@@ -1,0 +1,139 @@
+# Monthly Scrape & Deploy
+#
+# This workflow runs on the 1st of every month (and on manual trigger).
+# It:
+#   1. Installs Python and dependencies
+#   2. Runs the scraper against all active utilities
+#   3. Validates the scraped data
+#   4. Exports JSON for the static site
+#   5. Runs a diff report comparing to the previous run
+#   6. Commits updated data files
+#   7. Deploys the static site to GitHub Pages
+#   8. Creates a GitHub Issue if any sources broke or data changed
+
+name: Monthly Scrape & Deploy
+
+on:
+  # Run on the 1st of every month at 08:00 UTC
+  schedule:
+    - cron: "0 8 1 * *"
+
+  # Allow manual runs from the GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      utility:
+        description: "Scrape a single utility (leave blank for all)"
+        required: false
+        default: ""
+
+# Only one scrape at a time
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
+permissions:
+  contents: write       # to commit updated data
+  pages: write          # to deploy to GitHub Pages
+  id-token: write       # for Pages deployment
+  issues: write         # to create issue on failures
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Initialize database (if needed)
+        run: python -m pipeline.run_scrape --init-db
+
+      - name: Run scrapers
+        id: scrape
+        run: |
+          if [ -n "${{ github.event.inputs.utility }}" ]; then
+            python -m pipeline.run_scrape --utility "${{ github.event.inputs.utility }}" 2>&1 | tee scrape_output.txt
+          else
+            python -m pipeline.run_scrape 2>&1 | tee scrape_output.txt
+          fi
+
+      - name: Validate data
+        id: validate
+        continue-on-error: true
+        run: python -m pipeline.validate 2>&1 | tee validate_output.txt
+
+      - name: Export JSON for site
+        run: python -m pipeline.export_json
+
+      - name: Generate diff report
+        id: diff
+        continue-on-error: true
+        run: python -m pipeline.diff_report 2>&1 | tee diff_output.txt
+
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add site/data/ data/db/
+          if git diff --staged --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "data: monthly scrape update $(date +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Create issue on validation errors
+        if: steps.validate.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const validateOutput = fs.readFileSync('validate_output.txt', 'utf8');
+            const diffOutput = fs.existsSync('diff_output.txt')
+              ? fs.readFileSync('diff_output.txt', 'utf8')
+              : 'No diff report available.';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Scrape issue: validation errors on ${new Date().toISOString().split('T')[0]}`,
+              body: `## Validation Report\n\n\`\`\`\n${validateOutput.slice(0, 3000)}\n\`\`\`\n\n## Diff Report\n\n\`\`\`\n${diffOutput.slice(0, 3000)}\n\`\`\`\n\nThis issue was created automatically by the monthly scrape workflow.`,
+              labels: ['scrape-issue', 'automated'],
+            });
+
+  # Deploy site to GitHub Pages
+  deploy:
+    needs: scrape
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout (with updated data)
+        uses: actions/checkout@v4
+        with:
+          ref: main  # use the commit from the scrape job
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "name": "BC Hydro",
+    "province": "BC",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 8,
+    "name": "Enbridge Gas",
+    "province": "ON",
+    "utility_type": "gas",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 5,
+    "name": "Toronto Hydro",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 3,
+    "name": "Hydro-Québec",
+    "province": "QC",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  }
+]

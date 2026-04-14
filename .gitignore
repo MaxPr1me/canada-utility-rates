@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (keep schema and exports, ignore large temp files)
+data/db/*.db
+!data/db/.gitkeep
+data/exports/*.csv
+data/exports/*.xlsx
+!data/exports/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+
+# Temporary scrape artifacts
+scrapers/temp/
+*.tmp

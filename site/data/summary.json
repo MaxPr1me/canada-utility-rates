@@ -1,0 +1,30 @@
+{
+  "last_updated": "2026-04-14T14:35:48.972155+00:00",
+  "total_utilities": 4,
+  "total_tariffs": 8,
+  "total_components": 42,
+  "provinces_covered": [
+    "BC",
+    "ON",
+    "QC"
+  ],
+  "utility_types": {
+    "electricity": 3,
+    "gas": 1
+  },
+  "customer_classes": [
+    "commercial",
+    "residential"
+  ],
+  "last_scrape_run": {
+    "id": 1,
+    "started_at": "2026-04-14T14:35:06.506923+00:00",
+    "finished_at": "2026-04-14T14:35:30.327375+00:00",
+    "status": "completed",
+    "utilities_attempted": 4,
+    "utilities_succeeded": 4,
+    "errors": null,
+    "notes": null
+  },
+  "missing_data_count": 0
+}

@@ -1,0 +1,672 @@
+{
+  "_description": "Source registry for Canadian utility rate scrapers. Each entry maps a utility to its data sources and scraper implementation.",
+  "_last_updated": "2025-01-01",
+  "utilities": [
+    {
+      "name": "BC Hydro",
+      "province": "BC",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.bc_hydro",
+      "scraper_class": "BCHydroScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://app.bchydro.com/accounts-billing/rates-energy-use/electricity-rates/residential-rates.html",
+          "source_type": "html",
+          "description": "Residential electricity rates page with tiered pricing (Step 1 and Step 2)",
+          "is_primary": true
+        },
+        {
+          "url": "https://app.bchydro.com/accounts-billing/rates-energy-use/electricity-rates/business-rates.html",
+          "source_type": "html",
+          "description": "Commercial and industrial electricity rate schedules",
+          "is_primary": false
+        }
+      ],
+      "notes": "BC Hydro uses a two-tier residential rate structure. Rates are regulated by the BC Utilities Commission (BCUC)."
+    },
+    {
+      "name": "Hydro-Québec",
+      "province": "QC",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.hydro_quebec",
+      "scraper_class": "HydroQuebecScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.hydroquebec.com/residential/customer-space/rates/rate-d.html",
+          "source_type": "html",
+          "description": "Residential Rate D (standard domestic rate) with tiered pricing",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.hydroquebec.com/business/customer-space/rates/",
+          "source_type": "html",
+          "description": "Business rate schedules including Rate G and Rate M",
+          "is_primary": false
+        }
+      ],
+      "notes": "Hydro-Québec offers some of the lowest electricity rates in North America. Rates are regulated by the Régie de l'énergie du Québec. Pages available in both English and French."
+    },
+    {
+      "name": "Toronto Hydro",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.toronto_hydro",
+      "scraper_class": "TorontoHydroScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.torontohydro.com/for-home/rates",
+          "source_type": "html",
+          "description": "Residential electricity rates including TOU and tiered pricing options",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.torontohydro.com/for-business/rates",
+          "source_type": "html",
+          "description": "Business and commercial electricity rate information",
+          "is_primary": false
+        }
+      ],
+      "notes": "Ontario electricity rates consist of multiple components: electricity charge (commodity), delivery, regulatory, and debt retirement. Toronto Hydro is the local distribution company (LDC) for the City of Toronto. Commodity rates are set by the OEB."
+    },
+    {
+      "name": "Enbridge Gas",
+      "province": "ON",
+      "utility_type": "gas",
+      "scraper_module": "scrapers.utilities.enbridge_gas",
+      "scraper_class": "EnbridgeGasScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.enbridgegas.com/residential/my-account/understanding-my-bill/rates",
+          "source_type": "html",
+          "description": "Residential natural gas rates for the Enbridge Gas Distribution service area",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.enbridgegas.com/business-industrial/accounts-billing/rates",
+          "source_type": "html",
+          "description": "Commercial and industrial natural gas rates",
+          "is_primary": false
+        }
+      ],
+      "notes": "Enbridge Gas Inc. was formed by the merger of Enbridge Gas Distribution and Union Gas in 2019. Rates vary by rate zone (former EGD vs. former Union Gas territories). Regulated by the OEB."
+    },
+    {
+      "name": "FortisBC",
+      "province": "BC",
+      "utility_type": "both",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/residential-rates",
+          "source_type": "html",
+          "description": "Residential electricity rates for FortisBC service area in southern BC interior",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.fortisbc.com/accounts-billing/billing-rates/natural-gas-rates/residential-rates",
+          "source_type": "html",
+          "description": "Residential natural gas rates",
+          "is_primary": false
+        }
+      ],
+      "notes": "FortisBC operates both electricity and natural gas distribution in British Columbia. The electricity division serves the southern interior, while gas distribution covers most of the province outside BC Hydro's electric territory. Regulated by the BCUC."
+    },
+    {
+      "name": "ENMAX",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.enmax.com/home/rates-billing/rates/current-electricity-rates",
+          "source_type": "html",
+          "description": "Current residential and commercial electricity rates for Calgary",
+          "is_primary": true
+        }
+      ],
+      "notes": "ENMAX is a municipally-owned utility serving Calgary. Alberta has a deregulated electricity market, so ENMAX offers both regulated rate option (RRO) and competitive retail rates. The RRO is set monthly by the AUC."
+    },
+    {
+      "name": "EPCOR",
+      "province": "AB",
+      "utility_type": "both",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.epcor.com/products-services/encor/rates/Pages/regulated-rate.aspx",
+          "source_type": "html",
+          "description": "EPCOR regulated rate option (RRO) for electricity in Edmonton",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.epcor.com/products-services/encor/rates/Pages/natural-gas-rate.aspx",
+          "source_type": "html",
+          "description": "Natural gas regulated rates for Edmonton",
+          "is_primary": false
+        }
+      ],
+      "notes": "EPCOR is an Edmonton-based utility providing electricity and natural gas. Like ENMAX, it offers both RRO and competitive rates in the deregulated Alberta market."
+    },
+    {
+      "name": "ATCO Gas",
+      "province": "AB",
+      "utility_type": "gas",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.atco.com/en-ca/for-home/natural-gas/natural-gas-rates.html",
+          "source_type": "html",
+          "description": "ATCO residential natural gas distribution rates in Alberta",
+          "is_primary": true
+        }
+      ],
+      "notes": "ATCO Gas is one of the largest natural gas distribution companies in Alberta, serving over 1.1 million customers in more than 300 communities. Distribution charges are regulated by the AUC; commodity gas is purchased at market rates."
+    },
+    {
+      "name": "SaskPower",
+      "province": "SK",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.saskpower.com/Accounts-and-Services/Rates-and-Usage/Rates/Residential-Rates",
+          "source_type": "html",
+          "description": "Residential electricity rates for Saskatchewan",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.saskpower.com/Accounts-and-Services/Rates-and-Usage/Rates/Commercial-Rates",
+          "source_type": "html",
+          "description": "Commercial electricity rates",
+          "is_primary": false
+        }
+      ],
+      "notes": "SaskPower is the principal electricity supplier in Saskatchewan, a provincial Crown corporation. Rates are set by SaskPower and reviewed by the Saskatchewan Rate Review Panel."
+    },
+    {
+      "name": "SaskEnergy",
+      "province": "SK",
+      "utility_type": "gas",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.saskenergy.com/accounts-services/rates",
+          "source_type": "html",
+          "description": "Natural gas delivery and commodity rates for Saskatchewan",
+          "is_primary": true
+        }
+      ],
+      "notes": "SaskEnergy is the provincial Crown corporation responsible for natural gas distribution in Saskatchewan. Rates are adjusted quarterly based on commodity price changes."
+    },
+    {
+      "name": "Manitoba Hydro",
+      "province": "MB",
+      "utility_type": "both",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/residential_rates/",
+          "source_type": "html",
+          "description": "Residential electricity rates including basic charge and energy charge",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/natural_gas_rates/",
+          "source_type": "html",
+          "description": "Natural gas rates including primary gas, supplemental gas, transportation, and distribution charges",
+          "is_primary": false
+        }
+      ],
+      "notes": "Manitoba Hydro is a Crown corporation providing both electricity and natural gas in Manitoba. Electricity rates are among the lowest in Canada due to abundant hydroelectric generation. Regulated by the Manitoba Public Utilities Board."
+    },
+    {
+      "name": "Hydro One",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.hydroone.com/rates-and-billing/rates-and-charges/residential-rates",
+          "source_type": "html",
+          "description": "Residential electricity rates for Hydro One customers across Ontario",
+          "is_primary": true
+        }
+      ],
+      "notes": "Hydro One is the largest electricity distribution and transmission utility in Ontario, serving rural and suburban communities. Rates are regulated by the OEB. Commodity rates are the same province-wide (set by OEB) but delivery charges vary by distributor."
+    },
+    {
+      "name": "Alectra Utilities",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://alectrautilities.com/rates",
+          "source_type": "html",
+          "description": "Electricity rates for Alectra service territories (formerly Horizon, PowerStream, Enersource, Hydro One Brampton)",
+          "is_primary": true
+        }
+      ],
+      "notes": "Alectra Utilities is the second-largest municipally-owned electric utility in North America, serving communities in the Greater Golden Horseshoe area. Delivery rates vary by legacy service territory (rate zone). Regulated by the OEB."
+    },
+    {
+      "name": "Hydro Ottawa",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://hydroottawa.com/en/accounts-services/accounts/rates",
+          "source_type": "html",
+          "description": "Residential and commercial electricity rates for Ottawa",
+          "is_primary": true
+        }
+      ],
+      "notes": "Hydro Ottawa is the local distribution company for the City of Ottawa and the village of Casselman. Regulated by the OEB."
+    },
+    {
+      "name": "London Hydro",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.londonhydro.com/accounts-and-billing/understanding-rates",
+          "source_type": "html",
+          "description": "Electricity rate information for the City of London, Ontario",
+          "is_primary": true
+        }
+      ],
+      "notes": "London Hydro is the municipally-owned LDC for the City of London. Regulated by the OEB."
+    },
+    {
+      "name": "Énergir",
+      "province": "QC",
+      "utility_type": "gas",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.energir.com/en/residential/billing-and-payments/understanding-my-bill/rates/",
+          "source_type": "html",
+          "description": "Residential natural gas rates in Quebec",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.energir.com/en/business/billing-and-payments/understanding-my-bill/rates/",
+          "source_type": "html",
+          "description": "Commercial and industrial gas rates",
+          "is_primary": false
+        }
+      ],
+      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Rates are regulated by the Régie de l'énergie du Québec. Service covers most of southern Quebec."
+    },
+    {
+      "name": "NB Power",
+      "province": "NB",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.nbpower.com/en/products-services/residential/rates-and-tariffs/",
+          "source_type": "html",
+          "description": "Residential electricity rates and tariff schedules",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.nbpower.com/media/1490743/schedule-of-rates-and-tariffs.pdf",
+          "source_type": "pdf",
+          "description": "Complete schedule of rates and tariffs document (PDF)",
+          "is_primary": false
+        }
+      ],
+      "notes": "NB Power is a vertically integrated Crown corporation and the primary electricity provider in New Brunswick. Rates are regulated by the New Brunswick Energy and Utilities Board (NBEUB)."
+    },
+    {
+      "name": "Liberty Utilities (Gas New Brunswick)",
+      "province": "NB",
+      "utility_type": "gas",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://gas.libertyutilities.com/new-brunswick/residential/rates.html",
+          "source_type": "html",
+          "description": "Residential natural gas rates in New Brunswick",
+          "is_primary": true
+        }
+      ],
+      "notes": "Liberty Utilities acquired the former Enbridge Gas New Brunswick operations. URL is a best-guess and should be verified. Regulated by the NBEUB."
+    },
+    {
+      "name": "Nova Scotia Power",
+      "province": "NS",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.nspower.ca/about-us/electricity/rates-tariffs",
+          "source_type": "html",
+          "description": "Electricity rates and tariff schedules for Nova Scotia",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.nspower.ca/about-us/electricity/rates-tariffs/domestic-service-tariff",
+          "source_type": "html",
+          "description": "Domestic (residential) service tariff details",
+          "is_primary": false
+        }
+      ],
+      "notes": "Nova Scotia Power is the sole electricity provider for the majority of Nova Scotia. It is a subsidiary of Emera Inc. Rates are regulated by the Nova Scotia Utility and Review Board (NSUARB)."
+    },
+    {
+      "name": "Heritage Gas",
+      "province": "NS",
+      "utility_type": "gas",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.heritagegas.com/for-home/rates/",
+          "source_type": "html",
+          "description": "Residential natural gas rates in Nova Scotia",
+          "is_primary": true
+        }
+      ],
+      "notes": "Heritage Gas is the natural gas distribution utility in Nova Scotia, serving the Halifax-Dartmouth metro area and parts of the province along the Maritimes and Northeast Pipeline corridor. URL is a best-guess and should be verified. Regulated by the NSUARB."
+    },
+    {
+      "name": "Maritime Electric",
+      "province": "PE",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.maritimeelectric.com/about-us/regulatory/general-rules-regulations-and-schedules-of-rates/",
+          "source_type": "html",
+          "description": "General rules, regulations, and schedules of rates for Prince Edward Island",
+          "is_primary": true
+        }
+      ],
+      "notes": "Maritime Electric is the primary electricity distributor in Prince Edward Island, a subsidiary of Fortis Inc. PEI imports most of its electricity from New Brunswick via undersea cables. Regulated by the Island Regulatory and Appeals Commission (IRAC)."
+    },
+    {
+      "name": "Newfoundland Power",
+      "province": "NL",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.newfoundlandpower.com/en/About-Us/How-We-Operate/Rates-and-Regulations/Rates-and-Tariffs",
+          "source_type": "html",
+          "description": "Residential and commercial electricity rates and tariff schedule for the island of Newfoundland",
+          "is_primary": true
+        }
+      ],
+      "notes": "Newfoundland Power is a subsidiary of Fortis Inc. and the primary electricity distributor on the island of Newfoundland, serving approximately 270,000 customers. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB)."
+    },
+    {
+      "name": "Newfoundland and Labrador Hydro",
+      "province": "NL",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://nlhydro.com/accounts-services/rates/",
+          "source_type": "html",
+          "description": "Electricity rates for NL Hydro service areas (rural Newfoundland, coastal Labrador, and isolated systems)",
+          "is_primary": true
+        }
+      ],
+      "notes": "NL Hydro (Newfoundland and Labrador Hydro) is a Crown corporation that generates most of the province's electricity and distributes in rural and isolated areas. It also supplies wholesale power to Newfoundland Power. Regulated by the NL PUB."
+    },
+    {
+      "name": "Yukon Energy / ATCO Electric Yukon",
+      "province": "YT",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://yukonenergy.ca/customer-service/understanding-your-bill/residential-rates",
+          "source_type": "html",
+          "description": "Residential electricity rates in Yukon",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.atcoelectricyukon.com/en-ca/rates.html",
+          "source_type": "html",
+          "description": "ATCO Electric Yukon distribution rates",
+          "is_primary": false
+        }
+      ],
+      "notes": "Yukon Energy Corporation is the Crown-owned generation and transmission utility. ATCO Electric Yukon is the distribution utility (formerly Yukon Electrical Company). Both are regulated by the Yukon Utilities Board. Combined as one registry entry since rate determination involves both entities."
+    },
+    {
+      "name": "Northwest Territories Power Corporation (NTPC)",
+      "province": "NT",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.ntpc.com/customer-service/residential-service/understanding-your-power-bill/current-rates",
+          "source_type": "html",
+          "description": "Current residential electricity rates for NWT communities",
+          "is_primary": true
+        }
+      ],
+      "notes": "NTPC is a territorial Crown corporation generating and distributing electricity across the Northwest Territories. Rates vary significantly by community (hydro vs. diesel generation). Some communities receive territorial subsidies. Regulated by the NWT Public Utilities Board."
+    },
+    {
+      "name": "Qulliq Energy Corporation (QEC)",
+      "province": "NU",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "blocked",
+      "sources": [
+        {
+          "url": "https://www.qec.nu.ca/customer-care/accounts-and-billing/power-rates",
+          "source_type": "html",
+          "description": "Electricity rate information for Nunavut communities",
+          "is_primary": true
+        }
+      ],
+      "notes": "QEC is the sole electricity provider in Nunavut, operating diesel generation in each community. Rates vary by community and include a significant territorial subsidy component. Rate information on the website is limited and may require manual extraction. Status is 'blocked' pending investigation of data availability."
+    },
+    {
+      "name": "ATCO Electric",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.atco.com/en-ca/for-home/electricity/electricity-rates.html",
+          "source_type": "html",
+          "description": "Electricity distribution rates and regulated rate option",
+          "is_primary": true
+        }
+      ],
+      "notes": "ATCO Electric distributes electricity in northern and central Alberta. In Alberta's deregulated market, customers can choose a competitive retailer or stay on the regulated rate option (RRO). Distribution (wire) charges are regulated by the AUC."
+    },
+    {
+      "name": "Direct Energy (Alberta)",
+      "province": "AB",
+      "utility_type": "both",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.directenergy.ca/alberta/electricity-plans",
+          "source_type": "html",
+          "description": "Competitive electricity plans available in Alberta",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.directenergy.ca/alberta/natural-gas-plans",
+          "source_type": "html",
+          "description": "Competitive natural gas plans available in Alberta",
+          "is_primary": false
+        }
+      ],
+      "notes": "Direct Energy is one of the largest competitive energy retailers in Alberta, offering both electricity and natural gas. As a retailer (not a regulated distributor), rates are market-based and change frequently."
+    },
+    {
+      "name": "Kitchener-Wilmot Hydro",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.kwhydro.ca/billing-payments/rates/",
+          "source_type": "html",
+          "description": "Electricity rates for the Kitchener-Wilmot service area",
+          "is_primary": true
+        }
+      ],
+      "notes": "Kitchener-Wilmot Hydro is a municipally-owned LDC serving the cities of Kitchener and Wilmot Township. Regulated by the OEB."
+    },
+    {
+      "name": "Burlington Hydro",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://burlingtonhydro.com/charges-rates/",
+          "source_type": "html",
+          "description": "Electricity rates and charges for the City of Burlington",
+          "is_primary": true
+        }
+      ],
+      "notes": "Burlington Hydro is a municipally-owned LDC serving the City of Burlington. Regulated by the OEB."
+    },
+    {
+      "name": "Oakville Hydro",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.oakvillehydro.com/rates",
+          "source_type": "html",
+          "description": "Electricity rates for the Town of Oakville",
+          "is_primary": true
+        }
+      ],
+      "notes": "Oakville Hydro is a municipally-owned LDC serving the Town of Oakville. URL is a best-guess and should be verified. Regulated by the OEB."
+    },
+    {
+      "name": "Newfoundland Power (Gas)",
+      "province": "NL",
+      "utility_type": "gas",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "blocked",
+      "sources": [],
+      "notes": "Newfoundland and Labrador does not have a natural gas distribution system for residential or commercial customers. Status is 'blocked' because there is no retail natural gas market in the province."
+    },
+    {
+      "name": "Hydro-Sherbrooke",
+      "province": "QC",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.hydrosherbrooke.ca/en/residential/rates/",
+          "source_type": "html",
+          "description": "Residential electricity rates for the city of Sherbrooke",
+          "is_primary": true
+        }
+      ],
+      "notes": "Hydro-Sherbrooke is one of the few municipal electricity distributors in Quebec (most of the province is served by Hydro-Québec). URL is a best-guess and should be verified. Rates may differ slightly from Hydro-Québec."
+    },
+    {
+      "name": "Saskatoon Light & Power",
+      "province": "SK",
+      "utility_type": "electricity",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.saskatoon.ca/services-residents/power-water-sewer/saskatoon-light-power/electrical-rates",
+          "source_type": "html",
+          "description": "Electrical rates for City of Saskatoon customers",
+          "is_primary": true
+        }
+      ],
+      "notes": "Saskatoon Light & Power is the municipally-owned electricity distributor for the city of Saskatoon. It purchases wholesale power from SaskPower. Rates are set by Saskatoon City Council."
+    },
+    {
+      "name": "Manitoba Hydro (Gas only)",
+      "province": "MB",
+      "utility_type": "gas",
+      "scraper_module": null,
+      "scraper_class": null,
+      "status": "planned",
+      "sources": [
+        {
+          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/natural_gas_rates/",
+          "source_type": "html",
+          "description": "Natural gas rate details including commodity, distribution, and transportation charges",
+          "is_primary": true
+        }
+      ],
+      "notes": "This is a supplemental entry for tracking Manitoba Hydro's gas rates independently. The main Manitoba Hydro entry above covers both electricity and gas. Primary gas commodity rates are adjusted quarterly."
+    }
+  ]
+}

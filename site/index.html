@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canada Utility Rates</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Canada Utility Rates</h1>
+        <p class="subtitle">Browse electricity and natural gas rates across Canada</p>
+    </header>
+
+    <main>
+        <!-- Summary stats -->
+        <section id="summary" class="summary-bar">
+            <div class="stat">
+                <span class="stat-value" id="stat-utilities">—</span>
+                <span class="stat-label">Utilities</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="stat-tariffs">—</span>
+                <span class="stat-label">Tariffs</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="stat-provinces">—</span>
+                <span class="stat-label">Provinces</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="stat-updated">—</span>
+                <span class="stat-label">Last Updated</span>
+            </div>
+        </section>
+
+        <!-- Filters -->
+        <section id="filters" class="filters">
+            <div class="filter-group">
+                <label for="filter-province">Province</label>
+                <select id="filter-province">
+                    <option value="">All Provinces</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-utility">Utility</label>
+                <select id="filter-utility">
+                    <option value="">All Utilities</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-fuel">Fuel Type</label>
+                <select id="filter-fuel">
+                    <option value="">All Types</option>
+                    <option value="electricity">Electricity</option>
+                    <option value="gas">Natural Gas</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-class">Customer Class</label>
+                <select id="filter-class">
+                    <option value="">All Classes</option>
+                    <option value="residential">Residential</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="industrial">Industrial</option>
+                    <option value="general_service">General Service</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-structure">Rate Structure</label>
+                <select id="filter-structure">
+                    <option value="">All Structures</option>
+                    <option value="flat">Flat</option>
+                    <option value="tiered">Tiered</option>
+                    <option value="tou">Time-of-Use</option>
+                    <option value="demand">Demand-based</option>
+                    <option value="market">Market-indexed</option>
+                    <option value="mixed">Mixed</option>
+                </select>
+            </div>
+            <button id="btn-clear-filters" class="btn-secondary">Clear Filters</button>
+        </section>
+
+        <!-- Results count -->
+        <section class="results-info">
+            <span id="results-count">Loading…</span>
+        </section>
+
+        <!-- Rate cards -->
+        <section id="rates-container" class="rates-container">
+            <!-- Cards are injected by JS -->
+        </section>
+
+        <!-- Rate detail modal -->
+        <div id="modal-overlay" class="modal-overlay hidden">
+            <div class="modal">
+                <button id="modal-close" class="modal-close">&times;</button>
+                <div id="modal-content"></div>
+            </div>
+        </div>
+
+        <!-- Missing data notice -->
+        <section id="missing-notice" class="missing-notice hidden">
+            <h3>Data Gaps</h3>
+            <p>Some utilities or rate classes are not yet fully covered.</p>
+            <ul id="missing-list"></ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>
+            Data sourced from official utility and regulator websites.
+            <a href="https://github.com/YOUR_USERNAME/canada-utility-costs">View on GitHub</a>
+        </p>
+        <p class="disclaimer">
+            This tool is for informational purposes only. Always verify rates
+            directly with your utility provider. Rates may not include all
+            applicable taxes, fees, or adjustments.
+        </p>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
