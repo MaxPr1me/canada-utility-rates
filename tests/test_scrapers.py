@@ -147,7 +147,7 @@ class TestTorontoHydroSeed:
         ulo = [r for r in self.records if r.tariff_code == "ULO-R"][0]
         ulo_comps = [c for c in ulo.components if c.tou_period == "ultra-low-overnight"]
         assert len(ulo_comps) == 1
-        assert ulo_comps[0].charge_value == pytest.approx(0.028)
+        assert ulo_comps[0].charge_value == pytest.approx(0.039)
 
     def test_delivery_components_present(self):
         tou = [r for r in self.records if r.tariff_code == "TOU-R"][0]

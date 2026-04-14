@@ -327,7 +327,9 @@ class TestOntarioLDCScraper:
         from scrapers.utilities.ontario_ldc import OntarioLDCScraper
         s = OntarioLDCScraper(registry_entry={"name": "Hydro Ottawa Ltd."})
         records = s.scrape()
-        assert len(records) == 7  # 3 residential + 2 GS<50 + 1 GS>=50 + 1 street lighting
+        # 3 residential (TOU, Tiered, ULO) + 3 GS<50 (TOU, Tiered, ULO)
+        # + 3 demand tiers (GS-D1, GS-D2, GS-D3) + 1 street lighting = 10
+        assert len(records) == 10
         assert all(r.province == "ON" for r in records)
         assert all(r.utility_name == "Hydro Ottawa Ltd." for r in records)
 
@@ -355,7 +357,8 @@ class TestOntarioLDCScraper:
         from scrapers.utilities.ontario_ldc import OntarioLDCScraper
         s = OntarioLDCScraper(registry_entry={"name": "Nonexistent Power Co."})
         records = s.scrape()
-        assert len(records) == 7
+        # 3 residential + 3 GS<50 + 1 demand tier (gs_d1) + 1 street lighting = 8
+        assert len(records) == 8
         assert records[0].confidence == "unverified"
 
     def test_all_55_ldcs_have_data(self):
@@ -371,12 +374,11 @@ class TestOntarioLDCScraper:
         assert "commercial" in classes
         # Check GS < 50 kW
         gs_small = [r for r in records if r.sub_class == "GS < 50 kW"]
-        assert len(gs_small) >= 2  # TOU and Tiered
-        # Check GS >= 50 kW
-        gs_large = [r for r in records if r.sub_class == "GS >= 50 kW"]
-        assert len(gs_large) >= 1
-        assert gs_large[0].rate_structure == "demand"
-        assert gs_large[0].demand_min_kw == 50
+        assert len(gs_small) >= 3  # TOU, Tiered, ULO
+        # Check demand tiers (GS >= 50 kW)
+        demand = [r for r in records if r.rate_structure == "demand"]
+        assert len(demand) >= 1
+        assert demand[0].demand_min_kw == 50
 
     def test_has_street_lighting(self):
         from scrapers.utilities.ontario_ldc import OntarioLDCScraper
@@ -385,6 +387,68 @@ class TestOntarioLDCScraper:
         sl = [r for r in records if r.sub_class == "street lighting"]
         assert len(sl) == 1
         assert sl[0].customer_class == "other"
+
+    def test_demand_tiers(self):
+        """Major LDC with 3 demand tiers has distinct tariff codes."""
+        from scrapers.utilities.ontario_ldc import OntarioLDCScraper
+        s = OntarioLDCScraper(registry_entry={"name": "Hydro Ottawa Ltd."})
+        records = s.scrape()
+        demand = [r for r in records if r.rate_structure == "demand"]
+        codes = {r.tariff_code for r in demand}
+        assert codes == {"GS-D1", "GS-D2", "GS-D3"}
+        # Check demand ranges don't overlap
+        d1 = [r for r in demand if r.tariff_code == "GS-D1"][0]
+        d2 = [r for r in demand if r.tariff_code == "GS-D2"][0]
+        d3 = [r for r in demand if r.tariff_code == "GS-D3"][0]
+        assert d1.demand_min_kw == 50
+        assert d2.demand_min_kw == 1500
+        assert d3.demand_min_kw == 5000
+        assert d3.demand_max_kw is None  # no upper bound
+
+    def test_demand_tier_transmission_is_demand_based(self):
+        """GS >= 50 kW transmission should be $/kW, not $/kWh."""
+        from scrapers.utilities.ontario_ldc import OntarioLDCScraper
+        s = OntarioLDCScraper(registry_entry={"name": "Hydro Ottawa Ltd."})
+        records = s.scrape()
+        d1 = [r for r in records if r.tariff_code == "GS-D1"][0]
+        tx = [c for c in d1.components if c.component_type == "transmission"]
+        assert len(tx) == 2
+        for c in tx:
+            assert c.charge_unit == "$/kW", f"Demand-tier TX should be $/kW, got {c.charge_unit}"
+
+    def test_small_ldc_fewer_tiers(self):
+        """Small LDC with only gs_d1 should have fewer records."""
+        from scrapers.utilities.ontario_ldc import OntarioLDCScraper
+        s = OntarioLDCScraper(registry_entry={"name": "Burlington Hydro Inc."})
+        records = s.scrape()
+        demand = [r for r in records if r.rate_structure == "demand"]
+        assert len(demand) == 1
+        assert demand[0].tariff_code == "GS-D1"
+
+    def test_oeb_rates_updated(self):
+        """OEB rates should be Nov 2025 values."""
+        from scrapers.utilities.ontario_ldc import OEB_TOU, OEB_ULO, OEB_REGULATORY_CHARGE
+        assert OEB_TOU["off_peak"] == 0.098
+        assert OEB_TOU["on_peak"] == 0.203
+        assert OEB_ULO["ultra_low_overnight"] == 0.039
+        assert OEB_REGULATORY_CHARGE == 0.0053
+
+    def test_gs_ulo_present(self):
+        """GS < 50 kW should have ULO tariff."""
+        from scrapers.utilities.ontario_ldc import OntarioLDCScraper
+        s = OntarioLDCScraper(registry_entry={"name": "Hydro Ottawa Ltd."})
+        records = s.scrape()
+        gs_ulo = [r for r in records if r.tariff_code == "GS-ULO-S"]
+        assert len(gs_ulo) == 1
+        assert gs_ulo[0].sub_class == "GS < 50 kW"
+
+    def test_industrial_class_for_large_demand(self):
+        """GS-D3 (5,000+ kW) should be customer_class='industrial'."""
+        from scrapers.utilities.ontario_ldc import OntarioLDCScraper
+        s = OntarioLDCScraper(registry_entry={"name": "Hydro Ottawa Ltd."})
+        records = s.scrape()
+        d3 = [r for r in records if r.tariff_code == "GS-D3"][0]
+        assert d3.customer_class == "industrial"
 
 
 # ─── Alberta Distribution Utilities ─────────────────────────

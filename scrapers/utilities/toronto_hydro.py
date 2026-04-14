@@ -32,45 +32,55 @@ import logging
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
+from scrapers.utilities.ontario_ldc import (
+    OEB_EFFECTIVE_DATE,
+    OEB_SOURCE_URL,
+    OEB_TOU,
+    OEB_TIERED,
+    OEB_ULO,
+    OEB_TX_NETWORK_VOL,
+    OEB_TX_CONNECTION_VOL,
+    OEB_REGULATORY_CHARGE,
+)
 
 logger = logging.getLogger(__name__)
 
-# OEB-regulated electricity prices (province-wide, not utility-specific).
-# These change periodically — usually May 1 and Nov 1.
+# Re-export OEB constants in the format toronto_hydro _seed_data expects.
+# These are now single-source-of-truth imports from ontario_ldc.py.
 OEB_TOU_RATES = {
-    "effective_date": "2024-11-01",
-    "source_url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
-    "off_peak": 0.076,    # $/kWh
-    "mid_peak": 0.122,    # $/kWh
-    "on_peak": 0.176,     # $/kWh
+    "effective_date": OEB_EFFECTIVE_DATE,
+    "source_url": OEB_SOURCE_URL,
+    "off_peak": OEB_TOU["off_peak"],
+    "mid_peak": OEB_TOU["mid_peak"],
+    "on_peak": OEB_TOU["on_peak"],
 }
 
 OEB_TIERED_RATES = {
-    "effective_date": "2024-11-01",
-    "source_url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
-    "tier1_threshold_kwh": 1000,  # winter; 600 in summer
-    "tier1_rate": 0.076,
-    "tier2_rate": 0.0913,
+    "effective_date": OEB_EFFECTIVE_DATE,
+    "source_url": OEB_SOURCE_URL,
+    "tier1_threshold_kwh": OEB_TIERED["tier1_threshold_winter"],
+    "tier1_rate": OEB_TIERED["tier1_rate"],
+    "tier2_rate": OEB_TIERED["tier2_rate"],
 }
 
 OEB_ULO_RATES = {
-    "effective_date": "2024-11-01",
-    "source_url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
-    "ultra_low_overnight": 0.028,  # $/kWh  (11pm–7am)
-    "weekend_off_peak": 0.076,
-    "mid_peak": 0.122,
-    "on_peak": 0.176,
+    "effective_date": OEB_EFFECTIVE_DATE,
+    "source_url": OEB_SOURCE_URL,
+    "ultra_low_overnight": OEB_ULO["ultra_low_overnight"],
+    "weekend_off_peak": OEB_ULO["weekend_off_peak"],
+    "mid_peak": OEB_ULO["mid_peak"],
+    "on_peak": OEB_ULO["on_peak"],
 }
 
 # Toronto Hydro delivery charges (utility-specific).
 TORONTO_HYDRO_DELIVERY = {
-    "effective_date": "2024-05-01",
+    "effective_date": OEB_EFFECTIVE_DATE,
     "source_url": "https://www.torontohydro.com/rates-billing",
     "residential_fixed_monthly": 6.04,         # $/month
     "residential_distribution_volumetric": 0.0254,  # $/kWh
-    "residential_transmission_network": 0.0120,      # $/kWh
-    "residential_transmission_connection": 0.0048,   # $/kWh
-    "regulatory_charge": 0.0007,                     # $/kWh
+    "residential_transmission_network": OEB_TX_NETWORK_VOL,   # $/kWh
+    "residential_transmission_connection": OEB_TX_CONNECTION_VOL,  # $/kWh
+    "regulatory_charge": OEB_REGULATORY_CHARGE,               # $/kWh
 }
 
 

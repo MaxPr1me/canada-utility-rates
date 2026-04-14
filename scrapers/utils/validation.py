@@ -38,8 +38,8 @@ GAS_MIN = 0.0
 GAS_MAX_GJ = 50.0           # $/GJ
 GAS_MAX_M3 = 10.0           # $/m³
 
-# Fixed charges: $0–$200/month is a reasonable range.
-FIXED_MAX = 500.0            # $/month
+# Fixed charges: $0–$200/month typical for residential, up to $15k+ for industrial.
+FIXED_MAX = 20000.0          # $/month
 
 
 def validate_tariff(record: TariffRecord) -> ValidationResult:
