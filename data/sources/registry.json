@@ -3,6 +3,177 @@
   "_last_updated": "2025-01-01",
   "utilities": [
     {
+      "name": "Enbridge Gas",
+      "province": "ON",
+      "utility_type": "gas",
+      "scraper_module": "scrapers.utilities.enbridge_gas",
+      "scraper_class": "EnbridgeGasScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.enbridgegas.com/residential/my-account/understanding-my-bill/rates",
+          "source_type": "html",
+          "description": "Residential natural gas rates for the Enbridge Gas Distribution service area",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.enbridgegas.com/business-industrial/accounts-billing/rates",
+          "source_type": "html",
+          "description": "Commercial and industrial natural gas rates",
+          "is_primary": false
+        }
+      ],
+      "notes": "Enbridge Gas Inc. was formed by the merger of Enbridge Gas Distribution and Union Gas in 2019. Rates vary by rate zone (former EGD vs. former Union Gas territories). Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Énergir",
+      "province": "QC",
+      "utility_type": "gas",
+      "scraper_module": "scrapers.utilities.energir",
+      "scraper_class": "EnergirScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.energir.com/en/residential/billing-and-payments/understanding-my-bill/rates/",
+          "source_type": "html",
+          "description": "Residential natural gas rates in Quebec",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.energir.com/en/business/billing-and-payments/understanding-my-bill/rates/",
+          "source_type": "html",
+          "description": "Commercial and industrial gas rates",
+          "is_primary": false
+        }
+      ],
+      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Regulated by the Régie de l'énergie du Québec."
+    },
+    {
+      "name": "FortisBC Energy",
+      "province": "BC",
+      "utility_type": "gas",
+      "scraper_module": "scrapers.utilities.fortisbc_energy",
+      "scraper_class": "FortisBCEnergyScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.fortisbc.com/accounts-billing/billing-rates/natural-gas-rates/residential-rates",
+          "source_type": "html",
+          "description": "Residential natural gas rates for FortisBC Energy service area",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.fortisbc.com/accounts-billing/billing-rates/natural-gas-rates/commercial-rates",
+          "source_type": "html",
+          "description": "Commercial natural gas rates",
+          "is_primary": false
+        }
+      ],
+      "notes": "FortisBC Energy is the natural gas distribution arm of FortisBC, serving most of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC)."
+    },
+    {
+      "name": "ATCO Gas",
+      "province": "AB",
+      "utility_type": "gas",
+      "scraper_module": "scrapers.utilities.atco_gas",
+      "scraper_class": "ATCOGasScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.atco.com/en-ca/for-home/natural-gas/natural-gas-rates.html",
+          "source_type": "html",
+          "description": "ATCO residential natural gas distribution rates in Alberta",
+          "is_primary": true
+        }
+      ],
+      "notes": "ATCO Gas is one of the largest natural gas distribution companies in Alberta, serving over 1.1 million customers. Distribution charges are regulated by the Alberta Utilities Commission (AUC); commodity gas is purchased at market rates."
+    },
+    {
+      "name": "EPCOR Natural Gas",
+      "province": "AB",
+      "utility_type": "gas",
+      "scraper_module": "scrapers.utilities.epcor_gas",
+      "scraper_class": "EPCORGasScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.epcor.com/products-services/encor/rates/Pages/natural-gas-rate.aspx",
+          "source_type": "html",
+          "description": "Natural gas regulated rates for Edmonton",
+          "is_primary": true
+        }
+      ],
+      "notes": "EPCOR provides natural gas distribution in Edmonton and surrounding areas. Regulated by the Alberta Utilities Commission (AUC)."
+    },
+    {
+      "name": "Centra Gas Manitoba",
+      "province": "MB",
+      "utility_type": "gas",
+      "scraper_module": "scrapers.utilities.centra_gas",
+      "scraper_class": "CentraGasScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/natural_gas_rates/",
+          "source_type": "html",
+          "description": "Natural gas rates for Centra Gas Manitoba (operated by Manitoba Hydro)",
+          "is_primary": true
+        }
+      ],
+      "notes": "Centra Gas Manitoba is a subsidiary of Manitoba Hydro responsible for natural gas distribution in Manitoba. Regulated by the Manitoba Public Utilities Board (PUB)."
+    },
+    {
+      "name": "SaskEnergy",
+      "province": "SK",
+      "utility_type": "gas",
+      "scraper_module": "scrapers.utilities.saskenergy",
+      "scraper_class": "SaskEnergyScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.saskenergy.com/accounts-services/rates",
+          "source_type": "html",
+          "description": "Natural gas delivery and commodity rates for Saskatchewan",
+          "is_primary": true
+        }
+      ],
+      "notes": "SaskEnergy is the provincial Crown corporation responsible for natural gas distribution in Saskatchewan. Rates are adjusted quarterly based on commodity price changes. Regulated by the Saskatchewan Rate Review Panel."
+    },
+    {
+      "name": "Heritage Gas",
+      "province": "NS",
+      "utility_type": "gas",
+      "scraper_module": "scrapers.utilities.heritage_gas",
+      "scraper_class": "HeritageGasScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.heritagegas.com/for-home/rates/",
+          "source_type": "html",
+          "description": "Residential natural gas rates in Nova Scotia",
+          "is_primary": true
+        }
+      ],
+      "notes": "Heritage Gas is the natural gas distribution utility in Nova Scotia, serving the Halifax-Dartmouth metro area and parts of the province along the Maritimes and Northeast Pipeline corridor. Regulated by the Nova Scotia Utility and Review Board (NSUARB)."
+    },
+    {
+      "name": "Liberty Utilities NB",
+      "province": "NB",
+      "utility_type": "gas",
+      "scraper_module": "scrapers.utilities.liberty_gas_nb",
+      "scraper_class": "LibertyGasNBScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://gas.libertyutilities.com/new-brunswick/residential/rates.html",
+          "source_type": "html",
+          "description": "Residential natural gas rates in New Brunswick",
+          "is_primary": true
+        }
+      ],
+      "notes": "Liberty Utilities acquired the former Enbridge Gas New Brunswick operations. Regulated by the New Brunswick Energy and Utilities Board (NBEUB)."
+    },
+    {
       "name": "BC Hydro",
       "province": "BC",
       "utility_type": "electricity",
@@ -23,7 +194,30 @@
           "is_primary": false
         }
       ],
-      "notes": "BC Hydro uses a two-tier residential rate structure. Rates are regulated by the BC Utilities Commission (BCUC)."
+      "notes": "BC Hydro uses a two-tier residential rate structure. Rates are regulated by the British Columbia Utilities Commission (BCUC)."
+    },
+    {
+      "name": "FortisBC Electric",
+      "province": "BC",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.fortisbc_electric",
+      "scraper_class": "FortisBCElectricScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/residential-rates",
+          "source_type": "html",
+          "description": "Residential electricity rates for FortisBC Electric service area in southern BC interior",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/commercial-rates",
+          "source_type": "html",
+          "description": "Commercial electricity rates",
+          "is_primary": false
+        }
+      ],
+      "notes": "FortisBC Electric serves the southern interior of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC)."
     },
     {
       "name": "Hydro-Québec",
@@ -46,141 +240,38 @@
           "is_primary": false
         }
       ],
-      "notes": "Hydro-Québec offers some of the lowest electricity rates in North America. Rates are regulated by the Régie de l'énergie du Québec. Pages available in both English and French."
+      "notes": "Hydro-Québec offers some of the lowest electricity rates in North America. Rates are regulated by the Régie de l'énergie du Québec."
     },
     {
-      "name": "Toronto Hydro",
-      "province": "ON",
+      "name": "Manitoba Hydro",
+      "province": "MB",
       "utility_type": "electricity",
-      "scraper_module": "scrapers.utilities.toronto_hydro",
-      "scraper_class": "TorontoHydroScraper",
+      "scraper_module": "scrapers.utilities.manitoba_hydro",
+      "scraper_class": "ManitobaHydroScraper",
       "status": "active",
       "sources": [
         {
-          "url": "https://www.torontohydro.com/for-home/rates",
+          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/residential_rates/",
           "source_type": "html",
-          "description": "Residential electricity rates including TOU and tiered pricing options",
+          "description": "Residential electricity rates including basic charge and energy charge",
           "is_primary": true
         },
         {
-          "url": "https://www.torontohydro.com/for-business/rates",
+          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/commercial_rates/",
           "source_type": "html",
-          "description": "Business and commercial electricity rate information",
+          "description": "Commercial and industrial electricity rates",
           "is_primary": false
         }
       ],
-      "notes": "Ontario electricity rates consist of multiple components: electricity charge (commodity), delivery, regulatory, and debt retirement. Toronto Hydro is the local distribution company (LDC) for the City of Toronto. Commodity rates are set by the OEB."
-    },
-    {
-      "name": "Enbridge Gas",
-      "province": "ON",
-      "utility_type": "gas",
-      "scraper_module": "scrapers.utilities.enbridge_gas",
-      "scraper_class": "EnbridgeGasScraper",
-      "status": "active",
-      "sources": [
-        {
-          "url": "https://www.enbridgegas.com/residential/my-account/understanding-my-bill/rates",
-          "source_type": "html",
-          "description": "Residential natural gas rates for the Enbridge Gas Distribution service area",
-          "is_primary": true
-        },
-        {
-          "url": "https://www.enbridgegas.com/business-industrial/accounts-billing/rates",
-          "source_type": "html",
-          "description": "Commercial and industrial natural gas rates",
-          "is_primary": false
-        }
-      ],
-      "notes": "Enbridge Gas Inc. was formed by the merger of Enbridge Gas Distribution and Union Gas in 2019. Rates vary by rate zone (former EGD vs. former Union Gas territories). Regulated by the OEB."
-    },
-    {
-      "name": "FortisBC",
-      "province": "BC",
-      "utility_type": "both",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/residential-rates",
-          "source_type": "html",
-          "description": "Residential electricity rates for FortisBC service area in southern BC interior",
-          "is_primary": true
-        },
-        {
-          "url": "https://www.fortisbc.com/accounts-billing/billing-rates/natural-gas-rates/residential-rates",
-          "source_type": "html",
-          "description": "Residential natural gas rates",
-          "is_primary": false
-        }
-      ],
-      "notes": "FortisBC operates both electricity and natural gas distribution in British Columbia. The electricity division serves the southern interior, while gas distribution covers most of the province outside BC Hydro's electric territory. Regulated by the BCUC."
-    },
-    {
-      "name": "ENMAX",
-      "province": "AB",
-      "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://www.enmax.com/home/rates-billing/rates/current-electricity-rates",
-          "source_type": "html",
-          "description": "Current residential and commercial electricity rates for Calgary",
-          "is_primary": true
-        }
-      ],
-      "notes": "ENMAX is a municipally-owned utility serving Calgary. Alberta has a deregulated electricity market, so ENMAX offers both regulated rate option (RRO) and competitive retail rates. The RRO is set monthly by the AUC."
-    },
-    {
-      "name": "EPCOR",
-      "province": "AB",
-      "utility_type": "both",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://www.epcor.com/products-services/encor/rates/Pages/regulated-rate.aspx",
-          "source_type": "html",
-          "description": "EPCOR regulated rate option (RRO) for electricity in Edmonton",
-          "is_primary": true
-        },
-        {
-          "url": "https://www.epcor.com/products-services/encor/rates/Pages/natural-gas-rate.aspx",
-          "source_type": "html",
-          "description": "Natural gas regulated rates for Edmonton",
-          "is_primary": false
-        }
-      ],
-      "notes": "EPCOR is an Edmonton-based utility providing electricity and natural gas. Like ENMAX, it offers both RRO and competitive rates in the deregulated Alberta market."
-    },
-    {
-      "name": "ATCO Gas",
-      "province": "AB",
-      "utility_type": "gas",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://www.atco.com/en-ca/for-home/natural-gas/natural-gas-rates.html",
-          "source_type": "html",
-          "description": "ATCO residential natural gas distribution rates in Alberta",
-          "is_primary": true
-        }
-      ],
-      "notes": "ATCO Gas is one of the largest natural gas distribution companies in Alberta, serving over 1.1 million customers in more than 300 communities. Distribution charges are regulated by the AUC; commodity gas is purchased at market rates."
+      "notes": "Manitoba Hydro is a Crown corporation providing electricity in Manitoba. Electricity rates are among the lowest in Canada due to abundant hydroelectric generation. Regulated by the Manitoba Public Utilities Board (PUB)."
     },
     {
       "name": "SaskPower",
       "province": "SK",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.saskpower",
+      "scraper_class": "SaskPowerScraper",
+      "status": "active",
       "sources": [
         {
           "url": "https://www.saskpower.com/Accounts-and-Services/Rates-and-Usage/Rates/Residential-Rates",
@@ -195,146 +286,15 @@
           "is_primary": false
         }
       ],
-      "notes": "SaskPower is the principal electricity supplier in Saskatchewan, a provincial Crown corporation. Rates are set by SaskPower and reviewed by the Saskatchewan Rate Review Panel."
-    },
-    {
-      "name": "SaskEnergy",
-      "province": "SK",
-      "utility_type": "gas",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://www.saskenergy.com/accounts-services/rates",
-          "source_type": "html",
-          "description": "Natural gas delivery and commodity rates for Saskatchewan",
-          "is_primary": true
-        }
-      ],
-      "notes": "SaskEnergy is the provincial Crown corporation responsible for natural gas distribution in Saskatchewan. Rates are adjusted quarterly based on commodity price changes."
-    },
-    {
-      "name": "Manitoba Hydro",
-      "province": "MB",
-      "utility_type": "both",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/residential_rates/",
-          "source_type": "html",
-          "description": "Residential electricity rates including basic charge and energy charge",
-          "is_primary": true
-        },
-        {
-          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/natural_gas_rates/",
-          "source_type": "html",
-          "description": "Natural gas rates including primary gas, supplemental gas, transportation, and distribution charges",
-          "is_primary": false
-        }
-      ],
-      "notes": "Manitoba Hydro is a Crown corporation providing both electricity and natural gas in Manitoba. Electricity rates are among the lowest in Canada due to abundant hydroelectric generation. Regulated by the Manitoba Public Utilities Board."
-    },
-    {
-      "name": "Hydro One",
-      "province": "ON",
-      "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://www.hydroone.com/rates-and-billing/rates-and-charges/residential-rates",
-          "source_type": "html",
-          "description": "Residential electricity rates for Hydro One customers across Ontario",
-          "is_primary": true
-        }
-      ],
-      "notes": "Hydro One is the largest electricity distribution and transmission utility in Ontario, serving rural and suburban communities. Rates are regulated by the OEB. Commodity rates are the same province-wide (set by OEB) but delivery charges vary by distributor."
-    },
-    {
-      "name": "Alectra Utilities",
-      "province": "ON",
-      "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://alectrautilities.com/rates",
-          "source_type": "html",
-          "description": "Electricity rates for Alectra service territories (formerly Horizon, PowerStream, Enersource, Hydro One Brampton)",
-          "is_primary": true
-        }
-      ],
-      "notes": "Alectra Utilities is the second-largest municipally-owned electric utility in North America, serving communities in the Greater Golden Horseshoe area. Delivery rates vary by legacy service territory (rate zone). Regulated by the OEB."
-    },
-    {
-      "name": "Hydro Ottawa",
-      "province": "ON",
-      "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://hydroottawa.com/en/accounts-services/accounts/rates",
-          "source_type": "html",
-          "description": "Residential and commercial electricity rates for Ottawa",
-          "is_primary": true
-        }
-      ],
-      "notes": "Hydro Ottawa is the local distribution company for the City of Ottawa and the village of Casselman. Regulated by the OEB."
-    },
-    {
-      "name": "London Hydro",
-      "province": "ON",
-      "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://www.londonhydro.com/accounts-and-billing/understanding-rates",
-          "source_type": "html",
-          "description": "Electricity rate information for the City of London, Ontario",
-          "is_primary": true
-        }
-      ],
-      "notes": "London Hydro is the municipally-owned LDC for the City of London. Regulated by the OEB."
-    },
-    {
-      "name": "Énergir",
-      "province": "QC",
-      "utility_type": "gas",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://www.energir.com/en/residential/billing-and-payments/understanding-my-bill/rates/",
-          "source_type": "html",
-          "description": "Residential natural gas rates in Quebec",
-          "is_primary": true
-        },
-        {
-          "url": "https://www.energir.com/en/business/billing-and-payments/understanding-my-bill/rates/",
-          "source_type": "html",
-          "description": "Commercial and industrial gas rates",
-          "is_primary": false
-        }
-      ],
-      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Rates are regulated by the Régie de l'énergie du Québec. Service covers most of southern Quebec."
+      "notes": "SaskPower is the principal electricity supplier in Saskatchewan, a provincial Crown corporation. Regulated by the Saskatchewan Rate Review Panel."
     },
     {
       "name": "NB Power",
       "province": "NB",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.nb_power",
+      "scraper_class": "NBPowerScraper",
+      "status": "active",
       "sources": [
         {
           "url": "https://www.nbpower.com/en/products-services/residential/rates-and-tariffs/",
@@ -349,32 +309,15 @@
           "is_primary": false
         }
       ],
-      "notes": "NB Power is a vertically integrated Crown corporation and the primary electricity provider in New Brunswick. Rates are regulated by the New Brunswick Energy and Utilities Board (NBEUB)."
-    },
-    {
-      "name": "Liberty Utilities (Gas New Brunswick)",
-      "province": "NB",
-      "utility_type": "gas",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://gas.libertyutilities.com/new-brunswick/residential/rates.html",
-          "source_type": "html",
-          "description": "Residential natural gas rates in New Brunswick",
-          "is_primary": true
-        }
-      ],
-      "notes": "Liberty Utilities acquired the former Enbridge Gas New Brunswick operations. URL is a best-guess and should be verified. Regulated by the NBEUB."
+      "notes": "NB Power is a vertically integrated Crown corporation and the primary electricity provider in New Brunswick. Regulated by the New Brunswick Energy and Utilities Board (NBEUB)."
     },
     {
       "name": "Nova Scotia Power",
       "province": "NS",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.nova_scotia_power",
+      "scraper_class": "NovaScotiaPowerScraper",
+      "status": "active",
       "sources": [
         {
           "url": "https://www.nspower.ca/about-us/electricity/rates-tariffs",
@@ -389,32 +332,15 @@
           "is_primary": false
         }
       ],
-      "notes": "Nova Scotia Power is the sole electricity provider for the majority of Nova Scotia. It is a subsidiary of Emera Inc. Rates are regulated by the Nova Scotia Utility and Review Board (NSUARB)."
-    },
-    {
-      "name": "Heritage Gas",
-      "province": "NS",
-      "utility_type": "gas",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://www.heritagegas.com/for-home/rates/",
-          "source_type": "html",
-          "description": "Residential natural gas rates in Nova Scotia",
-          "is_primary": true
-        }
-      ],
-      "notes": "Heritage Gas is the natural gas distribution utility in Nova Scotia, serving the Halifax-Dartmouth metro area and parts of the province along the Maritimes and Northeast Pipeline corridor. URL is a best-guess and should be verified. Regulated by the NSUARB."
+      "notes": "Nova Scotia Power is the sole electricity provider for the majority of Nova Scotia, a subsidiary of Emera Inc. Regulated by the Nova Scotia Utility and Review Board (NSUARB)."
     },
     {
       "name": "Maritime Electric",
       "province": "PE",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.maritime_electric",
+      "scraper_class": "MaritimeElectricScraper",
+      "status": "active",
       "sources": [
         {
           "url": "https://www.maritimeelectric.com/about-us/regulatory/general-rules-regulations-and-schedules-of-rates/",
@@ -423,15 +349,15 @@
           "is_primary": true
         }
       ],
-      "notes": "Maritime Electric is the primary electricity distributor in Prince Edward Island, a subsidiary of Fortis Inc. PEI imports most of its electricity from New Brunswick via undersea cables. Regulated by the Island Regulatory and Appeals Commission (IRAC)."
+      "notes": "Maritime Electric is the primary electricity distributor in Prince Edward Island, a subsidiary of Fortis Inc. Regulated by the Island Regulatory and Appeals Commission (IRAC)."
     },
     {
       "name": "Newfoundland Power",
       "province": "NL",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.newfoundland_power",
+      "scraper_class": "NewfoundlandPowerScraper",
+      "status": "active",
       "sources": [
         {
           "url": "https://www.newfoundlandpower.com/en/About-Us/How-We-Operate/Rates-and-Regulations/Rates-and-Tariffs",
@@ -440,15 +366,15 @@
           "is_primary": true
         }
       ],
-      "notes": "Newfoundland Power is a subsidiary of Fortis Inc. and the primary electricity distributor on the island of Newfoundland, serving approximately 270,000 customers. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB)."
+      "notes": "Newfoundland Power is a subsidiary of Fortis Inc. and the primary electricity distributor on the island of Newfoundland. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB)."
     },
     {
-      "name": "Newfoundland and Labrador Hydro",
+      "name": "NL Hydro",
       "province": "NL",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.nl_hydro",
+      "scraper_class": "NLHydroScraper",
+      "status": "active",
       "sources": [
         {
           "url": "https://nlhydro.com/accounts-services/rates/",
@@ -457,38 +383,49 @@
           "is_primary": true
         }
       ],
-      "notes": "NL Hydro (Newfoundland and Labrador Hydro) is a Crown corporation that generates most of the province's electricity and distributes in rural and isolated areas. It also supplies wholesale power to Newfoundland Power. Regulated by the NL PUB."
+      "notes": "NL Hydro (Newfoundland and Labrador Hydro) is a Crown corporation that generates most of the province's electricity and distributes in rural and isolated areas. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB)."
     },
     {
-      "name": "Yukon Energy / ATCO Electric Yukon",
+      "name": "Yukon Energy",
       "province": "YT",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.yukon_energy",
+      "scraper_class": "YukonEnergyScraper",
+      "status": "active",
       "sources": [
         {
           "url": "https://yukonenergy.ca/customer-service/understanding-your-bill/residential-rates",
           "source_type": "html",
           "description": "Residential electricity rates in Yukon",
           "is_primary": true
-        },
+        }
+      ],
+      "notes": "Yukon Energy Corporation is the Crown-owned generation and transmission utility in Yukon. Regulated by the Yukon Utilities Board (YUB)."
+    },
+    {
+      "name": "Yukon Electrical Company",
+      "province": "YT",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.yukon_electrical",
+      "scraper_class": "YukonElectricalScraper",
+      "status": "active",
+      "sources": [
         {
           "url": "https://www.atcoelectricyukon.com/en-ca/rates.html",
           "source_type": "html",
-          "description": "ATCO Electric Yukon distribution rates",
-          "is_primary": false
+          "description": "ATCO Electric Yukon (formerly Yukon Electrical Company) distribution rates",
+          "is_primary": true
         }
       ],
-      "notes": "Yukon Energy Corporation is the Crown-owned generation and transmission utility. ATCO Electric Yukon is the distribution utility (formerly Yukon Electrical Company). Both are regulated by the Yukon Utilities Board. Combined as one registry entry since rate determination involves both entities."
+      "notes": "Yukon Electrical Company (now operating as ATCO Electric Yukon) is the distribution utility in Yukon. Regulated by the Yukon Utilities Board (YUB)."
     },
     {
-      "name": "Northwest Territories Power Corporation (NTPC)",
+      "name": "Northwest Territories Power Corporation",
       "province": "NT",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.ntpc",
+      "scraper_class": "NTPCScraper",
+      "status": "active",
       "sources": [
         {
           "url": "https://www.ntpc.com/customer-service/residential-service/understanding-your-power-bill/current-rates",
@@ -497,15 +434,15 @@
           "is_primary": true
         }
       ],
-      "notes": "NTPC is a territorial Crown corporation generating and distributing electricity across the Northwest Territories. Rates vary significantly by community (hydro vs. diesel generation). Some communities receive territorial subsidies. Regulated by the NWT Public Utilities Board."
+      "notes": "NTPC is a territorial Crown corporation generating and distributing electricity across the Northwest Territories. Rates vary significantly by community (hydro vs. diesel generation). Regulated by the Northwest Territories Public Utilities Board (PUB)."
     },
     {
-      "name": "Qulliq Energy Corporation (QEC)",
+      "name": "Qulliq Energy Corporation",
       "province": "NU",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "blocked",
+      "scraper_module": "scrapers.utilities.qulliq",
+      "scraper_class": "QulliqScraper",
+      "status": "active",
       "sources": [
         {
           "url": "https://www.qec.nu.ca/customer-care/accounts-and-billing/power-rates",
@@ -514,159 +451,950 @@
           "is_primary": true
         }
       ],
-      "notes": "QEC is the sole electricity provider in Nunavut, operating diesel generation in each community. Rates vary by community and include a significant territorial subsidy component. Rate information on the website is limited and may require manual extraction. Status is 'blocked' pending investigation of data availability."
+      "notes": "Qulliq Energy Corporation is the sole electricity provider in Nunavut, operating diesel generation in each community. Rates vary by community and include territorial subsidy components. Regulated by the Utility Rates Review Council of Nunavut (URRC)."
     },
     {
-      "name": "ATCO Electric",
-      "province": "AB",
+      "name": "Alectra Utilities",
+      "province": "ON",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
       "sources": [
         {
-          "url": "https://www.atco.com/en-ca/for-home/electricity/electricity-rates.html",
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
-          "description": "Electricity distribution rates and regulated rate option",
-          "is_primary": true
-        }
-      ],
-      "notes": "ATCO Electric distributes electricity in northern and central Alberta. In Alberta's deregulated market, customers can choose a competitive retailer or stay on the regulated rate option (RRO). Distribution (wire) charges are regulated by the AUC."
-    },
-    {
-      "name": "Direct Energy (Alberta)",
-      "province": "AB",
-      "utility_type": "both",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
-      "sources": [
-        {
-          "url": "https://www.directenergy.ca/alberta/electricity-plans",
-          "source_type": "html",
-          "description": "Competitive electricity plans available in Alberta",
+          "description": "OEB electricity rate information for Ontario LDCs",
           "is_primary": true
         },
         {
-          "url": "https://www.directenergy.ca/alberta/natural-gas-plans",
+          "url": "https://alectrautilities.com/rates",
           "source_type": "html",
-          "description": "Competitive natural gas plans available in Alberta",
+          "description": "Alectra Utilities rate information",
           "is_primary": false
         }
       ],
-      "notes": "Direct Energy is one of the largest competitive energy retailers in Alberta, offering both electricity and natural gas. As a retailer (not a regulated distributor), rates are market-based and change frequently."
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
     },
     {
-      "name": "Kitchener-Wilmot Hydro",
+      "name": "Algoma Power Inc.",
       "province": "ON",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
       "sources": [
         {
-          "url": "https://www.kwhydro.ca/billing-payments/rates/",
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
-          "description": "Electricity rates for the Kitchener-Wilmot service area",
+          "description": "OEB electricity rate information for Ontario LDCs",
           "is_primary": true
         }
       ],
-      "notes": "Kitchener-Wilmot Hydro is a municipally-owned LDC serving the cities of Kitchener and Wilmot Township. Regulated by the OEB."
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
     },
     {
-      "name": "Burlington Hydro",
+      "name": "Atikokan Hydro Inc.",
       "province": "ON",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
       "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Bluewater Power Distribution",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Brantford Power Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Burlington Hydro Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        },
         {
           "url": "https://burlingtonhydro.com/charges-rates/",
           "source_type": "html",
-          "description": "Electricity rates and charges for the City of Burlington",
-          "is_primary": true
+          "description": "Burlington Hydro rate information",
+          "is_primary": false
         }
       ],
-      "notes": "Burlington Hydro is a municipally-owned LDC serving the City of Burlington. Regulated by the OEB."
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
     },
     {
-      "name": "Oakville Hydro",
+      "name": "Canadian Niagara Power Inc.",
       "province": "ON",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
       "sources": [
         {
-          "url": "https://www.oakvillehydro.com/rates",
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
-          "description": "Electricity rates for the Town of Oakville",
+          "description": "OEB electricity rate information for Ontario LDCs",
           "is_primary": true
         }
       ],
-      "notes": "Oakville Hydro is a municipally-owned LDC serving the Town of Oakville. URL is a best-guess and should be verified. Regulated by the OEB."
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
     },
     {
-      "name": "Newfoundland Power (Gas)",
-      "province": "NL",
-      "utility_type": "gas",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "blocked",
-      "sources": [],
-      "notes": "Newfoundland and Labrador does not have a natural gas distribution system for residential or commercial customers. Status is 'blocked' because there is no retail natural gas market in the province."
-    },
-    {
-      "name": "Hydro-Sherbrooke",
-      "province": "QC",
+      "name": "Centre Wellington Hydro Ltd.",
+      "province": "ON",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
       "sources": [
         {
-          "url": "https://www.hydrosherbrooke.ca/en/residential/rates/",
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
-          "description": "Residential electricity rates for the city of Sherbrooke",
+          "description": "OEB electricity rate information for Ontario LDCs",
           "is_primary": true
         }
       ],
-      "notes": "Hydro-Sherbrooke is one of the few municipal electricity distributors in Quebec (most of the province is served by Hydro-Québec). URL is a best-guess and should be verified. Rates may differ slightly from Hydro-Québec."
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
     },
     {
-      "name": "Saskatoon Light & Power",
-      "province": "SK",
+      "name": "Chapleau Public Utilities Corp.",
+      "province": "ON",
       "utility_type": "electricity",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
       "sources": [
         {
-          "url": "https://www.saskatoon.ca/services-residents/power-water-sewer/saskatoon-light-power/electrical-rates",
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
-          "description": "Electrical rates for City of Saskatoon customers",
+          "description": "OEB electricity rate information for Ontario LDCs",
           "is_primary": true
         }
       ],
-      "notes": "Saskatoon Light & Power is the municipally-owned electricity distributor for the city of Saskatoon. It purchases wholesale power from SaskPower. Rates are set by Saskatoon City Council."
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
     },
     {
-      "name": "Manitoba Hydro (Gas only)",
-      "province": "MB",
-      "utility_type": "gas",
-      "scraper_module": null,
-      "scraper_class": null,
-      "status": "planned",
+      "name": "Elexicon Energy Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
       "sources": [
         {
-          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/natural_gas_rates/",
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
-          "description": "Natural gas rate details including commodity, distribution, and transportation charges",
+          "description": "OEB electricity rate information for Ontario LDCs",
           "is_primary": true
         }
       ],
-      "notes": "This is a supplemental entry for tracking Manitoba Hydro's gas rates independently. The main Manitoba Hydro entry above covers both electricity and gas. Primary gas commodity rates are adjusted quarterly."
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Entegrus Powerlines Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Enwin Utilities Ltd.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Erie Thames Powerlines Corp.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Espanola Regional Hydro",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Essex Powerlines Corp.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Festival Hydro Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Fort Frances Power Corp.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Greater Sudbury Hydro Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Grimsby Power Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Guelph Hydro Electric Systems Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Halton Hills Hydro Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Hearst Power Distribution Co. Ltd.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Hydro 2000 Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Hydro Hawkesbury Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Hydro One Networks Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.hydroone.com/rates-and-billing/rates-and-charges/residential-rates",
+          "source_type": "html",
+          "description": "Hydro One residential electricity rates",
+          "is_primary": false
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Hydro One is the largest electricity distribution and transmission utility in Ontario. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Hydro Ottawa Ltd.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        },
+        {
+          "url": "https://hydroottawa.com/en/accounts-services/accounts/rates",
+          "source_type": "html",
+          "description": "Hydro Ottawa rate information",
+          "is_primary": false
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Innpower Corporation",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Kingston Hydro Corporation",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Kitchener-Wilmot Hydro Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.kwhydro.ca/billing-payments/rates/",
+          "source_type": "html",
+          "description": "Kitchener-Wilmot Hydro rate information",
+          "is_primary": false
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Lakefront Utilities Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Lakeland Power Distribution Ltd.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "London Hydro Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.londonhydro.com/accounts-and-billing/understanding-rates",
+          "source_type": "html",
+          "description": "London Hydro rate information",
+          "is_primary": false
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Midland Power Utility Corp.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Milton Hydro Distribution Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Newmarket-Tay Power Distribution Ltd.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Niagara Peninsula Energy Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "North Bay Hydro Distribution Ltd.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Northern Ontario Wires Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Oakville Hydro Electricity Distribution Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Orangeville Hydro Limited",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Oshawa PUC Networks Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Ottawa River Power Corporation",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "PUC Distribution Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Rideau St. Lawrence Distribution Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Sioux Lookout Hydro Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "St. Thomas Energy Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Synergy North Corporation",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Tillsonburg Hydro Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Toronto Hydro-Electric System Ltd.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.torontohydro.com/for-home/rates",
+          "source_type": "html",
+          "description": "Toronto Hydro residential rate information",
+          "is_primary": false
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Toronto Hydro is the LDC for the City of Toronto. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Wasaga Distribution Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Waterloo North Hydro Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Welland Hydro-Electric System Corp.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "Westario Power Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": true
+        }
+      ],
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
     }
   ]
 }

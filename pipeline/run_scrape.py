@@ -67,13 +67,18 @@ def load_scraper(registry_entry: dict) -> BaseScraper | None:
     The registry entry must have a 'scraper_module' key like
     "scrapers.utilities.bc_hydro" and a 'scraper_class' key like
     "BCHydroScraper".
+
+    If the scraper constructor accepts a registry_entry keyword argument,
+    the full registry entry dict is passed in.  This lets data-driven
+    scrapers (e.g. the Ontario LDC scraper) know which utility they
+    should produce data for.
     """
     module_name = registry_entry.get("scraper_module")
     class_name = registry_entry.get("scraper_class")
 
     if not module_name or not class_name:
         logger.warning(
-            "No scraper configured for %s — skipping",
+            "No scraper configured for %s -- skipping",
             registry_entry.get("name", "?"),
         )
         return None
@@ -81,7 +86,12 @@ def load_scraper(registry_entry: dict) -> BaseScraper | None:
     try:
         module = importlib.import_module(module_name)
         scraper_cls = getattr(module, class_name)
-        return scraper_cls()
+        # Try passing registry_entry so data-driven scrapers can read it.
+        # Fall back to a bare call for scrapers that don't accept it.
+        try:
+            return scraper_cls(registry_entry=registry_entry)
+        except TypeError:
+            return scraper_cls()
     except (ImportError, AttributeError) as e:
         logger.error(
             "Could not load scraper %s.%s: %s",

@@ -1,6 +1,26 @@
 [
   {
-    "id": 1,
+    "id": 6,
+    "name": "ATCO Gas",
+    "province": "AB",
+    "utility_type": "gas",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 8,
+    "name": "EPCOR Natural Gas",
+    "province": "AB",
+    "utility_type": "gas",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 13,
     "name": "BC Hydro",
     "province": "BC",
     "utility_type": "electricity",
@@ -10,7 +30,227 @@
     "notes": null
   },
   {
-    "id": 8,
+    "id": 15,
+    "name": "FortisBC Electric",
+    "province": "BC",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 4,
+    "name": "FortisBC Energy",
+    "province": "BC",
+    "utility_type": "gas",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 9,
+    "name": "Centra Gas Manitoba",
+    "province": "MB",
+    "utility_type": "gas",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 19,
+    "name": "Manitoba Hydro",
+    "province": "MB",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 12,
+    "name": "Liberty Utilities Gas NB",
+    "province": "NB",
+    "utility_type": "gas",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 25,
+    "name": "NB Power",
+    "province": "NB",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 33,
+    "name": "NL Hydro",
+    "province": "NL",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 31,
+    "name": "Newfoundland Power",
+    "province": "NL",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 11,
+    "name": "Heritage Gas",
+    "province": "NS",
+    "utility_type": "gas",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 27,
+    "name": "Nova Scotia Power",
+    "province": "NS",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 40,
+    "name": "Northwest Territories Power Corporation",
+    "province": "NT",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 43,
+    "name": "Qulliq Energy Corporation",
+    "province": "NU",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 45,
+    "name": "Alectra Utilities",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 48,
+    "name": "Algoma Power Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 51,
+    "name": "Atikokan Hydro Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 54,
+    "name": "Bluewater Power Distribution",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 57,
+    "name": "Brantford Power Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 60,
+    "name": "Burlington Hydro Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 63,
+    "name": "Canadian Niagara Power Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 66,
+    "name": "Centre Wellington Hydro Ltd.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 69,
+    "name": "Chapleau Public Utilities Corp.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 72,
+    "name": "Elexicon Energy Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 1,
     "name": "Enbridge Gas",
     "province": "ON",
     "utility_type": "gas",
@@ -20,8 +260,8 @@
     "notes": null
   },
   {
-    "id": 5,
-    "name": "Toronto Hydro",
+    "id": 75,
+    "name": "Entegrus Powerlines Inc.",
     "province": "ON",
     "utility_type": "electricity",
     "website": null,
@@ -30,9 +270,489 @@
     "notes": null
   },
   {
-    "id": 3,
+    "id": 78,
+    "name": "Enwin Utilities Ltd.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 81,
+    "name": "Erie Thames Powerlines Corp.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 84,
+    "name": "Espanola Regional Hydro",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 87,
+    "name": "Essex Powerlines Corp.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 90,
+    "name": "Festival Hydro Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 93,
+    "name": "Fort Frances Power Corp.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 96,
+    "name": "Greater Sudbury Hydro Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 99,
+    "name": "Grimsby Power Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 102,
+    "name": "Guelph Hydro Electric Systems Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 105,
+    "name": "Halton Hills Hydro Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 108,
+    "name": "Hearst Power Distribution Co. Ltd.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 111,
+    "name": "Hydro 2000 Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 114,
+    "name": "Hydro Hawkesbury Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 117,
+    "name": "Hydro One Networks Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 120,
+    "name": "Hydro Ottawa Ltd.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 123,
+    "name": "Innpower Corporation",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 126,
+    "name": "Kingston Hydro Corporation",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 129,
+    "name": "Kitchener-Wilmot Hydro Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 132,
+    "name": "Lakefront Utilities Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 135,
+    "name": "Lakeland Power Distribution Ltd.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 138,
+    "name": "London Hydro Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 141,
+    "name": "Midland Power Utility Corp.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 144,
+    "name": "Milton Hydro Distribution Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 147,
+    "name": "Newmarket-Tay Power Distribution Ltd.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 150,
+    "name": "Niagara Peninsula Energy Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 153,
+    "name": "North Bay Hydro Distribution Ltd.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 156,
+    "name": "Northern Ontario Wires Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 159,
+    "name": "Oakville Hydro Electricity Distribution Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 162,
+    "name": "Orangeville Hydro Limited",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 165,
+    "name": "Oshawa PUC Networks Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 168,
+    "name": "Ottawa River Power Corporation",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 171,
+    "name": "PUC Distribution Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 174,
+    "name": "Rideau St. Lawrence Distribution Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 177,
+    "name": "Sioux Lookout Hydro Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 180,
+    "name": "St. Thomas Energy Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 183,
+    "name": "Synergy North Corporation",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 186,
+    "name": "Tillsonburg Hydro Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 189,
+    "name": "Toronto Hydro-Electric System Ltd.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 192,
+    "name": "Wasaga Distribution Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 195,
+    "name": "Waterloo North Hydro Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 198,
+    "name": "Welland Hydro-Electric System Corp.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 201,
+    "name": "Westario Power Inc.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 29,
+    "name": "Maritime Electric",
+    "province": "PE",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 2,
+    "name": "Energir",
+    "province": "QC",
+    "utility_type": "gas",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 17,
     "name": "Hydro-Québec",
     "province": "QC",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 10,
+    "name": "SaskEnergy",
+    "province": "SK",
+    "utility_type": "gas",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 22,
+    "name": "SaskPower",
+    "province": "SK",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 38,
+    "name": "Yukon Electrical Company",
+    "province": "YT",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 35,
+    "name": "Yukon Energy",
+    "province": "YT",
     "utility_type": "electricity",
     "website": null,
     "rate_page_url": null,

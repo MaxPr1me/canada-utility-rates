@@ -1,16 +1,26 @@
 {
-  "last_updated": "2026-04-14T14:52:07.958409+00:00",
-  "total_utilities": 4,
-  "total_tariffs": 8,
-  "total_components": 42,
+  "last_updated": "2026-04-14T15:17:43.302964+00:00",
+  "total_utilities": 76,
+  "total_tariffs": 203,
+  "total_components": 1422,
   "provinces_covered": [
+    "AB",
     "BC",
+    "MB",
+    "NB",
+    "NL",
+    "NS",
+    "NT",
+    "NU",
     "ON",
-    "QC"
+    "PE",
+    "QC",
+    "SK",
+    "YT"
   ],
   "utility_types": {
-    "electricity": 3,
-    "gas": 1
+    "electricity": 67,
+    "gas": 9
   },
   "customer_classes": [
     "commercial",
@@ -18,11 +28,11 @@
   ],
   "last_scrape_run": {
     "id": 1,
-    "started_at": "2026-04-14T14:51:55.746751+00:00",
-    "finished_at": "2026-04-14T14:52:07.814906+00:00",
+    "started_at": "2026-04-14T15:16:02.099273+00:00",
+    "finished_at": "2026-04-14T15:17:35.977192+00:00",
     "status": "completed",
-    "utilities_attempted": 4,
-    "utilities_succeeded": 4,
+    "utilities_attempted": 76,
+    "utilities_succeeded": 76,
     "errors": null,
     "notes": null
   },
