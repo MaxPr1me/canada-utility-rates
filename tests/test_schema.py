@@ -25,6 +25,7 @@ EXPECTED_TABLES = [
     "rate_components",
     "historical_snapshots",
     "missing_data",
+    "customer_classes",
 ]
 
 

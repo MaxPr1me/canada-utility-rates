@@ -187,6 +187,29 @@ def store_results(records: list[TariffRecord], run_id: int, conn: sqlite3.Connec
             tariff_json, snapshot_hash,
         ))
 
+        # Upsert customer_classes metadata
+        cursor.execute("""
+            INSERT INTO customer_classes (
+                utility_id, class_name, sub_class_name,
+                eligibility_rule, threshold_kw_min, threshold_kw_max,
+                source_url
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(utility_id, class_name, sub_class_name)
+            DO UPDATE SET
+                eligibility_rule = COALESCE(excluded.eligibility_rule, customer_classes.eligibility_rule),
+                threshold_kw_min = COALESCE(excluded.threshold_kw_min, customer_classes.threshold_kw_min),
+                threshold_kw_max = COALESCE(excluded.threshold_kw_max, customer_classes.threshold_kw_max),
+                source_url = COALESCE(excluded.source_url, customer_classes.source_url)
+        """, (
+            utility_id,
+            record.customer_class,
+            record.sub_class,
+            record.eligibility,
+            record.demand_min_kw,
+            record.demand_max_kw,
+            record.source_url,
+        ))
+
         stored += 1
 
     conn.commit()

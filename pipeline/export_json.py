@@ -26,6 +26,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from scrapers.utils.logging_config import setup_logging
+from pipeline.validate import generate_missing_classes_report
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ def export_all() -> None:
     setup_logging()
 
     if not DB_PATH.exists():
-        logger.error("Database not found at %s — run the scraper first.", DB_PATH)
+        logger.error("Database not found at %s -- run the scraper first.", DB_PATH)
         sys.exit(1)
 
     SITE_DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -114,6 +115,11 @@ def export_all() -> None:
     # ── Export missing.json ───────────────────────────────────
     write_json(SITE_DATA_DIR / "missing.json", missing)
     logger.info("Exported %d missing data entries", len(missing))
+
+    # ── Export missing_classes_report.json ────────────────────
+    classes_report = generate_missing_classes_report(conn)
+    write_json(SITE_DATA_DIR / "missing_classes_report.json", classes_report)
+    logger.info("Exported missing classes report (%d entries)", len(classes_report))
 
     conn.close()
     print(f"JSON export complete -> {SITE_DATA_DIR}")

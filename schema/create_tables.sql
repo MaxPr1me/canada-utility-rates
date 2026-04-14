@@ -197,6 +197,27 @@ CREATE TABLE IF NOT EXISTS missing_data (
 );
 
 -- ============================================================
+-- 8. CUSTOMER CLASSES  — structured class/threshold metadata
+--    One row per customer class per utility.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS customer_classes (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    utility_id          INTEGER NOT NULL REFERENCES utilities(id),
+    class_name          TEXT    NOT NULL,        -- "residential" | "commercial" | "industrial" | "general_service"
+    sub_class_name      TEXT,                    -- "GS < 50 kW", "Large Use", "Street Lighting", etc.
+    eligibility_rule    TEXT,                    -- structured eligibility description
+    threshold_kw_min    REAL,                    -- minimum demand threshold (kW)
+    threshold_kw_max    REAL,                    -- maximum demand threshold (kW)
+    threshold_other     TEXT,                    -- any non-kW eligibility threshold (JSON or text)
+    rule_text_raw       TEXT,                    -- verbatim tariff rule text from source
+    source_url          TEXT,                    -- where the class definition was found
+    notes               TEXT,
+    created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
+
+    UNIQUE(utility_id, class_name, sub_class_name)
+);
+
+-- ============================================================
 -- INDEXES for common queries
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_tariffs_utility    ON tariffs(utility_id);
@@ -207,3 +228,5 @@ CREATE INDEX IF NOT EXISTS idx_components_type    ON rate_components(component_t
 CREATE INDEX IF NOT EXISTS idx_snapshots_tariff   ON historical_snapshots(tariff_id);
 CREATE INDEX IF NOT EXISTS idx_snapshots_run      ON historical_snapshots(scrape_run_id);
 CREATE INDEX IF NOT EXISTS idx_sources_utility    ON sources(utility_id);
+CREATE INDEX IF NOT EXISTS idx_customer_classes_utility ON customer_classes(utility_id);
+CREATE INDEX IF NOT EXISTS idx_customer_classes_name    ON customer_classes(class_name);

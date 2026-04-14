@@ -327,7 +327,7 @@ class TestOntarioLDCScraper:
         from scrapers.utilities.ontario_ldc import OntarioLDCScraper
         s = OntarioLDCScraper(registry_entry={"name": "Hydro Ottawa Ltd."})
         records = s.scrape()
-        assert len(records) == 3  # TOU, Tiered, ULO
+        assert len(records) == 7  # 3 residential + 2 GS<50 + 1 GS>=50 + 1 street lighting
         assert all(r.province == "ON" for r in records)
         assert all(r.utility_name == "Hydro Ottawa Ltd." for r in records)
 
@@ -355,9 +355,151 @@ class TestOntarioLDCScraper:
         from scrapers.utilities.ontario_ldc import OntarioLDCScraper
         s = OntarioLDCScraper(registry_entry={"name": "Nonexistent Power Co."})
         records = s.scrape()
-        assert len(records) == 3
+        assert len(records) == 7
         assert records[0].confidence == "unverified"
 
     def test_all_55_ldcs_have_data(self):
         from scrapers.utilities.ontario_ldc import ONTARIO_LDC_DATA
         assert len(ONTARIO_LDC_DATA) >= 53  # at least 53 LDCs in the data dict
+
+    def test_has_commercial_classes(self):
+        from scrapers.utilities.ontario_ldc import OntarioLDCScraper
+        s = OntarioLDCScraper(registry_entry={"name": "Toronto Hydro-Electric System Ltd."})
+        records = s.scrape()
+        classes = {r.customer_class for r in records}
+        assert "residential" in classes
+        assert "commercial" in classes
+        # Check GS < 50 kW
+        gs_small = [r for r in records if r.sub_class == "GS < 50 kW"]
+        assert len(gs_small) >= 2  # TOU and Tiered
+        # Check GS >= 50 kW
+        gs_large = [r for r in records if r.sub_class == "GS >= 50 kW"]
+        assert len(gs_large) >= 1
+        assert gs_large[0].rate_structure == "demand"
+        assert gs_large[0].demand_min_kw == 50
+
+    def test_has_street_lighting(self):
+        from scrapers.utilities.ontario_ldc import OntarioLDCScraper
+        s = OntarioLDCScraper(registry_entry={"name": "Hydro Ottawa Ltd."})
+        records = s.scrape()
+        sl = [r for r in records if r.sub_class == "street lighting"]
+        assert len(sl) == 1
+        assert sl[0].customer_class == "other"
+
+
+# ─── Alberta Distribution Utilities ─────────────────────────
+
+class TestATCOElectric:
+    def setup_method(self):
+        from scrapers.utilities.atco_electric import ATCOElectricScraper
+        self.records = ATCOElectricScraper().scrape()
+
+    def test_returns_records(self):
+        assert len(self.records) >= 3  # residential + small commercial + large commercial
+
+    def test_province(self):
+        for r in self.records:
+            assert r.province == "AB"
+            assert r.utility_type == "electricity"
+
+    def test_has_commercial(self):
+        classes = {r.customer_class for r in self.records}
+        assert "residential" in classes
+        assert "commercial" in classes
+
+
+class TestFortisAlberta:
+    def setup_method(self):
+        from scrapers.utilities.fortisalberta import FortisAlbertaScraper
+        self.records = FortisAlbertaScraper().scrape()
+
+    def test_returns_records(self):
+        assert len(self.records) >= 3
+
+    def test_province(self):
+        for r in self.records:
+            assert r.province == "AB"
+            assert r.utility_type == "electricity"
+
+
+class TestEPCORDistribution:
+    def setup_method(self):
+        from scrapers.utilities.epcor_distribution import EPCORDistributionScraper
+        self.records = EPCORDistributionScraper().scrape()
+
+    def test_returns_records(self):
+        assert len(self.records) >= 3
+
+    def test_province(self):
+        for r in self.records:
+            assert r.province == "AB"
+
+
+class TestENMAXPower:
+    def setup_method(self):
+        from scrapers.utilities.enmax_power import ENMAXPowerScraper
+        self.records = ENMAXPowerScraper().scrape()
+
+    def test_returns_records(self):
+        assert len(self.records) >= 3
+
+    def test_province(self):
+        for r in self.records:
+            assert r.province == "AB"
+
+
+# ─── Alberta Retail/RRO Utilities ────────────────────────────
+
+class TestDirectEnergyRegulated:
+    def setup_method(self):
+        from scrapers.utilities.direct_energy_regulated import DirectEnergyRegulatedScraper
+        self.records = DirectEnergyRegulatedScraper().scrape()
+
+    def test_returns_records(self):
+        assert len(self.records) >= 2
+
+    def test_province_and_market(self):
+        for r in self.records:
+            assert r.province == "AB"
+            assert r.rate_structure == "market"
+
+
+class TestENMAXEnergy:
+    def setup_method(self):
+        from scrapers.utilities.enmax_energy import ENMAXEnergyScraper
+        self.records = ENMAXEnergyScraper().scrape()
+
+    def test_returns_records(self):
+        assert len(self.records) >= 2
+
+    def test_province(self):
+        for r in self.records:
+            assert r.province == "AB"
+
+
+class TestEPCOREnergyAlberta:
+    def setup_method(self):
+        from scrapers.utilities.epcor_energy_alberta import EPCOREnergyAlbertaScraper
+        self.records = EPCOREnergyAlbertaScraper().scrape()
+
+    def test_returns_records(self):
+        assert len(self.records) >= 2
+
+    def test_province(self):
+        for r in self.records:
+            assert r.province == "AB"
+
+
+class TestAESO:
+    def setup_method(self):
+        from scrapers.utilities.aeso import AESOScraper
+        self.records = AESOScraper().scrape()
+
+    def test_returns_records(self):
+        assert len(self.records) >= 1
+
+    def test_is_market_reference(self):
+        for r in self.records:
+            assert r.province == "AB"
+            assert r.rate_structure == "market"
+            assert r.customer_class == "other"

@@ -1395,6 +1395,142 @@
         }
       ],
       "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
+      "name": "ATCO Electric",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.atco_electric",
+      "scraper_class": "ATCOElectricScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.atco.com/en-ca/for-home/electricity/understand-your-bill.html",
+          "source_type": "html",
+          "description": "ATCO Electric distribution tariff information",
+          "is_primary": true
+        }
+      ],
+      "notes": "Alberta distribution utility serving rural Alberta. Distribution charges only; energy from retailers. Regulated by the AUC."
+    },
+    {
+      "name": "FortisAlberta",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.fortisalberta",
+      "scraper_class": "FortisAlbertaScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.fortisalberta.com/customer-service/rates-and-tariffs",
+          "source_type": "html",
+          "description": "FortisAlberta distribution tariff information",
+          "is_primary": true
+        }
+      ],
+      "notes": "Alberta distribution utility serving central/southern Alberta. Distribution charges only; energy from retailers. Regulated by the AUC."
+    },
+    {
+      "name": "EPCOR Distribution",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.epcor_distribution",
+      "scraper_class": "EPCORDistributionScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.epcor.com/products-services/power/rates-tariffs/Pages/default.aspx",
+          "source_type": "html",
+          "description": "EPCOR Distribution electricity rate schedules",
+          "is_primary": true
+        }
+      ],
+      "notes": "Alberta distribution utility serving Edmonton. Distribution charges only; energy from retailers. Regulated by the AUC."
+    },
+    {
+      "name": "ENMAX Power",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.enmax_power",
+      "scraper_class": "ENMAXPowerScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.enmax.com/home/rates-and-billing/understand-your-bill",
+          "source_type": "html",
+          "description": "ENMAX Power distribution tariff information",
+          "is_primary": true
+        }
+      ],
+      "notes": "Alberta distribution utility serving Calgary. Distribution charges only; energy from retailers. Regulated by the AUC."
+    },
+    {
+      "name": "Direct Energy Regulated Services",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.direct_energy_regulated",
+      "scraper_class": "DirectEnergyRegulatedScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.directenergyregulatedservices.com/",
+          "source_type": "html",
+          "description": "Direct Energy Regulated Rate Option for ATCO Electric area",
+          "is_primary": true
+        }
+      ],
+      "notes": "RRO provider for ATCO Electric service area. Regulated Rate Option tracks AESO pool price. Regulated by the AUC."
+    },
+    {
+      "name": "ENMAX Energy Corporation",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.enmax_energy",
+      "scraper_class": "ENMAXEnergyScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.enmax.com/home/rates-and-billing/understand-your-bill/regulated-rate-option",
+          "source_type": "html",
+          "description": "ENMAX Energy Regulated Rate Option for Calgary area",
+          "is_primary": true
+        }
+      ],
+      "notes": "RRO provider for ENMAX Power (Calgary) service area. Regulated Rate Option tracks AESO pool price. Regulated by the AUC."
+    },
+    {
+      "name": "EPCOR Energy Alberta",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.epcor_energy_alberta",
+      "scraper_class": "EPCOREnergyAlbertaScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.epcor.com/products-services/power/rates-tariffs/Pages/regulated-rate-option.aspx",
+          "source_type": "html",
+          "description": "EPCOR Energy Alberta Regulated Rate Option for Edmonton area",
+          "is_primary": true
+        }
+      ],
+      "notes": "RRO provider for EPCOR Distribution (Edmonton) service area. Regulated Rate Option tracks AESO pool price. Regulated by the AUC."
+    },
+    {
+      "name": "Alberta Electric System Operator",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.aeso",
+      "scraper_class": "AESOScraper",
+      "status": "active",
+      "sources": [
+        {
+          "url": "https://www.aeso.ca/market/market-and-system-reporting/hourly-pool-price-report/",
+          "source_type": "html",
+          "description": "AESO hourly pool price report and market data",
+          "is_primary": true
+        }
+      ],
+      "notes": "Market operator, not a utility. Provides reference pool price used by all Alberta RRO providers."
     }
   ]
 }

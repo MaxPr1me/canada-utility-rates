@@ -117,7 +117,8 @@ def run_validation(conn: sqlite3.Connection) -> list[dict]:
     utils_no_residential = conn.execute("""
         SELECT u.name, u.province
         FROM utilities u
-        WHERE u.id NOT IN (
+        WHERE u.utility_type = 'electricity'
+        AND u.id NOT IN (
             SELECT DISTINCT utility_id FROM tariffs WHERE customer_class = 'residential'
         )
     """).fetchall()
@@ -126,6 +127,39 @@ def run_validation(conn: sqlite3.Connection) -> list[dict]:
             "severity": "warning",
             "check": "no_residential_rate",
             "message": f"{name} ({prov}) has no residential tariff",
+        })
+
+    # ── Check 7: Electricity utilities missing commercial class ─
+    utils_no_commercial = conn.execute("""
+        SELECT u.name, u.province
+        FROM utilities u
+        WHERE u.utility_type = 'electricity'
+        AND u.id NOT IN (
+            SELECT DISTINCT utility_id FROM tariffs
+            WHERE customer_class IN ('commercial', 'general_service')
+        )
+    """).fetchall()
+    for name, prov in utils_no_commercial:
+        issues.append({
+            "severity": "warning",
+            "check": "no_commercial_rate",
+            "message": f"{name} ({prov}) electricity utility has no commercial/GS tariff",
+        })
+
+    # ── Check 8: Demand-based tariffs missing threshold info ─────
+    demand_no_threshold = conn.execute("""
+        SELECT t.name, u.name, u.province
+        FROM tariffs t
+        JOIN utilities u ON t.utility_id = u.id
+        WHERE t.rate_structure = 'demand'
+        AND t.demand_min_kw IS NULL
+        AND t.demand_max_kw IS NULL
+    """).fetchall()
+    for tname, uname, prov in demand_no_threshold:
+        issues.append({
+            "severity": "info",
+            "check": "demand_no_threshold",
+            "message": f"Demand tariff '{tname}' ({uname}, {prov}) has no demand_min/max_kw set",
         })
 
     # ── Summary ───────────────────────────────────────────────
@@ -163,19 +197,122 @@ def print_issues(issues: list[dict]) -> None:
     print()
 
 
+def generate_missing_classes_report(conn: sqlite3.Connection) -> list[dict]:
+    """
+    Generate a report of utilities missing expected customer classes.
+
+    For electricity utilities, we expect at least: residential + commercial.
+    For gas utilities, we expect at least: residential.
+
+    Returns a list of dicts suitable for writing to missing_classes_report.json.
+    """
+    report = []
+
+    # All electricity utilities
+    elec_utils = conn.execute("""
+        SELECT u.id, u.name, u.province
+        FROM utilities u
+        WHERE u.utility_type = 'electricity'
+        ORDER BY u.province, u.name
+    """).fetchall()
+
+    for uid, name, prov in elec_utils:
+        classes = {
+            row[0] for row in conn.execute(
+                "SELECT DISTINCT customer_class FROM tariffs WHERE utility_id = ?",
+                (uid,),
+            ).fetchall()
+        }
+
+        missing = []
+        if "residential" not in classes:
+            missing.append("residential")
+        if "commercial" not in classes and "general_service" not in classes:
+            missing.append("commercial")
+
+        # Check if demand tariffs have thresholds
+        demand_tariffs = conn.execute("""
+            SELECT name, demand_min_kw, demand_max_kw
+            FROM tariffs
+            WHERE utility_id = ? AND rate_structure = 'demand'
+        """, (uid,)).fetchall()
+        missing_thresholds = [
+            t[0] for t in demand_tariffs
+            if t[1] is None and t[2] is None
+        ]
+
+        if missing or missing_thresholds:
+            entry = {
+                "utility": name,
+                "province": prov,
+                "utility_type": "electricity",
+                "classes_present": sorted(classes),
+            }
+            if missing:
+                entry["missing_classes"] = missing
+            if missing_thresholds:
+                entry["demand_tariffs_missing_thresholds"] = missing_thresholds
+            report.append(entry)
+
+    # Gas utilities - check for residential
+    gas_utils = conn.execute("""
+        SELECT u.id, u.name, u.province
+        FROM utilities u
+        WHERE u.utility_type = 'gas'
+        ORDER BY u.province, u.name
+    """).fetchall()
+
+    for uid, name, prov in gas_utils:
+        classes = {
+            row[0] for row in conn.execute(
+                "SELECT DISTINCT customer_class FROM tariffs WHERE utility_id = ?",
+                (uid,),
+            ).fetchall()
+        }
+        if "residential" not in classes:
+            report.append({
+                "utility": name,
+                "province": prov,
+                "utility_type": "gas",
+                "classes_present": sorted(classes),
+                "missing_classes": ["residential"],
+            })
+
+    return report
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate scraped data quality")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
+    parser.add_argument(
+        "--missing-classes-report",
+        action="store_true",
+        help="Generate missing_classes_report.json in site/data/",
+    )
     args = parser.parse_args()
 
     setup_logging()
 
     if not DB_PATH.exists():
-        logger.error("Database not found at %s — run the scraper first.", DB_PATH)
+        logger.error("Database not found at %s -- run the scraper first.", DB_PATH)
         sys.exit(1)
 
     conn = sqlite3.connect(str(DB_PATH))
     issues = run_validation(conn)
+
+    if args.missing_classes_report:
+        report = generate_missing_classes_report(conn)
+        report_path = PROJECT_ROOT / "site" / "data" / "missing_classes_report.json"
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(
+            json.dumps(report, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        logger.info(
+            "Missing classes report written to %s (%d entries)",
+            report_path, len(report),
+        )
+
     conn.close()
 
     if args.json:

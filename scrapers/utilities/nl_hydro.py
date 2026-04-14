@@ -38,6 +38,14 @@ SEED_LABRADOR_INTERCONNECTED = {
     "basic_charge_per_month": 12.94,  # $/month
 }
 
+SEED_GENERAL_SERVICE = {
+    "effective_date": "2024-04-01",
+    "source_url": "https://nlhydro.com/rates-and-energy-use/rates/",
+    "energy_rate": 0.12853,         # $/kWh
+    "basic_charge_per_month": 19.42,  # $/month
+    "demand_charge": 8.56,          # $/kW (for demand-metered)
+}
+
 
 class NLHydroScraper(BaseScraper):
     """Scrape NL Hydro electricity rates."""
@@ -146,6 +154,49 @@ class NLHydroScraper(BaseScraper):
                         "Labrador interconnected rate — substantially lower than island "
                         "rates due to local hydroelectric generation"
                     ),
+                ),
+            ],
+        ))
+
+        # ── General Service (Commercial) ────────────────────────────
+        records.append(TariffRecord(
+            utility_name="NL Hydro",
+            province="NL",
+            utility_type="electricity",
+            tariff_name="General Service",
+            customer_class="commercial",
+            sub_class="general service",
+            rate_structure="demand",
+            effective_date=SEED_GENERAL_SERVICE["effective_date"],
+            source_url=SEED_GENERAL_SERVICE["source_url"],
+            confidence="medium",
+            notes=(
+                "NL Hydro general service rate for commercial customers "
+                "in rural areas served directly by NL Hydro."
+            ),
+            components=[
+                RateComponent(
+                    component_type="fixed",
+                    component_name="Basic Charge",
+                    charge_value=SEED_GENERAL_SERVICE["basic_charge_per_month"],
+                    charge_unit="$/month",
+                    confidence="medium",
+                ),
+                RateComponent(
+                    component_type="demand",
+                    component_name="Demand Charge",
+                    charge_value=SEED_GENERAL_SERVICE["demand_charge"],
+                    charge_unit="$/kW",
+                    demand_unit="kW",
+                    confidence="medium",
+                    notes="Applied to billing demand (kW)",
+                ),
+                RateComponent(
+                    component_type="energy",
+                    component_name="Energy Charge",
+                    charge_value=SEED_GENERAL_SERVICE["energy_rate"],
+                    charge_unit="$/kWh",
+                    confidence="medium",
                 ),
             ],
         ))
