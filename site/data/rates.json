@@ -23,7 +23,7 @@
     "source_page": null,
     "confidence": "high",
     "notes": "BC Hydro small commercial rate with demand charge",
-    "created_at": "2026-04-14 14:35:30",
+    "created_at": "2026-04-14 14:52:07",
     "utility_name": "BC Hydro",
     "province": "BC",
     "components": [
@@ -54,7 +54,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Applied to billing demand (kW)",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 7,
@@ -83,7 +83,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 5,
@@ -112,7 +112,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       }
     ]
   },
@@ -140,7 +140,7 @@
     "source_page": null,
     "confidence": "high",
     "notes": "BC Hydro two-step residential rate. Step 1 applies up to threshold per billing period.",
-    "created_at": "2026-04-14 14:35:30",
+    "created_at": "2026-04-14 14:52:07",
     "utility_name": "BC Hydro",
     "province": "BC",
     "components": [
@@ -171,7 +171,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Applies to first 1,350 kWh per ~2-month billing period",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 3,
@@ -200,7 +200,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Applies to all kWh above the Step 1 threshold",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 1,
@@ -229,7 +229,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Daily basic charge regardless of consumption",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 4,
@@ -258,7 +258,7 @@
         "source_detail": null,
         "confidence": "medium",
         "notes": "Rider amount varies — check BC Hydro site for current value",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       }
     ]
   },
@@ -286,7 +286,7 @@
     "source_page": null,
     "confidence": "high",
     "notes": "Enbridge Gas residential rate for Union South legacy service area. Gas supply (commodity) rate includes a mix of fixed and variable components. Total cost per m³ is the sum of all volumetric components.",
-    "created_at": "2026-04-14 14:35:30",
+    "created_at": "2026-04-14 14:52:07",
     "utility_name": "Enbridge Gas",
     "province": "ON",
     "components": [
@@ -317,7 +317,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Federal carbon levy — increases annually per federal schedule",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 38,
@@ -346,7 +346,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Cost of the natural gas commodity — set by OEB quarterly",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 39,
@@ -375,7 +375,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Enbridge distribution charge for delivering gas to your home",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 37,
@@ -404,7 +404,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Fixed monthly charge regardless of gas usage",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 42,
@@ -433,7 +433,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Quarterly adjustment — can be positive or negative",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 40,
@@ -462,7 +462,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Cost of transporting gas through upstream pipelines to Enbridge's system",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       }
     ]
   },
@@ -490,7 +490,7 @@
     "source_page": null,
     "confidence": "high",
     "notes": "Ontario residential tiered rate (opt-in alternative to TOU). Tier 1 threshold is 1,000 kWh/month in winter (Nov-Apr), 600 kWh/month in summer (May-Oct).",
-    "created_at": "2026-04-14 14:35:30",
+    "created_at": "2026-04-14 14:52:07",
     "utility_name": "Toronto Hydro",
     "province": "ON",
     "components": [
@@ -521,7 +521,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 23,
@@ -550,7 +550,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "1,000 kWh/month winter threshold; 600 kWh/month summer",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 24,
@@ -579,7 +579,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 25,
@@ -608,7 +608,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 29,
@@ -637,7 +637,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 27,
@@ -666,7 +666,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 28,
@@ -695,7 +695,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       }
     ]
   },
@@ -723,7 +723,7 @@
     "source_page": null,
     "confidence": "high",
     "notes": "Ontario residential TOU rate. Energy prices set by OEB province-wide. Delivery charges are Toronto Hydro-specific. TOU periods: On-Peak 7am-11am & 5pm-7pm weekdays, Mid-Peak 11am-5pm weekdays, Off-Peak all other times.",
-    "created_at": "2026-04-14 14:35:30",
+    "created_at": "2026-04-14 14:52:07",
     "utility_name": "Toronto Hydro",
     "province": "ON",
     "components": [
@@ -754,7 +754,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 16,
@@ -783,7 +783,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 15,
@@ -812,7 +812,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 17,
@@ -841,7 +841,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 18,
@@ -870,7 +870,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 22,
@@ -899,7 +899,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Covers OEB operating costs",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 20,
@@ -928,7 +928,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 21,
@@ -957,7 +957,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       }
     ]
   },
@@ -985,7 +985,7 @@
     "source_page": null,
     "confidence": "high",
     "notes": "Ontario ULO rate — opt-in for EV owners and overnight heavy users. Ultra-low period is 11pm-7am daily.",
-    "created_at": "2026-04-14 14:35:30",
+    "created_at": "2026-04-14 14:52:07",
     "utility_name": "Toronto Hydro",
     "province": "ON",
     "components": [
@@ -1016,7 +1016,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 32,
@@ -1045,7 +1045,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 31,
@@ -1074,7 +1074,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 33,
@@ -1103,7 +1103,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 30,
@@ -1132,7 +1132,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 34,
@@ -1161,7 +1161,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 36,
@@ -1190,7 +1190,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       }
     ]
   },
@@ -1218,7 +1218,7 @@
     "source_page": null,
     "confidence": "high",
     "notes": "Hydro-Québec small commercial rate — energy charge is tiered, plus demand charge above 50 kW.",
-    "created_at": "2026-04-14 14:35:30",
+    "created_at": "2026-04-14 14:52:07",
     "utility_name": "Hydro-Québec",
     "province": "QC",
     "components": [
@@ -1249,7 +1249,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "No demand charge for first 50 kW; $18.89/kW above 50 kW",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 12,
@@ -1278,7 +1278,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 13,
@@ -1307,7 +1307,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 11,
@@ -1336,7 +1336,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       }
     ]
   },
@@ -1364,7 +1364,7 @@
     "source_page": null,
     "confidence": "high",
     "notes": "Hydro-Québec residential rate. Tier threshold is 40 kWh/day (~1,200 kWh/month in a 30-day period).",
-    "created_at": "2026-04-14 14:35:30",
+    "created_at": "2026-04-14 14:52:07",
     "utility_name": "Hydro-Québec",
     "province": "QC",
     "components": [
@@ -1395,7 +1395,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Applies to first 40 kWh per day of the billing period",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 10,
@@ -1424,7 +1424,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": "Applies to all kWh beyond 40/day",
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       },
       {
         "id": 8,
@@ -1453,7 +1453,7 @@
         "source_detail": null,
         "confidence": "high",
         "notes": null,
-        "created_at": "2026-04-14 14:35:30"
+        "created_at": "2026-04-14 14:52:07"
       }
     ]
   }
