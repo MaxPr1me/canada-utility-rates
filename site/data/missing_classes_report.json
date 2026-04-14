@@ -1,0 +1,122 @@
+[
+  {
+    "utility": "Alberta Electric System Operator",
+    "province": "AB",
+    "utility_type": "electricity",
+    "classes_present": [
+      "other"
+    ],
+    "missing_classes": [
+      "residential",
+      "commercial"
+    ]
+  },
+  {
+    "utility": "Manitoba Hydro",
+    "province": "MB",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service Medium (Demand)"
+    ]
+  },
+  {
+    "utility": "NB Power",
+    "province": "NB",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "Small Industrial Service"
+    ]
+  },
+  {
+    "utility": "NL Hydro",
+    "province": "NL",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service"
+    ]
+  },
+  {
+    "utility": "Newfoundland Power",
+    "province": "NL",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service (Rate 2.1)"
+    ]
+  },
+  {
+    "utility": "Nova Scotia Power",
+    "province": "NS",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "Small General Service"
+    ]
+  },
+  {
+    "utility": "Northwest Territories Power Corporation",
+    "province": "NT",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service — Yellowknife Zone"
+    ]
+  },
+  {
+    "utility": "SaskPower",
+    "province": "SK",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "Power Service (Demand)"
+    ]
+  },
+  {
+    "utility": "Yukon Electrical Company",
+    "province": "YT",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service"
+    ]
+  },
+  {
+    "utility": "Yukon Energy",
+    "province": "YT",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service"
+    ]
+  }
+]
