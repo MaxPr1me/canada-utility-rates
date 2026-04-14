@@ -1,0 +1,4701 @@
+{
+  "metadata": {
+    "province": "ON",
+    "market_operator": "IESO",
+    "description": "Representative Ontario wholesale electricity pricing surface (HOEP + GA)",
+    "history_window_years": 5,
+    "derivation_method": "historical_average",
+    "ga_allocation": "Class B uniform per-kWh",
+    "source_urls": [
+      "https://www.ieso.ca/en/Power-Data/Price-Overview/Hourly-Ontario-Energy-Price",
+      "https://www.ieso.ca/en/Power-Data/Price-Overview/Global-Adjustment"
+    ],
+    "generated": "2026-04-14",
+    "units": "$/kWh",
+    "notes": "Combined HOEP+GA represents the total energy cost for Class B customers. Class A customers pay GA differently via coincident peak demand."
+  },
+  "monthly_ga_rates": [
+    {
+      "month": 1,
+      "month_name": "January",
+      "avg_ga": 0.115,
+      "notes": "winter peak, high gas generation"
+    },
+    {
+      "month": 2,
+      "month_name": "February",
+      "avg_ga": 0.112,
+      "notes": "late winter, still elevated"
+    },
+    {
+      "month": 3,
+      "month_name": "March",
+      "avg_ga": 0.105,
+      "notes": "spring transition, declining"
+    },
+    {
+      "month": 4,
+      "month_name": "April",
+      "avg_ga": 0.092,
+      "notes": "spring shoulder, lower demand"
+    },
+    {
+      "month": 5,
+      "month_name": "May",
+      "avg_ga": 0.085,
+      "notes": "spring surplus, baseload excess"
+    },
+    {
+      "month": 6,
+      "month_name": "June",
+      "avg_ga": 0.098,
+      "notes": "summer air conditioning starts"
+    },
+    {
+      "month": 7,
+      "month_name": "July",
+      "avg_ga": 0.11,
+      "notes": "summer peak demand"
+    },
+    {
+      "month": 8,
+      "month_name": "August",
+      "avg_ga": 0.108,
+      "notes": "late summer, still elevated"
+    },
+    {
+      "month": 9,
+      "month_name": "September",
+      "avg_ga": 0.095,
+      "notes": "fall transition, declining"
+    },
+    {
+      "month": 10,
+      "month_name": "October",
+      "avg_ga": 0.088,
+      "notes": "autumn low demand"
+    },
+    {
+      "month": 11,
+      "month_name": "November",
+      "avg_ga": 0.092,
+      "notes": "early winter ramp-up"
+    },
+    {
+      "month": 12,
+      "month_name": "December",
+      "avg_ga": 0.105,
+      "notes": "winter heating season begins"
+    }
+  ],
+  "hourly_surface": [
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0228,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1378
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.0206,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1356
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0212,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1362
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.0204,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1354
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.0224,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1374
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0253,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1403
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.0317,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1467
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.0394,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1544
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.0449,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1599
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0433,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1583
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.0466,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1616
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.0483,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1633
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.0502,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1652
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.0503,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1653
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.0507,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1657
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.0481,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1631
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0472,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1622
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0537,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1687
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.0596,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1746
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.057,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.172
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.0502,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1652
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.032,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.147
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0283,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1433
+    },
+    {
+      "month": 1,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.0249,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1399
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.0171,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1321
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.0169,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1319
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0165,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1315
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.0173,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1323
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.0182,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1332
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.0197,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1347
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0202,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1352
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.0253,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1403
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.0296,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1446
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.0279,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1429
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0305,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1455
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.0317,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1467
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.0331,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1481
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0338,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1488
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.033,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.148
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.0311,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1461
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.0306,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1456
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0344,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1494
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.0396,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1546
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.038,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.153
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.0325,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1475
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.0253,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1403
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.0217,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1367
+    },
+    {
+      "month": 1,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.0209,
+      "avg_ga": 0.115,
+      "combined_energy_component": 0.1359
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0215,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1335
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.0204,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1324
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0201,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1321
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.0199,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1319
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.0204,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1324
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0243,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1363
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.0297,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1417
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.0376,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1496
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.0433,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1553
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0405,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1525
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.0436,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1556
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.0459,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1579
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.0466,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1586
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.0485,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1605
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.0477,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1597
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.0457,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1577
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0446,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1566
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0514,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1634
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.057,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.169
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.0546,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1666
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.0477,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1597
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.0287,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1407
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0265,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1385
+    },
+    {
+      "month": 2,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.0245,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1365
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.0166,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1286
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.0168,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1288
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0167,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1287
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.0154,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1274
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.0176,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1296
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.0188,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1308
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0201,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1321
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.0242,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1362
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.0286,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1406
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.0278,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1398
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0293,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1413
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.0307,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1427
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.0312,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1432
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0326,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1446
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.0324,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1444
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.0308,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1428
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.0292,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1412
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0342,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1462
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.038,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.15
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.0366,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1486
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.0327,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1447
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.0241,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1361
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.022,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.134
+    },
+    {
+      "month": 2,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.0191,
+      "avg_ga": 0.112,
+      "combined_energy_component": 0.1311
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0142,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1192
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.0138,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1188
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0124,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1174
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.012,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.117
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.0126,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1176
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0169,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1219
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.0224,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1274
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.0307,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1357
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.0367,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1417
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0348,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1398
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.0373,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1423
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.0392,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1442
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.0408,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1458
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.0408,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1458
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.0404,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1454
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.0369,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1419
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0357,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1407
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0397,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1447
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.0453,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1503
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.0447,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1497
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.0379,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1429
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.0234,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1284
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0192,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1242
+    },
+    {
+      "month": 3,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.017,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.122
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.0115,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1165
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.01,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.115
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0092,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1142
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.0082,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1132
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.0098,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1148
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.0129,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1179
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0131,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1181
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.018,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.123
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.0211,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1261
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.0214,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1264
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0229,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1279
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.0242,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1292
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.024,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.129
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0251,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1301
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.0245,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1295
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.0233,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1283
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.0218,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1268
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0248,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1298
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.0266,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1316
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.0262,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1312
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.0225,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1275
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.017,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.122
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.014,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.119
+    },
+    {
+      "month": 3,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.0135,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1185
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0131,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1051
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.0121,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1041
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0115,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1035
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.0107,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1027
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.0118,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1038
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0158,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1078
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.0212,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1132
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.0277,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1197
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.0335,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1255
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0327,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1247
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.0347,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1267
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.0356,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1276
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.0366,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1286
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.0372,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1292
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.0358,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1278
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.0343,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1263
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0331,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1251
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0361,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1281
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.0423,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1343
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.04,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.132
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.035,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.127
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.0201,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1121
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0183,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1103
+    },
+    {
+      "month": 4,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.0153,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1073
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.0087,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1007
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.0084,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1004
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0085,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1005
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.007,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.099
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.0076,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.0996
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.0115,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1035
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0113,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1033
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.0151,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1071
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.0188,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1108
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.0181,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1101
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0188,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1108
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.0211,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1131
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.021,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.113
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0206,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1126
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.0213,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1133
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.0191,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1111
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.0191,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1111
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0209,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1129
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.0243,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1163
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.0223,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1143
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.02,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.112
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.0143,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1063
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.0127,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1047
+    },
+    {
+      "month": 4,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.0118,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1038
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0112,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0962
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.0103,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0953
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0101,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0951
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.01,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.095
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.0108,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0958
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0135,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0985
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.0195,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1045
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.0248,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1098
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.0305,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1155
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0284,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1134
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.03,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.115
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.0323,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1173
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.0338,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1188
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.0341,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1191
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.0322,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1172
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.0311,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1161
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0298,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1148
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0333,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1183
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.0383,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1233
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.0367,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1217
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.0316,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1166
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.0189,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1039
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0156,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1006
+    },
+    {
+      "month": 5,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.0138,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0988
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.0087,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0937
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.0082,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0932
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0074,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0924
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.0059,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0909
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.0065,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0915
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.0098,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0948
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0096,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0946
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.0134,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0984
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.0163,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1013
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.0147,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0997
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0161,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1011
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.0173,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1023
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.0171,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1021
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0179,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1029
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.0177,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1027
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.017,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.102
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.0157,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1007
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0176,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1026
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.0203,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1053
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.0188,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1038
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.0169,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.1019
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.0125,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0975
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.0109,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0959
+    },
+    {
+      "month": 5,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.0092,
+      "avg_ga": 0.085,
+      "combined_energy_component": 0.0942
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0162,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1142
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.0146,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1126
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0149,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1129
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.0141,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1121
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.0155,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1135
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0182,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1162
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.0247,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1227
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.0318,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1298
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.037,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.135
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0401,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1381
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.0444,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1424
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.048,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.146
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.0524,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1504
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.0536,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1516
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.0524,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1504
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.0507,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1487
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0467,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1447
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0449,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1429
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.0489,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1469
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.0465,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1445
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.0394,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1374
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.0247,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1227
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0213,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1193
+    },
+    {
+      "month": 6,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.0197,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1177
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.0127,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1107
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.012,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.11
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0103,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1083
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.0099,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1079
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.0121,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1101
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.0137,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1117
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0142,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1122
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.0191,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1171
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.022,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.12
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.0235,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1215
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0267,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1247
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.0287,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1267
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.0304,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1284
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0324,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1304
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.0307,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1287
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.0301,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1281
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.028,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.126
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0273,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1253
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.0296,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1276
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.0277,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1257
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.0237,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1217
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.0195,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1175
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.0167,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1147
+    },
+    {
+      "month": 6,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.0149,
+      "avg_ga": 0.098,
+      "combined_energy_component": 0.1129
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0187,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1287
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.0178,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1278
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0166,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1266
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.0172,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1272
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.0173,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1273
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0212,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1312
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.029,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.139
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.0362,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1462
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.0428,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1528
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0471,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1571
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.051,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.161
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.057,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.167
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.0604,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1704
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.0633,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1733
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.0617,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1717
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.0596,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1696
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0558,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1658
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0535,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1635
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.0574,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1674
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.0534,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1634
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.0464,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1564
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.0293,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1393
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0255,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1355
+    },
+    {
+      "month": 7,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.0223,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1323
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.015,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.125
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.014,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.124
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0132,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1232
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.0124,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1224
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.014,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.124
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.0165,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1265
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0187,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1287
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.0228,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1328
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.0268,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1368
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.0287,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1387
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0315,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1415
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.0356,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1456
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.037,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.147
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0391,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1491
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.0375,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1475
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.0373,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1473
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.0336,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1436
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0329,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1429
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.0348,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1448
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.0342,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1442
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.0282,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1382
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.0235,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1335
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.0194,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.1294
+    },
+    {
+      "month": 7,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.018,
+      "avg_ga": 0.11,
+      "combined_energy_component": 0.128
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0176,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1256
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.0167,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1247
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0159,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1239
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.0157,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1237
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.0168,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1248
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0202,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1282
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.0276,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1356
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.0342,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1422
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.0408,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1488
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0433,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1513
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.048,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.156
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.0535,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1615
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.0579,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1659
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.0585,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1665
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.0585,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1665
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.0559,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1639
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0525,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1605
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0495,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1575
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.0534,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1614
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.0511,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1591
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.0435,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1515
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.0284,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1364
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0248,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1328
+    },
+    {
+      "month": 8,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.0217,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1297
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.0135,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1215
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.012,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.12
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0115,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1195
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.0118,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1198
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.0123,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1203
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.0142,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1222
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0156,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1236
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.0205,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1285
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.0228,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1308
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.0259,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1339
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0286,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1366
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.0311,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1391
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.0339,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1419
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0351,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1431
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.0331,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1411
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.0315,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1395
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.03,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.138
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0286,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1366
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.0309,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1389
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.029,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.137
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.0255,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1335
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.0206,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1286
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.0174,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1254
+    },
+    {
+      "month": 8,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.0152,
+      "avg_ga": 0.108,
+      "combined_energy_component": 0.1232
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0155,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1105
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.0144,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1094
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0141,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1091
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.0142,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1092
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.0141,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1091
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0172,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1122
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.0241,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1191
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.032,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.127
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.038,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.133
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0371,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1321
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.039,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.134
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.0407,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1357
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.042,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.137
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.0431,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1381
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.041,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.136
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.0394,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1344
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0384,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1334
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0405,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1355
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.0453,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1403
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.0442,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1392
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.0384,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1334
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.025,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.12
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0208,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1158
+    },
+    {
+      "month": 9,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.019,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.114
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.0113,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1063
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.0109,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1059
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0105,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1055
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.0098,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1048
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.011,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.106
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.0135,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1085
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0149,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1099
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.0195,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1145
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.0231,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1181
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.0233,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1183
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0238,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1188
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.0251,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1201
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.0249,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1199
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0254,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1204
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.0248,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1198
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.0237,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1187
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.0226,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1176
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0255,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1205
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.0273,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1223
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.0266,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1216
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.023,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.118
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.0195,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1145
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.0159,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1109
+    },
+    {
+      "month": 9,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.0132,
+      "avg_ga": 0.095,
+      "combined_energy_component": 0.1082
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0146,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1026
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.014,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.102
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0122,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1002
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.0128,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1008
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.0132,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1012
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0165,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1045
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.0227,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1107
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.0302,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1182
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.0357,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1237
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0352,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1232
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.0368,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1248
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.0374,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1254
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.0386,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1266
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.039,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.127
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.0392,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1272
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.0367,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1247
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0355,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1235
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0388,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1268
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.0414,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1294
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.0402,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1282
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.0358,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1238
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.0228,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1108
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0204,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1084
+    },
+    {
+      "month": 10,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.0166,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1046
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.011,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.099
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.0092,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.0972
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0099,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.0979
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.0093,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.0973
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.0103,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.0983
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.012,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0134,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1014
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.017,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.105
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.0194,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1074
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.02,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.108
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0208,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1088
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.0218,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1098
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.0215,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1095
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0224,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1104
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.0226,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1106
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.0208,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1088
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.0198,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1078
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0214,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1094
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.0244,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1124
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.0228,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1108
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.0205,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1085
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.0171,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1051
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.0151,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1031
+    },
+    {
+      "month": 10,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.0129,
+      "avg_ga": 0.088,
+      "combined_energy_component": 0.1009
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0157,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1077
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.0147,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1067
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0129,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1049
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.0127,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1047
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.014,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.106
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0168,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1088
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.024,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.116
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.0311,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1231
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.0372,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1292
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0371,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1291
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.0388,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1308
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.0402,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1322
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.0406,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1326
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.0418,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1338
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.0402,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1322
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.0382,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1302
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0377,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1297
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0399,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1319
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.0439,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1359
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.0422,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1342
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.038,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.13
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.0247,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1167
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0208,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1128
+    },
+    {
+      "month": 11,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.0181,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1101
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.0109,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1029
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.01,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.102
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0105,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1025
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.009,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.101
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.0099,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1019
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.0131,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1051
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0149,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1069
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.0182,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1102
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.0211,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1131
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.0222,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1142
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0225,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1145
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.023,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.115
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.0237,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1157
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0241,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1161
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.0243,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1163
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.0222,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1142
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.0218,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1138
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0243,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1163
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.0262,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1182
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.0254,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1174
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.0218,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1138
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.0176,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1096
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.016,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.108
+    },
+    {
+      "month": 11,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.0127,
+      "avg_ga": 0.092,
+      "combined_energy_component": 0.1047
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 0,
+      "avg_hoep": 0.0216,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1266
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 1,
+      "avg_hoep": 0.0212,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1262
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 2,
+      "avg_hoep": 0.0198,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1248
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 3,
+      "avg_hoep": 0.0205,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1255
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 4,
+      "avg_hoep": 0.0202,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1252
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 5,
+      "avg_hoep": 0.0236,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1286
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 6,
+      "avg_hoep": 0.0302,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1352
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 7,
+      "avg_hoep": 0.038,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.143
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 8,
+      "avg_hoep": 0.044,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.149
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 9,
+      "avg_hoep": 0.0424,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1474
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 10,
+      "avg_hoep": 0.0449,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1499
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 11,
+      "avg_hoep": 0.0459,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1509
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 12,
+      "avg_hoep": 0.0484,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1534
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 13,
+      "avg_hoep": 0.0493,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1543
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 14,
+      "avg_hoep": 0.0481,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1531
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 15,
+      "avg_hoep": 0.047,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.152
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 16,
+      "avg_hoep": 0.0461,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1511
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 17,
+      "avg_hoep": 0.0514,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1564
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 18,
+      "avg_hoep": 0.0568,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1618
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 19,
+      "avg_hoep": 0.0561,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1611
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 20,
+      "avg_hoep": 0.0493,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1543
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 21,
+      "avg_hoep": 0.0294,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1344
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 22,
+      "avg_hoep": 0.0268,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1318
+    },
+    {
+      "month": 12,
+      "day_type": "weekday",
+      "hour": 23,
+      "avg_hoep": 0.0245,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1295
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 0,
+      "avg_hoep": 0.017,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.122
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 1,
+      "avg_hoep": 0.0166,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1216
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 2,
+      "avg_hoep": 0.0158,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1208
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 3,
+      "avg_hoep": 0.0154,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1204
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 4,
+      "avg_hoep": 0.0161,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1211
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 5,
+      "avg_hoep": 0.018,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.123
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 6,
+      "avg_hoep": 0.0194,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1244
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 7,
+      "avg_hoep": 0.024,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.129
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 8,
+      "avg_hoep": 0.0278,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1328
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 9,
+      "avg_hoep": 0.0265,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1315
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 10,
+      "avg_hoep": 0.0282,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1332
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 11,
+      "avg_hoep": 0.0296,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1346
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 12,
+      "avg_hoep": 0.0305,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1355
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 13,
+      "avg_hoep": 0.0309,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1359
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 14,
+      "avg_hoep": 0.0301,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1351
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 15,
+      "avg_hoep": 0.0295,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1345
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 16,
+      "avg_hoep": 0.0288,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1338
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 17,
+      "avg_hoep": 0.0322,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1372
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 18,
+      "avg_hoep": 0.0368,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1418
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 19,
+      "avg_hoep": 0.0357,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1407
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 20,
+      "avg_hoep": 0.0316,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1366
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 21,
+      "avg_hoep": 0.023,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.128
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 22,
+      "avg_hoep": 0.0212,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1262
+    },
+    {
+      "month": 12,
+      "day_type": "weekend",
+      "hour": 23,
+      "avg_hoep": 0.0199,
+      "avg_ga": 0.105,
+      "combined_energy_component": 0.1249
+    }
+  ]
+}

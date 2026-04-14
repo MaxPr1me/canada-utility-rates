@@ -1,0 +1,241 @@
+{
+  "metadata": {
+    "title": "Canadian Provincial Electricity Market Structures",
+    "description": "Research notes on how electricity pricing works in each Canadian province, focusing on whether rates are regulated, market-based, or hybrid, and what that means for the rate data in this project.",
+    "generated": "2026-04-14",
+    "version": "1.0"
+  },
+  "provinces": {
+    "ON": {
+      "province_name": "Ontario",
+      "market_operator": "IESO (Independent Electricity System Operator)",
+      "market_type": "hybrid_regulated_market",
+      "summary": "Ontario has a wholesale electricity market operated by IESO, but most consumers pay OEB-regulated rates rather than direct market prices. Large commercial/industrial customers (Class A, > 1 MW) are exposed to market pricing through HOEP + Global Adjustment based on their coincident peak demand.",
+      "pricing_components": {
+        "HOEP": {
+          "full_name": "Hourly Ontario Energy Price",
+          "description": "Real-time wholesale price set by IESO dispatch every 5 minutes, averaged hourly. Reflects marginal cost of generation.",
+          "source_url": "https://www.ieso.ca/en/Power-Data/Price-Overview/Hourly-Ontario-Energy-Price"
+        },
+        "GA": {
+          "full_name": "Global Adjustment",
+          "description": "Monthly charge covering the difference between wholesale market price and total contracted/regulated generation costs. Typically much larger than HOEP.",
+          "allocation": {
+            "Class_B": "Volumetric per-kWh charge applied uniformly. Covers most consumers including residential, small commercial (< 1 MW).",
+            "Class_A": "Allocated based on percentage of consumption during IESO's top-5 system coincident peak hours (ICI mechanism). Customers who reduce load during peaks pay less GA."
+          },
+          "source_url": "https://www.ieso.ca/en/Power-Data/Price-Overview/Global-Adjustment"
+        }
+      },
+      "customer_classes_pricing": {
+        "residential": "OEB Time-of-Use, Tiered, or ULO (regulated, province-wide)",
+        "commercial_small": "GS < 50 kW: same OEB TOU/Tiered rates as residential (Class B GA allocation)",
+        "commercial_large": "GS >= 50 kW: demand-based delivery + market energy (Class B GA if 50 kW-1 MW, Class A ICI if > 1 MW)",
+        "industrial": "Large Use > 5 MW: direct market participation or bilateral contracts"
+      },
+      "model_in_project": "market_pricing_ontario.json provides 576 hourly bins (12 months x 2 day_types x 24 hours) derived from 5-year HOEP+GA averages.",
+      "notes": "Ontario's electricity market is deregulated at the wholesale level but regulated at retail. The OEB sets distribution rates per-LDC and regulates the TOU/Tiered/ULO energy prices that most consumers pay."
+    },
+    "AB": {
+      "province_name": "Alberta",
+      "market_operator": "AESO (Alberta Electric System Operator)",
+      "market_type": "deregulated_market",
+      "summary": "Alberta has a fully deregulated, energy-only wholesale market. All generation bids into a single provincial pool and is dispatched merit-order. Retail customers choose their retailer — those who don't actively choose get Regulated Rate Option (RRO) pricing, which is a pass-through of pool price with a monthly adjustment.",
+      "pricing_components": {
+        "pool_price": {
+          "description": "Real-time wholesale price set hourly by AESO based on merit-order dispatch. Volatile — can spike during high demand or supply shortfalls.",
+          "source_url": "https://www.aeso.ca/market/market-and-system-reporting/current-supply-demand-report/"
+        },
+        "RRO": {
+          "full_name": "Regulated Rate Option",
+          "description": "Default retail rate for customers who haven't chosen a competitive retailer. Calculated monthly as a flow-through of pool price plus retailer margin. Set by AUC (Alberta Utilities Commission).",
+          "providers": ["ENMAX Energy (Calgary area)", "EPCOR Energy (Edmonton area)", "Direct Energy Regulated Services (ATCO/FortisAlberta areas)"]
+        }
+      },
+      "wires_distribution": {
+        "description": "Distribution (wires) is separate from retail energy. Four main distribution companies: ATCO Electric, FortisAlberta, EPCOR Distribution, ENMAX Power.",
+        "regulation": "Distribution rates regulated by AUC"
+      },
+      "model_in_project": "Alberta scrapers capture distribution charges (wires) and RRO energy charges separately. RRO tariffs reference AESO pool price as market_reference.",
+      "notes": "Alberta is the only Canadian province with a fully deregulated retail electricity market for all customer classes. Transmission is also deregulated at wholesale."
+    },
+    "BC": {
+      "province_name": "British Columbia",
+      "market_operator": null,
+      "market_type": "vertically_integrated_regulated",
+      "summary": "BC Hydro is a Crown corporation that owns most generation, transmission, and distribution. Rates are fully regulated by BCUC (BC Utilities Commission). No wholesale market for retail customers.",
+      "pricing_components": {
+        "residential": {
+          "structure": "Two-tier stepped rate (Step 1 and Step 2)",
+          "description": "Step 1 covers a baseline consumption (~1,350 kWh/2 months), Step 2 applies to usage above that threshold at a higher rate.",
+          "regulator": "BCUC"
+        },
+        "commercial": {
+          "structure": "Demand-based with energy charge",
+          "description": "Monthly demand charge ($/kW) plus flat energy charge ($/kWh). Different rate schedules by customer size."
+        }
+      },
+      "model_in_project": "BC rates are fully regulated and set by BCUC rate orders. No market pricing model needed — all rates are published and static until the next rate filing.",
+      "notes": "BC's low electricity costs are driven by abundant hydroelectric generation. FortisBC serves a small portion of the province with separately regulated rates."
+    },
+    "QC": {
+      "province_name": "Quebec",
+      "market_operator": null,
+      "market_type": "vertically_integrated_regulated",
+      "summary": "Hydro-Quebec is a Crown corporation with near-total control of generation, transmission, and distribution. Rates are regulated by the Regie de l'energie. Quebec has the lowest electricity rates in North America due to massive hydroelectric capacity.",
+      "pricing_components": {
+        "heritage_pool": {
+          "description": "Hydro-Quebec's heritage pool of ~165 TWh/year is priced at a low regulated rate. This pool covers most domestic demand. Incremental supply above the heritage pool is priced at a higher post-heritage rate.",
+          "significance": "The heritage pool mechanism keeps Quebec rates low by pricing the vast majority of consumption at historically cheap hydro rates."
+        },
+        "residential": {
+          "structure": "Two-tier (first 40 kWh/day at lower rate, above at higher rate)",
+          "regulator": "Regie de l'energie"
+        }
+      },
+      "model_in_project": "Quebec rates are fully regulated tariffs published by Hydro-Quebec. No market pricing model needed.",
+      "notes": "Quebec exports significant surplus electricity to New England and New York via HVDC links. Export revenues help subsidize domestic rates."
+    },
+    "MB": {
+      "province_name": "Manitoba",
+      "market_operator": null,
+      "market_type": "vertically_integrated_regulated",
+      "summary": "Manitoba Hydro is a Crown corporation handling generation, transmission, and distribution. Rates are regulated by the Public Utilities Board (PUB). Manitoba has the second-lowest electricity rates in Canada after Quebec.",
+      "pricing_components": {
+        "residential": {
+          "structure": "Flat energy rate with basic monthly charge",
+          "description": "Simple flat rate per kWh with a small monthly service charge."
+        }
+      },
+      "model_in_project": "Fully regulated, no market model needed.",
+      "notes": "Manitoba Hydro also handles natural gas distribution in the province, making it one of the few combined electric/gas utilities."
+    },
+    "SK": {
+      "province_name": "Saskatchewan",
+      "market_operator": null,
+      "market_type": "vertically_integrated_regulated",
+      "summary": "SaskPower is the Crown corporation responsible for nearly all electricity generation, transmission, and distribution. Rates are regulated by the Saskatchewan Rate Review Panel.",
+      "pricing_components": {
+        "residential": {
+          "structure": "Tiered (basic charge + two energy tiers)",
+          "description": "Monthly basic charge plus Step 1/Step 2 energy charges. Step 1 threshold varies seasonally."
+        }
+      },
+      "model_in_project": "Fully regulated, no market model needed.",
+      "notes": "Saskatchewan has a relatively carbon-intensive generation mix (natural gas and coal), leading to higher rates than hydro-dominated provinces."
+    },
+    "NB": {
+      "province_name": "New Brunswick",
+      "market_operator": null,
+      "market_type": "vertically_integrated_regulated",
+      "summary": "NB Power is the Crown corporation handling generation, transmission, and distribution. Rates are regulated by the New Brunswick Energy and Utilities Board (EUB).",
+      "pricing_components": {
+        "residential": {
+          "structure": "Flat energy rate with monthly service charge",
+          "description": "Simple flat rate structure with a fixed monthly charge."
+        }
+      },
+      "model_in_project": "Fully regulated, no market model needed.",
+      "notes": "NB Power has a diverse generation mix including hydro, nuclear (Point Lepreau), and thermal. There is limited wholesale trading with neighboring provinces (Quebec, Nova Scotia, PEI)."
+    },
+    "NS": {
+      "province_name": "Nova Scotia",
+      "market_operator": null,
+      "market_type": "investor_owned_regulated",
+      "summary": "Nova Scotia Power (owned by Emera Inc.) is the primary electricity provider. It is investor-owned but rates are fully regulated by the Nova Scotia Utility and Review Board (NSUARB).",
+      "pricing_components": {
+        "residential": {
+          "structure": "Flat energy rate with monthly service charge plus various riders",
+          "description": "Base energy rate plus fuel adjustment mechanism (FAM), demand-side management charge, and other regulatory riders."
+        }
+      },
+      "model_in_project": "Fully regulated, no market model needed.",
+      "notes": "Nova Scotia has among the highest electricity rates in Canada due to fossil fuel dependence, though this is improving with new wind and hydro imports from Newfoundland (Muskrat Falls via Maritime Link)."
+    },
+    "PE": {
+      "province_name": "Prince Edward Island",
+      "market_operator": null,
+      "market_type": "hybrid_import",
+      "summary": "Maritime Electric (owned by Fortis Inc.) distributes electricity on PEI. The island imports most of its electricity from New Brunswick via submarine cables and has growing on-island wind generation. Rates are regulated by IRAC (Island Regulatory and Appeals Commission).",
+      "pricing_components": {
+        "residential": {
+          "structure": "Flat energy rate with monthly service charge",
+          "description": "Simple structure reflecting import costs and on-island wind production."
+        }
+      },
+      "model_in_project": "Fully regulated, no market model needed.",
+      "notes": "PEI is unique in importing the majority of its electricity. The province has significant wind generation but relies on submarine cables for baseload and backup."
+    },
+    "NL": {
+      "province_name": "Newfoundland and Labrador",
+      "market_operator": null,
+      "market_type": "dual_utility_regulated",
+      "summary": "Two utilities operate: Newfoundland Power (Fortis-owned, serves most of the island) and NL Hydro (Crown corporation, handles generation/transmission and serves rural/Labrador areas). Rates are regulated by the Board of Commissioners of Public Utilities (PUB NL).",
+      "pricing_components": {
+        "island_residential": {
+          "structure": "Flat energy rate with basic monthly charge",
+          "description": "Newfoundland Power residential rate, same structure for NL Hydro rural customers."
+        },
+        "labrador_interconnected": {
+          "structure": "Flat energy rate (much lower)",
+          "description": "Labrador interconnected system rates are significantly lower due to proximity to Churchill Falls generation."
+        }
+      },
+      "rate_disparity": "Island rates are roughly 4x higher than Labrador interconnected rates. Muskrat Falls project was intended to reduce island rates but has instead driven rate increases.",
+      "model_in_project": "Fully regulated, no market model needed. Both Newfoundland Power and NL Hydro scrapers produce separate tariffs.",
+      "notes": "The Muskrat Falls hydroelectric project and Labrador-Island transmission link are major factors in NL's current rate trajectory. Rate mitigation programs are in place to manage consumer impact."
+    },
+    "NT": {
+      "province_name": "Northwest Territories",
+      "market_operator": null,
+      "market_type": "regulated_multi_zone",
+      "summary": "Northwest Territories Power Corporation (NTPC, Crown corporation) handles generation and transmission. Northland Utilities (an ATCO subsidiary) handles distribution in some communities. Rates vary dramatically by community based on generation source (hydro vs. diesel).",
+      "pricing_components": {
+        "zones": {
+          "hydro_zone": "Communities on the hydro grid (Yellowknife, Hay River) pay lower rates.",
+          "thermal_zone": "Isolated communities on diesel generation pay much higher rates, subsidized through territorial programs."
+        }
+      },
+      "model_in_project": "Not yet scraped. Community-specific rate zones make this complex.",
+      "notes": "Electricity costs in diesel-dependent communities can exceed $1/kWh before subsidies. The GNWT provides various rate relief programs."
+    },
+    "YT": {
+      "province_name": "Yukon",
+      "market_operator": null,
+      "market_type": "regulated_single_utility",
+      "summary": "ATCO Electric Yukon (formerly Yukon Energy/Yukon Electrical) provides generation, transmission, and distribution. Rates are regulated by the Yukon Utilities Board.",
+      "pricing_components": {
+        "residential": {
+          "structure": "Tiered (first block at lower rate, remainder at higher rate)",
+          "description": "Monthly service charge plus two-tier energy charges."
+        }
+      },
+      "model_in_project": "Not yet scraped.",
+      "notes": "Yukon's electricity comes primarily from hydro (Whitehorse Rapids, Aishihik) with diesel backup. Dawson City has separate rates."
+    },
+    "NU": {
+      "province_name": "Nunavut",
+      "market_operator": null,
+      "market_type": "regulated_diesel_dependent",
+      "summary": "Qulliq Energy Corporation (QEC, territorial Crown corporation) is the sole electricity provider. All communities rely on diesel generation. Rates are regulated by the Utility Rates Review Council of Nunavut.",
+      "pricing_components": {
+        "residential": {
+          "structure": "Tiered with heavy subsidies",
+          "description": "Base rate applies to a subsidized block of consumption. Usage above the subsidized threshold is charged at a much higher rate reflecting true cost of diesel generation."
+        }
+      },
+      "model_in_project": "Not yet scraped.",
+      "notes": "Nunavut has the highest electricity costs in Canada. True cost of generation can exceed $1.50/kWh in remote communities. Heavy territorial subsidies keep consumer rates manageable."
+    }
+  },
+  "market_model_applicability": {
+    "description": "Summary of which provinces need market pricing models vs. simple regulated tariff scraping.",
+    "market_model_required": {
+      "ON": "IESO HOEP + GA model (implemented in market_pricing_ontario.json)",
+      "AB": "AESO pool price reference (RRO tariffs reference pool price; dedicated model could be built)"
+    },
+    "regulated_tariff_only": ["BC", "QC", "MB", "SK", "NB", "NS", "PE", "NL"],
+    "not_yet_scraped": ["NT", "YT", "NU"],
+    "notes": "Only Ontario and Alberta have wholesale markets that affect retail pricing. All other provinces use vertically integrated utilities with fully regulated tariffs."
+  }
+}

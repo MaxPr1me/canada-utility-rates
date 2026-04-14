@@ -30,6 +30,9 @@ data/exports/*.csv
 data/exports/*.xlsx
 !data/exports/.gitkeep
 
+# Excel audit/reference files (not system of record)
+data/excel/
+
 # Logs
 logs/
 *.log

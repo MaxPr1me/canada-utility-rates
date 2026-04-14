@@ -148,10 +148,16 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://www.heritagegas.com/for-home/rates/",
+          "url": "https://eastwardenergy.com/for-home/rates/",
           "source_type": "html",
-          "description": "Residential natural gas rates in Nova Scotia",
+          "description": "Residential natural gas rates in Nova Scotia (Eastward Energy, formerly Heritage Gas)",
           "is_primary": true
+        },
+        {
+          "url": "https://eastwardenergy.com/for-business/rates/",
+          "source_type": "html",
+          "description": "Commercial natural gas rates",
+          "is_primary": false
         }
       ],
       "notes": "Heritage Gas is the natural gas distribution utility in Nova Scotia, serving the Halifax-Dartmouth metro area and parts of the province along the Maritimes and Northeast Pipeline corridor. Regulated by the Nova Scotia Utility and Review Board (NSUARB)."
@@ -165,10 +171,16 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://gas.libertyutilities.com/new-brunswick/residential/rates.html",
+          "url": "https://naturalgasnb.com/en/for-home/accounts-billing/customer-rate-classes/#current-rate",
           "source_type": "html",
           "description": "Residential natural gas rates in New Brunswick",
           "is_primary": true
+        },
+        {
+          "url": "https://naturalgasnb.com/en/for-business/accounts-and-billing/customer-rate-classes/#current-rate",
+          "source_type": "html",
+          "description": "Commercial natural gas rates in New Brunswick",
+          "is_primary": false
         }
       ],
       "notes": "Liberty Utilities acquired the former Enbridge Gas New Brunswick operations. Regulated by the New Brunswick Energy and Utilities Board (NBEUB)."
@@ -274,16 +286,10 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://www.saskpower.com/Accounts-and-Services/Rates-and-Usage/Rates/Residential-Rates",
+          "url": "https://www.saskpower.com/accounts/power-rates/power-supply-rates",
           "source_type": "html",
-          "description": "Residential electricity rates for Saskatchewan",
+          "description": "Residential and commercial power supply rates for Saskatchewan",
           "is_primary": true
-        },
-        {
-          "url": "https://www.saskpower.com/Accounts-and-Services/Rates-and-Usage/Rates/Commercial-Rates",
-          "source_type": "html",
-          "description": "Commercial electricity rates",
-          "is_primary": false
         }
       ],
       "notes": "SaskPower is the principal electricity supplier in Saskatchewan, a provincial Crown corporation. Regulated by the Saskatchewan Rate Review Panel."
@@ -297,15 +303,15 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://www.nbpower.com/en/products-services/residential/rates-and-tariffs/",
+          "url": "https://www.nbpower.com/en/products-services/residential/rates",
           "source_type": "html",
-          "description": "Residential electricity rates and tariff schedules",
+          "description": "Residential electricity rates",
           "is_primary": true
         },
         {
-          "url": "https://www.nbpower.com/media/1490743/schedule-of-rates-and-tariffs.pdf",
-          "source_type": "pdf",
-          "description": "Complete schedule of rates and tariffs document (PDF)",
+          "url": "https://www.nbpower.com/en/products-services/business/rates",
+          "source_type": "html",
+          "description": "Business electricity rates",
           "is_primary": false
         }
       ],

@@ -48,19 +48,35 @@ The whole cycle runs automatically once a month using GitHub Actions (a free ser
 |---|---|
 | `scrapers/base.py` | The "template" that all scrapers follow. You don't change this unless you're adding a new feature that applies to ALL scrapers. |
 | `scrapers/utilities/bc_hydro.py` | Scrapes BC Hydro electricity rates. |
-| `scrapers/utilities/hydro_quebec.py` | Scrapes Hydro-Québec electricity rates. |
-| `scrapers/utilities/toronto_hydro.py` | Scrapes Toronto Hydro electricity rates. |
+| `scrapers/utilities/hydro_quebec.py` | Scrapes Hydro-Quebec electricity rates. |
+| `scrapers/utilities/ontario_ldc.py` | **Data-driven scraper for all 53 Ontario LDCs.** One class handles every Ontario local distribution company — the registry passes in which LDC to produce data for. |
+| `scrapers/utilities/toronto_hydro.py` | Toronto Hydro (legacy scraper, separate from the LDC scraper). |
 | `scrapers/utilities/enbridge_gas.py` | Scrapes Enbridge Gas natural gas rates. |
+| `scrapers/utilities/atco_electric.py` | ATCO Electric distribution charges (Alberta). |
+| `scrapers/utilities/fortisalberta.py` | FortisAlberta distribution charges (Alberta). |
+| `scrapers/utilities/epcor_distribution.py` | EPCOR Distribution charges (Edmonton, Alberta). |
+| `scrapers/utilities/enmax_power.py` | ENMAX Power distribution charges (Calgary, Alberta). |
+| `scrapers/utilities/direct_energy_regulated.py` | Direct Energy RRO retail rates (Alberta). |
+| `scrapers/utilities/enmax_energy.py` | ENMAX Energy RRO retail rates (Alberta). |
+| `scrapers/utilities/epcor_energy_alberta.py` | EPCOR Energy RRO retail rates (Alberta). |
+| `scrapers/utilities/aeso.py` | AESO market reference price (Alberta wholesale). |
+| `scrapers/utilities/nl_hydro.py` | NL Hydro electricity rates (Newfoundland — residential + commercial). |
 | `scrapers/registry.py` | Reads the list of all utilities and their scraper info. |
+| `scrapers/utils/market_pricing.py` | Ontario IESO market pricing model (HOEP + GA hourly bins). |
 
 ### Where the data lives
 
 | File | What it does |
 |---|---|
-| `data/sources/registry.json` | **The master list.** Every utility the project knows about is listed here, along with the URL where its rates are published and which scraper handles it. |
+| `data/sources/registry.json` | **The master list (system of record).** Every utility the project knows about is listed here, along with the URL where its rates are published and which scraper handles it. Currently 84 utilities. |
 | `data/inventory/utilities.json` | The full inventory of ALL Canadian utilities — even ones we don't scrape yet. This is the reference list. |
 | `data/db/rates.db` | The SQLite database where scraped rates are stored. Created automatically when you first run the scraper. |
+| `data/excel/old_urls.xlsm` | **Audit reference only.** An Excel file with historical URLs and rate data. NO scraper reads this file. It is git-ignored. |
 | `site/data/rates.json` | The JSON file the website reads. Created by running the export script. |
+| `site/data/market_pricing_ontario.json` | Ontario IESO hourly market pricing bins (576 bins: 12 months x 2 day types x 24 hours). |
+| `site/data/market_structure_notes.json` | Research notes on market structure for every Canadian province/territory. |
+| `site/data/missing_classes_report.json` | Audit report showing which utilities are missing customer classes. |
+| `site/data/source_review_report.json` | Source URL audit — compares Excel reference URLs against registry. |
 
 ### Where the website lives
 
@@ -272,12 +288,61 @@ The database (`data/db/rates.db`) has these main tables:
 | `utilities` | One row per utility company (name, province, type). |
 | `tariffs` | One row per rate plan (name, customer class, rate structure, dates). |
 | `rate_components` | One row per individual charge (energy charge, fixed fee, rider, etc.). This is the most detailed table. |
+| `customer_classes` | One row per customer class per utility (residential, commercial GS < 50 kW, GS >= 50 kW, etc.) with eligibility thresholds. |
+| `market_pricing` | Representative hourly electricity market prices by province (576 bins for Ontario IESO, expandable to AESO). |
 | `sources` | URLs where rate data was found. |
 | `scrape_runs` | A log of each time the scraper ran. |
 | `historical_snapshots` | A copy of each tariff's data at each scrape, so we can track changes over time. |
 | `missing_data` | A list of known gaps — utilities or rates we don't have yet. |
 
 **The key relationship:** A utility has many tariffs. A tariff has many rate components. This structure lets us capture the full complexity of utility bills instead of flattening everything into one number.
+
+---
+
+## Ontario Market Pricing — What You Need to Know
+
+Ontario is special. Most Canadian provinces set electricity rates directly — a regulator publishes a price and that's what you pay. Ontario is different:
+
+- **Small customers** (residential, GS < 50 kW) pay OEB-regulated TOU or Tiered rates — simple, published prices.
+- **Large customers** (GS >= 50 kW) pay market-based energy prices that change every hour, plus a monthly "Global Adjustment" (GA) that covers long-term generation contracts.
+
+The project models this with a **576-bin hourly pricing surface** stored in `site/data/market_pricing_ontario.json`. Each bin represents a typical $/kWh cost for:
+- A specific **month** (1-12)
+- A specific **day type** (weekday or weekend)
+- A specific **hour** (0-23)
+
+This was derived from 5 years of IESO HOEP data plus monthly GA rates.
+
+**How to update it:** After each month's IESO data is published, re-run the market pricing pipeline to refresh the bins.
+
+---
+
+## Alberta's Deregulated Market
+
+Alberta is the only province where retail electricity is fully deregulated. This means:
+
+- **Distribution companies** (ATCO Electric, FortisAlberta, EPCOR Distribution, ENMAX Power) own the wires and charge regulated delivery rates.
+- **Retail energy** is sold by competitive retailers. Customers who don't choose a retailer get the Regulated Rate Option (RRO) — a monthly pass-through of the AESO wholesale pool price.
+- The scrapers capture both pieces separately: distribution charges in the distribution scrapers, and RRO energy in the retail scrapers.
+
+---
+
+## Source URL Management
+
+### The Excel file is NOT a data source
+
+There is an Excel file at `data/excel/old_urls.xlsm` that contains historical reference URLs and rate data. **No scraper reads this file.** It exists only for manual audit and comparison. It is git-ignored.
+
+### The registry IS the system of record
+
+`data/sources/registry.json` lists every utility's official source URLs and scraper configuration. When source URLs change, update the registry — not the Excel file.
+
+### Source prioritization
+
+When choosing which URL to use for a utility, prefer:
+1. The utility's own rate schedule page
+2. Regulator rate orders or decisions
+3. Third-party aggregators (last resort)
 
 ---
 
@@ -299,6 +364,12 @@ The database (`data/db/rates.db`) has these main tables:
 | **Rider** | A temporary adjustment to rates — can be a surcharge or a credit. |
 | **LDC** | Local Distribution Company — the utility that delivers electricity to your home (common in Ontario). |
 | **OEB** | Ontario Energy Board — the regulator that sets many Ontario utility rates. |
+| **IESO** | Independent Electricity System Operator — operates Ontario's wholesale electricity market. |
+| **HOEP** | Hourly Ontario Energy Price — the real-time wholesale electricity price in Ontario. |
+| **GA** | Global Adjustment — monthly charge in Ontario covering contracted/regulated generation costs. |
+| **AESO** | Alberta Electric System Operator — operates Alberta's wholesale electricity market. |
+| **RRO** | Regulated Rate Option — default retail electricity rate in Alberta for customers who haven't chosen a competitive retailer. |
+| **Class A/B** | Ontario GA allocation categories. Class A (> 1 MW) pays based on coincident peak demand. Class B (everyone else) pays a flat per-kWh charge. |
 | **kWh** | Kilowatt-hour — the standard unit for measuring electricity consumption. |
 | **GJ** | Gigajoule — a unit for measuring natural gas energy content. |
 | **m³** | Cubic metre — a unit for measuring natural gas volume. |

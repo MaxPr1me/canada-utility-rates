@@ -641,6 +641,13 @@ class OntarioLDCScraper(BaseScraper):
 
         # ================================================================
         # GS >= 50 kW -- demand-based pricing
+        #
+        # Energy cost for GS >= 50 kW is market-based (IESO HOEP + GA).
+        # Class A (> 1 MW) pays GA via coincident peak demand allocation.
+        # Class B (50 kW–1 MW) pays GA as a per-kWh volumetric charge.
+        # The OEB_GS_DEMAND_ENERGY value is the Class B average; true
+        # costs vary monthly based on IESO market conditions.
+        # See site/data/market_pricing_ontario.json for hourly bin data.
         # ================================================================
         records.append(TariffRecord(
             utility_name=self._ldc_name,
@@ -657,17 +664,27 @@ class OntarioLDCScraper(BaseScraper):
             eligibility="Non-residential customers with monthly peak demand of 50 kW or more",
             demand_min_kw=50,
             demand_max_kw=4999,
+            pricing_method="market_based",
+            market_reference="IESO HOEP + Global Adjustment",
             notes=(
-                "OEB-regulated GS >= 50 kW demand rate. Energy price is OEB province-wide; "
-                f"demand charge and delivery are specific to {self._ldc_name}."
+                "GS >= 50 kW energy cost is market-based (IESO HOEP + GA). "
+                "Class B (50 kW-1 MW) pays GA as volumetric per-kWh charge; "
+                "Class A (> 1 MW) pays GA via coincident peak demand (ICI). "
+                f"Delivery charges are specific to {self._ldc_name}. "
+                "Energy value shown is Class B average; see market_pricing_ontario.json "
+                "for hourly representative rates."
             ),
             components=[
                 RateComponent(
                     component_type="energy",
-                    component_name="Energy Charge",
+                    component_name="Energy Charge (Class B average)",
                     charge_value=OEB_GS_DEMAND_ENERGY,
                     charge_unit="$/kWh",
                     source_url=OEB_SOURCE_URL,
+                    notes=(
+                        "Market-based: HOEP + GA. This value is the Class B average. "
+                        "Actual cost varies by hour/month. See market_pricing_ontario.json."
+                    ),
                 ),
                 RateComponent(
                     component_type="demand",

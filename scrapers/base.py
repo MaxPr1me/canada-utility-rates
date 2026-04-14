@@ -97,6 +97,8 @@ class TariffRecord:
     usage_max: Optional[float] = None
     usage_unit: Optional[str] = None
     rate_structure: str = "flat"  # "flat", "tiered", "tou", "demand", "market", "mixed"
+    pricing_method: Optional[str] = None  # "regulated", "market_based", etc.
+    market_reference: Optional[str] = None  # e.g. "IESO HOEP + Global Adjustment"
     effective_date: Optional[str] = None
     end_date: Optional[str] = None
     source_url: Optional[str] = None

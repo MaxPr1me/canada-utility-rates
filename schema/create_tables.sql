@@ -230,3 +230,28 @@ CREATE INDEX IF NOT EXISTS idx_snapshots_run      ON historical_snapshots(scrape
 CREATE INDEX IF NOT EXISTS idx_sources_utility    ON sources(utility_id);
 CREATE INDEX IF NOT EXISTS idx_customer_classes_utility ON customer_classes(utility_id);
 CREATE INDEX IF NOT EXISTS idx_customer_classes_name    ON customer_classes(class_name);
+
+-- ============================================================
+-- 9. MARKET PRICING  — representative historical hourly pricing surface
+-- ============================================================
+CREATE TABLE IF NOT EXISTS market_pricing (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    province            TEXT    NOT NULL,
+    market_operator     TEXT    NOT NULL,        -- "IESO" for Ontario, "AESO" for Alberta
+    component           TEXT    NOT NULL,        -- "hoep", "ga", "combined"
+    month               INTEGER NOT NULL,        -- 1-12
+    day_type            TEXT    NOT NULL,         -- "weekday" | "weekend"
+    hour                INTEGER NOT NULL,         -- 0-23
+    value               REAL    NOT NULL,         -- $/kWh
+    unit                TEXT    NOT NULL DEFAULT '$/kWh',
+    history_window_years INTEGER NOT NULL,
+    derivation_method   TEXT    NOT NULL,         -- "historical_average" | "direct_source" | "derived_allocation"
+    source_url          TEXT,
+    last_updated        TEXT    NOT NULL DEFAULT (datetime('now')),
+    notes               TEXT,
+
+    UNIQUE(province, market_operator, component, month, day_type, hour)
+);
+
+CREATE INDEX IF NOT EXISTS idx_market_pricing_province ON market_pricing(province, market_operator);
+CREATE INDEX IF NOT EXISTS idx_market_pricing_component ON market_pricing(component, month);
