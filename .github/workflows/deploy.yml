@@ -1,0 +1,46 @@
+# Deploy to GitHub Pages
+#
+# Runs automatically on every push to main — so any code change,
+# scraper data update, or site tweak triggers a fresh deploy.
+
+name: Deploy Site
+
+on:
+  push:
+    branches: [main]
+
+  # Also allow manual deploys
+  workflow_dispatch:
+
+permissions:
+  pages: write
+  id-token: write
+
+# Cancel in-progress deploys if a new push arrives
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

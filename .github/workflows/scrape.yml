@@ -1,17 +1,18 @@
-# Monthly Scrape & Deploy
+# Monthly Scrape
 #
-# This workflow runs on the 1st of every month (and on manual trigger).
-# It:
+# Runs the scraper on a monthly schedule or manual trigger.
+# Does NOT deploy the site — that's handled by deploy.yml.
+#
+# What it does:
 #   1. Installs Python and dependencies
 #   2. Runs the scraper against all active utilities
 #   3. Validates the scraped data
 #   4. Exports JSON for the static site
 #   5. Runs a diff report comparing to the previous run
-#   6. Commits updated data files
-#   7. Deploys the static site to GitHub Pages
-#   8. Creates a GitHub Issue if any sources broke or data changed
+#   6. Commits updated data files (which triggers deploy.yml)
+#   7. Creates a GitHub Issue if any sources broke or data changed
 
-name: Monthly Scrape & Deploy
+name: Monthly Scrape
 
 on:
   # Run on the 1st of every month at 08:00 UTC
@@ -33,8 +34,6 @@ concurrency:
 
 permissions:
   contents: write       # to commit updated data
-  pages: write          # to deploy to GitHub Pages
-  id-token: write       # for Pages deployment
   issues: write         # to create issue on failures
 
 jobs:
@@ -110,30 +109,3 @@ jobs:
               body: `## Validation Report\n\n\`\`\`\n${validateOutput.slice(0, 3000)}\n\`\`\`\n\n## Diff Report\n\n\`\`\`\n${diffOutput.slice(0, 3000)}\n\`\`\`\n\nThis issue was created automatically by the monthly scrape workflow.`,
               labels: ['scrape-issue', 'automated'],
             });
-
-  # Deploy site to GitHub Pages
-  deploy:
-    needs: scrape
-    runs-on: ubuntu-latest
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Checkout (with updated data)
-        uses: actions/checkout@v5
-        with:
-          ref: main  # use the commit from the scrape job
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload site artifact
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: site/
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
