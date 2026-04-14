@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-14T15:17:43.302964+00:00",
+  "last_updated": "2026-04-14T15:25:42.749185+00:00",
   "total_utilities": 76,
   "total_tariffs": 203,
   "total_components": 1422,
@@ -28,8 +28,8 @@
   ],
   "last_scrape_run": {
     "id": 1,
-    "started_at": "2026-04-14T15:16:02.099273+00:00",
-    "finished_at": "2026-04-14T15:17:35.977192+00:00",
+    "started_at": "2026-04-14T15:25:05.903780+00:00",
+    "finished_at": "2026-04-14T15:25:42.557567+00:00",
     "status": "completed",
     "utilities_attempted": 76,
     "utilities_succeeded": 76,
