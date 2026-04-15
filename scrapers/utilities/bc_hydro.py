@@ -12,6 +12,7 @@ Rate classes scraped:
   - Residential Service (Rate 1101) — tiered/step pricing, no demand charge
   - Small General Service (Rate 1300) — flat energy, no demand charge
   - Medium General Service (Rate 1500) — energy + demand charge
+  - Large General Service (Rate 1600) — energy + demand charge (higher demand, lower energy)
 
 The live parser fetches sub-pages (tiered.html for residential,
 business-rates.html for SGS/MGS) and extracts rates from prose text
@@ -62,6 +63,14 @@ SEED_MEDIUM_GENERAL = {
     "basic_charge_per_day": 0.2999,  # $/day
 }
 
+SEED_LARGE_GENERAL = {
+    "effective_date": "2026-04-01",
+    "source_url": BUSINESS_URL,
+    "demand_charge": 13.83,          # $/kW
+    "energy_rate": 0.0679,           # $/kWh
+    "basic_charge_per_day": 0.2999,  # $/day
+}
+
 
 class BCHydroScraper(BaseScraper):
     """Scrape BC Hydro electricity rates."""
@@ -99,7 +108,7 @@ class BCHydroScraper(BaseScraper):
             if res_record:
                 records.append(res_record)
 
-            # --- Business rates (SGS + MGS) ---
+            # --- Business rates (SGS + MGS + LGS) ---
             biz_records = self._parse_business()
             if biz_records:
                 records.extend(biz_records)
@@ -212,7 +221,7 @@ class BCHydroScraper(BaseScraper):
             return None
 
     def _parse_business(self) -> Optional[list[TariffRecord]]:
-        """Parse SGS (1300) and MGS (1500) from the business-rates.html page."""
+        """Parse SGS (1300), MGS (1500), and LGS (1600) from business-rates.html."""
         try:
             html = self.fetch_page(BUSINESS_URL)
             if detect_js_rendered(html):
@@ -233,6 +242,11 @@ class BCHydroScraper(BaseScraper):
             mgs = self._parse_mgs(page_text)
             if mgs:
                 records.append(mgs)
+
+            # --- Large General Service (Rate 1600) ---
+            lgs = self._parse_lgs(page_text)
+            if lgs:
+                records.append(lgs)
 
             return records if records else None
 
@@ -340,6 +354,75 @@ class BCHydroScraper(BaseScraper):
             eligibility="Commercial customers with annual peak demand between 35 and 150 kW",
             demand_max_kw=150,
             notes="BC Hydro medium commercial rate with demand charge; served at secondary voltage",
+            components=[
+                RateComponent(
+                    component_type="fixed",
+                    component_name="Basic Charge",
+                    charge_value=basic,
+                    charge_unit="$/day",
+                ),
+                RateComponent(
+                    component_type="demand",
+                    component_name="Demand Charge",
+                    charge_value=demand,
+                    charge_unit="$/kW",
+                    demand_unit="kW",
+                    notes="Applied to highest 15-minute demand average per billing period",
+                ),
+                RateComponent(
+                    component_type="energy",
+                    component_name="Energy Charge",
+                    charge_value=energy,
+                    charge_unit="$/kWh",
+                ),
+            ],
+        )
+
+    def _parse_lgs(self, page_text: str) -> Optional[TariffRecord]:
+        """Extract Large General Service rates from page text."""
+        # Isolate the LGS section: after "Large General Service" until end or next section
+        lgs_section = self._extract_section(
+            page_text, "Large General Service", "Declaration of Eligibility"
+        )
+        if not lgs_section:
+            lgs_section = self._extract_section(
+                page_text, "Large General Service", None
+            )
+        if not lgs_section:
+            self.logger.warning("Could not find LGS section in business page")
+            return None
+
+        basic = self._extract_cents_per(lgs_section, "cents per day")
+        energy = self._extract_cents_per(lgs_section, "cents per kWh")
+        demand = self._extract_dollar_per(lgs_section, r"\$\s*([\d.]+)\s*per\s*kW\b")
+
+        if basic is None or energy is None or demand is None:
+            self.logger.warning(
+                "Could not extract LGS rates (basic=%s, energy=%s, demand=%s)",
+                basic, energy, demand,
+            )
+            return None
+
+        self.logger.info(
+            "Parsed LGS: basic=%.4f, energy=%.4f, demand=%.2f",
+            basic, energy, demand,
+        )
+
+        return TariffRecord(
+            utility_name="BC Hydro",
+            province="BC",
+            utility_type="electricity",
+            tariff_name="Large General Service (Rate 1600)",
+            tariff_code="1600",
+            customer_class="commercial",
+            sub_class="large general service",
+            rate_structure="demand",
+            effective_date=SEED_LARGE_GENERAL["effective_date"],
+            source_url=BUSINESS_URL,
+            confidence="high",
+            eligibility="Commercial customers with annual peak demand of at least 150 kW, or using more than 550,000 kWh/year",
+            demand_min_kw=150,
+            notes="BC Hydro large commercial rate with demand charge; higher demand rate, lower energy rate than MGS",
             components=[
                 RateComponent(
                     component_type="fixed",
@@ -576,6 +659,46 @@ class BCHydroScraper(BaseScraper):
                     component_type="energy",
                     component_name="Energy Charge",
                     charge_value=SEED_MEDIUM_GENERAL["energy_rate"],
+                    charge_unit="$/kWh",
+                ),
+            ],
+        ))
+
+        # -- Large General Service (Rate 1600) -- higher demand, lower energy --
+        records.append(TariffRecord(
+            utility_name="BC Hydro",
+            province="BC",
+            utility_type="electricity",
+            tariff_name="Large General Service (Rate 1600)",
+            tariff_code="1600",
+            customer_class="commercial",
+            sub_class="large general service",
+            rate_structure="demand",
+            effective_date=SEED_LARGE_GENERAL["effective_date"],
+            source_url=SEED_LARGE_GENERAL["source_url"],
+            confidence="high",
+            eligibility="Commercial customers with annual peak demand of at least 150 kW, or using more than 550,000 kWh/year",
+            demand_min_kw=150,
+            notes="BC Hydro large commercial rate with demand charge; higher demand rate, lower energy rate than MGS",
+            components=[
+                RateComponent(
+                    component_type="fixed",
+                    component_name="Basic Charge",
+                    charge_value=SEED_LARGE_GENERAL["basic_charge_per_day"],
+                    charge_unit="$/day",
+                ),
+                RateComponent(
+                    component_type="demand",
+                    component_name="Demand Charge",
+                    charge_value=SEED_LARGE_GENERAL["demand_charge"],
+                    charge_unit="$/kW",
+                    demand_unit="kW",
+                    notes="Applied to highest 15-minute demand average per billing period",
+                ),
+                RateComponent(
+                    component_type="energy",
+                    component_name="Energy Charge",
+                    charge_value=SEED_LARGE_GENERAL["energy_rate"],
                     charge_unit="$/kWh",
                 ),
             ],

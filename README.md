@@ -155,7 +155,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← Automated tests (174 tests)
+├── tests/                    ← Automated tests (233 tests)
 │   ├── fixtures/             ← Saved HTML snapshots for parser tests
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
@@ -347,8 +347,16 @@ All other provinces use vertically integrated Crown utilities with fully regulat
   - URL corrections for rebranded utilities (Heritage Gas → Eastward Energy, Liberty Gas NB → naturalgasnb.com, SaskPower, NB Power)
   - Test fixture directory (`tests/fixtures/`) for saved HTML snapshots
   - 27 new change detection tests (174 total)
-- **Step 2 (Next):** Implement live HTML parsers for Tier 1 major provincial utilities (BC Hydro, Hydro-Quebec, Manitoba Hydro, SaskPower, etc.)
-- **Step 3:** Ontario OEB province-wide rate scraping
+- **Step 2 (Complete):** Live HTML parsers for Tier 1 major provincial utilities
+  - **Full live HTML parsers:** Manitoba Hydro (table extraction, 3 tariffs), NB Power (table extraction with merged cells, 3 tariffs), Nova Scotia Power (residential label-based + commercial Rates 10/11/12, 4 tariffs), BC Hydro (prose text regex, 4 tariffs including LGS)
+  - **PDF live parser:** Hydro-Québec (Rate D, G, M from official electricity-rates.pdf, 3 tariffs)
+  - **PDF detection:** SaskPower, NL Hydro, Newfoundland Power — landing page parsing, PDF link logging (seed only)
+  - Seed data refreshed to 2025-2026 published rates for all 8 utilities
+  - URL fixes for NS Power, NL Hydro, Newfoundland Power (old URLs returned 404)
+  - Structural fixes: NB Power residential tiered→flat, BC Hydro SGS demand charge removed, BC Hydro LGS added
+  - 56 live parser tests (`tests/test_live_parsers.py`), 233+ total
+  - Gap report at `docs/live_parser_gap_report.md`
+- **Step 3 (Next):** Ontario OEB province-wide rate scraping
 - **Step 4:** Alberta electricity parsers (distribution + RRO)
 - **Step 5:** Gas utility parsers
 - **Step 6:** Northern/remote utility parsers
@@ -358,6 +366,8 @@ All other provinces use vertically integrated Crown utilities with fully regulat
 ### Phase 5.5: Enhanced Web Interface ✓
 - Two-tab layout: Rate Browser + Market Pricing dashboard
 - Multi-select checkbox filters (province, utility, fuel type, customer class, rate structure) with search
+- Province filter cascades into utility filter (selecting BC shows only BC utilities)
+- Rate deduplication: only most recent effective_date per tariff displayed
 - Confidence indicators on rate cards (colored dots) and in detail modal (badge + tooltip)
 - Source attribution in detail modal (primary source + utility website from source review)
 - Market-based rate callouts with IESO/AESO/gas explanations and links to Market Pricing tab

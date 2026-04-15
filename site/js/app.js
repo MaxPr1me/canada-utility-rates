@@ -23,6 +23,7 @@
     let sourceLookup = {};
     let marketChart = null;
     let currentView = "rates";
+    let utilityProvinceMap = {};
 
     // Multi-select filter state: each key holds a Set of selected values
     const filterState = {
@@ -72,6 +73,9 @@
             sourceReviewData = sourceRes.status === "fulfilled" ? sourceRes.value : [];
             marketPricingON = marketRes.status === "fulfilled" ? marketRes.value : {};
 
+            // Deduplicate: keep only the most recent effective_date per utility+tariff
+            allRates = deduplicateRates(allRates);
+
             sourceLookup = buildSourceLookup();
 
             if (allRates.length === 0) {
@@ -81,6 +85,15 @@
             }
 
             populateFilters();
+
+            // Build utility → province mapping for cascading filter
+            utilityProvinceMap = {};
+            allRates.forEach(r => {
+                if (!utilityProvinceMap[r.utility_name]) {
+                    utilityProvinceMap[r.utility_name] = r.province;
+                }
+            });
+
             initMultiSelects();
             updateSummary();
             renderRates();
@@ -90,6 +103,24 @@
             document.getElementById("results-count").textContent =
                 "Error loading data. Check the browser console for details.";
         }
+    }
+
+    function buildSourceLookup() {
+
+    /**
+     * Deduplicate rates: when the same utility+tariff has multiple effective dates
+     * (historical snapshots), keep only the most recent one per combination.
+     */
+    function deduplicateRates(rates) {
+        const latest = {};
+        rates.forEach(r => {
+            const key = (r.utility_name || "") + "|" + (r.name || "") + "|" + (r.customer_class || "");
+            const existing = latest[key];
+            if (!existing || (r.effective_date || "") > (existing.effective_date || "")) {
+                latest[key] = r;
+            }
+        });
+        return Object.values(latest);
     }
 
     function buildSourceLookup() {
@@ -187,7 +218,16 @@
                     const query = searchInput.value.toLowerCase();
                     ms.querySelectorAll(".ms-option").forEach(opt => {
                         const text = opt.textContent.toLowerCase();
-                        opt.style.display = text.includes(query) ? "" : "none";
+                        const matchesSearch = text.includes(query);
+
+                        // For utility filter, also respect province filtering
+                        if (filterKey === "utility" && filterState.province.size > 0) {
+                            const utilName = opt.querySelector("input").value;
+                            const utilProvince = utilityProvinceMap[utilName];
+                            opt.style.display = (matchesSearch && filterState.province.has(utilProvince)) ? "" : "none";
+                        } else {
+                            opt.style.display = matchesSearch ? "" : "none";
+                        }
                     });
                 });
             }
@@ -202,6 +242,9 @@
                     filterState[filterKey].delete(val);
                 }
                 updateMultiSelectLabel(ms, filterKey);
+                if (filterKey === "province") {
+                    filterUtilitiesByProvince();
+                }
                 renderRates();
             });
         });
@@ -255,7 +298,33 @@
                 ms.querySelectorAll(".ms-option").forEach(opt => { opt.style.display = ""; });
             }
         });
+        filterUtilitiesByProvince();
         renderRates();
+    }
+
+    function filterUtilitiesByProvince() {
+        const utilityContainer = document.getElementById("filter-utility");
+        const options = utilityContainer.querySelectorAll(".ms-option");
+        const selectedProvs = filterState.province;
+
+        options.forEach(opt => {
+            const cb = opt.querySelector("input");
+            const utilName = cb.value;
+            const utilProvince = utilityProvinceMap[utilName];
+            if (selectedProvs.size === 0 || selectedProvs.has(utilProvince)) {
+                opt.style.display = "";
+            } else {
+                opt.style.display = "none";
+                if (cb.checked) {
+                    cb.checked = false;
+                    filterState.utility.delete(utilName);
+                }
+            }
+        });
+        updateMultiSelectLabel(
+            document.querySelector("#filter-utility"),
+            "utility"
+        );
     }
 
     // ── Filtering ─────────────────────────────────────────────

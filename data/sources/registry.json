@@ -252,9 +252,15 @@
           "is_primary": true
         },
         {
+          "url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
+          "source_type": "pdf",
+          "description": "Official electricity rates PDF with Rate D, G, M values (primary data source for live parsing)",
+          "is_primary": false
+        },
+        {
           "url": "https://www.hydroquebec.com/business/customer-space/rates/",
           "source_type": "html",
-          "description": "Business rate schedules including Rate G and Rate M",
+          "description": "Business rate schedules landing page (JS-rendered, links to PDF)",
           "is_primary": false
         }
       ],
@@ -338,9 +344,9 @@
           "is_primary": true
         },
         {
-          "url": "https://www.nspower.ca/products-services/rate-information",
+          "url": "https://www.nspower.ca/your-business/save-money-energy/business-rates",
           "source_type": "html",
-          "description": "Rate information landing page (no rate values — links to sub-pages)",
+          "description": "Business rates page with Rate 10, 11, 12 (small commercial, commercial general, large commercial)",
           "is_primary": false
         }
       ],

@@ -87,7 +87,7 @@ The whole cycle runs automatically once a month using GitHub Actions (a free ser
 |---|---|
 | `site/index.html` | The main web page. Two-tab layout: **Rate Browser** and **Market Pricing**. |
 | `site/css/style.css` | How the page looks — includes styles for multi-select filters, heatmap, confidence indicators, source attribution, and market callouts. |
-| `site/js/app.js` | The application logic: loads 5 JSON data files, manages multi-select checkbox filter state (using JavaScript `Set`s), renders rate cards with confidence dots, shows detail modals with source attribution and market callouts, and powers the Market Pricing dashboard (heatmap, Chart.js line chart, summary table, methodology). |
+| `site/js/app.js` | The application logic: loads 5 JSON data files, deduplicates rates by effective_date, manages multi-select checkbox filter state (using JavaScript `Set`s), cascades province selection into the utility filter, renders rate cards with confidence dots, shows detail modals with source attribution and market callouts, and powers the Market Pricing dashboard (heatmap, Chart.js line chart, summary table, methodology). |
 
 ### Where the automation lives
 
@@ -387,7 +387,25 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
+There are currently 233+ tests across 6 test files (test_scrapers, test_new_scrapers, test_live_parsers, test_parsing, test_change_detection, test_validation, test_schema).
+
 If everything passes, you'll see green output. If something fails, it will show you exactly what went wrong and where.
+
+---
+
+## Documentation Review Rule
+
+**Every task** — whether adding a feature, fixing a bug, or refactoring — must include a final documentation review step. At minimum, check whether the following files need updates:
+
+| File | When to update |
+|---|---|
+| `README.md` | Roadmap changes, new phases completed, tech stack additions, project structure changes |
+| `AGENTS.md` | New files added, glossary terms needed, troubleshooting patterns discovered |
+| `CLAUDE.md` | Architecture changes, new conventions, test count changes, key pattern additions |
+| `docs/adding-a-utility.md` | Scraper patterns or helper functions changed |
+| `docs/live_parser_gap_report.md` | Live parser status changed (new parsers, fixed gaps) |
+
+If the task doesn't warrant a change to any of these, no update needed — but the check should happen.
 
 ---
 

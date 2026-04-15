@@ -136,8 +136,8 @@ class TestNovaScotiaPowerSeed:
             self.scraper = NovaScotiaPowerScraper()
             self.records = self.scraper.scrape()
 
-    def test_returns_two_tariffs(self):
-        assert len(self.records) == 2
+    def test_returns_four_tariffs(self):
+        assert len(self.records) == 4
 
     def test_residential_is_flat(self):
         res = [r for r in self.records if r.customer_class == "residential"][0]
@@ -154,15 +154,21 @@ class TestNovaScotiaPowerSeed:
         energy = [c for c in res.components if c.component_type == "energy"][0]
         assert energy.charge_value == pytest.approx(0.18187)
 
-    def test_small_general_has_demand(self):
-        sg = [r for r in self.records if r.customer_class == "commercial"][0]
-        assert sg.rate_structure == "demand"
-        demand = [c for c in sg.components if c.component_type == "demand"]
+    def test_rate10_small_commercial_present(self):
+        r10 = [r for r in self.records if r.tariff_code == "10"]
+        assert len(r10) == 1
+        assert r10[0].rate_structure == "tiered"
+
+    def test_rate11_commercial_general_present(self):
+        r11 = [r for r in self.records if r.tariff_code == "11"]
+        assert len(r11) == 1
+        demand = [c for c in r11[0].components if c.component_type == "demand"]
         assert len(demand) == 1
 
-    def test_effective_dates_updated(self):
-        for r in self.records:
-            assert r.effective_date == "2026-01-01"
+    def test_rate12_large_commercial_present(self):
+        r12 = [r for r in self.records if r.tariff_code == "12"]
+        assert len(r12) == 1
+        assert r12[0].rate_structure == "demand"
 
 
 # ─── BC Hydro ──────────────────────────────────────────────────
@@ -175,8 +181,8 @@ class TestBCHydroSeedUpdated:
             self.scraper = BCHydroScraper()
             self.records = self.scraper.scrape()
 
-    def test_returns_three_tariffs(self):
-        assert len(self.records) == 3
+    def test_returns_four_tariffs(self):
+        assert len(self.records) == 4
 
     def test_residential_is_tiered(self):
         res = [r for r in self.records if r.customer_class == "residential"][0]
@@ -201,6 +207,23 @@ class TestBCHydroSeedUpdated:
         demand = [c for c in mgs.components if c.component_type == "demand"]
         assert len(demand) == 1
 
+    def test_lgs_present(self):
+        lgs = [r for r in self.records if r.tariff_code == "1600"]
+        assert len(lgs) == 1, "LGS Rate 1600 should be present"
+
+    def test_lgs_has_demand_charge(self):
+        lgs = [r for r in self.records if r.tariff_code == "1600"][0]
+        demand = [c for c in lgs.components if c.component_type == "demand"]
+        assert len(demand) == 1
+        assert demand[0].charge_value == pytest.approx(13.83)
+
+    def test_lgs_energy_lower_than_mgs(self):
+        lgs = [r for r in self.records if r.tariff_code == "1600"][0]
+        mgs = [r for r in self.records if r.tariff_code == "1500"][0]
+        lgs_energy = [c for c in lgs.components if c.component_type == "energy"][0]
+        mgs_energy = [c for c in mgs.components if c.component_type == "energy"][0]
+        assert lgs_energy.charge_value < mgs_energy.charge_value
+
     def test_effective_dates_updated(self):
         for r in self.records:
             assert r.effective_date == "2026-04-01"
@@ -216,14 +239,27 @@ class TestHydroQuebecUpdated:
             self.scraper = HydroQuebecScraper()
             self.records = self.scraper.scrape()
 
+    def test_returns_three_tariffs(self):
+        assert len(self.records) == 3
+
     def test_effective_dates_updated(self):
         for r in self.records:
             assert r.effective_date == "2026-04-01"
 
-    def test_confidence_is_medium(self):
-        """HQ rates are from a JS-rendered source — confidence should be medium."""
+    def test_confidence_is_high(self):
+        """HQ rates now verified from official PDF — confidence should be high."""
         for r in self.records:
-            assert r.confidence == "medium"
+            assert r.confidence == "high"
+
+    def test_rate_d_values_updated(self):
+        rate_d = [r for r in self.records if r.tariff_code == "D"][0]
+        tier1 = [c for c in rate_d.components if c.tier_number == 1][0]
+        assert tier1.charge_value == pytest.approx(0.07065)
+
+    def test_rate_m_present(self):
+        rate_m = [r for r in self.records if r.tariff_code == "M"]
+        assert len(rate_m) == 1
+        assert rate_m[0].customer_class == "commercial"
 
 
 # ─── SaskPower ──────────────────────────────────────────────────
@@ -372,5 +408,5 @@ class TestAllTier1UtilitiesBasicSanity:
             assert r.source_url.startswith("http")
 
     def test_total_tariff_count(self):
-        """8 utilities should produce at least 18 tariff records total."""
-        assert len(self.all_records) >= 18
+        """8 utilities should produce at least 19 tariff records total."""
+        assert len(self.all_records) >= 19

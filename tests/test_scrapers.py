@@ -101,7 +101,7 @@ class TestHydroQuebecSeed:
         energy = [c for c in rate_d.components if c.component_type == "energy"]
         assert len(energy) >= 2
         tier1 = [c for c in energy if c.tier_number == 1][0]
-        assert tier1.charge_value == pytest.approx(0.06509)
+        assert tier1.charge_value == pytest.approx(0.07065)
 
     def test_rate_g_present(self):
         rate_g = [r for r in self.records if r.tariff_code == "G"]

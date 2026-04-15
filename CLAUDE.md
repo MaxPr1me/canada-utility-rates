@@ -12,10 +12,13 @@ Canada-wide utility rate scraping and browsing platform.
 - **Static site** in `site/` is a single-page app (plain HTML+CSS+JS + Chart.js CDN), deployed to GitHub Pages, reads JSON from `site/data/`.
   - Two views: **Rate Browser** (multi-select checkbox filters, rate cards, detail modal) and **Market Pricing** (heatmap, line chart, summary table, methodology).
   - Filters use a `filterState` object with JavaScript `Set`s — empty set = show all, non-empty = intersection.
+  - Province filter cascades into utility filter — selecting a province hides utilities from other provinces.
+  - Rate deduplication at load time: only the most recent effective_date per utility+tariff is shown.
 - **Source registry** at `data/sources/registry.json` maps utilities to scraper classes and source URLs.
 
 ## Key patterns
 - Scrapers try live HTTP fetch first, fall back to hardcoded seed data.
+- **Live parsers** (Phase 5 Step 2): Manitoba Hydro, NB Power, NS Power (residential + commercial Rates 10/11/12), BC Hydro have full HTML parsers. Hydro-Québec live-parsed from official PDF. SaskPower, NL Hydro, Newfoundland Power detected as PDF-only (seed data only).
 - Every tariff stores individual rate_components (fixed, energy, demand, delivery, riders, etc.) — never flatten to one number.
 - Historical snapshots are preserved in `historical_snapshots` table — never overwrite.
 - Validation runs after scraping (`scrapers/utils/validation.py`).
@@ -29,7 +32,7 @@ pip install -r requirements.txt && pip install -e .
 python -m pipeline.run_scrape --init-db   # first time
 python -m pipeline.run_scrape             # scrape all
 python -m pipeline.export_json            # export for site
-pytest                                    # run tests (174 tests)
+pytest                                    # run tests (233+ tests)
 ```
 
 ## Adding a utility
@@ -42,3 +45,11 @@ pytest                                    # run tests (174 tests)
 - ISO-8601 dates, always UTC for timestamps.
 - Currency always in CAD unless stated.
 - Province codes are 2-letter uppercase (BC, ON, QC, etc.).
+
+## Task completion checklist
+Every task should include a documentation review step. At minimum, assess whether the following need updates:
+- `README.md` — project overview, roadmap, tech stack
+- `AGENTS.md` — plain-language guide for non-technical maintainers
+- `CLAUDE.md` — this file (architecture, patterns, conventions)
+- `docs/` — any relevant guides or reports (e.g., `adding-a-utility.md`, `live_parser_gap_report.md`)
+Update these files when the task changes architecture, adds major features, changes conventions, or updates test/tariff counts.
