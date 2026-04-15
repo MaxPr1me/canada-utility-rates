@@ -105,8 +105,6 @@
         }
     }
 
-    function buildSourceLookup() {
-
     /**
      * Deduplicate rates: when the same utility+tariff has multiple effective dates
      * (historical snapshots), keep only the most recent one per combination.
