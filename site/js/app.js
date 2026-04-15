@@ -2,10 +2,11 @@
  * Canada Utility Rates — Static Site JavaScript
  *
  * This script powers the GitHub Pages interface. It:
- *   1. Loads JSON data exported by the pipeline (rates.json, summary.json)
+ *   1. Loads JSON data exported by the pipeline
  *   2. Populates filter dropdowns from the data
  *   3. Renders rate cards based on active filters
- *   4. Shows detailed tariff info in a modal when a card is clicked
+ *   4. Shows detailed tariff info in a modal (with enhanced source & confidence)
+ *   5. Provides a Market Pricing tab with heatmap, chart, and methodology
  *
  * No build tools needed — this is plain JS that runs in any modern browser.
  */
@@ -17,6 +18,11 @@
     let allRates = [];
     let summaryData = {};
     let missingData = [];
+    let sourceReviewData = [];
+    let marketPricingON = {};
+    let sourceLookup = {};
+    let marketChart = null;
+    let currentView = "rates";
 
     // Province display names
     const PROVINCE_NAMES = {
@@ -27,22 +33,39 @@
         NT: "Northwest Territories", NU: "Nunavut",
     };
 
+    const MONTH_NAMES = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+
+    const CONFIDENCE_DESC = {
+        high: "Official published rates from a direct utility or regulator source.",
+        medium: "Regulatory or market-variable source; values may change periodically.",
+        low: "Approximate, limited, or indirectly derived data.",
+        unverified: "Data has not yet been independently verified against the primary source.",
+    };
+
     // ── Data loading ──────────────────────────────────────────
 
     async function loadData() {
         try {
-            const [ratesRes, summaryRes, missingRes] = await Promise.allSettled([
+            const [ratesRes, summaryRes, missingRes, sourceRes, marketRes] = await Promise.allSettled([
                 fetch("data/rates.json").then(r => r.ok ? r.json() : []),
                 fetch("data/summary.json").then(r => r.ok ? r.json() : {}),
                 fetch("data/missing.json").then(r => r.ok ? r.json() : []),
+                fetch("data/source_review_report.json").then(r => r.ok ? r.json() : []),
+                fetch("data/market_pricing_ontario.json").then(r => r.ok ? r.json() : {}),
             ]);
 
             allRates = ratesRes.status === "fulfilled" ? ratesRes.value : [];
             summaryData = summaryRes.status === "fulfilled" ? summaryRes.value : {};
             missingData = missingRes.status === "fulfilled" ? missingRes.value : [];
+            sourceReviewData = sourceRes.status === "fulfilled" ? sourceRes.value : [];
+            marketPricingON = marketRes.status === "fulfilled" ? marketRes.value : {};
+
+            sourceLookup = buildSourceLookup();
 
             if (allRates.length === 0) {
-                // No data yet — show sample notice
                 document.getElementById("results-count").textContent =
                     "No rate data loaded yet. Run the scraper and export JSON first.";
                 return;
@@ -56,6 +79,30 @@
             console.error("Failed to load data:", err);
             document.getElementById("results-count").textContent =
                 "Error loading data. Check the browser console for details.";
+        }
+    }
+
+    function buildSourceLookup() {
+        const map = {};
+        sourceReviewData.forEach(entry => {
+            const key = entry.utility_name + "|" + entry.province + "|" + entry.utility_type;
+            map[key] = entry;
+        });
+        return map;
+    }
+
+    // ── View switching ────────────────────────────────────────
+
+    function switchView(viewName) {
+        currentView = viewName;
+        document.querySelectorAll(".view-panel").forEach(el => {
+            el.classList.toggle("hidden", el.id !== "view-" + viewName);
+        });
+        document.querySelectorAll(".nav-tab").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.view === viewName);
+        });
+        if (viewName === "market") {
+            renderMarketPricing();
         }
     }
 
@@ -138,6 +185,8 @@
                 ? `<span class="card-badge badge-gas">Gas</span>`
                 : `<span class="card-badge badge-electricity">Elec</span>`;
 
+            const confDot = `<span class="conf-dot conf-dot-${rate.confidence || 'high'}" title="Confidence: ${capitalize(rate.confidence || 'high')}"></span>`;
+
             const components = (rate.components || []).slice(0, 4);
             const moreCount = (rate.components || []).length - 4;
 
@@ -158,6 +207,7 @@
                     ${fuelBadge}
                 </div>
                 <div class="card-meta">
+                    ${confDot}
                     <span>${escapeHtml(rate.utility_name || "")}</span>
                     <span>${PROVINCE_NAMES[rate.province] || rate.province || ""}</span>
                     <span>${capitalize(rate.customer_class || "")}</span>
@@ -181,6 +231,7 @@
 
         const components = rate.components || [];
 
+        // Component table — show market_reference for market-based components
         const componentTable = components.length > 0 ? `
             <table>
                 <thead>
@@ -196,8 +247,8 @@
                     ${components.map(c => `
                         <tr>
                             <td>${escapeHtml(c.component_type || "")}</td>
-                            <td>${escapeHtml(c.component_name || "")}</td>
-                            <td>${c.charge_value != null ? c.charge_value : "—"}</td>
+                            <td>${escapeHtml(c.component_name || "")}${c.market_reference ? ` <span class="market-ref-badge">Market</span>` : ""}</td>
+                            <td>${c.charge_value != null ? c.charge_value : (c.market_reference ? `<em>Variable</em>` : "\u2014")}</td>
                             <td>${escapeHtml(c.charge_unit || "")}</td>
                             <td>${escapeHtml(formatDetails(c))}</td>
                         </tr>
@@ -206,15 +257,28 @@
             </table>
         ` : "<p>No rate components available.</p>";
 
-        const sourceLink = rate.source_url
-            ? `<a class="source-link" href="${escapeHtml(rate.source_url)}" target="_blank" rel="noopener">${escapeHtml(rate.source_url)}</a>`
-            : "Not available";
+        // Confidence with tooltip
+        const conf = rate.confidence || "high";
+        const confClass = `confidence-${conf}`;
+        const confDesc = CONFIDENCE_DESC[conf] || "";
+        const confHtml = `
+            <span class="confidence-badge ${confClass}" tabindex="0">
+                ${capitalize(conf)} <span class="confidence-info">&#9432;</span>
+            </span>
+            <span class="confidence-tooltip">${escapeHtml(confDesc)}</span>
+        `;
 
-        const confClass = `confidence-${rate.confidence || "high"}`;
+        // Source section — primary + backup from source review
+        const reviewKey = (rate.utility_name || "") + "|" + (rate.province || "") + "|" + (rate.utility_type || "");
+        const review = sourceLookup[reviewKey];
+        const sourceHtml = buildSourceSection(rate.source_url, review);
+
+        // Market callout
+        const marketCallout = buildMarketCallout(components);
 
         content.innerHTML = `
             <h2>${escapeHtml(rate.name || rate.tariff_name || "Tariff Details")}</h2>
-            <p class="modal-subtitle">${escapeHtml(rate.utility_name || "")} — ${PROVINCE_NAMES[rate.province] || rate.province || ""}</p>
+            <p class="modal-subtitle">${escapeHtml(rate.utility_name || "")} \u2014 ${PROVINCE_NAMES[rate.province] || rate.province || ""}</p>
 
             <div class="meta-grid">
                 <span class="meta-label">Fuel Type</span>
@@ -227,26 +291,113 @@
                 <span>${capitalize(rate.rate_structure || "")}</span>
 
                 <span class="meta-label">Tariff Code</span>
-                <span>${escapeHtml(rate.tariff_code || "—")}</span>
+                <span>${escapeHtml(rate.tariff_code || "\u2014")}</span>
 
                 <span class="meta-label">Effective Date</span>
                 <span>${escapeHtml(rate.effective_date || "Unknown")}</span>
 
                 <span class="meta-label">Confidence</span>
-                <span class="${confClass}">${capitalize(rate.confidence || "high")}</span>
-
-                <span class="meta-label">Source</span>
-                <span>${sourceLink}</span>
+                <span class="confidence-cell">${confHtml}</span>
             </div>
+
+            ${sourceHtml}
 
             ${rate.eligibility ? `<p><strong>Eligibility:</strong> ${escapeHtml(rate.eligibility)}</p>` : ""}
             ${rate.notes ? `<p><strong>Notes:</strong> ${escapeHtml(rate.notes)}</p>` : ""}
 
             <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Charge Components</h3>
             ${componentTable}
+            ${marketCallout}
         `;
 
+        // Attach market link click handler
+        const marketLink = content.querySelector(".btn-market-link");
+        if (marketLink) {
+            marketLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                hideModal();
+                switchView("market");
+            });
+        }
+
         overlay.classList.remove("hidden");
+    }
+
+    function buildSourceSection(sourceUrl, review) {
+        const items = [];
+
+        if (sourceUrl) {
+            items.push(`
+                <div class="source-item">
+                    <span class="source-label">Data Source</span>
+                    <a class="source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener">${truncateUrl(sourceUrl)}</a>
+                </div>
+            `);
+        }
+
+        if (review && review.backup_url && review.backup_url !== sourceUrl) {
+            items.push(`
+                <div class="source-item">
+                    <span class="source-label">Utility Website</span>
+                    <a class="source-link" href="${escapeHtml(review.backup_url)}" target="_blank" rel="noopener">${truncateUrl(review.backup_url)}</a>
+                </div>
+            `);
+        }
+
+        if (items.length === 0) {
+            items.push(`<div class="source-item"><span class="source-label">Source</span><span>Not available</span></div>`);
+        }
+
+        return `<div class="source-section">${items.join("")}</div>`;
+    }
+
+    function buildMarketCallout(components) {
+        const marketRefs = components
+            .filter(c => c.market_reference)
+            .map(c => c.market_reference);
+
+        if (marketRefs.length === 0) return "";
+
+        const unique = [...new Set(marketRefs)];
+        const parts = [];
+
+        const hasIESO = unique.some(r => r.includes("IESO"));
+        const hasAESO = unique.some(r => r.includes("AESO"));
+        const hasGas = unique.some(r => /portfolio|gas supply/i.test(r));
+
+        if (hasIESO) {
+            parts.push(`
+                <div class="callout-item">
+                    <strong>Ontario Electricity Market Pricing:</strong>
+                    The energy component for this rate class is based on the IESO Hourly Ontario Energy Price (HOEP) plus Global Adjustment (GA).
+                    Actual costs vary by hour and month.
+                    <a href="#" class="btn-market-link" data-market="ontario">View Ontario Electricity Energy Price Bins &rarr;</a>
+                </div>
+            `);
+        }
+
+        if (hasAESO) {
+            parts.push(`
+                <div class="callout-item">
+                    <strong>Alberta Electricity Market Pricing:</strong>
+                    The energy component is based on the AESO pool price, passed through via the Regulated Rate Option (RRO).
+                    Actual costs vary hourly based on wholesale market conditions.
+                </div>
+            `);
+        }
+
+        if (hasGas) {
+            const gasRefs = unique.filter(r => /portfolio|gas supply/i.test(r));
+            parts.push(`
+                <div class="callout-item">
+                    <strong>Gas Commodity Pricing:</strong>
+                    The commodity/supply component references: ${gasRefs.map(r => `<em>${escapeHtml(r)}</em>`).join(", ")}.
+                    Rates are adjusted periodically based on wholesale gas market conditions.
+                </div>
+            `);
+        }
+
+        return `<div class="market-callout"><div class="callout-header">&#9889; Market-Based Pricing</div>${parts.join("")}</div>`;
     }
 
     function hideModal() {
@@ -268,6 +419,274 @@
         section.classList.remove("hidden");
     }
 
+    // ── Market Pricing View ───────────────────────────────────
+
+    function renderMarketPricing() {
+        if (!marketPricingON.hourly_surface) return;
+        renderMarketHeatmap();
+        renderMarketChart();
+        renderMarketTable();
+        renderMarketMethodology();
+    }
+
+    function getMarketControls() {
+        return {
+            dayType: document.getElementById("market-day-type").value,
+            field: document.getElementById("market-display").value,
+        };
+    }
+
+    function getFilteredSurface(dayType) {
+        return (marketPricingON.hourly_surface || []).filter(b => b.day_type === dayType);
+    }
+
+    // ── Heatmap ───────────────────────────────────────────────
+
+    function renderMarketHeatmap() {
+        const container = document.getElementById("heatmap-container");
+        const { dayType, field } = getMarketControls();
+        const bins = getFilteredSurface(dayType);
+
+        if (bins.length === 0) {
+            container.innerHTML = "<p>No data available for this selection.</p>";
+            return;
+        }
+
+        // Get value range for color normalization
+        const values = bins.map(b => b[field]);
+        const minVal = Math.min(...values);
+        const maxVal = Math.max(...values);
+
+        // Build grid: rows = months (1-12), cols = hours (0-23)
+        let html = '<div class="heatmap-grid">';
+
+        // Header row with hour labels
+        html += '<div class="heatmap-corner"></div>';
+        for (let h = 0; h < 24; h++) {
+            html += `<div class="heatmap-hour-label">${h}</div>`;
+        }
+
+        for (let m = 1; m <= 12; m++) {
+            html += `<div class="heatmap-month-label">${MONTH_NAMES[m - 1]}</div>`;
+            for (let h = 0; h < 24; h++) {
+                const bin = bins.find(b => b.month === m && b.hour === h);
+                const val = bin ? bin[field] : 0;
+                const pct = maxVal > minVal ? (val - minVal) / (maxVal - minVal) : 0.5;
+                const color = heatmapColor(pct);
+                const cents = (val * 100).toFixed(2);
+                html += `<div class="heatmap-cell" style="background:${color}" title="${MONTH_NAMES[m - 1]} ${String(h).padStart(2, '0')}:00 — ${cents} \u00a2/kWh"></div>`;
+            }
+        }
+
+        html += '</div>';
+
+        // Legend
+        const minCents = (minVal * 100).toFixed(2);
+        const maxCents = (maxVal * 100).toFixed(2);
+        html += `
+            <div class="heatmap-legend">
+                <span>${minCents}\u00a2</span>
+                <div class="heatmap-legend-bar"></div>
+                <span>${maxCents}\u00a2</span>
+                <span class="legend-unit">/kWh</span>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    function heatmapColor(pct) {
+        // Blue (low) -> Yellow (mid) -> Red (high)
+        let r, g, b;
+        if (pct < 0.5) {
+            const t = pct * 2;
+            r = Math.round(30 + t * 225);
+            g = Math.round(100 + t * 155);
+            b = Math.round(200 - t * 160);
+        } else {
+            const t = (pct - 0.5) * 2;
+            r = Math.round(255);
+            g = Math.round(255 - t * 200);
+            b = Math.round(40 - t * 40);
+        }
+        return `rgb(${r},${g},${b})`;
+    }
+
+    // ── Line Chart ────────────────────────────────────────────
+
+    function renderMarketChart() {
+        const canvas = document.getElementById("market-chart-canvas");
+        if (typeof Chart === "undefined") {
+            canvas.parentElement.innerHTML = "<p>Chart.js failed to load. Heatmap and table are still available above.</p>";
+            return;
+        }
+
+        const { dayType, field } = getMarketControls();
+        const bins = getFilteredSurface(dayType);
+
+        if (marketChart) {
+            marketChart.destroy();
+            marketChart = null;
+        }
+
+        // 12 datasets, one per month
+        const colors = [
+            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b",
+            "#e377c2", "#7f7f7f", "#bcbd22", "#17becf", "#aec7e8", "#ffbb78",
+        ];
+
+        const datasets = [];
+        for (let m = 1; m <= 12; m++) {
+            const monthBins = bins.filter(b => b.month === m).sort((a, b) => a.hour - b.hour);
+            datasets.push({
+                label: MONTH_NAMES[m - 1],
+                data: monthBins.map(b => +(b[field] * 100).toFixed(2)),
+                borderColor: colors[m - 1],
+                backgroundColor: colors[m - 1] + "33",
+                borderWidth: 1.5,
+                pointRadius: 2,
+                tension: 0.3,
+            });
+        }
+
+        const fieldLabels = {
+            combined_energy_component: "Combined Energy (HOEP + GA)",
+            avg_hoep: "Hourly Ontario Energy Price (HOEP)",
+            avg_ga: "Global Adjustment (GA)",
+        };
+
+        marketChart = new Chart(canvas, {
+            type: "line",
+            data: {
+                labels: Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, "0")}:00`),
+                datasets: datasets,
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} \u00a2/kWh`,
+                        },
+                    },
+                },
+                scales: {
+                    x: { title: { display: true, text: "Hour of Day" } },
+                    y: { title: { display: true, text: "\u00a2/kWh" }, beginAtZero: false },
+                },
+            },
+        });
+    }
+
+    // ── Summary Table ─────────────────────────────────────────
+
+    function renderMarketTable() {
+        const container = document.getElementById("market-table-container");
+        const { dayType } = getMarketControls();
+        const bins = getFilteredSurface(dayType);
+
+        if (bins.length === 0) {
+            container.innerHTML = "<p>No data available.</p>";
+            return;
+        }
+
+        let html = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Avg HOEP</th>
+                        <th>Avg GA</th>
+                        <th>Combined</th>
+                        <th>Peak Hour</th>
+                        <th>Off-Peak Hour</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        for (let m = 1; m <= 12; m++) {
+            const monthBins = bins.filter(b => b.month === m);
+            if (monthBins.length === 0) continue;
+
+            const avgHoep = monthBins.reduce((s, b) => s + b.avg_hoep, 0) / monthBins.length;
+            const avgGa = monthBins.reduce((s, b) => s + b.avg_ga, 0) / monthBins.length;
+            const avgCombined = monthBins.reduce((s, b) => s + b.combined_energy_component, 0) / monthBins.length;
+
+            let peakBin = monthBins[0], offPeakBin = monthBins[0];
+            monthBins.forEach(b => {
+                if (b.combined_energy_component > peakBin.combined_energy_component) peakBin = b;
+                if (b.combined_energy_component < offPeakBin.combined_energy_component) offPeakBin = b;
+            });
+
+            html += `
+                <tr>
+                    <td>${MONTH_NAMES[m - 1]}</td>
+                    <td>${(avgHoep * 100).toFixed(2)}\u00a2</td>
+                    <td>${(avgGa * 100).toFixed(2)}\u00a2</td>
+                    <td><strong>${(avgCombined * 100).toFixed(2)}\u00a2</strong></td>
+                    <td>${String(peakBin.hour).padStart(2, "0")}:00 (${(peakBin.combined_energy_component * 100).toFixed(2)}\u00a2)</td>
+                    <td>${String(offPeakBin.hour).padStart(2, "0")}:00 (${(offPeakBin.combined_energy_component * 100).toFixed(2)}\u00a2)</td>
+                </tr>
+            `;
+        }
+
+        html += "</tbody></table>";
+        container.innerHTML = html;
+    }
+
+    // ── Methodology ───────────────────────────────────────────
+
+    function renderMarketMethodology() {
+        const container = document.getElementById("methodology-container");
+        const meta = marketPricingON.metadata;
+
+        if (!meta) {
+            container.innerHTML = "<p>Methodology information not available.</p>";
+            return;
+        }
+
+        const sourcesList = (meta.sources || []).map(s => {
+            const link = s.url ? `<a class="source-link" href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.name)}</a>` : escapeHtml(s.name);
+            return `<li>${link}: ${escapeHtml(s.description || "")}</li>`;
+        }).join("");
+
+        container.innerHTML = `
+            <div class="methodology-grid">
+                <span class="meta-label">Market Operator</span>
+                <span>${escapeHtml(meta.market_operator || "")}</span>
+
+                <span class="meta-label">Province</span>
+                <span>${PROVINCE_NAMES[meta.province] || meta.province || ""}</span>
+
+                <span class="meta-label">Historical Window</span>
+                <span>${meta.history_window_years || ""} years (${escapeHtml(meta.history_period || "")})</span>
+
+                <span class="meta-label">Derivation Method</span>
+                <span>${escapeHtml((meta.derivation_method || "").replace(/_/g, " "))}</span>
+
+                <span class="meta-label">Binning</span>
+                <span>Month (1\u201312) &times; Day Type (weekday/weekend) &times; Hour (0\u201323) = 576 bins</span>
+
+                <span class="meta-label">GA Allocation</span>
+                <span>${escapeHtml(meta.ga_allocation_method || "Uniform per-kWh allocation")}</span>
+            </div>
+
+            <h4 style="margin-top: 1rem;">Data Sources</h4>
+            <ul class="methodology-sources">${sourcesList}</ul>
+
+            ${meta.notes ? `<p class="methodology-notes">${escapeHtml(meta.notes)}</p>` : ""}
+
+            <p class="methodology-summary">
+                Based on ${meta.history_window_years || "5"} years of official IESO market data, binned by month,
+                weekday/weekend, and hour of day. Combined energy = HOEP + Global Adjustment.
+                Values represent historical averages and may not reflect current or future prices.
+            </p>
+        `;
+    }
+
     // ── Helpers ───────────────────────────────────────────────
 
     function escapeHtml(text) {
@@ -283,10 +702,12 @@
     }
 
     function formatCharge(comp) {
-        if (comp.charge_value == null) return "—";
+        if (comp.charge_value == null) {
+            if (comp.market_reference) return "Variable";
+            return "\u2014";
+        }
         const val = comp.charge_value;
         const unit = comp.charge_unit || "";
-        // Format to reasonable precision
         if (Math.abs(val) < 1) {
             return `$${val.toFixed(4)} ${unit}`.trim();
         }
@@ -301,11 +722,24 @@
         if (comp.tou_hours) parts.push(comp.tou_hours);
         if (comp.season) parts.push(comp.season);
         if (comp.demand_threshold_kw) parts.push(`>${comp.demand_threshold_kw} kW`);
+        if (comp.market_reference) parts.push(comp.market_reference);
         return parts.join(" | ");
+    }
+
+    function truncateUrl(url) {
+        try {
+            const u = new URL(url);
+            const host = u.hostname.replace(/^www\./, "");
+            const path = u.pathname.length > 30 ? u.pathname.substring(0, 28) + "\u2026" : u.pathname;
+            return host + (path && path !== "/" ? path : "");
+        } catch {
+            return url;
+        }
     }
 
     // ── Event listeners ───────────────────────────────────────
 
+    // Rate browser filters
     document.getElementById("filter-province").addEventListener("change", renderRates);
     document.getElementById("filter-utility").addEventListener("change", renderRates);
     document.getElementById("filter-fuel").addEventListener("change", renderRates);
@@ -321,6 +755,7 @@
         renderRates();
     });
 
+    // Modal
     document.getElementById("modal-close").addEventListener("click", hideModal);
     document.getElementById("modal-overlay").addEventListener("click", (e) => {
         if (e.target === e.currentTarget) hideModal();
@@ -328,6 +763,15 @@
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") hideModal();
     });
+
+    // Navigation tabs
+    document.querySelectorAll(".nav-tab").forEach(btn => {
+        btn.addEventListener("click", () => switchView(btn.dataset.view));
+    });
+
+    // Market pricing controls
+    document.getElementById("market-day-type").addEventListener("change", renderMarketPricing);
+    document.getElementById("market-display").addEventListener("change", renderMarketPricing);
 
     // ── Initialize ────────────────────────────────────────────
     loadData();

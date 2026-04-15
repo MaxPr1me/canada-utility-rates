@@ -10,100 +10,166 @@
     <header>
         <h1>Canada Utility Rates</h1>
         <p class="subtitle">Browse electricity and natural gas rates across Canada</p>
+        <nav class="main-nav" id="main-nav">
+            <button class="nav-tab active" data-view="rates">Rate Browser</button>
+            <button class="nav-tab" data-view="market">Market Pricing</button>
+        </nav>
     </header>
 
     <main>
-        <!-- Summary stats -->
-        <section id="summary" class="summary-bar">
-            <div class="stat">
-                <span class="stat-value" id="stat-utilities">—</span>
-                <span class="stat-label">Utilities</span>
-            </div>
-            <div class="stat">
-                <span class="stat-value" id="stat-tariffs">—</span>
-                <span class="stat-label">Tariffs</span>
-            </div>
-            <div class="stat">
-                <span class="stat-value" id="stat-provinces">—</span>
-                <span class="stat-label">Provinces</span>
-            </div>
-            <div class="stat">
-                <span class="stat-value" id="stat-updated">—</span>
-                <span class="stat-label">Last Updated</span>
-            </div>
-        </section>
+        <!-- ── Rate Browser View ──────────────────────────────── -->
+        <div id="view-rates" class="view-panel">
 
-        <!-- Filters -->
-        <section id="filters" class="filters">
-            <div class="filter-group">
-                <label for="filter-province">Province</label>
-                <select id="filter-province">
-                    <option value="">All Provinces</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="filter-utility">Utility</label>
-                <select id="filter-utility">
-                    <option value="">All Utilities</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="filter-fuel">Fuel Type</label>
-                <select id="filter-fuel">
-                    <option value="">All Types</option>
-                    <option value="electricity">Electricity</option>
-                    <option value="gas">Natural Gas</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="filter-class">Customer Class</label>
-                <select id="filter-class">
-                    <option value="">All Classes</option>
-                    <option value="residential">Residential</option>
-                    <option value="commercial">Commercial</option>
-                    <option value="industrial">Industrial</option>
-                    <option value="general_service">General Service</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="filter-structure">Rate Structure</label>
-                <select id="filter-structure">
-                    <option value="">All Structures</option>
-                    <option value="flat">Flat</option>
-                    <option value="tiered">Tiered</option>
-                    <option value="tou">Time-of-Use</option>
-                    <option value="demand">Demand-based</option>
-                    <option value="market">Market-indexed</option>
-                    <option value="mixed">Mixed</option>
-                </select>
-            </div>
-            <button id="btn-clear-filters" class="btn-secondary">Clear Filters</button>
-        </section>
+            <!-- Summary stats -->
+            <section id="summary" class="summary-bar">
+                <div class="stat">
+                    <span class="stat-value" id="stat-utilities">&mdash;</span>
+                    <span class="stat-label">Utilities</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="stat-tariffs">&mdash;</span>
+                    <span class="stat-label">Tariffs</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="stat-provinces">&mdash;</span>
+                    <span class="stat-label">Provinces</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="stat-updated">&mdash;</span>
+                    <span class="stat-label">Last Updated</span>
+                </div>
+            </section>
 
-        <!-- Results count -->
-        <section class="results-info">
-            <span id="results-count">Loading…</span>
-        </section>
+            <!-- Filters -->
+            <section id="filters" class="filters">
+                <div class="filter-group">
+                    <label for="filter-province">Province</label>
+                    <select id="filter-province">
+                        <option value="">All Provinces</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-utility">Utility</label>
+                    <select id="filter-utility">
+                        <option value="">All Utilities</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-fuel">Fuel Type</label>
+                    <select id="filter-fuel">
+                        <option value="">All Types</option>
+                        <option value="electricity">Electricity</option>
+                        <option value="gas">Natural Gas</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-class">Customer Class</label>
+                    <select id="filter-class">
+                        <option value="">All Classes</option>
+                        <option value="residential">Residential</option>
+                        <option value="commercial">Commercial</option>
+                        <option value="industrial">Industrial</option>
+                        <option value="general_service">General Service</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-structure">Rate Structure</label>
+                    <select id="filter-structure">
+                        <option value="">All Structures</option>
+                        <option value="flat">Flat</option>
+                        <option value="tiered">Tiered</option>
+                        <option value="tou">Time-of-Use</option>
+                        <option value="demand">Demand-based</option>
+                        <option value="market">Market-indexed</option>
+                        <option value="mixed">Mixed</option>
+                    </select>
+                </div>
+                <button id="btn-clear-filters" class="btn-secondary">Clear Filters</button>
+            </section>
 
-        <!-- Rate cards -->
-        <section id="rates-container" class="rates-container">
-            <!-- Cards are injected by JS -->
-        </section>
+            <!-- Results count -->
+            <section class="results-info">
+                <span id="results-count">Loading&hellip;</span>
+            </section>
 
-        <!-- Rate detail modal -->
+            <!-- Rate cards -->
+            <section id="rates-container" class="rates-container">
+                <!-- Cards are injected by JS -->
+            </section>
+
+            <!-- Missing data notice -->
+            <section id="missing-notice" class="missing-notice hidden">
+                <h3>Data Gaps</h3>
+                <p>Some utilities or rate classes are not yet fully covered.</p>
+                <ul id="missing-list"></ul>
+            </section>
+
+        </div><!-- /view-rates -->
+
+        <!-- ── Market Pricing View ────────────────────────────── -->
+        <div id="view-market" class="view-panel hidden">
+
+            <section class="market-header">
+                <h2>Electricity Market Pricing</h2>
+                <p>Historical hourly energy price bins for market-based rate classes.</p>
+            </section>
+
+            <section class="market-controls">
+                <div class="filter-group">
+                    <label for="market-region">Region</label>
+                    <select id="market-region">
+                        <option value="ontario">Ontario (IESO)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="market-day-type">Day Type</label>
+                    <select id="market-day-type">
+                        <option value="weekday">Weekday</option>
+                        <option value="weekend">Weekend</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="market-display">Display</label>
+                    <select id="market-display">
+                        <option value="combined_energy_component">Combined (HOEP + GA)</option>
+                        <option value="avg_hoep">HOEP Only</option>
+                        <option value="avg_ga">Global Adjustment Only</option>
+                    </select>
+                </div>
+            </section>
+
+            <section id="market-heatmap" class="market-section">
+                <h3>Hourly Price Heatmap</h3>
+                <p class="section-desc">Rows = months, columns = hours of day. Hover for values.</p>
+                <div id="heatmap-container"></div>
+            </section>
+
+            <section id="market-chart" class="market-section">
+                <h3>Hourly Price Curves by Month</h3>
+                <div class="market-chart-container">
+                    <canvas id="market-chart-canvas"></canvas>
+                </div>
+            </section>
+
+            <section id="market-table" class="market-section">
+                <h3>Monthly Summary</h3>
+                <div id="market-table-container"></div>
+            </section>
+
+            <section id="market-methodology" class="market-section">
+                <h3>Methodology &amp; Sources</h3>
+                <div id="methodology-container"></div>
+            </section>
+
+        </div><!-- /view-market -->
+
+        <!-- Rate detail modal (shared, outside both views) -->
         <div id="modal-overlay" class="modal-overlay hidden">
             <div class="modal">
                 <button id="modal-close" class="modal-close">&times;</button>
                 <div id="modal-content"></div>
             </div>
         </div>
-
-        <!-- Missing data notice -->
-        <section id="missing-notice" class="missing-notice hidden">
-            <h3>Data Gaps</h3>
-            <p>Some utilities or rate classes are not yet fully covered.</p>
-            <ul id="missing-list"></ul>
-        </section>
     </main>
 
     <footer>
@@ -118,6 +184,7 @@
         </p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
