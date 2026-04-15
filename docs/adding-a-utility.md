@@ -160,3 +160,34 @@ the data looks correct.
 - **Include source URLs** — link to the exact page or PDF for each value
 - **Set confidence** — use "high" for values you've manually verified
 - **Add notes** — explain anything unusual about the rate structure
+
+## Using parsing helpers for live scraping
+
+The project provides helpers in `scrapers/utils/parsing.py` for implementing live HTML parsers:
+
+- **`find_text_near_label(soup, label_text, search_radius=3)`** — finds numeric text near a labeled element (useful for label/value pairs in divs)
+- **`extract_rate_from_text(text)`** — regex extraction of rate values from free-form text (`$X.XXXX/kWh`, `X.XX cents/kWh`, `$XX.XX/month`, `$X.XXXX/GJ`)
+- **`detect_js_rendered(html)`** — detects JS-rendered pages where BeautifulSoup can't extract content
+- **`find_pdf_links(soup, keywords=None)`** — extracts PDF `<a>` hrefs, optionally filtered by keywords like "tariff" or "rate"
+
+## Change detection
+
+When implementing a live parser, use `scrapers/utils/change_detection.py` to validate live-parsed data against seed values before accepting it:
+
+```python
+from scrapers.utils.change_detection import compare_to_seed, has_critical_alerts, log_change_alerts
+
+alerts = compare_to_seed(live_records, self._seed_data())
+log_change_alerts(alerts)
+
+if has_critical_alerts(alerts):
+    self.logger.warning("Critical drift detected — rejecting live data, falling back to seed")
+    return None
+
+return live_records
+```
+
+This prevents broken parsers from silently corrupting data. Changes are classified by severity:
+- **info** (<5%): normal rate adjustments
+- **warning** (5-30%): notable changes worth reviewing
+- **critical** (>30%): likely a parsing error — live data is rejected

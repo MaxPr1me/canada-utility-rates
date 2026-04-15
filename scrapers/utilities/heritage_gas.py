@@ -6,7 +6,7 @@ Nova Scotia, including the Halifax Regional Municipality, Amherst,
 and other communities.
 
 Official source:
-  https://www.heritagegas.com/rates/
+  https://eastwardenergy.com/for-home/rates/
 
 Nova Scotia gas rates are regulated by the Nova Scotia Utility and
 Review Board (NSUARB).  Heritage Gas uses GJ as the primary billing unit.
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Seed data — limited public rate information available.
 SEED_RESIDENTIAL = {
     "effective_date": "2024-10-01",
-    "source_url": "https://www.heritagegas.com/rates/",
+    "source_url": "https://eastwardenergy.com/for-home/rates/",
     "basic_charge_monthly": 20.00,              # $/month
     "delivery_rate": 10.50,                     # $/GJ — delivery/distribution
     "commodity_rate": 8.00,                     # $/GJ — gas supply (varies with market)

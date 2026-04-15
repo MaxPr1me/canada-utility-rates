@@ -24,6 +24,15 @@
     let marketChart = null;
     let currentView = "rates";
 
+    // Multi-select filter state: each key holds a Set of selected values
+    const filterState = {
+        province: new Set(),
+        utility: new Set(),
+        fuel: new Set(),
+        class: new Set(),
+        structure: new Set(),
+    };
+
     // Province display names
     const PROVINCE_NAMES = {
         BC: "British Columbia", AB: "Alberta", SK: "Saskatchewan",
@@ -72,6 +81,7 @@
             }
 
             populateFilters();
+            initMultiSelects();
             updateSummary();
             renderRates();
             showMissingNotice();
@@ -127,39 +137,136 @@
     function populateFilters() {
         const provinces = [...new Set(allRates.map(r => r.province))].sort();
         const utilities = [...new Set(allRates.map(r => r.utility_name))].sort();
+        const fuelTypes = [...new Set(allRates.map(r => r.utility_type))].sort();
+        const custClasses = [...new Set(allRates.map(r => r.customer_class))].sort();
+        const structures = [...new Set(allRates.map(r => r.rate_structure))].sort();
 
-        const provSelect = document.getElementById("filter-province");
-        provinces.forEach(p => {
-            const opt = document.createElement("option");
-            opt.value = p;
-            opt.textContent = PROVINCE_NAMES[p] || p;
-            provSelect.appendChild(opt);
+        fillMultiSelect("filter-province", provinces.map(p => ({ value: p, label: PROVINCE_NAMES[p] || p })));
+        fillMultiSelect("filter-utility", utilities.map(u => ({ value: u, label: u })));
+        fillMultiSelect("filter-fuel", fuelTypes.map(f => ({ value: f, label: capitalize(f) })));
+        fillMultiSelect("filter-class", custClasses.map(c => ({ value: c, label: capitalize(c) })));
+        fillMultiSelect("filter-structure", structures.map(s => ({ value: s, label: capitalize(s) })));
+    }
+
+    function fillMultiSelect(containerId, items) {
+        const container = document.getElementById(containerId);
+        const optionsDiv = container.querySelector(".ms-options");
+        optionsDiv.innerHTML = items.map(item => `
+            <label class="ms-option">
+                <input type="checkbox" value="${escapeHtml(item.value)}">
+                <span>${escapeHtml(item.label)}</span>
+            </label>
+        `).join("");
+    }
+
+    // ── Multi-select UI management ────────────────────────────
+
+    function initMultiSelects() {
+        document.querySelectorAll(".multi-select").forEach(ms => {
+            const btn = ms.querySelector(".multi-select-btn");
+            const dropdown = ms.querySelector(".multi-select-dropdown");
+            const filterKey = ms.dataset.filter;
+            const searchInput = ms.querySelector(".ms-search-input");
+
+            // Toggle dropdown
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                // Close all other dropdowns first
+                document.querySelectorAll(".multi-select-dropdown").forEach(d => {
+                    if (d !== dropdown) d.classList.add("hidden");
+                });
+                dropdown.classList.toggle("hidden");
+                if (!dropdown.classList.contains("hidden") && searchInput) {
+                    searchInput.focus();
+                }
+            });
+
+            // Search filtering
+            if (searchInput) {
+                searchInput.addEventListener("input", () => {
+                    const query = searchInput.value.toLowerCase();
+                    ms.querySelectorAll(".ms-option").forEach(opt => {
+                        const text = opt.textContent.toLowerCase();
+                        opt.style.display = text.includes(query) ? "" : "none";
+                    });
+                });
+            }
+
+            // Check/uncheck handlers
+            ms.addEventListener("change", (e) => {
+                if (e.target.type !== "checkbox") return;
+                const val = e.target.value;
+                if (e.target.checked) {
+                    filterState[filterKey].add(val);
+                } else {
+                    filterState[filterKey].delete(val);
+                }
+                updateMultiSelectLabel(ms, filterKey);
+                renderRates();
+            });
         });
 
-        const utilSelect = document.getElementById("filter-utility");
-        utilities.forEach(u => {
-            const opt = document.createElement("option");
-            opt.value = u;
-            opt.textContent = u;
-            utilSelect.appendChild(opt);
+        // Close dropdowns when clicking elsewhere
+        document.addEventListener("click", () => {
+            document.querySelectorAll(".multi-select-dropdown").forEach(d => {
+                d.classList.add("hidden");
+            });
         });
+
+        // Stop clicks inside dropdowns from closing them
+        document.querySelectorAll(".multi-select-dropdown").forEach(d => {
+            d.addEventListener("click", (e) => e.stopPropagation());
+        });
+    }
+
+    function updateMultiSelectLabel(ms, filterKey) {
+        const btn = ms.querySelector(".multi-select-btn");
+        const selected = filterState[filterKey];
+        const allLabels = {
+            province: "All Provinces",
+            utility: "All Utilities",
+            fuel: "All Types",
+            class: "All Classes",
+            structure: "All Structures",
+        };
+        if (selected.size === 0) {
+            btn.textContent = allLabels[filterKey] || "All";
+            btn.classList.remove("has-selection");
+        } else if (selected.size === 1) {
+            const val = [...selected][0];
+            const label = filterKey === "province" ? (PROVINCE_NAMES[val] || val) : capitalize(val);
+            btn.textContent = label;
+            btn.classList.add("has-selection");
+        } else {
+            btn.textContent = `${selected.size} selected`;
+            btn.classList.add("has-selection");
+        }
+    }
+
+    function clearAllFilters() {
+        Object.keys(filterState).forEach(key => filterState[key].clear());
+        document.querySelectorAll(".multi-select").forEach(ms => {
+            ms.querySelectorAll("input[type=checkbox]").forEach(cb => { cb.checked = false; });
+            const filterKey = ms.dataset.filter;
+            updateMultiSelectLabel(ms, filterKey);
+            const searchInput = ms.querySelector(".ms-search-input");
+            if (searchInput) {
+                searchInput.value = "";
+                ms.querySelectorAll(".ms-option").forEach(opt => { opt.style.display = ""; });
+            }
+        });
+        renderRates();
     }
 
     // ── Filtering ─────────────────────────────────────────────
 
     function getFilteredRates() {
-        const province = document.getElementById("filter-province").value;
-        const utility = document.getElementById("filter-utility").value;
-        const fuel = document.getElementById("filter-fuel").value;
-        const custClass = document.getElementById("filter-class").value;
-        const structure = document.getElementById("filter-structure").value;
-
         return allRates.filter(r => {
-            if (province && r.province !== province) return false;
-            if (utility && r.utility_name !== utility) return false;
-            if (fuel && r.utility_type !== fuel) return false;
-            if (custClass && r.customer_class !== custClass) return false;
-            if (structure && r.rate_structure !== structure) return false;
+            if (filterState.province.size > 0 && !filterState.province.has(r.province)) return false;
+            if (filterState.utility.size > 0 && !filterState.utility.has(r.utility_name)) return false;
+            if (filterState.fuel.size > 0 && !filterState.fuel.has(r.utility_type)) return false;
+            if (filterState.class.size > 0 && !filterState.class.has(r.customer_class)) return false;
+            if (filterState.structure.size > 0 && !filterState.structure.has(r.rate_structure)) return false;
             return true;
         });
     }
@@ -739,21 +846,8 @@
 
     // ── Event listeners ───────────────────────────────────────
 
-    // Rate browser filters
-    document.getElementById("filter-province").addEventListener("change", renderRates);
-    document.getElementById("filter-utility").addEventListener("change", renderRates);
-    document.getElementById("filter-fuel").addEventListener("change", renderRates);
-    document.getElementById("filter-class").addEventListener("change", renderRates);
-    document.getElementById("filter-structure").addEventListener("change", renderRates);
-
-    document.getElementById("btn-clear-filters").addEventListener("click", () => {
-        document.getElementById("filter-province").value = "";
-        document.getElementById("filter-utility").value = "";
-        document.getElementById("filter-fuel").value = "";
-        document.getElementById("filter-class").value = "";
-        document.getElementById("filter-structure").value = "";
-        renderRates();
-    });
+    // Clear filters button
+    document.getElementById("btn-clear-filters").addEventListener("click", clearAllFilters);
 
     // Modal
     document.getElementById("modal-close").addEventListener("click", hideModal);

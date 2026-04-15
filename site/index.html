@@ -43,46 +43,51 @@
             <!-- Filters -->
             <section id="filters" class="filters">
                 <div class="filter-group">
-                    <label for="filter-province">Province</label>
-                    <select id="filter-province">
-                        <option value="">All Provinces</option>
-                    </select>
+                    <label>Province</label>
+                    <div class="multi-select" id="filter-province" data-filter="province">
+                        <button class="multi-select-btn" type="button">All Provinces</button>
+                        <div class="multi-select-dropdown hidden">
+                            <div class="ms-search"><input type="text" placeholder="Search..." class="ms-search-input"></div>
+                            <div class="ms-options"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="filter-group">
-                    <label for="filter-utility">Utility</label>
-                    <select id="filter-utility">
-                        <option value="">All Utilities</option>
-                    </select>
+                    <label>Utility</label>
+                    <div class="multi-select" id="filter-utility" data-filter="utility">
+                        <button class="multi-select-btn" type="button">All Utilities</button>
+                        <div class="multi-select-dropdown hidden">
+                            <div class="ms-search"><input type="text" placeholder="Search..." class="ms-search-input"></div>
+                            <div class="ms-options"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="filter-group">
-                    <label for="filter-fuel">Fuel Type</label>
-                    <select id="filter-fuel">
-                        <option value="">All Types</option>
-                        <option value="electricity">Electricity</option>
-                        <option value="gas">Natural Gas</option>
-                    </select>
+                    <label>Fuel Type</label>
+                    <div class="multi-select" id="filter-fuel" data-filter="fuel">
+                        <button class="multi-select-btn" type="button">All Types</button>
+                        <div class="multi-select-dropdown hidden">
+                            <div class="ms-options"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="filter-group">
-                    <label for="filter-class">Customer Class</label>
-                    <select id="filter-class">
-                        <option value="">All Classes</option>
-                        <option value="residential">Residential</option>
-                        <option value="commercial">Commercial</option>
-                        <option value="industrial">Industrial</option>
-                        <option value="general_service">General Service</option>
-                    </select>
+                    <label>Customer Class</label>
+                    <div class="multi-select" id="filter-class" data-filter="class">
+                        <button class="multi-select-btn" type="button">All Classes</button>
+                        <div class="multi-select-dropdown hidden">
+                            <div class="ms-options"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="filter-group">
-                    <label for="filter-structure">Rate Structure</label>
-                    <select id="filter-structure">
-                        <option value="">All Structures</option>
-                        <option value="flat">Flat</option>
-                        <option value="tiered">Tiered</option>
-                        <option value="tou">Time-of-Use</option>
-                        <option value="demand">Demand-based</option>
-                        <option value="market">Market-indexed</option>
-                        <option value="mixed">Mixed</option>
-                    </select>
+                    <label>Rate Structure</label>
+                    <div class="multi-select" id="filter-structure" data-filter="structure">
+                        <button class="multi-select-btn" type="button">All Structures</button>
+                        <div class="multi-select-dropdown hidden">
+                            <div class="ms-options"></div>
+                        </div>
+                    </div>
                 </div>
                 <button id="btn-clear-filters" class="btn-secondary">Clear Filters</button>
             </section>

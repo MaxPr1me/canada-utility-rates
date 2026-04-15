@@ -212,3 +212,182 @@ def normalize_province(text: str) -> str:
         "nunavut": "NU", "nu": "NU",
     }
     return mapping.get(text.strip().lower(), text.strip().upper())
+
+
+# ─── Live-scraping helpers ───────────────────────────────────
+
+def find_text_near_label(
+    soup: BeautifulSoup,
+    label_text: str,
+    search_radius: int = 3,
+) -> Optional[str]:
+    """
+    Find a label (like "Basic Charge") in the page and return numeric
+    text found near it. Searches next siblings, parent's next siblings,
+    and adjacent table cells within *search_radius* hops.
+
+    Returns the first string that looks like it contains a number,
+    or None if nothing is found.
+    """
+    label_lower = label_text.lower()
+
+    # Search all text nodes containing the label
+    for tag in soup.find_all(string=re.compile(re.escape(label_lower), re.IGNORECASE)):
+        element = tag.parent if tag.parent else tag
+
+        # Strategy 1: next siblings of the element
+        candidates = []
+        sib = element.next_sibling
+        for _ in range(search_radius):
+            if sib is None:
+                break
+            text = sib.get_text(strip=True) if hasattr(sib, "get_text") else str(sib).strip()
+            if text:
+                candidates.append(text)
+            sib = sib.next_sibling
+
+        # Strategy 2: if element is inside a <td>/<th>, check the next <td>/<th> in the row
+        cell = element.find_parent(["td", "th"])
+        if cell:
+            for next_cell in cell.find_next_siblings(["td", "th"])[:search_radius]:
+                text = next_cell.get_text(strip=True)
+                if text:
+                    candidates.append(text)
+
+        # Strategy 3: parent's next sibling (common in <dt>/<dd> or <div> layouts)
+        parent = element.parent
+        if parent:
+            psib = parent.next_sibling
+            for _ in range(search_radius):
+                if psib is None:
+                    break
+                text = psib.get_text(strip=True) if hasattr(psib, "get_text") else str(psib).strip()
+                if text:
+                    candidates.append(text)
+                psib = psib.next_sibling
+
+        # Return the first candidate that contains a digit
+        for cand in candidates:
+            if re.search(r"\d", cand):
+                return cand
+
+    return None
+
+
+def extract_rate_from_text(text: str) -> Optional[float]:
+    """
+    Extract a rate value from free-form text. Handles patterns like:
+      "$0.0945/kWh"  "12.34 ¢/kWh"  "$25.00/month"  "0.0945 $/GJ"
+      "9.45 cents per kWh"  "$6.89 per kW"
+
+    Always returns the value in dollars (converts cents automatically).
+    Returns None if no numeric rate is found.
+    """
+    if not text:
+        return None
+
+    text = text.strip()
+
+    # Detect cents
+    is_cents = bool(re.search(r"[¢]|cents?\b", text, re.IGNORECASE))
+
+    # Try to extract a dollar amount like $X.XXXX
+    match = re.search(r"\$\s*(\d+\.?\d*)", text)
+    if match:
+        return float(match.group(1))
+
+    # Try bare number (possibly with cents indicator)
+    match = re.search(r"(\d+\.?\d*)\s*(?:[¢]|cents?|/|\$|per\b)", text, re.IGNORECASE)
+    if not match:
+        # Last resort: any number in the text
+        match = re.search(r"(\d+\.?\d*)", text)
+
+    if not match:
+        return None
+
+    value = float(match.group(1))
+    if is_cents:
+        value /= 100.0
+
+    return value
+
+
+def detect_js_rendered(html: str) -> bool:
+    """
+    Heuristic check for JS-rendered pages. Returns True if the page
+    appears to rely on client-side JavaScript for content rendering.
+
+    Indicators:
+      - Very little visible text in <body> relative to page size
+      - Many <script> tags
+      - References to common SPA frameworks (React, Angular, Vue, Next.js)
+      - Presence of div#root, div#app, or div#__next with no content
+    """
+    soup = parse_html(html)
+    body = soup.find("body")
+    if not body:
+        return False
+
+    body_text = body.get_text(strip=True)
+    scripts = body.find_all("script")
+
+    # Very little text but lots of scripts
+    if len(body_text) < 200 and len(scripts) > 3:
+        return True
+
+    # Low text-to-HTML ratio
+    html_len = len(html)
+    if html_len > 5000 and len(body_text) < html_len * 0.05:
+        return True
+
+    # SPA framework markers
+    spa_markers = [
+        "__NEXT_DATA__", "__next", "react-root", "_react",
+        "ng-app", "ng-version", "Vue.js", "nuxt",
+    ]
+    html_lower = html.lower()
+    if any(marker.lower() in html_lower for marker in spa_markers):
+        # Check if body has substantive content despite framework markers
+        if len(body_text) < 500:
+            return True
+
+    # Empty root containers
+    for div_id in ["root", "app", "__next", "main-content"]:
+        div = body.find("div", id=div_id)
+        if div and len(div.get_text(strip=True)) < 50:
+            return True
+
+    return False
+
+
+def find_pdf_links(
+    soup: BeautifulSoup,
+    keywords: Optional[list[str]] = None,
+) -> list[str]:
+    """
+    Extract all href values linking to PDF files from a parsed page.
+
+    Args:
+        soup: BeautifulSoup object of the parsed page.
+        keywords: Optional list of keywords to filter by. If provided,
+                  only links where the href or link text contains at
+                  least one keyword (case-insensitive) are returned.
+
+    Returns:
+        List of PDF URLs (may be relative paths).
+    """
+    pdf_links = []
+    for a_tag in soup.find_all("a", href=True):
+        href = a_tag["href"]
+        if not href.lower().endswith(".pdf"):
+            continue
+
+        if keywords:
+            link_text = a_tag.get_text(strip=True).lower()
+            href_lower = href.lower()
+            if not any(kw.lower() in link_text or kw.lower() in href_lower for kw in keywords):
+                continue
+
+        pdf_links.append(href)
+
+    return pdf_links

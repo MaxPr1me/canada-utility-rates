@@ -6,7 +6,7 @@ corporation providing generation, transmission, and distribution
 province-wide. Rates are flat (non-tiered) for most customer classes.
 
 Official source:
-  https://www.saskpower.com/Rates-and-Billing/Rates
+  https://www.saskpower.com/accounts/power-rates/power-supply-rates
 
 Regulated by: Saskatchewan Rate Review Panel
 """
@@ -23,21 +23,21 @@ logger = logging.getLogger(__name__)
 # Known rate values — used as seed/fallback data.
 SEED_RESIDENTIAL = {
     "effective_date": "2024-04-01",
-    "source_url": "https://www.saskpower.com/Rates-and-Billing/Rates",
+    "source_url": "https://www.saskpower.com/accounts/power-rates/power-supply-rates",
     "energy_rate": 0.1797,          # $/kWh — flat rate
     "basic_charge_per_month": 24.05,  # $/month
 }
 
 SEED_SMALL_COMMERCIAL = {
     "effective_date": "2024-04-01",
-    "source_url": "https://www.saskpower.com/Rates-and-Billing/Rates",
+    "source_url": "https://www.saskpower.com/accounts/power-rates/power-supply-rates",
     "energy_rate": 0.1797,          # $/kWh
     "basic_charge_per_month": 40.24,  # $/month
 }
 
 SEED_DEMAND_COMMERCIAL = {
     "effective_date": "2024-04-01",
-    "source_url": "https://www.saskpower.com/Rates-and-Billing/Rates",
+    "source_url": "https://www.saskpower.com/accounts/power-rates/power-supply-rates",
     "energy_rate": 0.0928,          # $/kWh
     "demand_charge": 14.94,         # $/kW
     "basic_charge_per_month": 40.24,  # $/month

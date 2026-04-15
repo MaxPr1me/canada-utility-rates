@@ -5,7 +5,7 @@ Liberty Utilities provides natural gas distribution in parts of
 New Brunswick, serving a relatively small service area.
 
 Official source:
-  https://libertyutilities.com/east/gas/rates
+  https://naturalgasnb.com/en/for-home/accounts-billing/customer-rate-classes/
 
 New Brunswick gas rates are regulated by the Energy and Utilities
 Board of New Brunswick (EUB NB).  Liberty uses GJ as the primary
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Seed data — limited public rate information available.
 SEED_RESIDENTIAL = {
     "effective_date": "2024-10-01",
-    "source_url": "https://libertyutilities.com/east/gas/rates",
+    "source_url": "https://naturalgasnb.com/en/for-home/accounts-billing/customer-rate-classes/",
     "basic_charge_monthly": 18.00,              # $/month
     "delivery_rate": 7.00,                      # $/GJ — delivery/distribution
     "commodity_rate": 6.50,                     # $/GJ — gas supply (market-linked)

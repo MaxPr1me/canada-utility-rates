@@ -62,6 +62,22 @@ cannot query SQLite directly.
                           │ description  │
                           │ severity     │
                           └──────────────┘
+
+┌───────────────────┐     ┌──────────────────────┐
+│ customer_classes  │     │   market_pricing     │
+│                   │     │                      │
+│ id                │     │ id                   │
+│ utility_id        │→    │ province             │
+│ class_name        │     │ market_operator      │
+│ sub_class         │     │ month                │
+│ description       │     │ day_type             │
+│ eligibility       │     │ hour                 │
+│ threshold_kw      │     │ avg_hoep             │
+│ threshold_kwh     │     │ avg_ga               │
+│ is_default        │     │ combined_energy      │
+└───────────────────┘     │ derivation_method    │
+                          │ history_window_years │
+                          └──────────────────────┘
 ```
 
 ## Key Design Decisions
@@ -82,3 +98,10 @@ cannot query SQLite directly.
 
 5. **Confidence flags** — every record has a confidence level so downstream
    consumers (AI, analysts) know how much to trust each value.
+
+6. **Customer class tracking** — `customer_classes` records which classes each
+   utility serves and their eligibility thresholds, enabling coverage audits.
+
+7. **Market pricing** — `market_pricing` stores representative hourly wholesale
+   prices (576 bins for Ontario IESO: 12 months × 2 day types × 24 hours),
+   used by the Market Pricing dashboard and market-based tariff components.

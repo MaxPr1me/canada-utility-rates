@@ -49,7 +49,7 @@ The whole cycle runs automatically once a month using GitHub Actions (a free ser
 | `scrapers/base.py` | The "template" that all scrapers follow. You don't change this unless you're adding a new feature that applies to ALL scrapers. |
 | `scrapers/utilities/bc_hydro.py` | Scrapes BC Hydro electricity rates. |
 | `scrapers/utilities/hydro_quebec.py` | Scrapes Hydro-Quebec electricity rates. |
-| `scrapers/utilities/ontario_ldc.py` | **Data-driven scraper for all 53 Ontario LDCs.** One class handles every Ontario local distribution company — the registry passes in which LDC to produce data for. |
+| `scrapers/utilities/ontario_ldc.py` | **Data-driven scraper for all 53 Ontario LDCs.** One class handles every Ontario local distribution company — the registry passes in which LDC to produce data for. Eventually, each LDC should be scraped from its own website. |
 | `scrapers/utilities/toronto_hydro.py` | Toronto Hydro (legacy scraper, separate from the LDC scraper). |
 | `scrapers/utilities/enbridge_gas.py` | Scrapes Enbridge Gas natural gas rates. |
 | `scrapers/utilities/atco_electric.py` | ATCO Electric distribution charges (Alberta). |
@@ -62,13 +62,16 @@ The whole cycle runs automatically once a month using GitHub Actions (a free ser
 | `scrapers/utilities/aeso.py` | AESO market reference price (Alberta wholesale). |
 | `scrapers/utilities/nl_hydro.py` | NL Hydro electricity rates (Newfoundland — residential + commercial). |
 | `scrapers/registry.py` | Reads the list of all utilities and their scraper info. |
+| `scrapers/utils/parsing.py` | HTML/PDF parsing helpers: `find_text_near_label()`, `extract_rate_from_text()`, `detect_js_rendered()`, `find_pdf_links()`. |
+| `scrapers/utils/change_detection.py` | Compares live-parsed rates against seed data. Flags changes by severity (info/warning/critical). If critical drift is detected, the scraper rejects live data and falls back to seed. |
 | `scrapers/utils/market_pricing.py` | Ontario IESO market pricing model (HOEP + GA hourly bins). |
+| `scrapers/utils/validation.py` | Data quality checks run after every scrape. |
 
 ### Where the data lives
 
 | File | What it does |
 |---|---|
-| `data/sources/registry.json` | **The master list (system of record).** Every utility the project knows about is listed here, along with the URL where its rates are published and which scraper handles it. Currently 84 utilities. |
+| `data/sources/registry.json` | **The master list (system of record).** Every utility the project knows about is listed here, along with the URL where its rates are published and which scraper handles it. Currently 84 utilities across 34 scraper files. |
 | `data/inventory/utilities.json` | The full inventory of ALL Canadian utilities — even ones we don't scrape yet. This is the reference list. |
 | `data/db/rates.db` | The SQLite database where scraped rates are stored. Created automatically when you first run the scraper. |
 | `data/excel/old_urls.xlsm` | **Audit reference only.** An Excel file with historical URLs and rate data. NO scraper reads this file. It is git-ignored. |
@@ -82,9 +85,9 @@ The whole cycle runs automatically once a month using GitHub Actions (a free ser
 
 | File | What it does |
 |---|---|
-| `site/index.html` | The main web page. |
-| `site/css/style.css` | How the page looks (colors, layout, fonts). |
-| `site/js/app.js` | The code that loads data and makes the filters work. |
+| `site/index.html` | The main web page. Two-tab layout: **Rate Browser** and **Market Pricing**. |
+| `site/css/style.css` | How the page looks — includes styles for multi-select filters, heatmap, confidence indicators, source attribution, and market callouts. |
+| `site/js/app.js` | The application logic: loads 5 JSON data files, manages multi-select checkbox filter state (using JavaScript `Set`s), renders rate cards with confidence dots, shows detail modals with source attribution and market callouts, and powers the Market Pricing dashboard (heatmap, Chart.js line chart, summary table, methodology). |
 
 ### Where the automation lives
 
@@ -287,9 +290,9 @@ The database (`data/db/rates.db`) has these main tables:
 |---|---|
 | `utilities` | One row per utility company (name, province, type). |
 | `tariffs` | One row per rate plan (name, customer class, rate structure, dates). |
-| `rate_components` | One row per individual charge (energy charge, fixed fee, rider, etc.). This is the most detailed table. |
+| `rate_components` | One row per individual charge (energy charge, fixed fee, rider, etc.). This is the most detailed table. Includes `market_reference` for market-indexed components. |
 | `customer_classes` | One row per customer class per utility (residential, commercial GS < 50 kW, GS >= 50 kW, etc.) with eligibility thresholds. |
-| `market_pricing` | Representative hourly electricity market prices by province (576 bins for Ontario IESO, expandable to AESO). |
+| `market_pricing` | Representative hourly electricity market prices by province (576 bins for Ontario IESO: 12 months × 2 day types × 24 hours). Expandable to AESO. |
 | `sources` | URLs where rate data was found. |
 | `scrape_runs` | A log of each time the scraper ran. |
 | `historical_snapshots` | A copy of each tariff's data at each scrape, so we can track changes over time. |
