@@ -7,7 +7,7 @@ NL Hydro also directly serves some rural and isolated communities,
 as well as customers on the Labrador interconnected system.
 
 Official source:
-  https://nlhydro.com/rates-and-energy-use/rates/
+  https://nlhydro.com/electicity-rates/current-rates/
 
 Regulated by: Board of Commissioners of Public Utilities (PUB NL)
 """
@@ -15,33 +15,42 @@ Regulated by: Board of Commissioners of Public Utilities (PUB NL)
 from __future__ import annotations
 
 import logging
+import re
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
+from scrapers.utils.parsing import (
+    parse_html,
+    detect_js_rendered,
+    find_pdf_links,
+    extract_rate_from_text,
+)
 
 logger = logging.getLogger(__name__)
+
+NL_HYDRO_URL = "https://nlhydro.com/electicity-rates/current-rates/"
 
 # Known rate values — used as seed/fallback data.
 # NL Hydro serves rural areas directly; rates shown are for
 # island-interconnected rural customers.
 SEED_RURAL_RESIDENTIAL = {
-    "effective_date": "2024-04-01",
-    "source_url": "https://nlhydro.com/rates-and-energy-use/rates/",
-    "energy_rate": 0.13263,         # $/kWh
+    "effective_date": "2026-01-01",
+    "source_url": NL_HYDRO_URL,
+    "energy_rate": 0.15213,         # $/kWh
     "basic_charge_per_month": 12.94,  # $/month
 }
 
 SEED_LABRADOR_INTERCONNECTED = {
-    "effective_date": "2024-04-01",
-    "source_url": "https://nlhydro.com/rates-and-energy-use/rates/",
-    "energy_rate": 0.03431,         # $/kWh — Labrador interconnected rate
+    "effective_date": "2026-01-01",
+    "source_url": NL_HYDRO_URL,
+    "energy_rate": 0.03154,         # $/kWh — Labrador interconnected rate
     "basic_charge_per_month": 12.94,  # $/month
 }
 
 SEED_GENERAL_SERVICE = {
-    "effective_date": "2024-04-01",
-    "source_url": "https://nlhydro.com/rates-and-energy-use/rates/",
-    "energy_rate": 0.12853,         # $/kWh
+    "effective_date": "2026-01-01",
+    "source_url": NL_HYDRO_URL,
+    "energy_rate": 0.14793,         # $/kWh (estimated proportional increase)
     "basic_charge_per_month": 19.42,  # $/month
     "demand_charge": 8.56,          # $/kW (for demand-metered)
 }
@@ -74,9 +83,61 @@ class NLHydroScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Attempt to parse rates from the live NL Hydro website."""
-        # TODO: implement HTML parsing once page structure is verified
-        return None
+        """
+        Attempt to parse rates from the live NL Hydro website.
+
+        Currently performs validation of inline rates and discovers PDF links
+        for future implementation. Returns None to fall back to seed data
+        since full PDF parsing is not yet implemented.
+        """
+        try:
+            html = self.fetch_url(NL_HYDRO_URL)
+            if not html:
+                self.logger.warning("NL Hydro: empty response from %s", NL_HYDRO_URL)
+                return None
+
+            # Check if the page requires JavaScript rendering
+            if detect_js_rendered(html):
+                self.logger.warning(
+                    "NL Hydro: page appears to be JS-rendered, cannot parse static HTML"
+                )
+                return None
+
+            soup = parse_html(html)
+            page_text = soup.get_text(separator=" ")
+
+            # Try to extract inline cent-per-kWh values for quick validation
+            # The page shows values like "15.213¢/kWh" and "3.154¢/kWh"
+            cent_pattern = re.compile(r"(\d+\.\d+)\s*[¢cents]+\s*/\s*kWh", re.IGNORECASE)
+            matches = cent_pattern.findall(page_text)
+            if matches:
+                self.logger.info(
+                    "NL Hydro: found inline energy rates on page: %s ¢/kWh",
+                    ", ".join(matches),
+                )
+            else:
+                self.logger.info("NL Hydro: no inline ¢/kWh rates detected on page")
+
+            # Look for PDF links to rate schedules
+            pdf_links = find_pdf_links(
+                soup, keywords=["schedule", "rates", "regulation"]
+            )
+            if pdf_links:
+                self.logger.info(
+                    "NL Hydro: found %d rate PDF link(s) for future implementation:",
+                    len(pdf_links),
+                )
+                for link in pdf_links:
+                    self.logger.info("  PDF: %s", link)
+            else:
+                self.logger.info("NL Hydro: no rate PDF links found on page")
+
+            # Full PDF parsing not yet implemented — fall back to seed data
+            return None
+
+        except Exception as exc:
+            self.logger.warning("NL Hydro: live scrape error — %s", exc)
+            return None
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""

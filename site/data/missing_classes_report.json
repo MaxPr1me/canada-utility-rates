@@ -20,6 +20,7 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
+      "General Service Medium (Demand)",
       "General Service Medium (Demand)"
     ]
   },
@@ -32,6 +33,7 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
+      "Small Industrial Service",
       "Small Industrial Service"
     ]
   },
@@ -45,6 +47,7 @@
     ],
     "demand_tariffs_missing_thresholds": [
       "General Service",
+      "General Service",
       "General Service"
     ]
   },
@@ -57,6 +60,7 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
+      "General Service (Rate 2.1)",
       "General Service (Rate 2.1)"
     ]
   },
@@ -69,6 +73,7 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
+      "Small General Service",
       "Small General Service"
     ]
   },
@@ -81,6 +86,7 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
+      "General Service — Yellowknife Zone",
       "General Service — Yellowknife Zone"
     ]
   },
@@ -93,6 +99,7 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
+      "Power Service (Demand)",
       "Power Service (Demand)"
     ]
   },
@@ -105,6 +112,7 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
+      "General Service",
       "General Service"
     ]
   },
@@ -117,6 +125,7 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
+      "General Service",
       "General Service"
     ]
   }

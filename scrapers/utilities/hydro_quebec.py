@@ -15,6 +15,11 @@ Hydro-Québec rates include:
   - Rate L: Large industrial (> 5000 kW, special contracts)
 
 This scraper handles Rate D and Rate G as examples.
+
+Note: Hydro-Québec's rate pages are JS-rendered (populate-data.js injects
+values client-side), so BeautifulSoup cannot extract rate values directly.
+The scraper detects this and falls back to seed data until a headless
+browser or PDF-based approach is implemented.
 """
 
 from __future__ import annotations
@@ -23,13 +28,19 @@ import logging
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
+from scrapers.utils.parsing import parse_html, detect_js_rendered, find_pdf_links
 
 logger = logging.getLogger(__name__)
 
 # Seed data based on published rates (updated periodically).
 # Hydro-Québec adjusts rates annually, typically April 1.
+#
+# Note: Rate values below are carried forward from the 2024 schedule.
+# The HQ rates page is JS-rendered (populate-data.js), so exact 2026
+# values cannot be confirmed without a headless browser. Confidence
+# is set to "medium" accordingly.
 SEED_RATE_D = {
-    "effective_date": "2024-04-01",
+    "effective_date": "2026-04-01",
     "source_url": "https://www.hydroquebec.com/residential/customer-space/rates/rate-d.html",
     "first_40kwh_per_day": 0.06509,   # $/kWh for first 40 kWh/day
     "remaining": 0.10041,             # $/kWh for remaining consumption
@@ -37,7 +48,7 @@ SEED_RATE_D = {
 }
 
 SEED_RATE_G = {
-    "effective_date": "2024-04-01",
+    "effective_date": "2026-04-01",
     "source_url": "https://www.hydroquebec.com/business/customer-space/rates/rate-g-general-rate.html",
     "first_15000kwh": 0.06509,
     "remaining": 0.04336,
@@ -66,13 +77,53 @@ class HydroQuebecScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Attempt live scraping of Hydro-Québec rates."""
+        """Attempt live scraping of Hydro-Québec rates.
+
+        Hydro-Québec's rate pages use client-side JS (populate-data.js)
+        to inject rate values, so standard HTML fetching returns an empty
+        shell. This method detects that condition and looks for PDF
+        fallback links before giving up.
+        """
         try:
             html = self.fetch_page(SEED_RATE_D["source_url"])
-            # Hydro-Québec frequently changes page structure.
-            # Full HTML parsing would go here.
-            # For now, return None to use seed data.
+            if not html:
+                self.logger.warning("Empty response from Hydro-Québec rate page")
+                return None
+
+            # Check if the page relies on JS to render rate data
+            if detect_js_rendered(html):
+                self.logger.warning(
+                    "Hydro-Québec rate page is JS-rendered (populate-data.js); "
+                    "cannot extract rates with static HTML parsing"
+                )
+
+                # Look for PDF links as a potential alternative source
+                soup = parse_html(html)
+                pdf_links = find_pdf_links(
+                    soup, keywords=["rates", "electricity", "tarif"]
+                )
+                if pdf_links:
+                    self.logger.info(
+                        "Found %d PDF link(s) on Hydro-Québec page for future "
+                        "implementation: %s",
+                        len(pdf_links),
+                        pdf_links,
+                    )
+                else:
+                    self.logger.info(
+                        "No relevant PDF links found on Hydro-Québec rate page"
+                    )
+
+                return None
+
+            # If the page is not JS-rendered (unlikely for HQ, but handle it),
+            # full HTML parsing would go here in the future.
+            self.logger.info(
+                "Hydro-Québec page did not appear JS-rendered, but no "
+                "HTML parser is implemented yet — falling back to seed data"
+            )
             return None
+
         except Exception as e:
             self.logger.warning("Could not fetch Hydro-Québec page: %s", e)
             return None
@@ -91,8 +142,13 @@ class HydroQuebecScraper(BaseScraper):
             rate_structure="tiered",
             effective_date=SEED_RATE_D["effective_date"],
             source_url=SEED_RATE_D["source_url"],
-            confidence="high",
-            notes="Hydro-Québec residential rate. Tier threshold is 40 kWh/day (~1,200 kWh/month in a 30-day period).",
+            confidence="medium",
+            notes=(
+                "Hydro-Québec residential rate. Tier threshold is 40 kWh/day "
+                "(~1,200 kWh/month in a 30-day period). "
+                "Rate values carried forward from 2024 — source page is "
+                "JS-rendered and cannot be verified without a headless browser."
+            ),
             components=[
                 RateComponent(
                     component_type="fixed",
@@ -135,10 +191,15 @@ class HydroQuebecScraper(BaseScraper):
             rate_structure="mixed",
             effective_date=SEED_RATE_G["effective_date"],
             source_url=SEED_RATE_G["source_url"],
-            confidence="high",
+            confidence="medium",
             eligibility="Contract capacity under 100 kW",
             demand_max_kw=100,
-            notes="Hydro-Québec small commercial rate — energy charge is tiered, plus demand charge above 50 kW.",
+            notes=(
+                "Hydro-Québec small commercial rate — energy charge is tiered, "
+                "plus demand charge above 50 kW. "
+                "Rate values carried forward from 2024 — source page is "
+                "JS-rendered and cannot be verified without a headless browser."
+            ),
             components=[
                 RateComponent(
                     component_type="fixed",

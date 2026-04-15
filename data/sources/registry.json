@@ -1,6 +1,6 @@
 {
   "_description": "Source registry for Canadian utility rate scrapers. Each entry maps a utility to its data sources and scraper implementation.",
-  "_last_updated": "2025-01-01",
+  "_last_updated": "2026-04-15",
   "utilities": [
     {
       "name": "Enbridge Gas",
@@ -194,19 +194,25 @@
       "status": "active",
       "sources": [
         {
+          "url": "https://app.bchydro.com/accounts-billing/rates-energy-use/electricity-rates/residential-rates/tiered.html",
+          "source_type": "html",
+          "description": "Residential tiered (Step 1/Step 2) electricity rates sub-page",
+          "is_primary": true
+        },
+        {
           "url": "https://app.bchydro.com/accounts-billing/rates-energy-use/electricity-rates/residential-rates.html",
           "source_type": "html",
-          "description": "Residential electricity rates page with tiered pricing (Step 1 and Step 2)",
-          "is_primary": true
+          "description": "Residential electricity rates landing page",
+          "is_primary": false
         },
         {
           "url": "https://app.bchydro.com/accounts-billing/rates-energy-use/electricity-rates/business-rates.html",
           "source_type": "html",
-          "description": "Commercial and industrial electricity rate schedules",
+          "description": "Commercial electricity rate schedules (SGS, MGS, LGS)",
           "is_primary": false
         }
       ],
-      "notes": "BC Hydro uses a two-tier residential rate structure. Rates are regulated by the British Columbia Utilities Commission (BCUC)."
+      "notes": "BC Hydro uses a two-tier residential rate structure. Rates are regulated by the British Columbia Utilities Commission (BCUC). Live parser fetches tiered sub-page for residential and business-rates page for commercial."
     },
     {
       "name": "FortisBC Electric",
@@ -326,19 +332,19 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://www.nspower.ca/about-us/electricity/rates-tariffs",
+          "url": "https://www.nspower.ca/your-home/residential-rates/standard-residential",
           "source_type": "html",
-          "description": "Electricity rates and tariff schedules for Nova Scotia",
+          "description": "Standard residential rates with actual rate values (base charge + energy charge)",
           "is_primary": true
         },
         {
-          "url": "https://www.nspower.ca/about-us/electricity/rates-tariffs/domestic-service-tariff",
+          "url": "https://www.nspower.ca/products-services/rate-information",
           "source_type": "html",
-          "description": "Domestic (residential) service tariff details",
+          "description": "Rate information landing page (no rate values — links to sub-pages)",
           "is_primary": false
         }
       ],
-      "notes": "Nova Scotia Power is the sole electricity provider for the majority of Nova Scotia, a subsidiary of Emera Inc. Regulated by the Nova Scotia Utility and Review Board (NSUARB)."
+      "notes": "Nova Scotia Power is the sole electricity provider for the majority of Nova Scotia, a subsidiary of Emera Inc. Regulated by the Nova Scotia Utility and Review Board (NSUARB). Live parser fetches the standard-residential sub-page for actual rate values."
     },
     {
       "name": "Maritime Electric",
@@ -366,13 +372,13 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://www.newfoundlandpower.com/en/About-Us/How-We-Operate/Rates-and-Regulations/Rates-and-Tariffs",
+          "url": "https://www.newfoundlandpower.com/en/My-Account/Usage/Electricity-Rates",
           "source_type": "html",
-          "description": "Residential and commercial electricity rates and tariff schedule for the island of Newfoundland",
+          "description": "Electricity rates page with links to PDF rate schedules",
           "is_primary": true
         }
       ],
-      "notes": "Newfoundland Power is a subsidiary of Fortis Inc. and the primary electricity distributor on the island of Newfoundland. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB)."
+      "notes": "Newfoundland Power is a subsidiary of Fortis Inc. and the primary electricity distributor on the island of Newfoundland. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB). Rates available only in linked PDF 'Schedule of Rates, Rules and Regulations'."
     },
     {
       "name": "NL Hydro",
@@ -383,13 +389,13 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://nlhydro.com/accounts-services/rates/",
+          "url": "https://nlhydro.com/electicity-rates/current-rates/",
           "source_type": "html",
-          "description": "Electricity rates for NL Hydro service areas (rural Newfoundland, coastal Labrador, and isolated systems)",
+          "description": "Current electricity rates page with inline rates and PDF link (note: 'electicity' typo is in the real URL)",
           "is_primary": true
         }
       ],
-      "notes": "NL Hydro (Newfoundland and Labrador Hydro) is a Crown corporation that generates most of the province's electricity and distributes in rural and isolated areas. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB)."
+      "notes": "NL Hydro (Newfoundland and Labrador Hydro) is a Crown corporation that generates most of the province's electricity and distributes in rural and isolated areas. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB). Full rates in linked PDF; page shows inline energy rates."
     },
     {
       "name": "Yukon Energy",

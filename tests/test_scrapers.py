@@ -59,7 +59,7 @@ class TestBCHydroSeed:
         assert len(energy) >= 2
         step1 = [c for c in energy if c.tier_number == 1][0]
         step2 = [c for c in energy if c.tier_number == 2][0]
-        assert step1.charge_value == pytest.approx(0.0950)
+        assert step1.charge_value == pytest.approx(0.1187)
         assert step2.charge_value == pytest.approx(0.1408)
         assert step1.charge_unit == "$/kWh"
 

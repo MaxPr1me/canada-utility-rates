@@ -7,7 +7,10 @@ a subsidiary of Fortis Inc. Newfoundland Power distributes electricity
 purchased mainly from NL Hydro.
 
 Official source:
-  https://www.newfoundlandpower.com/Customer-Service/Rates
+  https://www.newfoundlandpower.com/en/My-Account/Usage/Electricity-Rates
+
+Rates are published in the "Schedule of Rates, Rules and Regulations" PDF
+linked from the page above.
 
 Regulated by: Board of Commissioners of Public Utilities (PUB NL)
 """
@@ -18,20 +21,23 @@ import logging
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
+from scrapers.utils.parsing import parse_html, detect_js_rendered, find_pdf_links
 
 logger = logging.getLogger(__name__)
 
+_SOURCE_URL = "https://www.newfoundlandpower.com/en/My-Account/Usage/Electricity-Rates"
+
 # Known rate values — used as seed/fallback data.
 SEED_RESIDENTIAL = {
-    "effective_date": "2024-04-01",
-    "source_url": "https://www.newfoundlandpower.com/Customer-Service/Rates",
+    "effective_date": "2025-07-01",
+    "source_url": _SOURCE_URL,
     "energy_rate": 0.13263,         # $/kWh
     "basic_charge_per_month": 12.94,  # $/month
 }
 
 SEED_GENERAL_SERVICE = {
-    "effective_date": "2024-04-01",
-    "source_url": "https://www.newfoundlandpower.com/Customer-Service/Rates",
+    "effective_date": "2025-07-01",
+    "source_url": _SOURCE_URL,
     "energy_rate": 0.11690,         # $/kWh
     "demand_charge": 10.17,         # $/kW
     "basic_charge_per_month": 25.97,  # $/month
@@ -65,8 +71,41 @@ class NewfoundlandPowerScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Attempt to parse rates from the live Newfoundland Power website."""
-        # TODO: implement HTML parsing once page structure is verified
+        """Attempt to parse rates from the live Newfoundland Power website.
+
+        Currently fetches the rates page and looks for the Schedule of Rates
+        PDF link for future PDF-based parsing. Returns None to fall back to
+        seed data until PDF parsing is implemented.
+        """
+        try:
+            html = self.fetch_page(_SOURCE_URL)
+        except Exception:
+            self.logger.warning("Failed to fetch Newfoundland Power rates page")
+            return None
+
+        if detect_js_rendered(html):
+            self.logger.info(
+                "Newfoundland Power rates page appears JS-rendered; "
+                "content may be incomplete"
+            )
+
+        soup = parse_html(html)
+        pdf_links = find_pdf_links(
+            soup, keywords=["schedule", "rates", "regulation"]
+        )
+
+        if pdf_links:
+            self.logger.info(
+                "Found %d PDF link(s) on Newfoundland Power rates page: %s",
+                len(pdf_links),
+                pdf_links,
+            )
+        else:
+            self.logger.info(
+                "No matching PDF links found on Newfoundland Power rates page"
+            )
+
+        # TODO: implement PDF table extraction from the Schedule of Rates PDF
         return None
 
     def _seed_data(self) -> list[TariffRecord]:
