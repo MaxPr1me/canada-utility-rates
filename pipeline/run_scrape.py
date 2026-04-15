@@ -125,7 +125,7 @@ def store_results(records: list[TariffRecord], run_id: int, conn: sqlite3.Connec
             (record.utility_name, record.province),
         ).fetchone()[0]
 
-        # Insert tariff
+        # Upsert tariff
         cursor.execute("""
             INSERT INTO tariffs (
                 utility_id, scrape_run_id, name, tariff_code, utility_type,
@@ -134,6 +134,25 @@ def store_results(records: list[TariffRecord], run_id: int, conn: sqlite3.Connec
                 rate_structure, effective_date, end_date,
                 source_url, source_page, confidence, notes
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(utility_id, tariff_code, effective_date) DO UPDATE SET
+                scrape_run_id = excluded.scrape_run_id,
+                name = excluded.name,
+                utility_type = excluded.utility_type,
+                customer_class = excluded.customer_class,
+                sub_class = excluded.sub_class,
+                description = excluded.description,
+                eligibility = excluded.eligibility,
+                demand_min_kw = excluded.demand_min_kw,
+                demand_max_kw = excluded.demand_max_kw,
+                usage_min = excluded.usage_min,
+                usage_max = excluded.usage_max,
+                usage_unit = excluded.usage_unit,
+                rate_structure = excluded.rate_structure,
+                end_date = excluded.end_date,
+                source_url = excluded.source_url,
+                source_page = excluded.source_page,
+                confidence = excluded.confidence,
+                notes = excluded.notes
         """, (
             utility_id, run_id,
             record.tariff_name, record.tariff_code, record.utility_type,
@@ -143,7 +162,16 @@ def store_results(records: list[TariffRecord], run_id: int, conn: sqlite3.Connec
             record.rate_structure, record.effective_date, record.end_date,
             record.source_url, record.source_page, record.confidence, record.notes,
         ))
-        tariff_id = cursor.lastrowid
+
+        # Get tariff_id (works for both insert and update)
+        # Use IS for nullable columns (NULL = NULL is false in SQL)
+        tariff_id = cursor.execute(
+            "SELECT id FROM tariffs WHERE utility_id = ? AND tariff_code IS ? AND effective_date IS ?",
+            (utility_id, record.tariff_code, record.effective_date),
+        ).fetchone()[0]
+
+        # Remove old components before re-inserting fresh data
+        cursor.execute("DELETE FROM rate_components WHERE tariff_id = ?", (tariff_id,))
 
         # Insert components
         for comp in record.components:
