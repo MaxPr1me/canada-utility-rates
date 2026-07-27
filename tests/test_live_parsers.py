@@ -288,6 +288,23 @@ class TestSaskPowerUpdated:
         for r in self.records:
             assert r.effective_date == "2025-01-01"
 
+    def test_live_pdf_verifies_all_components(self):
+        from scrapers.utilities.saskpower import SaskPowerScraper
+        html = '<body><p>Current rates</p><a href="/rates/current.pdf">Rate schedule</a></body>'
+        pdf_text = """
+        Residential $24.05/month 17.970 cents per kWh
+        Small commercial $40.24/month 17.970 cents per kWh
+        Demand commercial $40.24/month $14.94/kW 9.280 cents per kWh
+        """
+        scraper = SaskPowerScraper()
+        with patch.object(scraper, "fetch_page", return_value=html), \
+             patch.object(scraper, "fetch_bytes", return_value=b"pdf"), \
+             patch("scrapers.utilities.saskpower.extract_pdf_text", return_value=pdf_text):
+            records = scraper._try_live_scrape()
+        assert records is not None
+        assert all(record.source_url == "https://www.saskpower.com/rates/current.pdf" for record in records)
+        assert all("live-verified" in record.notes for record in records)
+
 
 # ─── NL Hydro ──────────────────────────────────────────────────
 
@@ -355,6 +372,15 @@ class TestNewfoundlandPowerUpdated:
         gs = [r for r in self.records if r.customer_class == "commercial"][0]
         demand = [c for c in gs.components if c.component_type == "demand"]
         assert len(demand) == 1
+
+    def test_changed_pdf_rate_is_rejected(self):
+        from scrapers.utilities.newfoundland_power import NewfoundlandPowerScraper
+        html = '<body><p>Current rates</p><a href="rates.pdf">Schedule of Rates</a></body>'
+        scraper = NewfoundlandPowerScraper()
+        with patch.object(scraper, "fetch_page", return_value=html), \
+             patch.object(scraper, "fetch_bytes", return_value=b"pdf"), \
+             patch("scrapers.utilities.newfoundland_power.extract_pdf_text", return_value="changed rates"):
+            assert scraper._try_live_scrape() is None
 
 
 # ─── Cross-utility sanity checks ───────────────────────────────

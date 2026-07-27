@@ -17,7 +17,12 @@ from scrapers.utils.parsing import (
     normalize_province,
     extract_tables,
     find_table_by_header,
+    find_pdf_links,
+    parse_html,
+    rate_value_appears,
+    verify_tariff_values,
 )
+from scrapers.base import RateComponent, TariffRecord
 
 
 # ─── clean_currency ─────────────────────────────────────────────
@@ -143,3 +148,42 @@ class TestFindTableByHeader:
     def test_no_match_returns_none(self):
         table = find_table_by_header(self.TWO_TABLE_HTML, "Nonexistent")
         assert table is None
+
+
+class TestOfficialSourceVerification:
+    def test_pdf_links_resolve_relative_urls_and_query_strings(self):
+        soup = parse_html(
+            '<a href="/documents/rate-schedule.pdf?v=2026">Schedule of Rates</a>'
+        )
+        assert find_pdf_links(soup, ["schedule"], "https://utility.example/rates/") == [
+            "https://utility.example/documents/rate-schedule.pdf?v=2026"
+        ]
+
+    @pytest.mark.parametrize(
+        ("text", "value", "unit"),
+        [
+            ("Energy charge 15.213 cents per kWh", 0.15213, "$/kWh"),
+            ("Basic charge $24.05/month", 24.05, "$/month"),
+            ("Billing demand $14.940 per kW", 14.94, "$/kW"),
+        ],
+    )
+    def test_recognizes_published_rate_formats(self, text, value, unit):
+        assert rate_value_appears(text, value, unit)
+
+    def test_does_not_fuzzily_accept_a_changed_rate(self):
+        assert not rate_value_appears("Energy charge 15.500 cents per kWh", 0.15213, "$/kWh")
+
+    def test_flags_the_specific_missing_component(self):
+        record = TariffRecord(
+            utility_name="Example Utility",
+            province="ON",
+            utility_type="electricity",
+            tariff_name="Residential",
+            components=[
+                RateComponent("fixed", "Basic Charge", 24.05, "$/month"),
+                RateComponent("energy", "Energy Charge", 0.15213, "$/kWh"),
+            ],
+        )
+        assert verify_tariff_values("Basic charge $24.05/month", [record]) == [
+            "Residential: Energy Charge"
+        ]

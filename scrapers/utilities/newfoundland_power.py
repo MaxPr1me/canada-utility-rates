@@ -21,7 +21,10 @@ import logging
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
-from scrapers.utils.parsing import parse_html, detect_js_rendered, find_pdf_links
+from scrapers.utils.parsing import (
+    parse_html, detect_js_rendered, find_pdf_links, extract_pdf_text,
+    verify_tariff_values,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -73,9 +76,8 @@ class NewfoundlandPowerScraper(BaseScraper):
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
         """Attempt to parse rates from the live Newfoundland Power website.
 
-        Currently fetches the rates page and looks for the Schedule of Rates
-        PDF link for future PDF-based parsing. Returns None to fall back to
-        seed data until PDF parsing is implemented.
+        Fetch the rates page and its official Schedule of Rates PDF. Records
+        are returned only when every component is present in extracted text.
         """
         try:
             html = self.fetch_page(_SOURCE_URL)
@@ -91,21 +93,28 @@ class NewfoundlandPowerScraper(BaseScraper):
 
         soup = parse_html(html)
         pdf_links = find_pdf_links(
-            soup, keywords=["schedule", "rates", "regulation"]
+            soup, keywords=["schedule", "rates", "regulation"], base_url=_SOURCE_URL
         )
 
         if pdf_links:
-            self.logger.info(
-                "Found %d PDF link(s) on Newfoundland Power rates page: %s",
-                len(pdf_links),
-                pdf_links,
-            )
+            records = self._seed_data()
+            for link in pdf_links:
+                text = extract_pdf_text(self.fetch_bytes(link))
+                missing = verify_tariff_values(text, records)
+                if not missing:
+                    for record in records:
+                        record.source_url = link
+                        record.notes = f"{record.notes}; live-verified against official PDF"
+                    return records
+                self.logger.warning(
+                    "Official Newfoundland Power PDF %s is missing: %s",
+                    link, ", ".join(missing),
+                )
         else:
             self.logger.info(
                 "No matching PDF links found on Newfoundland Power rates page"
             )
 
-        # TODO: implement PDF table extraction from the Schedule of Rates PDF
         return None
 
     def _seed_data(self) -> list[TariffRecord]:

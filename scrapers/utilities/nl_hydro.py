@@ -24,6 +24,8 @@ from scrapers.utils.parsing import (
     detect_js_rendered,
     find_pdf_links,
     extract_rate_from_text,
+    extract_pdf_text,
+    verify_tariff_values,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,12 +88,11 @@ class NLHydroScraper(BaseScraper):
         """
         Attempt to parse rates from the live NL Hydro website.
 
-        Currently performs validation of inline rates and discovers PDF links
-        for future implementation. Returns None to fall back to seed data
-        since full PDF parsing is not yet implemented.
+        Inspect inline rates, then download the linked official schedule.
+        Records are returned only when every component is present in the PDF.
         """
         try:
-            html = self.fetch_url(NL_HYDRO_URL)
+            html = self.fetch_page(NL_HYDRO_URL)
             if not html:
                 self.logger.warning("NL Hydro: empty response from %s", NL_HYDRO_URL)
                 return None
@@ -120,19 +121,29 @@ class NLHydroScraper(BaseScraper):
 
             # Look for PDF links to rate schedules
             pdf_links = find_pdf_links(
-                soup, keywords=["schedule", "rates", "regulation"]
+                soup, keywords=["schedule", "rates", "regulation"], base_url=NL_HYDRO_URL
             )
             if pdf_links:
                 self.logger.info(
                     "NL Hydro: found %d rate PDF link(s) for future implementation:",
                     len(pdf_links),
                 )
+                records = self._seed_data()
                 for link in pdf_links:
-                    self.logger.info("  PDF: %s", link)
+                    text = extract_pdf_text(self.fetch_bytes(link))
+                    missing = verify_tariff_values(text, records)
+                    if not missing:
+                        for record in records:
+                            record.source_url = link
+                            record.confidence = "high"
+                            record.notes = f"{record.notes} Live-verified against official PDF."
+                            for component in record.components:
+                                component.confidence = "high"
+                        return records
+                    self.logger.warning("Official NL Hydro PDF %s is missing: %s", link, ", ".join(missing))
             else:
                 self.logger.info("NL Hydro: no rate PDF links found on page")
 
-            # Full PDF parsing not yet implemented — fall back to seed data
             return None
 
         except Exception as exc:

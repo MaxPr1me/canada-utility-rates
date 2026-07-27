@@ -12,6 +12,7 @@ import io
 import re
 import logging
 from typing import Optional
+from urllib.parse import urljoin, urlsplit
 
 from bs4 import BeautifulSoup
 
@@ -363,6 +364,7 @@ def detect_js_rendered(html: str) -> bool:
 def find_pdf_links(
     soup: BeautifulSoup,
     keywords: Optional[list[str]] = None,
+    base_url: Optional[str] = None,
 ) -> list[str]:
     """
     Extract all href values linking to PDF files from a parsed page.
@@ -372,6 +374,7 @@ def find_pdf_links(
         keywords: Optional list of keywords to filter by. If provided,
                   only links where the href or link text contains at
                   least one keyword (case-insensitive) are returned.
+        base_url: Page URL used to resolve relative PDF links.
 
     Returns:
         List of PDF URLs (may be relative paths).
@@ -379,7 +382,8 @@ def find_pdf_links(
     pdf_links = []
     for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"]
-        if not href.lower().endswith(".pdf"):
+        # Some publishers append cache-busting or download query strings.
+        if not urlsplit(href).path.lower().endswith(".pdf"):
             continue
 
         if keywords:
@@ -388,6 +392,57 @@ def find_pdf_links(
             if not any(kw.lower() in link_text or kw.lower() in href_lower for kw in keywords):
                 continue
 
-        pdf_links.append(href)
+        resolved = urljoin(base_url, href) if base_url else href
+        if resolved not in pdf_links:
+            pdf_links.append(resolved)
 
     return pdf_links
+
+
+def rate_value_appears(text: str, value: float, unit: str) -> bool:
+    """Return whether an expected charge appears in extracted source text.
+
+    This is deliberately strict: it accepts the normal dollar and cent
+    renderings of a value, but does not use fuzzy matching.  Scrapers use it
+    to prove every fallback component is still present in an official source
+    before labelling the resulting tariff as live-verified.
+    """
+    if not text or value is None:
+        return False
+
+    normalized = re.sub(r"\s+", " ", text).replace(",", "")
+    dollar_values = {f"{value:.2f}", f"{value:.3f}", f"{value:.4f}", f"{value:.5f}"}
+    patterns = []
+
+    if unit == "$/kWh":
+        cents = value * 100
+        cent_values = {f"{cents:.2f}", f"{cents:.3f}", f"{cents:.4f}"}
+        patterns.extend(
+            rf"(?<!\d){re.escape(number)}\s*(?:¢|cents?)\s*(?:/|per)\s*kWh"
+            for number in cent_values
+        )
+
+    unit_name = {
+        "$/kWh": r"kWh",
+        "$/kW": r"kW",
+        "$/month": r"(?:month|mo(?:nthly)?)",
+    }.get(unit)
+    if unit_name:
+        patterns.extend(
+            rf"\$\s*{re.escape(number)}\s*(?:/|per)\s*{unit_name}"
+            for number in dollar_values
+        )
+
+    return any(re.search(pattern, normalized, re.IGNORECASE) for pattern in patterns)
+
+
+def verify_tariff_values(text: str, records: list) -> list[str]:
+    """List tariff components whose values cannot be found in source text."""
+    missing = []
+    for record in records:
+        for component in record.components:
+            if component.charge_value is None or not component.charge_unit:
+                continue
+            if not rate_value_appears(text, component.charge_value, component.charge_unit):
+                missing.append(f"{record.tariff_name}: {component.component_name}")
+    return missing
