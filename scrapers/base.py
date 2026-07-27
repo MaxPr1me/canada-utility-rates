@@ -200,3 +200,78 @@ class BaseScraper(ABC):
     def now_iso(self) -> str:
         """Current UTC time as ISO-8601 string."""
         return datetime.now(timezone.utc).isoformat()
+
+    def mark_fallback(
+        self,
+        records: list[TariffRecord],
+        reason: str = "Official source could not be fetched or completely verified",
+    ) -> list[TariffRecord]:
+        """Label seed output conservatively and visibly.
+
+        A fallback is useful historical context, but it is never evidence that
+        a rate is current. This method prevents legacy seed constants from
+        retaining ``high`` confidence after a failed live check.
+        """
+        for record in records:
+            record.confidence = "unverified"
+            record.notes = f"Provenance: seed_fallback. {reason}. " + (record.notes or "")
+            for component in record.components:
+                component.confidence = "unverified"
+                component.source_url = component.source_url or record.source_url
+                component.notes = f"Provenance: seed_fallback. {reason}. " + (component.notes or "")
+        self.logger.warning("Seed fallback for %s: %s", self.utility_name, reason)
+        return records
+
+    def verify_official_records(
+        self,
+        landing_url: str,
+        records: list[TariffRecord],
+        *,
+        pdf_keywords: Optional[list[str]] = None,
+    ) -> Optional[list[TariffRecord]]:
+        """Strictly verify complete seed structures against an official source.
+
+        This is intentionally a verifier rather than a universal tariff parser.
+        Utility-specific parsers remain responsible for interpreting changed
+        schedules. HTML is checked first; linked official PDFs are then checked
+        with page-aware extraction. A partial match fails closed.
+        """
+        from scrapers.utils.parsing import (
+            extract_pdf_pages,
+            find_pdf_links,
+            parse_html,
+            verify_tariff_values,
+        )
+
+        try:
+            html = self.fetch_page(landing_url)
+            candidates: list[tuple[str, str, Optional[str]]] = [
+                (landing_url, parse_html(html).get_text(" ", strip=True), "HTML rate schedule")
+            ]
+            for pdf_url in find_pdf_links(parse_html(html), pdf_keywords, landing_url):
+                pages = extract_pdf_pages(self.fetch_bytes(pdf_url))
+                if pages:
+                    candidates.append((pdf_url, "\n".join(p.text for p in pages), "PDF pages " + ", ".join(str(p.page_number) for p in pages)))
+
+            failures: list[str] = []
+            for source_url, text, detail in candidates:
+                missing = verify_tariff_values(text, records, require_context=True)
+                if missing:
+                    failures.extend(missing)
+                    continue
+                for record in records:
+                    record.confidence = "high"
+                    record.source_url = source_url
+                    record.source_page = detail
+                    record.notes = "Provenance: officially_verified. " + (record.notes or "")
+                    for component in record.components:
+                        component.confidence = "high"
+                        component.source_url = source_url
+                        component.source_detail = detail
+                        component.notes = "Provenance: officially_verified. " + (component.notes or "")
+                self.logger.info("Officially verified %d tariffs at %s (%s)", len(records), source_url, detail)
+                return records
+            self.logger.warning("Structural drift for %s; unverified components: %s", self.utility_name, "; ".join(dict.fromkeys(failures)))
+        except Exception as exc:
+            self.logger.warning("Official-source fetch failed for %s: %s", self.utility_name, exc)
+        return None

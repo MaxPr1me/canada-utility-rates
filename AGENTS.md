@@ -420,3 +420,13 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - **`.js`** — JavaScript file. Makes the web page interactive.
 - **`.yml`** — YAML file. Used for GitHub Actions configuration.
 - **`.md`** — Markdown file. Human-readable documentation (like this file).
+
+## Phase 5: Live Sources, Fallbacks, and History
+
+- **Live parsed** means the scraper read the current official page/document and rebuilt the tariff.
+- **Officially verified** means the project already knows the tariff structure and proved every component in its tariff, label, and unit context in a current official document. It is not a number-only match.
+- If fetching fails or a schedule changes shape, `mark_fallback()` labels every tariff and component `unverified` and adds `Provenance: seed_fallback` to notes. Never raise this confidence by hand.
+- “Structural drift” in logs names components that could not be verified. Open the registry URL, find the current approved schedule, update the utility-specific interpretation and fixture, then run its targeted dry run.
+- Ontario updates start with the OEB common-rate page, then each distributor's approved tariff. Alberta wires, default retail, AESO, gas, and northern sources must remain separate and preserve their published classes, communities, tiers, and units.
+- Test comparison locally with `python -m http.server --directory site 8000`: add two cards, open **Compare**, remove/replace either, and check the mobile horizontal table. It never calculates a bill total.
+- Every successful stored scrape appends `historical_snapshots`. Canonical hashes ignore component ordering but change for values, units, tiers, dates, or structure; old effective-date versions are never deleted.

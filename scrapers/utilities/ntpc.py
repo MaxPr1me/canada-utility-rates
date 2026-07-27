@@ -95,29 +95,13 @@ class NTPCScraper(BaseScraper):
             )
         else:
             self.logger.warning("Live scrape failed — using seed data for NTPC")
-            records.extend(self._seed_data())
+            records.extend(self.mark_fallback(self._seed_data()))
 
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """
-        Attempt to parse rates from the live NTPC website.
-
-        Returns None until live parsing logic is implemented and verified.
-        NTPC publishes rates in a tabular format on their website, but
-        the multi-zone structure makes automated parsing complex and
-        requires manual verification of the HTML structure.
-        """
-        try:
-            html = self.fetch_page(SEED_RESIDENTIAL_YELLOWKNIFE["source_url"])
-            if "rate" in html.lower():
-                self.logger.info(
-                    "Reached NTPC rate page — live parsing not yet implemented"
-                )
-            return None  # TODO: implement HTML parsing once structure is verified
-        except Exception as e:
-            self.logger.warning("Could not fetch NTPC page: %s", e)
-            return None
+        """Verify every modelled component against the current official schedule."""
+        return self.verify_official_records(SEED_RESIDENTIAL_YELLOWKNIFE["source_url"], self._seed_data())
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""

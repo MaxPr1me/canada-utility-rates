@@ -94,7 +94,7 @@ class BCHydroScraper(BaseScraper):
 
         # Fall back to seed data
         self.logger.warning("Live scrape failed -- using seed data for BC Hydro")
-        return self._seed_data()
+        return self.mark_fallback(self._seed_data())
 
     # ── Live scraping ─────────────────────────────────────────
 

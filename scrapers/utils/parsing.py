@@ -10,13 +10,29 @@ from __future__ import annotations
 
 import io
 import re
+import csv
+import hashlib
 import logging
-from typing import Optional
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Iterable, Optional
 from urllib.parse import urljoin, urlsplit
 
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class DocumentPage:
+    """Text extracted from one source page, retaining its human page number."""
+
+    page_number: int
+    text: str
+
+    @property
+    def source_detail(self) -> str:
+        return f"PDF page {self.page_number}"
 
 
 # ─── HTML helpers ──────────────────────────────────────────────
@@ -120,6 +136,75 @@ def extract_pdf_text(pdf_bytes: bytes) -> str:
     return "\n\n".join(text_parts)
 
 
+def extract_pdf_pages(pdf_bytes: bytes, minimum_characters: int = 20) -> list[DocumentPage]:
+    """Extract usable PDF pages and fail closed on empty/corrupt documents.
+
+    Page boundaries are deliberately retained so a component can cite an exact
+    location. Repeated whitespace is normalized, while minus signs and
+    parentheses (which commonly identify credits) are preserved.
+    """
+    try:
+        import pdfplumber
+    except ImportError:
+        logger.error("pdfplumber not installed — run: pip install pdfplumber")
+        return []
+
+    pages: list[DocumentPage] = []
+    try:
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            for number, page in enumerate(pdf.pages, 1):
+                raw = page.extract_text(x_tolerance=2, y_tolerance=3) or ""
+                text = normalize_document_text(raw)
+                if len(re.sub(r"\W", "", text)) >= minimum_characters:
+                    pages.append(DocumentPage(number, text))
+    except Exception as exc:
+        logger.warning("PDF extraction failed closed: %s", exc)
+        return []
+    return pages
+
+
+def normalize_document_text(text: str) -> str:
+    """Normalize extracted document text and reconstruct wrapped rows."""
+    lines = [re.sub(r"\s+", " ", line).strip() for line in text.splitlines()]
+    repeated = {line for line in lines if line and lines.count(line) > 2}
+    output: list[str] = []
+    for line in lines:
+        if not line or line in repeated:
+            continue
+        # A line with no numeric value is normally a wrapped label. Keep it on
+        # the same logical row as the following value-bearing line.
+        if output and not re.search(r"\d", output[-1]) and re.search(r"\d", line):
+            output[-1] = f"{output[-1]} {line}"
+        else:
+            output.append(line)
+    return "\n".join(output)
+
+
+def find_pdf_section(
+    pages: Iterable[DocumentPage],
+    section_labels: Iterable[str],
+    *,
+    tariff_code: Optional[str] = None,
+    following_pages: int = 1,
+) -> list[DocumentPage]:
+    """Return pages belonging to a labelled tariff section.
+
+    Merely finding a number is insufficient: at least one requested label and,
+    when supplied, the tariff code must occur on the anchor page. A limited
+    number of following pages supports schedules split across page boundaries.
+    """
+    page_list = list(pages)
+    labels = [label.casefold() for label in section_labels]
+    for index, page in enumerate(page_list):
+        folded = page.text.casefold()
+        if not any(label in folded for label in labels):
+            continue
+        if tariff_code and not re.search(rf"\b{re.escape(tariff_code)}\b", page.text, re.I):
+            continue
+        return page_list[index:index + following_pages + 1]
+    return []
+
+
 # ─── Spreadsheet helpers ──────────────────────────────────────
 
 def read_xlsx_tables(xlsx_bytes: bytes) -> dict[str, list[list[str]]]:
@@ -146,6 +231,18 @@ def read_xlsx_tables(xlsx_bytes: bytes) -> dict[str, list[list[str]]]:
     return result
 
 
+def read_csv_rows(csv_bytes: bytes) -> list[dict[str, str]]:
+    """Read an official UTF-8/UTF-8-BOM CSV into named rows."""
+    text = csv_bytes.decode("utf-8-sig")
+    return list(csv.DictReader(io.StringIO(text)))
+
+
+def content_hash(content: bytes | str) -> str:
+    """Return a stable SHA-256 hash for downloaded official content."""
+    data = content.encode("utf-8") if isinstance(content, str) else content
+    return hashlib.sha256(data).hexdigest()
+
+
 # ─── Numeric / text cleaning ─────────────────────────────────
 
 def clean_currency(text: str) -> Optional[float]:
@@ -167,7 +264,8 @@ def clean_currency(text: str) -> Optional[float]:
     # Check for cents
     is_cents = "¢" in text or "cents" in text.lower()
 
-    # Extract numeric value
+    # Parentheses and a leading minus are both published credit conventions.
+    negative = text.startswith("-") or bool(re.match(r"^\(\d", text))
     match = re.search(r"(\d+\.?\d*)", text)
     if not match:
         return None
@@ -178,7 +276,40 @@ def clean_currency(text: str) -> Optional[float]:
     if is_cents:
         value = value / 100.0
 
-    return value
+    return -value if negative else value
+
+
+def normalize_charge_unit(text: str) -> Optional[str]:
+    """Normalize Canadian tariff units without conflating kW and kVA."""
+    value = text.casefold().replace("³", "3").replace("cubic metre", "m3")
+    period = "month" if re.search(r"month|monthly", value) else "day" if re.search(r"day|daily", value) else None
+    measure = next((unit for token, unit in (
+        ("kwh", "kWh"), ("kva", "kVA"), ("kw", "kW"),
+        ("gj", "GJ"), ("m3", "m3"),
+    ) if token in value), None)
+    denominator = measure or period
+    if not denominator:
+        return None
+    return f"$/{denominator}"
+
+
+def extract_effective_date(text: str) -> Optional[str]:
+    """Extract an explicitly labelled effective date as ISO-8601."""
+    match = re.search(
+        r"(?:effective|rates? (?:as of|from))\s*:?[ ]*"
+        r"([A-Z][a-z]+\s+\d{1,2},?\s+\d{4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})",
+        text,
+        re.I,
+    )
+    if not match:
+        return None
+    raw = match.group(1).replace("/", "-")
+    for fmt in ("%B %d, %Y", "%B %d %Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(raw, fmt).date().isoformat()
+        except ValueError:
+            pass
+    return None
 
 
 def clean_number(text: str) -> Optional[float]:
@@ -399,7 +530,14 @@ def find_pdf_links(
     return pdf_links
 
 
-def rate_value_appears(text: str, value: float, unit: str) -> bool:
+def rate_value_appears(
+    text: str,
+    value: float,
+    unit: str,
+    *,
+    label: Optional[str] = None,
+    context_characters: int = 180,
+) -> bool:
     """Return whether an expected charge appears in extracted source text.
 
     This is deliberately strict: it accepts the normal dollar and cent
@@ -416,7 +554,7 @@ def rate_value_appears(text: str, value: float, unit: str) -> bool:
 
     if unit == "$/kWh":
         cents = value * 100
-        cent_values = {f"{cents:.2f}", f"{cents:.3f}", f"{cents:.4f}"}
+        cent_values = {f"{cents:g}", f"{cents:.2f}", f"{cents:.3f}", f"{cents:.4f}"}
         patterns.extend(
             rf"(?<!\d){re.escape(number)}\s*(?:¢|cents?)\s*(?:/|per)\s*kWh"
             for number in cent_values
@@ -425,7 +563,11 @@ def rate_value_appears(text: str, value: float, unit: str) -> bool:
     unit_name = {
         "$/kWh": r"kWh",
         "$/kW": r"kW",
+        "$/kVA": r"kVA",
         "$/month": r"(?:month|mo(?:nthly)?)",
+        "$/day": r"day|daily",
+        "$/GJ": r"GJ",
+        "$/m3": r"m(?:3|³)",
     }.get(unit)
     if unit_name:
         patterns.extend(
@@ -433,16 +575,53 @@ def rate_value_appears(text: str, value: float, unit: str) -> bool:
             for number in dollar_values
         )
 
-    return any(re.search(pattern, normalized, re.IGNORECASE) for pattern in patterns)
+    matches = [m for pattern in patterns for m in re.finditer(pattern, normalized, re.IGNORECASE)]
+    if not matches:
+        return False
+    if not label:
+        return True
+    label_tokens = [t for t in re.findall(r"[a-z]{3,}", label.casefold()) if t not in {"charge", "rate"}]
+    if not label_tokens:
+        return False
+    for match in matches:
+        context = normalized[max(0, match.start() - context_characters):match.end() + context_characters].casefold()
+        if any(token in context for token in label_tokens):
+            return True
+    return False
 
 
-def verify_tariff_values(text: str, records: list) -> list[str]:
-    """List tariff components whose values cannot be found in source text."""
+def verify_tariff_values(
+    text: str,
+    records: list,
+    *,
+    require_context: bool = False,
+) -> list[str]:
+    """List components not proven in their tariff/label/unit context.
+
+    Each tariff's name or code must identify a section when contextual mode is
+    enabled. This prevents an unrelated occurrence of the same number elsewhere
+    in a large schedule from verifying a component.
+    """
     missing = []
     for record in records:
+        section = text
+        if require_context:
+            identifiers = [x for x in (record.tariff_code, record.tariff_name) if x]
+            locations = [text.casefold().find(str(x).casefold()) for x in identifiers]
+            locations = [loc for loc in locations if loc >= 0]
+            if not locations:
+                missing.extend(f"{record.tariff_name}: {c.component_name} (tariff section absent)" for c in record.components)
+                continue
+            start = min(locations)
+            section = text[max(0, start - 300):start + 8000]
         for component in record.components:
             if component.charge_value is None or not component.charge_unit:
                 continue
-            if not rate_value_appears(text, component.charge_value, component.charge_unit):
+            if not rate_value_appears(
+                section,
+                component.charge_value,
+                component.charge_unit,
+                label=component.component_name if require_context else None,
+            ):
                 missing.append(f"{record.tariff_name}: {component.component_name}")
     return missing

@@ -68,20 +68,13 @@ class ENMAXEnergyScraper(BaseScraper):
             self.logger.warning(
                 "Live scrape failed -- using seed data for ENMAX Energy"
             )
-            records.extend(self._seed_data())
+            records.extend(self.mark_fallback(self._seed_data()))
 
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        try:
-            html = self.fetch_page(SOURCE_URL)
-            # TODO: parse live RRO rate from ENMAX page
-            return None
-        except Exception as e:
-            self.logger.warning(
-                "Could not fetch ENMAX Energy page: %s", e
-            )
-            return None
+        """Verify every modelled component against the current official schedule."""
+        return self.verify_official_records(SOURCE_URL, self._seed_data())
 
     def _seed_data(self) -> list[TariffRecord]:
         records = []

@@ -61,14 +61,13 @@ class FortisBCElectricScraper(BaseScraper):
             )
         else:
             self.logger.warning("Live scrape failed — using seed data for FortisBC Electric")
-            records.extend(self._seed_data())
+            records.extend(self.mark_fallback(self._seed_data()))
 
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Attempt to parse rates from the live FortisBC website."""
-        # TODO: implement HTML parsing once page structure is verified
-        return None
+        """Verify every community/tier component against the official schedule."""
+        return self.verify_official_records(SEED_RESIDENTIAL["source_url"], self._seed_data())
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""

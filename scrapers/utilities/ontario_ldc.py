@@ -774,30 +774,17 @@ class OntarioLDCScraper(BaseScraper):
         # Read utility name from registry entry
         if registry_entry:
             self._ldc_name = registry_entry["name"]
+            self._source_urls = [s["url"] for s in registry_entry.get("sources", [])]
         else:
             self._ldc_name = "Unknown Ontario LDC"
+            self._source_urls = [OEB_SOURCE_URL]
 
         super().__init__(utility_name=self._ldc_name, province="ON")
 
         # Look up delivery charges
         self._ldc_data = ONTARIO_LDC_DATA.get(self._ldc_name)
         if not self._ldc_data:
-            self.logger.warning(
-                "No delivery charge data for %s -- will use Ontario median values",
-                self._ldc_name,
-            )
-            # Ontario median fallback
-            self._ldc_data = {
-                "confidence": "unverified",
-                "res": {"fixed": 7.50, "dist_vol": 0.0210},
-                "gs_s": {"fixed": 14.00, "dist_vol": 0.0210},
-                "gs_d1": {
-                    "fixed": 185.00, "dist_demand": 4.10,
-                    "tx_network": 4.65, "tx_connection": 2.70,
-                    "low_voltage": 0.01950,
-                    "demand_min_kw": 50, "demand_max_kw": 1499,
-                },
-            }
+            self.logger.error("No approved delivery data for %s; no estimated tariff will be emitted", self._ldc_name)
 
     def scrape(self) -> list[TariffRecord]:
         records = []
@@ -806,14 +793,45 @@ class OntarioLDCScraper(BaseScraper):
             records.extend(live)
         else:
             self.logger.info("Using seed data for %s", self._ldc_name)
-            records.extend(self._seed_data())
+            records.extend(self.mark_fallback(self._seed_data()))
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        # Placeholder -- each LDC's website has different HTML.
-        return None
+        """Verify common OEB and LDC delivery components as one structure."""
+        if not self._ldc_data:
+            return None
+        from scrapers.utils.parsing import parse_html, verify_tariff_values
+
+        records = self._seed_data()
+        texts, fetched = [], []
+        try:
+            for url in dict.fromkeys([OEB_SOURCE_URL, *self._source_urls]):
+                text = parse_html(self.fetch_page(url)).get_text(" ", strip=True)
+                if text:
+                    texts.append(text)
+                    fetched.append(url)
+        except Exception as exc:
+            self.logger.warning("Ontario official-source fetch failed for %s: %s", self._ldc_name, exc)
+            return None
+        missing = verify_tariff_values("\n".join(texts), records, require_context=True)
+        if missing:
+            self.logger.warning("Structural drift for %s: %s", self._ldc_name, "; ".join(missing))
+            return None
+        detail = "OEB common rates plus LDC approved rate page"
+        for record in records:
+            record.confidence = "high"
+            record.source_url = fetched[-1]
+            record.source_page = detail
+            record.notes = "Provenance: officially_verified. " + (record.notes or "")
+            for component in record.components:
+                component.confidence = "high"
+                component.source_url = component.source_url or fetched[-1]
+                component.source_detail = detail
+        return records
 
     def _seed_data(self) -> list[TariffRecord]:
+        if not self._ldc_data:
+            return []
         confidence = self._ldc_data["confidence"]
         res = self._ldc_data["res"]
         gs_s = self._ldc_data["gs_s"]

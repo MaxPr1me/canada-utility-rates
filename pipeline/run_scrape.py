@@ -21,6 +21,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib
 import json
 import logging
@@ -101,6 +102,23 @@ def load_scraper(registry_entry: dict) -> BaseScraper | None:
 
 
 # ─── Database storage ─────────────────────────────────────────
+
+def canonical_snapshot(record: TariffRecord) -> tuple[str, str]:
+    """Serialize a semantic tariff deterministically for historical hashing.
+
+    Component ordering is not meaningful, but every component field (including
+    units, tiers, dates, source and structure metadata) is. Sorting canonical
+    component dictionaries removes false changes without hiding real ones.
+    """
+    tariff = asdict(record)
+    components = tariff.pop("components")
+    tariff["components"] = sorted(
+        components,
+        key=lambda component: json.dumps(component, sort_keys=True, ensure_ascii=False, separators=(",", ":")),
+    )
+    payload = json.dumps(tariff, sort_keys=True, default=str, ensure_ascii=False, separators=(",", ":"))
+    return payload, hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
 
 def store_results(records: list[TariffRecord], run_id: int, conn: sqlite3.Connection) -> int:
     """
@@ -200,10 +218,7 @@ def store_results(records: list[TariffRecord], run_id: int, conn: sqlite3.Connec
             ))
 
         # Store historical snapshot
-        tariff_dict = asdict(record)
-        tariff_json = json.dumps(tariff_dict, default=str, ensure_ascii=False)
-        import hashlib
-        snapshot_hash = hashlib.sha256(tariff_json.encode("utf-8")).hexdigest()
+        tariff_json, snapshot_hash = canonical_snapshot(record)
 
         cursor.execute("""
             INSERT INTO historical_snapshots (

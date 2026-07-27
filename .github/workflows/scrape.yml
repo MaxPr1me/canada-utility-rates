@@ -57,6 +57,9 @@ jobs:
       - name: Initialize database (if needed)
         run: python -m pipeline.run_scrape --init-db
 
+      - name: Run deterministic tests before scraping
+        run: pytest -q
+
       - name: Run scrapers
         id: scrape
         run: |
@@ -68,11 +71,21 @@ jobs:
 
       - name: Validate data
         id: validate
-        continue-on-error: true
         run: python -m pipeline.validate 2>&1 | tee validate_output.txt
 
       - name: Export JSON for site
         run: python -m pipeline.export_json
+
+      - name: Reject empty or corrupt exports
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for name in ("rates.json", "utilities.json", "summary.json"):
+              value = json.loads((Path("site/data") / name).read_text())
+              if not value:
+                  raise SystemExit(f"Refusing to publish empty {name}")
+          PY
 
       - name: Generate diff report
         id: diff

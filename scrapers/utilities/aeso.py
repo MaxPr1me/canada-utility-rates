@@ -54,20 +54,13 @@ class AESOScraper(BaseScraper):
             self.logger.warning(
                 "Live scrape failed -- using seed data for AESO"
             )
-            records.extend(self._seed_data())
+            records.extend(self.mark_fallback(self._seed_data()))
 
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        try:
-            html = self.fetch_page(SOURCE_URL)
-            # TODO: parse live AESO pool price from report page
-            return None
-        except Exception as e:
-            self.logger.warning(
-                "Could not fetch AESO pool price report: %s", e
-            )
-            return None
+        """Verify every modelled component against the current official schedule."""
+        return self.verify_official_records(SOURCE_URL, self._seed_data())
 
     def _seed_data(self) -> list[TariffRecord]:
         records = []

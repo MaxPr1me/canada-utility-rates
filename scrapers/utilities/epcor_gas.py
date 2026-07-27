@@ -48,17 +48,13 @@ class EPCORGasScraper(BaseScraper):
             records.extend(live)
         else:
             self.logger.warning("Live scrape failed — using seed data for EPCOR Natural Gas")
-            records.extend(self._seed_data())
+            records.extend(self.mark_fallback(self._seed_data()))
 
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        try:
-            html = self.fetch_page(SEED_RESIDENTIAL["source_url"])
-            return None
-        except Exception as e:
-            self.logger.warning("Could not fetch EPCOR Natural Gas page: %s", e)
-            return None
+        """Verify every modelled component against the current official schedule."""
+        return self.verify_official_records(SEED_RESIDENTIAL["source_url"], self._seed_data())
 
     def _seed_data(self) -> list[TariffRecord]:
         records = []
