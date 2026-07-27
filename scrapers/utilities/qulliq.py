@@ -80,29 +80,13 @@ class QulliqScraper(BaseScraper):
             self.logger.warning(
                 "Live scrape failed — using seed data for Qulliq Energy"
             )
-            records.extend(self._seed_data())
+            records.extend(self.mark_fallback(self._seed_data()))
 
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """
-        Attempt to parse rates from the live Qulliq Energy website.
-
-        Returns None until live parsing logic is implemented and verified.
-        QEC publishes rates on their website, but the subsidy structure
-        is complex and rates may be presented differently than the
-        formal tariff schedule.
-        """
-        try:
-            html = self.fetch_page(SEED_RESIDENTIAL["source_url"])
-            if "rate" in html.lower():
-                self.logger.info(
-                    "Reached Qulliq Energy rate page — live parsing not yet implemented"
-                )
-            return None  # TODO: implement HTML parsing once structure is verified
-        except Exception as e:
-            self.logger.warning("Could not fetch Qulliq Energy page: %s", e)
-            return None
+        """Verify every community/tier component against the official schedule."""
+        return self.verify_official_records(SEED_RESIDENTIAL["source_url"], self._seed_data())
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""

@@ -340,28 +340,15 @@ All other provinces use vertically integrated Crown utilities with fully regulat
 - Provincial market structure research (`market_structure_notes.json`)
 - `market_pricing` database table
 
-### Phase 5: Live Parser Hardening & Historical Tracking (In Progress)
-- **Step 1 (Complete):** Foundation infrastructure
-  - Change detection module (`scrapers/utils/change_detection.py`) — compares live-parsed vs seed data with severity thresholds (info/warning/critical), rejects live data on critical drift
-  - Enhanced parsing helpers in `scrapers/utils/parsing.py` — label/rate extraction, JS detection, relative/query-string PDF link resolution, and strict official-source component verification
-  - URL corrections for rebranded utilities (Heritage Gas → Eastward Energy, Liberty Gas NB → naturalgasnb.com, SaskPower, NB Power)
-  - Test fixture directory (`tests/fixtures/`) for saved HTML snapshots
-  - 27 new change detection tests (174 total)
-- **Step 2 (Complete):** Live HTML parsers for Tier 1 major provincial utilities
-  - **Full live HTML parsers:** Manitoba Hydro (table extraction, 3 tariffs), NB Power (table extraction with merged cells, 3 tariffs), Nova Scotia Power (residential label-based + commercial Rates 10/11/12, 4 tariffs), BC Hydro (prose text regex, 4 tariffs including LGS)
-  - **PDF live parser:** Hydro-Québec (Rate D, G, M from official electricity-rates.pdf, 3 tariffs)
-  - **Official PDF verification:** SaskPower, NL Hydro, Newfoundland Power — resolve and download linked official schedules, require every component to match before marking records live-verified, and flag exact missing components on drift
-  - Seed data refreshed to 2025-2026 published rates for all 8 utilities
-  - URL fixes for NS Power, NL Hydro, Newfoundland Power (old URLs returned 404)
-  - Structural fixes: NB Power residential tiered→flat, BC Hydro SGS demand charge removed, BC Hydro LGS added
-  - 241 tests across scraper, parser, change-detection, validation, and schema coverage
-  - Gap report at `docs/live_parser_gap_report.md`
-- **Step 3 (Next):** Ontario OEB province-wide source validation (individual LDC source depth remains flagged)
-- **Step 4:** Alberta electricity parsers (distribution + RRO)
-- **Step 5:** Gas utility parsers
-- **Step 6:** Northern/remote utility parsers
-- Build rate comparison tools (compare two utilities side by side)
-- Add PDF tariff parsing for complex rate schedules
+### Phase 5: Live Parser Hardening & Historical Tracking (In Progress — blockers documented)
+- Reusable page-aware PDF extraction, wrapped-row normalization, strict tariff/label/unit contextual verification, negative-credit and unit helpers.
+- Explicit provenance: failed fetches and structural drift now produce `unverified` seed fallbacks rather than high-confidence current data. Unknown Ontario LDCs no longer receive invented median rates.
+- Official component-verification paths cover Ontario, Alberta distribution/default retail/AESO, active gas utilities, and northern/community utilities. The full per-utility status and external-source blockers are tracked in `docs/phase5_completion_matrix.md`.
+- Historical snapshots use canonical, component-order-independent JSON hashes; integration tests cover repeat, change, nullable code, append-only, and effective-date-version behaviour.
+- Static side-by-side comparison aligns components and flags incompatible fuel, unit, or tariff structures without calculating a total.
+- Monthly publishing now runs deterministic tests and fails closed on validation or empty exports; a separate non-blocking source-health workflow checks unstable live sites.
+- **Not marked complete:** many Ontario distributors still lack a registry link to an individual approved tariff, and fixture-reviewed tariff-specific interpretation is still needed when official documents drift. The system fails safely, but these are material completion blockers.
+- **248 deterministic tests** cover scraper output, parsers, provenance, change detection, validation, schema, and historical tracking.
 
 ### Phase 5.5: Enhanced Web Interface ✓
 - Two-tab layout: Rate Browser + Market Pricing dashboard

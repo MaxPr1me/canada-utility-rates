@@ -920,3 +920,18 @@ footer a:hover {
         flex-direction: column;
     }
 }
+
+/* Phase 5 side-by-side comparison */
+.compare-add { margin-top: .75rem; width: 100%; }
+.comparison-empty { padding: 2rem; text-align: center; background: #fff; border-radius: 8px; }
+.comparison-warning { padding: 1rem; border-left: 4px solid #b45309; background: #fffbeb; color: #78350f; }
+.comparison-actions { display: flex; gap: .75rem; margin: 1rem 0; flex-wrap: wrap; }
+.comparison-scroll { overflow-x: auto; }
+.comparison-table { width: 100%; min-width: 620px; border-collapse: collapse; background: #fff; }
+.comparison-table th, .comparison-table td { text-align: left; vertical-align: top; padding: .75rem; border: 1px solid #dbe3ea; }
+.comparison-table thead th, .comparison-section th { background: #edf4f7; }
+.component-type { display: block; text-transform: uppercase; font-size: .7rem; color: #52606d; }
+@media (max-width: 640px) {
+  .comparison-table { font-size: .86rem; }
+  .comparison-table th, .comparison-table td { padding: .55rem; }
+}

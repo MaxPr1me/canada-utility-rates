@@ -13,6 +13,7 @@
         <nav class="main-nav" id="main-nav">
             <button class="nav-tab active" data-view="rates">Rate Browser</button>
             <button class="nav-tab" data-view="market">Market Pricing</button>
+            <button class="nav-tab" data-view="compare">Compare <span id="compare-count">0/2</span></button>
         </nav>
     </header>
 
@@ -167,6 +168,17 @@
             </section>
 
         </div><!-- /view-market -->
+
+        <div id="view-compare" class="view-panel hidden">
+            <section class="market-header">
+                <h2>Side-by-Side Tariff Comparison</h2>
+                <p>Compare published components without combining unlike charges into a misleading total.</p>
+            </section>
+            <div id="comparison-empty" class="comparison-empty">
+                Choose “Compare” on two current tariff cards. You can replace either selection at any time.
+            </div>
+            <section id="comparison-container" aria-live="polite"></section>
+        </div>
 
         <!-- Rate detail modal (shared, outside both views) -->
         <div id="modal-overlay" class="modal-overlay hidden">

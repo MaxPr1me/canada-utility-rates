@@ -72,29 +72,13 @@ class YukonElectricalScraper(BaseScraper):
             self.logger.warning(
                 "Live scrape failed — using seed data for Yukon Electrical"
             )
-            records.extend(self._seed_data())
+            records.extend(self.mark_fallback(self._seed_data()))
 
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """
-        Attempt to parse rates from the live Yukon Electrical website.
-
-        Returns None until live parsing logic is implemented and verified.
-        YECL (ATCO) publishes rates on their customer-service pages; the
-        exact HTML structure needs manual verification before reliable
-        automated parsing.
-        """
-        try:
-            html = self.fetch_page(SEED_RESIDENTIAL["source_url"])
-            if "rate" in html.lower():
-                self.logger.info(
-                    "Reached Yukon Electrical rate page — live parsing not yet implemented"
-                )
-            return None  # TODO: implement HTML parsing once structure is verified
-        except Exception as e:
-            self.logger.warning("Could not fetch Yukon Electrical page: %s", e)
-            return None
+        """Verify every community/tier component against the official schedule."""
+        return self.verify_official_records(SEED_RESIDENTIAL["source_url"], self._seed_data())
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""

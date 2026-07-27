@@ -246,10 +246,11 @@ class TestHydroQuebecUpdated:
         for r in self.records:
             assert r.effective_date == "2026-04-01"
 
-    def test_confidence_is_high(self):
-        """HQ rates now verified from official PDF — confidence should be high."""
+    def test_fallback_confidence_is_unverified(self):
+        """A mocked live failure must not present seed rates as freshly verified."""
         for r in self.records:
-            assert r.confidence == "high"
+            assert r.confidence == "unverified"
+            assert "seed_fallback" in r.notes
 
     def test_rate_d_values_updated(self):
         rate_d = [r for r in self.records if r.tariff_code == "D"][0]

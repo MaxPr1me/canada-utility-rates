@@ -353,13 +353,11 @@ class TestOntarioLDCScraper:
         fixed2 = [c for c in r2.components if c.component_type == "fixed"][0].charge_value
         assert fixed1 != fixed2  # Different LDCs have different delivery charges
 
-    def test_unknown_ldc_uses_median(self):
+    def test_unknown_ldc_does_not_invent_median(self):
         from scrapers.utilities.ontario_ldc import OntarioLDCScraper
         s = OntarioLDCScraper(registry_entry={"name": "Nonexistent Power Co."})
         records = s.scrape()
-        # 3 residential + 3 GS<50 + 1 demand tier (gs_d1) + 1 street lighting = 8
-        assert len(records) == 8
-        assert records[0].confidence == "unverified"
+        assert records == []
 
     def test_all_55_ldcs_have_data(self):
         from scrapers.utilities.ontario_ldc import ONTARIO_LDC_DATA

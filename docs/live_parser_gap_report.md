@@ -106,3 +106,15 @@ component and uses fallback data rather than silently treating it as live.
 2. **NS Power industrial** — Rate 21, 22, 23 are available on the business page but are not yet scraped.
 3. **Ontario LDC depth** — the shared Ontario scraper provides broad registry coverage, but each LDC still needs individual source-structure validation rather than relying on a common data-driven pattern.
 4. **Live-network CI** — add a non-blocking scheduled source check. Unit tests deliberately use representative official-document text because utility sites can be unavailable or rate-limit CI.
+
+## Phase 5-wide status (2026-07-27)
+
+The original Tier 1 report above remains its historical detailed audit. The live
+scope now uses the maintained per-utility matrix in
+[`phase5_completion_matrix.md`](phase5_completion_matrix.md), covering all 53
+Ontario LDCs, Alberta wires/default retail/AESO, nine gas utilities, and four
+northern utilities. Each family has a deterministic contextual-verification
+path and conservative fallback provenance. Known fragilities are PDF layout,
+JS-only pages, renamed products, quarterly/monthly effective dates, and missing
+individual OEB-approved tariff links. Those gaps remain visible blockers; Phase
+5 is therefore not claimed complete.

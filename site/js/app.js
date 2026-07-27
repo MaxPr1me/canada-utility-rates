@@ -24,6 +24,7 @@
     let marketChart = null;
     let currentView = "rates";
     let utilityProvinceMap = {};
+    const comparison = [];
 
     // Multi-select filter state: each key holds a Set of selected values
     const filterState = {
@@ -391,10 +392,71 @@
                     ${compRows}
                     ${moreText}
                 </div>
+                <button type="button" class="btn-secondary compare-add">Compare</button>
             `;
+
+            card.querySelector(".compare-add").addEventListener("click", (event) => {
+                event.stopPropagation();
+                addToComparison(rate);
+            });
 
             container.appendChild(card);
         });
+    }
+
+    function tariffIdentity(rate) {
+        return [rate.utility_name, rate.tariff_code || rate.name || rate.tariff_name, rate.effective_date].join("|");
+    }
+
+    function addToComparison(rate) {
+        const existing = comparison.findIndex(item => tariffIdentity(item) === tariffIdentity(rate));
+        if (existing >= 0) comparison.splice(existing, 1);
+        else {
+            if (comparison.length === 2) comparison.shift();
+            comparison.push(rate);
+        }
+        document.getElementById("compare-count").textContent = `${comparison.length}/2`;
+        renderComparison();
+        switchView("compare");
+    }
+
+    function renderComparison() {
+        const container = document.getElementById("comparison-container");
+        const empty = document.getElementById("comparison-empty");
+        empty.classList.toggle("hidden", comparison.length > 0);
+        if (!comparison.length) { container.innerHTML = ""; return; }
+        const metadata = [
+            ["Utility", "utility_name"], ["Province", "province"], ["Fuel", "utility_type"],
+            ["Tariff", "name"], ["Tariff code", "tariff_code"], ["Customer class", "customer_class"],
+            ["Subclass", "sub_class"], ["Eligibility", "eligibility"], ["Effective date", "effective_date"],
+            ["Structure", "rate_structure"], ["Confidence", "confidence"], ["Source", "source_url"],
+        ];
+        const unitSets = comparison.map(rate => [...new Set((rate.components || []).map(c => c.charge_unit).filter(Boolean))].sort().join("|"));
+        const incompatible = comparison.length === 2 && (
+            comparison[0].utility_type !== comparison[1].utility_type ||
+            comparison[0].rate_structure !== comparison[1].rate_structure || unitSets[0] !== unitSets[1]
+        );
+        const componentKeys = [...new Set(comparison.flatMap(rate => (rate.components || []).map(c =>
+            [c.component_type, c.component_name, c.charge_unit || "variable"].join("|"))))];
+        container.innerHTML = `
+            ${incompatible ? '<p class="comparison-warning" role="status">These tariffs use different fuels, units, or structures. Components are shown separately and are not totalled.</p>' : ''}
+            <div class="comparison-actions">${comparison.map((rate, index) => `<button class="btn-secondary compare-remove" data-index="${index}">Remove ${escapeHtml(rate.utility_name)}</button>`).join("")}</div>
+            <div class="comparison-scroll"><table class="comparison-table">
+            <thead><tr><th>Field / component</th>${comparison.map(rate => `<th>${escapeHtml(rate.utility_name)}</th>`).join("")}</tr></thead><tbody>
+            ${metadata.map(([label, key]) => `<tr><th scope="row">${label}</th>${comparison.map(rate => `<td>${key === "source_url" && rate[key] ? `<a href="${escapeHtml(rate[key])}" target="_blank" rel="noopener">Official source</a>` : escapeHtml(rate[key] || "—")}</td>`).join("")}</tr>`).join("")}
+            <tr class="comparison-section"><th colspan="${comparison.length + 1}">Published components (no calculated total)</th></tr>
+            ${componentKeys.map(key => {
+                const [type, name, unit] = key.split("|");
+                return `<tr><th scope="row"><span class="component-type">${escapeHtml(type)}</span>${escapeHtml(name)} <small>${escapeHtml(unit)}</small></th>${comparison.map(rate => {
+                    const c = (rate.components || []).find(item => [item.component_type, item.component_name, item.charge_unit || "variable"].join("|") === key);
+                    return `<td>${c ? `${formatCharge(c)}${c.market_reference ? ' <span class="market-ref-badge">Market-indexed</span>' : ''}<br><small>${escapeHtml(formatDetails(c))}</small>` : "—"}</td>`;
+                }).join("")}</tr>`;
+            }).join("")}</tbody></table></div>`;
+        container.querySelectorAll(".compare-remove").forEach(button => button.addEventListener("click", () => {
+            comparison.splice(Number(button.dataset.index), 1);
+            document.getElementById("compare-count").textContent = `${comparison.length}/2`;
+            renderComparison();
+        }));
     }
 
     // ── Modal ─────────────────────────────────────────────────

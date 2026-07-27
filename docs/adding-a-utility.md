@@ -197,3 +197,11 @@ This prevents broken parsers from silently corrupting data. Changes are classifi
 - **info** (<5%): normal rate adjustments
 - **warning** (5-30%): notable changes worth reviewing
 - **critical** (>30%): likely a parsing error — live data is rejected
+
+## Phase 5 provenance and fixture checklist
+
+1. Save a small representative HTML, CSV, or extracted-text fixture; normal tests must not use the network.
+2. Preserve page/section in `source_detail`, direct URLs on components, effective dates, signs, and published units (especially kW versus kVA).
+3. A parser must return the complete expected structure or fail closed. For a stable known structure, `verify_official_records()` may prove all components contextually.
+4. Send failed live output through `mark_fallback()`; fallback confidence is always `unverified` and its notes identify `seed_fallback`.
+5. Add change/drift, partial-rejection, negative-credit, and date tests as applicable. Never verify a component merely because its number appears elsewhere in a PDF.

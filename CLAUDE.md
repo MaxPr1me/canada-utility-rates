@@ -53,3 +53,11 @@ Every task should include a documentation review step. At minimum, assess whethe
 - `CLAUDE.md` — this file (architecture, patterns, conventions)
 - `docs/` — any relevant guides or reports (e.g., `adding-a-utility.md`, `live_parser_gap_report.md`)
 Update these files when the task changes architecture, adds major features, changes conventions, or updates test/tariff counts.
+
+## Phase 5 hardening conventions
+
+- `BaseScraper.verify_official_records()` is the shared strict HTML/PDF component verifier; utility modules retain tariff interpretation. `mark_fallback()` recursively downgrades confidence and emits provenance notes.
+- `scrapers.utils.parsing` provides `DocumentPage`, page-aware fail-closed PDF extraction/section selection, CSV/XLSX readers, content hashing, effective-date/unit/currency normalization, and contextual verification.
+- Snapshot serialization is canonical JSON with sorted component dictionaries. Ordering alone is ignored; all semantic fields remain hashed. `diff_runs` compares append-only per-run snapshots.
+- The no-build comparison state is an in-memory two-item array in `site/js/app.js`; it aligns exact type/name/unit keys and never totals them.
+- Deterministic tests block unmocked network access. Run `pytest -q` (248 tests); live availability belongs to the non-blocking source-health workflow.

@@ -1,0 +1,28 @@
+name: Non-blocking Source Health
+
+on:
+  schedule:
+    - cron: "0 10 15 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-source-check:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt && pip install -e .
+      - name: Exercise all official sources without publishing
+        run: python -m pipeline.run_scrape --dry-run 2>&1 | tee source-health.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: source-health-${{ github.run_id }}
+          path: source-health.txt

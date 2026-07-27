@@ -80,7 +80,7 @@ class ManitobaHydroScraper(BaseScraper):
             )
         else:
             self.logger.warning("Live scrape failed — using seed data for Manitoba Hydro")
-            records.extend(self._seed_data())
+            records.extend(self.mark_fallback(self._seed_data()))
 
         return records
 

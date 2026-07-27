@@ -112,7 +112,7 @@ class NBPowerScraper(BaseScraper):
             )
         else:
             self.logger.warning("Live scrape failed — using seed data for NB Power")
-            records.extend(self._seed_data())
+            records.extend(self.mark_fallback(self._seed_data()))
 
         return records
 
