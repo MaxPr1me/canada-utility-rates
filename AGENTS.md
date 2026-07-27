@@ -62,7 +62,7 @@ The whole cycle runs automatically once a month using GitHub Actions (a free ser
 | `scrapers/utilities/aeso.py` | AESO market reference price (Alberta wholesale). |
 | `scrapers/utilities/nl_hydro.py` | NL Hydro electricity rates (Newfoundland — residential + commercial). |
 | `scrapers/registry.py` | Reads the list of all utilities and their scraper info. |
-| `scrapers/utils/parsing.py` | HTML/PDF parsing helpers: `find_text_near_label()`, `extract_rate_from_text()`, `detect_js_rendered()`, `find_pdf_links()`. |
+| `scrapers/utils/parsing.py` | HTML/PDF parsing helpers, including PDF URL resolution and strict `verify_tariff_values()` checks that prove fallback values still appear in an official schedule. |
 | `scrapers/utils/change_detection.py` | Compares live-parsed rates against seed data. Flags changes by severity (info/warning/critical). If critical drift is detected, the scraper rejects live data and falls back to seed. |
 | `scrapers/utils/market_pricing.py` | Ontario IESO market pricing model (HOEP + GA hourly bins). |
 | `scrapers/utils/validation.py` | Data quality checks run after every scrape. |

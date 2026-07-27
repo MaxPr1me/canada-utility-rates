@@ -18,13 +18,13 @@ Canada-wide utility rate scraping and browsing platform.
 
 ## Key patterns
 - Scrapers try live HTTP fetch first, fall back to hardcoded seed data.
-- **Live parsers** (Phase 5 Step 2): Manitoba Hydro, NB Power, NS Power (residential + commercial Rates 10/11/12), BC Hydro have full HTML parsers. Hydro-Québec live-parsed from official PDF. SaskPower, NL Hydro, Newfoundland Power detected as PDF-only (seed data only).
+- **Live parsers** (Phase 5 Step 2): Manitoba Hydro, NB Power, NS Power (residential + commercial Rates 10/11/12), BC Hydro have full HTML parsers. Hydro-Québec is live-parsed from its official PDF. SaskPower, NL Hydro, and Newfoundland Power strictly verify every component against their linked official PDFs before marking fallback-shaped records live-verified.
 - Every tariff stores individual rate_components (fixed, energy, demand, delivery, riders, etc.) — never flatten to one number.
 - Historical snapshots are preserved in `historical_snapshots` table — never overwrite.
 - Validation runs after scraping (`scrapers/utils/validation.py`).
 - `confidence` field on tariffs/components tracks data quality: high / medium / low / unverified.
 - **Change detection** (`scrapers/utils/change_detection.py`): `compare_to_seed()` pairs live-parsed records with seed data, flags changes by severity (info <5%, warning 5-30%, critical >30%). Critical alerts cause fallback to seed data.
-- **Parsing helpers** (`scrapers/utils/parsing.py`): `find_text_near_label()`, `extract_rate_from_text()`, `detect_js_rendered()`, `find_pdf_links()` — ready for use by live parsers.
+- **Parsing helpers** (`scrapers/utils/parsing.py`): `find_text_near_label()`, `extract_rate_from_text()`, `detect_js_rendered()`, query-safe/relative-aware `find_pdf_links()`, and strict `verify_tariff_values()` official-source checks.
 
 ## Running
 ```bash

@@ -168,7 +168,13 @@ The project provides helpers in `scrapers/utils/parsing.py` for implementing liv
 - **`find_text_near_label(soup, label_text, search_radius=3)`** — finds numeric text near a labeled element (useful for label/value pairs in divs)
 - **`extract_rate_from_text(text)`** — regex extraction of rate values from free-form text (`$X.XXXX/kWh`, `X.XX cents/kWh`, `$XX.XX/month`, `$X.XXXX/GJ`)
 - **`detect_js_rendered(html)`** — detects JS-rendered pages where BeautifulSoup can't extract content
-- **`find_pdf_links(soup, keywords=None)`** — extracts PDF `<a>` hrefs, optionally filtered by keywords like "tariff" or "rate"
+- **`find_pdf_links(soup, keywords=None, base_url=None)`** — extracts PDF `<a>` hrefs (including links with query strings), optionally filters by keywords, and resolves relative links when `base_url` is supplied
+- **`verify_tariff_values(text, records)`** — returns the exact tariff components that are absent from extracted official-source text; only mark fallback records live-verified when this returns an empty list
+
+For PDF schedules, pass the landing page URL as `base_url`, download the
+resolved link with `fetch_bytes()`, and run `extract_pdf_text()` before
+verification. If any component is missing, log the returned list and fall back
+instead of labelling the data as live.
 
 ## Change detection
 

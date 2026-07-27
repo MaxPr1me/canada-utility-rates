@@ -343,20 +343,20 @@ All other provinces use vertically integrated Crown utilities with fully regulat
 ### Phase 5: Live Parser Hardening & Historical Tracking (In Progress)
 - **Step 1 (Complete):** Foundation infrastructure
   - Change detection module (`scrapers/utils/change_detection.py`) — compares live-parsed vs seed data with severity thresholds (info/warning/critical), rejects live data on critical drift
-  - Enhanced parsing helpers in `scrapers/utils/parsing.py` — `find_text_near_label()`, `extract_rate_from_text()`, `detect_js_rendered()`, `find_pdf_links()`
+  - Enhanced parsing helpers in `scrapers/utils/parsing.py` — label/rate extraction, JS detection, relative/query-string PDF link resolution, and strict official-source component verification
   - URL corrections for rebranded utilities (Heritage Gas → Eastward Energy, Liberty Gas NB → naturalgasnb.com, SaskPower, NB Power)
   - Test fixture directory (`tests/fixtures/`) for saved HTML snapshots
   - 27 new change detection tests (174 total)
 - **Step 2 (Complete):** Live HTML parsers for Tier 1 major provincial utilities
   - **Full live HTML parsers:** Manitoba Hydro (table extraction, 3 tariffs), NB Power (table extraction with merged cells, 3 tariffs), Nova Scotia Power (residential label-based + commercial Rates 10/11/12, 4 tariffs), BC Hydro (prose text regex, 4 tariffs including LGS)
   - **PDF live parser:** Hydro-Québec (Rate D, G, M from official electricity-rates.pdf, 3 tariffs)
-  - **PDF detection:** SaskPower, NL Hydro, Newfoundland Power — landing page parsing, PDF link logging (seed only)
+  - **Official PDF verification:** SaskPower, NL Hydro, Newfoundland Power — resolve and download linked official schedules, require every component to match before marking records live-verified, and flag exact missing components on drift
   - Seed data refreshed to 2025-2026 published rates for all 8 utilities
   - URL fixes for NS Power, NL Hydro, Newfoundland Power (old URLs returned 404)
   - Structural fixes: NB Power residential tiered→flat, BC Hydro SGS demand charge removed, BC Hydro LGS added
-  - 56 live parser tests (`tests/test_live_parsers.py`), 233+ total
+  - 241 tests across scraper, parser, change-detection, validation, and schema coverage
   - Gap report at `docs/live_parser_gap_report.md`
-- **Step 3 (Next):** Ontario OEB province-wide rate scraping
+- **Step 3 (Next):** Ontario OEB province-wide source validation (individual LDC source depth remains flagged)
 - **Step 4:** Alberta electricity parsers (distribution + RRO)
 - **Step 5:** Gas utility parsers
 - **Step 6:** Northern/remote utility parsers
