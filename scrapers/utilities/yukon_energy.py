@@ -21,11 +21,18 @@ Official source:
 from __future__ import annotations
 
 import logging
+import re
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
+from scrapers.utils.parsing import (
+    parse_html, detect_js_rendered, find_pdf_links, extract_pdf_text,
+    extract_effective_date,
+)
 
 logger = logging.getLogger(__name__)
+
+RATE_SCHEDULES_URL = "https://yukonenergy.ca/customer-service/rates/rate-schedules/"
 
 # ── Seed / fallback rate data ─────────────────────────────────────
 # Values below are approximate published rates as of early 2025.
@@ -86,8 +93,80 @@ class YukonEnergyScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Verify every community/tier component against the official schedule."""
-        return self.verify_official_records(SEED_RESIDENTIAL["source_url"], self._seed_data())
+        """Parse the effective residential rate (base + Riders R & J) from the official
+        Base Rates cross-reference schedule. Other classes stay as labelled seed."""
+        try:
+            html = self.fetch_page(RATE_SCHEDULES_URL)
+            if not html or detect_js_rendered(html):
+                html = self.fetch_rendered_page(RATE_SCHEDULES_URL)
+            if not html:
+                return None
+            pdf_links = find_pdf_links(
+                parse_html(html), keywords=["base", "rate", "cross", "reference"],
+                base_url=RATE_SCHEDULES_URL,
+            )
+            residential = self._parse_residential_pdf(pdf_links)
+            if not residential:
+                return None
+
+            live = self.mark_live_parsed([residential])
+            seed_only = [r for r in self._seed_data() if r.tariff_name != "Residential Service"]
+            if seed_only:
+                live = live + self.mark_fallback(seed_only)
+            return live
+        except Exception:
+            self.logger.exception("Error during Yukon Energy live scrape")
+            return None
+
+    def _parse_residential_pdf(self, pdf_links: list[str]) -> Optional[TariffRecord]:
+        """Return the 1160 residential record (effective rate incl. Riders R & J)."""
+        # The Base Rates cross-reference PDF holds the effective (base + rider) rates.
+        candidates = [u for u in pdf_links if "cross-reference" in u.lower() or "base_rates" in u.lower()]
+        for link in (candidates or pdf_links)[:6]:
+            try:
+                text = extract_pdf_text(self.fetch_bytes(link))
+            except Exception:
+                continue
+            cust = re.search(r"Customer\s*\$\s*[\d.]+\s*\$\s*[\d.]+\s*\$\s*[\d.]+\s*\$\s*([\d.]+)", text)
+            b1 = re.search(r"First 1000 kWh Energy Block 1\s*\u00a2/kWh\s*[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)", text)
+            b2 = re.search(r"1001-2500 kWh Energy Block 2\s*\u00a2/kWh\s*[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)", text)
+            b3 = re.search(r">2500 kWh Energy Block 3\s*\u00a2/kWh\s*[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)", text)
+            if not (cust and b1 and b2 and b3):
+                continue
+            return TariffRecord(
+                utility_name="Yukon Energy", province="YT", utility_type="electricity",
+                tariff_name="Residential Service Hydro (Rate 1160)", tariff_code="1160",
+                customer_class="residential", rate_structure="tiered",
+                effective_date=extract_effective_date(text) or SEED_RESIDENTIAL["effective_date"],
+                source_url=link, confidence="high",
+                notes=(
+                    "Yukon Energy residential (grid hydro, non-government) effective rate "
+                    "including Rider R and Rider J, from the official Base Rates cross-reference schedule."
+                ),
+                components=[
+                    RateComponent(
+                        component_type="fixed", component_name="Customer Charge",
+                        charge_value=float(cust.group(1)), charge_unit="$/month",
+                        notes="Monthly customer charge (base + Riders R & J)",
+                    ),
+                    RateComponent(
+                        component_type="energy", component_name="Energy Block 1 (first 1,000 kWh)",
+                        charge_value=float(b1.group(1)) / 100.0, charge_unit="$/kWh",
+                        tier_number=1, tier_threshold=1000, tier_unit="kWh",
+                    ),
+                    RateComponent(
+                        component_type="energy", component_name="Energy Block 2 (1,001-2,500 kWh)",
+                        charge_value=float(b2.group(1)) / 100.0, charge_unit="$/kWh",
+                        tier_number=2, tier_threshold=2500, tier_unit="kWh",
+                    ),
+                    RateComponent(
+                        component_type="energy", component_name="Energy Block 3 (over 2,500 kWh)",
+                        charge_value=float(b3.group(1)) / 100.0, charge_unit="$/kWh",
+                        tier_number=3, tier_threshold=2500, tier_unit="kWh",
+                    ),
+                ],
+            )
+        return None
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""

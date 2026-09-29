@@ -412,9 +412,9 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://yukonenergy.ca/customer-service/understanding-your-bill/residential-rates",
+          "url": "https://yukonenergy.ca/customer-service/rates/rate-schedules/",
           "source_type": "html",
-          "description": "Residential electricity rates in Yukon",
+          "description": "Rate schedules — Base Rates cross-reference (effective rate incl. Riders R & J)",
           "is_primary": true
         }
       ],
