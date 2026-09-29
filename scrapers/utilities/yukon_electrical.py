@@ -14,8 +14,15 @@ Rates are regulated by the Yukon Utilities Board and are closely
 aligned with Yukon Energy's published rates, though distribution
 charges differ slightly.
 
+The company now operates as ATCO Electric Yukon; the former
+yukonelectrical.com domain no longer resolves. Rates are published
+as Yukon Utilities Board rate-order PDFs and via a JavaScript single-
+page app that does not expose rate tables to headless rendering, so
+the residential/general-service figures below are carried as labelled
+seed until a machine-readable official schedule is wired up.
+
 Official source:
-  https://www.yukonelectrical.com/customer-service/rates
+  https://www.atcoelectricyukon.com/en-ca/rates.html
 """
 
 from __future__ import annotations
@@ -32,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 SEED_RESIDENTIAL = {
     "effective_date": "2024-04-01",
-    "source_url": "https://www.yukonelectrical.com/customer-service/rates",
+    "source_url": "https://www.atcoelectricyukon.com/en-ca/rates.html",
     "tier1_threshold_kwh": 1000,   # per month
     "tier1_rate": 0.1326,          # $/kWh
     "tier2_rate": 0.1481,          # $/kWh (above 1000 kWh)
@@ -41,7 +48,7 @@ SEED_RESIDENTIAL = {
 
 SEED_GENERAL_SERVICE = {
     "effective_date": "2024-04-01",
-    "source_url": "https://www.yukonelectrical.com/customer-service/rates",
+    "source_url": "https://www.atcoelectricyukon.com/en-ca/rates.html",
     "energy_rate": 0.1326,         # $/kWh
     "demand_charge": 12.72,        # $/kW
     "basic_charge_monthly": 28.33, # $/month
