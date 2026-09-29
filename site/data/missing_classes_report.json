@@ -98,6 +98,24 @@
     ]
   },
   {
+    "utility": "Maritime Electric",
+    "province": "PE",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "industrial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service (Rate 232)",
+      "General Service - Seasonal Operators Option (Rate 233)",
+      "Small Industrial (Rate 320)",
+      "Large Industrial (Rate 310)",
+      "Long Term Contract (Rate 340)",
+      "Short Term Contract (Rate 330)"
+    ]
+  },
+  {
     "utility": "SaskPower",
     "province": "SK",
     "utility_type": "electricity",

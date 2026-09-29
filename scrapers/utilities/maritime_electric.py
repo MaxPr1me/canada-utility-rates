@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
@@ -41,6 +42,56 @@ SEED_GENERAL_SERVICE = {
     "energy_rate": 0.1740,          # $/kWh
     "basic_charge_per_month": 30.00,  # $/month
 }
+
+# Non-lighting service classes published in the IRAC-approved Schedule of
+# Adjusted Rates (Section N-28). (rate code, display name, customer_class,
+# rate_structure). Street-lighting fixture rentals are intentionally excluded.
+RATE_CLASSES: list[tuple[str, str, str, str]] = [
+    ("110", "Residential Urban", "residential", "tiered"),
+    ("130", "Residential Rural", "residential", "tiered"),
+    ("131", "Residential Seasonal", "residential", "tiered"),
+    ("133", "Residential Seasonal Option", "residential", "tiered"),
+    ("232", "General Service", "commercial", "demand"),
+    ("233", "General Service - Seasonal Operators Option", "commercial", "demand"),
+    ("320", "Small Industrial", "industrial", "demand"),
+    ("310", "Large Industrial", "industrial", "demand"),
+    ("340", "Long Term Contract", "industrial", "demand"),
+    ("330", "Short Term Contract", "industrial", "demand"),
+]
+
+
+def _tier_from_label(label: str, unit: str) -> tuple[Optional[int], Optional[float]]:
+    """Infer (tier_number, tier_threshold) from a 'first N unit' / 'balance' label."""
+    match = re.search(rf"first\s+([\d,]+)\s*{unit}", label)
+    if match:
+        return 1, float(match.group(1).replace(",", ""))
+    if "balance" in label:
+        return 2, None
+    return None, None
+
+
+def _resolve_effective_date(text: str, link: str) -> str:
+    """Resolve the schedule effective date from the text, then the URL, then seed."""
+    iso = extract_effective_date(text)
+    if iso:
+        return iso
+    bare = re.search(r"([A-Z][a-z]+)\s+(\d{1,2}),\s*(\d{4})", text)
+    if bare:
+        try:
+            return datetime.strptime(
+                f"{bare.group(1)} {bare.group(2)} {bare.group(3)}", "%B %d %Y"
+            ).date().isoformat()
+        except ValueError:
+            pass
+    fname = re.search(r"effective-([a-z]+)-(\d{1,2})-(\d{4})", link, re.I)
+    if fname:
+        try:
+            return datetime.strptime(
+                f"{fname.group(1)} {fname.group(2)} {fname.group(3)}", "%B %d %Y"
+            ).date().isoformat()
+        except ValueError:
+            pass
+    return SEED_RESIDENTIAL["effective_date"]
 
 
 class MaritimeElectricScraper(BaseScraper):
@@ -70,10 +121,7 @@ class MaritimeElectricScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Parse the current Residential Urban rate from the official Schedule of Adjusted Rates PDF.
-
-        General Service is kept as a labelled seed estimate until parsed.
-        """
+        """Parse every non-lighting service class from the official Schedule of Adjusted Rates PDF."""
         try:
             html = self.fetch_page(SOURCE_URL)
             if not html:
@@ -82,61 +130,103 @@ class MaritimeElectricScraper(BaseScraper):
                 parse_html(html), keywords=["adjusted", "rate", "schedule", "section"],
                 base_url=SOURCE_URL,
             )
-            residential = self._parse_residential_pdf(pdf_links)
-            if not residential:
-                return None
-
-            live = self.mark_live_parsed([residential])
-            seed_only = [r for r in self._seed_data() if r.customer_class != "residential"]
-            if seed_only:
-                live = live + self.mark_fallback(seed_only)
-            return live
+            for link in pdf_links[:6]:
+                try:
+                    text = extract_pdf_text(self.fetch_bytes(link))
+                except Exception:
+                    continue
+                if "Residential Urban" not in text:
+                    continue
+                records = self._parse_all_classes(text, link)
+                if records:
+                    return self.mark_live_parsed(records)
+            return None
         except Exception:
             self.logger.exception("Error during Maritime Electric live scrape")
             return None
 
-    def _parse_residential_pdf(self, pdf_links: list[str]) -> Optional[TariffRecord]:
-        """Return the Residential Urban (Rate 110) record from the Schedule of Adjusted Rates PDF."""
-        for link in pdf_links[:6]:
-            try:
-                text = extract_pdf_text(self.fetch_bytes(link))
-            except Exception:
-                continue
-            idx = text.find("Residential Urban")
-            if idx == -1:
-                continue
-            section = text[idx:idx + 300]
-            service = re.search(r"Service Charge\s*\$\s*([\d.]+)", section)
-            tiers = re.findall(
-                r"Energy Charge per kWh for (?:first 2,000 kWh|balance(?: of)? kWh)\s*\$\s*([\d.]+)",
-                section,
+    def _parse_all_classes(self, text: str, link: str) -> list[TariffRecord]:
+        """Parse all non-lighting service classes from the Schedule of Adjusted Rates."""
+        start = text.find("110 Residential")
+        if start == -1:
+            return []
+        end = text.find("Page 1 of 3")
+        body = text[start:end] if end != -1 else text[start:]
+        effective = _resolve_effective_date(text, link)
+
+        codes = {code for code, _, _, _ in RATE_CLASSES}
+        headers = [
+            (m.group(1), m.start())
+            for m in re.finditer(r"(?m)^\s*(\d{3})\s+\D.*$", body)
+            if m.group(1) in codes
+        ]
+        records: list[TariffRecord] = []
+        for i, (code, pos) in enumerate(headers):
+            seg_end = headers[i + 1][1] if i + 1 < len(headers) else len(body)
+            record = self._build_record(code, body[pos:seg_end], effective, link)
+            if record:
+                records.append(record)
+        return records
+
+    def _build_record(
+        self, code: str, block: str, effective: str, link: str
+    ) -> Optional[TariffRecord]:
+        """Build one TariffRecord from a single rate-code block of the schedule."""
+        meta = next((m for m in RATE_CLASSES if m[0] == code), None)
+        if not meta:
+            return None
+        _, name, customer_class, structure = meta
+        components: list[RateComponent] = []
+        for line in block.splitlines()[1:]:
+            component = self._parse_component_line(line.strip())
+            if component:
+                components.append(component)
+        if not components:
+            return None
+        return TariffRecord(
+            utility_name="Maritime Electric", province="PE", utility_type="electricity",
+            tariff_name=f"{name} (Rate {code})", tariff_code=code,
+            customer_class=customer_class, rate_structure=structure,
+            effective_date=effective, source_url=link, confidence="high",
+            notes=(
+                "Parsed from the IRAC-approved Maritime Electric Schedule of "
+                "Adjusted Rates (Section N-28)."
+            ),
+            components=components,
+        )
+
+    @staticmethod
+    def _parse_component_line(line: str) -> Optional[RateComponent]:
+        """Turn one '... Charge ... $ value' schedule line into a RateComponent."""
+        match = re.match(r"^(.*?charge.*?)\s*\$\s*(-|[\d,]+\.?\d*)\s*$", line, re.I)
+        if not match:
+            return None
+        label = re.sub(r"\s+", " ", match.group(1)).strip()
+        raw = match.group(2)
+        if raw == "-":
+            return None
+        value = float(raw.replace(",", ""))
+        low = label.lower()
+        if low.startswith("service charge"):
+            return RateComponent(
+                component_type="fixed", component_name="Service Charge",
+                charge_value=value, charge_unit="$/month",
             )
-            if not service or len(tiers) < 2:
-                continue
-            return TariffRecord(
-                utility_name="Maritime Electric", province="PE", utility_type="electricity",
-                tariff_name="Residential Urban (Rate 110)", tariff_code="110",
-                customer_class="residential", rate_structure="tiered",
-                effective_date=extract_effective_date(text) or SEED_RESIDENTIAL["effective_date"],
-                source_url=link, confidence="high",
-                notes="Maritime Electric Residential Urban rate, parsed from the IRAC-approved Schedule of Adjusted Rates.",
-                components=[
-                    RateComponent(
-                        component_type="fixed", component_name="Service Charge",
-                        charge_value=float(service.group(1)), charge_unit="$/month",
-                        notes="Monthly service charge",
-                    ),
-                    RateComponent(
-                        component_type="energy", component_name="Energy Charge (first 2,000 kWh)",
-                        charge_value=float(tiers[0]), charge_unit="$/kWh",
-                        tier_number=1, tier_threshold=2000, tier_unit="kWh",
-                    ),
-                    RateComponent(
-                        component_type="energy", component_name="Energy Charge (balance)",
-                        charge_value=float(tiers[1]), charge_unit="$/kWh",
-                        tier_number=2, tier_threshold=2000, tier_unit="kWh",
-                    ),
-                ],
+        if low.startswith("demand charge"):
+            tier_number, threshold = _tier_from_label(low, "kw")
+            return RateComponent(
+                component_type="demand", component_name=label,
+                charge_value=value, charge_unit="$/kW", demand_unit="kW",
+                tier_number=tier_number, tier_threshold=threshold,
+                tier_unit="kW" if threshold else None,
+            )
+        if low.startswith("energy charge"):
+            tier_number, threshold = _tier_from_label(low, "kwh")
+            return RateComponent(
+                component_type="energy", component_name=label,
+                charge_value=value, charge_unit="$/kWh",
+                tier_number=tier_number, tier_threshold=threshold,
+                tier_unit="kWh" if threshold else None,
             )
         return None
 
