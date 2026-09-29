@@ -18,12 +18,12 @@ Regulated by: Board of Commissioners of Public Utilities (PUB NL)
 from __future__ import annotations
 
 import logging
+import re
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
 from scrapers.utils.parsing import (
-    parse_html, detect_js_rendered, find_pdf_links, extract_pdf_text,
-    verify_tariff_values,
+    parse_html, find_pdf_links, extract_pdf_text, extract_effective_date,
 )
 
 logger = logging.getLogger(__name__)
@@ -74,10 +74,10 @@ class NewfoundlandPowerScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Attempt to parse rates from the live Newfoundland Power website.
+        """Parse the current Domestic (Rate 1.1) schedule from the official RateBook PDF.
 
-        Fetch the rates page and its official Schedule of Rates PDF. Records
-        are returned only when every component is present in extracted text.
+        The rates page links a RateBook PDF; General Service is kept as a labelled
+        seed estimate until parsed.
         """
         try:
             html = self.fetch_page(_SOURCE_URL)
@@ -85,37 +85,60 @@ class NewfoundlandPowerScraper(BaseScraper):
             self.logger.warning("Failed to fetch Newfoundland Power rates page")
             return None
 
-        if detect_js_rendered(html):
-            self.logger.info(
-                "Newfoundland Power rates page appears JS-rendered; "
-                "content may be incomplete"
-            )
-
-        soup = parse_html(html)
         pdf_links = find_pdf_links(
-            soup, keywords=["schedule", "rates", "regulation"], base_url=_SOURCE_URL
+            parse_html(html), keywords=["ratebook", "schedule", "rates", "regulation"],
+            base_url=_SOURCE_URL,
         )
+        residential = self._parse_domestic_pdf(pdf_links)
+        if not residential:
+            return None
 
-        if pdf_links:
-            records = self._seed_data()
-            for link in pdf_links:
+        live = self.mark_live_parsed([residential])
+        seed_only = [r for r in self._seed_data() if r.customer_class != "residential"]
+        if seed_only:
+            live = live + self.mark_fallback(seed_only)
+        return live
+
+    def _parse_domestic_pdf(self, pdf_links: list[str]) -> Optional[TariffRecord]:
+        """Return the Domestic Rate 1.1 record from the official RateBook PDF."""
+        for link in pdf_links[:6]:
+            try:
                 text = extract_pdf_text(self.fetch_bytes(link))
-                missing = verify_tariff_values(text, records)
-                if not missing:
-                    for record in records:
-                        record.confidence = "high"
-                        for component in record.components:
-                            component.confidence = "high"
-                    return self.mark_live_parsed(records, source_url=link, detail="Official Schedule of Rates PDF")
-                self.logger.warning(
-                    "Official Newfoundland Power PDF %s is missing: %s",
-                    link, ", ".join(missing),
-                )
-        else:
-            self.logger.info(
-                "No matching PDF links found on Newfoundland Power rates page"
+            except Exception:
+                continue
+            # Pick the rate-detail occurrence, not a table-of-contents entry.
+            section = None
+            for match in re.finditer(r"RATE #1\.1", text):
+                window = text[match.start():match.start() + 900]
+                if "Basic Customer Charge" in window and "Energy Charge" in window:
+                    section = window
+                    break
+            if not section:
+                continue
+            basic = re.search(r"Basic Customer Charge:.*?\$([\d.]+)\s*per month", section, re.IGNORECASE | re.DOTALL)
+            energy = re.search(r"Energy Charge:.*?@?([\d.]+)\s*\u00a2\s*per\s*kWh", section, re.IGNORECASE | re.DOTALL)
+            if not basic or not energy:
+                continue
+            return TariffRecord(
+                utility_name="Newfoundland Power", province="NL", utility_type="electricity",
+                tariff_name="Domestic Service (Rate 1.1)", tariff_code="1.1",
+                customer_class="residential", rate_structure="flat",
+                effective_date=extract_effective_date(text) or SEED_RESIDENTIAL["effective_date"],
+                source_url=link, confidence="high",
+                notes="Newfoundland Power domestic residential flat rate (Rate 1.1), parsed from the official RateBook.",
+                components=[
+                    RateComponent(
+                        component_type="fixed", component_name="Basic Charge",
+                        charge_value=float(basic.group(1)), charge_unit="$/month",
+                        notes="Monthly basic charge (not exceeding 200 Amp service)",
+                    ),
+                    RateComponent(
+                        component_type="energy", component_name="Energy Charge",
+                        charge_value=float(energy.group(1)) / 100.0, charge_unit="$/kWh",
+                        notes="Flat rate applied to all kWh",
+                    ),
+                ],
             )
-
         return None
 
     def _seed_data(self) -> list[TariffRecord]:
