@@ -61,11 +61,15 @@
     "utility_type": "electricity",
     "classes_present": [
       "commercial",
+      "industrial",
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
       "General Service (Rate 2.1)",
-      "General Service (Rate 2.1)"
+      "General Service (Rate 2.1)",
+      "General Service 0-100 kW (Rate 2.1)",
+      "General Service 110 kVA - 1000 kVA (Rate 2.3)",
+      "General Service 1000 kVA and Over (Rate 2.4)"
     ]
   },
   {

@@ -46,6 +46,16 @@ SEED_GENERAL_SERVICE = {
     "basic_charge_per_month": 25.97,  # $/month
 }
 
+# Core service classes published in the Newfoundland Power RateBook.
+# (rate code, display name, customer_class, rate_structure). Seasonal
+# (1.1S) and street/area-lighting (4.x) schedules are not modelled here.
+_NF_RATES: list[tuple[str, str, str, str]] = [
+    ("1.1", "Domestic Service", "residential", "flat"),
+    ("2.1", "General Service 0-100 kW", "commercial", "demand"),
+    ("2.3", "General Service 110 kVA - 1000 kVA", "commercial", "demand"),
+    ("2.4", "General Service 1000 kVA and Over", "industrial", "demand"),
+]
+
 
 class NewfoundlandPowerScraper(BaseScraper):
     """Scrape Newfoundland Power electricity rates."""
@@ -74,11 +84,7 @@ class NewfoundlandPowerScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Parse the current Domestic (Rate 1.1) schedule from the official RateBook PDF.
-
-        The rates page links a RateBook PDF; General Service is kept as a labelled
-        seed estimate until parsed.
-        """
+        """Parse the core Domestic + General Service classes from the official RateBook PDF."""
         try:
             html = self.fetch_page(_SOURCE_URL)
         except Exception:
@@ -89,57 +95,144 @@ class NewfoundlandPowerScraper(BaseScraper):
             parse_html(html), keywords=["ratebook", "schedule", "rates", "regulation"],
             base_url=_SOURCE_URL,
         )
-        residential = self._parse_domestic_pdf(pdf_links)
-        if not residential:
-            return None
-
-        live = self.mark_live_parsed([residential])
-        seed_only = [r for r in self._seed_data() if r.customer_class != "residential"]
-        if seed_only:
-            live = live + self.mark_fallback(seed_only)
-        return live
-
-    def _parse_domestic_pdf(self, pdf_links: list[str]) -> Optional[TariffRecord]:
-        """Return the Domestic Rate 1.1 record from the official RateBook PDF."""
         for link in pdf_links[:6]:
             try:
                 text = extract_pdf_text(self.fetch_bytes(link))
             except Exception:
                 continue
-            # Pick the rate-detail occurrence, not a table-of-contents entry.
-            section = None
-            for match in re.finditer(r"RATE #1\.1", text):
-                window = text[match.start():match.start() + 900]
-                if "Basic Customer Charge" in window and "Energy Charge" in window:
-                    section = window
-                    break
+            if "RATE #1.1" not in text:
+                continue
+            records = self._parse_ratebook(text, link)
+            if records:
+                return self.mark_live_parsed(records)
+        return None
+
+    def _parse_ratebook(self, text: str, link: str) -> list[TariffRecord]:
+        """Build a TariffRecord for each core rate class found in the RateBook text."""
+        effective = extract_effective_date(text) or SEED_RESIDENTIAL["effective_date"]
+        records: list[TariffRecord] = []
+        for code, name, customer_class, structure in _NF_RATES:
+            section = self._rate_section(text, code)
             if not section:
                 continue
-            basic = re.search(r"Basic Customer Charge:.*?\$([\d.]+)\s*per month", section, re.IGNORECASE | re.DOTALL)
-            energy = re.search(r"Energy Charge:.*?@?([\d.]+)\s*\u00a2\s*per\s*kWh", section, re.IGNORECASE | re.DOTALL)
-            if not basic or not energy:
+            components = self._parse_components(section)
+            if not components:
                 continue
-            return TariffRecord(
+            records.append(TariffRecord(
                 utility_name="Newfoundland Power", province="NL", utility_type="electricity",
-                tariff_name="Domestic Service (Rate 1.1)", tariff_code="1.1",
-                customer_class="residential", rate_structure="flat",
-                effective_date=extract_effective_date(text) or SEED_RESIDENTIAL["effective_date"],
-                source_url=link, confidence="high",
-                notes="Newfoundland Power domestic residential flat rate (Rate 1.1), parsed from the official RateBook.",
-                components=[
-                    RateComponent(
-                        component_type="fixed", component_name="Basic Charge",
-                        charge_value=float(basic.group(1)), charge_unit="$/month",
-                        notes="Monthly basic charge (not exceeding 200 Amp service)",
-                    ),
-                    RateComponent(
-                        component_type="energy", component_name="Energy Charge",
-                        charge_value=float(energy.group(1)) / 100.0, charge_unit="$/kWh",
-                        notes="Flat rate applied to all kWh",
-                    ),
-                ],
-            )
+                tariff_name=f"{name} (Rate {code})", tariff_code=code,
+                customer_class=customer_class, rate_structure=structure,
+                effective_date=effective, source_url=link, confidence="high",
+                notes=(
+                    "Parsed from the Newfoundland Power RateBook "
+                    "(PUB-approved Schedule of Rates, Rules and Regulations)."
+                ),
+                components=components,
+            ))
+        return records
+
+    @staticmethod
+    def _rate_section(text: str, code: str) -> Optional[str]:
+        """Return the charge-bearing detail section for a rate code, bounded to the next rate."""
+        for m in re.finditer(rf"RATE #{re.escape(code)}\b", text):
+            start = m.start()
+            nxt = re.search(r"RATE #\d", text[start + 10:])
+            end = start + 10 + nxt.start() if nxt else start + 1800
+            section = text[start:end]
+            if "Basic Customer Charge" in section:
+                return section
         return None
+
+    @staticmethod
+    def _slice(text: str, start_label: str, end_labels: list[str]) -> str:
+        """Return the text between *start_label* and the earliest of *end_labels*."""
+        i = text.find(start_label)
+        if i == -1:
+            return ""
+        i += len(start_label)
+        end = len(text)
+        for label in end_labels:
+            j = text.find(label, i)
+            if j != -1:
+                end = min(end, j)
+        return text[i:end]
+
+    def _parse_components(self, section: str) -> list[RateComponent]:
+        """Extract fixed, demand and energy components from one rate-detail section."""
+        components: list[RateComponent] = []
+
+        # ── Basic Customer Charge (may have metered/phase variants) ──
+        basic = self._slice(
+            section, "Basic Customer Charge",
+            ["Demand Charge", "Energy Charge", "Minimum Monthly"],
+        )
+        basic = re.sub(r"\.{3,}", " ... ", basic)
+        for label, value in re.findall(
+            r"([^$\n]*?)\s*\.\.\.\s*\$?([\d.]+)\s*per month", basic
+        ):
+            label = label.strip(" :")
+            name = (
+                "Basic Customer Charge"
+                if not label or label.lower().startswith("basic customer")
+                else f"Basic Customer Charge ({label})"
+            )
+            components.append(RateComponent(
+                component_type="fixed", component_name=name,
+                charge_value=float(value), charge_unit="$/month",
+            ))
+
+        # ── Demand Charge (seasonal: winter vs. balance of year) ──
+        demand = self._slice(
+            section, "Demand Charge",
+            ["Energy Charge", "Maximum Monthly", "Minimum Monthly"],
+        )
+        dm = re.search(
+            r"\$([\d.]+)\s*per (kW|kVA).*?and\s*\$([\d.]+)\s*per (?:kW|kVA)",
+            demand, re.DOTALL,
+        )
+        if dm:
+            unit = dm.group(2)
+            components.append(RateComponent(
+                component_type="demand", component_name="Demand Charge (December-March)",
+                charge_value=float(dm.group(1)), charge_unit=f"$/{unit}", demand_unit=unit,
+                notes="Billing demand, winter months (December-March)",
+            ))
+            components.append(RateComponent(
+                component_type="demand", component_name="Demand Charge (April-November)",
+                charge_value=float(dm.group(3)), charge_unit=f"$/{unit}", demand_unit=unit,
+                notes="Billing demand, balance of year (April-November)",
+            ))
+
+        # ── Energy Charge (flat or tiered, quoted in cents) ──
+        energy = self._slice(
+            section, "Energy Charge",
+            ["Maximum Monthly", "Minimum Monthly", "Discount", "General:"],
+        )
+        energy = re.sub(r"\.{3,}", " ... ", energy)
+        for label, value in re.findall(
+            r"(First [\d,]+[^@]*?|All excess[^@]*?|All kilowatt-hours[^@]*?)@\s*([\d.]+)",
+            energy,
+        ):
+            clean = re.sub(r"\s+", " ", label.replace("...", "")).strip(" ,")
+            tier_number: Optional[int] = None
+            threshold: Optional[float] = None
+            low = clean.lower()
+            if low.startswith("first"):
+                tier_number = 1
+                fm = re.search(r"First ([\d,]+) kilowatt-hours(?! per)", clean)
+                if fm:
+                    threshold = float(fm.group(1).replace(",", ""))
+            elif "excess" in low:
+                tier_number = 2
+            components.append(RateComponent(
+                component_type="energy",
+                component_name=f"Energy Charge - {clean}"[:120],
+                charge_value=round(float(value) / 100.0, 6), charge_unit="$/kWh",
+                tier_number=tier_number, tier_threshold=threshold,
+                tier_unit="kWh" if threshold else None,
+            ))
+
+        return components
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""
