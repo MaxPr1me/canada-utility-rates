@@ -152,9 +152,9 @@ def store_results(records: list[TariffRecord], run_id: int, conn: sqlite3.Connec
                 rate_structure, effective_date, end_date,
                 source_url, source_page, confidence, notes
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(utility_id, tariff_code, effective_date) DO UPDATE SET
+            ON CONFLICT(utility_id, name, effective_date) DO UPDATE SET
                 scrape_run_id = excluded.scrape_run_id,
-                name = excluded.name,
+                tariff_code = excluded.tariff_code,
                 utility_type = excluded.utility_type,
                 customer_class = excluded.customer_class,
                 sub_class = excluded.sub_class,
@@ -181,11 +181,15 @@ def store_results(records: list[TariffRecord], run_id: int, conn: sqlite3.Connec
             record.source_url, record.source_page, record.confidence, record.notes,
         ))
 
-        # Get tariff_id (works for both insert and update)
-        # Use IS for nullable columns (NULL = NULL is false in SQL)
+        # Resolve tariff_id by the (utility_id, name, effective_date) identity
+        # — the same key the UNIQUE constraint uses — so codeless classes that
+        # share a NULL tariff_code don't collide and overwrite each other's
+        # components. Use IS for the nullable effective_date.
         tariff_id = cursor.execute(
-            "SELECT id FROM tariffs WHERE utility_id = ? AND tariff_code IS ? AND effective_date IS ?",
-            (utility_id, record.tariff_code, record.effective_date),
+            "SELECT id FROM tariffs "
+            "WHERE utility_id = ? AND name IS ? AND effective_date IS ? "
+            "ORDER BY id DESC LIMIT 1",
+            (utility_id, record.tariff_name, record.effective_date),
         ).fetchone()[0]
 
         # Remove old components before re-inserting fresh data

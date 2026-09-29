@@ -21,35 +21,11 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "General Service Medium (Demand)",
-      "General Service Medium (Demand)",
-      "General Service Medium (Demand)",
-      "General Service Medium (Demand)",
-      "General Service Small (Demand)",
-      "General Service Medium",
-      "General Service Large (>750 V to 30 kV)",
-      "General Service Large (>30 kV to 100 kV)",
-      "General Service Large (>100 kV)",
-      "General Service Medium (Demand)",
       "General Service Small (Demand)",
       "General Service Medium",
       "General Service Large (>750 V to 30 kV)",
       "General Service Large (>30 kV to 100 kV)",
       "General Service Large (>100 kV)"
-    ]
-  },
-  {
-    "utility": "NB Power",
-    "province": "NB",
-    "utility_type": "electricity",
-    "classes_present": [
-      "commercial",
-      "residential"
-    ],
-    "demand_tariffs_missing_thresholds": [
-      "Small Industrial Service",
-      "Small Industrial Service",
-      "Small Industrial Service"
     ]
   },
   {
@@ -61,9 +37,6 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "General Service",
-      "General Service",
-      "General Service",
       "General Service"
     ]
   },
@@ -77,8 +50,6 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "General Service (Rate 2.1)",
-      "General Service (Rate 2.1)",
       "General Service 0-100 kW (Rate 2.1)",
       "General Service 110 kVA - 1000 kVA (Rate 2.3)",
       "General Service 1000 kVA and Over (Rate 2.4)"
@@ -93,8 +64,6 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "Small General Service",
-      "Small General Service",
       "Commercial General Demand",
       "Large Commercial"
     ]
@@ -108,8 +77,6 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "General Service — Yellowknife Zone",
-      "General Service — Yellowknife Zone",
       "General Service — Yellowknife Zone"
     ]
   },
@@ -140,9 +107,6 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "Power Service (Demand)",
-      "Power Service (Demand)",
-      "Power Service (Demand)",
       "Power Service (Demand)"
     ]
   },
@@ -155,8 +119,6 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "General Service",
-      "General Service",
       "General Service"
     ]
   },
@@ -169,9 +131,6 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "General Service",
-      "General Service",
-      "General Service",
       "General Service"
     ]
   }

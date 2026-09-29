@@ -1,6 +1,6 @@
 [
   {
-    "id": 15,
+    "id": 501,
     "name": "ATCO Electric",
     "province": "AB",
     "utility_type": "electricity",
@@ -10,7 +10,7 @@
     "notes": null
   },
   {
-    "id": 27,
+    "id": 6,
     "name": "ATCO Gas",
     "province": "AB",
     "utility_type": "gas",
@@ -20,7 +20,7 @@
     "notes": null
   },
   {
-    "id": 18,
+    "id": 519,
     "name": "Alberta Electric System Operator",
     "province": "AB",
     "utility_type": "electricity",
@@ -80,7 +80,7 @@
     "notes": null
   },
   {
-    "id": 29,
+    "id": 8,
     "name": "EPCOR Natural Gas",
     "province": "AB",
     "utility_type": "gas",
@@ -100,7 +100,7 @@
     "notes": null
   },
   {
-    "id": 34,
+    "id": 13,
     "name": "BC Hydro",
     "province": "BC",
     "utility_type": "electricity",
@@ -110,7 +110,7 @@
     "notes": null
   },
   {
-    "id": 36,
+    "id": 17,
     "name": "FortisBC Electric",
     "province": "BC",
     "utility_type": "electricity",
@@ -120,7 +120,7 @@
     "notes": null
   },
   {
-    "id": 25,
+    "id": 4,
     "name": "FortisBC Energy",
     "province": "BC",
     "utility_type": "gas",
@@ -130,7 +130,7 @@
     "notes": null
   },
   {
-    "id": 30,
+    "id": 9,
     "name": "Centra Gas Manitoba",
     "province": "MB",
     "utility_type": "gas",
@@ -140,7 +140,7 @@
     "notes": null
   },
   {
-    "id": 40,
+    "id": 22,
     "name": "Manitoba Hydro",
     "province": "MB",
     "utility_type": "electricity",
@@ -150,7 +150,7 @@
     "notes": null
   },
   {
-    "id": 33,
+    "id": 12,
     "name": "Liberty Utilities Gas NB",
     "province": "NB",
     "utility_type": "gas",
@@ -160,7 +160,7 @@
     "notes": null
   },
   {
-    "id": 46,
+    "id": 33,
     "name": "NB Power",
     "province": "NB",
     "utility_type": "electricity",
@@ -170,7 +170,7 @@
     "notes": null
   },
   {
-    "id": 19,
+    "id": 54,
     "name": "NL Hydro",
     "province": "NL",
     "utility_type": "electricity",
@@ -180,7 +180,7 @@
     "notes": null
   },
   {
-    "id": 52,
+    "id": 50,
     "name": "Newfoundland Power",
     "province": "NL",
     "utility_type": "electricity",
@@ -190,7 +190,7 @@
     "notes": null
   },
   {
-    "id": 32,
+    "id": 11,
     "name": "Heritage Gas",
     "province": "NS",
     "utility_type": "gas",
@@ -200,7 +200,7 @@
     "notes": null
   },
   {
-    "id": 48,
+    "id": 36,
     "name": "Nova Scotia Power",
     "province": "NS",
     "utility_type": "electricity",
@@ -330,7 +330,7 @@
     "notes": null
   },
   {
-    "id": 22,
+    "id": 1,
     "name": "Enbridge Gas",
     "province": "ON",
     "utility_type": "gas",
@@ -490,7 +490,7 @@
     "notes": null
   },
   {
-    "id": 8,
+    "id": 271,
     "name": "Hydro Ottawa Ltd.",
     "province": "ON",
     "utility_type": "electricity",
@@ -720,7 +720,7 @@
     "notes": null
   },
   {
-    "id": 1,
+    "id": 459,
     "name": "Toronto Hydro-Electric System Ltd.",
     "province": "ON",
     "utility_type": "electricity",
@@ -770,7 +770,7 @@
     "notes": null
   },
   {
-    "id": 50,
+    "id": 40,
     "name": "Maritime Electric",
     "province": "PE",
     "utility_type": "electricity",
@@ -780,7 +780,7 @@
     "notes": null
   },
   {
-    "id": 23,
+    "id": 2,
     "name": "Energir",
     "province": "QC",
     "utility_type": "gas",
@@ -790,7 +790,7 @@
     "notes": null
   },
   {
-    "id": 38,
+    "id": 19,
     "name": "Hydro-Québec",
     "province": "QC",
     "utility_type": "electricity",
@@ -800,7 +800,7 @@
     "notes": null
   },
   {
-    "id": 31,
+    "id": 10,
     "name": "SaskEnergy",
     "province": "SK",
     "utility_type": "gas",
@@ -810,7 +810,7 @@
     "notes": null
   },
   {
-    "id": 43,
+    "id": 30,
     "name": "SaskPower",
     "province": "SK",
     "utility_type": "electricity",

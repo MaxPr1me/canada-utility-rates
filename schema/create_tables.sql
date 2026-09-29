@@ -99,7 +99,10 @@ CREATE TABLE IF NOT EXISTS tariffs (
     notes           TEXT,
     created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
 
-    UNIQUE(utility_id, tariff_code, effective_date)
+    -- Identity is (utility, name, effective_date): tariff_code is often NULL
+    -- and SQLite treats NULLs as distinct, so keying on it lets several
+    -- codeless classes collide and lose their components.
+    UNIQUE(utility_id, name, effective_date)
 );
 
 -- ============================================================
