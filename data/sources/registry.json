@@ -361,9 +361,9 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://www.maritimeelectric.com/about-us/regulatory/general-rules-regulations-and-schedules-of-rates/",
+          "url": "https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/",
           "source_type": "html",
-          "description": "General rules, regulations, and schedules of rates for Prince Edward Island",
+          "description": "Rates and General Rules and Regulations — IRAC-approved Schedule of Adjusted Rates (PDF)",
           "is_primary": true
         }
       ],

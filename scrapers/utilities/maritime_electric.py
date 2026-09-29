@@ -14,11 +14,17 @@ Regulated by: Island Regulatory and Appeals Commission (IRAC)
 from __future__ import annotations
 
 import logging
+import re
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
+from scrapers.utils.parsing import (
+    parse_html, find_pdf_links, extract_pdf_text, extract_effective_date,
+)
 
 logger = logging.getLogger(__name__)
+
+SOURCE_URL = "https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/"
 
 # Known rate values — used as seed/fallback data.
 # Rates are approximate; IRAC publishes exact approved schedules.
@@ -64,8 +70,75 @@ class MaritimeElectricScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Verify every community/tier component against the official schedule."""
-        return self.verify_official_records(SEED_RESIDENTIAL["source_url"], self._seed_data())
+        """Parse the current Residential Urban rate from the official Schedule of Adjusted Rates PDF.
+
+        General Service is kept as a labelled seed estimate until parsed.
+        """
+        try:
+            html = self.fetch_page(SOURCE_URL)
+            if not html:
+                return None
+            pdf_links = find_pdf_links(
+                parse_html(html), keywords=["adjusted", "rate", "schedule", "section"],
+                base_url=SOURCE_URL,
+            )
+            residential = self._parse_residential_pdf(pdf_links)
+            if not residential:
+                return None
+
+            live = self.mark_live_parsed([residential])
+            seed_only = [r for r in self._seed_data() if r.customer_class != "residential"]
+            if seed_only:
+                live = live + self.mark_fallback(seed_only)
+            return live
+        except Exception:
+            self.logger.exception("Error during Maritime Electric live scrape")
+            return None
+
+    def _parse_residential_pdf(self, pdf_links: list[str]) -> Optional[TariffRecord]:
+        """Return the Residential Urban (Rate 110) record from the Schedule of Adjusted Rates PDF."""
+        for link in pdf_links[:6]:
+            try:
+                text = extract_pdf_text(self.fetch_bytes(link))
+            except Exception:
+                continue
+            idx = text.find("Residential Urban")
+            if idx == -1:
+                continue
+            section = text[idx:idx + 300]
+            service = re.search(r"Service Charge\s*\$\s*([\d.]+)", section)
+            tiers = re.findall(
+                r"Energy Charge per kWh for (?:first 2,000 kWh|balance(?: of)? kWh)\s*\$\s*([\d.]+)",
+                section,
+            )
+            if not service or len(tiers) < 2:
+                continue
+            return TariffRecord(
+                utility_name="Maritime Electric", province="PE", utility_type="electricity",
+                tariff_name="Residential Urban (Rate 110)", tariff_code="110",
+                customer_class="residential", rate_structure="tiered",
+                effective_date=extract_effective_date(text) or SEED_RESIDENTIAL["effective_date"],
+                source_url=link, confidence="high",
+                notes="Maritime Electric Residential Urban rate, parsed from the IRAC-approved Schedule of Adjusted Rates.",
+                components=[
+                    RateComponent(
+                        component_type="fixed", component_name="Service Charge",
+                        charge_value=float(service.group(1)), charge_unit="$/month",
+                        notes="Monthly service charge",
+                    ),
+                    RateComponent(
+                        component_type="energy", component_name="Energy Charge (first 2,000 kWh)",
+                        charge_value=float(tiers[0]), charge_unit="$/kWh",
+                        tier_number=1, tier_threshold=2000, tier_unit="kWh",
+                    ),
+                    RateComponent(
+                        component_type="energy", component_name="Energy Charge (balance)",
+                        charge_value=float(tiers[1]), charge_unit="$/kWh",
+                        tier_number=2, tier_threshold=2000, tier_unit="kWh",
+                    ),
+                ],
+            )
+        return None
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""
