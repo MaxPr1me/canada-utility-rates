@@ -155,20 +155,6 @@ class HydroQuebecScraper(BaseScraper):
             self.logger.warning("Could not fetch/parse Hydro-Québec PDF: %s", e)
             return None
 
-    # ── Section extraction helpers ────────────────────────────
-
-    @staticmethod
-    def _extract_section(pdf_text: str, section_start: str, section_end: str) -> str:
-        """Extract text between two section markers (case-insensitive)."""
-        text_lower = pdf_text.lower()
-        start = text_lower.find(section_start.lower())
-        if start == -1:
-            return ""
-        end = text_lower.find(section_end.lower(), start + len(section_start))
-        if end == -1:
-            return pdf_text[start:]
-        return pdf_text[start:end]
-
     # ── Rate D parser ─────────────────────────────────────────
 
     def _parse_rate_d(self, pdf_text: str) -> Optional[TariffRecord]:
@@ -265,35 +251,28 @@ class HydroQuebecScraper(BaseScraper):
 
     def _parse_rate_g(self, pdf_text: str) -> Optional[TariffRecord]:
         """Parse Rate G (General/Small Commercial) from PDF text."""
-        section = self._extract_section(pdf_text, "Rate G", "Rate M")
-        if not section:
+        idx = pdf_text.find("Structure of Rate G")
+        if idx == -1:
             self.logger.warning("Could not find Rate G section in PDF")
             return None
+        section = pdf_text[idx:idx + 900]
 
-        # Fixed charge: "$XX.XXX per month" or "XX.XXX $/month"
+        # Fixed charge is worded "$XX.XXX system access charge".
         fixed_match = re.search(
-            r'\$([\d.]+)\s*per\s*month', section, re.IGNORECASE
+            r'\$([\d.]+)\s*system access charge', section, re.IGNORECASE
         )
-        if not fixed_match:
-            fixed_match = re.search(
-                r'([\d.]+)\s*\$/\s*month', section, re.IGNORECASE
-            )
         fixed_per_month = float(fixed_match.group(1)) if fixed_match else None
 
-        # Demand charge: "$XX.XXX per kilowatt"
+        # Demand charge: "$XX.XXX per kilowatt of billing demand in excess of 50 kilowatts"
         demand_match = re.search(
             r'\$([\d.]+)\s*per\s*kilowatt', section, re.IGNORECASE
         )
         demand_charge = float(demand_match.group(1)) if demand_match else None
 
-        # Energy rates: "XX.XXX¢ per kilowatthour"
+        # Energy rates: "XX.XXX¢ per kilowatthour" (the cent glyph varies by PDF encoding)
         energy_matches = re.findall(
-            r'([\d.]+)\s*[¢c]\s*per\s*kilowatthour', section, re.IGNORECASE
+            r'([\d.]+)\s*[^\d\s]{0,2}\s*per\s*kilowatthour', section, re.IGNORECASE
         )
-        if not energy_matches:
-            energy_matches = re.findall(
-                r'([\d.]+)\s*cents?\s*per\s*kilowatthour', section, re.IGNORECASE
-            )
         if len(energy_matches) < 2:
             self.logger.warning(
                 "Could not find two energy tiers for Rate G (found %d)",
@@ -371,30 +350,22 @@ class HydroQuebecScraper(BaseScraper):
 
     def _parse_rate_m(self, pdf_text: str) -> Optional[TariffRecord]:
         """Parse Rate M (Medium Power, 50-5000 kW) from PDF text."""
-        section = self._extract_section(pdf_text, "Rate M", "Rate L")
-        if not section:
-            # Rate M might be near the end; try without end marker
-            section = self._extract_section(pdf_text, "Rate M", "Rate LG")
-            if not section:
-                section = self._extract_section(pdf_text, "Rate M", "SECTION")
-        if not section:
+        idx = pdf_text.find("Structure of Rate M")
+        if idx == -1:
             self.logger.warning("Could not find Rate M section in PDF")
             return None
+        section = pdf_text[idx:idx + 900]
 
-        # Demand charge: "$XX.XXX per kilowatt"
+        # Demand charge: "$XX.XXX per kilowatt of billing demand"
         demand_match = re.search(
             r'\$([\d.]+)\s*per\s*kilowatt', section, re.IGNORECASE
         )
         demand_charge = float(demand_match.group(1)) if demand_match else None
 
-        # Energy rates: "X.XXX¢ per kilowatthour"
+        # Energy rates: "X.XXX¢ per kilowatthour" (the cent glyph varies by PDF encoding)
         energy_matches = re.findall(
-            r'([\d.]+)\s*[¢c]\s*per\s*kilowatthour', section, re.IGNORECASE
+            r'([\d.]+)\s*[^\d\s]{0,2}\s*per\s*kilowatthour', section, re.IGNORECASE
         )
-        if not energy_matches:
-            energy_matches = re.findall(
-                r'([\d.]+)\s*cents?\s*per\s*kilowatthour', section, re.IGNORECASE
-            )
         if len(energy_matches) < 2:
             self.logger.warning(
                 "Could not find two energy tiers for Rate M (found %d)",

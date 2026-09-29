@@ -122483,7 +122483,7 @@
   {
     "id": 538,
     "utility_id": 38,
-    "scrape_run_id": 18,
+    "scrape_run_id": 28,
     "name": "Rate G — General",
     "tariff_code": "G",
     "utility_type": "electricity",
@@ -122501,18 +122501,18 @@
     "end_date": null,
     "source_id": null,
     "source_url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
-    "source_page": null,
-    "confidence": "unverified",
-    "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. Hydro-Québec small commercial rate — energy charge is tiered, plus demand charge above 50 kW. Verified from official electricity-rates PDF (2026-04-01).",
+    "source_page": "Official electricity-rates PDF",
+    "confidence": "high",
+    "notes": "Provenance: live_parsed. Hydro-Québec small commercial rate — energy charge is tiered, plus demand charge above 50 kW. Parsed from official electricity-rates PDF.",
     "created_at": "2026-04-15 14:34:17",
     "utility_name": "Hydro-Québec",
     "province": "QC",
-    "provenance": "seed",
+    "provenance": "live",
     "components": [
       {
-        "id": 10542,
+        "id": 10693,
         "tariff_id": 538,
-        "scrape_run_id": 18,
+        "scrape_run_id": 28,
         "component_type": "demand",
         "component_name": "Demand Charge (above 50 kW)",
         "sub_component": null,
@@ -122533,15 +122533,15 @@
         "effective_date": null,
         "end_date": null,
         "source_url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
-        "source_detail": null,
-        "confidence": "unverified",
-        "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. No demand charge for first 50 kW",
-        "created_at": "2026-09-29 16:53:19"
+        "source_detail": "Official electricity-rates PDF",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. No demand charge for first 50 kW",
+        "created_at": "2026-09-29 20:07:27"
       },
       {
-        "id": 10540,
+        "id": 10691,
         "tariff_id": 538,
-        "scrape_run_id": 18,
+        "scrape_run_id": 28,
         "component_type": "energy",
         "component_name": "First 15,090 kWh",
         "sub_component": null,
@@ -122562,15 +122562,15 @@
         "effective_date": null,
         "end_date": null,
         "source_url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
-        "source_detail": null,
-        "confidence": "unverified",
-        "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. ",
-        "created_at": "2026-09-29 16:53:19"
+        "source_detail": "Official electricity-rates PDF",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-09-29 20:07:27"
       },
       {
-        "id": 10541,
+        "id": 10692,
         "tariff_id": 538,
-        "scrape_run_id": 18,
+        "scrape_run_id": 28,
         "component_type": "energy",
         "component_name": "Remaining kWh",
         "sub_component": null,
@@ -122591,15 +122591,15 @@
         "effective_date": null,
         "end_date": null,
         "source_url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
-        "source_detail": null,
-        "confidence": "unverified",
-        "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. ",
-        "created_at": "2026-09-29 16:53:19"
+        "source_detail": "Official electricity-rates PDF",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-09-29 20:07:27"
       },
       {
-        "id": 10539,
+        "id": 10690,
         "tariff_id": 538,
-        "scrape_run_id": 18,
+        "scrape_run_id": 28,
         "component_type": "fixed",
         "component_name": "Monthly Fixed Charge",
         "sub_component": null,
@@ -122620,17 +122620,17 @@
         "effective_date": null,
         "end_date": null,
         "source_url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
-        "source_detail": null,
-        "confidence": "unverified",
-        "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. ",
-        "created_at": "2026-09-29 16:53:19"
+        "source_detail": "Official electricity-rates PDF",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-09-29 20:07:27"
       }
     ]
   },
   {
     "id": 1044,
     "utility_id": 38,
-    "scrape_run_id": 18,
+    "scrape_run_id": 28,
     "name": "Rate M — Medium Power",
     "tariff_code": "M",
     "utility_type": "electricity",
@@ -122648,18 +122648,18 @@
     "end_date": null,
     "source_id": null,
     "source_url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
-    "source_page": null,
-    "confidence": "unverified",
-    "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. Hydro-Québec medium-power rate for contract power 50–5,000 kW. Verified from official electricity-rates PDF (2026-04-01).",
+    "source_page": "Official electricity-rates PDF",
+    "confidence": "high",
+    "notes": "Provenance: live_parsed. Hydro-Québec medium-power rate for contract power 50–5,000 kW. Parsed from official electricity-rates PDF.",
     "created_at": "2026-04-15 15:35:54",
     "utility_name": "Hydro-Québec",
     "province": "QC",
-    "provenance": "seed",
+    "provenance": "live",
     "components": [
       {
-        "id": 10543,
+        "id": 10694,
         "tariff_id": 1044,
-        "scrape_run_id": 18,
+        "scrape_run_id": 28,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -122680,15 +122680,15 @@
         "effective_date": null,
         "end_date": null,
         "source_url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
-        "source_detail": null,
-        "confidence": "unverified",
-        "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. Per kW of billing demand",
-        "created_at": "2026-09-29 16:53:19"
+        "source_detail": "Official electricity-rates PDF",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. Per kW of billing demand",
+        "created_at": "2026-09-29 20:07:27"
       },
       {
-        "id": 10544,
+        "id": 10695,
         "tariff_id": 1044,
-        "scrape_run_id": 18,
+        "scrape_run_id": 28,
         "component_type": "energy",
         "component_name": "First 210,000 kWh",
         "sub_component": null,
@@ -122709,15 +122709,15 @@
         "effective_date": null,
         "end_date": null,
         "source_url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
-        "source_detail": null,
-        "confidence": "unverified",
-        "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. ",
-        "created_at": "2026-09-29 16:53:19"
+        "source_detail": "Official electricity-rates PDF",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-09-29 20:07:27"
       },
       {
-        "id": 10545,
+        "id": 10696,
         "tariff_id": 1044,
-        "scrape_run_id": 18,
+        "scrape_run_id": 28,
         "component_type": "energy",
         "component_name": "Remaining kWh",
         "sub_component": null,
@@ -122738,10 +122738,10 @@
         "effective_date": null,
         "end_date": null,
         "source_url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
-        "source_detail": null,
-        "confidence": "unverified",
-        "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. ",
-        "created_at": "2026-09-29 16:53:19"
+        "source_detail": "Official electricity-rates PDF",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-09-29 20:07:27"
       }
     ]
   },
@@ -122866,7 +122866,7 @@
   {
     "id": 537,
     "utility_id": 38,
-    "scrape_run_id": 18,
+    "scrape_run_id": 28,
     "name": "Rate D — Domestic",
     "tariff_code": "D",
     "utility_type": "electricity",
@@ -122893,9 +122893,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 10537,
+        "id": 10688,
         "tariff_id": 537,
-        "scrape_run_id": 18,
+        "scrape_run_id": 28,
         "component_type": "energy",
         "component_name": "First 40 kWh/day",
         "sub_component": null,
@@ -122919,12 +122919,12 @@
         "source_detail": "Official electricity-rates PDF",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Applies to first 40 kWh per day of the billing period",
-        "created_at": "2026-09-29 16:53:19"
+        "created_at": "2026-09-29 20:07:27"
       },
       {
-        "id": 10538,
+        "id": 10689,
         "tariff_id": 537,
-        "scrape_run_id": 18,
+        "scrape_run_id": 28,
         "component_type": "energy",
         "component_name": "Remaining consumption",
         "sub_component": null,
@@ -122948,12 +122948,12 @@
         "source_detail": "Official electricity-rates PDF",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Applies to all kWh beyond 40/day",
-        "created_at": "2026-09-29 16:53:19"
+        "created_at": "2026-09-29 20:07:27"
       },
       {
-        "id": 10536,
+        "id": 10687,
         "tariff_id": 537,
-        "scrape_run_id": 18,
+        "scrape_run_id": 28,
         "component_type": "fixed",
         "component_name": "Daily Fixed Charge",
         "sub_component": null,
@@ -122977,7 +122977,7 @@
         "source_detail": "Official electricity-rates PDF",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-09-29 16:53:19"
+        "created_at": "2026-09-29 20:07:27"
       }
     ]
   },
