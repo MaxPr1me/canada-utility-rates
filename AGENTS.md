@@ -40,6 +40,18 @@ The whole cycle runs automatically once a month using GitHub Actions (a free ser
 
 ---
 
+## Working Rules (Read First)
+
+Two rules govern every change to this project. They matter more than any single feature.
+
+**1. Never show "default" numbers as if they were real.**
+Some rates in the code are *seed values* — hand-entered fallback numbers used only when the live official website can't be read. These are estimates, not live data. The website must never present them as current rates. They are labelled **"Estimated"**, hidden by default, and only appear if the visitor ticks **"Show estimated (not live-verified) rates."** Only numbers pulled from (or checked against) a live official source are shown by default. If you add or change a scraper, make sure real live data is marked live and fallbacks stay marked as estimates — never dress up a default value as the real thing.
+
+**2. When unsure, ask — don't assume.**
+If a task is unclear, or there is more than one sensible way to do it, stop and ask which path to take before making changes. Guessing wastes effort and can hide problems. A short question is always better than an assumption.
+
+---
+
 ## Important Files and What They Do
 
 ### Where the scrapers live

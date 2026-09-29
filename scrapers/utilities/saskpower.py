@@ -18,12 +18,13 @@ Regulated by: Saskatchewan Rate Review Panel
 from __future__ import annotations
 
 import logging
+import re
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
 from scrapers.utils.parsing import (
     parse_html, detect_js_rendered, find_pdf_links, extract_pdf_text,
-    verify_tariff_values,
+    extract_effective_date,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,10 +35,10 @@ LANDING_URL = "https://www.saskpower.com/accounts/power-rates/power-supply-rates
 # Values reflect SaskPower's published rates; effective_date updated to
 # the most recent known adjustment period.
 SEED_RESIDENTIAL = {
-    "effective_date": "2025-01-01",
+    "effective_date": "2026-02-01",
     "source_url": LANDING_URL,
-    "energy_rate": 0.1797,          # $/kWh — flat rate
-    "basic_charge_per_month": 24.05,  # $/month
+    "energy_rate": 0.15476,         # $/kWh — flat rate (15.476¢/kWh)
+    "basic_charge_per_month": 31.16,  # $/month
 }
 
 SEED_SMALL_COMMERCIAL = {
@@ -92,43 +93,60 @@ class SaskPowerScraper(BaseScraper):
         """
         try:
             html = self.fetch_page(LANDING_URL)
-            if html is None:
-                self.logger.warning("Could not fetch SaskPower landing page")
+            if not html or detect_js_rendered(html):
+                # The landing page is JS-rendered; render it to reveal PDF links.
+                html = self.fetch_rendered_page(LANDING_URL)
+            if not html:
+                self.logger.warning("Could not fetch SaskPower rates page")
                 return None
 
-            # Check whether the page requires JavaScript rendering
-            if detect_js_rendered(html):
-                self.logger.info(
-                    "SaskPower landing page appears JS-rendered; "
-                    "cannot parse without a headless browser"
+            pdf_links = find_pdf_links(
+                parse_html(html),
+                keywords=["residential", "rate", "schedule", "service"],
+                base_url=LANDING_URL,
+            )
+            res_pdf = next((u for u in pdf_links if "residential" in u.lower()), None)
+            if not res_pdf:
+                self.logger.info("No SaskPower residential rate PDF found on page")
+                return None
+
+            text = extract_pdf_text(self.fetch_bytes(res_pdf))
+            basic = re.search(r"Basic monthly charge[^\d]*([\d.]+)", text, re.IGNORECASE)
+            energy = re.search(r"Energy charge[^\d]*([\d.]+)\s*\u00a2", text, re.IGNORECASE)
+            if not basic or not energy:
+                self.logger.warning(
+                    "Could not parse SaskPower residential PDF (basic=%s, energy=%s)",
+                    basic, energy,
                 )
                 return None
 
-            soup = parse_html(html)
-
-            # Look for PDF links related to rate schedules
-            pdf_links = find_pdf_links(
-                soup, keywords=["residential", "rate", "schedule"], base_url=LANDING_URL
+            residential = TariffRecord(
+                utility_name="SaskPower", province="SK", utility_type="electricity",
+                tariff_name="Residential Service", customer_class="residential",
+                rate_structure="flat",
+                effective_date=extract_effective_date(text) or SEED_RESIDENTIAL["effective_date"],
+                source_url=res_pdf, confidence="high",
+                notes="SaskPower flat residential rate (Standard Rate E01/E03).",
+                components=[
+                    RateComponent(
+                        component_type="fixed", component_name="Basic Charge",
+                        charge_value=float(basic.group(1)), charge_unit="$/month",
+                    ),
+                    RateComponent(
+                        component_type="energy", component_name="Energy Charge",
+                        charge_value=float(energy.group(1)) / 100.0, charge_unit="$/kWh",
+                    ),
+                ],
+            )
+            live = self.mark_live_parsed(
+                [residential], source_url=res_pdf, detail="Official residential rate schedule PDF"
             )
 
-            if pdf_links:
-                records = self._seed_data()
-                for link in pdf_links:
-                    text = extract_pdf_text(self.fetch_bytes(link))
-                    missing = verify_tariff_values(text, records)
-                    if not missing:
-                        for record in records:
-                            record.source_url = link
-                            record.notes = f"{record.notes}; live-verified against official PDF"
-                        return records
-                    self.logger.warning("Official SaskPower PDF %s is missing: %s", link, ", ".join(missing))
-            else:
-                self.logger.info(
-                    "No PDF links detected on SaskPower rates page; "
-                    "page structure may have changed"
-                )
-
-            return None
+            # Preserve commercial classes (separate schedules) as labelled seed
+            seed_only = [r for r in self._seed_data() if r.tariff_name != "Residential Service"]
+            if seed_only:
+                live = live + self.mark_fallback(seed_only)
+            return live
 
         except Exception:
             self.logger.exception("Error during SaskPower live scrape")

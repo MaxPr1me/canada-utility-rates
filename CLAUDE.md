@@ -3,6 +3,10 @@
 ## Project
 Canada-wide utility rate scraping and browsing platform.
 
+## Working rules
+- **Never display default values as if they were live.** Only rate values pulled from (or verified against) a live official web source may be presented as current. Hardcoded seed/fallback values are a safety net only: they carry `Provenance: seed_fallback` + `confidence: unverified`, export as `provenance: "seed"`, and the site hides them by default behind a labelled "Estimated" toggle. Never dress up a static default as a live-scraped rate.
+- **Do not assume scope.** If a requirement is unclear or has multiple reasonable interpretations, stop and ask the user which path to take before proceeding.
+
 ## Architecture
 - **Scrapers** (Python) live in `scrapers/utilities/`, one file per utility (34 files covering 84 registered utilities).
   Each inherits from `scrapers/base.py:BaseScraper` and returns `list[TariffRecord]`.
@@ -17,8 +21,9 @@ Canada-wide utility rate scraping and browsing platform.
 - **Source registry** at `data/sources/registry.json` maps utilities to scraper classes and source URLs.
 
 ## Key patterns
-- Scrapers try live HTTP fetch first, fall back to hardcoded seed data.
-- **Live parsers** (Phase 5 Step 2): Manitoba Hydro, NB Power, NS Power (residential + commercial Rates 10/11/12), BC Hydro have full HTML parsers. Hydro-Québec is live-parsed from its official PDF. SaskPower, NL Hydro, and Newfoundland Power strictly verify every component against their linked official PDFs before marking fallback-shaped records live-verified.
+- Scrapers try live HTTP fetch first, fall back to hardcoded seed data. Provenance is tracked, not flattened (see Working rules): live/verified records carry `Provenance: officially_verified` or `Provenance: live_parsed`; failed fetches call `mark_fallback()` (→ `Provenance: seed_fallback`, `confidence: unverified`). `export_json.derive_provenance()` maps this to a `provenance` field (`"live"`/`"seed"`) and the site hides `seed` by default.
+- **Live parsers** (Phase 5 Step 2): Manitoba Hydro, NB Power, NS Power (residential + commercial Rates 10/11/12), BC Hydro have full HTML parsers. Hydro-Québec is live-parsed from its official PDF. SaskPower, NL Hydro, and Newfoundland Power strictly verify every component against their linked official PDFs before marking fallback-shaped records live-verified. Bespoke live parsers and PDF-verifiers call `BaseScraper.mark_live_parsed()` to stamp `Provenance: live_parsed` on success.
+- **JS-rendered pages**: `BaseScraper.fetch_rendered_page()` renders JS-heavy pages via headless Chromium (Playwright, lazy-imported); SaskPower discovers its rate PDFs this way. When a scraper can only parse some classes live, it keeps the rest as labelled seed (never dropped).
 - Every tariff stores individual rate_components (fixed, energy, demand, delivery, riders, etc.) — never flatten to one number.
 - Historical snapshots are preserved in `historical_snapshots` table — never overwrite.
 - Validation runs after scraping (`scrapers/utils/validation.py`).
@@ -29,10 +34,11 @@ Canada-wide utility rate scraping and browsing platform.
 ## Running
 ```bash
 pip install -r requirements.txt && pip install -e .
+python -m playwright install chromium     # headless browser for JS-rendered pages
 python -m pipeline.run_scrape --init-db   # first time
 python -m pipeline.run_scrape             # scrape all
 python -m pipeline.export_json            # export for site
-pytest                                    # run tests (233+ tests)
+pytest                                    # run tests (250 tests)
 ```
 
 ## Adding a utility
@@ -56,8 +62,8 @@ Update these files when the task changes architecture, adds major features, chan
 
 ## Phase 5 hardening conventions
 
-- `BaseScraper.verify_official_records()` is the shared strict HTML/PDF component verifier; utility modules retain tariff interpretation. `mark_fallback()` recursively downgrades confidence and emits provenance notes.
+- `BaseScraper.verify_official_records()` is the shared strict HTML/PDF component verifier; utility modules retain tariff interpretation. `mark_fallback()` recursively downgrades confidence and emits `Provenance: seed_fallback` notes; `mark_live_parsed()` stamps `Provenance: live_parsed` for scrapers that rebuild tariffs directly from a live fetch. `pipeline/export_json.py:derive_provenance()` collapses these markers into a `provenance` field the site uses to hide non-live data by default.
 - `scrapers.utils.parsing` provides `DocumentPage`, page-aware fail-closed PDF extraction/section selection, CSV/XLSX readers, content hashing, effective-date/unit/currency normalization, and contextual verification.
 - Snapshot serialization is canonical JSON with sorted component dictionaries. Ordering alone is ignored; all semantic fields remain hashed. `diff_runs` compares append-only per-run snapshots.
 - The no-build comparison state is an in-memory two-item array in `site/js/app.js`; it aligns exact type/name/unit keys and never totals them.
-- Deterministic tests block unmocked network access. Run `pytest -q` (248 tests); live availability belongs to the non-blocking source-health workflow.
+- Deterministic tests block unmocked network access. Run `pytest -q` (250 tests); live availability belongs to the non-blocking source-health workflow.

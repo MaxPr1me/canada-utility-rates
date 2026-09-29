@@ -1,8 +1,8 @@
 {
-  "last_updated": "2026-09-01T12:56:58.971707+00:00",
+  "last_updated": "2026-09-29T16:53:20.637724+00:00",
   "total_utilities": 84,
-  "total_tariffs": 504,
-  "total_components": 3429,
+  "total_tariffs": 587,
+  "total_components": 3575,
   "provinces_covered": [
     "AB",
     "BC",
@@ -28,13 +28,15 @@
     "other",
     "residential"
   ],
+  "live_tariffs": 11,
+  "seed_tariffs": 576,
   "last_scrape_run": {
-    "id": 1,
-    "started_at": "2026-09-01T12:53:28.912368+00:00",
-    "finished_at": "2026-09-01T12:56:58.609564+00:00",
+    "id": 18,
+    "started_at": "2026-09-29T16:49:36.939425+00:00",
+    "finished_at": "2026-09-29T16:53:19.063694+00:00",
     "status": "completed",
-    "utilities_attempted": 84,
-    "utilities_succeeded": 84,
+    "utilities_attempted": 1,
+    "utilities_succeeded": 1,
     "errors": null,
     "notes": null
   },

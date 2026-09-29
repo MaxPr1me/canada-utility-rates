@@ -103,9 +103,10 @@ class NewfoundlandPowerScraper(BaseScraper):
                 missing = verify_tariff_values(text, records)
                 if not missing:
                     for record in records:
-                        record.source_url = link
-                        record.notes = f"{record.notes}; live-verified against official PDF"
-                    return records
+                        record.confidence = "high"
+                        for component in record.components:
+                            component.confidence = "high"
+                    return self.mark_live_parsed(records, source_url=link, detail="Official Schedule of Rates PDF")
                 self.logger.warning(
                     "Official Newfoundland Power PDF %s is missing: %s",
                     link, ", ".join(missing),

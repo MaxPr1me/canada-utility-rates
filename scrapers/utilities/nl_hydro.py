@@ -134,12 +134,10 @@ class NLHydroScraper(BaseScraper):
                     missing = verify_tariff_values(text, records)
                     if not missing:
                         for record in records:
-                            record.source_url = link
                             record.confidence = "high"
-                            record.notes = f"{record.notes} Live-verified against official PDF."
                             for component in record.components:
                                 component.confidence = "high"
-                        return records
+                        return self.mark_live_parsed(records, source_url=link, detail="Official rate schedule PDF")
                     self.logger.warning("Official NL Hydro PDF %s is missing: %s", link, ", ".join(missing))
             else:
                 self.logger.info("NL Hydro: no rate PDF links found on page")

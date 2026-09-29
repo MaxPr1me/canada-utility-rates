@@ -379,6 +379,55 @@ header h1 {
 .conf-dot-low { background: var(--color-danger); }
 .conf-dot-unverified { background: var(--color-text-secondary); }
 
+/* Estimated (not live-verified) provenance indicators */
+.seed-badge {
+    display: inline-block;
+    padding: 0.05rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: #fff3cd;
+    color: #8a6d00;
+    border: 1px solid #ffe69c;
+}
+
+.estimated-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: 1rem;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.estimated-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0 1.5rem 1rem;
+    padding: 0.75rem 1rem;
+    background: #fff8e6;
+    border: 1px solid #ffe69c;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    color: #7a5c00;
+}
+
+.modal-estimated-callout {
+    margin: 0.75rem 0;
+    padding: 0.75rem 1rem;
+    background: #fff8e6;
+    border: 1px solid #ffe69c;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    color: #7a5c00;
+}
+
 .rate-card .card-components {
     border-top: 1px solid var(--color-border);
     padding-top: 0.75rem;

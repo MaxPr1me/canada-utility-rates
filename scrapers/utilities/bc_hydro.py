@@ -128,7 +128,7 @@ class BCHydroScraper(BaseScraper):
                 )
                 return None
 
-            return records
+            return self.mark_live_parsed(records)
 
         except Exception as e:
             self.logger.warning("Could not fetch BC Hydro pages: %s", e)
@@ -456,25 +456,37 @@ class BCHydroScraper(BaseScraper):
         end_marker: Optional[str],
     ) -> Optional[str]:
         """
-        Extract a slice of text between start_marker and end_marker
-        (case-insensitive). If end_marker is None, returns everything
-        after start_marker.
+        Extract the rate-bearing slice between start_marker and end_marker
+        (case-insensitive). The page repeats these service headers in a
+        summary/navigation list, so pick the occurrence whose following text
+        actually introduces a rate block ("cents per" / "per kW"), not the first.
         """
         lower = text.lower()
-        start_idx = lower.find(start_marker.lower())
+        marker = start_marker.lower()
+
+        start_idx = -1
+        pos = 0
+        while True:
+            idx = lower.find(marker, pos)
+            if idx == -1:
+                break
+            window = lower[idx:idx + 600]
+            if "cents per" in window or "per kw" in window:
+                start_idx = idx
+                break
+            pos = idx + len(marker)
+
         if start_idx == -1:
-            return None
+            start_idx = lower.find(marker)
+            if start_idx == -1:
+                return None
 
-        # Move past the marker itself
-        start_idx += len(start_marker)
-
+        content_start = start_idx + len(start_marker)
         if end_marker:
-            end_idx = lower.find(end_marker.lower(), start_idx)
-            if end_idx == -1:
-                return text[start_idx:]
-            return text[start_idx:end_idx]
-
-        return text[start_idx:]
+            end_idx = lower.find(end_marker.lower(), content_start)
+            if end_idx != -1:
+                return text[content_start:end_idx]
+        return text[content_start:]
 
     @staticmethod
     def _extract_cents_per(text: str, unit_pattern: str) -> Optional[float]:
@@ -510,28 +522,13 @@ class BCHydroScraper(BaseScraper):
         """
         Extract the energy rate for a given step/tier from residential page text.
 
-        Looks for patterns like:
-          "11.87 cents per kWh" near "Step 1" / "Tier 1"
+        Matches the current "Tier N XX.XX cents per kWh" wording as well as the
+        older "Step N" phrasing.
         """
-        # Split text into chunks around Step N / Tier N references
-        labels = [f"step {step}", f"tier {step}"]
-        lower = page_text.lower()
-
-        for label in labels:
-            idx = lower.find(label)
-            if idx == -1:
-                continue
-
-            # Search in a window after the label for "XX.XX cents per kWh"
-            window = page_text[max(0, idx - 50):idx + 300]
-            match = re.search(
-                r"([\d]+\.?\d*)\s*cents\s*per\s*kWh",
-                window,
-                re.IGNORECASE,
-            )
-            if match:
-                return float(match.group(1)) / 100.0
-
+        pattern = rf"(?:step|tier)\s*{step}\s+([\d]+\.?\d*)\s*cents\s*(?:per|/)\s*kWh"
+        match = re.search(pattern, page_text, re.IGNORECASE)
+        if match:
+            return float(match.group(1)) / 100.0
         return None
 
     # ── Seed / fallback data ──────────────────────────────────

@@ -142,7 +142,14 @@ class HydroQuebecScraper(BaseScraper):
                 "Successfully parsed %d rate(s) from Hydro-Québec PDF",
                 len(records),
             )
-            return records
+            live = self.mark_live_parsed(records, source_url=PDF_URL, detail="Official electricity-rates PDF")
+
+            # Preserve any rates we couldn't parse live as labelled seed estimates
+            live_names = {r.tariff_name for r in live}
+            seed_only = [r for r in self._seed_data() if r.tariff_name not in live_names]
+            if seed_only:
+                live = live + self.mark_fallback(seed_only)
+            return live
 
         except Exception as e:
             self.logger.warning("Could not fetch/parse Hydro-Québec PDF: %s", e)
@@ -166,21 +173,21 @@ class HydroQuebecScraper(BaseScraper):
 
     def _parse_rate_d(self, pdf_text: str) -> Optional[TariffRecord]:
         """Parse Rate D (Domestic/Residential) from PDF text."""
-        # Extract the Rate D section — ends at Rate DM or Rate G
-        section = self._extract_section(pdf_text, "Rate D", "Rate DM")
-        if not section:
-            section = self._extract_section(pdf_text, "Rate D", "Rate G")
-        if not section:
+        # The "Structure of Rate D" section carries the actual charges; the
+        # plain "Rate D" heading also appears in the table of contents.
+        idx = pdf_text.find("Structure of Rate D")
+        if idx == -1:
             self.logger.warning("Could not find Rate D section in PDF")
             return None
+        section = pdf_text[idx:idx + 1200]
 
-        # Fixed charge: look for "XX.XXX¢ per day" or "XX.XXX cents per day"
+        # Fixed charge is worded "XX.XXX¢ system access charge for each day".
         fixed_match = re.search(
-            r'([\d.]+)\s*[¢c]\s*per\s*day', section, re.IGNORECASE
+            r'([\d.]+)\s*[¢c]\s*system access charge', section, re.IGNORECASE
         )
         if not fixed_match:
             fixed_match = re.search(
-                r'([\d.]+)\s*cents?\s*per\s*day', section, re.IGNORECASE
+                r'([\d.]+)\s*[¢c][^.]{0,40}(?:per day|for each day|a day)', section, re.IGNORECASE
             )
         if not fixed_match:
             self.logger.warning("Could not find Rate D fixed charge in PDF")

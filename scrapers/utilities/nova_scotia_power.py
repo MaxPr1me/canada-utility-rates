@@ -142,14 +142,16 @@ class NovaScotiaPowerScraper(BaseScraper):
             commercial_records = self._try_live_commercial()
             if commercial_records:
                 live_records.extend(commercial_records)
-            else:
-                # Fall back to commercial seed data
-                self.logger.info("Using seed data for commercial rate classes")
-                live_records.append(self._seed_data_rate10())
-                live_records.append(self._seed_data_rate11())
-                live_records.append(self._seed_data_rate12())
+                return self.mark_live_parsed(live_records)
 
-            return live_records
+            # Live residential succeeded but commercial did not: mark each honestly
+            self.logger.info("Using seed data for commercial rate classes")
+            seed_commercial = self.mark_fallback([
+                self._seed_data_rate10(),
+                self._seed_data_rate11(),
+                self._seed_data_rate12(),
+            ])
+            return self.mark_live_parsed(live_records) + seed_commercial
 
         except Exception as e:
             self.logger.warning("Could not fetch Nova Scotia Power page: %s", e)

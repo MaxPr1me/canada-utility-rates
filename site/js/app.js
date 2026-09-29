@@ -24,6 +24,7 @@
     let marketChart = null;
     let currentView = "rates";
     let utilityProvinceMap = {};
+    let showEstimated = false;
     const comparison = [];
 
     // Multi-select filter state: each key holds a Set of selected values
@@ -344,13 +345,17 @@
     function renderRates() {
         const container = document.getElementById("rates-container");
         const filtered = getFilteredRates();
+        const seedCount = filtered.filter(r => (r.provenance || "seed") !== "live").length;
+        const visible = showEstimated ? filtered : filtered.filter(r => (r.provenance || "seed") === "live");
 
         document.getElementById("results-count").textContent =
-            `Showing ${filtered.length} of ${allRates.length} tariffs`;
+            `Showing ${visible.length} of ${allRates.length} tariffs`;
+
+        renderEstimatedBanner(seedCount);
 
         container.innerHTML = "";
 
-        filtered.forEach((rate, idx) => {
+        visible.forEach((rate, idx) => {
             const card = document.createElement("div");
             card.className = "rate-card";
             card.dataset.index = idx;
@@ -361,6 +366,9 @@
                 : `<span class="card-badge badge-electricity">Elec</span>`;
 
             const confDot = `<span class="conf-dot conf-dot-${rate.confidence || 'high'}" title="Confidence: ${capitalize(rate.confidence || 'high')}"></span>`;
+            const seedBadge = (rate.provenance || "seed") !== "live"
+                ? `<span class="seed-badge" title="Not verified against a live source; shown for reference only">Estimated</span>`
+                : "";
 
             const components = (rate.components || []).slice(0, 4);
             const moreCount = (rate.components || []).length - 4;
@@ -382,7 +390,7 @@
                     ${fuelBadge}
                 </div>
                 <div class="card-meta">
-                    ${confDot}
+                    ${confDot}${seedBadge}
                     <span>${escapeHtml(rate.utility_name || "")}</span>
                     <span>${PROVINCE_NAMES[rate.province] || rate.province || ""}</span>
                     <span>${capitalize(rate.customer_class || "")}</span>
@@ -401,6 +409,28 @@
             });
 
             container.appendChild(card);
+        });
+    }
+
+    function renderEstimatedBanner(seedCount) {
+        const banner = document.getElementById("estimated-banner");
+        if (!banner) return;
+        if (showEstimated || seedCount === 0) {
+            banner.classList.add("hidden");
+            banner.innerHTML = "";
+            return;
+        }
+        banner.classList.remove("hidden");
+        const label = seedCount === 1 ? "estimated rate is" : "estimated rates are";
+        banner.innerHTML = `
+            <span><strong>${seedCount}</strong> ${label} hidden because ${seedCount === 1 ? "it has" : "they have"} not been verified against a live source.</span>
+            <button type="button" id="btn-show-estimated" class="btn-secondary">Show estimated rates</button>
+        `;
+        banner.querySelector("#btn-show-estimated").addEventListener("click", () => {
+            showEstimated = true;
+            const toggle = document.getElementById("toggle-estimated");
+            if (toggle) toggle.checked = true;
+            renderRates();
         });
     }
 
@@ -511,6 +541,10 @@
 
         // Market callout
         const marketCallout = buildMarketCallout(components);
+
+        const estimatedNotice = (rate.provenance || "seed") !== "live"
+            ? `<div class="modal-estimated-callout"><strong>Estimated \u2014 not live-verified.</strong> These values are reference defaults that could not be confirmed against a live official source. Verify with the utility before relying on them.</div>`
+            : "";
 
         content.innerHTML = `
             <h2>${escapeHtml(rate.name || rate.tariff_name || "Tariff Details")}</h2>
@@ -977,6 +1011,15 @@
 
     // Clear filters button
     document.getElementById("btn-clear-filters").addEventListener("click", clearAllFilters);
+
+    // Show/hide estimated (non-live-verified) rates
+    const estimatedToggle = document.getElementById("toggle-estimated");
+    if (estimatedToggle) {
+        estimatedToggle.addEventListener("change", (e) => {
+            showEstimated = e.target.checked;
+            renderRates();
+        });
+    }
 
     // Modal
     document.getElementById("modal-close").addEventListener("click", hideModal);

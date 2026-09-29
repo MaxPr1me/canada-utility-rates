@@ -19,7 +19,7 @@ import re
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
-from scrapers.utils.parsing import extract_tables, clean_currency, detect_js_rendered
+from scrapers.utils.parsing import extract_tables, clean_currency, detect_js_rendered, parse_html
 from scrapers.utils.change_detection import compare_to_seed, log_change_alerts, has_critical_alerts
 
 logger = logging.getLogger(__name__)
@@ -105,11 +105,10 @@ class ManitobaHydroScraper(BaseScraper):
             residential_records = self._parse_residential(residential_html)
             commercial_records = self._parse_commercial(commercial_html)
 
-            if not residential_records and not commercial_records:
+            live_records = residential_records + commercial_records
+            if not live_records:
                 self.logger.warning("Could not parse any tariffs from live pages")
                 return None
-
-            live_records = residential_records + commercial_records
 
             # Compare to seed data for sanity checking
             seed_records = self._seed_data()
@@ -123,6 +122,14 @@ class ManitobaHydroScraper(BaseScraper):
                 )
                 return None
 
+            live_records = self.mark_live_parsed(live_records)
+
+            # Preserve any classes we couldn't parse live as labelled seed estimates
+            live_names = {r.tariff_name for r in live_records}
+            seed_only = [r for r in seed_records if r.tariff_name not in live_names]
+            if seed_only:
+                live_records = live_records + self.mark_fallback(seed_only)
+
             return live_records
 
         except Exception as e:
@@ -130,40 +137,20 @@ class ManitobaHydroScraper(BaseScraper):
             return None
 
     def _parse_residential(self, html: str) -> list[TariffRecord]:
-        """Parse residential rates from the Manitoba Hydro residential rates page."""
-        tables = extract_tables(html)
-        if not tables:
-            self.logger.warning("No tables found on residential page")
-            return []
+        """Parse residential rates from the Manitoba Hydro residential page text."""
+        text = parse_html(html).get_text(" ", strip=True)
+        basic_match = re.search(r"not exceeding 200\s*Amp\s*\$\s*([\d.]+)", text, re.IGNORECASE)
+        energy_match = re.search(r"Energy charge\s*([\d.]+)\s*\u00a2", text, re.IGNORECASE)
 
-        basic_charge: Optional[float] = None
-        energy_rate: Optional[float] = None
-
-        for table in tables:
-            for row in table:
-                if len(row) < 2:
-                    continue
-                charge_text = row[0].lower()
-                cost_text = row[-1]
-
-                # Basic monthly charge (≤200 Amp standard service)
-                if "basic monthly" in charge_text and "200" in charge_text and ">" not in charge_text:
-                    val = clean_currency(cost_text)
-                    if val is not None:
-                        basic_charge = val
-
-                # Energy charge — look for "energy" or "kwh" in charge column
-                if ("energy" in charge_text or "kwh" in charge_text) and "demand" not in charge_text:
-                    val = clean_currency(cost_text)
-                    if val is not None:
-                        energy_rate = val
-
-        if basic_charge is None or energy_rate is None:
+        if not basic_match or not energy_match:
             self.logger.warning(
                 "Could not extract all residential values (basic=%s, energy=%s)",
-                basic_charge, energy_rate,
+                basic_match, energy_match,
             )
             return []
+
+        basic_charge = float(basic_match.group(1))
+        energy_rate = float(energy_match.group(1)) / 100.0
 
         record = TariffRecord(
             utility_name="Manitoba Hydro",

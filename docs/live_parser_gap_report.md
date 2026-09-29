@@ -3,6 +3,8 @@
 **Updated:** 2026-07-27
 **Scope:** 8 major provincial utilities (Phase 5, Step 2)
 
+**Provenance surfacing (2026-09-29):** These live parsers and PDF-verifiers stamp `Provenance: live_parsed` (or `officially_verified`) via `mark_live_parsed()` / `verify_official_records()`. The site treats only these as live and hides seed fallbacks by default behind the "Show estimated (not live-verified) rates" toggle.
+
 ## Summary
 
 | Utility | Province | Page Type | Parser Status | Residential | Commercial | Confidence |

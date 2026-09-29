@@ -174,6 +174,42 @@ class BaseScraper(ABC):
         response.raise_for_status()
         return response.content
 
+    def fetch_rendered_page(
+        self,
+        url: str,
+        wait_selector: Optional[str] = None,
+        timeout_ms: int = 30000,
+    ) -> Optional[str]:
+        """Return the fully-rendered HTML of a JS-heavy page via headless Chromium.
+
+        Playwright is lazy-imported so only JS-rendered scrapers need it. Returns
+        None if Playwright or its browser binary is unavailable, so callers can
+        fall back to seed data without crashing.
+        """
+        self.logger.info("Fetching (rendered) %s", url)
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            self.logger.warning("Playwright not installed; cannot render %s", url)
+            return None
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                try:
+                    page = browser.new_page(user_agent=self.USER_AGENT)
+                    page.goto(url, wait_until="networkidle", timeout=timeout_ms)
+                    if wait_selector:
+                        try:
+                            page.wait_for_selector(wait_selector, timeout=timeout_ms)
+                        except Exception:
+                            self.logger.debug("Selector %s not found on %s", wait_selector, url)
+                    return page.content()
+                finally:
+                    browser.close()
+        except Exception as e:
+            self.logger.warning("Rendered fetch failed for %s: %s", url, e)
+            return None
+
     @staticmethod
     def content_hash(text: str) -> str:
         """SHA-256 hash of text content for change detection."""
@@ -220,6 +256,34 @@ class BaseScraper(ABC):
                 component.source_url = component.source_url or record.source_url
                 component.notes = f"Provenance: seed_fallback. {reason}. " + (component.notes or "")
         self.logger.warning("Seed fallback for %s: %s", self.utility_name, reason)
+        return records
+
+    def mark_live_parsed(
+        self,
+        records: list[TariffRecord],
+        source_url: Optional[str] = None,
+        detail: Optional[str] = None,
+    ) -> list[TariffRecord]:
+        """Label records rebuilt directly from a live fetch this run.
+
+        Use this when a scraper parses the current official page/PDF and
+        reconstructs the tariff itself, rather than confirming seed values via
+        ``verify_official_records``. It stamps a machine-readable
+        ``Provenance: live_parsed`` marker so the exporter and site can tell live
+        data apart from seed fallback. Confidence is left as the parser set it.
+        """
+        for record in records:
+            if source_url:
+                record.source_url = source_url
+            if detail:
+                record.source_page = detail
+            record.notes = "Provenance: live_parsed. " + (record.notes or "")
+            for component in record.components:
+                component.source_url = component.source_url or record.source_url
+                if detail and not component.source_detail:
+                    component.source_detail = detail
+                component.notes = "Provenance: live_parsed. " + (component.notes or "")
+        self.logger.info("Live-parsed %d tariffs for %s", len(records), self.utility_name)
         return records
 
     def verify_official_records(

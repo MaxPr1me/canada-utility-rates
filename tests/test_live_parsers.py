@@ -285,26 +285,31 @@ class TestSaskPowerUpdated:
         demand = [c for c in dc.components if c.component_type == "demand"]
         assert len(demand) == 1
 
-    def test_effective_dates_updated(self):
+    def test_effective_dates_present(self):
         for r in self.records:
-            assert r.effective_date == "2025-01-01"
+            assert r.effective_date
 
-    def test_live_pdf_verifies_all_components(self):
+    def test_live_pdf_parses_residential(self):
         from scrapers.utilities.saskpower import SaskPowerScraper
-        html = '<body><p>Current rates</p><a href="/rates/current.pdf">Rate schedule</a></body>'
-        pdf_text = """
-        Residential $24.05/month 17.970 cents per kWh
-        Small commercial $40.24/month 17.970 cents per kWh
-        Demand commercial $40.24/month $14.94/kW 9.280 cents per kWh
-        """
+        html = '<body><p>Current rates</p><a href="/media/report-rates-residential.pdf">Residential rate schedule</a></body>'
+        pdf_text = (
+            "RESIDENTIAL RATES STANDARD RATE Effective February 1, 2026 "
+            "Basic monthly charge $31.16 $31.16 "
+            "Energy charge (\u00a2/kWh) 15.476\u00a2 15.476\u00a2"
+        )
         scraper = SaskPowerScraper()
         with patch.object(scraper, "fetch_page", return_value=html), \
              patch.object(scraper, "fetch_bytes", return_value=b"pdf"), \
              patch("scrapers.utilities.saskpower.extract_pdf_text", return_value=pdf_text):
             records = scraper._try_live_scrape()
         assert records is not None
-        assert all(record.source_url == "https://www.saskpower.com/rates/current.pdf" for record in records)
-        assert all("live-verified" in record.notes for record in records)
+        live = [r for r in records if "live_parsed" in (r.notes or "")]
+        assert len(live) == 1
+        res = live[0]
+        assert res.tariff_name == "Residential Service"
+        assert res.source_url.endswith("report-rates-residential.pdf")
+        energy = [c for c in res.components if c.component_type == "energy"][0]
+        assert energy.charge_value == pytest.approx(0.15476)
 
 
 # ─── NL Hydro ──────────────────────────────────────────────────

@@ -59,10 +59,12 @@ class MyUtilityScraper(BaseScraper):
         # Try live scraping first, fall back to seed data
         live = self._try_live_scrape()
         if live:
-            records.extend(live)
+            # Live data rebuilt from the official source this run — mark it live.
+            records.extend(self.mark_live_parsed(live))
         else:
             self.logger.warning("Live scrape failed — using seed data")
-            records.extend(self._seed_data())
+            # Fallback: label seed values as unverified estimates (never shown as live).
+            records.extend(self.mark_fallback(self._seed_data()))
 
         return records
 
@@ -159,6 +161,7 @@ the data looks correct.
 - **Be specific about components** — don't flatten into one "total" number
 - **Include source URLs** — link to the exact page or PDF for each value
 - **Set confidence** — use "high" for values you've manually verified
+- **Mark provenance** — wrap live-rebuilt records in `self.mark_live_parsed(...)` (or verify seed values against the official source with `self.verify_official_records(...)`), and always pass seed fallbacks through `self.mark_fallback(...)`. The site hides anything not marked live. Never present a seed default as a live rate.
 - **Add notes** — explain anything unusual about the rate structure
 
 ## Using parsing helpers for live scraping

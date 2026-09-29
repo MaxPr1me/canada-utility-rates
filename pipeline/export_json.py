@@ -34,6 +34,20 @@ DB_PATH = PROJECT_ROOT / "data" / "db" / "rates.db"
 SITE_DATA_DIR = PROJECT_ROOT / "site" / "data"
 
 
+def derive_provenance(confidence: str | None, notes: str | None) -> str:
+    """Classify a tariff as live-sourced or seed from its provenance marker.
+
+    Conservative on purpose: only records that were verified against, or parsed
+    from, a live official source this run count as ``live``. Everything else
+    (including legacy seed constants) is ``seed`` so the site never presents a
+    static default value as if it were a current, live-sourced rate.
+    """
+    text = notes or ""
+    if "Provenance: officially_verified" in text or "Provenance: live_parsed" in text:
+        return "live"
+    return "seed"
+
+
 def export_all() -> None:
     """Export all data from the database to JSON files for the site."""
     setup_logging()
@@ -67,6 +81,7 @@ def export_all() -> None:
     """).fetchall():
         tariff = dict(row)
         tariff_id = tariff["id"]
+        tariff["provenance"] = derive_provenance(tariff.get("confidence"), tariff.get("notes"))
 
         # Fetch components for this tariff
         components = [dict(c) for c in conn.execute("""
@@ -93,6 +108,8 @@ def export_all() -> None:
             "gas": sum(1 for u in utilities if u["utility_type"] in ("gas", "both")),
         },
         "customer_classes": sorted(set(t["customer_class"] for t in tariffs)),
+        "live_tariffs": sum(1 for t in tariffs if t.get("provenance") == "live"),
+        "seed_tariffs": sum(1 for t in tariffs if t.get("provenance") != "live"),
     }
 
     # Last scrape run info

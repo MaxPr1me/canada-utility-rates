@@ -73,6 +73,26 @@ def test_fallback_downgrades_tariff_and_critical_components():
     assert "seed_fallback" in record.notes
 
 
+def test_live_parsed_marks_provenance_on_tariff_and_components():
+    record = _Scraper().mark_live_parsed(
+        [tariff()], source_url="https://example.com/rates", detail="Rate page"
+    )[0]
+    assert record.notes.startswith("Provenance: live_parsed.")
+    assert record.source_url == "https://example.com/rates"
+    assert record.components[0].notes.startswith("Provenance: live_parsed.")
+
+
+def test_derive_provenance_only_trusts_explicit_live_markers():
+    from pipeline.export_json import derive_provenance
+
+    assert derive_provenance("high", "Provenance: officially_verified. x") == "live"
+    assert derive_provenance("high", "Provenance: live_parsed. x") == "live"
+    assert derive_provenance("unverified", "Provenance: seed_fallback. x") == "seed"
+    # Conservative: high confidence without an explicit live marker is still seed.
+    assert derive_provenance("high", "some note without marker") == "seed"
+    assert derive_provenance("high", None) == "seed"
+
+
 def test_snapshot_hash_ignores_component_order_but_tracks_semantics():
     a = RateComponent("fixed", "Monthly", 10, "$/month")
     b = RateComponent("energy", "Energy", 0.1, "$/kWh", tier_number=1)

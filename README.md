@@ -17,6 +17,15 @@ This project scrapes official utility rate data, stores it in a structured datab
 
 ---
 
+## Working Rules
+
+Two rules govern every change to this project:
+
+1. **Never display default values as if they were live.** Only rate values pulled from (or verified against) a live official web source are shown as current. Hardcoded seed/fallback values are a safety net only — they are marked `provenance: "seed"` (with `confidence: unverified`), hidden by default on the site, and revealed only via the labelled **"Show estimated (not live-verified) rates"** toggle. Never present a static default as a live-scraped rate.
+2. **Do not assume scope.** If a requirement is unclear or has more than one reasonable interpretation, stop and ask which path to take before proceeding.
+
+---
+
 ## Quick Start (For Beginners)
 
 If you've never used Python or the command line before, follow these steps exactly.
@@ -342,13 +351,13 @@ All other provinces use vertically integrated Crown utilities with fully regulat
 
 ### Phase 5: Live Parser Hardening & Historical Tracking (In Progress — blockers documented)
 - Reusable page-aware PDF extraction, wrapped-row normalization, strict tariff/label/unit contextual verification, negative-credit and unit helpers.
-- Explicit provenance: failed fetches and structural drift now produce `unverified` seed fallbacks rather than high-confidence current data. Unknown Ontario LDCs no longer receive invented median rates.
+- Explicit provenance, end to end: failed fetches and structural drift produce `unverified` seed fallbacks (`Provenance: seed_fallback`) rather than high-confidence current data; live parses and PDF verifications stamp `Provenance: live_parsed` / `officially_verified` via `mark_live_parsed()` / `verify_official_records()`. `export_json.derive_provenance()` collapses these into a `provenance` field, and the site hides seed rates by default behind a labelled "Estimated" toggle. Unknown Ontario LDCs no longer receive invented median rates.
 - Official component-verification paths cover Ontario, Alberta distribution/default retail/AESO, active gas utilities, and northern/community utilities. The full per-utility status and external-source blockers are tracked in `docs/phase5_completion_matrix.md`.
 - Historical snapshots use canonical, component-order-independent JSON hashes; integration tests cover repeat, change, nullable code, append-only, and effective-date-version behaviour.
 - Static side-by-side comparison aligns components and flags incompatible fuel, unit, or tariff structures without calculating a total.
 - Monthly publishing now runs deterministic tests and fails closed on validation or empty exports; a separate non-blocking source-health workflow checks unstable live sites.
 - **Not marked complete:** many Ontario distributors still lack a registry link to an individual approved tariff, and fixture-reviewed tariff-specific interpretation is still needed when official documents drift. The system fails safely, but these are material completion blockers.
-- **248 deterministic tests** cover scraper output, parsers, provenance, change detection, validation, schema, and historical tracking.
+- **250 deterministic tests** cover scraper output, parsers, provenance, change detection, validation, schema, and historical tracking.
 
 ### Phase 5.5: Enhanced Web Interface ✓
 - Two-tab layout: Rate Browser + Market Pricing dashboard
@@ -356,6 +365,7 @@ All other provinces use vertically integrated Crown utilities with fully regulat
 - Province filter cascades into utility filter (selecting BC shows only BC utilities)
 - Rate deduplication: only most recent effective_date per tariff displayed
 - Confidence indicators on rate cards (colored dots) and in detail modal (badge + tooltip)
+- Estimated (non-live-verified) rates hidden by default, with an opt-in "Show estimated rates" toggle, an "Estimated" badge on cards, and a not-live-verified callout in the detail modal
 - Source attribution in detail modal (primary source + utility website from source review)
 - Market-based rate callouts with IESO/AESO/gas explanations and links to Market Pricing tab
 - Interactive Market Pricing dashboard:
@@ -378,6 +388,7 @@ All other provinces use vertically integrated Crown utilities with fully regulat
 | Component | Technology | Why |
 |---|---|---|
 | Scraping | Python + requests + BeautifulSoup | Standard, reliable, huge community |
+| JS-rendered pages | Playwright (headless Chromium) | Renders JS-heavy rate pages when the static HTML lacks the data |
 | PDF parsing | pdfplumber | Best Python PDF table extractor |
 | Database | SQLite | Zero setup, single file, full SQL |
 | Validation | Custom + Pydantic | Type-safe, catches errors early |

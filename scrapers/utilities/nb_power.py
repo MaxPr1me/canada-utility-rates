@@ -50,10 +50,10 @@ SEED_GS1 = {
     "effective_date": "2026-04-14",
     "source_url": BUSINESS_URL,
     "basic_charge_per_month": 30.87,   # $/month
-    "demand_charge": 7.52,             # $/kW
-    "tier1_threshold_kwh": 15000,      # first 15,000 kWh
-    "tier1_rate": 0.1584,              # $/kWh
-    "tier2_rate": 0.1050,              # $/kWh — balance
+    "demand_charge": 14.20,            # $/kW (first 20 kW no charge)
+    "tier1_threshold_kwh": 5000,       # first 5,000 kWh
+    "tier1_rate": 0.1821,              # $/kWh — 18.21¢ total (base + variance)
+    "tier2_rate": 0.1304,              # $/kWh — balance, 13.04¢ total
 }
 
 SEED_SMALL_INDUSTRIAL = {
@@ -155,6 +155,14 @@ class NBPowerScraper(BaseScraper):
                     "Critical deviation in live data vs seed — falling back to seed"
                 )
                 return None
+
+            live_records = self.mark_live_parsed(live_records)
+
+            # Preserve any classes we couldn't parse live as labelled seed estimates
+            live_names = {r.tariff_name for r in live_records}
+            seed_only = [r for r in self._seed_data() if r.tariff_name not in live_names]
+            if seed_only:
+                live_records = live_records + self.mark_fallback(seed_only)
 
             return live_records
 
