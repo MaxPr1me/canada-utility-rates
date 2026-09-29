@@ -1,15 +1,17 @@
 # Live Parser Gap Report — Tier 1 Provincial Utilities
 
-**Updated:** 2026-07-27
+**Updated:** 2026-09-29
 **Scope:** 8 major provincial utilities (Phase 5, Step 2)
 
 **Provenance surfacing (2026-09-29):** These live parsers and PDF-verifiers stamp `Provenance: live_parsed` (or `officially_verified`) via `mark_live_parsed()` / `verify_official_records()`. The site treats only these as live and hides seed fallbacks by default behind the "Show estimated (not live-verified) rates" toggle.
+
+**Multi-class expansion (2026-09-29):** Several utilities were widened from residential-only to **every published rate class**, parsing the same official document with a shared "section-slice + label/value" approach. A recurring root cause of prior commercial fall-backs was the cent symbol: official pages/PDFs render it with a glyph that a literal `¢`/`[¢c]` regex misses, so energy charges are now matched glyph-agnostically (`[^\d\s]{0,2}` before `per kWh`/`per kilowatthour`). Newly live-parsed classes: Maritime Electric (10 classes), Newfoundland Power (4), Nova Scotia Power (commercial Rate 10/11/12), Manitoba Hydro (7 general-service classes), Hydro-Québec (Rate G + M).
 
 ## Summary
 
 | Utility | Province | Page Type | Parser Status | Residential | Commercial | Confidence |
 |---------|----------|-----------|---------------|-------------|------------|------------|
-| **Manitoba Hydro** | MB | Server-rendered tables | Live parser | Flat rate | GS Small (tiered), GS Medium (demand) | High |
+| **Manitoba Hydro** | MB | Server-rendered (line-pair text) | Live parser | Flat rate | GS Small Non-Demand/Demand/Seasonal, GS Medium, GS Large (3 voltage tiers) | High |
 | **NB Power** | NB | Server-rendered tables | Live parser | Flat rate | GS1 (tiered+demand), Small Industrial | High |
 | **Nova Scotia Power** | NS | Server-rendered h4/li | Live parser (residential + commercial) | Flat rate | Rate 10 (tiered), Rate 11 (demand), Rate 12 (demand) | High |
 | **BC Hydro** | BC | Prose text (sub-pages) | Live parser | Tiered (Step 1/2) | SGS (flat), MGS (demand), LGS (demand) | High |
@@ -22,9 +24,9 @@
 
 ### Manitoba Hydro
 - **URL:** `hydro.mb.ca/accounts_and_services/rates/residential_rates/`
-- **Parser:** Table extraction via `extract_tables()`, `clean_currency()` for ¢ values
-- **Coverage:** Residential (flat), GS Small Non-Demand (2 energy tiers), GS Medium (demand + 2 energy tiers)
-- **Fragilities:** Section boundary detection depends on header text ("non-demand", "medium"); table structure changes would break parser
+- **Parser:** Residential via text regex; commercial via a line-pair section parser (each class header, then `label` line + value on the next line). Cent glyph handled agnostically; lone footnote-marker lines are filtered so they cannot split a label from its value.
+- **Coverage:** Residential (flat); GS Small Non-Demand, GS Small Demand, GS Seasonal, GS Medium, and GS Large at three voltage tiers (>750 V-30 kV / >30-100 kV / >100 kV)
+- **Fragilities:** Section boundary detection depends on header text ("non-demand", "medium", "large ... exceeding"); page restructuring would break it
 - **Seed update:** 2024-04-01 → 2026-01-01
 
 ### NB Power
@@ -37,10 +39,10 @@
 ### Nova Scotia Power
 - **URL (residential):** `nspower.ca/your-home/residential-rates/standard-residential`
 - **URL (commercial):** `nspower.ca/your-business/save-money-energy/business-rates`
-- **Parser:** Label-based extraction via `find_text_near_label()` for residential; table extraction for commercial rates
+- **Parser:** Label-based extraction via `find_text_near_label()` for residential; a section parser for commercial that slices each rate between its page header and the next rate/sample/minimum-charge marker (replacing the old table heuristic that always fell back because the page's cent glyph is not a literal `¢`)
 - **Coverage:** Residential (live parsed), Rate 10 Small Commercial (tiered, live parsed), Rate 11 Commercial General (demand, live parsed), Rate 12 Large Commercial (demand, live parsed)
 - **Gap:** Industrial rates (Rate 21, 22, 23) available on the business page but not yet scraped.
-- **Seed update:** 2024-04-01 → 2026-01-01; URLs corrected; commercial rates added from business page
+- **Seed update:** 2024-04-01 → 2026-01-01; commercial seeds refreshed to current values
 
 ### BC Hydro
 - **URL:** `app.bchydro.com/.../residential-rates/tiered.html` and `.../business-rates.html`
@@ -57,7 +59,7 @@
 - **PDF URL:** `hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf`
 - **Parser:** PDF text extraction via `pdfplumber` (`extract_pdf_text()`), regex parsing for ¢/kWh and $/kW patterns
 - **Coverage:** Rate D (residential, tiered), Rate G (commercial, mixed demand+tiered), Rate M (medium power, demand+tiered)
-- **Fix:** Previously seed-only with medium confidence. Now live-parsed from official PDF with high confidence.
+- **Fix:** Rate G/M previously fell back to seed because the section extractor keyed on the generic "Rate G"/"Rate M" strings (first found in the table of contents) and the cent regex missed the PDF's glyph. Now anchored on the "Structure of Rate G"/"Structure of Rate M" sections with a glyph-agnostic energy pattern, so all three tariffs parse live.
 - **Seed update:** 2024-04-01 → 2026-04-01; values verified from official PDF
 
 ## Group C: PDF-Only — Official-Source Component Verification
