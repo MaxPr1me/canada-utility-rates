@@ -19,14 +19,20 @@ Regulated by the Alberta Utilities Commission (AUC).
 from __future__ import annotations
 
 import logging
+import re
+from datetime import date
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
+from scrapers.utils.parsing import (
+    parse_html, detect_js_rendered, find_pdf_links, extract_pdf_text,
+    extract_effective_date,
+)
 
 logger = logging.getLogger(__name__)
 
 # Seed data for FortisAlberta distribution rates.
-SOURCE_URL = "https://www.fortisalberta.com/customer-service/rates-and-tariffs"
+SOURCE_URL = "https://www.fortisalberta.com/customer-service/rates-and-billing/rates-options-and-riders"
 EFFECTIVE_DATE = "2024-01-01"
 
 SEED_RESIDENTIAL = {
@@ -76,8 +82,85 @@ class FortisAlbertaScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Verify every modelled component against the current official schedule."""
-        return self.verify_official_records(SOURCE_URL, self._seed_data())
+        """Parse the current AUC-approved residential (Rate 11) distribution charges.
+
+        FortisAlberta publishes dated Rates, Options and Riders schedule PDFs; we
+        parse the most recent one already in effect. Other classes are kept as
+        labelled seed estimates until parsed.
+        """
+        try:
+            html = self.fetch_page(SOURCE_URL)
+            keywords = ["rates", "options", "riders", "schedule"]
+            pdf_links = find_pdf_links(parse_html(html), keywords=keywords, base_url=SOURCE_URL) if html else []
+            if not pdf_links:
+                html = self.fetch_rendered_page(SOURCE_URL)
+                pdf_links = find_pdf_links(parse_html(html), keywords=keywords, base_url=SOURCE_URL) if html else []
+
+            residential = self._parse_residential_pdf(pdf_links)
+            if not residential:
+                return None
+
+            live = self.mark_live_parsed([residential])
+
+            # Keep classes we haven't parsed live as labelled seed estimates
+            seed_only = [r for r in self._seed_data() if r.customer_class != "residential"]
+            if seed_only:
+                live = live + self.mark_fallback(seed_only)
+            return live
+        except Exception:
+            self.logger.exception("Error during FortisAlberta live scrape")
+            return None
+
+    def _parse_residential_pdf(self, pdf_links: list[str]) -> Optional[TariffRecord]:
+        """Return the residential Rate 11 record from the most recent in-effect PDF."""
+        today = date.today().isoformat()
+        for link in pdf_links[:6]:
+            try:
+                text = extract_pdf_text(self.fetch_bytes(link))
+            except Exception:
+                continue
+            # The header also appears in the PDF's table of contents; use the
+            # occurrence that actually precedes the charge table.
+            section = None
+            for match in re.finditer(r"RATE 11:\s*RESIDENTIAL SERVICE", text, re.IGNORECASE):
+                window = text[match.start():match.start() + 700]
+                if "System Usage Charge" in window:
+                    section = window
+                    break
+            if not section:
+                continue
+            usage = re.search(r"System Usage Charge\s*kWh\s*\$([\d.]+)\s*/kWh", section, re.IGNORECASE)
+            facilities = re.search(r"Facilities and Service Charge[^$]*\$([\d.]+)\s*/day", section, re.IGNORECASE)
+            if not usage or not facilities:
+                continue
+            effective = extract_effective_date(section) or EFFECTIVE_DATE
+            if effective > today:
+                continue
+            record = TariffRecord(
+                utility_name="FortisAlberta", province="AB", utility_type="electricity",
+                tariff_name="Residential Distribution (Rate 11)", tariff_code="11",
+                customer_class="residential", rate_structure="flat",
+                effective_date=effective, source_url=link, confidence="high",
+                notes=(
+                    "FortisAlberta residential distribution charges (Rate 11). "
+                    "Distribution/wires only; energy supply billed separately by a retailer. "
+                    "Regulated by the Alberta Utilities Commission (AUC)."
+                ),
+                components=[
+                    RateComponent(
+                        component_type="fixed", component_name="Facilities and Service Charge",
+                        charge_value=float(facilities.group(1)), charge_unit="$/day",
+                        notes="Daily fixed distribution charge (per unit)",
+                    ),
+                    RateComponent(
+                        component_type="distribution", component_name="System Usage Charge",
+                        charge_value=float(usage.group(1)), charge_unit="$/kWh",
+                        notes="Variable distribution charge per kWh",
+                    ),
+                ],
+            )
+            return record
+        return None
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""

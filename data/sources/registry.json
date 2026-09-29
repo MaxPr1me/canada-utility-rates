@@ -1440,9 +1440,9 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://www.fortisalberta.com/customer-service/rates-and-tariffs",
+          "url": "https://www.fortisalberta.com/customer-service/rates-and-billing/rates-options-and-riders",
           "source_type": "html",
-          "description": "FortisAlberta distribution tariff information",
+          "description": "FortisAlberta Rates, Options and Riders schedules (AUC-approved tariff PDFs)",
           "is_primary": true
         }
       ],
