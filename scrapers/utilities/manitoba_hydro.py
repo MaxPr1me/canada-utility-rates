@@ -19,7 +19,7 @@ import re
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
-from scrapers.utils.parsing import extract_tables, clean_currency, detect_js_rendered, parse_html
+from scrapers.utils.parsing import detect_js_rendered, parse_html
 from scrapers.utils.change_detection import compare_to_seed, log_change_alerts, has_critical_alerts
 
 logger = logging.getLogger(__name__)
@@ -56,6 +56,113 @@ SEED_GENERAL_SERVICE_MEDIUM = {
     "demand_free_kva": 50,             # first 50 kVA at no charge
     "basic_charge_per_month": 35.81,   # $/month
 }
+
+# Commercial general-service classes published on the commercial rates page,
+# in page order. (tariff_name, customer_class, rate_structure, eligibility)
+_MB_COMMERCIAL: list[tuple[str, str, str, str]] = [
+    ("General Service Small (Non-Demand)", "commercial", "tiered",
+     "General service small; billing demand not exceeding 50 kVA (non-demand metered)."),
+    ("General Service Small (Demand)", "commercial", "demand",
+     "General service small; billing demand between 51 kVA and 200 kVA."),
+    ("General Service Seasonal (Single Phase)", "commercial", "tiered",
+     "General service seasonal; consumption primarily in summer; demand not exceeding 50 kVA."),
+    ("General Service Medium", "commercial", "demand",
+     "General service medium; billing demand exceeding 200 kVA."),
+    ("General Service Large (>750 V to 30 kV)", "industrial", "demand",
+     "General service large; supply voltage exceeding 750 V but not exceeding 30 kV."),
+    ("General Service Large (>30 kV to 100 kV)", "industrial", "demand",
+     "General service large; supply voltage exceeding 30 kV but not exceeding 100 kV."),
+    ("General Service Large (>100 kV)", "industrial", "demand",
+     "General service large; supply voltage exceeding 100 kV."),
+]
+
+
+def _mb_section(low: str) -> Optional[int]:
+    """Map a header line to a commercial section index (see _MB_COMMERCIAL), else None."""
+    if "general service" not in low:
+        return None
+    if "small" in low and "non-demand" in low:
+        return 0
+    if "small" in low and "demand" in low:
+        return 1
+    if "seasonal" in low:
+        return 2
+    if "medium" in low:
+        return 3
+    if "large" in low and "750" in low:
+        return 4
+    if "large" in low and "exceeding 30" in low:
+        return 5
+    if "large" in low and "exceeding 100" in low:
+        return 6
+    return None
+
+
+def _mb_number(line: str) -> Optional[tuple[str, float, str]]:
+    """Parse a Manitoba Hydro value line into (kind, value, unit); glyph-agnostic for cents."""
+    line = line.strip()
+    m = re.match(r"^([\d.]+)\s*[^\d\s/]{0,2}\s*/\s*kWh$", line, re.I)
+    if m:
+        return ("energy", round(float(m.group(1)) / 100.0, 6), "$/kWh")
+    m = re.match(r"^\$\s*([\d.]+)\s*/\s*kVA$", line, re.I)
+    if m:
+        return ("demand", float(m.group(1)), "$/kVA")
+    m = re.match(r"^\$\s*([\d,]+\.?\d*)$", line)
+    if m:
+        return ("fixed", float(m.group(1).replace(",", "")), "$")
+    return None
+
+
+def _mb_component(label: str, value: str) -> Optional[RateComponent]:
+    """Build a RateComponent from a label line and the value line that follows it."""
+    parsed = _mb_number(value)
+    if parsed is None:
+        return None
+    _, number, _ = parsed
+    low = label.lower()
+
+    if low.startswith("basic"):
+        variant = (
+            " (single phase)" if "single phase" in low
+            else " (three phase)" if "three phase" in low
+            else ""
+        )
+        if "annual" in low:
+            return RateComponent(
+                component_type="fixed", component_name="Basic Annual Charge" + variant,
+                charge_value=number, charge_unit="$/year",
+            )
+        return RateComponent(
+            component_type="fixed", component_name="Basic Charge" + variant,
+            charge_value=number, charge_unit="$/month",
+        )
+
+    if "kwh" in low and low.startswith(("first", "next", "balance")):
+        tier = 1 if low.startswith("first") else 2 if low.startswith("next") else 3
+        m = re.search(r"(?:first|next)\s+([\d,]+)\s*kwh", low)
+        threshold = float(m.group(1).replace(",", "")) if m else None
+        return RateComponent(
+            component_type="energy", component_name=label,
+            charge_value=number, charge_unit="$/kWh",
+            tier_number=tier, tier_threshold=threshold,
+            tier_unit="kWh" if threshold else None,
+        )
+
+    if low.startswith("energy charge"):
+        return RateComponent(
+            component_type="energy", component_name="Energy Charge",
+            charge_value=number, charge_unit="$/kWh",
+        )
+
+    if low.startswith("demand charge") or ("balance of" in low and "demand" in low):
+        return RateComponent(
+            component_type="demand",
+            component_name="Demand Charge" if low.startswith("demand") else label,
+            charge_value=number, charge_unit="$/kVA", demand_unit="kVA",
+            notes=None if low.startswith("demand") else "Applied to billing demand above the first 50 kVA",
+        )
+
+    return None
 
 
 class ManitobaHydroScraper(BaseScraper):
@@ -186,261 +293,54 @@ class ManitobaHydroScraper(BaseScraper):
         return [record]
 
     def _parse_commercial(self, html: str) -> list[TariffRecord]:
-        """Parse commercial rates from the Manitoba Hydro commercial rates page."""
-        tables = extract_tables(html)
-        if not tables:
-            self.logger.warning("No tables found on commercial page")
-            return []
+        """Parse every general-service class from the Manitoba Hydro commercial rates page.
 
-        records = []
+        Labels and values sit on separate lines; each class section header repeats
+        before its data. Capture (label, next-line value) pairs per section.
+        """
+        lines = [
+            ln.strip()
+            for ln in parse_html(html).get_text("\n", strip=True).splitlines()
+            if ln.strip() and not re.fullmatch(r"\d{1,2}", ln.strip())  # drop footnote markers
+        ]
+        sections: dict[int, list[RateComponent]] = {}
+        current: Optional[int] = None
+        i = 0
+        while i < len(lines):
+            low = lines[i].lower()
+            if "diesel" in low or low.startswith("contact"):
+                current = None
+                i += 1
+                continue
+            sec = _mb_section(low)
+            if sec is not None:
+                current = sec
+                sections.setdefault(current, [])
+                i += 1
+                continue
+            if current is not None and i + 1 < len(lines):
+                component = _mb_component(lines[i], lines[i + 1])
+                if component is not None:
+                    sections[current].append(component)
+                    i += 2
+                    continue
+            i += 1
 
-        # ── GS Small Non-Demand ──────────────────────────────────
-        gs_small = self._parse_gs_small(tables)
-        if gs_small:
-            records.append(gs_small)
-
-        # ── GS Medium (Demand) ───────────────────────────────────
-        gs_medium = self._parse_gs_medium(tables)
-        if gs_medium:
-            records.append(gs_medium)
-
+        records: list[TariffRecord] = []
+        for idx, (name, cclass, structure, eligibility) in enumerate(_MB_COMMERCIAL):
+            components = sections.get(idx)
+            if not components:
+                continue
+            records.append(TariffRecord(
+                utility_name="Manitoba Hydro", province="MB", utility_type="electricity",
+                tariff_name=name, customer_class=cclass, sub_class=name.lower(),
+                rate_structure=structure,
+                effective_date=SEED_GENERAL_SERVICE_SMALL["effective_date"],
+                source_url=COMMERCIAL_URL, confidence="high", eligibility=eligibility,
+                notes="Parsed from the Manitoba Hydro commercial general service rate page.",
+                components=components,
+            ))
         return records
-
-    def _parse_gs_small(self, tables: list[list[list[str]]]) -> Optional[TariffRecord]:
-        """Parse GS Small Non-Demand rates from commercial page tables."""
-        basic_charge: Optional[float] = None
-        energy_tier1: Optional[float] = None
-        energy_tier2: Optional[float] = None
-        tier1_threshold: Optional[float] = None
-
-        # Search tables for GS Small Non-Demand data
-        # The page has separate sections/tables for each rate class
-        in_gs_small_section = False
-
-        for table in tables:
-            for row in table:
-                if not row:
-                    continue
-                row_text = " ".join(row).lower()
-
-                # Detect section headers — GS Small Non-Demand
-                if "non-demand" in row_text or ("small" in row_text and "non" in row_text):
-                    in_gs_small_section = True
-                # If we hit a different section header, stop
-                elif in_gs_small_section and (
-                    ("medium" in row_text and "general" in row_text)
-                    or ("large" in row_text and "general" in row_text)
-                    or "demand" in row_text and "non" not in row_text and "small" not in row_text
-                ):
-                    # Check if this looks like a section header (not a data row with "demand" in it)
-                    if len(row) <= 2 or not any(
-                        "¢" in cell or "$" in cell for cell in row
-                    ):
-                        in_gs_small_section = False
-
-                if not in_gs_small_section:
-                    continue
-
-                if len(row) < 2:
-                    continue
-
-                charge_text = row[0].lower()
-                cost_text = row[-1]
-
-                # Basic charge (single-phase)
-                if "basic" in charge_text and "single" in charge_text:
-                    val = clean_currency(cost_text)
-                    if val is not None:
-                        basic_charge = val
-
-                # Energy tiers
-                if "first" in charge_text and "kwh" in charge_text:
-                    val = clean_currency(cost_text)
-                    if val is not None:
-                        energy_tier1 = val
-                        # Extract threshold (e.g. "First 11,000 kWh")
-                        threshold_match = re.search(r"(\d[\d,]*)\s*kwh", charge_text)
-                        if threshold_match:
-                            tier1_threshold = float(threshold_match.group(1).replace(",", ""))
-
-                if "balance" in charge_text and "kwh" in charge_text:
-                    val = clean_currency(cost_text)
-                    if val is not None:
-                        energy_tier2 = val
-
-        if basic_charge is None or energy_tier1 is None or energy_tier2 is None:
-            self.logger.warning(
-                "Could not extract all GS Small values (basic=%s, tier1=%s, tier2=%s)",
-                basic_charge, energy_tier1, energy_tier2,
-            )
-            return None
-
-        return TariffRecord(
-            utility_name="Manitoba Hydro",
-            province="MB",
-            utility_type="electricity",
-            tariff_name="General Service Small (Non-Demand)",
-            customer_class="commercial",
-            sub_class="general service small",
-            rate_structure="tiered",
-            effective_date=SEED_GENERAL_SERVICE_SMALL["effective_date"],
-            source_url=COMMERCIAL_URL,
-            confidence="high",
-            eligibility="Non-demand metered commercial customers (≤50 kVA)",
-            notes="Small commercial accounts without demand metering",
-            components=[
-                RateComponent(
-                    component_type="fixed",
-                    component_name="Basic Charge",
-                    charge_value=basic_charge,
-                    charge_unit="$/month",
-                    notes="Monthly basic charge (single-phase service)",
-                ),
-                RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge — First Block",
-                    charge_value=energy_tier1,
-                    charge_unit="$/kWh",
-                    tier_number=1,
-                    tier_threshold=tier1_threshold or SEED_GENERAL_SERVICE_SMALL["tier1_threshold_kwh"],
-                    tier_unit="kWh",
-                    notes=f"First {int(tier1_threshold or SEED_GENERAL_SERVICE_SMALL['tier1_threshold_kwh']):,} kWh per month",
-                ),
-                RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge — Balance",
-                    charge_value=energy_tier2,
-                    charge_unit="$/kWh",
-                    tier_number=2,
-                    tier_threshold=tier1_threshold or SEED_GENERAL_SERVICE_SMALL["tier1_threshold_kwh"],
-                    tier_unit="kWh",
-                    notes="All additional kWh beyond the first block",
-                ),
-            ],
-        )
-
-    def _parse_gs_medium(self, tables: list[list[list[str]]]) -> Optional[TariffRecord]:
-        """Parse GS Medium (Demand) rates from commercial page tables."""
-        basic_charge: Optional[float] = None
-        energy_tier1: Optional[float] = None
-        energy_tier2: Optional[float] = None
-        tier1_threshold: Optional[float] = None
-        demand_charge: Optional[float] = None
-
-        in_gs_medium_section = False
-
-        for table in tables:
-            for row in table:
-                if not row:
-                    continue
-                row_text = " ".join(row).lower()
-
-                # Detect GS Medium section
-                if "medium" in row_text and ("general" in row_text or ">200" in row_text or "200 kva" in row_text):
-                    in_gs_medium_section = True
-                # If we hit the next section (e.g. Large), stop
-                elif in_gs_medium_section and "large" in row_text and "general" in row_text:
-                    if len(row) <= 2 or not any(
-                        "¢" in cell or "$" in cell for cell in row
-                    ):
-                        in_gs_medium_section = False
-
-                if not in_gs_medium_section:
-                    continue
-
-                if len(row) < 2:
-                    continue
-
-                charge_text = row[0].lower()
-                cost_text = row[-1]
-
-                # Basic charge
-                if "basic" in charge_text and ("monthly" in charge_text or "month" in charge_text or "charge" in charge_text):
-                    val = clean_currency(cost_text)
-                    if val is not None:
-                        basic_charge = val
-
-                # Energy tiers
-                if "first" in charge_text and "kwh" in charge_text:
-                    val = clean_currency(cost_text)
-                    if val is not None:
-                        energy_tier1 = val
-                        threshold_match = re.search(r"(\d[\d,]*)\s*kwh", charge_text)
-                        if threshold_match:
-                            tier1_threshold = float(threshold_match.group(1).replace(",", ""))
-
-                if "balance" in charge_text and "kwh" in charge_text:
-                    val = clean_currency(cost_text)
-                    if val is not None:
-                        energy_tier2 = val
-
-                # Demand charge — look for "balance" with "kVA" or just "kVA" charge
-                if "balance" in charge_text and "kva" in charge_text:
-                    val = clean_currency(cost_text)
-                    if val is not None:
-                        demand_charge = val
-                elif "kva" in charge_text and "demand" in charge_text:
-                    val = clean_currency(cost_text)
-                    if val is not None:
-                        demand_charge = val
-
-        if basic_charge is None or energy_tier1 is None or energy_tier2 is None or demand_charge is None:
-            self.logger.warning(
-                "Could not extract all GS Medium values (basic=%s, tier1=%s, tier2=%s, demand=%s)",
-                basic_charge, energy_tier1, energy_tier2, demand_charge,
-            )
-            return None
-
-        return TariffRecord(
-            utility_name="Manitoba Hydro",
-            province="MB",
-            utility_type="electricity",
-            tariff_name="General Service Medium (Demand)",
-            customer_class="commercial",
-            sub_class="general service medium",
-            rate_structure="demand",
-            effective_date=SEED_GENERAL_SERVICE_MEDIUM["effective_date"],
-            source_url=COMMERCIAL_URL,
-            confidence="high",
-            eligibility="Demand-metered commercial customers (>200 kVA)",
-            notes="Medium commercial accounts with demand metering",
-            components=[
-                RateComponent(
-                    component_type="fixed",
-                    component_name="Basic Charge",
-                    charge_value=basic_charge,
-                    charge_unit="$/month",
-                ),
-                RateComponent(
-                    component_type="demand",
-                    component_name="Demand Charge",
-                    charge_value=demand_charge,
-                    charge_unit="$/kVA",
-                    demand_unit="kVA",
-                    notes="First 50 kVA at no charge; applied to billing demand above 50 kVA",
-                ),
-                RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge — First Block",
-                    charge_value=energy_tier1,
-                    charge_unit="$/kWh",
-                    tier_number=1,
-                    tier_threshold=tier1_threshold or SEED_GENERAL_SERVICE_MEDIUM["tier1_threshold_kwh"],
-                    tier_unit="kWh",
-                    notes=f"First {int(tier1_threshold or SEED_GENERAL_SERVICE_MEDIUM['tier1_threshold_kwh']):,} kWh per month",
-                ),
-                RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge — Balance",
-                    charge_value=energy_tier2,
-                    charge_unit="$/kWh",
-                    tier_number=2,
-                    tier_threshold=tier1_threshold or SEED_GENERAL_SERVICE_MEDIUM["tier1_threshold_kwh"],
-                    tier_unit="kWh",
-                    notes="All additional kWh beyond the first block",
-                ),
-            ],
-        )
 
     # ── Seed / fallback data ─────────────────────────────────────
 
@@ -526,12 +426,12 @@ class ManitobaHydroScraper(BaseScraper):
             ],
         ))
 
-        # ── General Service Medium (Demand) ──────────────────────
+        # ── General Service Medium ───────────────────────────────
         records.append(TariffRecord(
             utility_name="Manitoba Hydro",
             province="MB",
             utility_type="electricity",
-            tariff_name="General Service Medium (Demand)",
+            tariff_name="General Service Medium",
             customer_class="commercial",
             sub_class="general service medium",
             rate_structure="demand",

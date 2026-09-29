@@ -17,13 +17,25 @@
     "utility_type": "electricity",
     "classes_present": [
       "commercial",
+      "industrial",
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
       "General Service Medium (Demand)",
       "General Service Medium (Demand)",
       "General Service Medium (Demand)",
-      "General Service Medium (Demand)"
+      "General Service Medium (Demand)",
+      "General Service Small (Demand)",
+      "General Service Medium",
+      "General Service Large (>750 V to 30 kV)",
+      "General Service Large (>30 kV to 100 kV)",
+      "General Service Large (>100 kV)",
+      "General Service Medium (Demand)",
+      "General Service Small (Demand)",
+      "General Service Medium",
+      "General Service Large (>750 V to 30 kV)",
+      "General Service Large (>30 kV to 100 kV)",
+      "General Service Large (>100 kV)"
     ]
   },
   {
