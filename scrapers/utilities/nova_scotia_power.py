@@ -26,10 +26,8 @@ from typing import Optional
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
 from scrapers.utils.parsing import (
     parse_html,
-    extract_tables,
     find_text_near_label,
     extract_rate_from_text,
-    clean_currency,
 )
 from scrapers.utils.change_detection import (
     compare_to_seed,
@@ -58,9 +56,9 @@ SEED_RESIDENTIAL = {
 SEED_RATE10 = {
     "effective_date": "2026-01-01",
     "source_url": BUSINESS_URL,
-    "base_charge": 21.28,             # $/month
-    "energy_tier1": 0.18872,          # $/kWh — first 200 kWh/month
-    "energy_tier2": 0.17146,          # $/kWh — balance
+    "base_charge": 22.00,             # $/month
+    "energy_tier1": 0.19804,          # $/kWh — first 200 kWh/month
+    "energy_tier2": 0.17997,          # $/kWh — balance
     "tier1_threshold_kwh": 200,
     "eligibility": "Under 45,000 kWh/year",
 }
@@ -68,9 +66,9 @@ SEED_RATE10 = {
 SEED_RATE11 = {
     "effective_date": "2026-01-01",
     "source_url": BUSINESS_URL,
-    "demand_charge": 10.554,          # $/kW
-    "energy_tier1": 0.15532,          # $/kWh — first 200 kWh per kW of max demand
-    "energy_tier2": 0.12235,          # $/kWh — balance
+    "demand_charge": 9.809,           # $/kW
+    "energy_tier1": 0.15738,          # $/kWh — first 200 kWh per kW of max demand
+    "energy_tier2": 0.12674,          # $/kWh — balance
     "tier1_threshold_desc": "First 200 kWh per kW of maximum demand",
     "eligibility": "Annual consumption ≥32,000 kWh; billing demand <2,000 kVA",
 }
@@ -78,11 +76,22 @@ SEED_RATE11 = {
 SEED_RATE12 = {
     "effective_date": "2026-01-01",
     "source_url": BUSINESS_URL,
-    "demand_charge": 13.845,          # $/kVA
-    "energy_rate": 0.12256,           # $/kWh — flat
-    "minimum_charge": 21.28,          # $/month
+    "demand_charge": 11.174,          # $/kVA
+    "energy_rate": 0.11780,           # $/kWh — flat
+    "minimum_charge": 22.00,          # $/month
     "eligibility": "Billing demand ≥2,000 kVA or 1,800 kW",
 }
+
+# Commercial rate classes published on the business rates page.
+# (code, tariff_name, sub_class, rate_structure, page section header)
+_COMMERCIAL_RATES: list[tuple[str, str, str, str, str]] = [
+    ("10", "Small Commercial", "small commercial", "tiered",
+     "Small Commercial (Small General Tariff): Rate 10"),
+    ("11", "Commercial General Demand", "general demand", "demand",
+     "Commercial General Demand: Rate 11"),
+    ("12", "Large Commercial", "large commercial", "demand",
+     "Large Commercial (Large General Tariff): Rate 12"),
+]
 
 
 class NovaScotiaPowerScraper(BaseScraper):
@@ -158,331 +167,119 @@ class NovaScotiaPowerScraper(BaseScraper):
             return None
 
     def _try_live_commercial(self) -> Optional[list[TariffRecord]]:
-        """Attempt to parse commercial rates from the business rates page."""
+        """Parse Rate 10/11/12 from the NSUARB-approved business rate schedule page."""
         try:
             html = self.fetch_page(BUSINESS_URL)
-            soup = parse_html(html)
-            page_text = soup.get_text()
-
-            records = []
-
-            rate10 = self._parse_rate10(soup, page_text)
-            rate11 = self._parse_rate11(soup, page_text)
-            rate12 = self._parse_rate12(soup, page_text)
-
-            for record in [rate10, rate11, rate12]:
-                if record is not None:
-                    records.append(record)
-
-            if not records:
-                self.logger.warning("Could not parse any commercial rates from business page")
-                return None
-
-            # Validate live commercial data against seeds
-            seed_commercial = [
-                self._seed_data_rate10(),
-                self._seed_data_rate11(),
-                self._seed_data_rate12(),
-            ]
-            alerts = compare_to_seed(records, seed_commercial)
-            log_change_alerts(alerts)
-
-            if has_critical_alerts(alerts):
-                self.logger.error(
-                    "Critical deviation in live commercial data vs seed — falling back to seed"
-                )
-                return None
-
-            self.logger.info(
-                "Parsed %d commercial rate classes from business page", len(records)
-            )
-            return records
-
         except Exception as e:
             self.logger.warning("Could not fetch business rates page: %s", e)
             return None
 
-    def _parse_rate10(self, soup, page_text: str) -> Optional[TariffRecord]:
-        """Parse Rate 10 — Small Commercial from the business page."""
-        # Look for base charge near "Small Commercial" or "Rate 10"
-        base_charge = self._find_commercial_value(soup, page_text, [
-            "Base Charge", "Basic Charge",
-        ], section_hint="Small Commercial")
-        energy_tier1 = self._find_commercial_value(soup, page_text, [
-            "first 200", "First 200 kWh",
-        ], section_hint="Small Commercial")
-        energy_tier2 = self._find_commercial_value(soup, page_text, [
-            "balance", "Balance",
-        ], section_hint="Small Commercial")
-
-        if base_charge is not None and energy_tier1 is not None:
-            # Sanity checks
-            if not (5.0 < base_charge < 100.0):
-                self.logger.warning("Rate 10 base charge out of range: %s", base_charge)
-                return None
-            if not (0.05 < energy_tier1 < 1.0):
-                self.logger.warning("Rate 10 energy tier1 out of range: %s", energy_tier1)
-                return None
-
-            components = [
-                RateComponent(
-                    component_type="fixed",
-                    component_name="Base Charge",
-                    charge_value=base_charge,
-                    charge_unit="$/month",
-                    notes="Monthly base charge",
+        text = parse_html(html).get_text("\n", strip=True)
+        headers = [row[4] for row in _COMMERCIAL_RATES] + ["Large Industrial"]
+        eligibility = {
+            "10": SEED_RATE10["eligibility"],
+            "11": SEED_RATE11["eligibility"],
+            "12": SEED_RATE12["eligibility"],
+        }
+        records: list[TariffRecord] = []
+        for idx, (code, name, sub, structure, header) in enumerate(_COMMERCIAL_RATES):
+            section = self._commercial_section(text, header, headers[idx + 1:])
+            if not section:
+                continue
+            components = self._parse_commercial_components(section)
+            if not components:
+                continue
+            records.append(TariffRecord(
+                utility_name="Nova Scotia Power", province="NS", utility_type="electricity",
+                tariff_name=name, tariff_code=code, customer_class="commercial",
+                sub_class=sub, rate_structure=structure,
+                effective_date=SEED_RATE10["effective_date"], source_url=BUSINESS_URL,
+                confidence="high", eligibility=eligibility[code],
+                notes=(
+                    f"NS Power Rate {code} — {name} — live parsed from the "
+                    "NSUARB-approved business rate schedule."
                 ),
-                RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge — First 200 kWh",
-                    charge_value=energy_tier1,
-                    charge_unit="$/kWh",
-                    tier_number=1,
-                    tier_threshold=200.0,
-                    tier_unit="kWh/month",
-                    notes="First 200 kWh per month",
-                ),
-            ]
-            if energy_tier2 is not None and 0.05 < energy_tier2 < 1.0:
-                components.append(RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge — Balance",
-                    charge_value=energy_tier2,
-                    charge_unit="$/kWh",
-                    tier_number=2,
-                    notes="All additional kWh beyond 200 kWh/month",
-                ))
-
-            return TariffRecord(
-                utility_name="Nova Scotia Power",
-                province="NS",
-                utility_type="electricity",
-                tariff_name="Small Commercial",
-                tariff_code="10",
-                customer_class="commercial",
-                sub_class="small commercial",
-                rate_structure="tiered",
-                effective_date=SEED_RATE10["effective_date"],
-                source_url=BUSINESS_URL,
-                confidence="high",
-                eligibility=SEED_RATE10["eligibility"],
-                notes="NS Power Rate 10 — Small Commercial — live parsed",
                 components=components,
+            ))
+
+        if not records:
+            self.logger.warning("Could not parse any commercial rates from business page")
+            return None
+
+        seed_commercial = [
+            self._seed_data_rate10(), self._seed_data_rate11(), self._seed_data_rate12(),
+        ]
+        alerts = compare_to_seed(records, seed_commercial)
+        log_change_alerts(alerts)
+        if has_critical_alerts(alerts):
+            self.logger.error(
+                "Critical deviation in live commercial data vs seed — falling back to seed"
             )
+            return None
+        self.logger.info("Parsed %d commercial rate classes from business page", len(records))
+        return records
 
-        self.logger.debug("Could not parse Rate 10 from business page")
-        return None
+    @staticmethod
+    def _commercial_section(text: str, start_header: str, end_headers: list[str]) -> str:
+        """Return the primary-charge slice for a rate, cut before samples/minimum-charge notes."""
+        i = text.find(start_header)
+        if i == -1:
+            return ""
+        i += len(start_header)
+        end = len(text)
+        stops = list(end_headers) + [
+            "The minimum monthly", "The maximum charge", "minimum monthly bill", "Sample ",
+        ]
+        for marker in stops:
+            j = text.find(marker, i)
+            if j != -1:
+                end = min(end, j)
+        return text[i:end]
 
-    def _parse_rate11(self, soup, page_text: str) -> Optional[TariffRecord]:
-        """Parse Rate 11 — Commercial General Demand from the business page."""
-        demand_charge = self._find_commercial_value(soup, page_text, [
-            "Demand Charge",
-        ], section_hint="General Demand")
-        energy_tier1 = self._find_commercial_value(soup, page_text, [
-            "first 200 kWh per kW", "First 200 kWh",
-        ], section_hint="General Demand")
-        energy_tier2 = self._find_commercial_value(soup, page_text, [
-            "balance", "Balance",
-        ], section_hint="General Demand")
+    def _parse_commercial_components(self, section: str) -> list[RateComponent]:
+        """Extract base, demand and (flat/tiered) energy charges from one rate section."""
+        components: list[RateComponent] = []
 
-        if demand_charge is not None and energy_tier1 is not None:
-            if not (1.0 < demand_charge < 100.0):
-                self.logger.warning("Rate 11 demand charge out of range: %s", demand_charge)
-                return None
-            if not (0.05 < energy_tier1 < 1.0):
-                self.logger.warning("Rate 11 energy tier1 out of range: %s", energy_tier1)
-                return None
+        base = re.search(r"\$\s*([\d.]+)\s*per month(?!\s*per\s*kilo)", section, re.I)
+        if base:
+            components.append(RateComponent(
+                component_type="fixed", component_name="Base Charge",
+                charge_value=float(base.group(1)), charge_unit="$/month",
+                notes="Monthly base charge",
+            ))
 
-            components = [
-                RateComponent(
-                    component_type="demand",
-                    component_name="Demand Charge",
-                    charge_value=demand_charge,
-                    charge_unit="$/kW",
-                    demand_unit="kW",
-                    notes="Billing demand charge",
-                ),
-                RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge — First 200 kWh/kW",
-                    charge_value=energy_tier1,
-                    charge_unit="$/kWh",
-                    tier_number=1,
-                    notes="First 200 kWh per kW of maximum demand",
-                ),
-            ]
-            if energy_tier2 is not None and 0.05 < energy_tier2 < 1.0:
-                components.append(RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge — Balance",
-                    charge_value=energy_tier2,
-                    charge_unit="$/kWh",
-                    tier_number=2,
-                    notes="All additional kWh beyond first block",
-                ))
+        demand = re.search(
+            r"\$\s*([\d.]+)\s*per month per (kilowatt|kilovolt ampere)", section, re.I
+        )
+        if demand:
+            unit = "kW" if "kilowatt" in demand.group(2).lower() else "kVA"
+            components.append(RateComponent(
+                component_type="demand", component_name="Demand Charge",
+                charge_value=float(demand.group(1)), charge_unit=f"$/{unit}", demand_unit=unit,
+                notes="Per unit of billing (maximum) demand",
+            ))
 
-            return TariffRecord(
-                utility_name="Nova Scotia Power",
-                province="NS",
-                utility_type="electricity",
-                tariff_name="Commercial General Demand",
-                tariff_code="11",
-                customer_class="commercial",
-                sub_class="general demand",
-                rate_structure="demand",
-                effective_date=SEED_RATE11["effective_date"],
-                source_url=BUSINESS_URL,
-                confidence="high",
-                eligibility=SEED_RATE11["eligibility"],
-                notes="NS Power Rate 11 — Commercial General Demand — live parsed",
-                components=components,
-            )
+        for em in re.finditer(
+            r"([\d.]+)\s*[^\d\s]{0,3}\s*per kilowatt hour([^\n.]*)", section, re.I
+        ):
+            qualifier = re.sub(r"\s+", " ", em.group(2)).strip()
+            tier_number: Optional[int] = None
+            threshold: Optional[float] = None
+            first = re.search(r"first ([\d,]+)", qualifier, re.I)
+            if first:
+                tier_number = 1
+                threshold = float(first.group(1).replace(",", ""))
+            elif "additional" in qualifier.lower():
+                tier_number = 2
+            label = ("Energy Charge " + qualifier).strip()[:110] if qualifier else "Energy Charge"
+            components.append(RateComponent(
+                component_type="energy", component_name=label,
+                charge_value=round(float(em.group(1)) / 100.0, 6), charge_unit="$/kWh",
+                tier_number=tier_number, tier_threshold=threshold,
+                tier_unit="kWh" if threshold else None,
+            ))
 
-        self.logger.debug("Could not parse Rate 11 from business page")
-        return None
-
-    def _parse_rate12(self, soup, page_text: str) -> Optional[TariffRecord]:
-        """Parse Rate 12 — Large Commercial from the business page."""
-        demand_charge = self._find_commercial_value(soup, page_text, [
-            "Demand Charge",
-        ], section_hint="Large Commercial")
-        energy_rate = self._find_commercial_value(soup, page_text, [
-            "Energy Charge",
-        ], section_hint="Large Commercial")
-
-        if demand_charge is not None and energy_rate is not None:
-            if not (1.0 < demand_charge < 100.0):
-                self.logger.warning("Rate 12 demand charge out of range: %s", demand_charge)
-                return None
-            if not (0.05 < energy_rate < 1.0):
-                self.logger.warning("Rate 12 energy rate out of range: %s", energy_rate)
-                return None
-
-            return TariffRecord(
-                utility_name="Nova Scotia Power",
-                province="NS",
-                utility_type="electricity",
-                tariff_name="Large Commercial",
-                tariff_code="12",
-                customer_class="commercial",
-                sub_class="large commercial",
-                rate_structure="demand",
-                effective_date=SEED_RATE12["effective_date"],
-                source_url=BUSINESS_URL,
-                confidence="high",
-                eligibility=SEED_RATE12["eligibility"],
-                notes="NS Power Rate 12 — Large Commercial — live parsed",
-                components=[
-                    RateComponent(
-                        component_type="demand",
-                        component_name="Demand Charge",
-                        charge_value=demand_charge,
-                        charge_unit="$/kVA",
-                        demand_unit="kVA",
-                        notes="Billing demand charge",
-                    ),
-                    RateComponent(
-                        component_type="energy",
-                        component_name="Energy Charge",
-                        charge_value=energy_rate,
-                        charge_unit="$/kWh",
-                        notes="Flat energy rate for all kWh consumed",
-                    ),
-                    RateComponent(
-                        component_type="fixed",
-                        component_name="Minimum Charge",
-                        charge_value=SEED_RATE12["minimum_charge"],
-                        charge_unit="$/month",
-                        notes="Minimum monthly charge",
-                    ),
-                ],
-            )
-
-        self.logger.debug("Could not parse Rate 12 from business page")
-        return None
-
-    def _find_commercial_value(
-        self,
-        soup,
-        page_text: str,
-        labels: list[str],
-        section_hint: Optional[str] = None,
-    ) -> Optional[float]:
-        """
-        Search for a rate value near the given labels on the business page.
-
-        Uses multiple strategies:
-          1. Table extraction — look for values in table cells adjacent to labels.
-          2. find_text_near_label — HTML structural search.
-          3. Regex scan of page text for patterns like "$21.280" or "18.872¢".
-
-        If section_hint is given, prefer matches within text blocks
-        containing the hint (e.g. "Small Commercial").
-        """
-        # Strategy 1: Table-based extraction
-        tables = extract_tables(str(soup))
-        for table in tables:
-            for row in table:
-                row_text = " ".join(row).lower()
-                # Check if this row is in the right section
-                if section_hint and section_hint.lower() not in row_text:
-                    # Check the whole table for section context
-                    table_text = " ".join(" ".join(r) for r in table).lower()
-                    if section_hint.lower() not in table_text:
-                        continue
-                for label in labels:
-                    if label.lower() in row_text:
-                        # Try to extract a value from cells in this row
-                        for cell in row:
-                            value = clean_currency(cell)
-                            if value is not None and value > 0:
-                                self.logger.debug(
-                                    "Found value %s for label '%s' in table", value, label
-                                )
-                                return value
-
-        # Strategy 2: find_text_near_label in HTML structure
-        for label in labels:
-            text = find_text_near_label(soup, label)
-            if text:
-                value = clean_currency(text)
-                if value is not None and value > 0:
-                    self.logger.debug(
-                        "Found value %s for label '%s' via find_text_near_label", value, label
-                    )
-                    return value
-
-        # Strategy 3: Regex scan of page text for section-specific values
-        if section_hint:
-            # Find the section in the page text
-            hint_lower = section_hint.lower()
-            text_lower = page_text.lower()
-            section_start = text_lower.find(hint_lower)
-            if section_start >= 0:
-                # Search within a reasonable window after the section header
-                section_text = page_text[section_start:section_start + 2000]
-                for label in labels:
-                    label_pos = section_text.lower().find(label.lower())
-                    if label_pos >= 0:
-                        nearby = section_text[label_pos:label_pos + 200]
-                        # Try $/value pattern
-                        match = re.search(r"\$\s*(\d+\.?\d*)", nearby)
-                        if match:
-                            value = float(match.group(1))
-                            self.logger.debug(
-                                "Found value %s for label '%s' via regex ($)", value, label
-                            )
-                            return value
-                        # Try cents pattern (e.g. "18.872¢")
-                        match = re.search(r"(\d+\.?\d*)\s*[¢]", nearby)
-                        if match:
-                            value = float(match.group(1)) / 100.0
-                            self.logger.debug(
-                                "Found value %s for label '%s' via regex (¢)", value, label
-                            )
-                            return value
-
-        return None
+        return components
 
     def _parse_residential(self, soup) -> Optional[TariffRecord]:
         """
