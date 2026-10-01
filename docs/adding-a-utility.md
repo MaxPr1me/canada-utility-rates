@@ -13,6 +13,8 @@ Before writing code, find these things:
 - **Rate structure** — flat? tiered? time-of-use? demand? mixed?
 - **Customer classes** — residential, commercial, industrial, etc.
 - **All charge components** — fixed fees, energy charges, delivery, transmission, riders, etc.
+- **Published catalogue** — all standard class codes, zones/communities, voltage variants and optional products; explicitly track special or closed-to-new-customer schedules.
+- **Effective periods** — distinguish current approved schedules from archived, proposed or future schedules, including separately dated riders.
 
 Write down the URLs you find — you'll need them.
 
@@ -27,7 +29,8 @@ scrapers/utilities/my_utility.py
 
 ## 3. Write the scraper class
 
-Use this template:
+Use this template. `_try_live_scrape()` must call `mark_live_parsed()` on complete
+parsed classes before combining them with any classes marked by `mark_fallback()`.
 
 ```python
 """
@@ -59,8 +62,7 @@ class MyUtilityScraper(BaseScraper):
         # Try live scraping first, fall back to seed data
         live = self._try_live_scrape()
         if live:
-            # Live data rebuilt from the official source this run — mark it live.
-            records.extend(self.mark_live_parsed(live))
+            records.extend(live)
         else:
             self.logger.warning("Live scrape failed — using seed data")
             # Fallback: label seed values as unverified estimates (never shown as live).
@@ -91,7 +93,7 @@ class MyUtilityScraper(BaseScraper):
                 rate_structure="flat",
                 effective_date="2024-01-01",
                 source_url="https://...",
-                confidence="high",
+                confidence="unverified",
                 components=[
                     RateComponent(
                         component_type="fixed",
@@ -137,8 +139,8 @@ Add an entry to `data/sources/registry.json`:
 ## 5. Test it
 
 ```bash
-# Run just your new scraper
-python -m pipeline.run_scrape --utility "[Utility Name]"
+# Run deterministic tests; normal tests must not make live HTTP requests
+python -m pytest -q
 
 # Run in dry-run mode (no database changes)
 python -m pipeline.run_scrape --utility "[Utility Name]" --dry-run
@@ -149,20 +151,27 @@ python -m pipeline.run_scrape --utility "[Utility Name]" --dry-run
 After scraping, export and check:
 
 ```bash
+python -m pipeline.run_scrape --utility "[Utility Name]"
+python -m pipeline.validate
 python -m pipeline.export_json
 ```
 
-Open `site/data/rates.json` and search for your utility to make sure
-the data looks correct.
+Inspect the utility's exported classes, component counts, units, effective dates and
+provenance, not merely the scrape success count. Repeat storage in a test database to
+prove classes keep their own components and snapshots are appended without duplicates.
+Never delete the real database to validate a parser change.
 
 ## Tips
 
-- **Start with seed data** — enter known rates manually, then add live parsing
+- **Start with a source-derived fixture** — capture a small relevant HTML/PDF-text excerpt with the direct source URL, retrieval date and page/section. Seed data is optional fallback, not completion.
 - **Be specific about components** — don't flatten into one "total" number
 - **Include source URLs** — link to the exact page or PDF for each value
-- **Set confidence** — use "high" for values you've manually verified
+- **Set confidence** — high confidence alone is not live provenance. Fallback output must be unverified even if someone once checked its values manually.
 - **Mark provenance** — wrap live-rebuilt records in `self.mark_live_parsed(...)` (or verify seed values against the official source with `self.verify_official_records(...)`), and always pass seed fallbacks through `self.mark_fallback(...)`. The site hides anything not marked live. Never present a seed default as a live rate.
 - **Add notes** — explain anything unusual about the rate structure
+- **Preserve class boundaries** — a broken PDF or missing row must not mark an incomplete class live or downgrade an independent complete class. Never blanket-stamp returned mixed live/seed records.
+- **Preserve units** — kVA is not kW, and daily, monthly, seasonal and volume-tier charges must not be silently converted. Keep eligibility text when the schema has no matching unit-specific threshold field.
+- **Keep source configuration aligned** — update registry links and any URL constants the scraper actually fetches.
 
 ## Using parsing helpers for live scraping
 
@@ -172,16 +181,24 @@ The project provides helpers in `scrapers/utils/parsing.py` for implementing liv
 - **`extract_rate_from_text(text)`** — regex extraction of rate values from free-form text (`$X.XXXX/kWh`, `X.XX cents/kWh`, `$XX.XX/month`, `$X.XXXX/GJ`)
 - **`detect_js_rendered(html)`** — detects JS-rendered pages where BeautifulSoup can't extract content
 - **`find_pdf_links(soup, keywords=None, base_url=None)`** — extracts PDF `<a>` hrefs (including links with query strings), optionally filters by keywords, and resolves relative links when `base_url` is supplied
-- **`verify_tariff_values(text, records)`** — returns the exact tariff components that are absent from extracted official-source text; only mark fallback records live-verified when this returns an empty list
+- **`verify_tariff_values(text, records, require_context=True)`** — checks known components in tariff/label/unit context; this verifies existing values rather than extracting replacements
+- **`extract_pdf_pages()` / `DocumentPage`** — retain page numbers and join only the continuation pages belonging to a class; do not mistake a table-of-contents entry for a charge table
 
-For PDF schedules, pass the landing page URL as `base_url`, download the
-resolved link with `fetch_bytes()`, and run `extract_pdf_text()` before
-verification. If any component is missing, log the returned list and fall back
-instead of labelling the data as live.
+For PDF schedules, resolve links against `base_url`, download with `fetch_bytes()`,
+and use page-aware extraction when layout/context matters. Rebuild records from
+complete charge tables and mark those classes live. If verifying a stable known
+structure instead, require contextual verification of every component. Missing or
+ambiguous rows, unsupported units and unproven dates must fail closed, not inherit
+seed values under a live marker.
 
 ## Change detection
 
 When implementing a live parser, use `scrapers/utils/change_detection.py` to validate live-parsed data against seed values before accepting it:
+
+Compare like-for-like, source-reviewed tariff structures. Old generic seed classes
+are not a valid numeric baseline for newly discovered voltage, tier or demand classes.
+Review structural changes against the official document and add fixtures; do not
+disable safeguards merely to increase live counts.
 
 ```python
 from scrapers.utils.change_detection import compare_to_seed, has_critical_alerts, log_change_alerts
@@ -208,3 +225,6 @@ This prevents broken parsers from silently corrupting data. Changes are classifi
 3. A parser must return the complete expected structure or fail closed. For a stable known structure, `verify_official_records()` may prove all components contextually.
 4. Send failed live output through `mark_fallback()`; fallback confidence is always `unverified` and its notes identify `seed_fallback`.
 5. Add change/drift, partial-rejection, negative-credit, and date tests as applicable. Never verify a component merely because its number appears elsewhere in a PDF.
+6. Mutate a fixture value and prove output follows the source; test missing columns, wrong units, future/missing dates, failed fetches and multi-class persistence/export.
+7. Compare the returned code/class set with the published catalogue. Log and document unsupported classes rather than inventing rates or silently calling the utility complete.
+8. Update the README, maintainer guides and coverage/gap reports with actual test and source-check results. Fixture-tested but inaccessible sources remain blocked, not live-verified.

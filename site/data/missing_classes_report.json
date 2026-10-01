@@ -104,10 +104,21 @@
     "utility_type": "electricity",
     "classes_present": [
       "commercial",
+      "industrial",
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "Power Service (Demand)"
+      "Power Service (Demand)",
+      "Customer-Owned Standard Service - Urban, 25kV & less (Rate E07)",
+      "Customer-Owned Standard Service - Rural, 25kV & less (Rate E08)",
+      "Customer-Owned Standard Service - 72kV (Rate E10)",
+      "Customer-Owned Standard Service - 100kV & above (Rate E12)",
+      "Customer-Owned Power Standard Service - 25kV (Rate E22)",
+      "Customer-Owned Power Standard Service - 72kV (Rate E23)",
+      "Customer-Owned Power Standard Service - 100kV & above (Rate E24)",
+      "Customer-Owned Capacity Reservation Service - 25kV (Rate N22)",
+      "Customer-Owned Capacity Reservation Service - 72kV (Rate N23)",
+      "Customer-Owned Capacity Reservation Service - 100kV & above (Rate N24)"
     ]
   },
   {

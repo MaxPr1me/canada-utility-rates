@@ -4,16 +4,42 @@
 
 This project scrapes official utility rate data, stores it in a structured database, and serves it as a clean, browsable static website via GitHub Pages.
 
+## Current Status (2026-10-01)
+
+The framework and website are implemented; **nationwide live-rate coverage is not complete**.
+The October 1 export includes a targeted SaskPower refresh. Other utilities retain their
+September 29 results; this is not a fresh Canada-wide source check.
+
+| Measure | Exported state |
+|---|---|
+| Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
+| Stored tariffs / components | 538 / 3,592, including retained older estimates |
+| Live-sourced tariffs | **58 across 10 utilities** |
+| Seed/fallback tariffs | **480**, hidden by default |
+| SaskPower live tariffs | **20**, up from 1; published class coverage remains partial |
+| Deterministic tests | **268 passing** on Python 3.11 |
+
+Live output currently includes BC Hydro (4), Manitoba Hydro (8), NB Power (3),
+Nova Scotia Power (4), Hydro-Quebec (3), Maritime Electric (10), Newfoundland Power (4),
+SaskPower (20), FortisAlberta (1), and Yukon Energy (1). These counts describe the export,
+not complete coverage of each utility's published catalogue. Ontario and all gas utilities
+still have no live records in this snapshot.
+
+See the [coverage matrix](docs/phase5_completion_matrix.md) for the implementation queue
+and [parser gap report](docs/live_parser_gap_report.md) for class-level details.
+A successful scrape can return only seeds; success counts and an empty missing-data log
+do **not** prove live coverage.
+
 ---
 
 ## What This Project Does
 
 1. **Scrapes** utility rate data from official Canadian utility websites.
 2. **Stores** everything in a normalized SQLite database that preserves every rate detail — not just a single "cost per kWh" number.
-3. **Tracks history** — each monthly scrape creates a new snapshot, so you can see how rates change over time.
+3. **Tracks local history** — each stored scrape appends snapshots. Keep the database to preserve them; durable history across CI runs still needs an explicit restore/save mechanism.
 4. **Exports** the data as JSON for the GitHub Pages static site.
 5. **Serves** a browsable web interface with multi-select filters, confidence indicators, source attribution, and an interactive Market Pricing dashboard with heatmaps and charts.
-6. **Runs automatically** on a monthly schedule via GitHub Actions.
+6. **Provides automation** through monthly scraping, separate Pages deployment, and non-blocking source-health workflows. Publication reliability is a remaining work item.
 
 ---
 
@@ -44,8 +70,8 @@ If you've never used Python or the command line before, follow these steps exact
 
 If you have Git installed:
 ```bash
-git clone https://github.com/YOUR_USERNAME/canada-utility-costs.git
-cd canada-utility-costs
+git clone https://github.com/MaxPr1me/canada-utility-rates.git
+cd canada-utility-rates
 ```
 
 If you don't have Git, click the green **"Code"** button on GitHub and download the ZIP file. Unzip it and open a terminal in that folder.
@@ -55,9 +81,10 @@ If you don't have Git, click the green **"Code"** button on GitHub and download 
 ```bash
 pip install -r requirements.txt
 pip install -e .
+python -m playwright install chromium
 ```
 
-**What this does:** Installs the Python libraries the project needs (web scraping tools, data processing tools, etc.).
+**What this does:** Installs the Python libraries and Chromium needed for JavaScript-rendered rate pages. Use the same Python 3.10+ environment for installation, tests, and scraping. A virtual environment is recommended; an older or empty environment will not work just because it is activated.
 
 ### Step 4: Initialize the Database
 
@@ -75,18 +102,10 @@ python -m pipeline.run_scrape
 
 **What this does:** Runs every active scraper, fetches rate data from official utility websites, validates it, and stores it in the database.
 
-You'll see output like:
-```
-INFO     Loaded 4 utilities from registry
-INFO     Will scrape 4 utilities
-INFO     ─── Scraping: BC Hydro ───
-INFO     Successfully scraped 2 BC Hydro tariffs
-...
-============================================================
-  Scrape complete: 4/4 utilities succeeded
-  Total tariffs scraped: 8
-============================================================
-```
+Check the per-utility `Live-parsed` and `Seed fallback` messages. A final
+`utilities succeeded` count only means execution completed, not that every rate was live.
+Run `python -m pipeline.validate` before exporting. Network retries and rendered pages
+can make a full scrape take several minutes.
 
 ### Step 6: Export Data for the Website
 
@@ -98,7 +117,14 @@ python -m pipeline.export_json
 
 ### Step 7: View the Website Locally
 
-Open `site/index.html` in your web browser. You should see rate cards you can filter and browse.
+Serve the site over HTTP so the browser can fetch its JSON files:
+
+```bash
+python -m http.server --directory site 8000
+```
+
+Open http://localhost:8000. If that port is occupied, choose another free port.
+Opening the HTML directly with `file://` is not a reliable way to load the data.
 
 ---
 
@@ -116,11 +142,11 @@ canada-utility-costs/
 │   │   ├── change_detection.py ← Compare live-parsed vs seed data, alert on drift
 │   │   ├── market_pricing.py ← Ontario IESO market pricing model
 │   │   └── logging_config.py ← Logging setup
-│   └── utilities/            ← One file per utility (34 scraper files, 84 registered utilities)
+│   └── utilities/            ← 33 scraper modules + package initializer; 84 registered utilities
 │       ├── bc_hydro.py       ← BC Hydro (electricity, BC)
 │       ├── hydro_quebec.py   ← Hydro-Québec (electricity, QC)
 │       ├── ontario_ldc.py    ← All 53 Ontario LDCs (data-driven, one class)
-│       ├── toronto_hydro.py  ← Toronto Hydro (legacy, separate from LDC)
+│       ├── toronto_hydro.py  ← Legacy, unregistered; current Toronto entry uses the LDC scraper
 │       ├── enbridge_gas.py   ← Enbridge Gas (gas, ON)
 │       ├── atco_electric.py  ← ATCO Electric (distribution, AB)
 │       ├── fortisalberta.py  ← FortisAlberta (distribution, AB)
@@ -154,7 +180,7 @@ canada-utility-costs/
 │   ├── index.html            ← Main page: Rate Browser + Market Pricing tabs
 │   ├── css/style.css         ← Styles inc. multi-select filters, heatmap, confidence
 │   ├── js/app.js             ← SPA logic: filters, cards, modal, market viz
-│   └── data/                 ← JSON data files (generated by export_json.py)
+│   └── data/                 ← Five pipeline exports plus separately maintained market/audit data
 │       ├── rates.json        ← All tariff/component data
 │       ├── utilities.json    ← Utility metadata
 │       ├── summary.json      ← Provincial summaries
@@ -164,8 +190,8 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← Automated tests (233 tests)
-│   ├── fixtures/             ← Saved HTML snapshots for parser tests
+├── tests/                    ← 268 deterministic tests across 8 test modules
+│   ├── fixtures/             ← Source-derived SaskPower PDF-text fixtures; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
 │
@@ -189,6 +215,7 @@ canada-utility-costs/
 | Validate data quality | `python -m pipeline.validate` |
 | Compare two scrape runs | `python -m pipeline.diff_report` |
 | Run tests | `pytest` |
+| Serve the website locally | `python -m http.server --directory site 8000` |
 | See verbose output | `python -m pipeline.run_scrape --verbose` |
 
 ---
@@ -230,17 +257,19 @@ See [docs/adding-a-utility.md](docs/adding-a-utility.md) for a detailed guide.
 
 ## How Monthly Updates Work
 
-A GitHub Actions workflow runs automatically on the 1st of every month:
+The [Monthly Scrape workflow](.github/workflows/scrape.yml) runs on the 1st at
+08:00 UTC or on manual dispatch. It installs dependencies and Chromium, runs tests,
+scrapes, validates, rejects empty exports, and commits updated data.
 
-1. Checks out the repo, installs Python and dependencies.
-2. Runs all active scrapers.
-3. Validates the scraped data.
-4. Exports JSON for the static site.
-5. Commits updated data files back to the repo.
-6. Deploys the site to GitHub Pages.
-7. If any scraper fails or data looks wrong, it creates a GitHub Issue.
+[Deploy Site](.github/workflows/deploy.yml) is a separate push/manual workflow.
+[Non-blocking Source Health](.github/workflows/source-health.yml) runs on the 15th
+and uploads a dry-run log without publishing.
 
-You can also trigger a run manually from the **Actions** tab on GitHub.
+**Remaining operational gaps:** the default Actions token's push does not automatically
+trigger the separate push workflow; failure notification paths need verification;
+source health lacks browser installation; and the ignored database has no explicit
+CI restore/save step. Local snapshots are append-only, but durable monthly CI history
+and automatic deployment must not be assumed. Manual workflows are available in **Actions**.
 
 ---
 
@@ -253,30 +282,37 @@ The project prioritizes data sources in this order:
 2. **Regulator filings** — OEB rate orders, BCUC decisions, AUC filings
 3. **Third-party aggregators** — only when no direct source is available
 
-`data/sources/registry.json` is the **system of record** for all source URLs. An Excel reference file (`data/excel/old_urls.xlsm`) exists for audit purposes only and is never read by any scraper — it is git-ignored.
+`data/sources/registry.json` is the **system of record** for source URLs. Some scraper
+modules still fetch URL constants directly, so source corrections must update both the
+registry and the owning scraper where necessary. The Excel reference file
+(`data/excel/old_urls.xlsm`) is audit-only and is never read by a scraper.
 
-### Ontario Market Pricing (IESO HOEP + GA)
+### Ontario Market Pricing Model
 
-Ontario's large commercial customers (GS >= 50 kW) pay market-based energy prices rather than OEB-regulated TOU/Tiered rates. Their energy cost is:
+The dashboard displays a 576-bin illustrative HOEP + Global Adjustment model:
+12 months x 2 day types x 24 hours. The included generator uses fixed monthly
+inputs and hourly multipliers; it does **not** ingest five years of IESO observations.
+Re-running it does not refresh prices from IESO.
 
-- **HOEP** (Hourly Ontario Energy Price) — real-time wholesale price set by IESO
-- **GA** (Global Adjustment) — monthly charge covering contracted/regulated generation costs
-
-The project includes a 576-bin hourly market pricing model (`site/data/market_pricing_ontario.json`) derived from 5 years of IESO data, with bins for 12 months x 2 day types x 24 hours. This provides representative $/kWh values for each time slot.
-
-**Class A vs. Class B:**
-- Class B (< 1 MW) pays GA as a uniform per-kWh volumetric charge
-- Class A (> 1 MW) pays GA based on coincident peak demand (ICI mechanism)
-
-To update market data monthly, re-run the market pricing pipeline after fresh IESO data is available.
+**Known provenance issue:** the JSON metadata and dashboard still describe historical
+averages. Treat these numbers as modeled estimates, not measured or current prices.
+Correcting the display and replacing the model with reproducible official-data ingestion
+are explicit follow-up phases. Current market definitions, effective periods and
+Class A/Class B allocation rules must be verified before implementing that ingestion.
 
 ### Alberta Deregulated Market
 
-Alberta has a fully deregulated energy-only wholesale market operated by AESO. Distribution (wires) charges are regulated separately from retail energy. Customers who don't choose a competitive retailer receive Regulated Rate Option (RRO) pricing — a monthly pass-through of the AESO pool price.
+Alberta distribution (wires), default retail products and AESO wholesale observations
+are separate data sources. Several modules and seeds still use legacy RRO descriptions.
+Current Rate of Last Resort product names, terms and published rates require official
+verification before completing those parsers; do not assume default retail is a monthly
+pool-price pass-through.
 
 ### Other Provinces
 
-All other provinces use vertically integrated Crown utilities with fully regulated tariff structures. See `site/data/market_structure_notes.json` for detailed research notes on every province's market structure.
+Ownership and market structure vary by province, including Crown, investor-owned and
+municipal utilities. The market-structure research notes are reference material, not a
+substitute for current approved tariff documents.
 
 ---
 
@@ -287,7 +323,7 @@ All other provinces use vertically integrated Crown utilities with fully regulat
 3. Look at the `source_url` field — this is the official page where the rate was found.
 4. Visit that URL and compare the numbers.
 5. Check the `effective_date` and `confidence` fields.
-6. If the rate has changed, update the scraper's seed data or improve the live parser.
+6. If the rate has changed, update the parser and its source-derived fixture. A seed update alone does not establish live provenance.
 
 ---
 
@@ -322,64 +358,46 @@ All other provinces use vertically integrated Crown utilities with fully regulat
 
 ## Roadmap
 
-### Phase 1: Architecture & Sample Utilities ✓
-- Core scraper framework
-- Database schema
-- Example scrapers (BC Hydro, Hydro-Quebec, Toronto Hydro, Enbridge Gas)
-- Static site viewer
-- GitHub Actions automation
+### Delivered Foundations
 
-### Phase 2: Province-by-Province Expansion ✓
-- All 53 Ontario LDCs via data-driven OntarioLDCScraper
-- 8 Alberta utilities (4 distribution + 3 RRO retail + AESO market reference)
-- Newfoundland Power, NL Hydro, Maritime Electric
-- SaskPower, Manitoba Hydro, NB Power, NS Power
-- Enbridge Gas, FortisBC Gas
+Earlier phases delivered the scraper framework, granular schema, 84-entry registry,
+seed class models, validation, local historical snapshots and JSON export. The website
+has multi-select filters, detail/source views, estimated-rate hiding, side-by-side
+comparison without bill totals, and a market-model dashboard. These are implemented
+features, **not evidence that all registered utilities or published classes are live**.
 
-### Phase 3: Customer Class Coverage ✓
-- Residential, Commercial (GS < 50 kW, GS >= 50 kW), Street Lighting for all Ontario LDCs
-- Commercial classes for Alberta and NL utilities
-- `customer_classes` database table
-- Validation for class completeness (`missing_classes_report.json`)
+### Phase 5: Live Parser Completion
 
-### Phase 4: Source Review & Market Pricing ✓
-- Excel audit file (`data/excel/old_urls.xlsm`) used as reference only
-- Source URL review and prioritization (utility-first sourcing)
-- Ontario IESO market pricing model (HOEP + Global Adjustment, 576 hourly bins)
-- Provincial market structure research (`market_structure_notes.json`)
-- `market_pricing` database table
+| Phase | Work and completion gate | Status |
+|---|---|---|
+| 5A: Baseline | Dated inventory, honest README, shared class-level coverage ledger | Updated October 1 |
+| 5B: SaskPower | All standard published schedules; current business/voltage/TOU/capacity batch adds 19 live tariffs with fixtures | Partial: 20 live tariffs; remaining schedules listed in the gap report |
+| 5C: Easier expansions | Yukon Energy classes and current riders; NS Power industrial; FortisBC Electric approved schedules | Next |
+| 5D: Provincial/territorial depth | NTPC, Qulliq, Yukon Electrical, NL Hydro; audit missing classes at already-live utilities | Planned |
+| 5E: Gas | All nine utilities, preserving zones, commodity/delivery components, units and effective dates | Planned |
+| 5F: Alberta electricity | All wires classes, source-correct default retail products, separate AESO market observations | Planned |
+| 5G: Ontario | Reconcile 53 registry identities; source approved distributor tariffs; pilot three layouts before rollout | Dedicated later campaign |
+| 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Independent operational follow-up |
 
-### Phase 5: Live Parser Hardening & Historical Tracking (In Progress — blockers documented)
-- Reusable page-aware PDF extraction, wrapped-row normalization, strict tariff/label/unit contextual verification, negative-credit and unit helpers.
-- Explicit provenance, end to end: failed fetches and structural drift produce `unverified` seed fallbacks (`Provenance: seed_fallback`) rather than high-confidence current data; live parses and PDF verifications stamp `Provenance: live_parsed` / `officially_verified` via `mark_live_parsed()` / `verify_official_records()`. `export_json.derive_provenance()` collapses these into a `provenance` field, and the site hides seed rates by default behind a labelled "Estimated" toggle. Unknown Ontario LDCs no longer receive invented median rates.
-- Official component-verification paths cover Ontario, Alberta distribution/default retail/AESO, active gas utilities, and northern/community utilities. The full per-utility status and external-source blockers are tracked in `docs/phase5_completion_matrix.md`.
-- Historical snapshots use canonical, component-order-independent JSON hashes; integration tests cover repeat, change, nullable code, append-only, and effective-date-version behaviour.
-- Static side-by-side comparison aligns components and flags incompatible fuel, unit, or tariff structures without calculating a total.
-- Monthly publishing now runs deterministic tests and fails closed on validation or empty exports; a separate non-blocking source-health workflow checks unstable live sites.
-- **Not marked complete:** many Ontario distributors still lack a registry link to an individual approved tariff, and fixture-reviewed tariff-specific interpretation is still needed when official documents drift. The system fails safely, but these are material completion blockers.
-- **250 deterministic tests** cover scraper output, parsers, provenance, change detection, validation, schema, and historical tracking.
+**Definition of done for each utility:** account for every standard published class,
+retain exact source/date/unit/component context, prove extraction and failure handling
+with source-derived fixtures, inspect an official-source dry run, verify repeat
+storage/export without lost components or history, and update the coverage ledger.
+Known failures remain unverified; newly discovered unsupported classes are recorded
+as gaps, never invented. Special/negotiated and closed-to-new-customer schedules must
+be explicitly identified. Do not equate a generic verifier test with a working parser.
 
-### Phase 5.5: Enhanced Web Interface ✓
-- Two-tab layout: Rate Browser + Market Pricing dashboard
-- Multi-select checkbox filters (province, utility, fuel type, customer class, rate structure) with search
-- Province filter cascades into utility filter (selecting BC shows only BC utilities)
-- Rate deduplication: only most recent effective_date per tariff displayed
-- Confidence indicators on rate cards (colored dots) and in detail modal (badge + tooltip)
-- Estimated (non-live-verified) rates hidden by default, with an opt-in "Show estimated rates" toggle, an "Estimated" badge on cards, and a not-live-verified callout in the detail modal
-- Source attribution in detail modal (primary source + utility website from source review)
-- Market-based rate callouts with IESO/AESO/gas explanations and links to Market Pricing tab
-- Interactive Market Pricing dashboard:
-  - Hourly price heatmap (12 months × 24 hours, blue→yellow→red color scale)
-  - Chart.js line chart with 12 monthly price curves
-  - Monthly summary table (avg HOEP, GA, combined, peak/off-peak hours)
-  - Methodology & sources section with data provenance
-- Controls for day type (weekday/weekend) and display metric (Combined/HOEP/GA)
+Utility-specific research can run independently; shared registry, database and export
+updates are integrated serially. Today's first batch is SaskPower, not a promise to
+complete all Canadian parsers in one session.
 
-### Phase 6: Better UI & AI Export (Planned)
-- Add historical rate charts to the web interface
-- AI-ready export format (structured for LLM retrieval/RAG)
-- Rate calculator tool
-- API endpoint (optional)
+### Phase 6: Provenance and Product Follow-up
+
+1. Correct the market-model metadata and UI disclosure/visibility; documentation is corrected now, the UI change is deferred.
+2. Replace fixed market-model inputs with reproducible official observation ingestion and freshness checks.
+3. Add historical rate charts and AI-ready exports after coverage is dependable.
+4. Scope a bill calculator and optional API separately; current comparison never calculates a total.
+5. **Conditional Alberta market region:** if the Alberta source audit reveals comparable market-pricing variation or complexity, add Alberta as a selectable region in the existing Market Pricing dashboard. Reuse the interface, but use Alberta-specific values, official sources, effective periods and methodology, not Ontario's values or HOEP-plus-GA assumptions. Keep wholesale, retail and wires charges distinct and label any modeled estimates explicitly. This is a later-phase option, not a change to the current parser priorities.
 
 ---
 
@@ -391,7 +409,7 @@ All other provinces use vertically integrated Crown utilities with fully regulat
 | JS-rendered pages | Playwright (headless Chromium) | Renders JS-heavy rate pages when the static HTML lacks the data |
 | PDF parsing | pdfplumber | Best Python PDF table extractor |
 | Database | SQLite | Zero setup, single file, full SQL |
-| Validation | Custom + Pydantic | Type-safe, catches errors early |
+| Validation | Dataclass records + custom checks | Checks structure, provenance and rate plausibility; Pydantic is installed but is not the record model |
 | Static site | HTML + CSS + vanilla JS + Chart.js | No build step, works on GitHub Pages |
 | Automation | GitHub Actions | Free for public repos, built-in cron |
 | Testing | pytest | Standard Python testing |
@@ -406,4 +424,6 @@ This project collects publicly available rate data from official utility website
 
 ## Contributing
 
-Contributions are welcome. The most impactful thing you can do is **add a new utility scraper** — see [docs/adding-a-utility.md](docs/adding-a-utility.md).
+The immediate priority is **complete existing live parsers and their source-derived
+fixtures**, not add more seed-only coverage. See [docs/adding-a-utility.md](docs/adding-a-utility.md)
+and the [coverage matrix](docs/phase5_completion_matrix.md).

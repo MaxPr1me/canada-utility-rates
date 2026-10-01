@@ -311,6 +311,154 @@ class TestSaskPowerUpdated:
         energy = [c for c in res.components if c.component_type == "energy"][0]
         assert energy.charge_value == pytest.approx(0.15476)
 
+    @pytest.fixture
+    def transformation_documents(self):
+        import json
+        from pathlib import Path
+
+        fixture_dir = Path(__file__).parent / "fixtures"
+        return {
+            name: json.loads((fixture_dir / f"saskpower_{name}_transformation.json").read_text(encoding="utf-8"))
+            for name in ("supplied", "customer_owned")
+        }
+
+    @staticmethod
+    def _scrape_transformation_document(document, broken_residential=False):
+        from scrapers.utilities.saskpower import SaskPowerScraper
+        from scrapers.utils.parsing import DocumentPage
+
+        pages = [DocumentPage(**page) for page in document["pages"]]
+        html = f'<body><a href="{document["source_url"]}">Transformation Rates</a>'
+        if broken_residential:
+            html += '<a href="/report-rates-residential.pdf">Residential Rates</a>'
+        html += '</body>'
+        scraper = SaskPowerScraper()
+        with patch.object(scraper, "fetch_page", return_value=html), \
+             patch.object(scraper, "fetch_bytes", return_value=b"pdf"), \
+             patch.object(scraper, "now_iso", return_value="2026-10-01T00:00:00+00:00"), \
+             patch("scrapers.utilities.saskpower.extract_pdf_text", side_effect=ValueError("Broken PDF")), \
+             patch("scrapers.utilities.saskpower.extract_pdf_pages", return_value=pages):
+            return scraper.scrape()
+
+    def test_live_pdf_parses_supplied_transformation_without_residential(self, transformation_documents):
+        fixture = transformation_documents["supplied"]
+        records = self._scrape_transformation_document(fixture)
+        live = {record.tariff_code: record for record in records if "live_parsed" in (record.notes or "")}
+        assert set(live) == {"E05", "E06", "E75", "E76"}
+        expected = {
+            "E05": (75.85, 16750, 0.11964, 21.632), "E06": (75.85, 15500, 0.11964, 21.632),
+            "E75": (42.79, 14500, 0.15602, 20.788), "E76": (42.79, 13000, 0.15602, 20.788),
+        }
+        for code, (basic, threshold, energy_rate, demand_rate) in expected.items():
+            record = live[code]
+            assert record.effective_date == "2026-02-01"
+            assert record.rate_structure == "mixed"
+            fixed = [component for component in record.components if component.component_type == "fixed"]
+            energy = [component for component in record.components if component.component_type == "energy"]
+            demand = [component for component in record.components if component.component_type == "demand"]
+            assert fixed[0].charge_value == pytest.approx(basic)
+            assert len(energy) == len(demand) == 2
+            assert energy[0].tier_threshold == threshold
+            assert energy[0].charge_value == pytest.approx(energy_rate)
+            assert demand[0].charge_value == 0
+            assert demand[0].tier_threshold == 50
+            assert demand[0].tier_unit == "kVA"
+            assert demand[1].charge_value == pytest.approx(demand_rate)
+            assert all(component.demand_unit == "kVA" for component in demand)
+            assert all(component.source_url == fixture["source_url"] for component in record.components)
+            assert all(component.source_detail for component in record.components)
+
+    @pytest.mark.parametrize(("old", "new"), [
+        ("Balance $/kVA $21.632 $21.632", "Balance $/kVA $21.632"),
+        ("Balance $/kVA", "Balance $/kW"),
+        ("February 1, 2026", "February 1, 2027"),
+        ("Effective February 1, 2026", "Effective date unavailable"),
+        ("E05 E06", "E06 E05"),
+        ("\u00a2/kWh", "$/kWh"),
+        ("$21.632", "-$21.632"),
+        ("11.964\u00a2", "-11.964\u00a2"),
+    ])
+    def test_incomplete_schedule_does_not_downgrade_other_classes(self, transformation_documents, old, new):
+        document = transformation_documents["supplied"]
+        document["pages"][0]["text"] = document["pages"][0]["text"].replace(old, new)
+        records = self._scrape_transformation_document(document)
+        live = [record for record in records if "live_parsed" in (record.notes or "")]
+        assert {record.tariff_code for record in live} == {"E75", "E76"}
+        fallback = next(record for record in records if record.tariff_name == "Power Service (Demand)")
+        assert fallback.confidence == "unverified"
+        assert "seed_fallback" in fallback.notes
+        assert all(component.confidence == "unverified" for component in fallback.components)
+
+    def test_changed_values_and_cent_glyph_are_parsed(self, transformation_documents):
+        document = transformation_documents["supplied"]
+        for page in document["pages"]:
+            page["text"] = page["text"].replace("20.788", "22.123").replace("\u00a2", "\ufffd")
+        records = self._scrape_transformation_document(document)
+        small = next(record for record in records if record.tariff_code == "E75")
+        demand = next(component for component in small.components if component.component_type == "demand" and component.tier_number == 2)
+        assert demand.charge_value == pytest.approx(22.123)
+
+    def test_broken_residential_pdf_keeps_commercial_live(self, transformation_documents):
+        records = self._scrape_transformation_document(transformation_documents["supplied"], broken_residential=True)
+        assert {record.tariff_code for record in records if "live_parsed" in (record.notes or "")} == {"E05", "E06", "E75", "E76"}
+        residential = next(record for record in records if record.tariff_name == "Residential Service")
+        assert residential.confidence == "unverified"
+
+    def test_customer_owned_voltage_tou_and_capacity_classes(self, transformation_documents):
+        records = self._scrape_transformation_document(transformation_documents["customer_owned"])
+        live = {record.tariff_code: record for record in records if "live_parsed" in (record.notes or "")}
+        assert set(live) == {"E07", "E08", "E10", "E12", "E77", "E78", "E82", "E83", "E84", "E22", "E23", "E24", "N22", "N23", "N24"}
+        assert all(record.effective_date == "2026-02-01" for record in live.values())
+        assert "closed to new customers" in live["E10"].eligibility.lower()
+        assert "72" in live["E10"].eligibility
+        energy = next(component for component in live["E12"].components if component.component_type == "energy")
+        assert energy.charge_value == pytest.approx(0.05536)
+        power = live["E82"]
+        fixed = next(component for component in power.components if component.component_type == "fixed")
+        assert fixed.charge_value == pytest.approx(7022.82)
+        energy = {component.tou_period: component for component in power.components if component.component_type == "energy"}
+        assert energy["on-peak"].charge_value == 0.07070
+        assert energy["off-peak"].charge_value == 0.06070
+        assert "7:00" in energy["on-peak"].tou_hours
+        assert "statutory holidays" in energy["on-peak"].tou_hours
+        assert "preceding 11" in power.notes
+        assert "preceding 23" in live["N22"].notes
+        assert all(component.demand_unit == "kVA" for record in live.values() for component in record.components if component.component_type == "demand")
+
+    def test_customer_owned_tou_requires_continuation_page(self, transformation_documents):
+        document = transformation_documents["customer_owned"]
+        document["pages"] = [page for page in document["pages"] if page["page_number"] != 6]
+        records = self._scrape_transformation_document(document)
+        codes = {record.tariff_code for record in records if "live_parsed" in (record.notes or "")}
+        assert not codes.intersection({"E82", "E83", "E84"})
+        assert {"E22", "E23", "E24", "N22", "N23", "N24"} <= codes
+
+    def test_customer_owned_wrong_demand_unit_rejects_only_affected_schedule(self, transformation_documents):
+        document = transformation_documents["customer_owned"]
+        page = next(page for page in document["pages"] if page["page_number"] == 7)
+        page["text"] = page["text"].replace("Per kVA", "Per kW")
+        records = self._scrape_transformation_document(document)
+        codes = {record.tariff_code for record in records if "live_parsed" in (record.notes or "")}
+        assert not codes.intersection({"E22", "E23", "E24"})
+        assert {"E82", "E83", "E84", "N22", "N23", "N24"} <= codes
+
+    def test_transformation_fixture_sources_are_registered(self, transformation_documents):
+        from scrapers.registry import get_utility
+
+        entry = get_utility("SaskPower")
+        registered = {source["url"] for source in entry["sources"]}
+        assert {document["source_url"] for document in transformation_documents.values()} <= registered
+
+    @pytest.mark.parametrize("unit", ["$/kWh", "\u00a2/kW"])
+    def test_residential_rejects_changed_energy_unit(self, unit):
+        from scrapers.utilities.saskpower import SaskPowerScraper
+
+        text = (
+            "RESIDENTIAL RATES STANDARD RATE Effective February 1, 2026 "
+            f"Basic monthly charge $31.16 $31.16 Energy charge ({unit}) 15.476\u00a2 15.476\u00a2"
+        )
+        assert SaskPowerScraper()._parse_residential_pdf(text, "https://example.com/rates.pdf") is None
+
 
 # ─── NL Hydro ──────────────────────────────────────────────────
 

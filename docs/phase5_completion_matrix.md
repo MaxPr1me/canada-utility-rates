@@ -1,17 +1,76 @@
 # Phase 5 Completion Matrix
 
-**Audit started:** 2026-07-27  
-**Status vocabulary:** *live parsed*, *officially component-verified*, or
-*blocked*. “Fixture” means a deterministic, network-free test input; it does
-not imply that the source was reachable during the most recent run.
+**Updated:** 2026-10-01. Scope: all 84 registered utilities, not every utility
+in the broader Canadian inventory. The export has 538 tariffs / 3,592 components /
+**58 live / 480 seed**. Only SaskPower was source-checked on October 1; other
+observed counts come from September 29. No gas or Ontario tariffs are live in this export.
 
-This is the working inventory for Phase 5. The OEB row covers the common
-province-wide prices; every active Ontario distributor is also listed because
-common prices do not verify distributor-specific delivery charges.
+**Status vocabulary:** *dynamic parser, partial* reconstructs supported classes;
+*verification path* checks known seed values but does not extract replacements;
+*seed in latest export* means no live output was observed, not proof of a current outage.
+*Complete* requires an audit and implementation of all standard published classes and
+components, with explicit special/unavailable exclusions. No utility is marked complete here.
 
-| Utility | Official source | Format | Modelled tariffs | Parser strategy | Status | Fixture coverage | Remaining gap |
+Only SaskPower currently has saved source-derived fixtures in `tests/fixtures/`.
+Other tests include inline synthetic text and seed checks. A shared verifier test,
+successful process exit, or empty missing-data log does not establish live coverage.
+
+Official discovery/document links live in [the registry](../data/sources/registry.json).
+Keep those links synchronized with URL constants the scrapers actually fetch.
+See the [gap report](live_parser_gap_report.md) for detailed findings and
+[README](../README.md) for the ordered roadmap.
+
+## Provincial Electricity
+
+| Utility | Live tariffs / source-check date | Implemented path and supported scope | Next work |
+|---|---|---|---|
+| BC Hydro | 4 / Sep 29 | HTML: tiered residential, SGS, MGS, LGS | Audit optional residential and all other standard schedules |
+| FortisBC Electric | 0 / Sep 29 | Known-value verification for two seed classes | Current utility/BCUC sources; full class-specific extraction |
+| Hydro-Quebec | 3 / Sep 29 | PDF: D/G/M | Remaining published classes and source-derived fixtures |
+| Manitoba Hydro | 8 / Sep 29 | HTML: residential and seven GS/voltage variants | Full standard-class audit; preserve kVA and seasonal rules |
+| SaskPower | **20 / Oct 1** | Residential plus 19 transformation variants; two saved fixtures | Irrigation E37, unmetered E15-E18, diesel E35, farm, oil-field, lighting, reseller, renewable access and residential variants |
+| NB Power | 3 / Sep 29 | HTML: residential, GS1, small industrial | Remaining standard business/industrial and other schedules |
+| Nova Scotia Power | 4 / Sep 29 | HTML: Domestic and Rates 10/11/12 | Industrial 21/22/23, source dates and full catalogue audit |
+| Maritime Electric | 10 / Sep 29 | IRAC PDF class-section extraction | Catalogue audit and source-derived success/failure fixtures |
+| Newfoundland Power | 4 / Sep 29 | RateBook PDF: 1.1/2.1/2.3/2.4 | Remaining schedules and fixture coverage |
+| NL Hydro | 0 / Sep 29 | PDF verification of rural/Labrador/GS seeds | Actual class/zone extraction, preserving interconnected/isolated distinctions |
+
+### SaskPower Delivered Batch
+
+Source tables are effective February 1, 2026; the October 1 source run returned
+residential plus the following 19 transformation records:
+
+| Schedule | Supported codes | Preserved distinctions |
+|---|---|---|
+| Supplied standard | E05/E06 | Urban/rural energy blocks and free first 50 kVA demand |
+| Supplied small commercial | E75/E76 | Urban/rural thresholds, tiered energy and kVA demand |
+| Customer-owned standard | E07/E08/E10/E12 | Voltage columns; E10/E12 closed to new customers |
+| Customer-owned small commercial | E77/E78 | Urban/rural energy and demand tiers |
+| Power time-of-use | E82/E83/E84 | Three voltages, on/off-peak hours and demand conditions |
+| Power standard | E22/E23/E24 | Three voltages and demand-ratchet rules |
+| Capacity reservation | N22/N23/N24 | Reservation eligibility, voltages and 23-month demand rule |
+
+Tests require complete columns, source dates/units and continuation pages, and
+isolate schedule failures. Targeted storage preserved all prior snapshots and unchanged
+non-SaskPower records. The two old generic commercial seeds remain labelled estimates
+in storage. Twenty live records is still **partial catalogue coverage**.
+
+## Ontario Registry Inventory
+
+There are 53 registry entries using one `OntarioLDCScraper`. Current company/merger
+identities and rate zones still need reconciliation before these can be described as
+53 active independent distributors. Every distributor below has **0 live tariffs in
+the September 29 export**. The OEB common-price row is a shared source, not a utility.
+
+Current code verifies seeded structures against configured HTML pages plus OEB common
+rates. It does not dynamically parse approved distributor PDFs. The strategy column
+below is the **target**, not delivered extraction capability; the fixture column denotes
+shared synthetic verifier tests, not saved source-derived tariff fixtures. Common energy
+prices cannot prove distributor-specific delivery/transmission/rider charges.
+
+| Utility | Official source | Format | Modelled tariffs | Target strategy | Status | Shared test coverage | Remaining gap |
 |---|---|---|---|---|---|---|---|
-| Ontario OEB common rates | OEB electricity-rates page | HTML | TOU, tiered, ULO; common pass-through charges | Structured page parsing and contextual verification | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
+| Ontario OEB common rates | OEB electricity-rates page | HTML | TOU, tiered, ULO; verify which other charges are truly common | Dynamic product parsing and contextual verification | Current path checks seeded values, not replacement extraction | Shared verifier tests | Parse current products/dates and distinguish per-LDC charges |
 | Alectra Utilities | https://www.oeb.ca/consumer-information-and-protection/electricity-rates<br>https://alectrautilities.com/rates | HTML | Residential, GS <50 kW, GS ≥50 kW, street lighting | OEB common-rate parse plus contextual approved-tariff verification | Blocked | OEB/LDC contextual verifier fixture | Registry lacks an individual approved tariff source or current document has not been fixture-audited; seed is exported only as unverified fallback |
 | Algoma Power Inc. | https://www.oeb.ca/consumer-information-and-protection/electricity-rates | HTML | Residential, GS <50 kW, GS ≥50 kW, street lighting | OEB common-rate parse plus contextual approved-tariff verification | Blocked | OEB/LDC contextual verifier fixture | Registry lacks an individual approved tariff source or current document has not been fixture-audited; seed is exported only as unverified fallback |
 | Atikokan Hydro Inc. | https://www.oeb.ca/consumer-information-and-protection/electricity-rates | HTML | Residential, GS <50 kW, GS ≥50 kW, street lighting | OEB common-rate parse plus contextual approved-tariff verification | Blocked | OEB/LDC contextual verifier fixture | Registry lacks an individual approved tariff source or current document has not been fixture-audited; seed is exported only as unverified fallback |
@@ -65,31 +124,85 @@ common prices do not verify distributor-specific delivery charges.
 | Waterloo North Hydro Inc. | https://www.oeb.ca/consumer-information-and-protection/electricity-rates | HTML | Residential, GS <50 kW, GS ≥50 kW, street lighting | OEB common-rate parse plus contextual approved-tariff verification | Blocked | OEB/LDC contextual verifier fixture | Registry lacks an individual approved tariff source or current document has not been fixture-audited; seed is exported only as unverified fallback |
 | Welland Hydro-Electric System Corp. | https://www.oeb.ca/consumer-information-and-protection/electricity-rates | HTML | Residential, GS <50 kW, GS ≥50 kW, street lighting | OEB common-rate parse plus contextual approved-tariff verification | Blocked | OEB/LDC contextual verifier fixture | Registry lacks an individual approved tariff source or current document has not been fixture-audited; seed is exported only as unverified fallback |
 | Westario Power Inc. | https://www.oeb.ca/consumer-information-and-protection/electricity-rates | HTML | Residential, GS <50 kW, GS ≥50 kW, street lighting | OEB common-rate parse plus contextual approved-tariff verification | Blocked | OEB/LDC contextual verifier fixture | Registry lacks an individual approved tariff source or current document has not been fixture-audited; seed is exported only as unverified fallback |
-| ATCO Electric | Utility rates/tariffs page and approved schedules | HTML/PDF | Residential and general service distribution | Schedule discovery and contextual PDF verification | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| FortisAlberta | Utility rates/tariffs page and approved schedules | HTML/PDF | Residential and general service distribution | Schedule discovery and contextual PDF verification | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| EPCOR Distribution | Utility rates/tariffs page and approved schedules | HTML/PDF | Residential and general service distribution | Schedule discovery and contextual PDF verification | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| ENMAX Power | Utility rates/billing page and approved schedules | HTML/PDF | Residential and general service distribution | Schedule discovery and contextual PDF verification | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| Direct Energy Regulated Services | Official regulated-service rate page | HTML | Default retail energy | Monthly rate parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| ENMAX Energy Corporation | Official regulated-rate page | HTML | Default retail energy | Monthly rate parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| EPCOR Energy Alberta | Official regulated-rate page | HTML | Default retail energy | Monthly rate parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| Alberta Electric System Operator | AESO hourly pool-price report | HTML/CSV | Wholesale market reference | Structured official data parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| Enbridge Gas | Utility residential/business rate pages | HTML/PDF | Residential and commercial gas | Rate-page/PDF family parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| Énergir | Utility rate page | HTML/PDF | Residential and commercial gas | Rate-page/PDF family parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| FortisBC Energy | Utility residential/commercial rate pages | HTML | Residential and commercial gas | Structured rate-page parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| ATCO Gas | Utility natural-gas rate page | HTML/PDF | Residential delivery | Schedule discovery and verification | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| EPCOR Natural Gas | Utility natural-gas rate page | HTML | Residential commodity | Structured rate-page parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| Centra Gas Manitoba | Manitoba Hydro gas-rate page | HTML | Residential and commercial gas | Structured table parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| SaskEnergy | Utility rate page | HTML | Residential and commercial gas | Structured rate-page parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| Heritage Gas / Eastward Energy | Eastward Energy home/business rate pages | HTML | Residential and commercial gas | Structured rate-page parser | Officially component-verified when complete source matches | Shared verifier fixture | Registry retains historical utility name; live drift needs review |
-| Liberty Utilities NB / Natural Gas NB | Natural Gas NB customer-class pages | HTML | Residential and commercial gas | Structured rate-page parser | Officially component-verified when complete source matches | Shared verifier fixture | Registry retains historical utility name; live drift needs review |
-| Yukon Energy | Utility residential-rate page | HTML/PDF | Representative residential tiers | Community/tier-aware parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| Yukon Electrical Company | ATCO Electric Yukon rate page | HTML/PDF | Representative residential tiers | Community/tier-aware parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| Northwest Territories Power Corporation | NTPC current-rate page | HTML/PDF | Residential community/zone rates | Community/tier-aware parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
-| Qulliq Energy Corporation | QEC power-rate page | HTML/PDF | Residential community rates | Community/tier-aware parser | Officially component-verified when the complete current schedule matches; otherwise blocked | Shared verifier fixture | Live drift requires reviewed tariff-specific update |
+Pilot materially different documents, such as Toronto, Ottawa and multi-zone Hydro One,
+before rollout. Legacy `toronto_hydro.py` is unregistered; do not duplicate Toronto's
+current registry entry. No interim mixed-live tariff label should bypass missing delivery data.
 
-## Ontario active distributor inventory
+## Alberta Electricity
 
-The rows below are generated from the active registry inventory. Their source
-is the OEB common-rates page plus a distributor page when one is registered.
+Gas entries are tracked once in the next section. All source-check counts here are
+from September 29; there are no saved utility-specific source fixtures yet.
 
-<!-- Individual rows intentionally remain explicit so additions/removals are visible in review. -->
+| Utility | Live tariffs | Implemented path | Required work |
+|---|---|---|---|
+| ATCO Electric | 0 | Seed verification wrapper | Current approved distribution sources and all class-specific tables |
+| FortisAlberta | 1 | Rate 11 residential PDF parser; other seeds | Full distribution catalogue and source-derived fixtures |
+| EPCOR Distribution | 0 | Seed verification wrapper | Current Edmonton distribution schedules, classes and riders |
+| ENMAX Power | 0 | Seed verification wrapper | Current Calgary distribution schedules, classes and riders |
+| Direct Energy Regulated Services | 0 | Seed verification wrapper | Current default-retail product, territory, terms and energy/admin components |
+| ENMAX Energy Corporation | 0 | Seed verification wrapper | Current default-retail product and effective terms |
+| EPCOR Energy Alberta | 0 | Seed verification wrapper | Current default-retail product and effective terms |
+| Alberta Electric System Operator | 0 | Seed verification wrapper | Dated official market observations with published units/cadence |
+
+Verify the Rate of Last Resort transition and provider terms before choosing a parser
+model; legacy RRO seeds do not prove a monthly pool-price pass-through. Keep wires,
+retail and wholesale references separate. Historical dead-URL reports need rechecking,
+not automatic classification as present outages.
+
+## Natural Gas
+
+All nine utilities have **0 live tariffs in the September 29 export** and known-value
+verification paths, not completed dynamic extraction. None has a saved source-derived
+utility fixture. Discovery and component interpretation must precede parser completion.
+
+| Registry utility | Required source/interpretation work |
+|---|---|
+| Enbridge Gas | Legacy rate zones, all classes, commodity/delivery/transport/storage and dated riders |
+| Énergir | Current distribution/volume classes, supply/balancing, units and effective dates |
+| FortisBC Energy | Service areas, all customer classes and separately published adjustments |
+| ATCO Gas | Current approved delivery schedules, classes and applicable riders |
+| EPCOR Natural Gas | Confirm product, jurisdiction and utility identity; do not infer these from the module name |
+| Centra Gas Manitoba | Current Manitoba Hydro gas tables and individual component periods |
+| SaskEnergy | Current class/volume tables, delivery/commodity and applicable adjustments |
+| Heritage Gas / Eastward Energy | Current company source and residential/business schedules |
+| Liberty Utilities NB / Natural Gas NB | Current company source and complete customer-class schedules |
+
+Preserve m3/GJ, volume tiers and component source ownership. Verify current tax/carbon
+applicability rather than copying obsolete charges. Incomplete commodity/delivery
+coverage must not be hidden under a live tariff label; do not invent unit conversions.
+
+## Northern Electricity
+
+Observed counts below are from September 29. No source-derived utility fixtures are
+saved yet; representative seed zones are not proof of the actual published catalogue.
+
+| Utility | Live tariffs | Implemented path | Required work |
+|---|---|---|---|
+| Yukon Energy | 1 | Residential hydro 1160 PDF cross-reference | Government/non-government hydro/diesel, GS/industrial/lighting and all other standard classes; current separate riders/rebates |
+| Yukon Electrical Company | 0 | Seed verification wrapper | ATCO Electric Yukon/Yukon Utilities Board sources and class/rider applicability |
+| Northwest Territories Power Corporation | 0 | Seed verification wrapper | Confirm actual service territory, zones/classes and subsidy eligibility; full extraction |
+| Qulliq Energy Corporation | 0 | Seed verification wrapper | Current QEC/regulator class schedules and subsidy applicability |
+
+Yukon Energy's October 1 landing-page review exposed an April base/R/J cross-reference
+alongside separate October 1 Rider F and affordability-relief documents. Their
+applicability needs parsing; do not assume the old combined column is a complete bill rate.
+
+## Next Batches and Acceptance
+
+1. Remaining SaskPower schedules, then Yukon Energy, NS industrial and FortisBC Electric.
+2. Territorial/provincial depth and full-catalogue audits of existing live utilities.
+3. Nine gas utilities, Alberta electricity, then the dedicated Ontario campaign.
+4. Separate operational track: browser-enabled source health, meaningful provenance counts,
+   failure reporting, deployment triggering and durable CI history.
+5. Deferred product track: market-model UI/metadata correction, real observation ingestion,
+   historical charts and AI export. Calculator/API requirements are separate.
+6. Conditional Alberta extension: if its market-pricing variation or complexity warrants
+    a dedicated view, add Alberta as a region in the existing Market Pricing dashboard.
+    Use Alberta-specific values, sources, dates and methodology; reuse the interface,
+    not Ontario's HOEP-plus-GA assumptions. Keep wholesale, retail and wires distinct,
+    with any modeled estimates clearly identified. This remains deferred work.
+
+Each batch requires source-derived positive/negative tests, a source-inspected dry run,
+validated storage/export, preserved history and a ledger update. Record observation dates
+separately from parser capability, keep unsupported classes visible, and never delete a
+database or invent rates to make completion metrics look better.

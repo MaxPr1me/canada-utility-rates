@@ -1,0 +1,15 @@
+{
+  "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-saskpowersuppliedtransformation.pdf",
+  "retrieved_on": "2026-10-01",
+  "description": "Rate-table excerpts extracted with pdfplumber; page numbers are from the official schedule.",
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "SASKPOWER-SUPPLIED\nTRANSFORMATION RATES\nSTANDARD RATE This rate is for metered non-residential and non-farm loads greater than 75 kilovolt\namperes (kVA) and up to and including 3,000 kVA, served through SaskPower-supplied\ntransformation and to which no other rates apply. Rate Codes* E05 E06\nEffective February 1, 2026 (Urban) (Rural)\nBasic monthly charge $75.85 $75.85\nDemand Charge First 50 kVA/month $0 $0\nBalance $/kVA $21.632 $21.632\nEnergy Charge First block kWh/month 16,750 kWh 15,500 kWh\nFirst block (\u00a2/kWh) 11.964\u00a2 11.964\u00a2\nBalance (\u00a2/kWh) 7.504\u00a2 7.504\u00a2\nMINIMUM BILL The basic monthly charge plus $5.059/kVA of the maximum demand over 50 kVA\nregistered in the defined billing periods between May 1st to October 31st and\nNovember 1st to April 30th."
+    },
+    {
+      "page_number": 3,
+      "text": "SASKPOWER-SUPPLIED\nTRANSFORMATION RATES\nSMALL COMMERCIAL RATE This rate is for metered commercial and municipal loads up to and including 75 kilovolt\namperes (kVA) served through SaskPower-supplied transformation and to which no\nother rates apply. Rate Codes* E75 E76\nEffective February 1, 2026 (Urban) (Rural)\nSupply voltage 25kV & less 25kV & less\nBasic monthly charge $42.79 $42.79\nDemand Charge First 50 kVA/month $0 $0\nBalance $/kVA $20.788 $20.788\nEnergy Charge First block kWh/month 14,500 kWh 13,000 kWh\nFirst block (\u00a2/kWh) 15.602\u00a2 15.602\u00a2\nBalance (\u00a2/kWh) 6.393\u00a2 6.393\u00a2\nMINIMUM BILL The basic monthly charge plus $5.059/kVA of the maximum demand over 50 kVA\nregistered in the defined billing periods between May 1st to October 31st and\nNovember 1st to April 30th."
+    }
+  ]
+}

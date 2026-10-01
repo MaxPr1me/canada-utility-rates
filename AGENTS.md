@@ -16,7 +16,10 @@ It works in three stages:
 2. **Store** — That information gets organized into a database (a structured file on your computer).
 3. **Display** — A simple website reads the database and shows the rates in a browsable format.
 
-The whole cycle runs automatically once a month using GitHub Actions (a free service that runs code on GitHub's servers).
+GitHub Actions schedules a monthly scrape. Deployment and durable history across
+cloud runs still need reliability work; see the roadmap in [README.md](README.md).
+The latest export has 58 live tariffs and 480 estimates. Registry coverage is not
+the same as live coverage.
 
 ---
 
@@ -83,7 +86,7 @@ If a task is unclear, or there is more than one sensible way to do it, stop and 
 
 | File | What it does |
 |---|---|
-| `data/sources/registry.json` | **The master list (system of record).** Every utility the project knows about is listed here, along with the URL where its rates are published and which scraper handles it. Currently 84 utilities across 34 scraper files. |
+| `data/sources/registry.json` | **The master list (system of record).** 84 registered utilities use 32 scraper modules; a 33rd, legacy Toronto module is unregistered. Some scrapers also contain source URL constants that must stay synchronized. |
 | `data/inventory/utilities.json` | The full inventory of ALL Canadian utilities — even ones we don't scrape yet. This is the reference list. |
 | `data/db/rates.db` | The SQLite database where scraped rates are stored. Created automatically when you first run the scraper. |
 | `data/excel/old_urls.xlsm` | **Audit reference only.** An Excel file with historical URLs and rate data. NO scraper reads this file. It is git-ignored. |
@@ -105,7 +108,9 @@ If a task is unclear, or there is more than one sensible way to do it, stop and 
 
 | File | What it does |
 |---|---|
-| `.github/workflows/monthly-scrape.yml` | The automation recipe. Tells GitHub to run the scraper on the 1st of every month, save the results, and update the website. |
+| `.github/workflows/scrape.yml` | Monthly tests, scrape, validation and export on the 1st. |
+| `.github/workflows/deploy.yml` | Separate GitHub Pages deployment on push or manual dispatch. |
+| `.github/workflows/source-health.yml` | Non-blocking dry run on the 15th; uploads logs without publishing. |
 
 ---
 
@@ -130,6 +135,7 @@ cd path/to/canada-utility-costs
 ```
 pip install -r requirements.txt
 pip install -e .
+python -m playwright install chromium
 ```
 You only need to do this once (or again if someone adds new tools).
 
@@ -143,7 +149,9 @@ This creates `data/db/rates.db`. You only need to do this once.
 ```
 python -m pipeline.run_scrape
 ```
-This visits utility websites, downloads rate information, and stores it. It takes about 30–60 seconds.
+This visits utility websites, downloads rate information, and stores it. A full run
+can take several minutes. A completed utility may have returned estimates, so check
+the `Live-parsed` and `Seed fallback` log messages, not just the success count.
 
 **5. Export data for the website:**
 ```
@@ -152,7 +160,9 @@ python -m pipeline.export_json
 This creates the JSON files that the website reads.
 
 **6. Open the website:**
-Double-click `site/index.html` or open it in your browser.
+Run `python -m http.server --directory site 8000`, then open http://localhost:8000.
+The browser needs HTTP access to fetch the JSON files; double-clicking the HTML
+is not a reliable way to load them.
 
 ---
 
@@ -177,7 +187,7 @@ python -m pipeline.run_scrape --utility "BC Hydro" --dry-run
 
 ## How the Monthly Updates Work
 
-The file `.github/workflows/monthly-scrape.yml` tells GitHub Actions to:
+The file `.github/workflows/scrape.yml` tells GitHub Actions to:
 
 1. **On the 1st of every month**, start a computer in the cloud.
 2. Install Python and all the project tools.
@@ -185,16 +195,22 @@ The file `.github/workflows/monthly-scrape.yml` tells GitHub Actions to:
 4. Run `python -m pipeline.validate` to check data quality.
 5. Run `python -m pipeline.export_json` to update the website data.
 6. Save the changes to the repository.
-7. Update the GitHub Pages website.
-8. If something goes wrong, create a GitHub Issue to alert you.
+7. Leave deployment to the separate **Deploy Site** workflow.
+8. Attempt to create a GitHub Issue for validation failures.
 
-**You don't need to do anything for this to happen.** It runs automatically as long as the repository exists on GitHub.
+**Known limitations:** the scrape workflow's default-token push does not automatically
+start the separate deployment workflow, and failure notification paths need testing.
+The ignored local database also has no explicit cloud restore/save step. Keep your
+local database to preserve history; do not delete it when updating a parser.
 
 **To run it early (not waiting for the 1st of the month):**
 1. Go to the repository on GitHub.
 2. Click the **"Actions"** tab.
-3. Click **"Monthly Scrape & Deploy"** on the left.
+3. Click **"Monthly Scrape"** on the left.
 4. Click the **"Run workflow"** button on the right.
+
+After a successful data update, **Deploy Site** can be run manually while the
+automatic handoff is being fixed.
 
 ---
 
@@ -242,9 +258,9 @@ See [docs/adding-a-utility.md](docs/adding-a-utility.md) for the full guide.
 1. Find the utility's official rate page.
 2. Create a new Python file in `scrapers/utilities/`.
 3. Copy the template from an existing scraper (like `bc_hydro.py`).
-4. Fill in the rate values you found on the official site.
-5. Add the utility to `data/sources/registry.json`.
-6. Test it: `python -m pipeline.run_scrape --utility "Your Utility" --dry-run`
+4. Save a small source-derived test fixture and parse the published classes, values, units and dates.
+5. Add the utility and official schedule URLs to `data/sources/registry.json`.
+6. Run the focused tests, then `python -m pipeline.run_scrape --utility "Your Utility" --dry-run`. Seed constants alone are not a completed live parser.
 
 ---
 
@@ -256,7 +272,7 @@ See [docs/adding-a-utility.md](docs/adding-a-utility.md) for the full guide.
 
 **What to do:**
 1. Visit the URL in `data/sources/registry.json` for that utility.
-2. Has the page moved? Update the URL.
+2. Has the page moved? Update the registry and any URL constant used by the scraper.
 3. Has the page layout changed? The scraper's HTML parsing needs updating.
 4. Is the page down temporarily? Wait and try again.
 
@@ -281,6 +297,13 @@ See [docs/adding-a-utility.md](docs/adding-a-utility.md) for the full guide.
 1. Make sure you've run the scraper: `python -m pipeline.run_scrape`
 2. Make sure you've exported: `python -m pipeline.export_json`
 3. Check that `site/data/rates.json` exists and is not empty.
+4. Serve the site over HTTP using the command above.
+
+### Python cannot find pytest, requests, or the browser
+
+Select a Python 3.10+ environment and install the requirements in that same
+environment. Then run `python -m playwright install chromium`. Activating an
+older or empty environment does not make the dependencies available.
 
 ### A rate value looks wrong
 
@@ -326,9 +349,12 @@ The project models this with a **576-bin hourly pricing surface** stored in `sit
 - A specific **day type** (weekday or weekend)
 - A specific **hour** (0-23)
 
-This was derived from 5 years of IESO HOEP data plus monthly GA rates.
+The included generator uses fixed monthly inputs and hourly multipliers; it does
+not download five years of observations. Treat the bins as modeled estimates.
+The dashboard's historical-data wording is a known issue scheduled for correction.
 
-**How to update it:** After each month's IESO data is published, re-run the market pricing pipeline to refresh the bins.
+**How to update it:** Re-running the current generator only rebuilds the same model.
+Actual source ingestion and freshness checks are future work, not an existing monthly refresh.
 
 ---
 
@@ -337,8 +363,8 @@ This was derived from 5 years of IESO HOEP data plus monthly GA rates.
 Alberta is the only province where retail electricity is fully deregulated. This means:
 
 - **Distribution companies** (ATCO Electric, FortisAlberta, EPCOR Distribution, ENMAX Power) own the wires and charge regulated delivery rates.
-- **Retail energy** is sold by competitive retailers. Customers who don't choose a retailer get the Regulated Rate Option (RRO) — a monthly pass-through of the AESO wholesale pool price.
-- The scrapers capture both pieces separately: distribution charges in the distribution scrapers, and RRO energy in the retail scrapers.
+- **Retail energy** is sold separately from wires service. Existing seeds use legacy RRO terminology; current Rate of Last Resort products and their effective terms need official-source verification.
+- The code models these pieces separately. Most Alberta entries still return estimates, not live-extracted rates.
 
 ---
 
@@ -399,7 +425,10 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are currently 233+ tests across 6 test files (test_scrapers, test_new_scrapers, test_live_parsers, test_parsing, test_change_detection, test_validation, test_schema).
+There are 268 tests across 8 test modules, including `test_phase5_hardening` for
+provenance, storage and history. Normal tests block unmocked network access.
+The two SaskPower JSON fixtures in `tests/fixtures/` hold official PDF-text excerpts,
+source URLs and page numbers for repeatable parser tests.
 
 If everything passes, you'll see green output. If something fails, it will show you exactly what went wrong and where.
 
@@ -442,3 +471,5 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - Ontario updates start with the OEB common-rate page, then each distributor's approved tariff. Alberta wires, default retail, AESO, gas, and northern sources must remain separate and preserve their published classes, communities, tiers, and units.
 - Test comparison locally with `python -m http.server --directory site 8000`: add two cards, open **Compare**, remove/replace either, and check the mobile horizontal table. It never calculates a bill total.
 - Every successful stored scrape appends `historical_snapshots`. Canonical hashes ignore component ordering but change for values, units, tiers, dates, or structure; old effective-date versions are never deleted.
+- The October 1 SaskPower batch parses 20 live tariffs, including 19 commercial/industrial transformation variants. Irrigation, unmetered, diesel, farm, oil-field, lighting, reseller and renewable-access schedules remain gaps; see [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).
+- Completing a utility means auditing every standard published class, not just replacing its existing seed values. A complete class can stay live when another class fails, but never stamp a mixed live/seed list as entirely live.

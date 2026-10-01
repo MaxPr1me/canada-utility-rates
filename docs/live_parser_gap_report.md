@@ -1,11 +1,19 @@
-# Live Parser Gap Report — Tier 1 Provincial Utilities
+# Live Parser Gap Report
 
-**Updated:** 2026-09-29
-**Scope:** 8 major provincial utilities (Phase 5, Step 2)
+**Updated:** 2026-10-01
+**Scope:** Provincial parser capabilities and the current SaskPower implementation batch.
 
-**Provenance surfacing (2026-09-29):** These live parsers and PDF-verifiers stamp `Provenance: live_parsed` (or `officially_verified`) via `mark_live_parsed()` / `verify_official_records()`. The site treats only these as live and hides seed fallbacks by default behind the "Show estimated (not live-verified) rates" toggle.
+**Evidence:** October 1 refreshed SaskPower only. Other observed live counts below
+come from the September 29 export, not a new source check. The current export has
+58 live and 480 seed tariffs across 84 registered utilities. A fixture or verifier
+implementation alone is not evidence of a successful live run.
 
-**Multi-class expansion (2026-09-29):** Several utilities were widened from residential-only to **every published rate class**, parsing the same official document with a shared "section-slice + label/value" approach. A recurring root cause of prior commercial fall-backs was the cent symbol: official pages/PDFs render it with a glyph that a literal `¢`/`[¢c]` regex misses, so energy charges are now matched glyph-agnostically (`[^\d\s]{0,2}` before `per kWh`/`per kilowatthour`). Newly live-parsed classes: Maritime Electric (10 classes), Newfoundland Power (4), Nova Scotia Power (commercial Rate 10/11/12), Manitoba Hydro (7 general-service classes), Hydro-Québec (Rate G + M).
+**Provenance:** complete fresh extraction uses `mark_live_parsed()`; contextual
+verification of known values uses `verify_official_records()`. Seed fallbacks remain
+unverified and hidden by default. Several utilities now have multiple live classes,
+but **none should be called catalogue-complete without an audit of all standard
+published schedules**. Cent glyph variation must be handled without accepting dollars
+as cents or borrowing a value from a different class/column.
 
 ## Summary
 
@@ -16,11 +24,14 @@
 | **Nova Scotia Power** | NS | Server-rendered h4/li | Live parser (residential + commercial) | Flat rate | Rate 10 (tiered), Rate 11 (demand), Rate 12 (demand) | High |
 | **BC Hydro** | BC | Prose text (sub-pages) | Live parser | Tiered (Step 1/2) | SGS (flat), MGS (demand), LGS (demand) | High |
 | **Hydro-Québec** | QC | JS-rendered + PDF | PDF live parser | Rate D (tiered) | Rate G (mixed), Rate M (demand) | High |
-| **SaskPower** | SK | PDF-only | Official PDF component verification | Flat rate | Small + Demand | High when verified |
+| **SaskPower** | SK | Rendered landing page + PDFs | Dynamic PDF parser, partial coverage | Standard E01/E03 combined record | 19 supplied/customer-owned transformation variants | High for complete parsed classes |
 | **NL Hydro** | NL | PDF + inline text | Official PDF component verification | Rural + Labrador | General Service | High when verified |
-| **Newfoundland Power** | NL | PDF-only | Official PDF component verification | Flat rate | General Service | High when verified |
+| **Newfoundland Power** | NL | PDF-only | Dynamic PDF parser | Domestic 1.1 | General Service 2.1/2.3/2.4 | High for parsed classes |
+| **Maritime Electric** | PE | IRAC PDF | Dynamic PDF parser | Urban/rural | 10 supported classes total | High for parsed classes |
+| **FortisAlberta** | AB | AUC/utility PDF | Residential PDF parser | Rate 11 | Other classes remain fallback | High for parsed residential |
+| **Yukon Energy** | YT | PDF cross-reference | Residential PDF parser | Hydro 1160 | Other classes remain fallback | High for parsed residential |
 
-## Group A: Server-Rendered HTML — Full Live Parsing
+## Group A: HTML Parsing for Supported Classes
 
 ### Manitoba Hydro
 - **URL:** `hydro.mb.ca/accounts_and_services/rates/residential_rates/`
@@ -62,63 +73,72 @@
 - **Fix:** Rate G/M previously fell back to seed because the section extractor keyed on the generic "Rate G"/"Rate M" strings (first found in the table of contents) and the cent regex missed the PDF's glyph. Now anchored on the "Structure of Rate G"/"Structure of Rate M" sections with a glyph-agnostic energy pattern, so all three tariffs parse live.
 - **Seed update:** 2024-04-01 → 2026-04-01; values verified from official PDF
 
-## Group C: PDF-Only — Official-Source Component Verification
+## SaskPower: October 1 Implementation
 
-These scrapers now resolve relative and query-string PDF links, download the
-official schedule, extract its text, and require **every** seeded tariff
-component to appear in that schedule. A tariff is marked live-verified and its
-source is changed to the exact PDF URL only after the complete check passes.
-If one component is absent or changed, the scraper explicitly logs the missing
-component and uses fallback data rather than silently treating it as live.
+- **Discovery:** render the official power-supply-rates landing page when needed, then fetch its linked schedules. Failure of one PDF does not discard independent complete classes.
+- **Live result:** 20 valid tariffs, all with live provenance; 19 newly parsed transformation records plus the existing residential record. Business schedules are effective February 1, 2026.
+- **Supplied transformation:** standard E05/E06 and small commercial E75/E76. Urban/rural energy thresholds differ; both include a free first demand block and a paid balance in kVA. The old flat small-commercial seed was not the current structure.
+- **Customer-owned transformation:** standard E07/E08/E10/E12; small commercial E77/E78; power TOU E82/E83/E84; power standard E22/E23/E24; capacity reservation N22/N23/N24. Voltage columns remain distinct; E10/E12 are identified as closed to new customers.
+- **Billing context:** preserve minimum-bill rules, demand ratchets and TOU hours from continuation pages. These are source conditions, not a calculated bill total. kVA eligibility is kept as text rather than written into kW-only fields.
+- **Safety gates:** require complete column counts, source dates that are not future dates, correct currency/units, and required continuation data. Reject malformed groups independently. Known failed classes retain unverified seeds; unknown classes are logged, not invented.
+- **Fixtures:** `tests/fixtures/saskpower_supplied_transformation.json` and `tests/fixtures/saskpower_customer_owned_transformation.json` contain source URLs, retrieval date, original page numbers and table/condition excerpts.
+- **Tests:** 23 focused SaskPower parser/storage/export cases; 268 tests in the full suite. Coverage includes source-value mutations, cent glyph variation, wrong units/signs, missing/reordered columns, dates, failed residential fetches, missing TOU continuation, repeated storage and codeless-class component isolation.
+- **Persistence:** targeted storage/export retained all 519 previous snapshots and unchanged non-SaskPower records. The two old generic commercial seed records remain labelled estimates; history was not deleted.
 
-### SaskPower
-- **URL:** `saskpower.com/accounts/power-rates/power-supply-rates`
-- **Status:** Complete component verification against linked official PDF.
-- **Coverage:** Residential (flat), Small Commercial (flat), Demand Commercial.
-- **Remaining gap:** The verifier detects drift but does not automatically infer a replacement tariff structure when SaskPower changes a rate.
+**Still incomplete:** supplied-transformation irrigation E37, unmetered E15/E16/E17/E18,
+diesel E35, farm, oil-field, streetlight, reseller and renewable-access schedules.
+Audit the remaining residential variants as well. The current residential record combines
+E01/E03; 20 exported tariffs is not a complete published-code count.
 
-### NL Hydro
+The [registry](../data/sources/registry.json) records the landing page and both
+transformation PDFs and marks SaskPower `partial`. Finish the remaining source catalogue
+in additional fixture-first batches; do not mark the whole utility complete yet.
+
+## Other PDF Capabilities and Gaps
+
+### NL Hydro: Verification Only
 - **URL:** `nlhydro.com/electicity-rates/current-rates/` (note: typo "electicity" is their actual path)
-- **Status:** Page shows inline ¢/kWh values; every returned component is verified against the linked official PDF.
+- **Status:** The code attempts contextual verification of seeded components against a linked PDF; the September 29 export contains no live NL Hydro tariffs. This is not automatic extraction of changed schedules.
 - **Coverage:** Rural Residential, Labrador Interconnected, General Service.
 - **Remaining gap:** Source drift is flagged and rejected; changed values still require a reviewed seed update.
 - **Seed update:** 2024-04-01 → 2026-01-01; energy rates updated from page text (island 15.213¢, Labrador 3.154¢)
 
 ### Newfoundland Power
 - **URL:** `newfoundlandpower.com/en/My-Account/Usage/Electricity-Rates`
-- **Status:** Rates are verified against the linked official "Schedule of Rates, Rules and Regulations" PDF.
-- **Coverage:** Domestic Service (Rate 1.1), General Service (Rate 2.1).
-- **Remaining gap:** Source drift is flagged and rejected; changed values still require a reviewed seed update.
+- **Status:** Rebuilds supported classes from the linked official RateBook PDF.
+- **Coverage:** Domestic Service 1.1 and General Service 2.1, 2.3 and 2.4; four live records in the September 29 export.
+- **Remaining gap:** Audit the rest of the published catalogue and add source-derived success/failure fixtures beyond the existing seed-path checks.
+
+### Maritime Electric, FortisAlberta and Yukon Energy
+
+- **Maritime Electric:** ten supported classes parsed from one IRAC schedule. Preserve the individual fixed/demand/energy tiers; verify catalogue completeness separately.
+- **FortisAlberta:** Rate 11 residential parses live; remaining distribution classes need source-specific extraction. The shared verifier is not a complete multi-class parser.
+- **Yukon Energy:** only residential hydro Rate 1160 parses. The public catalogue includes government/non-government, diesel, general-service, industrial and lighting schedules. The October 1 source review found separate current Rider F and affordability-relief documents; the base-plus-R/J cross-reference alone is not proof of complete current charges.
 
 ## Aggregate Statistics
 
 | Metric | Value |
 |--------|-------|
-| Total tariffs across 8 utilities | 24 |
-| Tariffs with live HTML parsing | 11 (MB:3, NB:3, NS:4, BC:4) |
-| Tariffs with live PDF parsing | 3 (HQ:3) |
-| Tariffs eligible for official live verification | 24/24 |
-| Tariffs automatically rebuilt from parsed values | 17/24 |
-| Tariffs verified component-by-component against official PDFs | 7/24 |
-| Official-source coverage | 100% when the live fetch succeeds and all components match |
-| URLs corrected | 3 (NS Power, NL Hydro, Newfoundland Power) |
-| Structural data fixes | 2 (NB residential tiered→flat, BC SGS demand removed) |
+| Registered utilities | 84 |
+| Stored/exported tariffs | 538, including older retained estimates |
+| Rate components | 3,592 |
+| Live tariffs / utilities with live output | 58 / 10 |
+| Seed tariffs | 480 |
+| Newly added SaskPower live tariffs | 19 |
+| Fresh October 1 source check | SaskPower only |
+| Deterministic suite | 268 passing |
 
 ## Recommended Next Steps
 
-1. **Automatic PDF drift updates** — safely infer replacement values and effective dates after component verification detects a change; until then changed components are logged and fallback data is clearly retained.
-2. **NS Power industrial** — Rate 21, 22, 23 are available on the business page but are not yet scraped.
-3. **Ontario LDC depth** — the shared Ontario scraper provides broad registry coverage, but each LDC still needs individual source-structure validation rather than relying on a common data-driven pattern.
-4. **Live-network CI** — add a non-blocking scheduled source check. Unit tests deliberately use representative official-document text because utility sites can be unavailable or rate-limit CI.
+1. Finish the remaining SaskPower catalogue in independently tested schedule batches.
+2. Easier expansions: Yukon Energy, NS Power industrial Rates 21/22/23, FortisBC Electric. Audit all standard classes, not only existing seeds.
+3. Continue provincial/territorial depth, nine gas utilities, Alberta wires/default retail/AESO, then Ontario's individual approved distributor schedules.
+4. Repair the existing non-blocking source-health workflow's browser setup and outcome reporting; keep normal tests network-free. Durable CI history and deployment triggering are separate operational follow-ups.
 
-## Phase 5-wide status (2026-07-27)
+## Phase 5-wide Status
 
-The original Tier 1 report above remains its historical detailed audit. The live
-scope now uses the maintained per-utility matrix in
-[`phase5_completion_matrix.md`](phase5_completion_matrix.md), covering all 53
-Ontario LDCs, Alberta wires/default retail/AESO, nine gas utilities, and four
-northern utilities. Each family has a deterministic contextual-verification
-path and conservative fallback provenance. Known fragilities are PDF layout,
-JS-only pages, renamed products, quarterly/monthly effective dates, and missing
-individual OEB-approved tariff links. Those gaps remain visible blockers; Phase
-5 is therefore not claimed complete.
+Use [phase5_completion_matrix.md](phase5_completion_matrix.md) as the maintained
+per-utility ledger and [README.md](../README.md) for the ordered roadmap. Ontario's
+53 registry identities still need a current distributor/merger audit. Official URL
+discovery, effective dates, full class interpretation and source-derived fixtures remain
+material work; a fail-safe seed verifier is not a completed dynamic parser.

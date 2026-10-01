@@ -295,16 +295,28 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.saskpower",
       "scraper_class": "SaskPowerScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
           "url": "https://www.saskpower.com/accounts/power-rates/power-supply-rates",
           "source_type": "html",
           "description": "Residential and commercial power supply rates for Saskatchewan",
           "is_primary": true
+        },
+        {
+          "url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-saskpowersuppliedtransformation.pdf",
+          "source_type": "pdf",
+          "description": "SaskPower-supplied transformation: live E05/E06 and E75/E76; other classes pending",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation.pdf",
+          "source_type": "pdf",
+          "description": "Customer-owned transformation: standard, small commercial, power TOU, power standard and capacity reservation",
+          "is_primary": false
         }
       ],
-      "notes": "SaskPower is the principal electricity supplier in Saskatchewan, a provincial Crown corporation. Regulated by the Saskatchewan Rate Review Panel."
+      "notes": "SaskPower is a provincial Crown corporation regulated by the Saskatchewan Rate Review Panel. On 2026-10-01, live parsing returned residential plus 19 transformation tariffs. Irrigation, unmetered, diesel, farm, oil-field, lighting, reseller and renewable-access schedules still need class-specific coverage."
     },
     {
       "name": "NB Power",

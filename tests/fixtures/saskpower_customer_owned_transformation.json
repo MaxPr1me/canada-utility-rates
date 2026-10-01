@@ -1,0 +1,39 @@
+{
+  "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation.pdf",
+  "retrieved_on": "2026-10-01",
+  "description": "Rate-table and billing-rule excerpts extracted with pdfplumber; original page numbers retained.",
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "CUSTOMER-OWNED\nTRANSFORMATION RATES\nSTANDARD RATE This rate is for metered non-residential and non-farm loads greater than 75 kilovolt\namperes (kVA) and up to and including 3,000 kVA, served through customer-owned\ntransformation and to which no other rates apply. Rate Codes* E07 E08 E10 E12\nEffective (Urban) (Rural) (closed to new (closed to new February 1, 2026 customers) customers)\nSupply voltage 25kV & less 25kV & less 72kV 100kV & above\nBasic monthly charge $289.55 $289.55 $299.50 $340.35\nDemand Charge Per kVA of recorded $20.037 $20.037 $15.502 $15.019\ndemand each month\nEnergy Charge \u00a2/kWh 7.288\u00a2 7.288\u00a2 5.677\u00a2 5.536\u00a2\nMINIMUM BILL The basic monthly charge plus $5.059/kVA of the maximum demand registered in the\ndefined billing periods between May 1st to October 31st and November 1st to April\n30th."
+    },
+    {
+      "page_number": 2,
+      "text": "CUSTOMER-OWNED\nTRANSFORMATION RATES\nRECORDED DEMAND\nThe maximum kVA demand registered during the current month, OR\nFor services with approved time-of-day metering, the greater of the maximum kVA demand registered between the hours of 07:00 to 22:00, Monday through\nFriday, excluding statutory holidays OR 85 per cent of the maximum kVA\ndemand registered at any other time during the current month.\nAVAILABILITY E10 and E12 rates are closed to new customers."
+    },
+    {
+      "page_number": 3,
+      "text": "CUSTOMER-OWNED\nTRANSFORMATION RATES\nSMALL COMMERCIAL RATE This rate is for metered commercial and municipal loads up to and including 75 kilovolt\namperes (kVA) served through customer-owned transformation and to which no other\nrates apply. Rate Codes* E77 E78\nEffective February 1, 2026 (Urban) (Rural)\nSupply voltage 25kV & less 25kV & less\nBasic monthly charge $42.79 $42.79\nDemand Charge First 50 kVA/month $0 $0\nBalance $/kVA $20.061 $20.061\nEnergy Charge First block kWh/month 14,500 kWh 13,000 kWh\nFirst block (\u00a2/kWh) 15.602\u00a2 15.602\u00a2\nBalance (\u00a2/kWh) 6.393\u00a2 6.393\u00a2\nMINIMUM BILL The basic monthly charge plus $5.059/kVA of the maximum demand over 50 kVA\nregistered in the defined billing periods between May 1st to October 31st and\nNovember 1st to April 30th."
+    },
+    {
+      "page_number": 5,
+      "text": "CUSTOMER-OWNED\nTRANSFORMATION RATES\nPOWER TIME-OF-USE RATE\nThis rate is for large commercial, farm, and industrial loads served through customer-\nowned transformation as an alternative to SaskPower Supplied Transformation -\nStandard Rates and Customer-Owned Transformation - Power Standard Rates. Rate Codes* E82 E83 E84\nEffective February 1, 2026\nSupply voltage 25kV 72kV 100kV & above\nBasic monthly charge $7,022.82 $8,151.50 $8,731.50\nDemand Charge Per kVA of billing demand $18.700 $15.203 $12.038\neach month\nEnergy Charge On-peak energy charge 7.070\u00a2 7.023\u00a2 6.833\u00a2\n(\u00a2/kWh) Off-peak energy charge 6.070\u00a2 6.023\u00a2 5.833\u00a2\n(\u00a2/kWh)\nMINIMUM BILL\nThe basic monthly charge plus the demand charge.\nRECORDED DEMAND\nThe monthly recorded demand is the maximum kVA demand registered during the\ncurrent month."
+    },
+    {
+      "page_number": 6,
+      "text": "CUSTOMER-OWNED\nTRANSFORMATION RATES\nBILLING DEMAND\nThe monthly billing demand is the monthly recorded demand, but the billing demand shall not be less than 75 per cent of the maximum billing demand in the preceding 11\nmonths.\nON-PEAK ENERGY CONSUMPTION The monthly energy consumed between the hours of 7:00 to 22:00, Monday through\nFriday, excluding statutory holidays.\nOFF-PEAK ENERGY CONSUMPTION\nThe monthly energy consumed in all hours except for the on-peak hours.\nAVAILABILITY\nThese time-of-use rates are optional - at the customer's request. Once a customer\nrequests to change to these rates they must stay on for at least one year."
+    },
+    {
+      "page_number": 7,
+      "text": "CUSTOMER-OWNED\nTRANSFORMATION RATES\nPOWER STANDARD RATE\nThis rate is for large commercial and industrial loads served through customer-owned\ntransformation as an alternative to SaskPower Supplied Transformation - Standard\nRates. Rate Codes* E22 E23 E24\nEffective February 1, 2026\nSupply voltage 25kV 72kV 100kV & above\nBasic monthly charge $7,022.82 $8,151.50 $8,731.50\nDemand Charge Per kVA of billing demand $18.700 $15.203 $12.038\neach month\nEnergy Charge \u00a2/kWh 6.497\u00a2 6.450\u00a2 6.260\u00a2\nMINIMUM BILL\nThe basic monthly charge plus the demand charge.\nBILLING DEMAND\nThe monthly billing demand is the monthly recorded demand, but the billing demand shall not be less than 75 per cent of the maximum billing demand in the preceding 11\nmonths."
+    },
+    {
+      "page_number": 8,
+      "text": "CUSTOMER-OWNED\nTRANSFORMATION RATES\nPOWER STANDARD RATE - CAPACITY RESERVATION SERVICE\nThis rate applies to Power Class customers requiring capacity reservation who are served\nthrough customer-owned transformation and self-generating a portion of their power\nrequirements using non-renewable sources. Rate Codes* N22 N23 N24\nEffective February 1, 2026\nSupply voltage 25kV 72kV 100kV & above\nBasic monthly charge $7,022.82 $8,151.50 $8,731.50\nDemand Charge Per kVA of billing demand each $20.067 $18.088 $17.821\nmonth\nEnergy Charge \u00a2/kWh 5.563\u00a2 5.508\u00a2 4.695\u00a2"
+    },
+    {
+      "page_number": 9,
+      "text": "CUSTOMER-OWNED\nTRANSFORMATION RATES\nMINIMUM BILL\nThe basic monthly charge plus the demand charge.\nBILLING DEMAND\nThe monthly billing demand shall be the greater of the monthly Recorded Demand or\nthe Reservation Capacity, but shall not be less than the maximum demand registered in the preceding 23 months."
+    }
+  ]
+}

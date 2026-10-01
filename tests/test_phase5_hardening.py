@@ -127,3 +127,49 @@ def test_new_effective_version_preserves_old_tariff_and_is_reported_new():
     report = diff_runs(conn, 1, 2)
     assert report["summary"] == {"new": 1, "removed": 1, "changed": 0, "unchanged": 0}
     assert conn.execute("SELECT count(*) FROM tariffs").fetchone()[0] == 2
+
+
+def test_saskpower_classes_keep_components_and_history_through_export(tmp_path, monkeypatch):
+    import json
+    from pathlib import Path
+    from pipeline import export_json
+    from scrapers.utilities.saskpower import SaskPowerScraper
+
+    scraper = SaskPowerScraper()
+    monkeypatch.setattr(scraper, "now_iso", lambda: "2026-10-01T00:00:00+00:00")
+    records = []
+    for name in ("supplied", "customer_owned"):
+        fixture_path = Path(__file__).parent / "fixtures" / f"saskpower_{name}_transformation.json"
+        document = json.loads(fixture_path.read_text(encoding="utf-8"))
+        pages = [DocumentPage(**page) for page in document["pages"]]
+        records.extend(scraper.mark_live_parsed(
+            scraper._parse_transformation(pages, document["source_url"]),
+            source_url=document["source_url"],
+        ))
+    assert len(records) == 19
+    records[:2] = [replace(record, tariff_code=None) for record in records[:2]]
+    connection = database()
+    for run_id in (1, 2):
+        assert store_results(records, run_id, connection) == 19
+    assert connection.execute("SELECT count(*) FROM tariffs").fetchone()[0] == 19
+    assert connection.execute("SELECT count(*) FROM historical_snapshots").fetchone()[0] == 38
+    assert diff_runs(connection, 1, 2)["summary"]["unchanged"] == 19
+    component_counts = dict(connection.execute(
+        "SELECT tariffs.name, count(rate_components.id) FROM tariffs "
+        "JOIN rate_components ON rate_components.tariff_id = tariffs.id GROUP BY tariffs.id"
+    ))
+    assert component_counts == {record.tariff_name: len(record.components) for record in records}
+
+    db_path = tmp_path / "rates.db"
+    persisted = sqlite3.connect(db_path)
+    connection.backup(persisted)
+    persisted.close()
+    connection.close()
+    monkeypatch.setattr(export_json, "DB_PATH", db_path)
+    monkeypatch.setattr(export_json, "SITE_DATA_DIR", tmp_path / "site")
+    export_json.export_all()
+    exported = json.loads((tmp_path / "site" / "rates.json").read_text(encoding="utf-8"))
+    assert len(exported) == 19
+    assert all(record["provenance"] == "live" for record in exported)
+    assert {record["name"]: len(record["components"]) for record in exported} == component_counts
+    assert all(component["source_url"] and component["source_detail"] for record in exported for component in record["components"])
