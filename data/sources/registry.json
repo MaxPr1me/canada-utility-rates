@@ -314,9 +314,21 @@
           "source_type": "pdf",
           "description": "Customer-owned transformation: standard, small commercial, power TOU, power standard and capacity reservation",
           "is_primary": false
+        },
+        {
+          "url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-farm.pdf",
+          "source_type": "pdf",
+          "description": "Farm standard, irrigation and closed-to-new interruptible irrigation: E34, E19, E41",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-oilfield.pdf",
+          "source_type": "pdf",
+          "description": "Oil-field supplied/customer-owned standard, high-voltage and time-of-use: E43/E44, E46-E48, E86-E88",
+          "is_primary": false
         }
       ],
-      "notes": "SaskPower is a provincial Crown corporation regulated by the Saskatchewan Rate Review Panel. On 2026-10-01, live parsing returned residential plus 25 supplied/customer-owned tariffs. Farm, oil-field, lighting, reseller, renewable-access and remaining residential variants still need class-specific coverage."
+      "notes": "SaskPower is a provincial Crown corporation regulated by the Saskatchewan Rate Review Panel. On 2026-10-01, live parsing returned 37 tariffs: residential, 25 supplied/customer-owned, three farm and eight oil-field classes. Lighting, reseller, renewable-access and remaining residential variants still need class-specific coverage."
     },
     {
       "name": "NB Power",

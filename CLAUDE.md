@@ -22,11 +22,12 @@ Canada-wide utility rate scraping and browsing platform.
 
 ## Key patterns
 - Scrapers try live HTTP fetch first, fall back to hardcoded seed data. Provenance is tracked, not flattened (see Working rules): live/verified records carry `Provenance: officially_verified` or `Provenance: live_parsed`; failed fetches call `mark_fallback()` (→ `Provenance: seed_fallback`, `confidence: unverified`). `export_json.derive_provenance()` maps this to a `provenance` field (`"live"`/`"seed"`) and the site hides `seed` by default.
-- **Live parsers**: Manitoba Hydro, NB Power, NS Power and BC Hydro have class-specific HTML parsers. Hydro-Quebec, Maritime Electric and Newfoundland Power rebuild supported classes from PDFs. SaskPower parses residential plus 25 supplied/customer-owned schedules. NL Hydro still verifies known values rather than rebuilding changed schedules.
+- **Live parsers**: Manitoba Hydro, NB Power, NS Power and BC Hydro have class-specific HTML parsers. Hydro-Quebec, Maritime Electric and Newfoundland Power rebuild supported classes from PDFs. SaskPower parses residential plus 36 supplied/customer-owned, farm and oil-field schedules. NL Hydro still verifies known values rather than rebuilding changed schedules.
 - **Multi-class coverage is not catalogue completeness.** Implemented output includes BC Hydro (4), NB Power (3), NS Power (Domestic + 10/11/12), Manitoba Hydro (8), Hydro-Quebec (D/G/M), Maritime Electric (10), Newfoundland Power (1.1/2.1/2.3/2.4). Missing standard classes still require source audits. Reuse section slicing and label/value parsing; handle cent glyph variation without accepting dollar-per-kWh as cents.
 - **JS-rendered pages**: `BaseScraper.fetch_rendered_page()` uses headless Chromium; SaskPower needs it for PDF discovery. Missing known classes retain labelled seed fallbacks. Newly discovered unsupported classes are recorded as gaps, never invented as fallback rates.
 - **SaskPower (2026-10-01)**: source-derived page fixtures cover E05/E06, E75/E76, E07/E08/E10/E12, E77/E78, E82/E83/E84, E22/E23/E24 and N22/N23/N24. Preserve voltage/urban/rural columns, kVA tiers, TOU hours, closed-to-new eligibility and continuation-page billing conditions. Require source dates and complete rows; isolate failures by schedule. Do not fill kW eligibility fields with kVA thresholds.
 - **Supplied-service additions:** E37 irrigation retains `$/season` and `$/HP/season`; E15/E17 use watt-block/month units, E16 uses power-supply-unit/month, E18 uses installed-kVA/month, and E35 diesel has two energy tiers. Slice multiple schedules on the same page before parsing; minimum bills are conditions, not extra additive charges.
+- **Farm/oil-field additions:** E34/E19/E41 and E43/E44/E46-E48/E86-E88 have dedicated fixtures. E41 is a monthly per-meter-location charge during the pumping season, not a seasonal lump sum; its 1997 closure notice is not the tariff effective date. Oil-field standard charges are per metering point; power variants preserve voltage and TOU conditions.
 - Every tariff stores individual rate_components (fixed, energy, demand, delivery, riders, etc.) — never flatten to one number.
 - Historical snapshots are preserved in `historical_snapshots` table — never overwrite.
 - Validation runs after scraping (`scrapers/utils/validation.py`).
@@ -41,7 +42,7 @@ python -m playwright install chromium     # headless browser for JS-rendered pag
 python -m pipeline.run_scrape --init-db   # first time
 python -m pipeline.run_scrape             # scrape all
 python -m pipeline.export_json            # export for site
-pytest                                    # run tests (274 tests)
+pytest                                    # run tests (283 tests)
 ```
 
 ## Adding a utility
@@ -57,7 +58,7 @@ pytest                                    # run tests (274 tests)
 - Keep registry URLs and actual scraper URL constants synchronized; most modules do not consume registry sources dynamically.
 
 ## Current snapshot and queue (2026-10-01)
-- Targeted SaskPower refresh: 26 live records. Export: 544 tariffs / 3,602 components / 64 live / 480 seed across 84 utilities. Other utilities retain September 29 source results; do not describe this as a new national source check.
+- Targeted SaskPower refresh: 37 live records. Export: 555 tariffs / 3,638 components / 75 live / 480 seed across 84 utilities. Other utilities retain September 29 source results; do not describe this as a new national source check.
 - Next: remaining SaskPower schedules, then easier Yukon Energy/NS industrial/FortisBC Electric expansions; territorial/provincial depth, nine gas utilities, Alberta electricity and the Ontario distributor campaign follow. README and the Phase 5 matrix hold the maintained roadmap.
 - The Ontario market generator uses fixed inputs and multipliers, not reproducible five-year observation ingestion. Document this now; the user deferred UI/metadata correction and real ingestion to later phases.
 - Local history is append-only. Monthly CI restore/save, default-token deployment triggering, source-health browser setup and failure reporting remain separate reliability work.
@@ -76,4 +77,4 @@ Update these files when the task changes architecture, adds major features, chan
 - `scrapers.utils.parsing` provides `DocumentPage`, page-aware fail-closed PDF extraction/section selection, CSV/XLSX readers, content hashing, effective-date/unit/currency normalization, and contextual verification.
 - Snapshot serialization is canonical JSON with sorted component dictionaries. Ordering alone is ignored; all semantic fields remain hashed. `diff_runs` compares append-only per-run snapshots.
 - The no-build comparison state is an in-memory two-item array in `site/js/app.js`; it aligns exact type/name/unit keys and never totals them.
-- Deterministic tests block unmocked network access. Run `pytest -q` (274 tests); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.
+- Deterministic tests block unmocked network access. Run `pytest -q` (283 tests); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.

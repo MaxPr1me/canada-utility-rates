@@ -111,8 +111,12 @@ class SaskPowerScraper(BaseScraper):
                     )
                     if record:
                         live.extend(self.mark_live_parsed([record], source_url=pdf_url))
+                elif "servicerates-farm.pdf" in pdf_url.lower():
+                    records = self._parse_farm_rates(extract_pdf_pages(self.fetch_bytes(pdf_url)), pdf_url)
+                    live.extend(self.mark_live_parsed(records, source_url=pdf_url))
                 elif any(filename in pdf_url.lower() for filename in (
                     "saskpowersuppliedtransformation.pdf", "customerownedtransformation.pdf",
+                    "servicerates-oilfield.pdf",
                 )):
                     records = self._parse_transformation(
                         extract_pdf_pages(self.fetch_bytes(pdf_url)), pdf_url,
@@ -179,6 +183,10 @@ class SaskPowerScraper(BaseScraper):
             ("E82", "E83", "E84"): ("Customer-Owned", "Power Time-of-Use", "tou", "industrial"),
             ("E22", "E23", "E24"): ("Customer-Owned", "Power Standard Service", "flat", "industrial"),
             ("N22", "N23", "N24"): ("Customer-Owned", "Capacity Reservation Service", "flat", "industrial"),
+            ("E43",): ("Oil Field", "SaskPower-Supplied Standard Service", "flat", "industrial"),
+            ("E44",): ("Oil Field", "Customer-Owned Standard Service", "flat", "industrial"),
+            ("E86", "E87", "E88"): ("Oil Field", "Power Time-of-Use", "tou", "industrial"),
+            ("E46", "E47", "E48"): ("Oil Field", "High-Voltage Service", "flat", "industrial"),
         }
         code_pattern = r"Rate Codes?\*?\s+([EN]\d{2}(?:\s+[EN]\d{2})*)\b"
         for page_index, page in enumerate(pages):
@@ -206,12 +214,13 @@ class SaskPowerScraper(BaseScraper):
                 effective_date = extract_effective_date("Effective " + dates[0]) if len(dates) == 1 else None
                 if not effective_date or effective_date > self.now_iso()[:10]:
                     raise ValueError("Missing, ambiguous or future effective date")
-                basic = self._column_values(text, r"Basic monthly charge", money, count)
+                basic_label = r"Basic monthly charge per metering point" if codes in {("E43",), ("E44",)} else r"Basic monthly charge"
+                basic = self._column_values(text, basic_label, money, count)
                 voltage_row = re.search(r"Supply voltage([^\n]*)", page.text)
-                voltages = re.findall(r"\d+\s*kV(?:\s*&\s*(?:less|above))?", voltage_row.group(1)) if voltage_row else []
+                voltages = re.findall(r"\d+\s*kV(?:\s*&\s*(?:less|above))?", voltage_row.group(1), re.I) if voltage_row else []
                 if voltage_row and len(voltages) != count:
                     raise ValueError("Incomplete voltage columns")
-                if owner == "Customer-Owned" and not voltages:
+                if (owner == "Customer-Owned" or (owner == "Oil Field" and count > 1)) and not voltages:
                     raise ValueError("Missing voltage columns")
                 areas = re.findall(r"\((Urban|Rural)\)", effective_header.group(1))
                 if customer_class == "commercial" and areas != ["Urban", "Rural"]:
@@ -252,7 +261,8 @@ class SaskPowerScraper(BaseScraper):
                 labels = ([areas[column]] if column < len(areas) else []) + ([voltages[column]] if voltages else [])
                 label = ", ".join(labels)
                 detail = f"PDF pages {page.page_number}-{section_pages[-1].page_number}; Rate {code} ({label})"
-                components = [RateComponent("fixed", "Basic Charge", basic[column], "$/month")]
+                basic_unit = "$/metering point/month" if code in {"E43", "E44"} else "$/month"
+                components = [RateComponent("fixed", "Basic Charge", basic[column], basic_unit)]
                 if energy_mode == "tiered":
                     components.extend([
                         RateComponent("demand", f"Demand Charge - First {demand_threshold:g} kVA", free_demand[column], "$/kVA",
@@ -284,8 +294,8 @@ class SaskPowerScraper(BaseScraper):
                     eligibility += " Closed to new customers."
                 records.append(TariffRecord(
                     utility_name="SaskPower", province="SK", utility_type="electricity",
-                    tariff_name=f"{owner} {name} - {label} (Rate {code})",
-                    tariff_code=code, customer_class=customer_class, sub_class=label.lower(),
+                    tariff_name=f"{owner} {name}" + (f" - {label}" if label else "") + f" (Rate {code})",
+                    tariff_code=code, customer_class=customer_class, sub_class=label.lower() or name.lower(),
                     rate_structure="mixed" if energy_mode != "flat" else "demand", effective_date=effective_date,
                     source_url=source_url, source_page=detail, confidence="high",
                     eligibility=eligibility,
@@ -293,6 +303,100 @@ class SaskPowerScraper(BaseScraper):
                           re.sub(r"\s+", " ", text.split("MINIMUM BILL", 1)[1]).strip(),
                     components=components,
                 ))
+        return records
+
+    def _parse_farm_rates(
+        self, pages: list[DocumentPage], source_url: str,
+    ) -> list[TariffRecord]:
+        services = {
+            "E34": ("Standard Service", "STANDARD RATE", "mixed"),
+            "E19": ("Irrigation", "IRRIGATION RATE", "flat"),
+            "E41": ("Irrigation (Interruptible)", "IRRIGATION (INTERRUPTIBLE) RATE", "flat"),
+        }
+        money = r"\$\s*([\d,]+(?:\.\d+)?)"
+        cents = r"(-?[\d,]+(?:\.\d+)?)\s*[^\d\w\s/$+-]{1,2}(?=\s|$)"
+        cent_unit = r"\([^\d\w\s/$+-]{1,2}/kWh\)"
+        records: list[TariffRecord] = []
+        for page in pages:
+            text = page.text
+            code_matches = re.findall(r"Rate Code\*?\s+(E\d{2})\b", text)
+            if "FARM RATES" not in text or len(code_matches) != 1 or code_matches[0] not in services:
+                self.logger.warning("Unrecognized SaskPower farm schedule on page %s", page.page_number)
+                continue
+            code = code_matches[0]
+            name, heading, structure = services[code]
+            try:
+                if heading not in text:
+                    raise ValueError("Farm code does not match the schedule heading")
+                date_header = text.split("Basic", 1)[0]
+                dates = re.findall(r"\bEffective\s+[A-Z][a-z]+\s+\d{1,2},\s*\d{4}\b", date_header)
+                effective_date = extract_effective_date(dates[0]) if len(dates) == 1 else None
+                if not effective_date or effective_date > self.now_iso()[:10]:
+                    raise ValueError("Missing, ambiguous or future effective date")
+                if "MINIMUM BILL" not in text:
+                    raise ValueError("Missing minimum-bill conditions")
+                if code == "E34":
+                    basic = self._column_values(text, r"Basic monthly charge", money, 1)[0]
+                    demand_row = re.search(r"Demand Charge First ([\d,]+) kVA/month", text)
+                    energy_row = re.search(r"Energy Charge First ([\d,]+) kWh/month", text)
+                    if not demand_row or not energy_row:
+                        raise ValueError("Missing farm tier thresholds")
+                    demand_threshold = float(demand_row.group(1).replace(",", ""))
+                    energy_threshold = float(energy_row.group(1).replace(",", ""))
+                    free_demand = self._column_values(text, r"Demand Charge First [\d,]+ kVA/month", money, 1)[0]
+                    demand = self._column_values(text, r"Balance\s+\$/kVA", money, 1)[0]
+                    first = self._column_values(text, r"Energy Charge First [\d,]+ kWh/month\s*" + cent_unit, cents, 1)[0]
+                    balance = self._column_values(text, r"Balance\s*" + cent_unit, cents, 1)[0]
+                    if free_demand != 0 or min(demand_threshold, energy_threshold) <= 0:
+                        raise ValueError("Changed free-demand block or invalid tier thresholds")
+                    components = [
+                        RateComponent("fixed", "Basic Charge", basic, "$/month"),
+                        RateComponent("demand", f"Demand Charge - First {demand_threshold:g} kVA", free_demand, "$/kVA",
+                                      tier_number=1, tier_threshold=demand_threshold, tier_unit="kVA", demand_unit="kVA"),
+                        RateComponent("demand", "Demand Charge - Balance", demand, "$/kVA",
+                                      tier_number=2, tier_threshold=demand_threshold, tier_unit="kVA", demand_unit="kVA"),
+                        RateComponent("energy", "Energy Charge - First Block", round(first / 100.0, 6), "$/kWh",
+                                      tier_number=1, tier_threshold=energy_threshold, tier_unit="kWh"),
+                        RateComponent("energy", "Energy Charge - Balance", round(balance / 100.0, 6), "$/kWh",
+                                      tier_number=2, tier_threshold=energy_threshold, tier_unit="kWh"),
+                    ]
+                else:
+                    if not re.search(r"(?:between|from) February 1 (?:and|to) Oct\. 31", text):
+                        raise ValueError("Missing or changed irrigation season")
+                    energy = self._column_values(text, r"Energy charge\s*" + cent_unit, cents, 1)[0]
+                    if code == "E19":
+                        basic = self._column_values(text, r"Basic seasonal charge", money, 1)[0]
+                        fixed = RateComponent("fixed", "Basic Seasonal Charge", basic, "$/season")
+                    else:
+                        basic = self._column_values(text, r"Basic charge per meter location \(February to", money + r"/month\b", 1)[0]
+                        if "closed to new customers" not in text:
+                            raise ValueError("Missing interruptible-rate availability restriction")
+                        fixed = RateComponent("fixed", "Basic Charge per Meter Location", basic, "$/meter location/month")
+                    components = [fixed, RateComponent("energy", "Energy Charge", round(energy / 100.0, 6), "$/kWh")]
+                    for component in components:
+                        component.season = "pumping"
+                        component.season_months = "2,3,4,5,6,7,8,9,10"
+                if any(component.charge_value is None or component.charge_value <= 0
+                       for component in components if not (component.component_type == "demand" and component.tier_number == 1)):
+                    raise ValueError("Invalid charge values")
+            except ValueError as exc:
+                self.logger.warning("SaskPower %s: %s", code, exc)
+                continue
+            detail = f"PDF page {page.page_number}; Farm Rate {code}"
+            for component in components:
+                component.source_url = source_url
+                component.source_detail = detail
+            eligibility = re.sub(r"\s+", " ", text.split("Rate Code", 1)[0]).strip()
+            if code == "E41":
+                eligibility += " Closed to new customers."
+            records.append(TariffRecord(
+                utility_name="SaskPower", province="SK", utility_type="electricity",
+                tariff_name=f"Farm {name} (Rate {code})", tariff_code=code,
+                customer_class="other", sub_class="farm", rate_structure=structure,
+                effective_date=effective_date, source_url=source_url, source_page=detail,
+                eligibility=eligibility, notes="Minimum bill and availability: " +
+                re.sub(r"\s+", " ", text.split("MINIMUM BILL", 1)[1]).strip(), components=components,
+            ))
         return records
 
     def _parse_supplied_services(

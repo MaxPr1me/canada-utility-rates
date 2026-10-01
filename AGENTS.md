@@ -18,7 +18,7 @@ It works in three stages:
 
 GitHub Actions schedules a monthly scrape. Deployment and durable history across
 cloud runs still need reliability work; see the roadmap in [README.md](README.md).
-The latest export has 64 live tariffs and 480 estimates. Registry coverage is not
+The latest export has 75 live tariffs and 480 estimates. Registry coverage is not
 the same as live coverage.
 
 ---
@@ -425,9 +425,9 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 274 tests across 8 test modules, including `test_phase5_hardening` for
+There are 283 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
-The two SaskPower JSON fixtures in `tests/fixtures/` hold official PDF-text excerpts,
+The four SaskPower JSON fixtures in `tests/fixtures/` hold official PDF-text excerpts,
 source URLs and page numbers for repeatable parser tests.
 
 If everything passes, you'll see green output. If something fails, it will show you exactly what went wrong and where.
@@ -471,5 +471,5 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - Ontario updates start with the OEB common-rate page, then each distributor's approved tariff. Alberta wires, default retail, AESO, gas, and northern sources must remain separate and preserve their published classes, communities, tiers, and units.
 - Test comparison locally with `python -m http.server --directory site 8000`: add two cards, open **Compare**, remove/replace either, and check the mobile horizontal table. It never calculates a bill total.
 - Every successful stored scrape appends `historical_snapshots`. Canonical hashes ignore component ordering but change for values, units, tiers, dates, or structure; old effective-date versions are never deleted.
-- The October 1 SaskPower batches parse 26 live tariffs, including all ten supplied-transformation codes and 15 customer-owned variants. Irrigation uses seasonal horsepower charges; unmetered service keeps its published watt-block/equipment units. Farm, oil-field, lighting, reseller, renewable-access and remaining residential variants are still gaps; see [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).
+- The October 1 SaskPower batches parse 37 live tariffs: residential, ten supplied-transformation codes, 15 customer-owned variants, three farm classes and eight oil-field classes. Preserve seasonal, horsepower and per-meter/equipment units and closed-to-new eligibility. Lighting, reseller, renewable-access and remaining residential variants are still gaps; see [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).
 - Completing a utility means auditing every standard published class, not just replacing its existing seed values. A complete class can stay live when another class fails, but never stamp a mixed live/seed list as entirely live.

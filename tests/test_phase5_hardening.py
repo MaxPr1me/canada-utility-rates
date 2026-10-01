@@ -138,22 +138,24 @@ def test_saskpower_classes_keep_components_and_history_through_export(tmp_path, 
     scraper = SaskPowerScraper()
     monkeypatch.setattr(scraper, "now_iso", lambda: "2026-10-01T00:00:00+00:00")
     records = []
-    for name in ("supplied", "customer_owned"):
-        fixture_path = Path(__file__).parent / "fixtures" / f"saskpower_{name}_transformation.json"
+    for name in ("supplied", "customer_owned", "farm", "oilfield"):
+        suffix = "_transformation" if name in {"supplied", "customer_owned"} else ""
+        fixture_path = Path(__file__).parent / "fixtures" / f"saskpower_{name}{suffix}.json"
         document = json.loads(fixture_path.read_text(encoding="utf-8"))
         pages = [DocumentPage(**page) for page in document["pages"]]
+        parse = scraper._parse_farm_rates if name == "farm" else scraper._parse_transformation
         records.extend(scraper.mark_live_parsed(
-            scraper._parse_transformation(pages, document["source_url"]),
+            parse(pages, document["source_url"]),
             source_url=document["source_url"],
         ))
-    assert len(records) == 25
+    assert len(records) == 36
     records[:2] = [replace(record, tariff_code=None) for record in records[:2]]
     connection = database()
     for run_id in (1, 2):
-        assert store_results(records, run_id, connection) == 25
-    assert connection.execute("SELECT count(*) FROM tariffs").fetchone()[0] == 25
-    assert connection.execute("SELECT count(*) FROM historical_snapshots").fetchone()[0] == 50
-    assert diff_runs(connection, 1, 2)["summary"]["unchanged"] == 25
+        assert store_results(records, run_id, connection) == 36
+    assert connection.execute("SELECT count(*) FROM tariffs").fetchone()[0] == 36
+    assert connection.execute("SELECT count(*) FROM historical_snapshots").fetchone()[0] == 72
+    assert diff_runs(connection, 1, 2)["summary"]["unchanged"] == 36
     component_counts = dict(connection.execute(
         "SELECT tariffs.name, count(rate_components.id) FROM tariffs "
         "JOIN rate_components ON rate_components.tariff_id = tariffs.id GROUP BY tariffs.id"
@@ -169,7 +171,7 @@ def test_saskpower_classes_keep_components_and_history_through_export(tmp_path, 
     monkeypatch.setattr(export_json, "SITE_DATA_DIR", tmp_path / "site")
     export_json.export_all()
     exported = json.loads((tmp_path / "site" / "rates.json").read_text(encoding="utf-8"))
-    assert len(exported) == 25
+    assert len(exported) == 36
     assert all(record["provenance"] == "live" for record in exported)
     assert {record["name"]: len(record["components"]) for record in exported} == component_counts
     assert all(component["source_url"] and component["source_detail"] for record in exported for component in record["components"])

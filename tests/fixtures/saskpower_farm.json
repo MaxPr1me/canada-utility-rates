@@ -1,0 +1,19 @@
+{
+  "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-farm.pdf",
+  "retrieved_on": "2026-10-01",
+  "description": "Official PDF rate-table and eligibility excerpts; original page numbers retained.",
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "FARM RATES\nSTANDARD RATE\nThis rate is for farms with normal household and agricultural use, served through SaskPower - supplied transformation up to and including 3000 kilovolt amperes (kVA).\nRate Code* E34\nEffective February 1, 2026\nBasic monthly charge $48.02\nDemand Charge First 50 kVA/month $0\nBalance $/kVA $15.727\nEnergy Charge First 16,000 kWh/month (\u00a2/kWh) 13.852\u00a2\nBalance (\u00a2/kWh) 5.820\u00a2\nMINIMUM BILL The basic monthly charge plus $5.059/kVA of the maximum demand over 50 kVA\nregistered in the defined billing periods between May 1st to October 31st and\nNovember 1st to April 30th. The month containing the highest registered demand\nwithin a defined billing period will be used to calculate the minimum bill for the\nremainder of that period. LOADS ABOVE 3,000 KVA\nFor loads in excess of 3,000 kVA, a different rate structure will apply. Please see\nCustomer-Owned Transformation - Power Standard Rates."
+    },
+    {
+      "page_number": 2,
+      "text": "FARM RATES\nIRRIGATION RATE\nThis rate is for farm irrigation loads served through SaskPower-supplied transformation for the annual pumping season between February 1 and Oct. 31.\nRate Code* E19\nEffective February 1, 2026\nBasic seasonal charge $659.83\nEnergy charge (\u00a2/kWh) 9.724\u00a2\nMINIMUM BILL\nThe basic seasonal charge. LOADS ABOVE 3,000 KVA\nFor loads in excess of 3,000 kVA, a different rate structure will apply. Please see\nCustomer-Owned Transformation - Power Standard Rates."
+    },
+    {
+      "page_number": 3,
+      "text": "FARM RATES\nIRRIGATION (INTERRUPTIBLE) RATE This rate is for farm irrigation main pumping stations requiring in excess of 1,000 kilovolt\namperes (kVA) served on an interruptible basis through customer-owned transformation, and for related booster pumps and pivot systems less than 1,000 kVA\nthat will be inoperable as a consequence of an interruption to the main pumping station. The annual irrigation pumping season is from February 1 to Oct. 31.\nRate Code* E41\nEffective February 1, 2026 (Over 1,000 kVA)\nBasic charge per meter location (February to $1,244.10/month\nOctober) Energy charge (\u00a2/kWh) 8.331\u00a2\nMINIMUM BILL\nThe basic charge.\nAVAILABILITY Irrigation (Interruptible) rates are closed to new customers, effective July 1, 1997."
+    }
+  ]
+}

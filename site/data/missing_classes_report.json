@@ -105,10 +105,11 @@
     "classes_present": [
       "commercial",
       "industrial",
+      "other",
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "SaskPower-Supplied Non-Farm Irrigation (Rate E37)",
+      "Power Service (Demand)",
       "Customer-Owned Standard Service - Urban, 25kV & less (Rate E07)",
       "Customer-Owned Standard Service - Rural, 25kV & less (Rate E08)",
       "Customer-Owned Standard Service - 72kV (Rate E10)",
@@ -118,7 +119,13 @@
       "Customer-Owned Power Standard Service - 100kV & above (Rate E24)",
       "Customer-Owned Capacity Reservation Service - 25kV (Rate N22)",
       "Customer-Owned Capacity Reservation Service - 72kV (Rate N23)",
-      "Customer-Owned Capacity Reservation Service - 100kV & above (Rate N24)"
+      "Customer-Owned Capacity Reservation Service - 100kV & above (Rate N24)",
+      "SaskPower-Supplied Non-Farm Irrigation (Rate E37)",
+      "Oil Field SaskPower-Supplied Standard Service (Rate E43)",
+      "Oil Field Customer-Owned Standard Service (Rate E44)",
+      "Oil Field High-Voltage Service - 25kV (Rate E46)",
+      "Oil Field High-Voltage Service - 72kV (Rate E47)",
+      "Oil Field High-Voltage Service - 100kV & Above (Rate E48)"
     ]
   },
   {

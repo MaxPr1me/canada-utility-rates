@@ -487,12 +487,90 @@ class TestSaskPowerUpdated:
         assert not codes.intersection({"E22", "E23", "E24"})
         assert {"E82", "E83", "E84", "N22", "N23", "N24"} <= codes
 
-    def test_transformation_fixture_sources_are_registered(self, transformation_documents):
+    def test_transformation_fixture_sources_are_registered(self, transformation_documents, farm_oilfield_documents):
         from scrapers.registry import get_utility
 
         entry = get_utility("SaskPower")
         registered = {source["url"] for source in entry["sources"]}
-        assert {document["source_url"] for document in transformation_documents.values()} <= registered
+        documents = list(transformation_documents.values()) + list(farm_oilfield_documents.values())
+        assert {document["source_url"] for document in documents} <= registered
+
+    @pytest.fixture
+    def farm_oilfield_documents(self):
+        import json
+        from pathlib import Path
+
+        return {
+            name: json.loads((Path(__file__).parent / "fixtures" / f"saskpower_{name}.json").read_text(encoding="utf-8"))
+            for name in ("farm", "oilfield")
+        }
+
+    def test_farm_seasonal_and_interruptible_schedules(self, farm_oilfield_documents):
+        records = self._scrape_transformation_document(farm_oilfield_documents["farm"])
+        live = {record.tariff_code: record for record in records if "live_parsed" in (record.notes or "")}
+        assert set(live) == {"E34", "E19", "E41"}
+        standard = live["E34"]
+        assert standard.customer_class == "other" and standard.sub_class == "farm"
+        assert standard.rate_structure == "mixed"
+        assert [(component.charge_value, component.charge_unit) for component in standard.components] == [
+            (48.02, "$/month"), (0, "$/kVA"), (15.727, "$/kVA"), (0.13852, "$/kWh"), (0.0582, "$/kWh"),
+        ]
+        assert standard.components[3].tier_threshold == 16000
+        assert live["E19"].components[0].charge_value == 659.83
+        assert live["E19"].components[0].charge_unit == "$/season"
+        interruptible = live["E41"]
+        assert interruptible.effective_date == "2026-02-01"
+        assert interruptible.components[0].charge_value == 1244.10
+        assert interruptible.components[0].charge_unit == "$/meter location/month"
+        assert interruptible.components[1].charge_value == 0.08331
+        assert "closed to new customers" in interruptible.eligibility.lower()
+        assert "1997" in interruptible.notes
+        assert all(component.season_months == "2,3,4,5,6,7,8,9,10" for component in interruptible.components)
+        assert all(record.demand_min_kw is None for record in live.values())
+
+    def test_oilfield_metering_voltage_and_tou_schedules(self, farm_oilfield_documents):
+        records = self._scrape_transformation_document(farm_oilfield_documents["oilfield"])
+        live = {record.tariff_code: record for record in records if "live_parsed" in (record.notes or "")}
+        assert set(live) == {"E43", "E44", "E86", "E87", "E88", "E46", "E47", "E48"}
+        assert live["E43"].components[0].charge_unit == "$/metering point/month"
+        assert live["E43"].components[1].charge_value == 18.490
+        assert live["E44"].components[1].charge_value == 17.763
+        assert "60 per cent" in live["E44"].notes
+        assert "100kV & Above" in live["E48"].eligibility
+        assert live["E48"].components[2].charge_value == 0.0626
+        energy = [component for component in live["E86"].components if component.component_type == "energy"]
+        assert [(component.tou_period, component.charge_value) for component in energy] == [("on-peak", 0.0707), ("off-peak", 0.0607)]
+        assert "statutory holidays" in energy[0].tou_hours
+        assert all(record.effective_date == "2026-02-01" for record in live.values())
+        assert all(component.source_url == farm_oilfield_documents["oilfield"]["source_url"] for record in live.values() for component in record.components)
+
+    @pytest.mark.parametrize(("family", "page_number", "old", "new", "rejected"), [
+        ("farm", 1, "16,000 kWh/month", "16,000 kVA/month", {"E34"}),
+        ("farm", 2, "Basic seasonal charge", "Basic monthly charge", {"E19"}),
+        ("farm", 3, "$1,244.10/month", "$1,244.10/season", {"E41"}),
+        ("farm", 3, "Effective February 1, 2026", "Effective February 1, 2027", {"E41"}),
+        ("oilfield", 1, "per metering point", "per season", {"E43"}),
+        ("oilfield", 4, "ON-PEAK ENERGY CONSUMPTION", "Missing on-peak hours", {"E86", "E87", "E88"}),
+    ])
+    def test_farm_oilfield_failures_are_class_specific(self, farm_oilfield_documents, family, page_number, old, new, rejected):
+        document = farm_oilfield_documents[family]
+        original = self._scrape_transformation_document(document)
+        expected = {record.tariff_code for record in original if "live_parsed" in (record.notes or "")}
+        assert expected
+        page = next(page for page in document["pages"] if page["page_number"] == page_number)
+        page["text"] = page["text"].replace(old, new)
+        changed = self._scrape_transformation_document(document)
+        assert {record.tariff_code for record in changed if "live_parsed" in (record.notes or "")} == expected - rejected
+
+    def test_farm_and_oilfield_values_follow_source_changes(self, farm_oilfield_documents):
+        farm = farm_oilfield_documents["farm"]
+        farm["pages"][0]["text"] = farm["pages"][0]["text"].replace("13.852", "14.200")
+        record = next(record for record in self._scrape_transformation_document(farm) if record.tariff_code == "E34")
+        assert record.components[3].charge_value == 0.142
+        oilfield = farm_oilfield_documents["oilfield"]
+        oilfield["pages"][-1]["text"] = oilfield["pages"][-1]["text"].replace("6.260", "6.310")
+        record = next(record for record in self._scrape_transformation_document(oilfield) if record.tariff_code == "E48")
+        assert record.components[2].charge_value == 0.0631
 
     @pytest.mark.parametrize("unit", ["$/kWh", "\u00a2/kW"])
     def test_residential_rejects_changed_energy_unit(self, unit):
