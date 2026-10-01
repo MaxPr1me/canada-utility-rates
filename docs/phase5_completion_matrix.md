@@ -1,8 +1,8 @@
 # Phase 5 Completion Matrix
 
 **Updated:** 2026-10-01. Scope: all 84 registered utilities, not every utility
-in the broader Canadian inventory. The export has 555 tariffs / 3,638 components /
-**75 live / 480 seed**. The export combines October 1 monthly CI observations with
+in the broader Canadian inventory. The export has 559 tariffs / 3,649 components /
+**79 live / 480 seed**. The export combines October 1 monthly CI observations with
 newer local SaskPower parser results. No gas or Ontario tariffs are live in this export.
 Counts include retained non-building reference records, not only building tariffs.
 
@@ -17,8 +17,9 @@ reference; do not expand those classes just to fill the entire catalogue.
 *verification path* checks known seed values but does not extract replacements;
 *seed in latest export* means no live output was observed, not proof of a current outage.
 *Complete* requires an audit and implementation of building-relevant standard classes
-and components, with explicit non-building/special/unavailable exclusions. No utility
-is marked building-coverage-complete here.
+and components, with explicit non-building/special/unavailable exclusions. SaskPower's
+audited published building-service schedules are implemented as of October 1; that
+does not claim full-catalogue, tax-inclusive billing or building-code compliance.
 
 Only SaskPower currently has saved source-derived fixtures in `tests/fixtures/`.
 Other tests include inline synthetic text and seed checks. A shared verifier test,
@@ -37,7 +38,7 @@ See the [gap report](live_parser_gap_report.md) for detailed findings and
 | FortisBC Electric | 0 / Oct 1 | Known-value verification for two seed classes | Current utility/BCUC building-service sources and extraction |
 | Hydro-Quebec | 3 / Oct 1 | PDF: D/G/M | Remaining building-relevant products and source-derived fixtures |
 | Manitoba Hydro | 8 / Oct 1 | HTML: residential and seven GS/voltage variants | Building-service audit; preserve kVA and seasonal rules |
-| SaskPower | **37 / Oct 1** | Building-service plus completed non-building reference records; four fixtures | Residential variants and applicable building-service/renewable-access terms |
+| SaskPower | **41 / Oct 1** | **Audited building schedules implemented**; six source fixtures; total includes reference records | Monitor current sources; no remaining identified building-schedule parser gap in the audited catalogue |
 | NB Power | 3 / Oct 1 | HTML: residential, GS1, small industrial | Remaining building-service schedules and fixtures |
 | Nova Scotia Power | 4 / Oct 1 | HTML: Domestic and Rates 10/11/12 | Building-relevant products and source dates; industrial process-only rates deferred |
 | Maritime Electric | 10 / Oct 1 | IRAC PDF class-section extraction | Building-service audit and source-derived success/failure fixtures |
@@ -46,11 +47,14 @@ See the [gap report](live_parser_gap_report.md) for detailed findings and
 
 ### SaskPower Delivered Batch
 
-Source tables are effective February 1, 2026; the October 1 source run returned
-residential plus the following 36 supplied/customer-owned, farm and oil-field records:
+Source tables are effective February 1, 2026; the October 1 source run returned 41
+records covering the building schedules below plus retained non-building references:
 
 | Schedule | Supported codes | Preserved distinctions |
 |---|---|---|
+| Standard residential | E01/E03 | Identical city/rural columns verified before retaining one stable record |
+| Bulk-metered residential | E01/E03 application | Closed to new customers; fixed charges per apartment unit or trailer stall |
+| Diesel residential | E04 | First-650-kWh and balance tiers, isolated from the standard page |
 | Supplied standard | E05/E06 | Urban/rural energy blocks and free first 50 kVA demand |
 | Supplied small commercial | E75/E76 | Urban/rural thresholds, tiered energy and kVA demand |
 | Customer-owned standard | E07/E08/E10/E12 | Voltage columns; E10/E12 closed to new customers |
@@ -58,6 +62,7 @@ residential plus the following 36 supplied/customer-owned, farm and oil-field re
 | Power time-of-use | E82/E83/E84 | Three voltages, on/off-peak hours and demand conditions |
 | Power standard | E22/E23/E24 | Three voltages and demand-ratchet rules |
 | Capacity reservation | N22/N23/N24 | Reservation eligibility, voltages and 23-month demand rule |
+| Renewable Access Service | R23/R24 | Self-generation eligibility, two voltages and required billing-demand continuation |
 | Non-farm irrigation | E37 | February-October pumping season, seasonal fixed and horsepower charges |
 | Unmetered services | E15/E16/E17/E18 | Native watt-block, equipment and installed-capacity units; independent minimum-bill conditions |
 | General service diesel | E35 | Monthly fixed charge and first-650-kWh/balance energy tiers |
@@ -69,8 +74,11 @@ Tests require complete columns, source dates/units and continuation pages, and
 isolate schedule failures. Targeted storage preserved all prior snapshots and unchanged
 non-SaskPower records. The two old generic commercial seeds remain labelled estimates
 in storage. Farm/oil-field, irrigation and other non-building additions are retained
-reference work, not the active queue. Thirty-seven live records is not a count of
-37 completed building tariff classes; building coverage still needs review.
+reference work, not the active queue. Forty-one live records is not a count of
+41 building tariff classes. The audit covers the published net charges and billing
+conditions in the linked building-service schedules; excluded taxes/surcharges and
+bill calculations are not claimed. Standard residential identity and historical
+snapshots remain intact after the expanded coverage.
 
 ## Ontario Registry Inventory
 
@@ -207,7 +215,7 @@ applicability needs parsing; do not assume the old combined column is a complete
 
 ## Next Batches and Acceptance
 
-1. SaskPower residential/building-service gaps, then Yukon Energy, NS building-service and FortisBC Electric.
+1. Yukon Energy residential/general service and current riders, then NS building-service and FortisBC Electric; maintain the implemented SaskPower scope.
 2. Territorial/provincial depth and building-relevant class audits of existing live utilities.
 3. Building-service tariffs at nine gas utilities, Alberta electricity, then the Ontario campaign.
 4. Separate operational track: browser-enabled source health, meaningful provenance counts,

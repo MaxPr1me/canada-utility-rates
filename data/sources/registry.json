@@ -304,6 +304,12 @@
           "is_primary": true
         },
         {
+          "url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
+          "source_type": "pdf",
+          "description": "Residential standard E01/E03, closed-to-new bulk-metered application, and diesel E04",
+          "is_primary": false
+        },
+        {
           "url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-saskpowersuppliedtransformation.pdf",
           "source_type": "pdf",
           "description": "SaskPower-supplied transformation: E05/E06, E75/E76, E37 irrigation, E15-E18 unmetered and E35 diesel",
@@ -313,6 +319,12 @@
           "url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation.pdf",
           "source_type": "pdf",
           "description": "Customer-owned transformation: standard, small commercial, power TOU, power standard and capacity reservation",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation-ras.pdf",
+          "source_type": "pdf",
+          "description": "Renewable Access Service R23/R24: self-generation eligibility, voltage-specific charges and billing-demand conditions",
           "is_primary": false
         },
         {
@@ -328,7 +340,7 @@
           "is_primary": false
         }
       ],
-      "notes": "SaskPower is a provincial Crown corporation regulated by the Saskatchewan Rate Review Panel. On 2026-10-01, live parsing returned 37 tariffs, including completed farm/oil-field and other non-building reference classes. Active work targets residential variants and building-relevant general-service/renewable-access terms. Non-building processes, irrigation, standalone lighting and wholesale/reseller coverage are not completion requirements."
+      "notes": "SaskPower is a provincial Crown corporation regulated by the Saskatchewan Rate Review Panel. The October 1 building-schedule audit is implemented: standard/bulk-metered/diesel residential, supplied/customer-owned general service, power/TOU/capacity and R23/R24 renewable access. The 41 live records include completed non-building reference classes. Partial status reflects the broader catalogue; standalone lighting and reseller schedules are outside the building completion scope. Published net rates exclude applicable taxes and surcharges."
     },
     {
       "name": "NB Power",

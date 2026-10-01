@@ -19,11 +19,12 @@ from __future__ import annotations
 
 import logging
 import re
+from dataclasses import replace
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
 from scrapers.utils.parsing import (
-    parse_html, detect_js_rendered, find_pdf_links, extract_pdf_text,
+    parse_html, detect_js_rendered, find_pdf_links,
     extract_effective_date, extract_pdf_pages, DocumentPage,
 )
 
@@ -106,17 +107,16 @@ class SaskPowerScraper(BaseScraper):
         for pdf_url in dict.fromkeys(pdf_links):
             try:
                 if "residential" in pdf_url.lower():
-                    record = self._parse_residential_pdf(
-                        extract_pdf_text(self.fetch_bytes(pdf_url)), pdf_url,
+                    records = self._parse_residential_schedules(
+                        extract_pdf_pages(self.fetch_bytes(pdf_url)), pdf_url,
                     )
-                    if record:
-                        live.extend(self.mark_live_parsed([record], source_url=pdf_url))
+                    live.extend(self.mark_live_parsed(records, source_url=pdf_url))
                 elif "servicerates-farm.pdf" in pdf_url.lower():
                     records = self._parse_farm_rates(extract_pdf_pages(self.fetch_bytes(pdf_url)), pdf_url)
                     live.extend(self.mark_live_parsed(records, source_url=pdf_url))
                 elif any(filename in pdf_url.lower() for filename in (
                     "saskpowersuppliedtransformation.pdf", "customerownedtransformation.pdf",
-                    "servicerates-oilfield.pdf",
+                    "servicerates-oilfield.pdf", "customerownedtransformation-ras.pdf",
                 )):
                     records = self._parse_transformation(
                         extract_pdf_pages(self.fetch_bytes(pdf_url)), pdf_url,
@@ -137,27 +137,126 @@ class SaskPowerScraper(BaseScraper):
         return live + self.mark_fallback(fallback) if fallback else live
 
     def _parse_residential_pdf(self, text: str, source_url: str) -> Optional[TariffRecord]:
-        basic = re.search(r"Basic monthly charge\s*\$\s*([\d,]+(?:\.\d+)?)", text, re.IGNORECASE)
-        energy = re.search(
-            r"Energy charge\s*\([^\d\w\s/$+-]{1,2}/kWh\)\s*([\d.]+)\s*[^\d\w\s/$+-]{1,2}",
-            text, re.IGNORECASE,
-        )
-        effective_date = extract_effective_date(text)
-        if not basic or not energy or not effective_date or effective_date > self.now_iso()[:10]:
+        """Keep the combined E01/E03 identity only while both source columns match."""
+        section = text.split("RATE APPLICATION FOR BULK METERED ACCOUNTS", 1)[0]
+        if not all(label in section for label in ("RESIDENTIAL RATES", "STANDARD RATE", "MINIMUM BILL")):
+            return None
+        if not re.search(r"Rate Codes\*?\s+E01\s+E03\s+Effective\b", section):
+            return None
+        dates = re.findall(r"\bEffective\s+[A-Z][a-z]+\s+\d{1,2},\s*\d{4}\b", section)
+        effective_date = extract_effective_date(dates[0]) if len(dates) == 1 else None
+        if not effective_date or effective_date > self.now_iso()[:10]:
+            return None
+        if not re.search(r"\(City, Town, and Village\)\s*\(Rural\)", section):
+            return None
+        try:
+            basic = self._column_values(section, r"Basic monthly charge", r"\$\s*([\d,]+(?:\.\d+)?)", 2)
+            energy = self._column_values(
+                section, r"Energy charge\s*\([^\d\w\s/$+-]{1,2}/kWh\)",
+                r"(-?[\d,]+(?:\.\d+)?)\s*[^\d\w\s/$+-]{1,2}(?=\s|$)", 2,
+            )
+            if basic[0] != basic[1] or energy[0] != energy[1] or min(basic + energy) <= 0:
+                raise ValueError("Divergent or invalid standard residential columns")
+        except ValueError as exc:
+            self.logger.warning("SaskPower residential E01/E03: %s", exc)
             return None
         return TariffRecord(
             utility_name="SaskPower", province="SK", utility_type="electricity",
-            tariff_name="Residential Service", customer_class="residential",
+            tariff_name="Residential Service", tariff_code="E01/E03", customer_class="residential",
+            sub_class="city, town, village and rural",
             rate_structure="flat", effective_date=effective_date,
             source_url=source_url, source_page="Residential standard rate table", confidence="high",
-            notes="SaskPower flat residential rate (Standard Rate E01/E03).",
+            eligibility=re.sub(r"\s+", " ", section.split("Rate Codes", 1)[0]).strip(),
+            notes="E01/E03 have identical charges. Minimum bill: the basic monthly charge. Published rates exclude applicable taxes and surcharges.",
             components=[
-                RateComponent("fixed", "Basic Charge", float(basic.group(1).replace(",", "")), "$/month",
+                RateComponent("fixed", "Basic Charge", basic[0], "$/month",
                               source_detail="Residential standard rate table"),
-                RateComponent("energy", "Energy Charge", round(float(energy.group(1)) / 100.0, 6), "$/kWh",
+                RateComponent("energy", "Energy Charge", round(energy[0] / 100.0, 6), "$/kWh",
                               source_detail="Residential standard rate table"),
             ],
         )
+
+    def _parse_residential_schedules(
+        self, pages: list[DocumentPage], source_url: str,
+    ) -> list[TariffRecord]:
+        records: list[TariffRecord] = []
+        money = r"\$\s*([\d,]+(?:\.\d+)?)"
+        cents = r"(-?[\d,]+(?:\.\d+)?)\s*[^\d\w\s/$+-]{1,2}(?=\s|$)"
+        cent_unit = r"\([^\d\w\s/$+-]{1,2}/kWh\)"
+        for page in pages:
+            text = page.text
+            if "RESIDENTIAL RATES" not in text:
+                continue
+            if "STANDARD RATE" in text:
+                standard = self._parse_residential_pdf(text, source_url)
+                if not standard:
+                    self.logger.warning("Incomplete SaskPower standard residential page %s", page.page_number)
+                    continue
+                detail = f"PDF page {page.page_number}; Residential Standard Rates E01/E03"
+                standard.source_page = detail
+                for component in standard.components:
+                    component.source_detail = detail
+                records.append(standard)
+                bulk_section = text.split("RATE APPLICATION FOR BULK METERED ACCOUNTS", 1)
+                if len(bulk_section) != 2:
+                    continue
+                bulk_text = re.sub(r"\s+", " ", bulk_section[1]).strip()
+                if not all(label in bulk_text for label in (
+                    "basic monthly charge", "multiplied by the number of units in the apartment block",
+                    "stalls in the trailer park", "closed to new customers",
+                )):
+                    self.logger.warning("Incomplete SaskPower bulk-metered residential applicability")
+                    continue
+                bulk_detail = f"PDF page {page.page_number}; Rate application for bulk metered accounts (E01/E03)"
+                records.append(replace(
+                    standard, tariff_name="Residential Bulk-Metered Service (Rates E01/E03)",
+                    sub_class="bulk metered", eligibility=bulk_text,
+                    source_page=bulk_detail,
+                    notes="Fixed charge is per apartment unit or trailer-park stall, not per account. Minimum bill is the applicable basic charge. Published rates exclude applicable taxes and surcharges.",
+                    components=[
+                        replace(standard.components[0], component_name="Basic Charge per Residential Unit or Trailer Stall",
+                                charge_unit="$/unit/month", source_detail=bulk_detail),
+                        replace(standard.components[1], source_detail=bulk_detail),
+                    ],
+                ))
+            elif "DIESEL RATE" in text:
+                try:
+                    if not re.search(r"Rate Code\*?\s+E04\s+Effective\b", text) or "MINIMUM BILL" not in text:
+                        raise ValueError("Missing diesel rate code or minimum-bill context")
+                    dates = re.findall(r"\bEffective\s+[A-Z][a-z]+\s+\d{1,2},\s*\d{4}\b", text)
+                    effective_date = extract_effective_date(dates[0]) if len(dates) == 1 else None
+                    if not effective_date or effective_date > self.now_iso()[:10]:
+                        raise ValueError("Missing, ambiguous or future diesel effective date")
+                    basic = self._column_values(text, r"Basic monthly charge", money, 1)[0]
+                    first_row = re.search(r"Energy Charge First ([\d,]+) kWh/month", text)
+                    if not first_row:
+                        raise ValueError("Missing diesel energy threshold")
+                    threshold = float(first_row.group(1).replace(",", ""))
+                    first = self._column_values(text, r"Energy Charge First [\d,]+ kWh/month\s*" + cent_unit, cents, 1)[0]
+                    balance = self._column_values(text, r"Balance\s*" + cent_unit, cents, 1)[0]
+                    if min(basic, threshold, first, balance) <= 0:
+                        raise ValueError("Invalid diesel charges or energy threshold")
+                except ValueError as exc:
+                    self.logger.warning("SaskPower residential E04: %s", exc)
+                    continue
+                detail = f"PDF page {page.page_number}; Residential Diesel Rate E04"
+                components = [
+                    RateComponent("fixed", "Basic Charge", basic, "$/month", source_detail=detail),
+                    RateComponent("energy", "Energy Charge - First Block", round(first / 100.0, 6), "$/kWh",
+                                  tier_number=1, tier_threshold=threshold, tier_unit="kWh", source_detail=detail),
+                    RateComponent("energy", "Energy Charge - Balance", round(balance / 100.0, 6), "$/kWh",
+                                  tier_number=2, tier_threshold=threshold, tier_unit="kWh", source_detail=detail),
+                ]
+                records.append(TariffRecord(
+                    utility_name="SaskPower", province="SK", utility_type="electricity",
+                    tariff_name="Residential Diesel Service (Rate E04)", tariff_code="E04", customer_class="residential",
+                    sub_class="diesel", rate_structure="tiered", effective_date=effective_date,
+                    source_url=source_url, source_page=detail,
+                    eligibility=re.sub(r"\s+", " ", text.split("Rate Code", 1)[0]).strip(),
+                    notes="Minimum bill: the basic monthly charge. Published rates exclude applicable taxes and surcharges.",
+                    components=components,
+                ))
+        return records
 
     @staticmethod
     def _column_values(text: str, label: str, value_pattern: str, count: int) -> list[float]:
@@ -183,12 +282,13 @@ class SaskPowerScraper(BaseScraper):
             ("E82", "E83", "E84"): ("Customer-Owned", "Power Time-of-Use", "tou", "industrial"),
             ("E22", "E23", "E24"): ("Customer-Owned", "Power Standard Service", "flat", "industrial"),
             ("N22", "N23", "N24"): ("Customer-Owned", "Capacity Reservation Service", "flat", "industrial"),
+            ("R23", "R24"): ("Customer-Owned", "Renewable Access Service", "flat", "industrial"),
             ("E43",): ("Oil Field", "SaskPower-Supplied Standard Service", "flat", "industrial"),
             ("E44",): ("Oil Field", "Customer-Owned Standard Service", "flat", "industrial"),
             ("E86", "E87", "E88"): ("Oil Field", "Power Time-of-Use", "tou", "industrial"),
             ("E46", "E47", "E48"): ("Oil Field", "High-Voltage Service", "flat", "industrial"),
         }
-        code_pattern = r"Rate Codes?\*?\s+([EN]\d{2}(?:\s+[EN]\d{2})*)\b"
+        code_pattern = r"Rate Codes?\*?\s+([ENR]\d{2}(?:\s+[ENR]\d{2})*)\b"
         for page_index, page in enumerate(pages):
             code_match = re.search(code_pattern, page.text)
             if not code_match:
@@ -209,6 +309,11 @@ class SaskPowerScraper(BaseScraper):
             try:
                 if owner.upper() not in page.text or "MINIMUM BILL" not in text:
                     raise ValueError("Schedule owner or minimum-bill conditions missing")
+                if codes == ("R23", "R24") and (
+                    "RENEWABLE ACCESS SERVICE" not in page.text or "BILLING DEMAND" not in text
+                    or not re.search(r"preceding\s+\d+\s+months", text)
+                ):
+                    raise ValueError("Missing renewable-access eligibility or billing-demand continuation")
                 effective_header = re.search(r"\bEffective\b(.*?)(?:Supply voltage|Basic monthly charge)", page.text, re.S)
                 dates = re.findall(r"\b[A-Z][a-z]+\s+\d{1,2},\s*\d{4}\b", effective_header.group(1)) if effective_header else []
                 effective_date = extract_effective_date("Effective " + dates[0]) if len(dates) == 1 else None

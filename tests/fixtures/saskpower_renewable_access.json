@@ -1,0 +1,15 @@
+{
+  "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation-ras.pdf",
+  "retrieved_on": "2026-10-01",
+  "description": "Official renewable-access rate table and continuation-page demand rule; original page numbers retained.",
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "CUSTOMER-OWNED\nTRANSFORMATION RATES\nPOWER STANDARD RATE - RENEWABLE ACCESS SERVICE\nThis rate is for individually metered Power Class customers served through customer\nowned transformation and self-generating a portion of their electricity needs using\nrenewable sources as a participant under SaskPower's Renewable Access Service.\nSelf-Generation Sources - Renewable self-generation sources include solar, wind, flare\ngas, biomass, geothermal and hydropower generation. All other sources are considered\nnon-renewable. Rate Codes* R23 R24\nEffective February 1, 2026\nSupply voltage 72kV 100kV & above\nBasic monthly charge $8,151.50 $8,731.50\nDemand Charge Per kVA of billing demand each $18.088 $17.821\nmonth\nEnergy Charge \u00a2/kWh 5.508\u00a2 4.695\u00a2\nMINIMUM BILL\nThe basic monthly charge plus the demand charge.\nRECORDED DEMAND\nThe monthly recorded demand is the maximum kVA demand registered during the\ncurrent month."
+    },
+    {
+      "page_number": 2,
+      "text": "CUSTOMER-OWNED\nTRANSFORMATION RATES\nBILLING DEMAND\nThe monthly billing demand is the monthly recorded demand, but the billing demand shall not be less than 75 per cent of the maximum billing demand in the preceding 11\nmonths."
+    }
+  ]
+}

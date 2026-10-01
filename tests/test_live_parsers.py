@@ -289,23 +289,11 @@ class TestSaskPowerUpdated:
         for r in self.records:
             assert r.effective_date
 
-    def test_live_pdf_parses_residential(self):
-        from scrapers.utilities.saskpower import SaskPowerScraper
-        html = '<body><p>Current rates</p><a href="/media/report-rates-residential.pdf">Residential rate schedule</a></body>'
-        pdf_text = (
-            "RESIDENTIAL RATES STANDARD RATE Effective February 1, 2026 "
-            "Basic monthly charge $31.16 $31.16 "
-            "Energy charge (\u00a2/kWh) 15.476\u00a2 15.476\u00a2"
-        )
-        scraper = SaskPowerScraper()
-        with patch.object(scraper, "fetch_page", return_value=html), \
-             patch.object(scraper, "fetch_bytes", return_value=b"pdf"), \
-             patch("scrapers.utilities.saskpower.extract_pdf_text", return_value=pdf_text):
-            records = scraper._try_live_scrape()
-        assert records is not None
+    def test_live_pdf_parses_residential(self, residential_document):
+        records = self._scrape_transformation_document(residential_document)
         live = [r for r in records if "live_parsed" in (r.notes or "")]
-        assert len(live) == 1
-        res = live[0]
+        assert len(live) == 3
+        res = next(record for record in live if record.tariff_name == "Residential Service")
         assert res.tariff_name == "Residential Service"
         assert res.source_url.endswith("report-rates-residential.pdf")
         energy = [c for c in res.components if c.component_type == "energy"][0]
@@ -333,10 +321,15 @@ class TestSaskPowerUpdated:
             html += '<a href="/report-rates-residential.pdf">Residential Rates</a>'
         html += '</body>'
         scraper = SaskPowerScraper()
+
+        def fetch_pdf(url):
+            if broken_residential and "residential" in url:
+                raise ValueError("Broken PDF")
+            return b"pdf"
+
         with patch.object(scraper, "fetch_page", return_value=html), \
-             patch.object(scraper, "fetch_bytes", return_value=b"pdf"), \
+             patch.object(scraper, "fetch_bytes", side_effect=fetch_pdf), \
              patch.object(scraper, "now_iso", return_value="2026-10-01T00:00:00+00:00"), \
-             patch("scrapers.utilities.saskpower.extract_pdf_text", side_effect=ValueError("Broken PDF")), \
              patch("scrapers.utilities.saskpower.extract_pdf_pages", return_value=pages):
             return scraper.scrape()
 
@@ -403,6 +396,115 @@ class TestSaskPowerUpdated:
         assert {record.tariff_code for record in records if "live_parsed" in (record.notes or "")} == {"E05", "E06", "E75", "E76", "E37", "E15", "E16", "E17", "E18", "E35"}
         residential = next(record for record in records if record.tariff_name == "Residential Service")
         assert residential.confidence == "unverified"
+
+    @pytest.fixture
+    def residential_document(self):
+        import json
+        from pathlib import Path
+
+        fixture = Path(__file__).parent / "fixtures" / "saskpower_residential.json"
+        return json.loads(fixture.read_text(encoding="utf-8"))
+
+    def test_residential_standard_bulk_metered_and_diesel(self, residential_document):
+        records = self._scrape_transformation_document(residential_document)
+        live = [record for record in records if "live_parsed" in (record.notes or "")]
+        assert len(live) == 3
+        standard = next(record for record in live if record.tariff_name == "Residential Service")
+        assert standard.tariff_code == "E01/E03"
+        assert standard.components[0].charge_value == 31.16
+        assert standard.components[1].charge_value == 0.15476
+        bulk = next(record for record in live if record.sub_class == "bulk metered")
+        assert bulk.components[0].charge_value == 31.16
+        assert bulk.components[0].charge_unit == "$/unit/month"
+        assert "closed to new customers" in bulk.eligibility.lower()
+        assert "trailer" in bulk.eligibility.lower()
+        diesel = next(record for record in live if record.tariff_code == "E04")
+        assert diesel.rate_structure == "tiered"
+        assert [(component.charge_value, component.tier_threshold) for component in diesel.components] == [
+            (31.16, None), (0.15476, 650), (0.60416, 650),
+        ]
+        assert all(record.customer_class == "residential" and record.effective_date == "2026-02-01" for record in live)
+        assert all(component.source_url == residential_document["source_url"] and component.source_detail for record in live for component in record.components)
+
+    @pytest.mark.parametrize(("old", "new"), [
+        ("Basic monthly charge $31.16 $31.16", "Basic monthly charge $31.16"),
+        ("15.476\u00a2 15.476\u00a2", "15.476\u00a2 17.000\u00a2"),
+        ("(\u00a2/kWh)", "($/kWh)"),
+        ("Effective February 1, 2026", "Effective February 1, 2027"),
+        ("Rate Codes* E01 E03", "Rate Codes* E03 E01"),
+    ])
+    def test_residential_standard_fails_without_borrowing_diesel_values(self, residential_document, old, new):
+        residential_document["pages"][0]["text"] = residential_document["pages"][0]["text"].replace(old, new)
+        records = self._scrape_transformation_document(residential_document)
+        assert [record.tariff_code for record in records if "live_parsed" in (record.notes or "")] == ["E04"]
+        fallback = next(record for record in records if record.tariff_name == "Residential Service")
+        assert fallback.confidence == "unverified"
+
+    def test_residential_diesel_rejects_incomplete_tiers(self, residential_document):
+        residential_document["pages"][1]["text"] = residential_document["pages"][1]["text"].replace("60.416\u00a2", "unavailable")
+        records = self._scrape_transformation_document(residential_document)
+        live = [record for record in records if "live_parsed" in (record.notes or "")]
+        assert len(live) == 2
+        assert all(record.tariff_code == "E01/E03" for record in live)
+
+    def test_residential_bulk_metering_requires_complete_applicability(self, residential_document):
+        residential_document["pages"][0]["text"] = residential_document["pages"][0]["text"].replace("closed to new customers", "availability not stated")
+        records = self._scrape_transformation_document(residential_document)
+        live = [record for record in records if "live_parsed" in (record.notes or "")]
+        assert {record.sub_class for record in live} == {"city, town, village and rural", "diesel"}
+
+    def test_residential_values_follow_source_changes(self, residential_document):
+        for page in residential_document["pages"]:
+            page["text"] = page["text"].replace("31.16", "32.25").replace("15.476", "16.125")
+        records = self._scrape_transformation_document(residential_document)
+        live = [record for record in records if "live_parsed" in (record.notes or "")]
+        assert len(live) == 3
+        assert all(record.components[0].charge_value == 32.25 and record.components[1].charge_value == 0.16125 for record in live)
+
+    @pytest.fixture
+    def renewable_access_document(self):
+        import json
+        from pathlib import Path
+
+        fixture = Path(__file__).parent / "fixtures" / "saskpower_renewable_access.json"
+        return json.loads(fixture.read_text(encoding="utf-8"))
+
+    def test_renewable_access_voltage_classes(self, renewable_access_document):
+        records = self._scrape_transformation_document(renewable_access_document)
+        live = {record.tariff_code: record for record in records if "live_parsed" in (record.notes or "")}
+        assert set(live) == {"R23", "R24"}
+        expected = {"R23": (8151.50, 18.088, 0.05508), "R24": (8731.50, 17.821, 0.04695)}
+        for code, values in expected.items():
+            record = live[code]
+            assert tuple(component.charge_value for component in record.components) == values
+            assert record.components[1].demand_unit == "kVA"
+            assert record.effective_date == "2026-02-01"
+            assert "Renewable Access Service" in record.eligibility
+            assert "75 per cent" in record.notes and "preceding 11" in record.notes
+            assert all(component.source_url == renewable_access_document["source_url"] for component in record.components)
+        page = renewable_access_document["pages"][0]
+        page["text"] = page["text"].replace("5.508", "5.608")
+        changed = self._scrape_transformation_document(renewable_access_document)
+        updated = next(record for record in changed if record.tariff_code == "R23")
+        assert updated.components[2].charge_value == 0.05608
+
+    @pytest.mark.parametrize(("old", "new"), [
+        ("$18.088 $17.821", "$18.088"),
+        ("72kV 100kV & above", "72kV"),
+        ("Effective February 1, 2026", "Effective February 1, 2027"),
+        ("\u00a2/kWh", "$/kWh"),
+    ])
+    def test_renewable_access_rejects_invalid_table(self, renewable_access_document, old, new):
+        document = renewable_access_document
+        assert any("live_parsed" in (record.notes or "") for record in self._scrape_transformation_document(document))
+        document["pages"][0]["text"] = document["pages"][0]["text"].replace(old, new)
+        records = self._scrape_transformation_document(document)
+        assert not any("live_parsed" in (record.notes or "") for record in records)
+
+    def test_renewable_access_requires_billing_demand_continuation(self, renewable_access_document):
+        renewable_access_document["pages"] = renewable_access_document["pages"][:1]
+        records = self._scrape_transformation_document(renewable_access_document)
+        assert not any("live_parsed" in (record.notes or "") for record in records)
 
     def test_irrigation_diesel_and_unmetered_units(self, transformation_documents):
         records = self._scrape_transformation_document(transformation_documents["supplied"])
@@ -487,12 +589,12 @@ class TestSaskPowerUpdated:
         assert not codes.intersection({"E22", "E23", "E24"})
         assert {"E82", "E83", "E84", "N22", "N23", "N24"} <= codes
 
-    def test_transformation_fixture_sources_are_registered(self, transformation_documents, farm_oilfield_documents):
+    def test_transformation_fixture_sources_are_registered(self, transformation_documents, farm_oilfield_documents, residential_document, renewable_access_document):
         from scrapers.registry import get_utility
 
         entry = get_utility("SaskPower")
         registered = {source["url"] for source in entry["sources"]}
-        documents = list(transformation_documents.values()) + list(farm_oilfield_documents.values())
+        documents = list(transformation_documents.values()) + list(farm_oilfield_documents.values()) + [residential_document, renewable_access_document]
         assert {document["source_url"] for document in documents} <= registered
 
     @pytest.fixture

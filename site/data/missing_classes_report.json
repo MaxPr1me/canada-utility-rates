@@ -125,7 +125,9 @@
       "Oil Field Customer-Owned Standard Service (Rate E44)",
       "Oil Field High-Voltage Service - 25kV (Rate E46)",
       "Oil Field High-Voltage Service - 72kV (Rate E47)",
-      "Oil Field High-Voltage Service - 100kV & Above (Rate E48)"
+      "Oil Field High-Voltage Service - 100kV & Above (Rate E48)",
+      "Customer-Owned Renewable Access Service - 72kV (Rate R23)",
+      "Customer-Owned Renewable Access Service - 100kV & above (Rate R24)"
     ]
   },
   {

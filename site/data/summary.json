@@ -1,8 +1,8 @@
 {
-  "last_updated": "2026-10-01T15:08:54.813650+00:00",
+  "last_updated": "2026-10-01T17:22:47.039958+00:00",
   "total_utilities": 84,
-  "total_tariffs": 555,
-  "total_components": 3638,
+  "total_tariffs": 559,
+  "total_components": 3649,
   "provinces_covered": [
     "AB",
     "BC",
@@ -28,17 +28,17 @@
     "other",
     "residential"
   ],
-  "live_tariffs": 75,
+  "live_tariffs": 79,
   "seed_tariffs": 480,
   "last_scrape_run": {
-    "id": 6,
-    "started_at": "2026-10-01T14:56:45.251428+00:00",
-    "finished_at": "2026-10-01T15:01:29.741101+00:00",
+    "id": 7,
+    "started_at": "2026-10-01T17:21:46.673225+00:00",
+    "finished_at": "2026-10-01T17:22:46.252955+00:00",
     "status": "completed",
-    "utilities_attempted": 83,
-    "utilities_succeeded": 83,
+    "utilities_attempted": 1,
+    "utilities_succeeded": 1,
     "errors": null,
-    "notes": "Imported CI observations from ba908fad05e721e2d908818c95c4a72fd719e3e5; SaskPower excluded to retain the newer local parser results."
+    "notes": null
   },
   "missing_data_count": 0
 }

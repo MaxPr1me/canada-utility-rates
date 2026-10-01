@@ -234,3 +234,4 @@ This prevents broken parsers from silently corrupting data. Changes are classifi
 6. Mutate a fixture value and prove output follows the source; test missing columns, wrong units, future/missing dates, failed fetches and multi-class persistence/export.
 7. Compare the returned code/class set with the building-relevant published catalogue. Document unsupported building classes and non-building exclusions separately; never invent rates to call a utility complete.
 8. Update the README, maintainer guides and coverage/gap reports with actual test and source-check results. Fixture-tested but inaccessible sources remain blocked, not live-verified.
+9. Preserve stable tariff names when adding coverage. Shared published codes can have distinct billing variants (for example, per-account and bulk per-unit service); keep those variants separate. A combined code record is valid only while every published column represented by it agrees.

@@ -117256,7 +117256,7 @@
   {
     "id": 530,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Small Commercial Service - Rural, 25kV & less (Rate E78)",
     "tariff_code": "E78",
     "utility_type": "electricity",
@@ -117283,9 +117283,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3803,
+        "id": 7441,
         "tariff_id": 530,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - First 50 kVA",
         "sub_component": null,
@@ -117309,12 +117309,12 @@
         "source_detail": "PDF pages 3-4; Rate E78 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3804,
+        "id": 7442,
         "tariff_id": 530,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - Balance",
         "sub_component": null,
@@ -117338,12 +117338,12 @@
         "source_detail": "PDF pages 3-4; Rate E78 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3805,
+        "id": 7443,
         "tariff_id": 530,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block",
         "sub_component": null,
@@ -117367,12 +117367,12 @@
         "source_detail": "PDF pages 3-4; Rate E78 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3806,
+        "id": 7444,
         "tariff_id": 530,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - Balance",
         "sub_component": null,
@@ -117396,12 +117396,12 @@
         "source_detail": "PDF pages 3-4; Rate E78 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3802,
+        "id": 7440,
         "tariff_id": 530,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -117425,14 +117425,14 @@
         "source_detail": "PDF pages 3-4; Rate E78 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 529,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Small Commercial Service - Urban, 25kV & less (Rate E77)",
     "tariff_code": "E77",
     "utility_type": "electricity",
@@ -117459,9 +117459,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3798,
+        "id": 7436,
         "tariff_id": 529,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - First 50 kVA",
         "sub_component": null,
@@ -117485,12 +117485,12 @@
         "source_detail": "PDF pages 3-4; Rate E77 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3799,
+        "id": 7437,
         "tariff_id": 529,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - Balance",
         "sub_component": null,
@@ -117514,12 +117514,12 @@
         "source_detail": "PDF pages 3-4; Rate E77 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3800,
+        "id": 7438,
         "tariff_id": 529,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block",
         "sub_component": null,
@@ -117543,12 +117543,12 @@
         "source_detail": "PDF pages 3-4; Rate E77 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3801,
+        "id": 7439,
         "tariff_id": 529,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - Balance",
         "sub_component": null,
@@ -117572,12 +117572,12 @@
         "source_detail": "PDF pages 3-4; Rate E77 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3797,
+        "id": 7435,
         "tariff_id": 529,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -117601,14 +117601,14 @@
         "source_detail": "PDF pages 3-4; Rate E77 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 528,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Standard Service - 100kV & above (Rate E12)",
     "tariff_code": "E12",
     "utility_type": "electricity",
@@ -117635,9 +117635,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3795,
+        "id": 7433,
         "tariff_id": 528,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -117661,12 +117661,12 @@
         "source_detail": "PDF pages 1-2; Rate E12 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3796,
+        "id": 7434,
         "tariff_id": 528,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -117690,12 +117690,12 @@
         "source_detail": "PDF pages 1-2; Rate E12 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3794,
+        "id": 7432,
         "tariff_id": 528,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -117719,14 +117719,14 @@
         "source_detail": "PDF pages 1-2; Rate E12 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 527,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Standard Service - 72kV (Rate E10)",
     "tariff_code": "E10",
     "utility_type": "electricity",
@@ -117753,9 +117753,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3792,
+        "id": 7430,
         "tariff_id": 527,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -117779,12 +117779,12 @@
         "source_detail": "PDF pages 1-2; Rate E10 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3793,
+        "id": 7431,
         "tariff_id": 527,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -117808,12 +117808,12 @@
         "source_detail": "PDF pages 1-2; Rate E10 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3791,
+        "id": 7429,
         "tariff_id": 527,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -117837,14 +117837,14 @@
         "source_detail": "PDF pages 1-2; Rate E10 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 526,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Standard Service - Rural, 25kV & less (Rate E08)",
     "tariff_code": "E08",
     "utility_type": "electricity",
@@ -117871,9 +117871,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3789,
+        "id": 7427,
         "tariff_id": 526,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -117897,12 +117897,12 @@
         "source_detail": "PDF pages 1-2; Rate E08 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3790,
+        "id": 7428,
         "tariff_id": 526,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -117926,12 +117926,12 @@
         "source_detail": "PDF pages 1-2; Rate E08 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3788,
+        "id": 7426,
         "tariff_id": 526,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -117955,14 +117955,14 @@
         "source_detail": "PDF pages 1-2; Rate E08 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 525,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Standard Service - Urban, 25kV & less (Rate E07)",
     "tariff_code": "E07",
     "utility_type": "electricity",
@@ -117989,9 +117989,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3786,
+        "id": 7424,
         "tariff_id": 525,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -118015,12 +118015,12 @@
         "source_detail": "PDF pages 1-2; Rate E07 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3787,
+        "id": 7425,
         "tariff_id": 525,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -118044,12 +118044,12 @@
         "source_detail": "PDF pages 1-2; Rate E07 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3785,
+        "id": 7423,
         "tariff_id": 525,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -118073,7 +118073,7 @@
         "source_detail": "PDF pages 1-2; Rate E07 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
@@ -118198,7 +118198,7 @@
   {
     "id": 566,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "SaskPower-Supplied General Service Diesel (Rate E35)",
     "tariff_code": "E35",
     "utility_type": "electricity",
@@ -118225,9 +118225,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3763,
+        "id": 7401,
         "tariff_id": 566,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block",
         "sub_component": null,
@@ -118251,12 +118251,12 @@
         "source_detail": "PDF page 8; Rate E35; GENERAL SERVICE DIESEL RATE",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3764,
+        "id": 7402,
         "tariff_id": 566,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - Balance",
         "sub_component": null,
@@ -118280,12 +118280,12 @@
         "source_detail": "PDF page 8; Rate E35; GENERAL SERVICE DIESEL RATE",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3762,
+        "id": 7400,
         "tariff_id": 566,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -118309,14 +118309,14 @@
         "source_detail": "PDF page 8; Rate E35; GENERAL SERVICE DIESEL RATE",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 561,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "SaskPower-Supplied Non-Farm Irrigation (Rate E37)",
     "tariff_code": "E37",
     "utility_type": "electricity",
@@ -118343,9 +118343,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3756,
+        "id": 7394,
         "tariff_id": 561,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Seasonal Horsepower Charge",
         "sub_component": null,
@@ -118369,12 +118369,12 @@
         "source_detail": "PDF page 5; Rate E37; NON-FARM IRRIGATION RATE",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3757,
+        "id": 7395,
         "tariff_id": 561,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -118398,12 +118398,12 @@
         "source_detail": "PDF page 5; Rate E37; NON-FARM IRRIGATION RATE",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3755,
+        "id": 7393,
         "tariff_id": 561,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Seasonal Charge",
         "sub_component": null,
@@ -118427,14 +118427,14 @@
         "source_detail": "PDF page 5; Rate E37; NON-FARM IRRIGATION RATE",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 524,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "SaskPower-Supplied Small Commercial Service - Rural, 25kV & less (Rate E76)",
     "tariff_code": "E76",
     "utility_type": "electricity",
@@ -118461,9 +118461,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3781,
+        "id": 7419,
         "tariff_id": 524,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - First 50 kVA",
         "sub_component": null,
@@ -118487,12 +118487,12 @@
         "source_detail": "PDF pages 3-4; Rate E76 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3782,
+        "id": 7420,
         "tariff_id": 524,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - Balance",
         "sub_component": null,
@@ -118516,12 +118516,12 @@
         "source_detail": "PDF pages 3-4; Rate E76 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3783,
+        "id": 7421,
         "tariff_id": 524,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block",
         "sub_component": null,
@@ -118545,12 +118545,12 @@
         "source_detail": "PDF pages 3-4; Rate E76 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3784,
+        "id": 7422,
         "tariff_id": 524,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - Balance",
         "sub_component": null,
@@ -118574,12 +118574,12 @@
         "source_detail": "PDF pages 3-4; Rate E76 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3780,
+        "id": 7418,
         "tariff_id": 524,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -118603,14 +118603,14 @@
         "source_detail": "PDF pages 3-4; Rate E76 (Rural, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 523,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "SaskPower-Supplied Small Commercial Service - Urban, 25kV & less (Rate E75)",
     "tariff_code": "E75",
     "utility_type": "electricity",
@@ -118637,9 +118637,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3776,
+        "id": 7414,
         "tariff_id": 523,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - First 50 kVA",
         "sub_component": null,
@@ -118663,12 +118663,12 @@
         "source_detail": "PDF pages 3-4; Rate E75 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3777,
+        "id": 7415,
         "tariff_id": 523,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - Balance",
         "sub_component": null,
@@ -118692,12 +118692,12 @@
         "source_detail": "PDF pages 3-4; Rate E75 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3778,
+        "id": 7416,
         "tariff_id": 523,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block",
         "sub_component": null,
@@ -118721,12 +118721,12 @@
         "source_detail": "PDF pages 3-4; Rate E75 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3779,
+        "id": 7417,
         "tariff_id": 523,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - Balance",
         "sub_component": null,
@@ -118750,12 +118750,12 @@
         "source_detail": "PDF pages 3-4; Rate E75 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3775,
+        "id": 7413,
         "tariff_id": 523,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -118779,14 +118779,14 @@
         "source_detail": "PDF pages 3-4; Rate E75 (Urban, 25kV & less)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 522,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "SaskPower-Supplied Standard Service - Rural (Rate E06)",
     "tariff_code": "E06",
     "utility_type": "electricity",
@@ -118813,9 +118813,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3771,
+        "id": 7409,
         "tariff_id": 522,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - First 50 kVA",
         "sub_component": null,
@@ -118839,12 +118839,12 @@
         "source_detail": "PDF pages 1-2; Rate E06 (Rural)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3772,
+        "id": 7410,
         "tariff_id": 522,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - Balance",
         "sub_component": null,
@@ -118868,12 +118868,12 @@
         "source_detail": "PDF pages 1-2; Rate E06 (Rural)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3773,
+        "id": 7411,
         "tariff_id": 522,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block",
         "sub_component": null,
@@ -118897,12 +118897,12 @@
         "source_detail": "PDF pages 1-2; Rate E06 (Rural)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3774,
+        "id": 7412,
         "tariff_id": 522,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - Balance",
         "sub_component": null,
@@ -118926,12 +118926,12 @@
         "source_detail": "PDF pages 1-2; Rate E06 (Rural)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3770,
+        "id": 7408,
         "tariff_id": 522,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -118955,14 +118955,14 @@
         "source_detail": "PDF pages 1-2; Rate E06 (Rural)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 521,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "SaskPower-Supplied Standard Service - Urban (Rate E05)",
     "tariff_code": "E05",
     "utility_type": "electricity",
@@ -118989,9 +118989,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3766,
+        "id": 7404,
         "tariff_id": 521,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - First 50 kVA",
         "sub_component": null,
@@ -119015,12 +119015,12 @@
         "source_detail": "PDF pages 1-2; Rate E05 (Urban)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3767,
+        "id": 7405,
         "tariff_id": 521,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - Balance",
         "sub_component": null,
@@ -119044,12 +119044,12 @@
         "source_detail": "PDF pages 1-2; Rate E05 (Urban)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3768,
+        "id": 7406,
         "tariff_id": 521,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block",
         "sub_component": null,
@@ -119073,12 +119073,12 @@
         "source_detail": "PDF pages 1-2; Rate E05 (Urban)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3769,
+        "id": 7407,
         "tariff_id": 521,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - Balance",
         "sub_component": null,
@@ -119102,12 +119102,12 @@
         "source_detail": "PDF pages 1-2; Rate E05 (Urban)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3765,
+        "id": 7403,
         "tariff_id": 521,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -119131,14 +119131,14 @@
         "source_detail": "PDF pages 1-2; Rate E05 (Urban)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 563,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "SaskPower-Supplied Unmetered CATV Power Supply (Rate E16)",
     "tariff_code": "E16",
     "utility_type": "electricity",
@@ -119165,9 +119165,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3759,
+        "id": 7397,
         "tariff_id": 563,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "other",
         "component_name": "Power Supply Unit Charge",
         "sub_component": null,
@@ -119191,14 +119191,14 @@
         "source_detail": "PDF page 6; Rate E16; UNMETERED GENERAL SERVICE RATE",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 564,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "SaskPower-Supplied Unmetered CATV Rectifier (Rate E17)",
     "tariff_code": "E17",
     "utility_type": "electricity",
@@ -119225,9 +119225,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3760,
+        "id": 7398,
         "tariff_id": 564,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "other",
         "component_name": "Rectifier Connected Load Charge",
         "sub_component": null,
@@ -119251,14 +119251,14 @@
         "source_detail": "PDF page 7; Rate E17; UNMETERED CATV RECTIFIER RATE",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 562,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "SaskPower-Supplied Unmetered General Service (Rate E15)",
     "tariff_code": "E15",
     "utility_type": "electricity",
@@ -119285,9 +119285,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3758,
+        "id": 7396,
         "tariff_id": 562,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "other",
         "component_name": "Connected Load Charge",
         "sub_component": null,
@@ -119311,14 +119311,14 @@
         "source_detail": "PDF page 6; Rate E15; UNMETERED GENERAL SERVICE RATE",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 565,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "SaskPower-Supplied Unmetered X-Ray (Rate E18)",
     "tariff_code": "E18",
     "utility_type": "electricity",
@@ -119345,9 +119345,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3761,
+        "id": 7399,
         "tariff_id": 565,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "other",
         "component_name": "Installed Transformer Capacity Charge",
         "sub_component": null,
@@ -119371,7 +119371,7 @@
         "source_detail": "PDF page 7; Rate E18; UNMETERED X-RAY RATE",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
@@ -119467,7 +119467,7 @@
   {
     "id": 539,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Capacity Reservation Service - 100kV & above (Rate N24)",
     "tariff_code": "N24",
     "utility_type": "electricity",
@@ -119494,9 +119494,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3835,
+        "id": 7473,
         "tariff_id": 539,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -119520,12 +119520,12 @@
         "source_detail": "PDF pages 8-9; Rate N24 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3836,
+        "id": 7474,
         "tariff_id": 539,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -119549,12 +119549,12 @@
         "source_detail": "PDF pages 8-9; Rate N24 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3834,
+        "id": 7472,
         "tariff_id": 539,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -119578,14 +119578,14 @@
         "source_detail": "PDF pages 8-9; Rate N24 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 537,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Capacity Reservation Service - 25kV (Rate N22)",
     "tariff_code": "N22",
     "utility_type": "electricity",
@@ -119612,9 +119612,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3829,
+        "id": 7467,
         "tariff_id": 537,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -119638,12 +119638,12 @@
         "source_detail": "PDF pages 8-9; Rate N22 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3830,
+        "id": 7468,
         "tariff_id": 537,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -119667,12 +119667,12 @@
         "source_detail": "PDF pages 8-9; Rate N22 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3828,
+        "id": 7466,
         "tariff_id": 537,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -119696,14 +119696,14 @@
         "source_detail": "PDF pages 8-9; Rate N22 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 538,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Capacity Reservation Service - 72kV (Rate N23)",
     "tariff_code": "N23",
     "utility_type": "electricity",
@@ -119730,9 +119730,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3832,
+        "id": 7470,
         "tariff_id": 538,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -119756,12 +119756,12 @@
         "source_detail": "PDF pages 8-9; Rate N23 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3833,
+        "id": 7471,
         "tariff_id": 538,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -119785,12 +119785,12 @@
         "source_detail": "PDF pages 8-9; Rate N23 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3831,
+        "id": 7469,
         "tariff_id": 538,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -119814,14 +119814,14 @@
         "source_detail": "PDF pages 8-9; Rate N23 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 536,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Power Standard Service - 100kV & above (Rate E24)",
     "tariff_code": "E24",
     "utility_type": "electricity",
@@ -119848,9 +119848,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3826,
+        "id": 7464,
         "tariff_id": 536,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -119874,12 +119874,12 @@
         "source_detail": "PDF pages 7-7; Rate E24 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3827,
+        "id": 7465,
         "tariff_id": 536,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -119903,12 +119903,12 @@
         "source_detail": "PDF pages 7-7; Rate E24 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3825,
+        "id": 7463,
         "tariff_id": 536,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -119932,14 +119932,14 @@
         "source_detail": "PDF pages 7-7; Rate E24 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 534,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Power Standard Service - 25kV (Rate E22)",
     "tariff_code": "E22",
     "utility_type": "electricity",
@@ -119966,9 +119966,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3820,
+        "id": 7458,
         "tariff_id": 534,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -119992,12 +119992,12 @@
         "source_detail": "PDF pages 7-7; Rate E22 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3821,
+        "id": 7459,
         "tariff_id": 534,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -120021,12 +120021,12 @@
         "source_detail": "PDF pages 7-7; Rate E22 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3819,
+        "id": 7457,
         "tariff_id": 534,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -120050,14 +120050,14 @@
         "source_detail": "PDF pages 7-7; Rate E22 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 535,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Power Standard Service - 72kV (Rate E23)",
     "tariff_code": "E23",
     "utility_type": "electricity",
@@ -120084,9 +120084,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3823,
+        "id": 7461,
         "tariff_id": 535,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -120110,12 +120110,12 @@
         "source_detail": "PDF pages 7-7; Rate E23 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3824,
+        "id": 7462,
         "tariff_id": 535,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -120139,12 +120139,12 @@
         "source_detail": "PDF pages 7-7; Rate E23 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3822,
+        "id": 7460,
         "tariff_id": 535,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -120168,14 +120168,14 @@
         "source_detail": "PDF pages 7-7; Rate E23 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 533,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Power Time-of-Use - 100kV & above (Rate E84)",
     "tariff_code": "E84",
     "utility_type": "electricity",
@@ -120202,9 +120202,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3816,
+        "id": 7454,
         "tariff_id": 533,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -120228,12 +120228,12 @@
         "source_detail": "PDF pages 5-6; Rate E84 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3818,
+        "id": 7456,
         "tariff_id": 533,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Off-Peak Energy Charge",
         "sub_component": null,
@@ -120257,12 +120257,12 @@
         "source_detail": "PDF pages 5-6; Rate E84 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3817,
+        "id": 7455,
         "tariff_id": 533,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "On-Peak Energy Charge",
         "sub_component": null,
@@ -120286,12 +120286,12 @@
         "source_detail": "PDF pages 5-6; Rate E84 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3815,
+        "id": 7453,
         "tariff_id": 533,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -120315,14 +120315,14 @@
         "source_detail": "PDF pages 5-6; Rate E84 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 531,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Power Time-of-Use - 25kV (Rate E82)",
     "tariff_code": "E82",
     "utility_type": "electricity",
@@ -120349,9 +120349,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3808,
+        "id": 7446,
         "tariff_id": 531,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -120375,12 +120375,12 @@
         "source_detail": "PDF pages 5-6; Rate E82 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3810,
+        "id": 7448,
         "tariff_id": 531,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Off-Peak Energy Charge",
         "sub_component": null,
@@ -120404,12 +120404,12 @@
         "source_detail": "PDF pages 5-6; Rate E82 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3809,
+        "id": 7447,
         "tariff_id": 531,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "On-Peak Energy Charge",
         "sub_component": null,
@@ -120433,12 +120433,12 @@
         "source_detail": "PDF pages 5-6; Rate E82 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3807,
+        "id": 7445,
         "tariff_id": 531,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -120462,14 +120462,14 @@
         "source_detail": "PDF pages 5-6; Rate E82 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 532,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Customer-Owned Power Time-of-Use - 72kV (Rate E83)",
     "tariff_code": "E83",
     "utility_type": "electricity",
@@ -120496,9 +120496,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3812,
+        "id": 7450,
         "tariff_id": 532,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -120522,12 +120522,12 @@
         "source_detail": "PDF pages 5-6; Rate E83 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3814,
+        "id": 7452,
         "tariff_id": 532,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Off-Peak Energy Charge",
         "sub_component": null,
@@ -120551,12 +120551,12 @@
         "source_detail": "PDF pages 5-6; Rate E83 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3813,
+        "id": 7451,
         "tariff_id": 532,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "On-Peak Energy Charge",
         "sub_component": null,
@@ -120580,12 +120580,12 @@
         "source_detail": "PDF pages 5-6; Rate E83 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3811,
+        "id": 7449,
         "tariff_id": 532,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -120609,14 +120609,250 @@
         "source_detail": "PDF pages 5-6; Rate E83 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
+      }
+    ]
+  },
+  {
+    "id": 1168,
+    "utility_id": 30,
+    "scrape_run_id": 7,
+    "name": "Customer-Owned Renewable Access Service - 100kV & above (Rate R24)",
+    "tariff_code": "R24",
+    "utility_type": "electricity",
+    "customer_class": "industrial",
+    "sub_class": "100kv & above",
+    "description": null,
+    "eligibility": "CUSTOMER-OWNED TRANSFORMATION RATES POWER STANDARD RATE – RENEWABLE ACCESS SERVICE This rate is for individually metered Power Class customers served through customer owned transformation and self-generating a portion of their electricity needs using renewable sources as a participant under SaskPower’s Renewable Access Service. Self-Generation Sources - Renewable self-generation sources include solar, wind, flare gas, biomass, geothermal and hydropower generation. All other sources are considered non-renewable. 100kV & above.",
+    "demand_min_kw": null,
+    "demand_max_kw": null,
+    "usage_min": null,
+    "usage_max": null,
+    "usage_unit": null,
+    "rate_structure": "demand",
+    "effective_date": "2026-02-01",
+    "end_date": null,
+    "source_id": null,
+    "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation-ras.pdf",
+    "source_page": "PDF pages 1-2; Rate R24 (100kV & above)",
+    "confidence": "high",
+    "notes": "Provenance: live_parsed. Published minimum bill and billing conditions: The basic monthly charge plus the demand charge. RECORDED DEMAND The monthly recorded demand is the maximum kVA demand registered during the current month. CUSTOMER-OWNED TRANSFORMATION RATES BILLING DEMAND The monthly billing demand is the monthly recorded demand, but the billing demand shall not be less than 75 per cent of the maximum billing demand in the preceding 11 months.",
+    "created_at": "2026-10-01 17:22:46",
+    "utility_name": "SaskPower",
+    "province": "SK",
+    "provenance": "live",
+    "components": [
+      {
+        "id": 7479,
+        "tariff_id": 1168,
+        "scrape_run_id": 7,
+        "component_type": "demand",
+        "component_name": "Demand Charge",
+        "sub_component": null,
+        "charge_value": 17.821,
+        "charge_unit": "$/kVA",
+        "charge_currency": "CAD",
+        "tier_number": null,
+        "tier_threshold": null,
+        "tier_unit": null,
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": "kVA",
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": null,
+        "end_date": null,
+        "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation-ras.pdf",
+        "source_detail": "PDF pages 1-2; Rate R24 (100kV & above)",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-10-01 17:22:46"
+      },
+      {
+        "id": 7480,
+        "tariff_id": 1168,
+        "scrape_run_id": 7,
+        "component_type": "energy",
+        "component_name": "Energy Charge",
+        "sub_component": null,
+        "charge_value": 0.04695,
+        "charge_unit": "$/kWh",
+        "charge_currency": "CAD",
+        "tier_number": null,
+        "tier_threshold": null,
+        "tier_unit": null,
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": null,
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": null,
+        "end_date": null,
+        "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation-ras.pdf",
+        "source_detail": "PDF pages 1-2; Rate R24 (100kV & above)",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-10-01 17:22:46"
+      },
+      {
+        "id": 7478,
+        "tariff_id": 1168,
+        "scrape_run_id": 7,
+        "component_type": "fixed",
+        "component_name": "Basic Charge",
+        "sub_component": null,
+        "charge_value": 8731.5,
+        "charge_unit": "$/month",
+        "charge_currency": "CAD",
+        "tier_number": null,
+        "tier_threshold": null,
+        "tier_unit": null,
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": null,
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": null,
+        "end_date": null,
+        "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation-ras.pdf",
+        "source_detail": "PDF pages 1-2; Rate R24 (100kV & above)",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-10-01 17:22:46"
+      }
+    ]
+  },
+  {
+    "id": 1167,
+    "utility_id": 30,
+    "scrape_run_id": 7,
+    "name": "Customer-Owned Renewable Access Service - 72kV (Rate R23)",
+    "tariff_code": "R23",
+    "utility_type": "electricity",
+    "customer_class": "industrial",
+    "sub_class": "72kv",
+    "description": null,
+    "eligibility": "CUSTOMER-OWNED TRANSFORMATION RATES POWER STANDARD RATE – RENEWABLE ACCESS SERVICE This rate is for individually metered Power Class customers served through customer owned transformation and self-generating a portion of their electricity needs using renewable sources as a participant under SaskPower’s Renewable Access Service. Self-Generation Sources - Renewable self-generation sources include solar, wind, flare gas, biomass, geothermal and hydropower generation. All other sources are considered non-renewable. 72kV.",
+    "demand_min_kw": null,
+    "demand_max_kw": null,
+    "usage_min": null,
+    "usage_max": null,
+    "usage_unit": null,
+    "rate_structure": "demand",
+    "effective_date": "2026-02-01",
+    "end_date": null,
+    "source_id": null,
+    "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation-ras.pdf",
+    "source_page": "PDF pages 1-2; Rate R23 (72kV)",
+    "confidence": "high",
+    "notes": "Provenance: live_parsed. Published minimum bill and billing conditions: The basic monthly charge plus the demand charge. RECORDED DEMAND The monthly recorded demand is the maximum kVA demand registered during the current month. CUSTOMER-OWNED TRANSFORMATION RATES BILLING DEMAND The monthly billing demand is the monthly recorded demand, but the billing demand shall not be less than 75 per cent of the maximum billing demand in the preceding 11 months.",
+    "created_at": "2026-10-01 17:22:46",
+    "utility_name": "SaskPower",
+    "province": "SK",
+    "provenance": "live",
+    "components": [
+      {
+        "id": 7476,
+        "tariff_id": 1167,
+        "scrape_run_id": 7,
+        "component_type": "demand",
+        "component_name": "Demand Charge",
+        "sub_component": null,
+        "charge_value": 18.088,
+        "charge_unit": "$/kVA",
+        "charge_currency": "CAD",
+        "tier_number": null,
+        "tier_threshold": null,
+        "tier_unit": null,
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": "kVA",
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": null,
+        "end_date": null,
+        "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation-ras.pdf",
+        "source_detail": "PDF pages 1-2; Rate R23 (72kV)",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-10-01 17:22:46"
+      },
+      {
+        "id": 7477,
+        "tariff_id": 1167,
+        "scrape_run_id": 7,
+        "component_type": "energy",
+        "component_name": "Energy Charge",
+        "sub_component": null,
+        "charge_value": 0.05508,
+        "charge_unit": "$/kWh",
+        "charge_currency": "CAD",
+        "tier_number": null,
+        "tier_threshold": null,
+        "tier_unit": null,
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": null,
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": null,
+        "end_date": null,
+        "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation-ras.pdf",
+        "source_detail": "PDF pages 1-2; Rate R23 (72kV)",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-10-01 17:22:46"
+      },
+      {
+        "id": 7475,
+        "tariff_id": 1167,
+        "scrape_run_id": 7,
+        "component_type": "fixed",
+        "component_name": "Basic Charge",
+        "sub_component": null,
+        "charge_value": 8151.5,
+        "charge_unit": "$/month",
+        "charge_currency": "CAD",
+        "tier_number": null,
+        "tier_threshold": null,
+        "tier_unit": null,
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": null,
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": null,
+        "end_date": null,
+        "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation-ras.pdf",
+        "source_detail": "PDF pages 1-2; Rate R23 (72kV)",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 616,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Oil Field Customer-Owned Standard Service (Rate E44)",
     "tariff_code": "E44",
     "utility_type": "electricity",
@@ -120643,9 +120879,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3850,
+        "id": 7494,
         "tariff_id": 616,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -120669,12 +120905,12 @@
         "source_detail": "PDF pages 2-2; Rate E44 ()",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3851,
+        "id": 7495,
         "tariff_id": 616,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -120698,12 +120934,12 @@
         "source_detail": "PDF pages 2-2; Rate E44 ()",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3849,
+        "id": 7493,
         "tariff_id": 616,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -120727,14 +120963,14 @@
         "source_detail": "PDF pages 2-2; Rate E44 ()",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 622,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Oil Field High-Voltage Service - 100kV & Above (Rate E48)",
     "tariff_code": "E48",
     "utility_type": "electricity",
@@ -120761,9 +120997,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3871,
+        "id": 7515,
         "tariff_id": 622,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -120787,12 +121023,12 @@
         "source_detail": "PDF pages 5-5; Rate E48 (100kV & Above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3872,
+        "id": 7516,
         "tariff_id": 622,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -120816,12 +121052,12 @@
         "source_detail": "PDF pages 5-5; Rate E48 (100kV & Above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3870,
+        "id": 7514,
         "tariff_id": 622,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -120845,14 +121081,14 @@
         "source_detail": "PDF pages 5-5; Rate E48 (100kV & Above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 620,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Oil Field High-Voltage Service - 25kV (Rate E46)",
     "tariff_code": "E46",
     "utility_type": "electricity",
@@ -120879,9 +121115,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3865,
+        "id": 7509,
         "tariff_id": 620,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -120905,12 +121141,12 @@
         "source_detail": "PDF pages 5-5; Rate E46 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3866,
+        "id": 7510,
         "tariff_id": 620,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -120934,12 +121170,12 @@
         "source_detail": "PDF pages 5-5; Rate E46 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3864,
+        "id": 7508,
         "tariff_id": 620,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -120963,14 +121199,14 @@
         "source_detail": "PDF pages 5-5; Rate E46 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 621,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Oil Field High-Voltage Service - 72kV (Rate E47)",
     "tariff_code": "E47",
     "utility_type": "electricity",
@@ -120997,9 +121233,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3868,
+        "id": 7512,
         "tariff_id": 621,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -121023,12 +121259,12 @@
         "source_detail": "PDF pages 5-5; Rate E47 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3869,
+        "id": 7513,
         "tariff_id": 621,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -121052,12 +121288,12 @@
         "source_detail": "PDF pages 5-5; Rate E47 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3867,
+        "id": 7511,
         "tariff_id": 621,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -121081,14 +121317,14 @@
         "source_detail": "PDF pages 5-5; Rate E47 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 619,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Oil Field Power Time-of-Use - 100kV & above (Rate E88)",
     "tariff_code": "E88",
     "utility_type": "electricity",
@@ -121115,9 +121351,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3861,
+        "id": 7505,
         "tariff_id": 619,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -121141,12 +121377,12 @@
         "source_detail": "PDF pages 3-4; Rate E88 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3863,
+        "id": 7507,
         "tariff_id": 619,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Off-Peak Energy Charge",
         "sub_component": null,
@@ -121170,12 +121406,12 @@
         "source_detail": "PDF pages 3-4; Rate E88 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3862,
+        "id": 7506,
         "tariff_id": 619,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "On-Peak Energy Charge",
         "sub_component": null,
@@ -121199,12 +121435,12 @@
         "source_detail": "PDF pages 3-4; Rate E88 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3860,
+        "id": 7504,
         "tariff_id": 619,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -121228,14 +121464,14 @@
         "source_detail": "PDF pages 3-4; Rate E88 (100kV & above)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 617,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Oil Field Power Time-of-Use - 25kV (Rate E86)",
     "tariff_code": "E86",
     "utility_type": "electricity",
@@ -121262,9 +121498,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3853,
+        "id": 7497,
         "tariff_id": 617,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -121288,12 +121524,12 @@
         "source_detail": "PDF pages 3-4; Rate E86 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3855,
+        "id": 7499,
         "tariff_id": 617,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Off-Peak Energy Charge",
         "sub_component": null,
@@ -121317,12 +121553,12 @@
         "source_detail": "PDF pages 3-4; Rate E86 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3854,
+        "id": 7498,
         "tariff_id": 617,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "On-Peak Energy Charge",
         "sub_component": null,
@@ -121346,12 +121582,12 @@
         "source_detail": "PDF pages 3-4; Rate E86 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3852,
+        "id": 7496,
         "tariff_id": 617,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -121375,14 +121611,14 @@
         "source_detail": "PDF pages 3-4; Rate E86 (25kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 618,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Oil Field Power Time-of-Use - 72kV (Rate E87)",
     "tariff_code": "E87",
     "utility_type": "electricity",
@@ -121409,9 +121645,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3857,
+        "id": 7501,
         "tariff_id": 618,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -121435,12 +121671,12 @@
         "source_detail": "PDF pages 3-4; Rate E87 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3859,
+        "id": 7503,
         "tariff_id": 618,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Off-Peak Energy Charge",
         "sub_component": null,
@@ -121464,12 +121700,12 @@
         "source_detail": "PDF pages 3-4; Rate E87 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3858,
+        "id": 7502,
         "tariff_id": 618,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "On-Peak Energy Charge",
         "sub_component": null,
@@ -121493,12 +121729,12 @@
         "source_detail": "PDF pages 3-4; Rate E87 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3856,
+        "id": 7500,
         "tariff_id": 618,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -121522,14 +121758,14 @@
         "source_detail": "PDF pages 3-4; Rate E87 (72kV)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 615,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Oil Field SaskPower-Supplied Standard Service (Rate E43)",
     "tariff_code": "E43",
     "utility_type": "electricity",
@@ -121556,9 +121792,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3847,
+        "id": 7491,
         "tariff_id": 615,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -121582,12 +121818,12 @@
         "source_detail": "PDF pages 1-1; Rate E43 ()",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3848,
+        "id": 7492,
         "tariff_id": 615,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -121611,12 +121847,12 @@
         "source_detail": "PDF pages 1-1; Rate E43 ()",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3846,
+        "id": 7490,
         "tariff_id": 615,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -121640,14 +121876,14 @@
         "source_detail": "PDF pages 1-1; Rate E43 ()",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 614,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Farm Irrigation (Interruptible) (Rate E41)",
     "tariff_code": "E41",
     "utility_type": "electricity",
@@ -121674,9 +121910,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3845,
+        "id": 7489,
         "tariff_id": 614,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -121700,12 +121936,12 @@
         "source_detail": "PDF page 3; Farm Rate E41",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3844,
+        "id": 7488,
         "tariff_id": 614,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge per Meter Location",
         "sub_component": null,
@@ -121729,14 +121965,14 @@
         "source_detail": "PDF page 3; Farm Rate E41",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 613,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Farm Irrigation (Rate E19)",
     "tariff_code": "E19",
     "utility_type": "electricity",
@@ -121763,9 +121999,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3843,
+        "id": 7487,
         "tariff_id": 613,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -121789,12 +122025,12 @@
         "source_detail": "PDF page 2; Farm Rate E19",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3842,
+        "id": 7486,
         "tariff_id": 613,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Seasonal Charge",
         "sub_component": null,
@@ -121818,14 +122054,14 @@
         "source_detail": "PDF page 2; Farm Rate E19",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
     "id": 612,
     "utility_id": 30,
-    "scrape_run_id": 5,
+    "scrape_run_id": 7,
     "name": "Farm Standard Service (Rate E34)",
     "tariff_code": "E34",
     "utility_type": "electricity",
@@ -121852,9 +122088,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 3838,
+        "id": 7482,
         "tariff_id": 612,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - First 50 kVA",
         "sub_component": null,
@@ -121878,12 +122114,12 @@
         "source_detail": "PDF page 1; Farm Rate E34",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3839,
+        "id": 7483,
         "tariff_id": 612,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "demand",
         "component_name": "Demand Charge - Balance",
         "sub_component": null,
@@ -121907,12 +122143,12 @@
         "source_detail": "PDF page 1; Farm Rate E34",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3840,
+        "id": 7484,
         "tariff_id": 612,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block",
         "sub_component": null,
@@ -121936,12 +122172,12 @@
         "source_detail": "PDF page 1; Farm Rate E34",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3841,
+        "id": 7485,
         "tariff_id": 612,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge - Balance",
         "sub_component": null,
@@ -121965,12 +122201,12 @@
         "source_detail": "PDF page 1; Farm Rate E34",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3837,
+        "id": 7481,
         "tariff_id": 612,
-        "scrape_run_id": 5,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -121994,21 +122230,21 @@
         "source_detail": "PDF page 1; Farm Rate E34",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
   {
-    "id": 30,
+    "id": 1140,
     "utility_id": 30,
-    "scrape_run_id": 5,
-    "name": "Residential Service",
-    "tariff_code": null,
+    "scrape_run_id": 7,
+    "name": "Residential Bulk-Metered Service (Rates E01/E03)",
+    "tariff_code": "E01/E03",
     "utility_type": "electricity",
     "customer_class": "residential",
-    "sub_class": null,
+    "sub_class": "bulk metered",
     "description": null,
-    "eligibility": null,
+    "eligibility": "The basic monthly charge applicable to the residential rates in the community, multiplied by the number of units in the apartment block or stalls in the trailer park. Note: The bulk metered rate option is closed to new customers.",
     "demand_min_kw": null,
     "demand_max_kw": null,
     "usage_min": null,
@@ -122019,18 +122255,18 @@
     "end_date": null,
     "source_id": null,
     "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
-    "source_page": "Residential standard rate table",
+    "source_page": "PDF page 1; Rate application for bulk metered accounts (E01/E03)",
     "confidence": "high",
-    "notes": "Provenance: live_parsed. SaskPower flat residential rate (Standard Rate E01/E03).",
-    "created_at": "2026-09-29 20:32:26",
+    "notes": "Provenance: live_parsed. Fixed charge is per apartment unit or trailer-park stall, not per account. Minimum bill is the applicable basic charge. Published rates exclude applicable taxes and surcharges.",
+    "created_at": "2026-10-01 17:22:46",
     "utility_name": "SaskPower",
     "province": "SK",
     "provenance": "live",
     "components": [
       {
-        "id": 3754,
-        "tariff_id": 30,
-        "scrape_run_id": 5,
+        "id": 7389,
+        "tariff_id": 1140,
+        "scrape_run_id": 7,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -122051,15 +122287,133 @@
         "effective_date": null,
         "end_date": null,
         "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
-        "source_detail": "Residential standard rate table",
+        "source_detail": "PDF page 1; Rate application for bulk metered accounts (E01/E03)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
       },
       {
-        "id": 3753,
-        "tariff_id": 30,
-        "scrape_run_id": 5,
+        "id": 7388,
+        "tariff_id": 1140,
+        "scrape_run_id": 7,
+        "component_type": "fixed",
+        "component_name": "Basic Charge per Residential Unit or Trailer Stall",
+        "sub_component": null,
+        "charge_value": 31.16,
+        "charge_unit": "$/unit/month",
+        "charge_currency": "CAD",
+        "tier_number": null,
+        "tier_threshold": null,
+        "tier_unit": null,
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": null,
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": null,
+        "end_date": null,
+        "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
+        "source_detail": "PDF page 1; Rate application for bulk metered accounts (E01/E03)",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-10-01 17:22:46"
+      }
+    ]
+  },
+  {
+    "id": 1141,
+    "utility_id": 30,
+    "scrape_run_id": 7,
+    "name": "Residential Diesel Service (Rate E04)",
+    "tariff_code": "E04",
+    "utility_type": "electricity",
+    "customer_class": "residential",
+    "sub_class": "diesel",
+    "description": null,
+    "eligibility": "RESIDENTIAL RATES DIESEL RATE These rates are for individually metered residential premises, including apartment units, supplied by diesel generation.",
+    "demand_min_kw": null,
+    "demand_max_kw": null,
+    "usage_min": null,
+    "usage_max": null,
+    "usage_unit": null,
+    "rate_structure": "tiered",
+    "effective_date": "2026-02-01",
+    "end_date": null,
+    "source_id": null,
+    "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
+    "source_page": "PDF page 2; Residential Diesel Rate E04",
+    "confidence": "high",
+    "notes": "Provenance: live_parsed. Minimum bill: the basic monthly charge. Published rates exclude applicable taxes and surcharges.",
+    "created_at": "2026-10-01 17:22:46",
+    "utility_name": "SaskPower",
+    "province": "SK",
+    "provenance": "live",
+    "components": [
+      {
+        "id": 7391,
+        "tariff_id": 1141,
+        "scrape_run_id": 7,
+        "component_type": "energy",
+        "component_name": "Energy Charge - First Block",
+        "sub_component": null,
+        "charge_value": 0.15476,
+        "charge_unit": "$/kWh",
+        "charge_currency": "CAD",
+        "tier_number": 1,
+        "tier_threshold": 650.0,
+        "tier_unit": "kWh",
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": null,
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": null,
+        "end_date": null,
+        "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
+        "source_detail": "PDF page 2; Residential Diesel Rate E04",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-10-01 17:22:46"
+      },
+      {
+        "id": 7392,
+        "tariff_id": 1141,
+        "scrape_run_id": 7,
+        "component_type": "energy",
+        "component_name": "Energy Charge - Balance",
+        "sub_component": null,
+        "charge_value": 0.60416,
+        "charge_unit": "$/kWh",
+        "charge_currency": "CAD",
+        "tier_number": 2,
+        "tier_threshold": 650.0,
+        "tier_unit": "kWh",
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": null,
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": null,
+        "end_date": null,
+        "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
+        "source_detail": "PDF page 2; Residential Diesel Rate E04",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-10-01 17:22:46"
+      },
+      {
+        "id": 7390,
+        "tariff_id": 1141,
+        "scrape_run_id": 7,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -122080,10 +122434,99 @@
         "effective_date": null,
         "end_date": null,
         "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
-        "source_detail": "Residential standard rate table",
+        "source_detail": "PDF page 2; Residential Diesel Rate E04",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-10-01 15:01:04"
+        "created_at": "2026-10-01 17:22:46"
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "utility_id": 30,
+    "scrape_run_id": 7,
+    "name": "Residential Service",
+    "tariff_code": "E01/E03",
+    "utility_type": "electricity",
+    "customer_class": "residential",
+    "sub_class": "city, town, village and rural",
+    "description": null,
+    "eligibility": "RESIDENTIAL RATES STANDARD RATE These rates are for individually metered residential premises, including apartment units and domestic out-buildings.",
+    "demand_min_kw": null,
+    "demand_max_kw": null,
+    "usage_min": null,
+    "usage_max": null,
+    "usage_unit": null,
+    "rate_structure": "flat",
+    "effective_date": "2026-02-01",
+    "end_date": null,
+    "source_id": null,
+    "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
+    "source_page": "PDF page 1; Residential Standard Rates E01/E03",
+    "confidence": "high",
+    "notes": "Provenance: live_parsed. E01/E03 have identical charges. Minimum bill: the basic monthly charge. Published rates exclude applicable taxes and surcharges.",
+    "created_at": "2026-09-29 20:32:26",
+    "utility_name": "SaskPower",
+    "province": "SK",
+    "provenance": "live",
+    "components": [
+      {
+        "id": 7387,
+        "tariff_id": 30,
+        "scrape_run_id": 7,
+        "component_type": "energy",
+        "component_name": "Energy Charge",
+        "sub_component": null,
+        "charge_value": 0.15476,
+        "charge_unit": "$/kWh",
+        "charge_currency": "CAD",
+        "tier_number": null,
+        "tier_threshold": null,
+        "tier_unit": null,
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": null,
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": null,
+        "end_date": null,
+        "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
+        "source_detail": "PDF page 1; Residential Standard Rates E01/E03",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-10-01 17:22:46"
+      },
+      {
+        "id": 7386,
+        "tariff_id": 30,
+        "scrape_run_id": 7,
+        "component_type": "fixed",
+        "component_name": "Basic Charge",
+        "sub_component": null,
+        "charge_value": 31.16,
+        "charge_unit": "$/month",
+        "charge_currency": "CAD",
+        "tier_number": null,
+        "tier_threshold": null,
+        "tier_unit": null,
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": null,
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": null,
+        "end_date": null,
+        "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
+        "source_detail": "PDF page 1; Residential Standard Rates E01/E03",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-10-01 17:22:46"
       }
     ]
   },
