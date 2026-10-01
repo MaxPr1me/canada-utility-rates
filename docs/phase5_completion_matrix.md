@@ -1,10 +1,10 @@
 # Phase 5 Completion Matrix
 
 **Updated:** 2026-10-01. Scope: all 84 registered utilities, not every utility
-in the broader Canadian inventory. The export has 560 stored tariff versions / 3,658
-components / **80 stored live versions / 480 seed**. Latest-per-name coverage is
-**79 live tariffs**; an older Yukon 1160 version remains in history. The export combines
-October 1 CI observations with newer local SaskPower/Yukon results. No gas or Ontario
+in the broader Canadian inventory. The export has 564 stored tariff versions / 3,685
+components / **84 stored live versions / 480 seed**. Latest-per-name coverage is
+**83 live tariffs**; an older Yukon 1160 version remains in history. The export combines
+October 1 CI observations with newer local BC Hydro/SaskPower/Yukon results. No gas or Ontario
 tariffs are live in this export.
 Counts include retained non-building reference records, not only building tariffs.
 
@@ -23,7 +23,7 @@ and components, with explicit non-building/special/unavailable exclusions. SaskP
 audited published building-service schedules are implemented as of October 1; that
 does not claim full-catalogue, tax-inclusive billing or building-code compliance.
 
-SaskPower and Yukon Energy have saved source-derived fixtures in `tests/fixtures/`.
+BC Hydro, SaskPower and Yukon Energy have saved source-derived fixtures in `tests/fixtures/`.
 Other tests include inline synthetic text and seed checks. A shared verifier test,
 successful process exit, or empty missing-data log does not establish live coverage.
 
@@ -36,13 +36,13 @@ See the [gap report](live_parser_gap_report.md) for detailed findings and
 
 | Utility | Live tariffs / source-check date | Implemented path and supported scope | Next work |
 |---|---|---|---|
-| BC Hydro | 4 / Oct 1 | HTML: tiered residential, SGS, MGS, LGS | Optional residential and other building-service schedules |
+| BC Hydro | 8 / Oct 1 | Approved PDF: tiered 1101, flat 1151, each +2101 TOD, closed dual-fuel 1105; three HTML business classes | Five residential options verified; preserve rider exclusions, prorated tiers and conditional discounts; other building-service audit remains |
 | FortisBC Electric | 0 / Oct 1 | Known-value verification for two seed classes | Current utility/BCUC building-service sources and extraction |
 | Hydro-Quebec | 3 / Oct 1 | PDF: D/G/M | Remaining building-relevant products and source-derived fixtures |
 | Manitoba Hydro | 8 / Oct 1 | HTML: residential and seven GS/voltage variants | Building-service audit; preserve kVA and seasonal rules |
 | SaskPower | **41 / Oct 1** | **Audited building schedules implemented**; six source fixtures; total includes reference records | Monitor current sources; no remaining identified building-schedule parser gap in the audited catalogue |
 | NB Power | 3 / Oct 1 | HTML: residential, GS1, small industrial | Remaining building-service schedules and fixtures |
-| Nova Scotia Power | 4 / Oct 1 | HTML: Domestic and Rates 10/11/12 | Building-relevant products and source dates; industrial process-only rates deferred |
+| Nova Scotia Power | 4 / Oct 1 | HTML: residential flat and business 10/11/12 only | **Next:** user-identified residential time-based options; verify official TOU/TOD/pilot eligibility, hours, seasons and dates before implementing |
 | Maritime Electric | 10 / Oct 1 | IRAC PDF class-section extraction | Building-service audit and source-derived success/failure fixtures |
 | Newfoundland Power | 4 / Oct 1 | RateBook PDF: 1.1/2.1/2.3/2.4 | Building-relevant schedules and fixture coverage |
 | NL Hydro | 0 / Oct 1 | PDF verification of rural/Labrador/GS seeds | Building class/zone extraction, preserving interconnected/isolated distinctions |
@@ -224,9 +224,9 @@ Next gate: reviewed OCR or authoritative text for full building-class extraction
 
 ## Next Batches and Acceptance
 
-1. Broader Yukon building classes/Rider A via reviewed OCR or text alternatives, then NS building-service and FortisBC Electric; maintain implemented SaskPower coverage and corrected Yukon 1160.
-2. Territorial/provincial depth and building-relevant class audits of existing live utilities.
-3. Building-service tariffs at nine gas utilities, Alberta electricity, then the Ontario campaign.
+1. NSPower residential optional/time-based products, then audit all registered utilities' residential offerings. Default residential coverage is not complete product coverage. BC Hydro's five options are implemented; do not assume the rest have been checked.
+2. Resume broader Yukon building classes/Rider A via reviewed OCR or text alternatives and other NS/FortisBC building-service gaps after the residential-priority audit.
+3. Territorial/provincial building-service depth, nine gas utilities, Alberta electricity, then the Ontario campaign.
 4. Separate operational track: browser-enabled source health, meaningful provenance counts,
    failure reporting, deployment triggering and durable CI history.
 5. Deferred product track: market-model UI/metadata correction, real observation ingestion,
@@ -241,3 +241,44 @@ Each batch requires source-derived positive/negative tests, a source-inspected d
 validated storage/export, preserved history and a ledger update. Record observation dates
 separately from parser capability, keep unsupported classes visible, and never delete a
 database or invent rates to make completion metrics look better.
+
+## Context Checkpoint: Residential Audit (2026-10-01)
+
+**Completed:** BC Hydro now parses five residential options from the approved tariff:
+1101 tiered, 1151 flat, both with optional 2101 time-of-day, and closed dual-fuel 1105.
+Riders 1901/1904 are source-parsed; their percentage base excludes 2101 adjustments.
+Conditional transformer discounts and monthly/bi-monthly tier rules are preserved.
+The existing tiered name remains stable. Eight live BC tariffs (including business)
+were dry-run checked, stored and exported; all other utilities and snapshots were retained.
+
+**Verification:** 325 tests pass, including 19 BC-focused tests. Database validation has
+zero errors and two existing AESO class warnings. New source fixture:
+`tests/fixtures/bc_hydro_residential.json`. No frontend code changed in this checkpoint.
+
+**Not done:** NSPower optional residential parsing and the all-residential source audit.
+The user specifically flagged NSPower TOU. Do not mark those offerings audited or
+complete based on the existing flat-rate parser or this handoff.
+
+**Resume here:**
+1. Read `scrapers/utilities/nova_scotia_power.py` at `_try_live_scrape()` and
+    `_parse_residential()`, plus `TestNovaScotiaPowerSeed` in `tests/test_live_parsers.py`.
+2. Inspect the official residential catalogue starting at
+    https://www.nspower.ca/your-home/residential-rates/standard-residential and follow
+    its current time-based product/tariff links. Distinguish generally available rates,
+    storage-heating/equipment requirements, closed offerings and pilots. Preserve actual
+    seasonal calendars, hour windows, fixed charges, rider bases and effective dates.
+3. Add a small source-derived fixture and failing product-coverage test, then extend
+    the residential owner path without letting a failed optional plan erase valid classes.
+4. Run `./venv/Scripts/python.exe -m pytest -q tests/test_live_parsers.py -k NovaScotia`,
+    then the full suite and a targeted official-source dry run before storage/export.
+5. Audit the remaining utilities' residential catalogues and record exact implemented,
+    missing, closed/conditional and source-blocked products. Existing Ontario shared
+    TOU/Tiered/ULO seeds are not proof of individual distributor verification. Gas and
+    northern/community variants must retain their actual eligibility and units.
+
+The supported local test interpreter is `./venv/Scripts/python.exe` (Python 3.11);
+the old editor-selected `.venv` remains Python 3.9 with missing dependencies. Preview:
+http://127.0.0.1:8000/ (reload to read the latest JSON). Leave unrelated
+`.claude/worktrees/` modifications untouched. Near the requested 90% context threshold,
+stop new work, validate the current batch, update this checkpoint/handoff and push before
+ending; checkpoint conservatively when exact token usage is unavailable.

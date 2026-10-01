@@ -206,13 +206,31 @@
           "is_primary": false
         },
         {
+          "url": "https://app.bchydro.com/accounts-billing/rates-energy-use/electricity-rates/residential-rates/flat.html",
+          "source_type": "html",
+          "description": "Optional residential flat rate RS 1151",
+          "is_primary": false
+        },
+        {
+          "url": "https://app.bchydro.com/accounts-billing/rates-energy-use/electricity-rates/residential-rates/time-of-day.html",
+          "source_type": "html",
+          "description": "Optional RS 2101 time-of-day pricing with either tiered or flat base service",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.bchydro.com/content/dam/BCHydro/customer-portal/documents/corporate/tariff-filings/electric-tariff/bchydro-electric-tariff.pdf",
+          "source_type": "pdf",
+          "description": "Authoritative residential RS 1101/1105/1151/2101 and riders 1901/1904, with dates and conditions",
+          "is_primary": false
+        },
+        {
           "url": "https://app.bchydro.com/accounts-billing/rates-energy-use/electricity-rates/business-rates.html",
           "source_type": "html",
           "description": "Commercial electricity rate schedules (SGS, MGS, LGS)",
           "is_primary": false
         }
       ],
-      "notes": "BC Hydro uses a two-tier residential rate structure. Rates are regulated by the British Columbia Utilities Commission (BCUC). Live parser fetches tiered sub-page for residential and business-rates page for commercial."
+      "notes": "BCUC-regulated residential choices include tiered 1101, flat 1151, each with optional 2101 time-of-day, plus closed dual-fuel 1105. The live parser reads the approved PDF including dates, separate 1901/1904 riders and conditional transformer discounts; the riders exclude 2101 adjustments. Business parsing remains separate."
     },
     {
       "name": "FortisBC Electric",

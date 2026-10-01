@@ -13,6 +13,9 @@ Canada-wide utility rate scraping and browsing for building energy-cost analysis
   are not required for completion. Keep completed implementations/data as reference,
   but stop expanding those classes. Do not remove snapshots or working reference parsers.
 - Significant tested milestones may be committed and pushed, as explicitly requested.
+- Near the user's requested 90% context limit, stop new work, validate the current
+  batch, save exact resume notes in the matrix/handoff, and commit/push before stopping.
+  Checkpoint early if exact usage is unavailable; preserve unrelated changes.
 
 ## Working rules
 - **Never display default values as if they were live.** Only rate values pulled from (or verified against) a live official web source may be presented as current. Hardcoded seed/fallback values are a safety net only: they carry `Provenance: seed_fallback` + `confidence: unverified`, export as `provenance: "seed"`, and the site hides them by default behind a labelled "Estimated" toggle. Never dress up a static default as a live-scraped rate.
@@ -34,7 +37,8 @@ Canada-wide utility rate scraping and browsing for building energy-cost analysis
 ## Key patterns
 - Scrapers try live HTTP fetch first, fall back to hardcoded seed data. Provenance is tracked, not flattened (see Working rules): live/verified records carry `Provenance: officially_verified` or `Provenance: live_parsed`; failed fetches call `mark_fallback()` (→ `Provenance: seed_fallback`, `confidence: unverified`). `export_json.derive_provenance()` maps this to a `provenance` field (`"live"`/`"seed"`) and the site hides `seed` by default.
 - **Live parsers**: Manitoba Hydro, NB Power, NS Power and BC Hydro have class-specific HTML parsers. Hydro-Quebec, Maritime Electric and Newfoundland Power rebuild supported classes from PDFs. SaskPower parses 41 records across its audited building schedules and retained non-building references. NL Hydro still verifies known values rather than rebuilding changed schedules.
-- **Multi-class coverage is not catalogue completeness.** Implemented output includes BC Hydro (4), NB Power (3), NS Power (Domestic + 10/11/12), Manitoba Hydro (8), Hydro-Quebec (D/G/M), Maritime Electric (10), Newfoundland Power (1.1/2.1/2.3/2.4). Missing standard classes still require source audits. Reuse section slicing and label/value parsing; handle cent glyph variation without accepting dollar-per-kWh as cents.
+- **Multi-class coverage is not catalogue completeness.** Implemented output includes BC Hydro (8), NB Power (3), NS Power (Domestic + 10/11/12), Manitoba Hydro (8), Hydro-Quebec (D/G/M), Maritime Electric (10), Newfoundland Power (1.1/2.1/2.3/2.4). Optional residential products and other missing classes still require source audits. Reuse section slicing and label/value parsing; handle cent glyph variation without accepting dollar-per-kWh as cents.
+- **BC Hydro residential:** approved PDF RS 1101 tiered, 1151 flat, each combined with optional 2101 time-of-day, and closed dual-fuel 1105. Parse RS 1901/1904 from their own sections; they exclude 2101 adjustments. Preserve daily prorated tier thresholds and conditional transformer discounts. Five residential options and three separate business records are live.
 - **JS-rendered pages**: `BaseScraper.fetch_rendered_page()` uses headless Chromium; SaskPower needs it for PDF discovery. Missing known classes retain labelled seed fallbacks. Newly discovered unsupported classes are recorded as gaps, never invented as fallback rates.
 - **SaskPower (2026-10-01)**: source-derived page fixtures cover E05/E06, E75/E76, E07/E08/E10/E12, E77/E78, E82/E83/E84, E22/E23/E24 and N22/N23/N24. Preserve voltage/urban/rural columns, kVA tiers, TOU hours, closed-to-new eligibility and continuation-page billing conditions. Require source dates and complete rows; isolate failures by schedule. Do not fill kW eligibility fields with kVA thresholds.
 - **Supplied-service additions:** E37 irrigation retains `$/season` and `$/HP/season`; E15/E17 use watt-block/month units, E16 uses power-supply-unit/month, E18 uses installed-kVA/month, and E35 diesel has two energy tiers. Slice multiple schedules on the same page before parsing; minimum bills are conditions, not extra additive charges.
@@ -55,7 +59,7 @@ python -m playwright install chromium     # headless browser for JS-rendered pag
 python -m pipeline.run_scrape --init-db   # first time
 python -m pipeline.run_scrape             # scrape all
 python -m pipeline.export_json            # export for site
-pytest                                    # run tests (316 tests)
+pytest                                    # run tests (325 tests)
 ```
 
 ## Adding a utility
@@ -71,8 +75,8 @@ pytest                                    # run tests (316 tests)
 - Keep registry URLs and actual scraper URL constants synchronized; most modules do not consume registry sources dynamically.
 
 ## Current snapshot and queue (2026-10-01)
-- Export: 560 stored tariff versions / 3,658 components / 80 stored live versions / 480 seed across 84 utilities. Latest-per-name coverage is 79 live tariffs; Yukon 1160 now has a corrected 2026-10-01 version while its older version remains. SaskPower has 41 live records including reference-only classes, with the scoped building schedule audit implemented.
-- Next: authoritative text/OCR for broader Yukon residential/general-service classes and Rider A, then NS building-service and FortisBC Electric expansions. Building coverage in other territories/provinces, gas, Alberta and Ontario follows. Do not resume farm/oil-field, wholesale or standalone lighting expansion. The matrix holds specific source blockers.
+- Export: 564 stored tariff versions / 3,685 components / 84 stored live versions / 480 seed across 84 utilities. Latest-per-name coverage is 83 live tariffs. BC Hydro now has five residential options plus three business tariffs; prior Yukon history and reference-only classes remain preserved.
+- Immediate next: audit and implement NSPower residential time-of-use/time-of-day products, then review optional residential offerings across all registered utilities. This latest user request takes priority over the earlier Yukon-first queue. NSPower optional-product implementation and the broad residential source audit are not complete. Other building-service gaps remain queued; do not resume excluded non-building expansion.
 - The Ontario market generator uses fixed inputs and multipliers, not reproducible five-year observation ingestion. Document this now; the user deferred UI/metadata correction and real ingestion to later phases.
 - Local history is append-only. Monthly CI restore/save, default-token deployment triggering, source-health browser setup and failure reporting remain separate reliability work.
 
@@ -90,4 +94,4 @@ Update these files when the task changes architecture, adds major features, chan
 - `scrapers.utils.parsing` provides `DocumentPage`, page-aware fail-closed PDF extraction/section selection, CSV/XLSX readers, content hashing, effective-date/unit/currency normalization, and contextual verification.
 - Snapshot serialization is canonical JSON with sorted component dictionaries. Ordering alone is ignored; all semantic fields remain hashed. `diff_runs` compares append-only per-run snapshots.
 - The no-build comparison state is an in-memory two-item array in `site/js/app.js`; it aligns exact type/name/unit keys and never totals them.
-- Deterministic tests block unmocked network access. Run `pytest -q` (316 tests); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.
+- Deterministic tests block unmocked network access. Run `pytest -q` (325 tests); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.

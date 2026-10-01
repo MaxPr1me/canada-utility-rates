@@ -18,8 +18,8 @@ It works in three stages:
 
 GitHub Actions schedules a monthly scrape. Deployment and durable history across
 cloud runs still need reliability work; see the roadmap in [README.md](README.md).
-The latest export has 79 latest live tariffs and 480 estimates; stored history contains
-80 live versions. Registry coverage is not the same as live coverage.
+The latest export has 83 latest live tariffs and 480 estimates; stored history contains
+84 live versions. Registry coverage is not the same as live coverage.
 
 ---
 
@@ -59,6 +59,13 @@ is a use-case reference, not a utility-rate eligibility rule or a compliance cla
 Do not spend the live-parser campaign expanding farm/oil-field processes, irrigation,
 standalone street lighting, wholesale or other non-building services. Completed work
 and historical data for those classes remain as reference; do not delete them.
+
+**Context checkpoint rule:** when approaching the context/token limit (target: about
+90%), stop opening new work. Leave room to finish the bounded batch, run its checks,
+record completed work, test results, remaining gaps and the exact next step in the
+coverage matrix/handoff, then commit and push the verified changes before stopping.
+If an exact context meter is unavailable, checkpoint conservatively rather than claim
+an exact percentage. Preserve history and do not stage unrelated work.
 
 ---
 
@@ -432,9 +439,9 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 316 tests across 8 test modules, including `test_phase5_hardening` for
+There are 325 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
-The SaskPower and Yukon Energy JSON fixtures in `tests/fixtures/` hold official PDF-text excerpts,
+The BC Hydro, SaskPower and Yukon Energy JSON fixtures in `tests/fixtures/` hold official PDF-text excerpts,
 source URLs and page numbers for repeatable parser tests.
 
 If everything passes, you'll see green output. If something fails, it will show you exactly what went wrong and where.

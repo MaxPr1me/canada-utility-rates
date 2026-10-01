@@ -184,6 +184,26 @@ class TestBCHydroSeedUpdated:
     def test_returns_four_tariffs(self):
         assert len(self.records) == 4
 
+    def test_residential_optional_products_are_fetched(self):
+        from scrapers.utilities.bc_hydro import BCHydroScraper, RESIDENTIAL_URL
+
+        root = RESIDENTIAL_URL.rsplit("/", 1)[0]
+        flat_url = root + "/flat.html"
+        time_url = root + "/time-of-day.html"
+        html = (
+            '<h1>Residential rates</h1>'
+            '<p>Residential customers can choose between the flat rate and tiered rate plan, '
+            'which can both also be combined with optional time-of-day pricing.</p>'
+            f'<a href="{flat_url}">Flat rate</a>'
+            f'<a href="{time_url}">Time-of-day pricing</a>'
+        )
+        scraper = BCHydroScraper()
+        with patch.object(scraper, "fetch_page", return_value=html) as fetch, \
+             patch.object(scraper, "_parse_business", return_value=None):
+            scraper._try_live_scrape()
+        fetched = {call.args[0] for call in fetch.call_args_list}
+        assert {flat_url, time_url} <= fetched
+
     def test_residential_is_tiered(self):
         res = [r for r in self.records if r.customer_class == "residential"][0]
         assert res.rate_structure == "tiered"
@@ -227,6 +247,105 @@ class TestBCHydroSeedUpdated:
     def test_effective_dates_updated(self):
         for r in self.records:
             assert r.effective_date == "2026-04-01"
+
+
+class TestBCHydroResidentialOptions:
+    @pytest.fixture
+    def document(self):
+        import json
+        from pathlib import Path
+
+        return json.loads((Path(__file__).parent / "fixtures" / "bc_hydro_residential.json").read_text(encoding="utf-8"))
+
+    @staticmethod
+    def parse(document):
+        from scrapers.utilities.bc_hydro import BCHydroScraper
+        from scrapers.utils.parsing import DocumentPage
+
+        scraper = BCHydroScraper()
+        with patch.object(scraper, "now_iso", return_value="2026-10-01T00:00:00+00:00"):
+            return {record.tariff_code: record for record in scraper._parse_residential_tariff([DocumentPage(**page) for page in document["pages"]])}
+
+    def test_all_residential_options_and_adjustment_basis(self, document):
+        records = self.parse(document)
+        assert set(records) == {"1101", "1151", "1105", "1101+2101", "1151+2101"}
+        assert records["1101"].tariff_name == "Residential Service (Rate 1101)"
+        flat = records["1151"]
+        assert flat.components[0].charge_value == 0.25 and flat.components[0].charge_unit == "$/day"
+        assert flat.components[1].charge_value == 0.127
+        assert flat.effective_date == "2026-04-01"
+        assert records["1105"].components[0].charge_value == 0.1261
+        assert "2008" in records["1105"].eligibility and "Closed" in records["1105"].tariff_name
+        assert records["1101+2101"].rate_structure == "mixed"
+        assert records["1151+2101"].rate_structure == "tou"
+        for code in ("1101+2101", "1151+2101"):
+            record = records[code]
+            adjustments = {component.tou_period: component for component in record.components if component.tou_period}
+            assert adjustments["overnight"].charge_value == -0.05
+            assert adjustments["on-peak"].charge_value == 0.05
+            assert adjustments["off-peak"].charge_value == 0
+            assert "23:00" in adjustments["overnight"].tou_hours and "07:00" in adjustments["overnight"].tou_hours
+            assert "16:00" in adjustments["on-peak"].tou_hours and "21:00" in adjustments["on-peak"].tou_hours
+            assert record.effective_date == "2026-07-01"
+            percentages = [component for component in record.components if component.charge_unit == "fraction"]
+            assert [component.charge_value for component in percentages] == [-0.015, 0]
+            assert all("not to RS 2101" in component.notes for component in percentages)
+        discount = next(component for component in flat.components if component.sub_component == "conditional")
+        assert discount.charge_value == -0.25 and "more than three units" in discount.notes
+        assert all(component.source_url == document["source_url"] and component.source_detail for record in records.values() for component in record.components)
+
+    @pytest.mark.parametrize(("page_number", "remaining"), [
+        (90, {"1101", "1151", "1105"}),
+        (88, {"1101", "1105", "1101+2101"}),
+        (233, set()),
+    ])
+    def test_incomplete_source_sections_fail_closed(self, document, page_number, remaining):
+        document["pages"] = [page for page in document["pages"] if page["page_number"] != page_number]
+        assert set(self.parse(document)) == remaining
+
+    def test_values_follow_source_and_future_schedule_is_rejected(self, document):
+        page = next(page for page in document["pages"] if page["page_number"] == 87)
+        page["text"] = page["text"].replace("12.70", "13.20")
+        assert self.parse(document)["1151"].components[1].charge_value == 0.132
+        for page in document["pages"]:
+            if page["page_number"] in {89, 90}:
+                page["text"] = page["text"].replace("July 1, 2026", "July 1, 2027")
+        assert set(self.parse(document)) == {"1101", "1151", "1105"}
+
+    def test_live_wrapper_preserves_independent_fallbacks(self, document):
+        from scrapers.utilities.bc_hydro import BCHydroScraper
+        from scrapers.utils.parsing import DocumentPage
+
+        scraper = BCHydroScraper()
+        with patch.object(scraper, "fetch_page", return_value="<h1>Residential rates</h1>"), \
+             patch.object(scraper, "fetch_bytes", return_value=b"pdf"), \
+             patch.object(scraper, "_parse_business", return_value=None), \
+             patch("scrapers.utilities.bc_hydro.extract_pdf_pages", return_value=[DocumentPage(**page) for page in document["pages"]]):
+            records = scraper.scrape()
+        assert len([record for record in records if "live_parsed" in (record.notes or "")]) == 5
+        assert len([record for record in records if "seed_fallback" in (record.notes or "")]) == 3
+
+    def test_divergent_monthly_tiers_do_not_borrow_bimonthly_values(self, document):
+        page = document["pages"][0]
+        page["text"] = page["text"].replace("675 kWh per month @ 11.87", "675 kWh per month @ 13.87")
+        assert set(self.parse(document)) == {"1151", "1105", "1151+2101"}
+
+    def test_residential_variants_keep_their_components_in_storage(self, document):
+        from pipeline.run_scrape import store_results
+        from tests.test_phase5_hardening import database
+
+        records = list(self.parse(document).values())
+        connection = database()
+        store_results(records, 1, connection)
+        store_results(records, 2, connection)
+        assert connection.execute("SELECT count(*) FROM tariffs").fetchone()[0] == 5
+        assert connection.execute("SELECT count(*) FROM historical_snapshots").fetchone()[0] == 10
+        actual = dict(connection.execute(
+            "SELECT tariffs.tariff_code, count(rate_components.id) FROM tariffs JOIN rate_components "
+            "ON rate_components.tariff_id = tariffs.id GROUP BY tariffs.id"
+        ))
+        assert actual == {record.tariff_code: len(record.components) for record in records}
+        connection.close()
 
 
 # ─── Hydro-Québec ──────────────────────────────────────────────
