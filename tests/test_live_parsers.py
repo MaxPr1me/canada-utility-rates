@@ -685,6 +685,119 @@ class TestSaskPowerUpdated:
         assert SaskPowerScraper()._parse_residential_pdf(text, "https://example.com/rates.pdf") is None
 
 
+class TestYukonEnergyBuildingRates:
+    @pytest.fixture
+    def documents(self):
+        import json
+        from pathlib import Path
+
+        fixture = Path(__file__).parent / "fixtures" / "yukon_energy_building_rates.json"
+        return json.loads(fixture.read_text(encoding="utf-8"))["documents"]
+
+    @staticmethod
+    def scrape_documents(documents):
+        from scrapers.utilities.yukon_energy import YukonEnergyScraper
+        from scrapers.utils.parsing import DocumentPage
+
+        by_url = {document["source_url"]: document for document in documents.values()}
+        html = '<body>' + ''.join(f'<a href="{url}">Current rate schedule</a>' for url in by_url) + '</body>'
+        scraper = YukonEnergyScraper()
+
+        def pages(data):
+            return [DocumentPage(**page) for page in by_url[data.decode("utf-8")]["pages"]]
+
+        with patch.object(scraper, "fetch_page", return_value=html), \
+             patch.object(scraper, "fetch_bytes", side_effect=lambda url: url.encode("utf-8")), \
+             patch.object(scraper, "now_iso", return_value="2026-10-01T00:00:00+00:00"), \
+             patch("scrapers.utilities.yukon_energy.extract_pdf_text", side_effect=lambda data: '\n'.join(page.text for page in pages(data)), create=True), \
+             patch("scrapers.utilities.yukon_energy.extract_pdf_pages", side_effect=pages, create=True):
+            return scraper.scrape()
+
+    def test_residential_includes_current_riders_and_relief(self, documents):
+        records = self.scrape_documents(documents)
+        residential = next(record for record in records if record.tariff_code == "1160")
+        riders = {component.component_name: component for component in residential.components if component.component_type == "rider"}
+        true_up = next(component for name, component in riders.items() if "J1" in name)
+        assert true_up.charge_value == 15.91
+        assert true_up.charge_unit == "%"
+        assert true_up.effective_date == "2026-04-01"
+        fuel = next(component for name, component in riders.items() if "Rider F" in name)
+        assert fuel.charge_value == 0.01 and fuel.charge_unit == "$/kWh"
+        assert fuel.effective_date == "2026-10-01"
+        relief = next(component for component in residential.components if component.component_type == "rebate")
+        assert relief.charge_value == -25 and relief.charge_unit == "%"
+        assert relief.tier_threshold == 1500 and relief.tier_unit == "kWh"
+        assert relief.end_date == "2027-03-31"
+        assert "Rider F" in relief.notes
+        assert residential.effective_date == "2026-10-01"
+        base = [component for component in residential.components if component.component_type in {"fixed", "energy"}]
+        assert [component.charge_value for component in base] == [14.65, 0.1214, 0.1282, 0.1399]
+        assert all(component.component_name.startswith("Base ") for component in base)
+        assert [component.charge_value for name, component in riders.items() if "Base Rate Adjustment" in name] == [14.38, 100.23]
+        assert len(residential.components) == 9
+        assert all(component.source_url and component.source_detail and component.effective_date for component in residential.components)
+
+    @pytest.mark.parametrize("missing", ["cross_reference", "j1", "fuel", "relief"])
+    def test_missing_required_document_does_not_mark_live(self, documents, missing):
+        del documents[missing]
+        records = self.scrape_documents(documents)
+        assert len(records) == 3
+        assert all(record.confidence == "unverified" and "seed_fallback" in record.notes for record in records)
+        assert all(component.confidence == "unverified" for record in records for component in record.components)
+
+    @pytest.mark.parametrize(("document", "old", "new"), [
+        ("cross_reference", "12.14 1.75 12.17 26.05", "-12.14 1.75 12.17 26.05"),
+        ("cross_reference", "\u00a2/kWh", "$/kWh"),
+        ("cross_reference", "1160 Hydro Non-Govt", "1180 Hydro Govt"),
+        ("j1", "Effective: 2026/04/01", "Effective: 2027/04/01"),
+        ("j1", "To all electric service retail rates", "To industrial retail rates"),
+        ("fuel", "\u00a2 per kWh", "dollars per kWh"),
+        ("fuel", "To all classes of service.", "To commercial service only."),
+        ("relief", "March 31,\n2027", "September 30,\n2026"),
+        ("relief", "Non Government", "Government"),
+        ("relief", "includes base rates and Rider J, J1, R and R1", "includes fuel charges"),
+    ])
+    def test_invalid_component_context_fails_closed(self, documents, document, old, new):
+        pages = documents[document]["pages"]
+        pages[0]["text"] = pages[0]["text"].replace(old, new)
+        records = self.scrape_documents(documents)
+        assert not any("live_parsed" in (record.notes or "") for record in records)
+
+    def test_current_rider_values_follow_the_source(self, documents):
+        documents["j1"]["pages"][0]["text"] = documents["j1"]["pages"][0]["text"].replace("15.91%", "16.25%")
+        documents["fuel"]["pages"][0]["text"] = documents["fuel"]["pages"][0]["text"].replace("1.0 \u00a2", "1.2 \u00a2")
+        residential = next(record for record in self.scrape_documents(documents) if record.tariff_code == "1160")
+        true_up = next(component for component in residential.components if "J1 -" in component.component_name)
+        fuel = next(component for component in residential.components if "Rider F" in component.component_name)
+        assert true_up.charge_value == 16.25
+        assert fuel.charge_value == 0.012
+
+    def test_yukon_sources_are_registered(self, documents):
+        from scrapers.registry import get_utility
+
+        entry = get_utility("Yukon Energy")
+        assert {document["source_url"] for document in documents.values()} <= {source["url"] for source in entry["sources"]}
+
+    def test_yukon_component_dates_and_history_survive_storage(self, documents):
+        from dataclasses import replace
+        from pipeline.run_scrape import store_results
+        from tests.test_phase5_hardening import database
+
+        residential = next(record for record in self.scrape_documents(documents) if record.tariff_code == "1160")
+        connection = database()
+        store_results([replace(residential, effective_date="2024-04-01")], 1, connection)
+        store_results([residential], 2, connection)
+        assert connection.execute("SELECT count(*) FROM tariffs").fetchone()[0] == 2
+        assert connection.execute("SELECT count(*) FROM historical_snapshots").fetchone()[0] == 2
+        rebate = connection.execute(
+            "SELECT charge_value, charge_unit, tier_threshold, effective_date, end_date, source_url "
+            "FROM rate_components WHERE scrape_run_id = 2 AND component_type = 'rebate'"
+        ).fetchone()
+        assert rebate == (-25, "%", 1500, "2026-10-01", "2027-03-31", documents["relief"]["source_url"])
+        assert connection.execute("SELECT count(*) FROM rate_components WHERE scrape_run_id = 2").fetchone()[0] == 9
+        connection.close()
+
+
 # ─── NL Hydro ──────────────────────────────────────────────────
 
 class TestNLHydroUpdated:

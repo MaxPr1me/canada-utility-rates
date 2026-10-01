@@ -3,10 +3,10 @@
 **Updated:** 2026-10-01
 **Scope:** Building-energy parser coverage, including single-family homes, with completed non-building schedules retained as reference.
 
-**Evidence:** October 1 local SaskPower results are combined with the October 1
+**Evidence:** October 1 local SaskPower/Yukon results are combined with the October 1
 monthly CI observations. CI data was integrated while preserving local history and
 newer SaskPower classes. The current export has
-79 live and 480 seed tariffs across 84 registered utilities. A fixture or verifier
+80 stored live versions (79 latest tariffs) and 480 seed tariffs across 84 registered utilities. A fixture or verifier
 implementation alone is not evidence of a successful live run.
 
 **Provenance:** complete fresh extraction uses `mark_live_parsed()`; contextual
@@ -31,7 +31,7 @@ as cents or borrowing a value from a different class/column.
 | **Newfoundland Power** | NL | PDF-only | Dynamic PDF parser | Domestic 1.1 | General Service 2.1/2.3/2.4 | High for parsed classes |
 | **Maritime Electric** | PE | IRAC PDF | Dynamic PDF parser | Urban/rural | 10 supported classes total | High for parsed classes |
 | **FortisAlberta** | AB | AUC/utility PDF | Residential PDF parser | Rate 11 | Other classes remain fallback | High for parsed residential |
-| **Yukon Energy** | YT | PDF cross-reference | Residential PDF parser | Hydro 1160 | Other classes remain fallback | High for parsed residential |
+| **Yukon Energy** | YT | Cross-reference and current rider PDFs | Partial: separate base/rider/relief parsing | Hydro 1160 | Other classes remain fallback; image-only base schedules | High for supported current residential |
 
 ## Group A: HTML Parsing for Supported Classes
 
@@ -88,7 +88,7 @@ as cents or borrowing a value from a different class/column.
 - **Billing context:** preserve minimum-bill rules, demand ratchets and TOU hours from continuation pages. These are source conditions, not a calculated bill total. kVA eligibility is kept as text rather than written into kW-only fields.
 - **Safety gates:** require complete column counts, source dates that are not future dates, correct currency/units, and required continuation data. Reject malformed groups independently. Known failed classes retain unverified seeds; unknown classes are logged, not invented.
 - **Fixtures:** six SaskPower JSON fixtures cover residential, supplied/customer-owned transformation, renewable access and retained farm/oil-field PDFs, with source URLs, retrieval dates, page numbers and table/condition excerpts.
-- **Tests:** 53 focused SaskPower parser/storage/export cases; 298 tests in the full suite. Coverage includes source-value mutations, cent glyph variation, wrong units/signs, missing/reordered/divergent columns, dates, failed fetches, required continuations, per-unit billing, seasonal/equipment units, historical closure notices, repeated storage and shared-code/codeless-class identity.
+- **Tests:** 53 focused SaskPower parser/storage/export cases; 316 tests in the full suite. Coverage includes source-value mutations, cent glyph variation, wrong units/signs, missing/reordered/divergent columns, dates, failed fetches, required continuations, per-unit billing, seasonal/equipment units, historical closure notices, repeated storage and shared-code/codeless-class identity.
 - **Persistence:** targeted storage/export retained all 519 previous snapshots and unchanged non-SaskPower records. The two old generic commercial seed records remain labelled estimates; history was not deleted.
 
 **Building audit result:** the currently published building-service schedules linked
@@ -121,20 +121,23 @@ not excluded catalogue expansion.
 
 - **Maritime Electric:** ten supported classes parsed from one IRAC schedule. Preserve individual charges; prioritize building-relevant service rather than all industrial process products.
 - **FortisAlberta:** Rate 11 residential parses live; building-relevant distribution classes need source-specific extraction. The October 1 CI observation updates its official schedule URL. The shared verifier is not a complete multi-class parser.
-- **Yukon Energy:** only residential hydro Rate 1160 parses. Prioritize government/non-government residential and general-service building classes. The October 1 source review found separate Rider F and affordability-relief documents; the base-plus-R/J cross-reference alone is not proof of complete current charges. Wholesale and standalone lighting are excluded from the building queue.
+- **Yukon Energy:** Rate 1160 now uses base fixed/energy columns with separate R/J/J1 percentages, current fuel Rider F and dated affordability relief. The prior combined R/J-only interpretation omitted J1/F/relief. The corrected October 1 version contains nine components, each with source details; no total is calculated. Relief ends March 31, 2027, applies only to eligible non-government residential energy up to 1,500 kWh, and excludes fuel/fixed charges.
+- **Yukon verification:** 18 focused tests cover missing documents or changed context, future/expired dates, negative/wrong-unit base rows, rider applicability, source mutation and persistence of rebate limits/end dates. The live dry run returned one live 1160 tariff plus two labelled seed fallbacks. Both old and new 1160 versions remain stored; latest-per-name counts must not count this as a second supported class.
+- **Yukon blocker:** the linked detailed 1160 residential and 2160 general-service PDFs are valid image-only documents (no text from `pdfplumber`). Their rendered pages confirm monthly residential billing and a multi-tier/demand general-service structure. The readable cross-reference contains only the fourth general-service energy block, so it cannot rebuild a complete GS tariff. Use OCR with reviewed fixtures or authoritative text alternatives before adding general-service, government/diesel variants or Rider A. No OCR dependency was added in this batch. Wholesale and standalone lighting remain excluded.
 
 ## Aggregate Statistics
 
 | Metric | Value |
 |--------|-------|
 | Registered utilities | 84 |
-| Stored/exported tariffs | 559, including older retained estimates |
-| Rate components | 3,649 |
-| Live tariffs / utilities with live output | 79 / 10 |
+| Stored/exported tariff versions | 560, including history and older retained estimates |
+| Rate components | 3,658 |
+| Latest live tariffs / utilities with live output | 79 / 10 |
+| Stored live versions | 80; includes older Yukon 1160 version |
 | Seed tariffs | 480 |
 | Newly added SaskPower live tariffs | 40 since the original residential-only parser |
 | October 1 observations | Monthly CI snapshot plus newer local SaskPower results |
-| Deterministic suite | 298 passing |
+| Deterministic suite | 316 passing |
 
 ## Recommended Next Steps
 

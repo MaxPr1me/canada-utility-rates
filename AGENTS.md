@@ -18,8 +18,8 @@ It works in three stages:
 
 GitHub Actions schedules a monthly scrape. Deployment and durable history across
 cloud runs still need reliability work; see the roadmap in [README.md](README.md).
-The latest export has 79 live tariffs and 480 estimates. Registry coverage is not
-the same as live coverage.
+The latest export has 79 latest live tariffs and 480 estimates; stored history contains
+80 live versions. Registry coverage is not the same as live coverage.
 
 ---
 
@@ -432,9 +432,9 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 298 tests across 8 test modules, including `test_phase5_hardening` for
+There are 316 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
-The six SaskPower JSON fixtures in `tests/fixtures/` hold official PDF-text excerpts,
+The SaskPower and Yukon Energy JSON fixtures in `tests/fixtures/` hold official PDF-text excerpts,
 source URLs and page numbers for repeatable parser tests.
 
 If everything passes, you'll see green output. If something fails, it will show you exactly what went wrong and where.
@@ -479,4 +479,5 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - Test comparison locally with `python -m http.server --directory site 8000`: add two cards, open **Compare**, remove/replace either, and check the mobile horizontal table. It never calculates a bill total.
 - Every successful stored scrape appends `historical_snapshots`. Canonical hashes ignore component ordering but change for values, units, tiers, dates, or structure; old effective-date versions are never deleted.
 - The October 1 SaskPower batches parse 41 live tariffs, including completed reference-only classes. Building scope now includes standard, bulk-metered and diesel residential service and R23/R24 renewable access. Standard E01/E03 keeps its identity only when both published columns agree; bulk fixed charges are per unit, not per account. Next is Yukon Energy building coverage; see [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).
+- Yukon Energy Rate 1160 now lists base rates, R/J/J1 percentage riders, fuel Rider F and dated residential relief separately. Do not add riders to a price that already includes them. Its old version remains in history; the browser keeps the latest version. Broader Yukon building classes need OCR or a text alternative for image-only base schedules.
 - Completing a utility means auditing its building-relevant standard published classes, not just replacing existing seed values or completing every unrelated service. A complete class can stay live when another class fails, but never stamp a mixed live/seed list as entirely live.

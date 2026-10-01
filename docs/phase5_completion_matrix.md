@@ -1,9 +1,11 @@
 # Phase 5 Completion Matrix
 
 **Updated:** 2026-10-01. Scope: all 84 registered utilities, not every utility
-in the broader Canadian inventory. The export has 559 tariffs / 3,649 components /
-**79 live / 480 seed**. The export combines October 1 monthly CI observations with
-newer local SaskPower parser results. No gas or Ontario tariffs are live in this export.
+in the broader Canadian inventory. The export has 560 stored tariff versions / 3,658
+components / **80 stored live versions / 480 seed**. Latest-per-name coverage is
+**79 live tariffs**; an older Yukon 1160 version remains in history. The export combines
+October 1 CI observations with newer local SaskPower/Yukon results. No gas or Ontario
+tariffs are live in this export.
 Counts include retained non-building reference records, not only building tariffs.
 
 **Active building scope:** single-family and multi-unit residential, commercial,
@@ -21,7 +23,7 @@ and components, with explicit non-building/special/unavailable exclusions. SaskP
 audited published building-service schedules are implemented as of October 1; that
 does not claim full-catalogue, tax-inclusive billing or building-code compliance.
 
-Only SaskPower currently has saved source-derived fixtures in `tests/fixtures/`.
+SaskPower and Yukon Energy have saved source-derived fixtures in `tests/fixtures/`.
 Other tests include inline synthetic text and seed checks. A shared verifier test,
 successful process exit, or empty missing-data log does not establish live coverage.
 
@@ -199,23 +201,30 @@ coverage must not be hidden under a live tariff label; do not invent unit conver
 
 ## Northern Electricity
 
-Observed counts below are from October 1 CI. No source-derived utility fixtures are
-saved yet; representative seed zones are not proof of the actual published catalogue.
+Observed counts below use the latest tariff versions. Yukon 1160 was refreshed locally
+on October 1 with a multi-document source fixture; other entries retain CI results.
+Representative seed zones are not proof of the actual published catalogue.
 
 | Utility | Live tariffs | Implemented path | Required work |
 |---|---|---|---|
-| Yukon Energy | 1 | Residential hydro 1160 PDF cross-reference | Government/non-government residential and general-service building classes; current separate riders/rebates |
+| Yukon Energy | 1 latest | 1160 base rates + separate R/J/J1 percentages, F and dated residential relief; source fixture and 18 focused tests | Broader building classes and Rider A require OCR/text alternatives for image-only base PDFs; not complete |
 | Yukon Electrical Company | 0 | Seed verification wrapper | ATCO Electric Yukon/Yukon Utilities Board sources and class/rider applicability |
 | Northwest Territories Power Corporation | 0 | Seed verification wrapper | Confirm actual service territory, zones/classes and subsidy eligibility; full extraction |
 | Qulliq Energy Corporation | 0 | Seed verification wrapper | Current QEC/regulator class schedules and subsidy applicability |
 
-Yukon Energy's October 1 landing-page review exposed an April base/R/J cross-reference
-alongside separate October 1 Rider F and affordability-relief documents. Their
-applicability needs parsing; do not assume the old combined column is a complete bill rate.
+Yukon 1160 now reads the base column and separately sources J1/F/relief with class,
+unit and date checks; R/J rates and dates come from the official cross-reference.
+The rebate is limited to eligible energy up to 1,500 kWh and ends March 31, 2027;
+it excludes Rider F and fixed charges. Older versions remain in history.
+
+The detailed 1160 and 2160 PDFs are image-only. Rendered source pages confirm that
+general service includes demand and four energy blocks, while the readable
+cross-reference lists only block 4. Do not infer the missing blocks from seeds.
+Next gate: reviewed OCR or authoritative text for full building-class extraction.
 
 ## Next Batches and Acceptance
 
-1. Yukon Energy residential/general service and current riders, then NS building-service and FortisBC Electric; maintain the implemented SaskPower scope.
+1. Broader Yukon building classes/Rider A via reviewed OCR or text alternatives, then NS building-service and FortisBC Electric; maintain implemented SaskPower coverage and corrected Yukon 1160.
 2. Territorial/provincial depth and building-relevant class audits of existing live utilities.
 3. Building-service tariffs at nine gas utilities, Alberta electricity, then the Ontario campaign.
 4. Separate operational track: browser-enabled source health, meaningful provenance counts,

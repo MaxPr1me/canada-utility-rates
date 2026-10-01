@@ -40,6 +40,7 @@ Canada-wide utility rate scraping and browsing for building energy-cost analysis
 - **Supplied-service additions:** E37 irrigation retains `$/season` and `$/HP/season`; E15/E17 use watt-block/month units, E16 uses power-supply-unit/month, E18 uses installed-kVA/month, and E35 diesel has two energy tiers. Slice multiple schedules on the same page before parsing; minimum bills are conditions, not extra additive charges.
 - **Farm/oil-field additions:** E34/E19/E41 and E43/E44/E46-E48/E86-E88 have dedicated fixtures. E41 is a monthly per-meter-location charge during the pumping season, not a seasonal lump sum; its 1997 closure notice is not the tariff effective date. Oil-field standard charges are per metering point; power variants preserve voltage and TOU conditions.
 - **SaskPower building scope:** page-aware E01/E03 standard parsing requires identical city/rural columns and preserves the existing name; bulk-metered service is a separate closed-to-new per-unit billing variant, and diesel E04 has two energy tiers. R23/R24 renewable access requires its eligibility heading and billing-demand continuation. Six source-derived fixtures cover the supported documents; taxes/surcharges excluded by the schedules are not calculated.
+- **Yukon Energy 1160:** read the base column, not the combined R/J column. R/J/J1 are separate percentages on base charges; Rider F is per kWh and relief is a dated, usage-limited energy percentage excluding fuel/fixed charges. Require current source dates and class applicability. One multi-document fixture covers this path. The detailed 1160 and 2160 PDFs are image-only; broader building classes and multiple-residence Rider A need OCR or authoritative text alternatives.
 - Every tariff stores individual rate_components (fixed, energy, demand, delivery, riders, etc.) — never flatten to one number.
 - Historical snapshots are preserved in `historical_snapshots` table — never overwrite.
 - Validation runs after scraping (`scrapers/utils/validation.py`).
@@ -54,7 +55,7 @@ python -m playwright install chromium     # headless browser for JS-rendered pag
 python -m pipeline.run_scrape --init-db   # first time
 python -m pipeline.run_scrape             # scrape all
 python -m pipeline.export_json            # export for site
-pytest                                    # run tests (298 tests)
+pytest                                    # run tests (316 tests)
 ```
 
 ## Adding a utility
@@ -70,8 +71,8 @@ pytest                                    # run tests (298 tests)
 - Keep registry URLs and actual scraper URL constants synchronized; most modules do not consume registry sources dynamically.
 
 ## Current snapshot and queue (2026-10-01)
-- Targeted SaskPower refresh: 41 live records. Export: 559 tariffs / 3,649 components / 79 live / 480 seed across 84 utilities. Counts include reference-only records. The scoped SaskPower building schedule audit is implemented; the stable standard residential identity and all prior snapshots are preserved.
-- Next: Yukon Energy residential/general service and current riders, NS building-service and FortisBC Electric expansions. Building coverage in the territories/provinces, nine gas utilities, Alberta and Ontario follows. Do not resume farm/oil-field, wholesale or standalone lighting expansion. README and the matrix hold the maintained roadmap.
+- Export: 560 stored tariff versions / 3,658 components / 80 stored live versions / 480 seed across 84 utilities. Latest-per-name coverage is 79 live tariffs; Yukon 1160 now has a corrected 2026-10-01 version while its older version remains. SaskPower has 41 live records including reference-only classes, with the scoped building schedule audit implemented.
+- Next: authoritative text/OCR for broader Yukon residential/general-service classes and Rider A, then NS building-service and FortisBC Electric expansions. Building coverage in other territories/provinces, gas, Alberta and Ontario follows. Do not resume farm/oil-field, wholesale or standalone lighting expansion. The matrix holds specific source blockers.
 - The Ontario market generator uses fixed inputs and multipliers, not reproducible five-year observation ingestion. Document this now; the user deferred UI/metadata correction and real ingestion to later phases.
 - Local history is append-only. Monthly CI restore/save, default-token deployment triggering, source-health browser setup and failure reporting remain separate reliability work.
 
@@ -89,4 +90,4 @@ Update these files when the task changes architecture, adds major features, chan
 - `scrapers.utils.parsing` provides `DocumentPage`, page-aware fail-closed PDF extraction/section selection, CSV/XLSX readers, content hashing, effective-date/unit/currency normalization, and contextual verification.
 - Snapshot serialization is canonical JSON with sorted component dictionaries. Ordering alone is ignored; all semantic fields remain hashed. `diff_runs` compares append-only per-run snapshots.
 - The no-build comparison state is an in-memory two-item array in `site/js/app.js`; it aligns exact type/name/unit keys and never totals them.
-- Deterministic tests block unmocked network access. Run `pytest -q` (298 tests); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.
+- Deterministic tests block unmocked network access. Run `pytest -q` (316 tests); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.

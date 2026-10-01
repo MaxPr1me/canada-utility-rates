@@ -1,0 +1,42 @@
+{
+  "retrieved_on": "2026-10-01",
+  "description": "Official Yukon Energy PDF-text excerpts; original document URLs and page numbers retained.",
+  "documents": {
+    "cross_reference": {
+      "source_url": "https://yukonenergy.ca/media/site_documents/Base_Rates_with_R_and_J_Cross-Reference_effective_April_1__2026.pdf",
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Yukon Base Rates with Riders R and J Cross Reference\nRider R (ATCO Electric Yukon (AEY) Rate Adjustment Rider)\nRider J (Yukon Energy Corporation (YEC) Rate Adjustment Rider)\nEffective Date: Effective Date Rate AEY Rider R: September 1, 2024 14.38%\nYEC Rider J: April 1, 2026 100.23%\nResidential Rate Schedules 1160 Hydro Non-Govt\n1260 Small Diesel Non-Govt Base Rate Rider R Rider J\n1360 Large Diesel Non-Govt\nCustomer $ 14.65 $ 2.11 $ 14.68 $ 31.44\nFirst 1000 kWh Energy Block 1 \u00a2/kWh 12.14 1.75 12.17 26.05\n1001-2500 kWh Energy Block 2 \u00a2/kWh 12.82 1.84 12.85 27.51\n>2500 kWh Energy Block 3 \u00a2/kWh 13.99 2.01 14.02 30.02\n1460 Old Crow Non-Govt Base Rate Rider R Rider J\nCustomer $ 14.65 $ 2.11 $ 14.68 $ 31.44\nFirst 1000 kWh Energy Block 1 \u00a2/kWh 12.14 1.75 12.17 26.05\n1001-2500 kWh Energy Block 2 \u00a2/kWh 12.82 1.84 12.85 27.51\n>2500 kWh Energy Block 3 \u00a2/kWh 30.77 4.42 30.84 66.04\n1180 Hydro Govt\n1280 Small Diesel Govt Base Rate Rider R Rider J\n1380 Large Diesel Govt\nCustomer $ 18.47 $ 2.66 $ 18.51 $ 39.64\nFirst 1000 kWh Energy Block 1 \u00a2/kWh 16.47 2.37 16.51 35.35\n1001-2500 kWh Energy Block 2 \u00a2/kWh 17.47 2.51 17.51 37.49\n>2500 kWh Energy Block 3 \u00a2/kWh 18.85 2.71 18.89 40.45\n1480 Old Crow Govt Base Rate Rider R Rider J\nCustomer $ 18.47 $ 2.66 $ 18.51 $ 39.64\nFirst 1000 kWh Energy Block 1 \u00a2/kWh 16.47 2.37 16.51 35.35\n1001-2500 kWh Energy Block 2 \u00a2/kWh 17.47 2.51 17.51 37.49\n>2500 kWh Energy Block 3 \u00a2/kWh 41.45 5.96 41.55 88.96"
+        }
+      ]
+    },
+    "j1": {
+      "source_url": "https://yukonenergy.ca/media/site_documents/2026-04-01_YEC_Rider_J1.pdf",
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Effective: 2026/04/01\nSupersedes: 2024/10/01\nRIDER J1\nRIDER J1 - YUKON ENERGY TEMPORARY TRUE-UP RIDER\nAVAILABLE: To all electric service throughout the Yukon Territory. APPLICABLE: To all electric service retail rates except Rate Schedule 32, Rate\nSchedule 42 and Rate Schedule 43.\nRATE: Rider J1 at 15.91% applicable to the base rates for all rate classes,\nincluding Rate Schedule 39 fixed Rider F and Fixed Charge.\nAll ATCO Electric Yukon recoveries from this rider to flow through\nto the Yukon Energy Corporation. NOTE: Rider J does not apply to Rate Schedule 32, Rate Schedule 42 and\nRate Schedule 43."
+        }
+      ]
+    },
+    "fuel": {
+      "source_url": "https://yukonenergy.ca/media/site_documents/2026-10-01_AEY-YEC_Rider_F_Rate_Schedule.pdf",
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Effective: 2026 10 01\nSupercedes: 2026 05 01\nRIDER F\nFUEL ADJUSTMENT RIDER\nAVAILABLE: To all electric service throughout the Yukon Territory.\nAPPLICABLE: To all classes of service.\nRATE: Service will be rendered at the applicable rates with the following\nsurcharge to cover changes in the unit cost of fuel. A surcharge rider of 1.0 \u00a2 per kWh will be applied to all kWh\nconsumed.\nNOTE: The change in this Rider will change in accordance with changes\nin the Companies' fuel costs calculated on a unit basis by\nreference to kWh sales. Such changes to the change in this\nRider shall be implemented coincident with changes in the\nCompanies' costs of fuel or at such time as is practical. Rider F does not apply to Rate Schedule 32 Secondary Energy."
+        }
+      ]
+    },
+    "relief": {
+      "source_url": "https://yukonenergy.ca/media/site_documents/2026-10-01_Affordability_Rate_Relief.pdf",
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Effective: 2026 10 01\nSupercedes: 2026 04 01\nAFFORDABILITY RATE RELIEF REBATE\nAVAILABLE: To all electric service throughout the Yukon Territory.\nAPPLICABLE: Residential - Non Government customer class only. Not applicable to any commercial,\nindustrial or government customers. RATE: A rebate effective October 1, 2026 to March 31,\n2027. The rebate is -25% off energy charges\n(includes base rates and Rider J, J1, R and R1\nonly) for the first 1,500 kWh of electricity usage.\nNOTE: The rebate does not apply to Rider F or any riders\nother than those listed above.\nThis rebate is subject to funding being approved\n(annually) by the Yukon Government Legislature\nfor the purpose of this rebate."
+        }
+      ]
+    }
+  }
+}

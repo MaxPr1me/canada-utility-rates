@@ -445,16 +445,40 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.yukon_energy",
       "scraper_class": "YukonEnergyScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
           "url": "https://yukonenergy.ca/customer-service/rates/rate-schedules/",
           "source_type": "html",
-          "description": "Rate schedules — Base Rates cross-reference (effective rate incl. Riders R & J)",
+          "description": "Official base-rate schedules, adjustment riders and residential rebates",
           "is_primary": true
+        },
+        {
+          "url": "https://yukonenergy.ca/media/site_documents/Base_Rates_with_R_and_J_Cross-Reference_effective_April_1__2026.pdf",
+          "source_type": "pdf",
+          "description": "Rate 1160 base columns and Rider R/J rates and dates; combined columns are not used as base prices",
+          "is_primary": false
+        },
+        {
+          "url": "https://yukonenergy.ca/media/site_documents/2026-04-01_YEC_Rider_J1.pdf",
+          "source_type": "pdf",
+          "description": "Temporary true-up percentage on base rates, separate from R and J",
+          "is_primary": false
+        },
+        {
+          "url": "https://yukonenergy.ca/media/site_documents/2026-10-01_AEY-YEC_Rider_F_Rate_Schedule.pdf",
+          "source_type": "pdf",
+          "description": "Current fuel surcharge per kWh",
+          "is_primary": false
+        },
+        {
+          "url": "https://yukonenergy.ca/media/site_documents/2026-10-01_Affordability_Rate_Relief.pdf",
+          "source_type": "pdf",
+          "description": "Dated non-government residential energy rebate, with usage limit and fuel/fixed-charge exclusions",
+          "is_primary": false
         }
       ],
-      "notes": "Yukon Energy Corporation is the Crown-owned generation and transmission utility in Yukon. Regulated by the Yukon Utilities Board (YUB)."
+      "notes": "Yukon Energy Corporation is regulated by the Yukon Utilities Board. Rate 1160 parses base rates, R/J/J1 percentages, current fuel Rider F and dated residential relief separately. Detailed 1160/2160 base PDFs are image-only; broader building classes and Rider A need OCR or authoritative text alternatives. General-service and representative diesel fallbacks remain unverified."
     },
     {
       "name": "Yukon Electrical Company",
