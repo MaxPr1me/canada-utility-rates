@@ -344,7 +344,7 @@ class TestSaskPowerUpdated:
         fixture = transformation_documents["supplied"]
         records = self._scrape_transformation_document(fixture)
         live = {record.tariff_code: record for record in records if "live_parsed" in (record.notes or "")}
-        assert set(live) == {"E05", "E06", "E75", "E76"}
+        assert set(live) == {"E05", "E06", "E75", "E76", "E37", "E15", "E16", "E17", "E18", "E35"}
         expected = {
             "E05": (75.85, 16750, 0.11964, 21.632), "E06": (75.85, 15500, 0.11964, 21.632),
             "E75": (42.79, 14500, 0.15602, 20.788), "E76": (42.79, 13000, 0.15602, 20.788),
@@ -383,7 +383,7 @@ class TestSaskPowerUpdated:
         document["pages"][0]["text"] = document["pages"][0]["text"].replace(old, new)
         records = self._scrape_transformation_document(document)
         live = [record for record in records if "live_parsed" in (record.notes or "")]
-        assert {record.tariff_code for record in live} == {"E75", "E76"}
+        assert {record.tariff_code for record in live} == {"E75", "E76", "E37", "E15", "E16", "E17", "E18", "E35"}
         fallback = next(record for record in records if record.tariff_name == "Power Service (Demand)")
         assert fallback.confidence == "unverified"
         assert "seed_fallback" in fallback.notes
@@ -400,9 +400,54 @@ class TestSaskPowerUpdated:
 
     def test_broken_residential_pdf_keeps_commercial_live(self, transformation_documents):
         records = self._scrape_transformation_document(transformation_documents["supplied"], broken_residential=True)
-        assert {record.tariff_code for record in records if "live_parsed" in (record.notes or "")} == {"E05", "E06", "E75", "E76"}
+        assert {record.tariff_code for record in records if "live_parsed" in (record.notes or "")} == {"E05", "E06", "E75", "E76", "E37", "E15", "E16", "E17", "E18", "E35"}
         residential = next(record for record in records if record.tariff_name == "Residential Service")
         assert residential.confidence == "unverified"
+
+    def test_irrigation_diesel_and_unmetered_units(self, transformation_documents):
+        records = self._scrape_transformation_document(transformation_documents["supplied"])
+        live = {record.tariff_code: record for record in records if "live_parsed" in (record.notes or "")}
+        irrigation = live["E37"]
+        assert [(component.charge_value, component.charge_unit) for component in irrigation.components] == [
+            (283.78, "$/season"), (28.553, "$/HP/season"), (0.10764, "$/kWh"),
+        ]
+        assert irrigation.components[1].demand_unit == "HP"
+        assert irrigation.demand_min_kw is None
+        assert all(component.season_months == "2,3,4,5,6,7,8,9,10" for component in irrigation.components)
+        assert "Feb" in irrigation.eligibility and "Oct. 31" in irrigation.eligibility
+        diesel = live["E35"]
+        assert diesel.rate_structure == "tiered"
+        assert [(component.charge_value, component.tier_threshold) for component in diesel.components] == [
+            (46.36, None), (0.16086, 650), (0.55413, 650),
+        ]
+        expected = {
+            "E15": (4.697, "$/100 W/month"), "E16": (81.66, "$/power supply unit/month"),
+            "E17": (1.713, "$/10 W/month"), "E18": (4.687, "$/kVA/month"),
+        }
+        for code, value_unit in expected.items():
+            record = live[code]
+            assert len(record.components) == 1
+            assert (record.components[0].charge_value, record.components[0].charge_unit) == value_unit
+            assert record.effective_date == "2026-02-01"
+            assert record.components[0].source_detail
+        assert "22.08" in live["E15"].notes and "81.66" not in live["E15"].notes
+        assert "34.21" in live["E17"].notes and "X-RAY" not in live["E17"].notes
+        assert "cable television" in live["E16"].eligibility
+
+    @pytest.mark.parametrize(("code", "page_number", "old", "new"), [
+        ("E16", 6, "Charge per power supply unit per month $81.66", "Charge per power supply unit per month unavailable"),
+        ("E15", 6, "100 watt", "100 kW"),
+        ("E37", 5, "$/HP/season", "$/kW/season"),
+        ("E35", 8, "Balance (\u00a2/kWh) 55.413\u00a2", "Balance unavailable"),
+        ("E18", 7, "Flat rate Effective February 1, 2026", "Flat rate Effective February 1, 2027"),
+    ])
+    def test_single_code_schedules_fail_independently(self, transformation_documents, code, page_number, old, new):
+        document = transformation_documents["supplied"]
+        page = next(page for page in document["pages"] if page["page_number"] == page_number)
+        page["text"] = page["text"].replace(old, new)
+        records = self._scrape_transformation_document(document)
+        codes = {record.tariff_code for record in records if "live_parsed" in (record.notes or "")}
+        assert codes == {"E05", "E06", "E75", "E76", "E37", "E15", "E16", "E17", "E18", "E35"} - {code}
 
     def test_customer_owned_voltage_tou_and_capacity_classes(self, transformation_documents):
         records = self._scrape_transformation_document(transformation_documents["customer_owned"])

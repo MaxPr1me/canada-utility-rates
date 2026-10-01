@@ -306,7 +306,7 @@
         {
           "url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-saskpowersuppliedtransformation.pdf",
           "source_type": "pdf",
-          "description": "SaskPower-supplied transformation: live E05/E06 and E75/E76; other classes pending",
+          "description": "SaskPower-supplied transformation: E05/E06, E75/E76, E37 irrigation, E15-E18 unmetered and E35 diesel",
           "is_primary": false
         },
         {
@@ -316,7 +316,7 @@
           "is_primary": false
         }
       ],
-      "notes": "SaskPower is a provincial Crown corporation regulated by the Saskatchewan Rate Review Panel. On 2026-10-01, live parsing returned residential plus 19 transformation tariffs. Irrigation, unmetered, diesel, farm, oil-field, lighting, reseller and renewable-access schedules still need class-specific coverage."
+      "notes": "SaskPower is a provincial Crown corporation regulated by the Saskatchewan Rate Review Panel. On 2026-10-01, live parsing returned residential plus 25 supplied/customer-owned tariffs. Farm, oil-field, lighting, reseller, renewable-access and remaining residential variants still need class-specific coverage."
     },
     {
       "name": "NB Power",

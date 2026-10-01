@@ -5,7 +5,7 @@
 
 **Evidence:** October 1 refreshed SaskPower only. Other observed live counts below
 come from the September 29 export, not a new source check. The current export has
-58 live and 480 seed tariffs across 84 registered utilities. A fixture or verifier
+64 live and 480 seed tariffs across 84 registered utilities. A fixture or verifier
 implementation alone is not evidence of a successful live run.
 
 **Provenance:** complete fresh extraction uses `mark_live_parsed()`; contextual
@@ -24,7 +24,7 @@ as cents or borrowing a value from a different class/column.
 | **Nova Scotia Power** | NS | Server-rendered h4/li | Live parser (residential + commercial) | Flat rate | Rate 10 (tiered), Rate 11 (demand), Rate 12 (demand) | High |
 | **BC Hydro** | BC | Prose text (sub-pages) | Live parser | Tiered (Step 1/2) | SGS (flat), MGS (demand), LGS (demand) | High |
 | **Hydro-Québec** | QC | JS-rendered + PDF | PDF live parser | Rate D (tiered) | Rate G (mixed), Rate M (demand) | High |
-| **SaskPower** | SK | Rendered landing page + PDFs | Dynamic PDF parser, partial coverage | Standard E01/E03 combined record | 19 supplied/customer-owned transformation variants | High for complete parsed classes |
+| **SaskPower** | SK | Rendered landing page + PDFs | Dynamic PDF parser, partial coverage | Standard E01/E03 combined record | 25 supplied/customer-owned schedules | High for complete parsed classes |
 | **NL Hydro** | NL | PDF + inline text | Official PDF component verification | Rural + Labrador | General Service | High when verified |
 | **Newfoundland Power** | NL | PDF-only | Dynamic PDF parser | Domestic 1.1 | General Service 2.1/2.3/2.4 | High for parsed classes |
 | **Maritime Electric** | PE | IRAC PDF | Dynamic PDF parser | Urban/rural | 10 supported classes total | High for parsed classes |
@@ -76,19 +76,19 @@ as cents or borrowing a value from a different class/column.
 ## SaskPower: October 1 Implementation
 
 - **Discovery:** render the official power-supply-rates landing page when needed, then fetch its linked schedules. Failure of one PDF does not discard independent complete classes.
-- **Live result:** 20 valid tariffs, all with live provenance; 19 newly parsed transformation records plus the existing residential record. Business schedules are effective February 1, 2026.
+- **Live result:** 26 valid tariffs, all with live provenance; 25 supplied/customer-owned records plus the existing residential record. Business schedules are effective February 1, 2026.
 - **Supplied transformation:** standard E05/E06 and small commercial E75/E76. Urban/rural energy thresholds differ; both include a free first demand block and a paid balance in kVA. The old flat small-commercial seed was not the current structure.
+- **Other supplied services:** E37 irrigation preserves the February-October pumping season, fixed seasonal charge and horsepower-based demand charge. E15/E16/E17/E18 unmetered schedules preserve 100-watt, equipment-unit, 10-watt and installed-kVA units respectively. E35 diesel preserves both energy tiers. Paired schedules on pages 6 and 7 are parsed independently and cannot borrow adjacent rates or minimum-bill conditions.
 - **Customer-owned transformation:** standard E07/E08/E10/E12; small commercial E77/E78; power TOU E82/E83/E84; power standard E22/E23/E24; capacity reservation N22/N23/N24. Voltage columns remain distinct; E10/E12 are identified as closed to new customers.
 - **Billing context:** preserve minimum-bill rules, demand ratchets and TOU hours from continuation pages. These are source conditions, not a calculated bill total. kVA eligibility is kept as text rather than written into kW-only fields.
 - **Safety gates:** require complete column counts, source dates that are not future dates, correct currency/units, and required continuation data. Reject malformed groups independently. Known failed classes retain unverified seeds; unknown classes are logged, not invented.
 - **Fixtures:** `tests/fixtures/saskpower_supplied_transformation.json` and `tests/fixtures/saskpower_customer_owned_transformation.json` contain source URLs, retrieval date, original page numbers and table/condition excerpts.
-- **Tests:** 23 focused SaskPower parser/storage/export cases; 268 tests in the full suite. Coverage includes source-value mutations, cent glyph variation, wrong units/signs, missing/reordered columns, dates, failed residential fetches, missing TOU continuation, repeated storage and codeless-class component isolation.
+- **Tests:** 29 focused SaskPower parser/storage/export cases; 274 tests in the full suite. Coverage includes source-value mutations, cent glyph variation, wrong units/signs, missing/reordered columns, dates, failed residential fetches, missing TOU continuation, paired-page isolation, seasonal/equipment units, repeated storage and codeless-class component isolation.
 - **Persistence:** targeted storage/export retained all 519 previous snapshots and unchanged non-SaskPower records. The two old generic commercial seed records remain labelled estimates; history was not deleted.
 
-**Still incomplete:** supplied-transformation irrigation E37, unmetered E15/E16/E17/E18,
-diesel E35, farm, oil-field, streetlight, reseller and renewable-access schedules.
+**Still incomplete:** farm, oil-field, streetlight, reseller and renewable-access schedules.
 Audit the remaining residential variants as well. The current residential record combines
-E01/E03; 20 exported tariffs is not a complete published-code count.
+E01/E03; 26 exported tariffs is not a complete published-code count.
 
 The [registry](../data/sources/registry.json) records the landing page and both
 transformation PDFs and marks SaskPower `partial`. Finish the remaining source catalogue
@@ -120,13 +120,13 @@ in additional fixture-first batches; do not mark the whole utility complete yet.
 | Metric | Value |
 |--------|-------|
 | Registered utilities | 84 |
-| Stored/exported tariffs | 538, including older retained estimates |
-| Rate components | 3,592 |
-| Live tariffs / utilities with live output | 58 / 10 |
+| Stored/exported tariffs | 544, including older retained estimates |
+| Rate components | 3,602 |
+| Live tariffs / utilities with live output | 64 / 10 |
 | Seed tariffs | 480 |
-| Newly added SaskPower live tariffs | 19 |
+| Newly added SaskPower live tariffs | 25 |
 | Fresh October 1 source check | SaskPower only |
-| Deterministic suite | 268 passing |
+| Deterministic suite | 274 passing |
 
 ## Recommended Next Steps
 

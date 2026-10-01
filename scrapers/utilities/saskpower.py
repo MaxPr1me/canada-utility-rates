@@ -168,7 +168,7 @@ class SaskPowerScraper(BaseScraper):
     def _parse_transformation(
         self, pages: list[DocumentPage], source_url: str,
     ) -> list[TariffRecord]:
-        records: list[TariffRecord] = []
+        records = self._parse_supplied_services(pages, source_url)
         money = r"\$\s*([\d,]+(?:\.\d+)?)"
         cents = r"(-?[\d,]+(?:\.\d+)?)\s*[^\d\w\s/$+-]{1,2}(?=\s|$)"
         schedules = {
@@ -187,7 +187,8 @@ class SaskPowerScraper(BaseScraper):
                 continue
             codes = tuple(code_match.group(1).split())
             if codes not in schedules:
-                self.logger.warning("Unparsed SaskPower rate codes %s at %s", codes, source_url)
+                if not set(codes) <= {"E37", "E15", "E16", "E17", "E18", "E35"}:
+                    self.logger.warning("Unparsed SaskPower rate codes %s at %s", codes, source_url)
                 continue
             owner, name, energy_mode, customer_class = schedules[codes]
             section_pages = [page]
@@ -291,6 +292,104 @@ class SaskPowerScraper(BaseScraper):
                     notes="Published minimum bill and billing conditions: " +
                           re.sub(r"\s+", " ", text.split("MINIMUM BILL", 1)[1]).strip(),
                     components=components,
+                ))
+        return records
+
+    def _parse_supplied_services(
+        self, pages: list[DocumentPage], source_url: str,
+    ) -> list[TariffRecord]:
+        services = {
+            "E37": ("NON-FARM IRRIGATION RATE", "Non-Farm Irrigation", "demand"),
+            "E15": ("UNMETERED GENERAL SERVICE RATE", "Unmetered General Service", "flat"),
+            "E16": ("UNMETERED GENERAL SERVICE RATE", "Unmetered CATV Power Supply", "flat"),
+            "E17": ("UNMETERED CATV RECTIFIER RATE", "Unmetered CATV Rectifier", "flat"),
+            "E18": ("UNMETERED X-RAY RATE", "Unmetered X-Ray", "flat"),
+            "E35": ("GENERAL SERVICE DIESEL RATE", "General Service Diesel", "tiered"),
+        }
+        unmetered = {
+            "E15": (r"Charge per 100 watt of connected load per month", "Connected Load Charge", "$/100 W/month"),
+            "E16": (r"Charge per power supply unit per month", "Power Supply Unit Charge", "$/power supply unit/month"),
+            "E17": (r"Charge per 10 watt of connected load per month", "Rectifier Connected Load Charge", "$/10 W/month"),
+            "E18": (r"Charge/kVA of installed transformer capacity/month", "Installed Transformer Capacity Charge", "$/kVA/month"),
+        }
+        money = r"\$\s*([\d,]+(?:\.\d+)?)"
+        cents = r"(-?[\d,]+(?:\.\d+)?)\s*[^\d\w\s/$+-]{1,2}(?=\s|$)"
+        cent_unit = r"\([^\d\w\s/$+-]{1,2}/kWh\)"
+        records: list[TariffRecord] = []
+        for page in pages:
+            if "SASKPOWER-SUPPLIED" not in page.text:
+                continue
+            headings = list(re.finditer(r"(?m)^([A-Z][A-Z -]* RATE)[ \t]*$", page.text))
+            for section_index, heading in enumerate(headings):
+                end = headings[section_index + 1].start() if section_index + 1 < len(headings) else len(page.text)
+                section = page.text[heading.start():end]
+                code_match = re.search(r"Rate Code\*?\s+(E\d{2})\b", section)
+                if not code_match or code_match.group(1) not in services:
+                    continue
+                code = code_match.group(1)
+                expected_header, name, structure = services[code]
+                try:
+                    if heading.group(1) != expected_header:
+                        raise ValueError("Rate code does not match service heading")
+                    dates = re.findall(r"\bEffective\s+[A-Z][a-z]+\s+\d{1,2},\s*\d{4}\b", section)
+                    effective_date = extract_effective_date(dates[0]) if len(dates) == 1 else None
+                    if not effective_date or effective_date > self.now_iso()[:10]:
+                        raise ValueError("Missing, ambiguous or future effective date")
+                    if code != "E18" and "MINIMUM BILL" not in section:
+                        raise ValueError("Missing minimum-bill conditions")
+                    if code == "E37":
+                        if not re.search(r"annual pumping season between February 1 and Oct\. 31", section):
+                            raise ValueError("Changed or missing pumping season")
+                        basic = self._column_values(section, r"Basic seasonal charge", money, 1)[0]
+                        demand = self._column_values(section, r"Demand Charge \$/HP/season", money, 1)[0]
+                        energy = self._column_values(section, r"Energy Charge Energy charge\s*" + cent_unit, cents, 1)[0]
+                        components = [
+                            RateComponent("fixed", "Basic Seasonal Charge", basic, "$/season"),
+                            RateComponent("demand", "Seasonal Horsepower Charge", demand, "$/HP/season", demand_unit="HP"),
+                            RateComponent("energy", "Energy Charge", round(energy / 100.0, 6), "$/kWh"),
+                        ]
+                        for component in components:
+                            component.season = "pumping"
+                            component.season_months = "2,3,4,5,6,7,8,9,10"
+                    elif code == "E35":
+                        basic = self._column_values(section, r"Basic monthly charge", money, 1)[0]
+                        first_row = re.search(r"Energy Charge First ([\d,]+) kWh/month", section)
+                        if not first_row:
+                            raise ValueError("Missing diesel energy block threshold")
+                        threshold = float(first_row.group(1).replace(",", ""))
+                        if threshold <= 0:
+                            raise ValueError("Invalid diesel energy block threshold")
+                        first = self._column_values(section, r"Energy Charge First [\d,]+ kWh/month\s*" + cent_unit, cents, 1)[0]
+                        balance = self._column_values(section, r"Balance\s*" + cent_unit, cents, 1)[0]
+                        components = [
+                            RateComponent("fixed", "Basic Charge", basic, "$/month"),
+                            RateComponent("energy", "Energy Charge - First Block", round(first / 100.0, 6), "$/kWh",
+                                          tier_number=1, tier_threshold=threshold, tier_unit="kWh"),
+                            RateComponent("energy", "Energy Charge - Balance", round(balance / 100.0, 6), "$/kWh",
+                                          tier_number=2, tier_threshold=threshold, tier_unit="kWh"),
+                        ]
+                    else:
+                        label, component_name, unit = unmetered[code]
+                        value = self._column_values(section, label, money, 1)[0]
+                        components = [RateComponent("other", component_name, value, unit)]
+                    if any(component.charge_value is None or component.charge_value <= 0 for component in components):
+                        raise ValueError("Invalid charge values")
+                except ValueError as exc:
+                    self.logger.warning("SaskPower %s: %s", code, exc)
+                    continue
+                detail = f"PDF page {page.page_number}; Rate {code}; {expected_header}"
+                for component in components:
+                    component.source_url = source_url
+                    component.source_detail = detail
+                conditions = section.split("MINIMUM BILL", 1)
+                notes = "Minimum bill: " + re.sub(r"\s+", " ", conditions[1]).strip() if len(conditions) == 2 else "Charge applies to installed transformer capacity, not measured demand."
+                records.append(TariffRecord(
+                    utility_name="SaskPower", province="SK", utility_type="electricity",
+                    tariff_name=f"SaskPower-Supplied {name} (Rate {code})", tariff_code=code,
+                    customer_class="commercial", sub_class=name.lower(), rate_structure=structure,
+                    effective_date=effective_date, source_url=source_url, source_page=detail,
+                    eligibility=re.sub(r"\s+", " ", section.split("Rate Code", 1)[0]).strip(),
+                    notes=notes, components=components,
                 ))
         return records
 

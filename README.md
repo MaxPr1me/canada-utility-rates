@@ -13,15 +13,15 @@ September 29 results; this is not a fresh Canada-wide source check.
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
-| Stored tariffs / components | 538 / 3,592, including retained older estimates |
-| Live-sourced tariffs | **58 across 10 utilities** |
+| Stored tariffs / components | 544 / 3,602, including retained older estimates |
+| Live-sourced tariffs | **64 across 10 utilities** |
 | Seed/fallback tariffs | **480**, hidden by default |
-| SaskPower live tariffs | **20**, up from 1; published class coverage remains partial |
-| Deterministic tests | **268 passing** on Python 3.11 |
+| SaskPower live tariffs | **26**, up from 1; published class coverage remains partial |
+| Deterministic tests | **274 passing** on Python 3.11 |
 
 Live output currently includes BC Hydro (4), Manitoba Hydro (8), NB Power (3),
 Nova Scotia Power (4), Hydro-Quebec (3), Maritime Electric (10), Newfoundland Power (4),
-SaskPower (20), FortisAlberta (1), and Yukon Energy (1). These counts describe the export,
+SaskPower (26), FortisAlberta (1), and Yukon Energy (1). These counts describe the export,
 not complete coverage of each utility's published catalogue. Ontario and all gas utilities
 still have no live records in this snapshot.
 
@@ -190,7 +190,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 268 deterministic tests across 8 test modules
+├── tests/                    ← 274 deterministic tests across 8 test modules
 │   ├── fixtures/             ← Source-derived SaskPower PDF-text fixtures; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
@@ -371,7 +371,7 @@ features, **not evidence that all registered utilities or published classes are 
 | Phase | Work and completion gate | Status |
 |---|---|---|
 | 5A: Baseline | Dated inventory, honest README, shared class-level coverage ledger | Updated October 1 |
-| 5B: SaskPower | All standard published schedules; current business/voltage/TOU/capacity batch adds 19 live tariffs with fixtures | Partial: 20 live tariffs; remaining schedules listed in the gap report |
+| 5B: SaskPower | Business/voltage/TOU/capacity, irrigation, unmetered and diesel schedules with fixtures | Partial: 26 live tariffs; farm/oil-field/lighting/reseller/renewable-access and residential variants remain |
 | 5C: Easier expansions | Yukon Energy classes and current riders; NS Power industrial; FortisBC Electric approved schedules | Next |
 | 5D: Provincial/territorial depth | NTPC, Qulliq, Yukon Electrical, NL Hydro; audit missing classes at already-live utilities | Planned |
 | 5E: Gas | All nine utilities, preserving zones, commodity/delivery components, units and effective dates | Planned |

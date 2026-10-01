@@ -1,8 +1,8 @@
 # Phase 5 Completion Matrix
 
 **Updated:** 2026-10-01. Scope: all 84 registered utilities, not every utility
-in the broader Canadian inventory. The export has 538 tariffs / 3,592 components /
-**58 live / 480 seed**. Only SaskPower was source-checked on October 1; other
+in the broader Canadian inventory. The export has 544 tariffs / 3,602 components /
+**64 live / 480 seed**. Only SaskPower was source-checked on October 1; other
 observed counts come from September 29. No gas or Ontario tariffs are live in this export.
 
 **Status vocabulary:** *dynamic parser, partial* reconstructs supported classes;
@@ -28,7 +28,7 @@ See the [gap report](live_parser_gap_report.md) for detailed findings and
 | FortisBC Electric | 0 / Sep 29 | Known-value verification for two seed classes | Current utility/BCUC sources; full class-specific extraction |
 | Hydro-Quebec | 3 / Sep 29 | PDF: D/G/M | Remaining published classes and source-derived fixtures |
 | Manitoba Hydro | 8 / Sep 29 | HTML: residential and seven GS/voltage variants | Full standard-class audit; preserve kVA and seasonal rules |
-| SaskPower | **20 / Oct 1** | Residential plus 19 transformation variants; two saved fixtures | Irrigation E37, unmetered E15-E18, diesel E35, farm, oil-field, lighting, reseller, renewable access and residential variants |
+| SaskPower | **26 / Oct 1** | Residential plus 25 supplied/customer-owned schedules; two saved fixtures | Farm, oil-field, lighting, reseller, renewable access and residential variants |
 | NB Power | 3 / Sep 29 | HTML: residential, GS1, small industrial | Remaining standard business/industrial and other schedules |
 | Nova Scotia Power | 4 / Sep 29 | HTML: Domestic and Rates 10/11/12 | Industrial 21/22/23, source dates and full catalogue audit |
 | Maritime Electric | 10 / Sep 29 | IRAC PDF class-section extraction | Catalogue audit and source-derived success/failure fixtures |
@@ -38,7 +38,7 @@ See the [gap report](live_parser_gap_report.md) for detailed findings and
 ### SaskPower Delivered Batch
 
 Source tables are effective February 1, 2026; the October 1 source run returned
-residential plus the following 19 transformation records:
+residential plus the following 25 supplied/customer-owned records:
 
 | Schedule | Supported codes | Preserved distinctions |
 |---|---|---|
@@ -49,11 +49,14 @@ residential plus the following 19 transformation records:
 | Power time-of-use | E82/E83/E84 | Three voltages, on/off-peak hours and demand conditions |
 | Power standard | E22/E23/E24 | Three voltages and demand-ratchet rules |
 | Capacity reservation | N22/N23/N24 | Reservation eligibility, voltages and 23-month demand rule |
+| Non-farm irrigation | E37 | February-October pumping season, seasonal fixed and horsepower charges |
+| Unmetered services | E15/E16/E17/E18 | Native watt-block, equipment and installed-capacity units; independent minimum-bill conditions |
+| General service diesel | E35 | Monthly fixed charge and first-650-kWh/balance energy tiers |
 
 Tests require complete columns, source dates/units and continuation pages, and
 isolate schedule failures. Targeted storage preserved all prior snapshots and unchanged
 non-SaskPower records. The two old generic commercial seeds remain labelled estimates
-in storage. Twenty live records is still **partial catalogue coverage**.
+in storage. Twenty-six live records is still **partial catalogue coverage**.
 
 ## Ontario Registry Inventory
 
