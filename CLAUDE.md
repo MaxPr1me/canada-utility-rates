@@ -1,7 +1,18 @@
 # CLAUDE.md — Project context for AI assistants
 
 ## Project
-Canada-wide utility rate scraping and browsing platform.
+Canada-wide utility rate scraping and browsing for building energy-cost analysis.
+
+## Active Scope (2026-10-01)
+- Prioritize building tariffs: single-family and multi-unit residential, commercial,
+  institutional and industrial service only where relevant to building energy loads.
+  NECB 2025 informs the use case; it does not replace utility eligibility rules or
+  make this a building-code compliance tool.
+- User narrowed the earlier all-published-classes goal. Farm/oil-field processes,
+  irrigation, standalone street lighting, wholesale and other non-building services
+  are not required for completion. Keep completed implementations/data as reference,
+  but stop expanding those classes. Do not remove snapshots or working reference parsers.
+- Significant tested milestones may be committed and pushed, as explicitly requested.
 
 ## Working rules
 - **Never display default values as if they were live.** Only rate values pulled from (or verified against) a live official web source may be presented as current. Hardcoded seed/fallback values are a safety net only: they carry `Provenance: seed_fallback` + `confidence: unverified`, export as `provenance: "seed"`, and the site hides them by default behind a labelled "Estimated" toggle. Never dress up a static default as a live-scraped rate.
@@ -58,8 +69,8 @@ pytest                                    # run tests (283 tests)
 - Keep registry URLs and actual scraper URL constants synchronized; most modules do not consume registry sources dynamically.
 
 ## Current snapshot and queue (2026-10-01)
-- Targeted SaskPower refresh: 37 live records. Export: 555 tariffs / 3,638 components / 75 live / 480 seed across 84 utilities. Other utilities retain September 29 source results; do not describe this as a new national source check.
-- Next: remaining SaskPower schedules, then easier Yukon Energy/NS industrial/FortisBC Electric expansions; territorial/provincial depth, nine gas utilities, Alberta electricity and the Ontario distributor campaign follow. README and the Phase 5 matrix hold the maintained roadmap.
+- Targeted SaskPower refresh: 37 live records. Export: 555 tariffs / 3,638 components / 75 live / 480 seed across 84 utilities. Counts include completed reference-only classes. October 1 CI observations were integrated without replacing newer SaskPower results or deleting history.
+- Next: SaskPower residential variants/building-service gaps, then Yukon Energy residential/general service, NS building-service and FortisBC Electric expansions. Building coverage in the territories/provinces, nine gas utilities, Alberta and Ontario follows. Do not resume farm/oil-field, wholesale or standalone lighting expansion. README and the matrix hold the maintained roadmap.
 - The Ontario market generator uses fixed inputs and multipliers, not reproducible five-year observation ingestion. Document this now; the user deferred UI/metadata correction and real ingestion to later phases.
 - Local history is append-only. Monthly CI restore/save, default-token deployment triggering, source-health browser setup and failure reporting remain separate reliability work.
 

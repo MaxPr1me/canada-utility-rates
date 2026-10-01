@@ -3,6 +3,12 @@
 This guide walks through adding a scraper for a new Canadian utility,
 step by step.
 
+The current campaign is building-focused: include single-family/multi-unit residential,
+commercial, institutional and building-related industrial service. Use official utility
+eligibility, not an assumption that NECB 2025 defines tariff classes. Do not expand
+farm/oil-field processes, irrigation, standalone lighting, wholesale or other non-building
+services merely to complete a catalogue. Existing implementations remain reference data.
+
 ## 1. Research the utility
 
 Before writing code, find these things:
@@ -13,7 +19,7 @@ Before writing code, find these things:
 - **Rate structure** — flat? tiered? time-of-use? demand? mixed?
 - **Customer classes** — residential, commercial, industrial, etc.
 - **All charge components** — fixed fees, energy charges, delivery, transmission, riders, etc.
-- **Published catalogue** — all standard class codes, zones/communities, voltage variants and optional products; explicitly track special or closed-to-new-customer schedules.
+- **Relevant catalogue** — building-service class codes, zones/communities, voltage variants and optional products; document non-building exclusions and applicable special or closed-to-new-customer schedules.
 - **Effective periods** — distinguish current approved schedules from archived, proposed or future schedules, including separately dated riders.
 
 Write down the URLs you find — you'll need them.
@@ -226,5 +232,5 @@ This prevents broken parsers from silently corrupting data. Changes are classifi
 4. Send failed live output through `mark_fallback()`; fallback confidence is always `unverified` and its notes identify `seed_fallback`.
 5. Add change/drift, partial-rejection, negative-credit, and date tests as applicable. Never verify a component merely because its number appears elsewhere in a PDF.
 6. Mutate a fixture value and prove output follows the source; test missing columns, wrong units, future/missing dates, failed fetches and multi-class persistence/export.
-7. Compare the returned code/class set with the published catalogue. Log and document unsupported classes rather than inventing rates or silently calling the utility complete.
+7. Compare the returned code/class set with the building-relevant published catalogue. Document unsupported building classes and non-building exclusions separately; never invent rates to call a utility complete.
 8. Update the README, maintainer guides and coverage/gap reports with actual test and source-check results. Fixture-tested but inaccessible sources remain blocked, not live-verified.

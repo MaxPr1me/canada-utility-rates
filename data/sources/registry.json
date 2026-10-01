@@ -328,7 +328,7 @@
           "is_primary": false
         }
       ],
-      "notes": "SaskPower is a provincial Crown corporation regulated by the Saskatchewan Rate Review Panel. On 2026-10-01, live parsing returned 37 tariffs: residential, 25 supplied/customer-owned, three farm and eight oil-field classes. Lighting, reseller, renewable-access and remaining residential variants still need class-specific coverage."
+      "notes": "SaskPower is a provincial Crown corporation regulated by the Saskatchewan Rate Review Panel. On 2026-10-01, live parsing returned 37 tariffs, including completed farm/oil-field and other non-building reference classes. Active work targets residential variants and building-relevant general-service/renewable-access terms. Non-building processes, irrigation, standalone lighting and wholesale/reseller coverage are not completion requirements."
     },
     {
       "name": "NB Power",

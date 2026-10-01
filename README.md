@@ -4,11 +4,29 @@
 
 This project scrapes official utility rate data, stores it in a structured database, and serves it as a clean, browsable static website via GitHub Pages.
 
+## Scope: Building Energy Costs
+
+The active parser campaign supports building energy-cost analysis, including work
+informed by **NECB 2025**, plus **single-family homes**. Prioritize residential and
+multi-unit residential, commercial, institutional and building-related industrial
+service: the tariffs needed for building electricity, heating and other building systems.
+Tariff eligibility still comes from the utility's published schedule; this project
+does not determine building-code applicability or certify NECB compliance.
+
+Agricultural and oil-field processes, irrigation, standalone street lighting, wholesale
+and other non-building-specific services are **not completion requirements**. Already
+implemented schedules and data remain as reference, including farm/oil-field work,
+but further expansion of those classes is deferred. Shared general-service tariffs may
+still be relevant to buildings even when the utility also offers them to other users.
+Inventory counts below include reference-only records, not just building tariffs.
+
 ## Current Status (2026-10-01)
 
 The framework and website are implemented; **nationwide live-rate coverage is not complete**.
-The October 1 export includes a targeted SaskPower refresh. Other utilities retain their
-September 29 results; this is not a fresh Canada-wide source check.
+The export combines the October 1 monthly CI observations with the newer targeted
+SaskPower parser results. CI and local history were reconciled without deleting prior
+snapshots. A successful source check and an export timestamp are different facts;
+unverified fallback records remain estimates regardless of the export date.
 
 | Measure | Exported state |
 |---|---|
@@ -371,21 +389,23 @@ features, **not evidence that all registered utilities or published classes are 
 | Phase | Work and completion gate | Status |
 |---|---|---|
 | 5A: Baseline | Dated inventory, honest README, shared class-level coverage ledger | Updated October 1 |
-| 5B: SaskPower | Business/voltage/TOU/capacity, irrigation, unmetered, diesel, farm and oil-field schedules with fixtures | Partial: 37 live tariffs; lighting/reseller/renewable-access and residential variants remain |
-| 5C: Easier expansions | Yukon Energy classes and current riders; NS Power industrial; FortisBC Electric approved schedules | Next |
-| 5D: Provincial/territorial depth | NTPC, Qulliq, Yukon Electrical, NL Hydro; audit missing classes at already-live utilities | Planned |
-| 5E: Gas | All nine utilities, preserving zones, commodity/delivery components, units and effective dates | Planned |
-| 5F: Alberta electricity | All wires classes, source-correct default retail products, separate AESO market observations | Planned |
+| 5B: SaskPower | Residential variants and building-applicable general-service/voltage/TOU schedules | Partial: 37 live tariffs total; completed farm/oil-field and other non-building data retained as reference |
+| 5C: Easier expansions | Yukon Energy residential/general service and current riders; NS Power building-relevant service; FortisBC Electric | Next |
+| 5D: Provincial/territorial depth | NTPC, Qulliq, Yukon Electrical, NL Hydro; building-class audits at already-live utilities | Planned |
+| 5E: Gas | Building heating/service tariffs at all nine utilities, preserving zones, components, units and dates | Planned |
+| 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Planned |
 | 5G: Ontario | Reconcile 53 registry identities; source approved distributor tariffs; pilot three layouts before rollout | Dedicated later campaign |
 | 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Independent operational follow-up |
 
-**Definition of done for each utility:** account for every standard published class,
+**Definition of done for each utility:** account for the standard published classes
+relevant to building energy costs, including single-family homes,
 retain exact source/date/unit/component context, prove extraction and failure handling
 with source-derived fixtures, inspect an official-source dry run, verify repeat
 storage/export without lost components or history, and update the coverage ledger.
-Known failures remain unverified; newly discovered unsupported classes are recorded
-as gaps, never invented. Special/negotiated and closed-to-new-customer schedules must
-be explicitly identified. Do not equate a generic verifier test with a working parser.
+Known failures remain unverified; unsupported building classes are recorded as gaps,
+never invented. Non-building services are explicit exclusions, not blockers to building
+coverage. Special/negotiated and closed-to-new schedules must be identified where
+applicable. Do not equate a generic verifier test with a working parser.
 
 Utility-specific research can run independently; shared registry, database and export
 updates are integrated serially. Today's first batch is SaskPower, not a promise to

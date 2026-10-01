@@ -53,6 +53,13 @@ Some rates in the code are *seed values* — hand-entered fallback numbers used 
 **2. When unsure, ask — don't assume.**
 If a task is unclear, or there is more than one sensible way to do it, stop and ask which path to take before making changes. Guessing wastes effort and can hide problems. A short question is always better than an assumption.
 
+**Current focus: building energy costs.** Prioritize residential (including single-family
+homes), commercial, institutional and building-related industrial service. NECB 2025
+is a use-case reference, not a utility-rate eligibility rule or a compliance claim.
+Do not spend the live-parser campaign expanding farm/oil-field processes, irrigation,
+standalone street lighting, wholesale or other non-building services. Completed work
+and historical data for those classes remain as reference; do not delete them.
+
 ---
 
 ## Important Files and What They Do
@@ -471,5 +478,5 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - Ontario updates start with the OEB common-rate page, then each distributor's approved tariff. Alberta wires, default retail, AESO, gas, and northern sources must remain separate and preserve their published classes, communities, tiers, and units.
 - Test comparison locally with `python -m http.server --directory site 8000`: add two cards, open **Compare**, remove/replace either, and check the mobile horizontal table. It never calculates a bill total.
 - Every successful stored scrape appends `historical_snapshots`. Canonical hashes ignore component ordering but change for values, units, tiers, dates, or structure; old effective-date versions are never deleted.
-- The October 1 SaskPower batches parse 37 live tariffs: residential, ten supplied-transformation codes, 15 customer-owned variants, three farm classes and eight oil-field classes. Preserve seasonal, horsepower and per-meter/equipment units and closed-to-new eligibility. Lighting, reseller, renewable-access and remaining residential variants are still gaps; see [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).
-- Completing a utility means auditing every standard published class, not just replacing its existing seed values. A complete class can stay live when another class fails, but never stamp a mixed live/seed list as entirely live.
+- The October 1 SaskPower batches parse 37 live tariffs, including farm/oil-field and other completed reference-only classes. Preserve their history and units, but focus new work on residential variants and building-relevant service. Standalone lighting and reseller schedules are not completion blockers; see [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).
+- Completing a utility means auditing its building-relevant standard published classes, not just replacing existing seed values or completing every unrelated service. A complete class can stay live when another class fails, but never stamp a mixed live/seed list as entirely live.
