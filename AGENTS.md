@@ -18,8 +18,8 @@ It works in three stages:
 
 GitHub Actions schedules a monthly scrape. Deployment and durable history across
 cloud runs still need reliability work; see the roadmap in [README.md](README.md).
-The latest export has 86 latest live tariffs and 480 estimates; stored history contains
-88 live versions. Registry coverage is not the same as live coverage.
+The latest export has 88 latest live tariffs and 480 estimates; stored history contains
+90 live versions. Registry coverage is not the same as live coverage.
 
 ---
 
@@ -415,6 +415,7 @@ When choosing which URL to use for a utility, prefer:
 | **Rate component** | One individual charge within a tariff (e.g., "Tier 1 energy charge: $0.095/kWh"). |
 | **TOU** | Time-of-Use pricing — rates that change based on time of day. |
 | **Tiered** | Pricing where the rate changes based on how much you use (first X kWh at one price, the rest at a higher price). |
+| **Multiplier** | A tariff-defined factor based on eligible dwellings or rooms. Some bulk-metered buildings multiply daily charges and energy allowances by this factor; it is not automatically one. |
 | **Demand charge** | A charge based on the peak power (kW) a customer draws, common for commercial and industrial accounts. |
 | **Rider** | A temporary adjustment to rates — can be a surcharge or a credit. |
 | **LDC** | Local Distribution Company — the utility that delivers electricity to your home (common in Ontario). |
@@ -439,9 +440,9 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 350 tests across 8 test modules, including `test_phase5_hardening` for
+There are 366 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
-The BC Hydro, NSPower, SaskPower and Yukon Energy JSON fixtures in `tests/fixtures/` hold official PDF-text excerpts,
+The BC Hydro, Hydro-Quebec, NSPower, SaskPower and Yukon Energy JSON fixtures in `tests/fixtures/` hold official PDF-text excerpts,
 source URLs and page numbers for repeatable parser tests.
 
 If everything passes, you'll see green output. If something fails, it will show you exactly what went wrong and where.
@@ -488,4 +489,5 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - The October 1 SaskPower batches parse 41 live tariffs, including completed reference-only classes. Building scope now includes standard, bulk-metered and diesel residential service and R23/R24 renewable access. Standard E01/E03 keeps its identity only when both published columns agree; bulk fixed charges are per unit, not per account. Next is Yukon Energy building coverage; see [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).
 - Yukon Energy Rate 1160 now lists base rates, R/J/J1 percentage riders, fuel Rider F and dated residential relief separately. Do not add riders to a price that already includes them. Its old version remains in history; the browser keeps the latest version. Broader Yukon building classes need OCR or a text alternative for image-only base schedules.
 - NSPower residential service includes standard, storage-heating TOD and closed-enrollment TOU/critical-peak pilots. Pilot records explicitly distinguish the tariff's conditional interim phase from its dated November pricing. Do not assume an existing customer's system-restoration status from an advertising page. Mandatory FAM/DSM/storm riders are separate from base energy; Green Power blocks are opt-in, not a standard charge. Dates past the supported tariff/rider year fail closed.
+- Hydro-Quebec DP and grandfathered DM are now parsed alongside D/G/M. DP has summer/winter demand charges; DM charges and energy allowances depend on the approved dwelling/room multiplier. Conditional supply-voltage credits do not apply to everyone. Minimum bills and transformation-loss rules remain conditions, not extra charges or calculated totals. Missing continuation pages reject only the affected class. The remaining domestic catalogue is still incomplete.
 - Completing a utility means auditing its building-relevant standard published classes, not just replacing existing seed values or completing every unrelated service. A complete class can stay live when another class fails, but never stamp a mixed live/seed list as entirely live.

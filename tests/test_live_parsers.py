@@ -593,6 +593,139 @@ class TestHydroQuebecUpdated:
         assert rate_m[0].customer_class == "commercial"
 
 
+class TestHydroQuebecDomestic:
+    @pytest.fixture
+    def document(self):
+        import json
+        from pathlib import Path
+
+        path = Path(__file__).parent / "fixtures" / "hydro_quebec_domestic.json"
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    @staticmethod
+    def scrape_document(document, landing_unavailable=False):
+        from scrapers.utilities.hydro_quebec import HydroQuebecScraper
+        from scrapers.utils.parsing import DocumentPage
+
+        scraper = HydroQuebecScraper()
+        pages = [DocumentPage(**page) for page in document["pages"]]
+        with patch.object(scraper, "fetch_page", return_value="<h1>Residential rates</h1>", side_effect=ConnectionError("Landing page unavailable") if landing_unavailable else None), \
+             patch.object(scraper, "fetch_bytes", return_value=b"pdf"), \
+             patch.object(scraper, "now_iso", return_value="2026-10-02T00:00:00+00:00"), \
+             patch.object(scraper, "_parse_rate_d", return_value=None), \
+             patch.object(scraper, "_parse_rate_g", return_value=None), \
+             patch.object(scraper, "_parse_rate_m", return_value=None), \
+             patch("scrapers.utilities.hydro_quebec.extract_pdf_text", return_value="\n".join(page.text for page in pages)), \
+             patch("scrapers.utilities.hydro_quebec.extract_pdf_pages", return_value=pages, create=True):
+            return scraper.scrape()
+
+    def test_dp_dm_rates_are_rebuilt_from_their_own_sections(self, document):
+        records = self.scrape_document(document)
+        live = {record.tariff_code: record for record in records if "live_parsed" in (record.notes or "")}
+        assert set(live) == {"DP", "DM"}
+        dp = live["DP"]
+        assert dp.customer_class == "residential" and dp.effective_date == "2026-04-01"
+        energy = [component for component in dp.components if component.component_type == "energy"]
+        assert [component.charge_value for component in energy] == [0.06878, 0.10458]
+        assert energy[0].tier_threshold == 1200
+        demand = {component.season: component for component in dp.components if component.component_type == "demand"}
+        assert demand["summer"].charge_value == 5.369
+        assert demand["winter"].charge_value == 7.266
+        assert demand["summer"].season_months == "4,5,6,7,8,9,10,11"
+        assert demand["winter"].season_months == "12,1,2,3"
+        assert all(component.demand_threshold_kw == 50 for component in demand.values())
+        assert not any(component.component_type == "fixed" for component in dp.components)
+        assert "13.833" in dp.notes and "20.750" in dp.notes and "65%" in dp.notes
+        dm = live["DM"]
+        assert "May 31, 2009" in dm.eligibility and "bulk metering" in dm.eligibility
+        fixed = next(component for component in dm.components if component.component_type == "fixed")
+        assert fixed.charge_value == 0.46154 and fixed.charge_unit == "$/multiplier/day"
+        energy = [component for component in dm.components if component.component_type == "energy"]
+        assert [component.charge_value for component in energy] == [0.07065, 0.11142]
+        assert energy[0].tier_threshold == 40 and energy[0].tier_unit == "kWh/day/multiplier"
+        demand = next(component for component in dm.components if component.component_type == "demand")
+        assert demand.charge_value == 7.266 and demand.demand_threshold_kw is None
+        assert "multiplier" in demand.notes and "50" in demand.notes
+        credit = next(component for component in dm.components if component.component_type == "rebate")
+        assert credit.charge_value == -0.002818 and credit.charge_unit == "$/kWh"
+        assert credit.sub_component == "conditional"
+        assert all(component.source_url == document["source_url"] and component.source_detail for record in live.values() for component in record.components)
+
+    @pytest.mark.parametrize(("page_number", "remaining"), [
+        (18, {"DM"}), (20, {"DP"}), (11, set()), (152, set()), (154, set()),
+    ])
+    def test_missing_conditions_fail_closed(self, document, page_number, remaining):
+        document["pages"] = [page for page in document["pages"] if page["page_number"] != page_number]
+        live = [record for record in self.scrape_document(document) if "live_parsed" in (record.notes or "")]
+        assert {record.tariff_code for record in live} == remaining
+
+    @pytest.mark.parametrize(("code", "page_number", "old", "new"), [
+        ("DP", 17, "6.878\u00a2", "$6.878"),
+        ("DP", 17, "$ 5.369", "$ -5.369"),
+        ("DP", 17, "1,200 kilowatthours", "1,200 kilowatts"),
+        ("DM", 19, "May 31, 2009", "eligibility unknown"),
+        ("DM", 19, "46.154\u00a2", "$46.154"),
+    ])
+    def test_tariff_drift_does_not_downgrade_other_class(self, document, code, page_number, old, new):
+        page = next(page for page in document["pages"] if page["page_number"] == page_number)
+        page["text"] = page["text"].replace(old, new)
+        live = [record for record in self.scrape_document(document) if "live_parsed" in (record.notes or "")]
+        assert {record.tariff_code for record in live} == {"DP", "DM"} - {code}
+
+    def test_rates_and_thresholds_follow_source_changes(self, document):
+        page = next(page for page in document["pages"] if page["page_number"] == 17)
+        page["text"] = page["text"].replace("6.878", "7.125").replace("1,200", "1,500")
+        records = self.scrape_document(document)
+        dp = next(record for record in records if record.tariff_code == "DP")
+        energy = next(component for component in dp.components if component.component_type == "energy")
+        assert energy.charge_value == 0.07125 and energy.tier_threshold == 1500
+
+    def test_missing_or_future_edition_date_cannot_borrow_grandfathering_date(self, document):
+        document["pages"][0]["text"] = document["pages"][0]["text"].replace("2026", "2027")
+        assert all(record.confidence == "unverified" for record in self.scrape_document(document))
+        document["pages"] = document["pages"][1:]
+        assert all(record.confidence == "unverified" for record in self.scrape_document(document))
+
+    def test_pdf_nonbreaking_hyphen_preserves_continuation(self, document):
+        page = next(page for page in document["pages"] if page["page_number"] == 18)
+        page["text"] = page["text"].replace("maximum-demand", "maximum\u2011demand")
+        live = [record for record in self.scrape_document(document) if "live_parsed" in (record.notes or "")]
+        assert {record.tariff_code for record in live} == {"DP", "DM"}
+
+    def test_landing_failure_does_not_block_official_pdf(self, document):
+        records = self.scrape_document(document, landing_unavailable=True)
+        assert {record.tariff_code for record in records if "live_parsed" in (record.notes or "")} == {"DP", "DM"}
+
+    def test_multiplier_and_seasonal_components_survive_export(self, document, tmp_path, monkeypatch):
+        import json
+        import sqlite3
+        from pipeline import export_json
+        from pipeline.run_scrape import store_results
+        from tests.test_phase5_hardening import database
+
+        records = [record for record in self.scrape_document(document) if "live_parsed" in (record.notes or "")]
+        connection = database()
+        for run_id in (1, 2):
+            assert store_results(records, run_id, connection) == 2
+        assert connection.execute("SELECT count(*) FROM tariffs").fetchone()[0] == 2
+        assert connection.execute("SELECT count(*) FROM historical_snapshots").fetchone()[0] == 4
+        path = tmp_path / "rates.db"
+        persisted = sqlite3.connect(path)
+        connection.backup(persisted)
+        persisted.close()
+        connection.close()
+        monkeypatch.setattr(export_json, "DB_PATH", path)
+        monkeypatch.setattr(export_json, "SITE_DATA_DIR", tmp_path / "site")
+        export_json.export_all()
+        exported = json.loads((tmp_path / "site" / "rates.json").read_text(encoding="utf-8"))
+        assert len(exported) == 2 and all(record["provenance"] == "live" for record in exported)
+        assert {record["tariff_code"]: len(record["components"]) for record in exported} == {record.tariff_code: len(record.components) for record in records}
+        dm = next(record for record in exported if record["tariff_code"] == "DM")
+        assert any(component["charge_unit"] == "$/multiplier/day" for component in dm["components"])
+        assert any(component["tier_unit"] == "kWh/day/multiplier" for component in dm["components"])
+        assert all(component["source_detail"] for record in exported for component in record["components"])
+
+
 # ─── SaskPower ──────────────────────────────────────────────────
 
 class TestSaskPowerUpdated:

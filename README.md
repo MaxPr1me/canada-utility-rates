@@ -24,21 +24,21 @@ Inventory counts below include reference-only records, not just building tariffs
 
 The framework and website are implemented; **nationwide live-rate coverage is not complete**.
 The export combines October 1 CI and targeted BC Hydro/SaskPower/Yukon observations
-with the October 2 NSPower residential update. CI and local history were reconciled without deleting prior
+with the October 2 NSPower and Hydro-Quebec residential updates. CI and local history were reconciled without deleting prior
 snapshots. A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
 
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
-| Stored tariff versions / components | 568 / 3,713, including history and older estimates |
-| Live-sourced tariffs | **86 latest tariffs across 10 utilities**; 88 stored live versions |
+| Stored tariff versions / components | 570 / 3,727, including history and older estimates |
+| Live-sourced tariffs | **88 latest tariffs across 10 utilities**; 90 stored live versions |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Deterministic tests | **350 passing** on Python 3.11 |
+| Deterministic tests | **366 passing** on Python 3.11 |
 
 Live output currently includes BC Hydro (8), Manitoba Hydro (8), NB Power (3),
-Nova Scotia Power (7), Hydro-Quebec (3), Maritime Electric (10), Newfoundland Power (4),
+Nova Scotia Power (7), Hydro-Quebec (5), Maritime Electric (10), Newfoundland Power (4),
 SaskPower (41), FortisAlberta (1), and Yukon Energy (1). These counts use the latest version per tariff,
 not complete coverage of each utility's published catalogue. Ontario and all gas utilities
 still have no live records in this snapshot.
@@ -54,6 +54,12 @@ tariff variants**, not a claim that every participant is currently on that rate.
 published November 1 transition is tested and is not activated early. Base energy,
 FAM, DSM, storm and optional Green Power charges remain separate. Participant restoration
 status and broader MURB/solar-program coverage still need review.
+
+Hydro-Quebec now includes domestic demand DP and grandfathered bulk-metered DM,
+alongside D/G/M. DP preserves seasonal demand charges; DM preserves per-multiplier
+daily charges and energy allowances. Conditional voltage credits remain separate,
+and minimum bills are conditions, not extra charges. DN, DT, Flex D, Winter Credit,
+off-grid variants and net-metering still need implementation or eligibility review.
 
 ---
 
@@ -215,8 +221,8 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 350 deterministic tests across 8 test modules
-│   ├── fixtures/             ← Source-derived BC Hydro/NSPower/SaskPower/Yukon fixtures; other tests also use inline text
+├── tests/                    ← 366 deterministic tests across 8 test modules
+│   ├── fixtures/             ← Source-derived BC Hydro/Hydro-Quebec/NSPower/SaskPower/Yukon fixtures; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
 │
@@ -397,7 +403,7 @@ features, **not evidence that all registered utilities or published classes are 
 |---|---|---|
 | 5A: Baseline | Dated inventory, honest README, shared class-level coverage ledger | Updated October 1 |
 | 5B: SaskPower | Standard/bulk-metered/diesel residential, general-service/voltage/TOU and renewable-access schedules | Audited building scope implemented October 1; 41 live tariffs total including retained non-building reference records |
-| 5C: Residential products and building-service expansion | Review optional residential plans and retain building-service gaps | BC Hydro's five options and NSPower standard/TOD/conditional pilot phases implemented. Hydro-Quebec optional products and FortisBC's current tariff are verified audit leads; broad national audit remains incomplete |
+| 5C: Residential products and building-service expansion | Review optional residential plans and retain building-service gaps | BC Hydro's five options, NSPower standard/TOD/conditional pilot phases and Hydro-Quebec DP/DM implemented. Remaining Hydro-Quebec domestic products and FortisBC's current tariff are next; broad national audit remains incomplete |
 | 5D: Provincial/territorial depth | NTPC, Qulliq, Yukon Electrical, NL Hydro; building-class audits at already-live utilities | Planned |
 | 5E: Gas | Building heating/service tariffs at all nine utilities, preserving zones, components, units and dates | Planned |
 | 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Planned |
