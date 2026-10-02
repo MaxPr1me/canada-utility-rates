@@ -1,0 +1,50 @@
+{
+  "_note": "Excerpts of official SaskEnergy pages (main content text via parse_html get_text, whitespace-normalised). Section scope per page key.",
+  "retrieved": "2026-10-02",
+  "pages": {
+    "residential": {
+      "url": "https://www.saskenergy.com/manage-account/rates/residential-rates",
+      "section": "Residential rates (main content)",
+      "text": "Effective as of October 1, 2023 Full Service Basic Monthly Charge : $26.50 Delivery Charge : $0.1113 per m 3 Commodity Rate : $0.1264 per m 3 ($3.20/GJ) Delivery Service Basic Monthly Charge : $26.50 Delivery Charge : $0.1113 per m 3 Commodity Rate : Gas Retailer Contract Price Minimum bill amount is equal to the Basic Monthly Change. Other charges are applied to your bill as required. The Commodity Rate in dollars per cubic metre ($/m 3 ) may be converted to a rate in dollars per gigajoule ($/GJ) by dividing it by SaskEnergy's forecast heating value of 0.03950 GJ/m 3 ."
+    },
+    "business": {
+      "url": "https://www.saskenergy.com/manage-account/rates/business-rates",
+      "section": "Business rates: Small Commercial, Large Commercial, Small Industrial",
+      "text": "Effective as of October 1, 2023 Small Commercial The following rates apply if your annual gas consumption is less than 100,000 m 3 . Full Service Basic Monthly Charge : $47.50 Delivery Charge: $0.0887 per m 3 Commodity Rate : $0.1264 per m 3 ($3.20/GJ) Delivery Service Basic Monthly Charge : $47.50 Delivery Charge : $0.0887 per m 3 Commodity Rate : Gas Retailer Contract Price Minimum bill amount is equal to the Basic Monthly Change. Other charges are applied to your bill as required. The Commodity Rate in dollars per cubic metre ($/m 3 ) may be converted to a rate in dollars per gigajoule ($/GJ) by dividing it by SaskEnergy's forecast heating value of 0.03950 GJ/m 3 . Large Commercial The following rates apply if your annual gas consumption is 100,001 to 660,000 m 3 . Full Service Basic Monthly Charge : $171.50 Delivery Charge : $0.0772 per m 3 Commodity Rate : $0.1264 per m 3 ($3.20/GJ) Delivery Service Basic Monthly Charge : $171.50 Delivery Charge : $0.0772 per m 3 Commodity Rate : Gas Retailer Contract Price Minimum bill amount is equal to the Basic Monthly Change. Other charges are applied to your bill as required. The Commodity Rate in dollars per cubic metre ($/m 3 ) may be converted to a rate in dollars per gigajoule ($/GJ) by dividing it by SaskEnergy's forecast heating value of 0.03950 GJ/m 3 . Small Industrial The following rates apply if your annual gas consumption is 660,001 to 970,000 m 3 . As of September 8, 2022, this class is no longer accepting new customers. Existing customers (prior to September 8, 2022) are eligible to maintain this service. Once a contract for this service ends, it will no longer be available. Customers must contact TransGas for firm delivery service of more than 660,000 m 3 per year. Full Service Basic Monthly Charge : $226.50 Delivery Charge : First 40,000 m 3 /month: $0.0507 per m 3 Remaining volumes : $0.0446 per m 3 Commodity Rate : $0.1264 m 3 ($3.20/GJ) Minimum bill amount is equal to the Basic Monthly Change. Other charges are applied to your bill as required. The Commodity Rate in dollars per cubic metre ($/m 3 ) may be converted to a rate in dollars per gigajoule ($/GJ) by dividing it by SaskEnergy's forecast heating value of 0.03950 GJ/m 3 . Small Industrial customers are not eligible to purchase gas from a Gas Retailer."
+    },
+    "carbon": {
+      "url": "https://www.saskenergy.com/manage-account/rates-fees-and-charges/federal-carbon-tax",
+      "section": "Federal Carbon Charge Amendment and Amount charged",
+      "text": "Federal Carbon Charge Amendment As of April 1, 2025, SaskEnergy’s residential and commercial customer classes will receive a zero charge for the Federal Carbon Tax on natural gas delivered from that date. This is the result of the Federal Government’s amendments to its regulations reducing the carbon charge under Part I of the Greenhouse Gas Pollution Pricing Act to zero. Have questions? Here are some answers: Why do I have an amount owing for carbon tax on my bill? While the charge will be zero, customers will continue to see a carbon charge on their bill into April, and possibly beyond, for gas delivered prior to the change. Will I still see the carbon charge reflected on my bill if I do not owe anything? The SaskEnergy bill statement will continue to reflect the carbon charge, showing a $0 amount owing. Amount charged The carbon charge on natural gas is a flat amount set by the Government of Canada and is part of a multi-year plan. Each year, the charge will adjust as follows: April 2019 → $20 per tonne ($0.0391 per cubic metre) April 2020 → $30 per tonne ($0.0587 per cubic metre) April 2021 → $40 per tonne ($0.0783 per cubic metre) April 2022 → $50 per tonne ($0.0979 per cubic metre) April 2023 → $65 per tonne ($0.1239 per cubic metre) April 2024 → $80 per tonne ($0.1525 per cubic metre) April 2025 → $0 per tonne ($0.0000 per cubic metre)"
+    },
+    "retailers": {
+      "url": "https://www.saskenergy.com/manage-account/rates/gas-retailers",
+      "section": "Buying from a third-party supplier (eligibility)",
+      "text": "In Saskatchewan, you have the option to buy natural gas from an authorized Gas Retailer if your annual consumption is less than 660,000 m 3 ."
+    }
+  },
+  "expected": {
+    "effective_date": "2023-10-01",
+    "carbon_zero_from": "2025-04-01",
+    "classes": {
+      "Residential": {
+        "basic": 26.5,
+        "delivery": 0.1113,
+        "commodity": 0.1264
+      },
+      "Small Commercial": {
+        "basic": 47.5,
+        "delivery": 0.0887,
+        "commodity": 0.1264
+      },
+      "Large Commercial": {
+        "basic": 171.5,
+        "delivery": 0.0772,
+        "commodity": 0.1264
+      }
+    },
+    "excluded": [
+      "Small Industrial (closed to new customers since 2022-09-08; no retailer access)"
+    ]
+  }
+}

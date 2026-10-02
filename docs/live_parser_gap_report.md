@@ -6,7 +6,7 @@
 **Evidence:** October 2 NSPower and Hydro-Quebec results are combined with October 1 local
 BC Hydro/SaskPower/Yukon and monthly CI observations. History remains preserved.
 The current export has
-91 stored live versions (89 latest tariffs) and 480 seed tariffs across 84 registered utilities. A fixture or verifier
+118 stored live versions (116 latest tariffs) and 480 seed tariffs across 84 registered utilities. A fixture or verifier
 implementation alone is not evidence of a successful live run.
 
 **Provenance:** complete fresh extraction uses `mark_live_parsed()`; contextual
@@ -27,7 +27,8 @@ as cents or borrowing a value from a different class/column.
 | **BC Hydro** | BC | Approved residential PDF + business HTML | Live parser | Tiered, flat, both time-of-day combinations; closed dual fuel | SGS, MGS, LGS | High |
 | **Hydro-Québec** | QC | Official PDF + product pages | PDF live parser, catalogue partial | D, seasonal-demand DP, grandfathered bulk-metered DM, northern off-grid DN | Rate G (mixed), Rate M (demand) | High for parsed classes; conditional credits are explicit |
 | **SaskPower** | SK | Rendered landing page + PDFs | Audited building scope implemented | E01/E03 standard + bulk-metered option; diesel E04 | General service, voltage/TOU/capacity and R23/R24; other records retained as reference | High for complete parsed classes |
-| **NL Hydro** | NL | PDF + inline text | Official PDF component verification | Rural + Labrador | General Service | High when verified |
+| **NL Hydro** | NL | Current-rates page + July approved PDF | Dynamic parser, 18 live records | Island/Labrador/diesel/government and seasonal options | Native kW/kVA and service alternatives; Burgeo school/library | High for complete source classes |
+| **SaskEnergy** | SK | Four official HTML pages | Six live full/delivery-only variants | Residential | Small/large commercial | High only with current carbon evidence |
 | **Newfoundland Power** | NL | PDF-only | Dynamic PDF parser | Domestic 1.1 | General Service 2.1/2.3/2.4 | High for parsed classes |
 | **Maritime Electric** | PE | IRAC PDF | Dynamic PDF parser | Urban/rural | 10 supported classes total | High for parsed classes |
 | **FortisAlberta** | AB | AUC/utility PDF | Residential PDF parser | Rate 11 | Other classes remain fallback | High for parsed residential |
@@ -107,9 +108,9 @@ not excluded catalogue expansion.
 
 ## Other PDF Capabilities and Gaps
 
-### NL Hydro: Verification Only
+### NL Hydro: Building-Service Extraction
 - **URL:** `nlhydro.com/electicity-rates/current-rates/` (note: typo "electicity" is their actual path)
-- **Status:** The code attempts contextual verification of seeded components against a linked PDF; the integrated October 1 export contains no live NL Hydro tariffs. This is not automatic extraction of changed schedules.
+- **Status:** The July 2026 schedule now rebuilds 18 current Island/Labrador/diesel building-service and seasonal-option records. Required class/charge/minimum/maximum/eligibility context fails independently; optional seasonal adjustments require their matching live base schedule. Fixed phase/amperage rows are alternatives, not cumulative charges.
 - **Coverage:** Rural Residential, Labrador Interconnected, General Service.
 - **Remaining gap:** Source drift is flagged and rejected; changed values still require a reviewed seed update.
 - **Seed update:** 2024-04-01 → 2026-01-01; energy rates updated from page text (island 15.213¢, Labrador 3.154¢)
@@ -133,14 +134,36 @@ not excluded catalogue expansion.
 | Metric | Value |
 |--------|-------|
 | Registered utilities | 84 |
-| Stored/exported tariff versions | 571, including history and older retained estimates |
-| Rate components | 3,732 |
-| Latest live tariffs / utilities with live output | 89 / 10 |
-| Stored live versions | 91; includes older Yukon and NSPower standard versions |
+| Stored/exported tariff versions | 598, including history and older retained estimates |
+| Rate components | 3,832 |
+| Latest live tariffs / utilities with live output | 116 / 12 |
+| Stored live versions | 118; includes older versions retained in history |
 | Seed tariffs | 480 |
 | Newly added SaskPower live tariffs | 40 since the original residential-only parser |
 | October 1 observations | Monthly CI snapshot plus newer local SaskPower results |
-| Deterministic suite | 382 passing |
+| Deterministic suite | 428 passing |
+
+## Regional Batch 1 Update (2026-10-02)
+
+This update supersedes the earlier DT-first and verifier-only checkpoints above.
+HQ now has nine live records, adding DT, Flex D and the closed Winter Credit
+adjustment. DT retains temperature-zone equipment/eligibility, Flex D notified
+events and seasonal tiers, and Winter Credit the reference-energy calculation
+rules and notice exceptions without calculating a total. Source pages 21-24,
+29-31 and 32-34 extend the existing domestic fixture.
+
+NL Hydro's new fixture covers the dated July 2026 building pages: eighteen classes,
+including two seasonal adjustments. Net-metering/commissioning and contract-specific
+industrial applicability remain explicit gaps. SaskEnergy's new fixture covers
+residential/commercial base and supply components, retailer eligibility and the
+required dated zero-carbon amendment. Its six records distinguish full supply from
+delivery-only service with private commodity excluded. Missing carbon evidence
+rejects live output; small industrial/fees/municipal-payment scope remains open.
+
+All 33 first-batch records passed current official-source checks and were stored
+serially. 428 tests pass, including permanent source corruption and repeat-storage
+cases. All 1,208 earlier snapshots and 561 non-target records were preserved; no
+excluded province was updated. Utility catalogue completion has not been claimed.
 
 ## Recommended Next Steps
 

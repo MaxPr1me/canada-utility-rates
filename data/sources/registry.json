@@ -128,16 +128,34 @@
       "utility_type": "gas",
       "scraper_module": "scrapers.utilities.saskenergy",
       "scraper_class": "SaskEnergyScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.saskenergy.com/accounts-services/rates",
+          "url": "https://www.saskenergy.com/manage-account/rates/residential-rates",
           "source_type": "html",
-          "description": "Natural gas delivery and commodity rates for Saskatchewan",
+          "description": "Residential full-service and delivery-only basic, delivery and commodity charges",
           "is_primary": true
+        },
+        {
+          "url": "https://www.saskenergy.com/manage-account/rates/business-rates",
+          "source_type": "html",
+          "description": "Commercial volume classes and full-service/delivery-only charges; small industrial still needs scope and component audit",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.saskenergy.com/manage-account/rates-fees-and-charges/federal-carbon-tax",
+          "source_type": "html",
+          "description": "Required dated carbon applicability and explicit zero charge for residential/commercial service",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.saskenergy.com/manage-account/rates/gas-retailers",
+          "source_type": "html",
+          "description": "Eligibility for delivery-only service; private retailer commodity prices are not included",
+          "is_primary": false
         }
       ],
-      "notes": "SaskEnergy is the provincial Crown corporation responsible for natural gas distribution in Saskatchewan. Rates are adjusted quarterly based on commodity price changes. Regulated by the Saskatchewan Rate Review Panel."
+      "notes": "Six live residential/small-commercial/large-commercial full-service and delivery-only variants. Base charges are published effective October 1, 2023; the assembled tariff begins April 1, 2025 when its separately dated, source-verified zero carbon component applies. Missing carbon evidence rejects live output. Private retailer commodity prices are excluded from delivery-only records, not invented. Small industrial eligibility and billing fees/municipal payments remain audit gaps; no full building-catalogue completion claim."
     },
     {
       "name": "Heritage Gas",
@@ -284,7 +302,7 @@
         {
           "url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
           "source_type": "pdf",
-          "description": "Official electricity rates PDF: D/DP/DM/DN/G/M; page-aware DP/DM/DN values, dates, seasonal/multiplier conditions and conditional voltage credits; DN off-grid territory and continuation on pages 127-128",
+          "description": "Official electricity rates PDF: D/DP/DM/DN/DT/Flex D, closed Winter Credit option and G/M; page-aware domestic eligibility, multipliers, temperature/event rules and conditional credits",
           "is_primary": false
         },
         {
@@ -294,7 +312,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Rates are regulated by the Regie de l'energie du Quebec. D, DP, grandfathered DM, northern off-grid DN, G and M are parsed from the current PDF. DP uses seasonal demand charges and monthly energy tiers; DM/DN fixed and energy allowances use an approved multiplier. DN applies north of the 53rd parallel except Schefferville, defaults to multiplier 1 unless formerly DM-eligible, and excludes DT off-grid. Demand allowances, minimum bills and transformation-loss rules remain source conditions, not calculated totals. DT, Flex D, Winter Credit, the Inukjuak domestic variant and net-metering remain pending; no full residential catalogue-completion claim."
+      "notes": "Nine live records include D/DP/DM/DN/DT/Flex D, the closed Winter Credit adjustment and G/M. DT switches on source-defined outdoor temperature zones, not hourly TOU, and excludes off-grid service. Flex D preserves seasonal tiers, notified events and mutually exclusive product eligibility. Winter Credit is a conditional adjustment to Rate D, retaining reference-energy rules and enrollment cutoff. Multiplier, minimum-bill and demand rules remain conditions, not calculated bills. Inukjuak, net metering and remaining building business options still need audit; no full catalogue-completion claim."
     },
     {
       "name": "Manitoba Hydro",
@@ -482,16 +500,22 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.nl_hydro",
       "scraper_class": "NLHydroScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
           "url": "https://nlhydro.com/electicity-rates/current-rates/",
           "source_type": "html",
           "description": "Current electricity rates page with inline rates and PDF link (note: 'electicity' typo is in the real URL)",
           "is_primary": true
+        },
+        {
+          "url": "https://nlhydro.com/wp-content/uploads/2026/07/Schedule-of-Rates-Rules-and-Regulations_Jul_2026.pdf",
+          "source_type": "pdf",
+          "description": "July 2026 Schedule of Rates: Island/Labrador/diesel domestic and general-service, government distinctions, Burgeo school/library and two seasonal adjustment options",
+          "is_primary": false
         }
       ],
-      "notes": "NL Hydro (Newfoundland and Labrador Hydro) is a Crown corporation that generates most of the province's electricity and distributes in rural and isolated areas. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB). Full rates in linked PDF; page shows inline energy rates."
+      "notes": "Eighteen current building-service and seasonal-option records are parsed from individually dated July 2026 pages. Phase/amperage basic charges are mutually exclusive alternatives. kW/kVA, monthly diesel blocks, government/non-government service, required minimum/maximum bills and optional adjustment conditions are retained. Seasonal options require their base schedule; no bill totals. Lighting/wholesale are outside scope; net-metering, commissioning and contract-specific industrial applicability remain explicit catalogue gaps."
     },
     {
       "name": "Yukon Energy",

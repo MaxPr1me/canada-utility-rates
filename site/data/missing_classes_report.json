@@ -37,7 +37,9 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "General Service"
+      "General Service",
+      "General Service 1,000 kVA and Over (Rate 2.4)",
+      "General Service 1,000 kVA and Over - Labrador (Rate 2.4L)"
     ]
   },
   {

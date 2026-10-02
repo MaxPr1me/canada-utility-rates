@@ -179,6 +179,7 @@ Never delete the real database to validate a parser change.
 - **Preserve units** — kVA is not kW, and daily, monthly, seasonal and volume-tier charges must not be silently converted. Keep eligibility text when the schema has no matching unit-specific threshold field.
 - **Preserve billing multipliers** — for bulk-metered buildings, a daily charge or tier allowance can apply per approved dwelling/room multiplier, not per account. Retain units such as `$/multiplier/day` and `kWh/day/multiplier`, occupancy conditions and billing-period proration. Distinguish a default multiplier of one from a grandfathered exception; an exception does not close the whole tariff to new customers. Do not turn a variable demand allowance into a fixed threshold or add minimum bills as extra charges. Conditional voltage bands are alternatives, not cumulative rebates.
 - **Keep source configuration aligned** — update registry links and any URL constants the scraper actually fetches.
+- **Keep component periods and alternatives explicit** — a combined tariff starts when all required components apply; retain each component's own date. Phase/amperage alternatives must not look cumulative. A separately published optional adjustment needs its base-plan applicability and must not look like a complete energy price. Missing required evidence (including current carbon applicability) rejects live output, rather than silently omitting the charge.
 
 ## Using parsing helpers for live scraping
 

@@ -782,6 +782,69 @@ class TestHydroQuebecDomestic:
         assert all(component["source_detail"] for record in exported for component in record["components"])
 
 
+class TestHydroQuebecOptional:
+    document = TestHydroQuebecDomestic.document
+
+    @pytest.fixture
+    def optional_document(self, document):
+        for key in ("dt_pages", "winter_credit_pages", "flex_d_pages"):
+            document["pages"].extend(document[key])
+        return document
+
+    @staticmethod
+    def options(document):
+        return {record.tariff_code: record for record in TestHydroQuebecDomestic.scrape_document(document)
+                if record.tariff_code in {"DT", "FLEX_D", "WINTER_CREDIT_D"}}
+
+    def test_temperature_events_and_closed_option_remain_distinct(self, optional_document):
+        records = self.options(optional_document)
+        assert set(records) == {"DT", "FLEX_D", "WINTER_CREDIT_D"}
+        dual = records["DT"]
+        energy = [component for component in dual.components if component.component_type == "energy"]
+        assert [component.charge_value for component in energy] == [0.05131, 0.30001]
+        assert all("-12 C or -15 C" in component.tou_period and component.tou_hours is None for component in energy)
+        assert "Certificate of Eligibility" in dual.notes and "off-grid" in dual.notes
+        assert next(component for component in dual.components if component.component_type == "demand").demand_threshold_kw is None
+        flex = records["FLEX_D"]
+        assert len(flex.components) == 7
+        peak = next(component for component in flex.components if component.tou_period == "peak demand event")
+        assert peak.charge_value == 0.46463 and peak.season_months == "12,1,2,3"
+        assert peak.tou_hours == "06:00-10:00,16:00-20:00"
+        assert "120 h per winter" in peak.notes
+        option = records["WINTER_CREDIT_D"]
+        assert option.components[0].charge_value == -0.5849
+        assert option.components[0].charge_unit == "$/kWh curtailed"
+        assert "reference energy" in option.notes.lower()
+        assert "15:00" in option.notes
+        assert "2026-03-31" in option.notes and "Rate D charges remain separate" in option.notes
+
+    @pytest.mark.parametrize(("page_number", "rejected"), [
+        (21, {"DT"}), (22, {"DT"}), (23, {"DT"}), (24, {"DT"}), (128, {"DT"}),
+        (29, {"WINTER_CREDIT_D"}), (30, {"WINTER_CREDIT_D"}), (31, {"WINTER_CREDIT_D"}),
+        (32, {"FLEX_D"}), (33, {"FLEX_D"}), (34, {"FLEX_D"}),
+        (11, {"DT", "FLEX_D", "WINTER_CREDIT_D"}),
+    ])
+    def test_required_pages_fail_by_optional_product(self, optional_document, page_number, rejected):
+        optional_document["pages"] = [page for page in optional_document["pages"] if page["page_number"] != page_number]
+        assert set(self.options(optional_document)) == {"DT", "FLEX_D", "WINTER_CREDIT_D"} - rejected
+
+    @pytest.mark.parametrize(("page_number", "old", "new", "rejected"), [
+        (22, "46.154", "-46.154", "DT"),
+        (22, "5.131", "-5.131", "DT"),
+        (21, "Certificate of Eligibility", "undocumented eligibility", "DT"),
+        (33, "46.154", "-46.154", "FLEX_D"),
+        (33, "4.886", "-4.886", "FLEX_D"),
+        (29, "March 31, 2026", "March 31, 2030", "WINTER_CREDIT_D"),
+        (29, "reference energy:", "reference removed:", "WINTER_CREDIT_D"),
+        (30, "15:00", "unknown time", "WINTER_CREDIT_D"),
+    ])
+    def test_optional_source_corruption_is_rejected(self, optional_document, page_number, old, new, rejected):
+        page = next(page for page in optional_document["pages"] if page["page_number"] == page_number)
+        assert old in page["text"]
+        page["text"] = page["text"].replace(old, new)
+        assert set(self.options(optional_document)) == {"DT", "FLEX_D", "WINTER_CREDIT_D"} - {rejected}
+
+
 # ─── SaskPower ──────────────────────────────────────────────────
 
 class TestSaskPowerUpdated:
@@ -1317,6 +1380,77 @@ class TestYukonEnergyBuildingRates:
         connection.close()
 
 
+class TestSaskEnergyLive:
+    @pytest.fixture
+    def pages(self):
+        import json
+        from pathlib import Path
+
+        document = json.loads((Path(__file__).parent / "fixtures" / "saskenergy.json").read_text(encoding="utf-8"))
+        return {key: page["text"] for key, page in document["pages"].items()}
+
+    @staticmethod
+    def parse(pages):
+        from datetime import date
+        from scrapers.utilities.saskenergy import SaskEnergyScraper
+
+        return {record.tariff_code: record for record in SaskEnergyScraper().parse_pages(pages, date(2026, 10, 2))}
+
+    def test_complete_service_variants_and_component_periods(self, pages):
+        records = self.parse(pages)
+        assert set(records) == {"Res", "SC", "LC", "Res-DS", "SC-DS", "LC-DS"}
+        for code, fixed, delivery in (("Res", 26.5, 0.1113), ("SC", 47.5, 0.0887), ("LC", 171.5, 0.0772)):
+            record = records[code]
+            components = {component.component_type: component for component in record.components}
+            assert components["fixed"].charge_value == fixed
+            assert components["delivery"].charge_value == delivery
+            assert components["commodity"].charge_value == 0.1264
+            assert components["commodity"].charge_unit == "$/m³"
+            assert components["carbon"].charge_value == 0
+            assert components["carbon"].effective_date == "2025-04-01"
+            assert components["fixed"].effective_date == "2023-10-01"
+            assert record.effective_date == "2025-04-01"
+            assert all(component.source_url and component.source_detail for component in record.components)
+            delivery_only = records[code + "-DS"]
+            assert {component.component_type for component in delivery_only.components} == {"fixed", "delivery", "carbon"}
+            assert "not included" in delivery_only.notes and "Gas Retailer" in delivery_only.notes
+        assert (records["LC"].usage_min, records["LC"].usage_max) == (100001, 660000)
+
+    @pytest.mark.parametrize("carbon", ["", "unavailable", "As of April 1, 2030, residential charges are zero"])
+    def test_missing_carbon_evidence_rejects_incomplete_live_output(self, pages, carbon):
+        pages["carbon"] = carbon
+        assert self.parse(pages) == {}
+
+    @pytest.mark.parametrize(("old", "new"), [
+        ("$0.1113 per m 3", "$0.1113 per kWh"),
+        ("$0.1113", "$-0.1113"),
+        ("$26.50", "$0.00"),
+        ("October 1, 2023", "October 1, 2030"),
+    ])
+    def test_residential_drift_preserves_complete_commercial_classes(self, pages, old, new):
+        assert old in pages["residential"]
+        pages["residential"] = pages["residential"].replace(old, new)
+        assert set(self.parse(pages)) == {"SC", "SC-DS", "LC", "LC-DS"}
+
+    def test_source_values_and_retailer_eligibility(self, pages):
+        pages["residential"] = pages["residential"].replace("$26.50", "$27.50")
+        records = self.parse(pages)
+        assert next(component.charge_value for component in records["Res"].components if component.component_type == "fixed") == 27.5
+        pages["retailers"] = ""
+        assert set(self.parse(pages)) == {"Res", "SC", "LC"}
+
+    def test_failed_carbon_fetch_returns_only_unverified_seed(self, pages):
+        from scrapers.utilities.saskenergy import SaskEnergyScraper, PAGE_URLS
+
+        scraper = SaskEnergyScraper()
+        responses = {PAGE_URLS[key]: value for key, value in pages.items()}
+        responses[PAGE_URLS["carbon"]] = ""
+        with patch.object(scraper, "fetch_page", side_effect=lambda url: responses[url]):
+            records = scraper.scrape()
+        assert len(records) == 1 and records[0].tariff_code == "Res"
+        assert all(record.confidence == "unverified" and "seed_fallback" in record.notes for record in records)
+
+
 # ─── NL Hydro ──────────────────────────────────────────────────
 
 class TestNLHydroUpdated:
@@ -1350,6 +1484,122 @@ class TestNLHydroUpdated:
         """All URLs should point to the new path, not the old 404 URL."""
         for r in self.records:
             assert "electicity-rates" in r.source_url
+
+
+class TestNLHydroLive:
+    @pytest.fixture
+    def document(self):
+        import json
+        from pathlib import Path
+
+        return json.loads((Path(__file__).parent / "fixtures" / "nl_hydro.json").read_text(encoding="utf-8"))
+
+    @staticmethod
+    def parse(document):
+        from datetime import date
+        from scrapers.utilities.nl_hydro import NLHydroScraper
+        from scrapers.utils.parsing import DocumentPage
+
+        return {record.tariff_code: record for record in NLHydroScraper().parse_schedule_pages(
+            [DocumentPage(**page) for page in document["pages"]], document["source_url"], today=date(2026, 10, 2))}
+
+    @staticmethod
+    def page(document, code):
+        import re
+
+        return next(page for page in document["pages"] if re.search(rf"^RATE NO\. {re.escape(code)}\s*$", page["text"], re.M))
+
+    def test_all_source_classes_keep_components_and_conditions(self, document):
+        records = self.parse(document)
+        expected = {"1.1": 3, "1.1S": 2, "1.3": 1, "2.1": 7, "2.3": 5, "2.4": 5,
+                    "1.2D": 10, "1.2DS": 2, "2.1D": 4, "2.2D": 5,
+                    "1.2G": 2, "2.1G": 2, "2.2G": 3,
+                    "1.1L": 2, "2.1L": 4, "2.2L": 5, "2.3L": 2, "2.4L": 2}
+        assert {code: len(record.components) for code, record in records.items()} == expected
+        assert all(record.effective_date == "2026-07-01" for record in records.values())
+        assert all("live_parsed" in record.notes for record in records.values())
+        fixed = [component for component in records["2.1"].components if component.component_type == "fixed"]
+        assert all("Mutually exclusive" in component.notes for component in fixed)
+        for code in ("1.1S", "1.2DS"):
+            assert "apply together with base Rate" in records[code].notes
+            assert all(component.charge_unit == "$/kWh adjustment" for component in records[code].components)
+        assert all(component.source_url == document["source_url"] and component.source_detail for record in records.values() for component in record.components)
+
+    @pytest.mark.parametrize(("code", "old", "new", "rejected"), [
+        ("1.1", "Effective July 1, 2026", "Effective December 1, 2026", {"1.1", "1.1S"}),
+        ("1.1", "Minimum Monthly Charge", "Missing Monthly Condition", {"1.1", "1.1S"}),
+        ("1.2D", "Minimum Monthly Charge", "Missing Monthly Condition", {"1.2D", "1.2DS"}),
+        ("1.2D", "17.213", "(17.213)", {"1.2D", "1.2DS"}),
+        ("2.1", "Minimum Monthly Charge", "Missing Monthly Condition", {"2.1"}),
+        ("2.4", "Maximum Monthly Charge", "Missing Maximum Condition", {"2.4"}),
+        ("2.3L", "per kVA", "per kW", {"2.3L"}),
+        ("1.1S", "12 months", "6 months", {"1.1S"}),
+        ("1.1S", "Effective July 1, 2026", "Effective June 1, 2026", {"1.1S"}),
+        ("1.2DS", "First Block Only", "Undocumented Block", {"1.2DS"}),
+    ])
+    def test_incomplete_schedules_reject_only_dependent_classes(self, document, code, old, new, rejected):
+        baseline = set(self.parse(document))
+        page = self.page(document, code)
+        assert old in page["text"]
+        page["text"] = page["text"].replace(old, new)
+        assert set(self.parse(document)) == baseline - rejected
+
+    def test_energy_follows_the_source_and_missing_page_is_isolated(self, document):
+        import re
+
+        page = self.page(document, "1.1L")
+        page["text"], replaced = re.subn(r"(@\s*)\d+\.\d+(\s*[¢])", r"\g<1>3.500\2", page["text"])
+        assert replaced == 1
+        records = self.parse(document)
+        assert next(component.charge_value for component in records["1.1L"].components if component.component_type == "energy") == 0.035
+        document["pages"].remove(page)
+        assert set(self.parse(document)) == set(records) - {"1.1L"}
+
+
+class TestRegionalBatchStorage:
+    @pytest.mark.parametrize("family", ["hydro_quebec", "nl_hydro", "saskenergy"])
+    def test_new_classes_survive_repeat_storage_and_export(self, family, tmp_path, monkeypatch):
+        import json
+        import sqlite3
+        from datetime import date
+        from pathlib import Path
+        from pipeline import export_json
+        from pipeline.run_scrape import store_results
+        from tests.test_phase5_hardening import database
+
+        fixture_name = "hydro_quebec_domestic" if family == "hydro_quebec" else family
+        document = json.loads((Path(__file__).parent / "fixtures" / f"{fixture_name}.json").read_text(encoding="utf-8"))
+        if family == "hydro_quebec":
+            for key in ("dt_pages", "winter_credit_pages", "flex_d_pages"):
+                document["pages"].extend(document[key])
+            records = list(TestHydroQuebecOptional.options(document).values())
+            assert len(records) == 3
+        elif family == "nl_hydro":
+            records = list(TestNLHydroLive.parse(document).values())
+            assert len(records) == 18
+        else:
+            from scrapers.utilities.saskenergy import SaskEnergyScraper
+
+            scraper = SaskEnergyScraper()
+            records = scraper.mark_live_parsed(scraper.parse_pages(
+                {key: page["text"] for key, page in document["pages"].items()}, date(2026, 10, 2)))
+            assert len(records) == 6
+        connection = database()
+        for run_id in (1, 2):
+            assert store_results(records, run_id, connection) == len(records)
+        assert connection.execute("SELECT count(*) FROM tariffs").fetchone()[0] == len(records)
+        assert connection.execute("SELECT count(*) FROM historical_snapshots").fetchone()[0] == 2 * len(records)
+        path = tmp_path / "rates.db"
+        with sqlite3.connect(path) as persisted:
+            connection.backup(persisted)
+        connection.close()
+        monkeypatch.setattr(export_json, "DB_PATH", path)
+        monkeypatch.setattr(export_json, "SITE_DATA_DIR", tmp_path / "site")
+        export_json.export_all()
+        exported = json.loads((tmp_path / "site" / "rates.json").read_text(encoding="utf-8"))
+        assert {record["tariff_code"]: len(record["components"]) for record in exported} == {record.tariff_code: len(record.components) for record in records}
+        assert all(record["provenance"] == "live" for record in exported)
+        assert all(component["source_url"] and component["source_detail"] for record in exported for component in record["components"])
 
 
 # ─── Newfoundland Power ────────────────────────────────────────

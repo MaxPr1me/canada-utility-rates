@@ -31,17 +31,17 @@ unverified fallback records remain estimates regardless of the export date.
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
-| Stored tariff versions / components | 571 / 3,732, including history and older estimates |
-| Live-sourced tariffs | **89 latest tariffs across 10 utilities**; 91 stored live versions |
+| Stored tariff versions / components | 598 / 3,832, including history and older estimates |
+| Live-sourced tariffs | **116 latest tariffs across 12 utilities**; 118 stored live versions |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Deterministic tests | **382 passing** on Python 3.11 |
+| Deterministic tests | **428 passing** on Python 3.11 |
 
 Live output currently includes BC Hydro (8), Manitoba Hydro (8), NB Power (3),
-Nova Scotia Power (7), Hydro-Quebec (6), Maritime Electric (10), Newfoundland Power (4),
-SaskPower (41), FortisAlberta (1), and Yukon Energy (1). These counts use the latest version per tariff,
-not complete coverage of each utility's published catalogue. Ontario and all gas utilities
-still have no live records in this snapshot.
+Nova Scotia Power (7), Hydro-Quebec (9), Maritime Electric (10), Newfoundland Power (4),
+NL Hydro (18), SaskPower (41), SaskEnergy (6), FortisAlberta (1), and Yukon Energy (1).
+These counts use the latest version per tariff, not complete utility catalogues.
+Ontario and the other eight gas utilities still have no live records in this snapshot.
 
 See the [coverage matrix](docs/phase5_completion_matrix.md) for the implementation queue
 and [parser gap report](docs/live_parser_gap_report.md) for class-level details.
@@ -60,8 +60,18 @@ northern off-grid DN, alongside D/G/M. DP preserves seasonal demand; DM/DN retai
 daily multiplier-based charges and energy allowances. DN excludes Schefferville
 and defaults to multiplier one unless its older DM-eligibility exception applies.
 Conditional credits remain separate; minimum bills are conditions, not extra charges.
-DT, Flex D, Winter Credit, the Inukjuak domestic variant and net-metering still need
-implementation or eligibility review.
+DT and Flex D now preserve temperature switching and notified-event pricing,
+respectively. The closed Winter Credit option retains reference-energy and notice
+rules as a conditional adjustment to Rate D. Inukjuak, net metering and remaining
+building business options still need review.
+
+The active long run covers **16 registered utilities outside Ontario, Alberta and
+the territories**, with parallel utility work and serial data/publication gates.
+NL Hydro now parses 18 Island/Labrador/diesel building-service and seasonal-option
+records. SaskEnergy has six residential/commercial full-service and delivery-only
+variants; missing current carbon evidence fails closed. Private retailer commodity
+prices are not included in delivery-only records. None of these counts certifies
+the remaining catalogue or calculates a complete bill.
 
 ---
 
@@ -223,7 +233,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 382 deterministic tests across 8 test modules
+├── tests/                    ← 428 deterministic tests across 8 test modules
 │   ├── fixtures/             ← Source-derived BC Hydro/Hydro-Quebec/NSPower/SaskPower/Yukon fixtures; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
