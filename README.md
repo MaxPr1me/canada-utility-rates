@@ -24,8 +24,11 @@ Inventory counts below include reference-only records, not just building tariffs
 
 The framework and website are implemented; **nationwide live-rate coverage is not complete**.
 The export combines October 1 CI and targeted BC Hydro/SaskPower/Yukon observations
-with the October 2 NSPower and Hydro-Quebec residential updates. CI and local history were reconciled without deleting prior
-snapshots. A successful source check and an export timestamp are different facts;
+with October 2 updates to Hydro-Quebec, NL Hydro, SaskEnergy, FortisBC Electric,
+Nova Scotia Power and Centra Gas. The latest implementation milestones are
+`6cdbc67` and `9b5980d`; the latter's GitHub Pages deployment succeeded.
+The export was generated at **2026-10-02 19:08 UTC**. History was preserved.
+A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
 
 | Measure | Exported state |
@@ -33,6 +36,8 @@ unverified fallback records remain estimates regardless of the export date.
 | Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
 | Stored tariff versions / components | 619 / 3,935, including history and older estimates |
 | Live-sourced tariffs | **137 latest tariffs across 14 utilities**; 139 stored live versions |
+| Active regional campaign | **135 latest live records across 12 of 16 target utilities** |
+| Remaining seed-only campaign utilities | **4**: FortisBC Energy, Energir, Heritage/Eastward and Liberty NB |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
 | Deterministic tests | **465 passing** on Python 3.11 |
@@ -42,7 +47,10 @@ Nova Scotia Power (10), Hydro-Quebec (9), Maritime Electric (10), Newfoundland P
 NL Hydro (18), SaskPower (41), SaskEnergy (6), Centra Gas Manitoba (12),
 FortisAlberta (1), and Yukon Energy (1).
 These counts use the latest version per tariff, not complete utility catalogues.
-Ontario and the other seven gas utilities still have no live records in this snapshot.
+They include conditional products, adjustment-only records and retained non-building
+references, not a count of complete building classes. The two live records outside
+the campaign are FortisAlberta and Yukon Energy, retained without a new regional-run
+scrape. Ontario and the other seven gas utilities still have no live records in this snapshot.
 
 See the [coverage matrix](docs/phase5_completion_matrix.md) for the implementation queue
 and [parser gap report](docs/live_parser_gap_report.md) for class-level details.
@@ -82,6 +90,13 @@ variants. Credits, kW/kVA alternatives and native volumetric demand units remain
 explicit. **12 of the 16 target utilities now have live output**, not necessarily
 complete building catalogues. FortisBC Energy, Energir, Heritage/Eastward and
 Liberty NB remain seed-only and are the next gas-source priorities.
+
+**Resume order:** develop FortisBC Energy, Energir and Heritage/Eastward in parallel,
+then Liberty NB, with shared tests, registry, database/export and publication handled
+serially. After those sources, continue the outstanding building-catalogue and
+component audits at already-live utilities. SaskPower's audited building schedules
+are implemented; the other utilities still have recorded catalogue or verification
+gaps. No source-blocked or unaudited class is considered finished.
 
 ---
 
@@ -244,7 +259,7 @@ canada-utility-costs/
 │       └── source_review_report.json    ← Source URL audit report
 │
 ├── tests/                    ← 465 deterministic tests across 8 test modules
-│   ├── fixtures/             ← Source-derived BC Hydro/Hydro-Quebec/NSPower/SaskPower/Yukon fixtures; other tests also use inline text
+│   ├── fixtures/             ← Source-derived fixtures for nine utility modules; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
 │
@@ -453,6 +468,16 @@ the roadmap is not a promise to complete all Canadian parsers in one session.
 3. Add historical rate charts and AI-ready exports after coverage is dependable.
 4. Scope a bill calculator and optional API separately; current comparison never calculates a total.
 5. **Conditional Alberta market region:** if the Alberta source audit reveals comparable market-pricing variation or complexity, add Alberta as a selectable region in the existing Market Pricing dashboard. Reuse the interface, but use Alberta-specific values, official sources, effective periods and methodology, not Ontario's values or HOEP-plus-GA assumptions. Keep wholesale, retail and wires charges distinct and label any modeled estimates explicitly. This is a later-phase option, not a change to the current parser priorities.
+6. **Across-Canada comparison view:** expand the Compare tab with a separate national view alongside the existing two-tariff comparison. Compare common customer classes and rate structures across provinces, using transparent provincial blends where multiple utilities offer comparable service. This is planned Phase 6 work, not part of the current parser campaign.
+
+#### Across-Canada Comparison: Design Direction
+
+- **National comparison matrix:** provinces/territories as rows, common customer-class/rate-structure categories as columns or selectable views. Keep every region visible, including where a category is **Not offered**, **Not yet verified**, or **Not comparable**; these are different states, never zero prices. Build the category crosswalk from published eligibility, not just similar utility plan names.
+- **Residential profiles:** start with flat, tiered and time-of-use plans, with separate views for other nationally recurring structures. Show energy prices, monthly fixed charges, tier allowances, TOU hours/seasons and mandatory adjustments. Show monthly-equivalent fixed charges only with a disclosed day/billing-period basis and the original units. Do not manufacture a flat rate by averaging a tiered or TOU plan; distinguish ordinary household service from bulk-metered, off-grid, pilot and other conditional products.
+- **Commercial class ladders:** compare small, medium and large general service using each utility's actual eligibility bands. Show the peak-demand range, fixed monthly charge, energy structure, when demand billing begins, any free demand allowance, and the applicable charge per kW or kVA. A shared demand-axis chart could reveal where one province's small-commercial class becomes another's medium class. Preserve voltage, season, minimum-bill and demand-ratchet conditions; do not invent universal class boundaries or convert kVA to kW without evidence.
+- **Transparent provincial blends:** blend only like-for-like categories, components and eligible customer groups. Prefer official class-specific customer weights where available; otherwise identify an equal-utility average explicitly as unweighted. Display the participating utilities, weights, coverage and min-max range, with expansion to individual tariffs and sources. Preserve incompatible tier boundaries and TOU windows as separate profiles instead of hiding them in one average. A blend is a comparison indicator, not an official tariff or a price every resident pays.
+- **Visual exploration:** combine the sortable matrix with provincial dot/range plots, miniature tier-step charts, 24-hour TOU strips and commercial demand-threshold ladders. Selecting a province should reveal its contributing utilities and charge breakdown; selecting a category should line up that structure across Canada. Offer fuel, customer/building type, rate structure and effective-period controls, with an accessible table alternative to charts.
+- **Fair comparisons:** keep energy, delivery, fixed charges, demand and riders distinct. Flag energy-only versus bundled service, differing units and incomplete component coverage before ranking or blending. Show source dates and methodology; keep estimated inputs separate and explicitly labelled. Any usage-weighted effective price or example monthly bill requires a disclosed load profile and the separately scoped calculator work above, not an implicit total in this comparison view.
 
 ---
 

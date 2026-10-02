@@ -9,6 +9,14 @@ eligibility, not an assumption that NECB 2025 defines tariff classes. Do not exp
 farm/oil-field processes, irrigation, standalone lighting, wholesale or other non-building
 services merely to complete a catalogue. Existing implementations remain reference data.
 
+The active run extends the 16 already-registered utilities in BC/QC/MB/SK/NB/NS/PE/NL;
+it does not onboard additional inventory utilities or update ON/AB/YT/NT/NU. Use
+this guide to fill missing classes in the owning utility module, and consult the
+[current coverage matrix](phase5_completion_matrix.md) before choosing work.
+Current examples include page-aware domestic options, NL Hydro service alternatives,
+and SaskEnergy/Centra gas variants with separately dated required components. They
+are reusable patterns, not proof that every class at those utilities is complete.
+
 ## 1. Research the utility
 
 Before writing code, find these things:

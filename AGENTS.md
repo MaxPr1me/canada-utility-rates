@@ -20,6 +20,11 @@ GitHub Actions schedules a monthly scrape. Deployment and durable history across
 cloud runs still need reliability work; see the roadmap in [README.md](README.md).
 The latest export has 137 latest live tariffs and 480 estimates; stored history contains
 139 live versions. Registry coverage is not the same as live coverage.
+Within the active 16-utility campaign, 12 utilities have 135 latest live records.
+That includes conditional products and reference-only services, not 135 fully audited
+building classes. FortisBC Energy, Energir, Heritage/Eastward and Liberty NB still
+need live extraction. The other utilities have the remaining gaps listed in the
+[coverage matrix](docs/phase5_completion_matrix.md).
 
 ---
 
@@ -114,7 +119,7 @@ an exact percentage. Preserve history and do not stage unrelated work.
 
 | File | What it does |
 |---|---|
-| `site/index.html` | The main web page. Two-tab layout: **Rate Browser** and **Market Pricing**. |
+| `site/index.html` | The main web page. **Rate Browser**, **Market Pricing** and the existing two-tariff **Compare** view. The new Across-Canada comparison is planned for Phase 6, not implemented. |
 | `site/css/style.css` | How the page looks — includes styles for multi-select filters, heatmap, confidence indicators, source attribution, and market callouts. |
 | `site/js/app.js` | The application logic: loads 5 JSON data files, deduplicates rates by effective_date, manages multi-select checkbox filter state (using JavaScript `Set`s), cascades province selection into the utility filter, renders rate cards with confidence dots, shows detail modals with source attribution and market callouts, and powers the Market Pricing dashboard (heatmap, Chart.js line chart, summary table, methodology). |
 
@@ -442,8 +447,11 @@ pytest
 
 There are 465 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
-The BC Hydro, Hydro-Quebec, NSPower, SaskPower and Yukon Energy JSON fixtures in `tests/fixtures/` hold official PDF-text excerpts,
-source URLs and page numbers for repeatable parser tests.
+The BC Hydro, FortisBC Electric, Hydro-Quebec, NL Hydro, NSPower, SaskPower,
+SaskEnergy, Centra Gas and Yukon Energy fixtures in `tests/fixtures/` hold official
+HTML/PDF-text excerpts, source URLs and page/section details for repeatable parser
+tests. A fixture covers only the saved classes and conditions; it does not prove
+the entire utility catalogue is complete.
 
 If everything passes, you'll see green output. If something fails, it will show you exactly what went wrong and where.
 
@@ -486,11 +494,12 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - Ontario updates start with the OEB common-rate page, then each distributor's approved tariff. Alberta wires, default retail, AESO, gas, and northern sources must remain separate and preserve their published classes, communities, tiers, and units.
 - Test comparison locally with `python -m http.server --directory site 8000`: add two cards, open **Compare**, remove/replace either, and check the mobile horizontal table. It never calculates a bill total.
 - Every successful stored scrape appends `historical_snapshots`. Canonical hashes ignore component ordering but change for values, units, tiers, dates, or structure; old effective-date versions are never deleted.
-- The October 1 SaskPower batches parse 41 live tariffs, including completed reference-only classes. Building scope now includes standard, bulk-metered and diesel residential service and R23/R24 renewable access. Standard E01/E03 keeps its identity only when both published columns agree; bulk fixed charges are per unit, not per account. Next is Yukon Energy building coverage; see [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).
+- The October 1 SaskPower batches parse 41 live tariffs, including completed reference-only classes. Building scope includes standard, bulk-metered and diesel residential service and R23/R24 renewable access. Standard E01/E03 keeps its identity only when both published columns agree; bulk fixed charges are per unit, not per account. Maintain this coverage; the next campaign targets are the four seed-only provincial gas utilities, not Yukon. See [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).
 - Yukon Energy Rate 1160 now lists base rates, R/J/J1 percentage riders, fuel Rider F and dated residential relief separately. Do not add riders to a price that already includes them. Its old version remains in history; the browser keeps the latest version. Broader Yukon building classes need OCR or a text alternative for image-only base schedules.
 - NSPower residential service includes standard, storage-heating TOD and closed-enrollment TOU/critical-peak pilots. Pilot records explicitly distinguish the tariff's conditional interim phase from its dated November pricing. Do not assume an existing customer's system-restoration status from an advertising page. Mandatory FAM/DSM/storm riders are separate from base energy; Green Power blocks are opt-in, not a standard charge. Dates past the supported tariff/rider year fail closed.
 - Hydro-Quebec DP, grandfathered DM and northern off-grid DN are now parsed alongside D/G/M. DP has summer/winter demand charges; DM/DN charges and energy allowances depend on the approved multiplier. DN applies north of the 53rd parallel except Schefferville and normally uses multiplier one; its older DM-eligibility exception is not a restriction on every DN customer. Conditional supply-voltage credits do not apply to everyone. Minimum bills, demand allowances and transformation-loss rules remain conditions, not extra charges or calculated totals. Missing continuation pages reject only the affected class. The remaining domestic catalogue is still incomplete.
 - Completing a utility means auditing its building-relevant standard published classes, not just replacing existing seed values or completing every unrelated service. A complete class can stay live when another class fails, but never stamp a mixed live/seed list as entirely live.
 - The current campaign covers only the 16 registered utilities outside Ontario, Alberta and the territories. Parallel workers own separate utility files; database/export/registry/test integration and publication are serial. Preserve excluded regions and all earlier snapshots.
+- Published milestones `6cdbc67` and `9b5980d` added coverage at six utilities. The current checkpoint has 465 passing tests, 1,269 local snapshots and a successful Pages deployment for `9b5980d`. The campaign is not finished; source-check dates, live-record counts and full-catalogue completion are separate facts. Historical checkpoint instructions must not override the current matrix queue.
 - Hydro-Quebec DT uses temperature switching, not clock-based TOU. Flex D uses notified events; Winter Credit is a closed, conditional adjustment to Rate D and retains the published reference-energy rules. NL Hydro's phase/amperage fixed charges are alternatives, not cumulative charges; seasonal options require their matching base schedules. SaskEnergy delivery-only service excludes private commodity prices. A missing carbon source cannot be hidden under a live label; assembled tariff dates reflect the latest required component while component dates remain intact.
 - FortisBC Electric's current residential price is flat; its older tiered version remains history. Rate 21's kW/kVA charges are alternatives, and voltage/transformation discounts are conditional negative credits. NSPower MURB has its own rider rows and minimum-bill condition; the approved book explicitly applies its peak price on weekends/holidays. Solar Garden and Community Solar records are subscriber adjustments to another tariff, not replacement household energy prices. Centra keeps published delivery/demand parts separate, with no guessed heat conversion or private marketer commodity price.

@@ -10,23 +10,30 @@ Counts include retained non-building reference records, not only building tariff
 
 ## Active Regional Campaign (2026-10-02)
 
-Implementation is underway for the 16 registered utilities in BC, QC, MB, SK,
+Two implementation batches are published for the 16 registered utilities in BC, QC, MB, SK,
 NB, NS, PE and NL: ten electricity and six gas utilities. Ontario, Alberta and
 all three territories are excluded from this run, not removed from the database
 or website. Provincial off-grid service in Quebec and Newfoundland and Labrador
 remains in scope. No additional inventory utilities are being registered.
 
-Baseline: 382 tests pass; 87 latest live tariffs in the selected provinces,
-including retained non-building references. The database/export agree on 571
-tariff versions and 3,732 components; 1,208 historical snapshots and all 468
-excluded-region tariff records are protected. A successful scrape or one live
-residential class does not establish complete building coverage.
+**Current checkpoint:** `9b5980d` (after `6cdbc67`), deployed successfully to GitHub
+Pages. There are **135 latest live records at 12 of 16 target utilities** and
+**465 passing tests**. Four gas utilities remain seed-only. Local history contains
+1,269 snapshots; all 468 excluded-region tariff records remain unchanged. The export
+timestamp is 2026-10-02 19:08 UTC, not a new source check for every utility.
 
-| Workstream | Utility queue | Current work |
+**Historical starting baseline:** 382 passing tests, 87 latest in-scope live records,
+571 stored versions, 3,732 components and 1,208 snapshots. The two batches added
+48 latest live records and 61 snapshots. These counts include optional adjustments
+and retained non-building references. A successful scrape or one live residential
+class does not establish complete building coverage.
+
+| Priority | Utility queue | Next work |
 |---|---|---|
-| Quebec and western electricity | Hydro-Quebec; FortisBC Electric; BC Hydro; Manitoba Hydro; SaskPower | Hydro-Quebec remaining domestic products and source conditions |
-| Atlantic electricity | NL Hydro; Nova Scotia Power; NB Power; Maritime Electric; Newfoundland Power | NL Hydro current building classes and service areas |
-| Natural gas | SaskEnergy; Centra Gas Manitoba; FortisBC Energy; Energir; Heritage/Eastward Energy; Liberty Utilities NB | SaskEnergy current published building classes and components |
+| Next parallel batch | FortisBC Energy; Energir; Heritage/Eastward Energy | Replace verifier-only paths with source-derived building-class extraction; establish units, service areas, supply choices and current carbon/adjustment evidence |
+| Following gas target | Liberty Utilities NB | Current official customer-class schedules and complete component sources |
+| Remaining electricity audits | BC Hydro; FortisBC Electric; Hydro-Quebec; Manitoba Hydro; NB Power; Nova Scotia Power; Maritime Electric; Newfoundland Power; NL Hydro | Finish the class, optional-product, component and fixture gaps in the utility rows below; maintain completed SaskPower building coverage |
+| Existing gas follow-up | SaskEnergy; Centra Gas Manitoba | Resolve small-industrial/ancillary charges and full PUB eligibility/demand/alternate-supply conditions; live variants are not full catalogue completion |
 
 Utility parser and fixture work may proceed in parallel. Shared tests, registry,
 database writes, exports, documentation and publication are integrated serially.
@@ -50,8 +57,10 @@ and components, with explicit non-building/special/unavailable exclusions. SaskP
 audited published building-service schedules are implemented as of October 1; that
 does not claim full-catalogue, tax-inclusive billing or building-code compliance.
 
-BC Hydro, Hydro-Quebec, NSPower, SaskPower and Yukon Energy have saved source-derived fixtures in `tests/fixtures/`.
-Other tests include inline synthetic text and seed checks. A shared verifier test,
+BC Hydro, FortisBC Electric, Hydro-Quebec, NL Hydro, NSPower, SaskPower, SaskEnergy,
+Centra Gas and Yukon Energy have saved source-derived fixtures in `tests/fixtures/`.
+Other tests include inline synthetic text and seed checks. Fixtures cover selected
+classes and conditions, not necessarily complete utility catalogues. A shared verifier test,
 successful process exit, or empty missing-data log does not establish live coverage.
 
 Official discovery/document links live in [the registry](../data/sources/registry.json).
@@ -211,23 +220,25 @@ fixtures. The other seven gas utilities remain seed-only; four are in this campa
 component interpretation must precede parser completion. No gas utility is yet
 certified complete for its published building catalogue.
 
-| Registry utility | Required source/interpretation work |
-|---|---|
-| Enbridge Gas | Legacy rate zones, building-service classes, commodity/delivery/transport/storage and dated riders |
-| Énergir | Current distribution/volume classes, supply/balancing, units and effective dates |
-| FortisBC Energy | Service areas, building customer classes and separately published adjustments |
-| ATCO Gas | Current approved delivery schedules, classes and applicable riders |
-| EPCOR Natural Gas | Confirm product, jurisdiction and utility identity; do not infer these from the module name |
-| Centra Gas Manitoba | Twelve residential/commercial Sales/T-service/marketer variants live; full PUB class/demand/alternate-supply conditions and fixed-term products remain under review |
-| SaskEnergy | Six residential/small/large-commercial full/delivery-only variants live; small-industrial applicability, fees and municipal-payment scope remain under audit |
-| Heritage Gas / Eastward Energy | Current company source and residential/business schedules |
-| Liberty Utilities NB / Natural Gas NB | Current company source and complete customer-class schedules |
+| Registry utility | Region / campaign | Latest live records | Implemented path and remaining work |
+|---|---|---|---|
+| Enbridge Gas | ON / excluded | 0 | Seed verification; legacy rate zones and full component extraction remain deferred |
+| Énergir | QC / next parallel batch | 0 | Seed verification only; extract current distribution/volume classes, supply/balancing, units, dates and applicable adjustments |
+| FortisBC Energy | BC / next parallel batch | 0 | Seed verification only; extract service-area building classes and separately published adjustments |
+| ATCO Gas | AB / excluded | 0 | Seed verification; current approved delivery classes/riders remain deferred |
+| EPCOR Natural Gas | AB registry entry / excluded | 0 | Seed verification; product, jurisdiction and identity still need confirmation |
+| Centra Gas Manitoba | MB / live, partial catalogue | 12 / Oct 2 | Residential/commercial Sales/T-service/marketer variants; full PUB class/demand/alternate-supply conditions and fixed-term products remain under review |
+| SaskEnergy | SK / live, partial catalogue | 6 / Oct 2 | Residential/small/large-commercial full/delivery-only variants; small-industrial applicability, fees and municipal-payment scope remain under audit |
+| Heritage Gas / Eastward Energy | NS / next parallel batch | 0 | Seed verification only; current company/regulator sources and complete residential/business schedules need extraction |
+| Liberty Utilities NB / Natural Gas NB | NB / following gas target | 0 | Seed verification only; current official customer-class schedules and all required components need extraction |
 
 Preserve m3/GJ, volume tiers and component source ownership. Verify current tax/carbon
 applicability rather than copying obsolete charges. Incomplete commodity/delivery
 coverage must not be hidden under a live tariff label; do not invent unit conversions.
 
 ## Northern Electricity
+
+This section is retained reference coverage, outside the current regional campaign.
 
 Observed counts below use the latest tariff versions. Yukon 1160 was refreshed locally
 on October 1 with a multi-document source fixture; other entries retain CI results.
@@ -248,13 +259,14 @@ it excludes Rider F and fixed charges. Older versions remain in history.
 The detailed 1160 and 2160 PDFs are image-only. Rendered source pages confirm that
 general service includes demand and four energy blocks, while the readable
 cross-reference lists only block 4. Do not infer the missing blocks from seeds.
-Next gate: reviewed OCR or authoritative text for full building-class extraction.
+Deferred gate: reviewed OCR or authoritative text for full building-class extraction
+when territorial work resumes. Do not open this work during the restricted campaign.
 
 ## Next Batches and Acceptance
 
-1. Continue the residential audit after Hydro-Quebec DP/DM/DN: DT dual-energy is the next bounded slice, followed by Flex D/Winter Credit and FortisBC's current tariff. BC Hydro's five options and NSPower standard/TOD/conditional pilot phases are implemented; do not infer national product completeness.
-2. Resume broader Yukon building classes/Rider A via reviewed OCR or text alternatives and other NS/FortisBC building-service gaps after the residential-priority audit.
-3. Territorial/provincial building-service depth, nine gas utilities, Alberta electricity, then the Ontario campaign.
+1. Implement FortisBC Energy, Energir and Heritage/Eastward in separate parallel parser/fixture assignments, then Liberty NB. All four remain seed-only. Verify complete building-class components, supply choices, units, dates and current carbon applicability before accepting live output.
+2. Finish the recorded catalogue and component gaps at the twelve already-live target utilities. HQ DT/Flex D/Winter Credit, FortisBC Electric's six schedules, NSPower MURB/solar, NL Hydro's eighteen records and SaskEnergy/Centra variants are implemented, not the next missing parser tasks.
+3. Audit the still-unreviewed building catalogues and add source-derived fixtures at BC Hydro business, Manitoba Hydro, NB Power, Maritime Electric and Newfoundland Power as needed; maintain SaskPower's audited building schedules. End with an explicit sixteen-utility refresh and class-level reconciliation. ON/AB/YT/NT/NU remain excluded from this run.
 4. Separate operational track: browser-enabled source health, meaningful provenance counts,
    failure reporting, deployment triggering and durable CI history.
 5. Deferred product track: market-model UI/metadata correction, real observation ingestion,
@@ -264,6 +276,10 @@ Next gate: reviewed OCR or authoritative text for full building-class extraction
     Use Alberta-specific values, sources, dates and methodology; reuse the interface,
     not Ontario's HOEP-plus-GA assumptions. Keep wholesale, retail and wires distinct,
     with any modeled estimates clearly identified. This remains deferred work.
+7. Phase 6 also includes the separate Across-Canada comparison view described in
+    [README](../README.md#phase-6-provenance-and-product-follow-up): common residential
+    structures, monthly charges, commercial demand-class ladders and transparent
+    provincial utility blends. It is a roadmap item, not an implemented feature.
 
 Each batch requires source-derived positive/negative tests, a source-inspected dry run,
 validated storage/export, preserved history and a ledger update. Record observation dates
@@ -271,6 +287,10 @@ separately from parser capability, keep unsupported classes visible, and never d
 database or invent rates to make completion metrics look better.
 
 ## Historical Checkpoint: BC Hydro (2026-10-01)
+
+Historical checkpoints retain their original counts and resume instructions for
+traceability. Use the active queue above and the final Regional Batch 2 checkpoint
+for current work; do not resume an older queue.
 
 **Completed:** BC Hydro now parses five residential options from the approved tariff:
 1101 tiered, 1151 flat, both with optional 2101 time-of-day, and closed dual-fuel 1105.
@@ -284,7 +304,7 @@ zero errors and two existing AESO class warnings. New source fixture:
 `tests/fixtures/bc_hydro_residential.json`. No frontend code changed in this checkpoint.
 
 The NSPower resume instructions below describe the October 1 handoff. That parser
-batch has since progressed; use the October 2 checkpoint below for current status.
+batch has since progressed; use the final Regional Batch 2 checkpoint for current status.
 
 **Resume here:**
 1. Read `scrapers/utilities/nova_scotia_power.py` at `_try_live_scrape()` and
@@ -312,20 +332,22 @@ ending; checkpoint conservatively when exact token usage is unavailable.
 
 ## Residential Catalogue Audit (2026-10-02)
 
-This is a dated product-catalogue audit, not a fresh live-rate run for every utility.
-The rest of the registry still needs review; no absence of optional products is inferred
-from an old seed or a single residential page.
+This catalogue ledger includes the two October 2 implementation batches, not a fresh
+live-rate run for every utility. The rest of the registry still needs review; no
+absence of optional products is inferred from an old seed or a single residential page.
 
 | Utility/group | Official evidence reviewed | Finding and remaining gate |
 |---|---|---|
 | BC Hydro | October 1 approved tariff and residential pages | Five options implemented: tiered/flat, both +TOD, closed dual-fuel. Preserve conditions/rider exclusions |
-| NSPower | October 2 [residential catalogue](https://www.nspower.ca/your-home/residential-rates/standard-residential) and [May 2026 tariff book](https://www.nspower.ca/docs/default-source/regulatory/tariff-book-2026.pdf) | Standard, thermal-storage TOD, TOU and CPP pilots implemented by dated tariff phase. Both pilots are closed to new applicants; October variants explicitly conditional. MURB TOU and solar riders still need extraction |
-| Hydro-Quebec | October 2 [domestic-rate catalogue](https://www.hydroquebec.com/residential/customer-space/rates/) and approved tariff | D/DP/DM/DN are implemented, with seasonal demand, grandfathered multipliers and DN's distinct off-grid/default-multiplier rules. DT, Flex D, Winter Credit, Inukjuak domestic variant and net-metering remain; catalogue links alone do not establish eligibility or current rates |
-| FortisBC Electric | October 2 [residential page](https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/residential-rates) through direct HTTP | Page links to the [official Electric Tariff](https://fbcdotcomprod.blob.core.windows.net/libraries/docs/default-source/about-us-documents/regulatory-affairs-documents/electric-utility/fortisbcelectrictariff.pdf). Current January 1, 2026 decision is mentioned; tariff extraction and full product audit are pending. Web-tool CSP failure is not proof of an inaccessible source |
+| NSPower | October 2 [residential catalogue](https://www.nspower.ca/your-home/residential-rates/standard-residential) and [May 2026 tariff book](https://www.nspower.ca/docs/default-source/regulatory/tariff-book-2026.pdf) | Standard, storage TOD, conditional closed pilots, MURB89 and two optional solar adjustments implemented. Pilot restoration-status and broader business/rider/date coverage remain open |
+| Hydro-Quebec | October 2 [domestic-rate catalogue](https://www.hydroquebec.com/residential/customer-space/rates/) and approved tariff | D/DP/DM/DN/DT/Flex D and closed Winter Credit adjustment implemented. Inukjuak, net metering and remaining building business options are still gaps |
+| FortisBC Electric | October 2 [official Electric Tariff](https://fbcdotcomprod.blob.core.windows.net/libraries/docs/default-source/about-us-documents/regulatory-affairs-documents/electric-utility/fortisbcelectrictariff.pdf) | Flat residential1 and closed TOU2A implemented with commercial20/21/22A/23A. Large commercial and Green Power/financing/net-metering/EV schedules remain under audit |
+| NL Hydro | October 2 approved July 2026 schedule | Island/Labrador/diesel/government domestic and general service plus two seasonal adjustments implemented (18 records). Net-metering/commissioning and contract-specific industrial applicability remain open |
 | Ontario shared prices | October 2 [OEB price catalogue](https://www.oeb.ca/consumer-information-and-protection/electricity-rates) | TOU, ULO and Tiered choices confirmed; displayed current prices effective November 1, 2025. RPP prices already include an estimate of GA. This does not verify any LDC's delivery charges or merger identity |
-| Manitoba, NB, PEI, Newfoundland, Labrador and remaining electricity entries | Existing matrix/source history only in this pass | Optional/conditional residential product catalogue audit remains pending; do not mark default-only outputs complete |
+| Manitoba Hydro, NB Power, Maritime Electric and Newfoundland Power | Existing matrix/source history; no new campaign catalogue audit yet | Optional/conditional residential and broader building catalogue/fixture audits remain pending; do not mark default-only outputs complete |
 | Northern and Alberta families | Existing matrix/source history only in this pass | Preserve community, government/subsidy and wires/retail distinctions; current product audit remains pending |
-| Nine gas utilities | No new catalogue source check in this pass | Residential class/zone and supply-contract options still need audit; all remain seed-only in the current export |
+| SaskEnergy and Centra Gas Manitoba | October 2 official rate/supply pages and required carbon evidence | Six SaskEnergy and twelve Centra live variants; remaining class/eligibility and ancillary-charge gaps are documented above |
+| Four remaining in-scope gas utilities | Current verifier-only paths and seed-only export | FortisBC Energy, Energir, Heritage/Eastward and Liberty NB are the next extraction targets; no new source availability is inferred from the seeds |
 
 ## Historical Checkpoint: NSPower (2026-10-02)
 
@@ -518,3 +540,18 @@ Use the supported `./venv/Scripts/python.exe`; current targeted selectors includ
 `RegionalBatchStorage` in the existing live-parser test module. Keep shared edits,
 DB/export/Git integration serial. Before context exhaustion, finish this tested
 checkpoint and push verified paths; do not leave unvalidated parallel work staged.
+
+### End-of-Day Handoff (2026-10-02)
+
+- Parser milestones `6cdbc67` and `9b5980d` are published; the Pages deployment for
+    `9b5980d` succeeded. The current test result is 465 passing. Documentation now
+    distinguishes current coverage from historical checkpoints and planned features.
+- Closing totals remain 137 latest live records nationwide, including 135 across
+    12 of the 16 campaign utilities, with 1,269 local snapshots preserved. This
+    closeout does not run a new scrape or change exported rates.
+- Resume with FortisBC Energy, Energir and Heritage/Eastward in parallel, then
+    Liberty NB. Follow with the recorded catalogue/component audits; the campaign
+    is not complete. Keep ON/AB/YT/NT/NU excluded and shared integration serial.
+- The Phase 6 Across-Canada comparison design is saved in
+    [README](../README.md#phase-6-provenance-and-product-follow-up). It remains future
+    work; no national-comparison UI or bill calculator has been implemented.
