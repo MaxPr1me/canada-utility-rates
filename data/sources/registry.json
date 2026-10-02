@@ -111,16 +111,34 @@
       "utility_type": "gas",
       "scraper_module": "scrapers.utilities.centra_gas",
       "scraper_class": "CentraGasScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/natural_gas_rates/",
+          "url": "https://www.hydro.mb.ca/account/rates/residential/",
           "source_type": "html",
-          "description": "Natural gas rates for Centra Gas Manitoba (operated by Manitoba Hydro)",
+          "description": "Current residential Centra gas basic, commodity and delivery components",
           "is_primary": true
+        },
+        {
+          "url": "https://www.hydro.mb.ca/account/rates/commercial/",
+          "source_type": "html",
+          "description": "General-service and large-volume gas Sales/T-service class tables and native demand units",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.hydro.mb.ca/account/rates/natural-gas/",
+          "source_type": "html",
+          "description": "Default quarterly commodity rate and marketer-supply applicability",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/fcrates/fuel-charge-rates.html",
+          "source_type": "html",
+          "description": "Dated federal zero fuel-charge applicability naming Manitoba; required for complete carbon evidence",
+          "is_primary": false
         }
       ],
-      "notes": "Centra Gas Manitoba is a subsidiary of Manitoba Hydro responsible for natural gas distribution in Manitoba. Regulated by the Manitoba Public Utilities Board (PUB)."
+      "notes": "Twelve current residential/commercial Sales, T-service and marketer-supply variants. Source cents/m3 are normalized to dollars/m3, without heat-content conversion; native volumetric demand units and component dates are preserved. Delivery/demand totals are checked against their parts, not added twice. Private marketer commodity is excluded and explicit carbon evidence is mandatory. Fixed-term products, full PUB tariff/eligibility and alternate-supply conditions remain review gaps; no full catalogue-completion claim."
     },
     {
       "name": "SaskEnergy",
@@ -256,13 +274,19 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.fortisbc_electric",
       "scraper_class": "FortisBCElectricScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://fbcdotcomprod.blob.core.windows.net/libraries/docs/default-source/about-us-documents/regulatory-affairs-documents/electric-utility/fortisbcelectrictariff.pdf",
+          "source_type": "pdf",
+          "description": "Approved Electric Tariff; current RS 1/2A/20/21/22A/23A dates, rates, conditional credits and demand alternatives",
+          "is_primary": true
+        },
         {
           "url": "https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/residential-rates",
           "source_type": "html",
           "description": "Residential electricity rates for FortisBC Electric service area in southern BC interior",
-          "is_primary": true
+          "is_primary": false
         },
         {
           "url": "https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/commercial-rates",
@@ -271,7 +295,7 @@
           "is_primary": false
         }
       ],
-      "notes": "FortisBC Electric serves the southern interior of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC)."
+      "notes": "Six live January 2026 building schedules: flat RS 1, closed residential TOU 2A, commercial 20/21 and TOU 22A/23A. Per-two-month and per-month charges remain native; RS21 kW/kVA components are alternative bases. Conditional voltage/transformation credits are negative rebates, not additive charges. Large commercial 30-33/37/38, Green Power85, financing91, net-metering95 and EV96 remain audit gaps. PDF extraction selects source sheets by printed footer to avoid table-of-contents extraction stalls."
     },
     {
       "name": "Hydro-Québec",
@@ -419,7 +443,7 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.nova_scotia_power",
       "scraper_class": "NovaScotiaPowerScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
           "url": "https://www.nspower.ca/your-home/residential-rates/standard-residential",
@@ -448,7 +472,7 @@
         {
           "url": "https://www.nspower.ca/docs/default-source/regulatory/tariff-book-2026.pdf",
           "source_type": "pdf",
-          "description": "May 2026 domestic tariffs, dated conditional pilot phases and FAM/DSM/storm riders",
+          "description": "May 2026 domestic and MURB89 tariffs, dated conditional pilots, FAM/DSM/storm and optional Solar Garden/Community Solar riders",
           "is_primary": false
         },
         {
@@ -458,7 +482,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Residential parsing separates standard 02/03/04, thermal-storage TOD 05/06 and closed-enrollment pilots 70/80. Published interim pilot variants are explicitly conditional on the tariff's restoration rules through October 31, 2026; they are not proof of any participant's operational status. Dated November rates are not activated early. Mandatory FAM/DSM/storm and optional Green Power components remain separate. Business 10/11/12 uses the existing HTML path. Broader building-service and optional rider coverage remains partial."
+      "notes": "Ten live records include standard/TOD/conditional pilots, MURB house-meter TOU89, separate optional Solar Garden and Community Solar adjustments, and existing business10/11/12. MURB requires ten units, its own General/MURB rider rows and minimum-bill context; printed Note1 explicitly applies the peak price on weekends/holidays. Solar credits apply only to subscriber-attributed generation with base tariffs still separate. Pilot restoration status remains conditional; no early November/2027 prices. Other building business classes and rider/date coverage still need audit."
     },
     {
       "name": "Maritime Electric",

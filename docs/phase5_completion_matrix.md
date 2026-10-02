@@ -1,11 +1,11 @@
 # Phase 5 Completion Matrix
 
 **Updated:** 2026-10-02. Scope: all 84 registered utilities, not every utility
-in the broader Canadian inventory. The export has 598 stored tariff versions / 3,832
-components / **118 stored live versions / 480 seed**. Latest-per-name coverage is
-**116 live tariffs**; older versions remain in history. October 2 updates now include
-NSPower, Hydro-Quebec, NL Hydro and SaskEnergy. SaskEnergy is the first live gas
-utility; Ontario and the other eight gas utilities still have no live output.
+in the broader Canadian inventory. The export has 619 stored tariff versions / 3,935
+components / **139 stored live versions / 480 seed**. Latest-per-name coverage is
+**137 live tariffs**; older versions remain in history. October 2 updates include
+NSPower, Hydro-Quebec, NL Hydro, FortisBC Electric, SaskEnergy and Centra Gas.
+Ontario and the other seven gas utilities still have no live output.
 Counts include retained non-building reference records, not only building tariffs.
 
 ## Active Regional Campaign (2026-10-02)
@@ -64,12 +64,12 @@ See the [gap report](live_parser_gap_report.md) for detailed findings and
 | Utility | Live tariffs / source-check date | Implemented path and supported scope | Next work |
 |---|---|---|---|
 | BC Hydro | 8 / Oct 1 | Approved PDF: tiered 1101, flat 1151, each +2101 TOD, closed dual-fuel 1105; three HTML business classes | Five residential options verified; preserve rider exclusions, prorated tiers and conditional discounts; other building-service audit remains |
-| FortisBC Electric | 0 / Oct 1 | Known-value verification for two seed classes | Oct 2 official residential page reachable through direct HTTP and links to Electric Tariff; actual residential extraction/catalogue completeness still pending |
+| FortisBC Electric | 6 / Oct 2 | Approved PDF 1/2A/20/21/22A/23A, flat/TOU, conditional credits and kW/kVA alternatives | Large commercial 30-33/37/38, Green Power85, financing91, net-metering95 and EV96 remain |
 | Hydro-Quebec | 9 / Oct 2 | D/DP/DM/DN/DT/Flex D, closed Winter Credit adjustment, G/M | Inukjuak, net-metering applicability and building business options remain; temperature/event conditions are not calculated bills |
 | Manitoba Hydro | 8 / Oct 1 | HTML: residential and seven GS/voltage variants | Building-service audit; preserve kVA and seasonal rules |
 | SaskPower | **41 / Oct 1** | **Audited building schedules implemented**; six source fixtures; total includes reference records | Monitor current sources; no remaining identified building-schedule parser gap in the audited catalogue |
 | NB Power | 3 / Oct 1 | HTML: residential, GS1, small industrial | Remaining building-service schedules and fixtures |
-| Nova Scotia Power | 7 latest / Oct 2 | PDF standard/TOD and explicitly conditional interim TOU/CPP pilots, separate riders; existing business 10/11/12 HTML | Participant restoration-status verification, MURB TOU and solar riders remain gaps; 2027 rates unsupported pending new source review |
+| Nova Scotia Power | 10 latest / Oct 2 | Standard/TOD/conditional pilots, MURB89, two optional solar adjustments; existing business10/11/12 | Pilot restoration-status and broader business class/rider/date audit remain; unsupported 2027 dates fail closed |
 | Maritime Electric | 10 / Oct 1 | IRAC PDF class-section extraction | Building-service audit and source-derived success/failure fixtures |
 | Newfoundland Power | 4 / Oct 1 | RateBook PDF: 1.1/2.1/2.3/2.4 | Building-relevant schedules and fixture coverage |
 | NL Hydro | 18 / Oct 2 | July PDF Island/Labrador/diesel, government distinctions, Burgeo school/library and two seasonal adjustments | Net-metering and commissioning scope plus contract-specific industrial applicability remain; preserve alternative fixed charges and conditional billing rules |
@@ -206,8 +206,8 @@ not automatic classification as present outages.
 
 ## Natural Gas
 
-SaskEnergy now has six live records and a source-derived fixture. The other eight
-gas utilities remain seed-only; five of those are in this campaign. Discovery and
+SaskEnergy now has six live records and Centra Gas twelve, both with source-derived
+fixtures. The other seven gas utilities remain seed-only; four are in this campaign. Discovery and
 component interpretation must precede parser completion. No gas utility is yet
 certified complete for its published building catalogue.
 
@@ -218,7 +218,7 @@ certified complete for its published building catalogue.
 | FortisBC Energy | Service areas, building customer classes and separately published adjustments |
 | ATCO Gas | Current approved delivery schedules, classes and applicable riders |
 | EPCOR Natural Gas | Confirm product, jurisdiction and utility identity; do not infer these from the module name |
-| Centra Gas Manitoba | Current Manitoba Hydro gas tables and individual component periods |
+| Centra Gas Manitoba | Twelve residential/commercial Sales/T-service/marketer variants live; full PUB class/demand/alternate-supply conditions and fixed-term products remain under review |
 | SaskEnergy | Six residential/small/large-commercial full/delivery-only variants live; small-industrial applicability, fees and municipal-payment scope remain under audit |
 | Heritage Gas / Eastward Energy | Current company source and residential/business schedules |
 | Liberty Utilities NB / Natural Gas NB | Current company source and complete customer-class schedules |
@@ -456,7 +456,7 @@ for the focused checks. Preview remains http://127.0.0.1:8000/. Preserve all exi
 history and reference classes, leave unrelated worktrees untouched, and checkpoint
 the tested batch before opening new work near the context limit.
 
-## Current Checkpoint: Regional Batch 1 (2026-10-02)
+## Historical Checkpoint: Regional Batch 1 (2026-10-02)
 
 **Delivered:** three further HQ options (DT/Flex D/Winter Credit), 18 NL Hydro
 building-service/seasonal records and six SaskEnergy service variants. Sources and
@@ -481,3 +481,40 @@ are never invented. All other campaign utilities still need their source audits.
 MURB/solar/building-service gaps; Centra Gas Manitoba current residential/general
 service. Shared integration remains serial. Continue the 16-utility queue; do not
 restart excluded Ontario/Alberta/territory work or call a partial batch complete.
+
+## Current Checkpoint: Regional Batch 2 (2026-10-02)
+
+**Delivered:** FortisBC Electric six January 2026 schedules (flat residential,
+closed residential TOU and four commercial variants); NSPower MURB89 and two
+optional solar adjustments (ten current records total); Centra Gas twelve current
+residential/commercial Sales, T-service and marketer-supply variants. Native units,
+conditional credits, alternative demand bases and component dates remain explicit.
+The unusual MURB weekend/holiday peak-price rule was visually checked against the
+official PDF. Solar credits use subscriber-attributable generation, not consumption.
+
+**Verified:** 465 tests pass. Live dry runs and the guarded store returned 6/10/12
+valid live records. An initial pre-store attribution failure wrote nothing; the
+assembler was repaired and its focused tests rerun before the successful store.
+All 1,241 prior snapshot contents/hashes and 587 non-target records were unchanged;
+28 snapshots appended (1,269 total). Validation: zero errors, two unchanged AESO
+warnings. Desktop/mobile filtering shows 6/10/12 cards, keeps estimates hidden and
+has no page overflow or JavaScript errors. No frontend source changes.
+
+**Current counts:** 619 versions / 3,935 components / 139 stored live / 137 latest
+live / 480 seed. Scope-only latest live count is 135, across 12 of the 16 target
+utilities. This is not a full-building-catalogue completion claim.
+
+**Exact next assignments:** FortisBC Energy, Energir and Heritage/Eastward gas
+source extraction in parallel, then Liberty NB. Their current parser paths remain
+verifier-only. Preserve jurisdiction-specific carbon/adjustment evidence, native
+units, service-area/supply choices and required component periods; no invented
+private prices or conversions. Continue the remaining electricity audits and all
+recorded first/second-batch gaps afterward. FortisBC Electric large-commercial and
+optional riders, NSPower business/rider/date coverage, and Centra's full PUB tariff
+conditions/fixed-term products are still open, not silently excluded.
+
+Use the supported `./venv/Scripts/python.exe`; current targeted selectors include
+`FortisBCElectricLive`, `NovaScotiaBuildingOptions`, `CentraGasLive` and
+`RegionalBatchStorage` in the existing live-parser test module. Keep shared edits,
+DB/export/Git integration serial. Before context exhaustion, finish this tested
+checkpoint and push verified paths; do not leave unvalidated parallel work staged.

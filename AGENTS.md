@@ -18,8 +18,8 @@ It works in three stages:
 
 GitHub Actions schedules a monthly scrape. Deployment and durable history across
 cloud runs still need reliability work; see the roadmap in [README.md](README.md).
-The latest export has 116 latest live tariffs and 480 estimates; stored history contains
-118 live versions. Registry coverage is not the same as live coverage.
+The latest export has 137 latest live tariffs and 480 estimates; stored history contains
+139 live versions. Registry coverage is not the same as live coverage.
 
 ---
 
@@ -440,7 +440,7 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 428 tests across 8 test modules, including `test_phase5_hardening` for
+There are 465 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
 The BC Hydro, Hydro-Quebec, NSPower, SaskPower and Yukon Energy JSON fixtures in `tests/fixtures/` hold official PDF-text excerpts,
 source URLs and page numbers for repeatable parser tests.
@@ -493,3 +493,4 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - Completing a utility means auditing its building-relevant standard published classes, not just replacing existing seed values or completing every unrelated service. A complete class can stay live when another class fails, but never stamp a mixed live/seed list as entirely live.
 - The current campaign covers only the 16 registered utilities outside Ontario, Alberta and the territories. Parallel workers own separate utility files; database/export/registry/test integration and publication are serial. Preserve excluded regions and all earlier snapshots.
 - Hydro-Quebec DT uses temperature switching, not clock-based TOU. Flex D uses notified events; Winter Credit is a closed, conditional adjustment to Rate D and retains the published reference-energy rules. NL Hydro's phase/amperage fixed charges are alternatives, not cumulative charges; seasonal options require their matching base schedules. SaskEnergy delivery-only service excludes private commodity prices. A missing carbon source cannot be hidden under a live label; assembled tariff dates reflect the latest required component while component dates remain intact.
+- FortisBC Electric's current residential price is flat; its older tiered version remains history. Rate 21's kW/kVA charges are alternatives, and voltage/transformation discounts are conditional negative credits. NSPower MURB has its own rider rows and minimum-bill condition; the approved book explicitly applies its peak price on weekends/holidays. Solar Garden and Community Solar records are subscriber adjustments to another tariff, not replacement household energy prices. Centra keeps published delivery/demand parts separate, with no guessed heat conversion or private marketer commodity price.

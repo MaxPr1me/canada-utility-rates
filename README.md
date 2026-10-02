@@ -31,17 +31,18 @@ unverified fallback records remain estimates regardless of the export date.
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
-| Stored tariff versions / components | 598 / 3,832, including history and older estimates |
-| Live-sourced tariffs | **116 latest tariffs across 12 utilities**; 118 stored live versions |
+| Stored tariff versions / components | 619 / 3,935, including history and older estimates |
+| Live-sourced tariffs | **137 latest tariffs across 14 utilities**; 139 stored live versions |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Deterministic tests | **428 passing** on Python 3.11 |
+| Deterministic tests | **465 passing** on Python 3.11 |
 
-Live output currently includes BC Hydro (8), Manitoba Hydro (8), NB Power (3),
-Nova Scotia Power (7), Hydro-Quebec (9), Maritime Electric (10), Newfoundland Power (4),
-NL Hydro (18), SaskPower (41), SaskEnergy (6), FortisAlberta (1), and Yukon Energy (1).
+Live output currently includes BC Hydro (8), FortisBC Electric (6), Manitoba Hydro (8), NB Power (3),
+Nova Scotia Power (10), Hydro-Quebec (9), Maritime Electric (10), Newfoundland Power (4),
+NL Hydro (18), SaskPower (41), SaskEnergy (6), Centra Gas Manitoba (12),
+FortisAlberta (1), and Yukon Energy (1).
 These counts use the latest version per tariff, not complete utility catalogues.
-Ontario and the other eight gas utilities still have no live records in this snapshot.
+Ontario and the other seven gas utilities still have no live records in this snapshot.
 
 See the [coverage matrix](docs/phase5_completion_matrix.md) for the implementation queue
 and [parser gap report](docs/live_parser_gap_report.md) for class-level details.
@@ -53,7 +54,9 @@ closed-enrollment pilots. The October pilot records are explicitly **conditional
 tariff variants**, not a claim that every participant is currently on that rate. The
 published November 1 transition is tested and is not activated early. Base energy,
 FAM, DSM, storm and optional Green Power charges remain separate. Participant restoration
-status and broader MURB/solar-program coverage still need review.
+status and remaining building business/rider coverage still need review. MURB Rate
+89 and two optional solar-program adjustments are now parsed from the approved
+book. Its unusual MURB weekend/holiday peak-price note was checked visually.
 
 Hydro-Quebec now includes domestic demand DP, grandfathered bulk-metered DM and
 northern off-grid DN, alongside D/G/M. DP preserves seasonal demand; DM/DN retain
@@ -72,6 +75,13 @@ records. SaskEnergy has six residential/commercial full-service and delivery-onl
 variants; missing current carbon evidence fails closed. Private retailer commodity
 prices are not included in delivery-only records. None of these counts certifies
 the remaining catalogue or calculates a complete bill.
+
+The second regional batch adds six FortisBC Electric schedules, including its
+current flat residential and closed TOU products, and twelve Centra gas service
+variants. Credits, kW/kVA alternatives and native volumetric demand units remain
+explicit. **12 of the 16 target utilities now have live output**, not necessarily
+complete building catalogues. FortisBC Energy, Energir, Heritage/Eastward and
+Liberty NB remain seed-only and are the next gas-source priorities.
 
 ---
 
@@ -233,7 +243,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 428 deterministic tests across 8 test modules
+├── tests/                    ← 465 deterministic tests across 8 test modules
 │   ├── fixtures/             ← Source-derived BC Hydro/Hydro-Quebec/NSPower/SaskPower/Yukon fixtures; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
@@ -415,9 +425,9 @@ features, **not evidence that all registered utilities or published classes are 
 |---|---|---|
 | 5A: Baseline | Dated inventory, honest README, shared class-level coverage ledger | Updated October 1 |
 | 5B: SaskPower | Standard/bulk-metered/diesel residential, general-service/voltage/TOU and renewable-access schedules | Audited building scope implemented October 1; 41 live tariffs total including retained non-building reference records |
-| 5C: Residential products and building-service expansion | Review optional residential plans and retain building-service gaps | BC Hydro's five options, NSPower standard/TOD/conditional pilot phases and Hydro-Quebec DP/DM/DN implemented. DT/Flex D/Winter Credit and FortisBC's current tariff are next; broad national audit remains incomplete |
-| 5D: Provincial/territorial depth | NTPC, Qulliq, Yukon Electrical, NL Hydro; building-class audits at already-live utilities | Planned |
-| 5E: Gas | Building heating/service tariffs at all nine utilities, preserving zones, components, units and dates | Planned |
+| 5C: Residential products and building-service expansion | Review optional residential plans and retain building-service gaps | Two regional batches delivered HQ optional products, FortisBC Electric schedules and NSPower MURB/solar; remaining building catalogues still incomplete |
+| 5D: Provincial/territorial depth | Building-class audits at already-live utilities; later territorial coverage | NL Hydro 18 records implemented; current regional campaign excludes the territories |
+| 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | SaskEnergy/Centra live variants implemented; four remaining in-scope gas utilities next. ON/AB gas excluded from this run |
 | 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Planned |
 | 5G: Ontario | Reconcile 53 registry identities; source approved distributor tariffs; pilot three layouts before rollout | Dedicated later campaign |
 | 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Independent operational follow-up |

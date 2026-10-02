@@ -6,7 +6,7 @@
 **Evidence:** October 2 NSPower and Hydro-Quebec results are combined with October 1 local
 BC Hydro/SaskPower/Yukon and monthly CI observations. History remains preserved.
 The current export has
-118 stored live versions (116 latest tariffs) and 480 seed tariffs across 84 registered utilities. A fixture or verifier
+139 stored live versions (137 latest tariffs) and 480 seed tariffs across 84 registered utilities. A fixture or verifier
 implementation alone is not evidence of a successful live run.
 
 **Provenance:** complete fresh extraction uses `mark_live_parsed()`; contextual
@@ -29,6 +29,8 @@ as cents or borrowing a value from a different class/column.
 | **SaskPower** | SK | Rendered landing page + PDFs | Audited building scope implemented | E01/E03 standard + bulk-metered option; diesel E04 | General service, voltage/TOU/capacity and R23/R24; other records retained as reference | High for complete parsed classes |
 | **NL Hydro** | NL | Current-rates page + July approved PDF | Dynamic parser, 18 live records | Island/Labrador/diesel/government and seasonal options | Native kW/kVA and service alternatives; Burgeo school/library | High for complete source classes |
 | **SaskEnergy** | SK | Four official HTML pages | Six live full/delivery-only variants | Residential | Small/large commercial | High only with current carbon evidence |
+| **FortisBC Electric** | BC | Approved Electric Tariff PDF | Six current schedules, broader catalogue partial | Flat1, closedTOU2A | 20/21/22A/23A with conditional credits and demand alternatives | High for complete parsed schedules |
+| **Centra Gas Manitoba** | MB | Current utility HTML + CRA applicability | Twelve live service variants | SGS and marketer-supply variant | SGS/LGS/high-volume/mainline/interruptible Sales/T-service | High with required commodity/carbon evidence |
 | **Newfoundland Power** | NL | PDF-only | Dynamic PDF parser | Domestic 1.1 | General Service 2.1/2.3/2.4 | High for parsed classes |
 | **Maritime Electric** | PE | IRAC PDF | Dynamic PDF parser | Urban/rural | 10 supported classes total | High for parsed classes |
 | **FortisAlberta** | AB | AUC/utility PDF | Residential PDF parser | Rate 11 | Other classes remain fallback | High for parsed residential |
@@ -134,14 +136,43 @@ not excluded catalogue expansion.
 | Metric | Value |
 |--------|-------|
 | Registered utilities | 84 |
-| Stored/exported tariff versions | 598, including history and older retained estimates |
-| Rate components | 3,832 |
-| Latest live tariffs / utilities with live output | 116 / 12 |
-| Stored live versions | 118; includes older versions retained in history |
+| Stored/exported tariff versions | 619, including history and older retained estimates |
+| Rate components | 3,935 |
+| Latest live tariffs / utilities with live output | 137 / 14 |
+| Stored live versions | 139; includes older versions retained in history |
 | Seed tariffs | 480 |
 | Newly added SaskPower live tariffs | 40 since the original residential-only parser |
 | October 1 observations | Monthly CI snapshot plus newer local SaskPower results |
-| Deterministic suite | 428 passing |
+| Deterministic suite | 465 passing |
+
+## Regional Batch 2 Update (2026-10-02)
+
+FortisBC Electric now reconstructs approved January 2026 RS1/2A/20/21/22A/23A.
+RS1 is flat, not the old seeded tiered structure; 2A requires its closed notice.
+Conditional primary/transformation discounts are negative rebates. RS21 kW/kVA
+charges are alternatives, not cumulative. Required source pages/dates/hours and
+nonpositive-price guards have permanent tests. Large-commercial/Green Power/
+financing/net-metering/EV schedules remain catalogue gaps.
+
+NSPower adds MURB89 with its own mandatory rider rows, ten-unit house-meter
+eligibility and minimum bill retained as a condition. The printed Note1 applies
+the peak price on weekends/holidays; this was visually verified. Solar Garden and
+Community Solar are optional subscriber adjustments to other tariffs, with credits
+on allocated generation only. Existing pilot-status and broader business/rider/date
+coverage remain partial; the legacy business change warnings are not new prices.
+
+Centra Gas adds twelve dated August 2026 variants. Published delivery/demand totals
+are checked against component parts without double counting. Native volumetric
+demand units and the separate April 2025 CRA zero-fuel-charge evidence are retained.
+Marketer/T-service excludes unpublished commodity. Full PUB eligibility, alternate
+supply conditions, billing-demand rules and fixed-term products still need audit.
+
+465 full tests and 6/10/12-record current-source checks pass. Serial storage kept
+all 1,241 earlier snapshots and 587 non-target records unchanged, adding 28 snapshots.
+Desktop/mobile filtering and estimate hiding passed without page overflow/JS errors.
+The campaign now has live output at 12 of its 16 utilities; utility completion is
+not implied. The next seed-only gas targets are FortisBC Energy, Energir,
+Heritage/Eastward and Liberty NB. All excluded regions remain unchanged.
 
 ## Regional Batch 1 Update (2026-10-02)
 

@@ -63,6 +63,7 @@
     "utility_type": "electricity",
     "classes_present": [
       "commercial",
+      "other",
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [

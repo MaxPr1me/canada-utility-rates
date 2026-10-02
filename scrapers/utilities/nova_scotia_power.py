@@ -145,6 +145,10 @@ class NovaScotiaPowerScraper(BaseScraper):
             self.logger.warning("NSPower business parse failed; retaining residential results: %s", exc)
         if not live_records:
             return None
+        for record in live_records:
+            record.source_page = record.source_page or f"Rate {record.tariff_code}: {record.tariff_name}"
+            for component in record.components:
+                component.source_detail = component.source_detail or record.source_page
         covered = {record.tariff_name for record in live_records}
         fallback = [record for record in self._seed_data() if record.tariff_name not in covered]
         return self.mark_live_parsed(live_records) + (self.mark_fallback(fallback) if fallback else [])
@@ -162,20 +166,26 @@ class NovaScotiaPowerScraper(BaseScraper):
             if len(candidates) > 1:
                 raise ValueError("Ambiguous current tariff books")
             source_url = candidates[0] if candidates else TARIFF_URL
-            return self._parse_residential_tariffs(extract_pdf_pages(self.fetch_bytes(source_url)), products, source_url)
+            pages = extract_pdf_pages(self.fetch_bytes(source_url))
         except Exception as exc:
             self.logger.warning("NSPower residential tariff unavailable: %s", exc)
             return []
+        records: list[TariffRecord] = []
+        for parse in (self._parse_residential_tariffs, self._parse_building_option_tariffs):
+            try:
+                records.extend(parse(pages, products, source_url))
+            except Exception as exc:
+                self.logger.warning("NSPower tariff group %s unavailable: %s", parse.__name__, exc)
+        return records
 
-    def _parse_residential_tariffs(
-        self, pages: list[DocumentPage], products: dict[str, str], source_url: str,
-    ) -> list[TariffRecord]:
-        """Parse the current approved book, separating tariff phases and rider totals."""
-        product_text = {kind: parse_html(html).get_text(" ", strip=True) for kind, html in products.items()}
+    def _order_context(
+        self, pages: list[DocumentPage], product_text: dict[str, str],
+    ) -> Optional[tuple[int, str, str, str]]:
+        """Return (book year, Board-order date, today, year end) when the dated book is current."""
         cover = next((page.text for page in pages if re.match(r"Tariffs\s+[A-Za-z]+\s+\d{4}", page.text)), "")
         publication = re.search(r"Tariffs\s+([A-Za-z]+)\s+(\d{4})", cover)
         if not publication or "Approved by" not in cover:
-            return []
+            return None
         year = int(publication.group(2))
         dates = set()
         for text in product_text.values():
@@ -185,12 +195,23 @@ class NovaScotiaPowerScraper(BaseScraper):
                 if effective and datetime.strptime(effective, "%Y-%m-%d").strftime("%B %Y") == f"{publication.group(1)} {year}":
                     dates.add(effective)
         if len(dates) != 1:
-            return []
+            return None
         effective = next(iter(dates))
         today = self.now_iso()[:10]
         year_end = date(year, 12, 31).isoformat()
         if not effective <= today <= year_end:
+            return None
+        return year, effective, today, year_end
+
+    def _parse_residential_tariffs(
+        self, pages: list[DocumentPage], products: dict[str, str], source_url: str,
+    ) -> list[TariffRecord]:
+        """Parse the current approved book, separating tariff phases and rider totals."""
+        product_text = {kind: parse_html(html).get_text(" ", strip=True) for kind, html in products.items()}
+        context = self._order_context(pages, product_text)
+        if not context:
             return []
+        year, effective, today, year_end = context
 
         titles = {
             "DOMESTIC SERVICE": ("standard", "02, 03, 04"),
@@ -408,6 +429,290 @@ class NovaScotiaPowerScraper(BaseScraper):
                 ))
             except (ValueError, IndexError) as exc:
                 self.logger.warning("NSPower residential %s incomplete: %s", code, exc)
+        return records
+
+    # ── Building options: MURB time-of-use and solar subscriptions ──
+
+    @staticmethod
+    def _continuous_pages(pages: list[DocumentPage], header_pattern: str, label: str) -> list[DocumentPage]:
+        """Return one tariff's pages in order, rejecting any missing continuation page."""
+        found: list[tuple[int, int, DocumentPage]] = []
+        for page in pages:
+            match = re.match(header_pattern, re.sub(r"\s+", " ", page.text))
+            if match:
+                found.append((int(match.group(1)), int(match.group(2)), page))
+        found.sort(key=lambda item: item[0])
+        if not found or {item[1] for item in found} != {len(found)} or [item[0] for item in found] != list(range(1, len(found) + 1)):
+            raise ValueError(f"Incomplete {label} continuation")
+        return [item[2] for item in found]
+
+    @staticmethod
+    def _footer_effective_date(pages: list[DocumentPage]) -> str:
+        """Return the single 'Effective: <date>' footer shared by every page of a rider."""
+        dates = set()
+        for page in pages:
+            match = re.search(r"Effective: ([A-Za-z]+ \d{1,2}, \d{4})", page.text)
+            dates.add(extract_effective_date("Effective " + match.group(1)) if match else None)
+        if len(dates) != 1 or None in dates:
+            raise ValueError("Missing or inconsistent rider effective date")
+        return next(iter(dates))
+
+    def _murb_rider_components(
+        self, pages: list[DocumentPage], year: int, effective: str, year_end: str, source_url: str,
+    ) -> list[RateComponent]:
+        """Read the shared General/MURB row of the FAM, DSM and storm riders (not Large General)."""
+        def joined(heading: str) -> tuple[str, str]:
+            selected = [page for page in pages if page.text.startswith(heading)]
+            detail = heading + "; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+            return re.sub(r"\s+", " ", "\n".join(page.text for page in selected)), detail
+
+        def number(token: str) -> float:
+            return -float(token[1:-1]) if token.startswith("(") else float(token)
+
+        text, fam_detail = joined("FUEL ADJUSTMENT MECHANISM (FAM) TARIFF")
+        current = re.search(rf"\b{year}\b(.*?)(?:\b{year + 1}\b|$)", text)
+        row = re.search(
+            r"(?<!Small )General, General Time of Use, (\d+\.\d+) (\d+\.\d+) General Critical Peak, Multi-Unit "
+            r".*?Residential Building \(MURB\) Time of Use Large General",
+            current.group(1) if current else "",
+        )
+        if not row or "cents per kWh" not in text or row.group(1) != row.group(2):
+            raise ValueError("Missing FAM row for General and MURB service")
+        fam = number(row.group(2))
+
+        text, dsm_detail = joined("DEMAND SIDE MANAGEMENT COST RECOVERY RIDER")
+        row = re.search(
+            r"General, General Time of Use, General Critical Peak (\d+\.\d+) (\(?\d+\.\d+\)?) (\d+\.\d+) "
+            r"Pricing, Multi-unit Residential Building Time-of-Use Large General", text,
+        )
+        if not row or f"January 1, {year} to December 31, {year}" not in text or "cents per kWh" not in text:
+            raise ValueError("Missing DSM row for General and MURB service")
+        program, balance, dsm = number(row.group(1)), number(row.group(2)), number(row.group(3))
+        if abs(program + balance - dsm) > 0.0011:
+            raise ValueError("Changed MURB DSM breakdown")
+
+        text, storm_detail = joined("STORM COST RECOVERY RIDER")
+        row = re.search(
+            r"General, General Time-of-Use, General Critical Peak Pricing, Multi-unit (\d+\.\d+) "
+            r"Residential Building Time-of-Use Large General", text,
+        )
+        if not row or f"SCRR RATES FOR {year}" not in text or "cents per kWh" not in text:
+            raise ValueError("Missing storm row for General and MURB service")
+        storm = number(row.group(1))
+
+        row_note = "Shared published row: General, General TOU, General Critical Peak and Multi-Unit Residential Building (MURB) TOU; Large General is a separate row."
+        riders = [
+            RateComponent("rider", "FAM Actual/Balance Adjustment (Combined)", round(fam / 100, 6), "$/kWh",
+                          source_detail=fam_detail, effective_date=effective, end_date=year_end, notes=row_note),
+            RateComponent("rider", "DSM Cost Recovery Rider", round(dsm / 100, 6), "$/kWh",
+                          source_detail=dsm_detail, effective_date=date(year, 1, 1).isoformat(), end_date=year_end,
+                          notes=f"Combined PCR {program} and BA {balance} cents/kWh; do not add the subcomponents again. {row_note}"),
+            RateComponent("rider", "Storm Cost Recovery Rider", round(storm / 100, 6), "$/kWh",
+                          source_detail=storm_detail, effective_date=effective, end_date=year_end, notes=row_note),
+        ]
+        for component in riders:
+            component.source_url = source_url
+        return riders
+
+    def _parse_murb_tariff(
+        self, pages: list[DocumentPage], context: tuple[int, str, str, str], source_url: str,
+    ) -> TariffRecord:
+        """Parse Rate 89 (optional MURB time-of-use) with its mandatory riders kept separate."""
+        year, effective, _today, year_end = context
+        selected = self._continuous_pages(
+            pages, r"MULTI-UNIT RESIDENTIAL BUILDINGS TIME OF USE TARIFF Page (\d+) of (\d+) Rate Code 89", "MURB tariff",
+        )
+        text = re.sub(r"\s+", " ", "\n".join(page.text for page in selected))
+        order = r"Board\S{1,2}s Order Effective January 1, " + str(year + 1)
+        non_winter = re.search(
+            r"cents per kilowatt-hour Non-winter Period Off-peak On-peak April 1 through October 31 9:00 PM to 7:00 AM to 7:00 AM 9:00 PM "
+            r"Effective upon the date of the (\d+\.\d+) (\d+\.\d+) " + order, text,
+        )
+        winter = re.search(
+            r"cents per kilowatt-hour On-peak On-peak Winter Period Mid-peak Off-peak \(morning\) \(evening\) November 1 through March 31 "
+            r"7:00 AM to 11:00 AM to 5:00 PM to 9:00 PM to 11:00 AM 5:00 PM 9:00 PM 7:00 AM "
+            r"Effective upon the date of the (\d+\.\d+) (\d+\.\d+) (\d+\.\d+) (\d+\.\d+) " + order, text,
+        )
+        if not non_winter or not winter:
+            raise ValueError("Missing or changed MURB energy table")
+        off_peak, on_peak = (float(value) for value in non_winter.groups())
+        winter_prices = [float(value) for value in winter.groups()]
+        if min(off_peak, on_peak, *winter_prices) <= 0:
+            raise ValueError("Non-positive MURB base energy price")
+        if winter_prices[0] != winter_prices[2]:
+            raise ValueError("Changed MURB winter on-peak columns")
+        weekend = re.search(r"Note 1: (.*?) FUEL ADJUSTMENT MECHANISM", text)
+        if not weekend or "applicable peak price also applies to all hours on Saturdays, Sundays" not in weekend.group(1):
+            raise ValueError("Missing MURB weekend and holiday rule")
+        availability = re.search(r"AVAILABILITY CONDITIONS (.*?) SPECIAL CONDITIONS", text)
+        required = ("minimum of 10 units", "house meter", "standard Smart Meter", "November 1st", "Regulation 3.3", "Regulation 3.6")
+        if not availability or not all(phrase in availability.group(1) for phrase in required) \
+                or "eligible for service under the General Tariff" not in text:
+            raise ValueError("Missing MURB eligibility conditions")
+        minimum = re.search(
+            r"MINIMUM MONTHLY CHARGE The minimum monthly charge shall not be less than the rates in the table below\. "
+            r"per month Effective upon the date of the \$(\d+\.\d{2}) " + order + r" \$", text,
+        )
+        metering = re.search(r"Meter readings shall then be reduced by (\d+\.\d+)%", text)
+        if not minimum or not metering:
+            raise ValueError("Missing MURB minimum charge or metering adjustment")
+        riders = self._murb_rider_components(pages, year, effective, year_end, source_url)
+
+        holiday_rule = " Source Note 1 applies the applicable peak price on Saturdays, Sundays and listed holidays."
+        weekday = "Monday-Friday excluding listed holidays: "
+        energy = [
+            ("Base Non-Winter Off-Peak Energy", off_peak, "off-peak", weekday + "9:00 PM to 7:00 AM", "non-winter", "4,5,6,7,8,9,10"),
+            ("Base Non-Winter On-Peak Energy", on_peak, "on-peak", "7:00 AM to 9:00 PM." + holiday_rule, "non-winter", "4,5,6,7,8,9,10"),
+            ("Base Winter On-Peak (Morning) Energy", winter_prices[0], "on-peak", weekday + "7:00 AM to 11:00 AM." + holiday_rule, "winter", "11,12,1,2,3"),
+            ("Base Winter Mid-Peak Energy", winter_prices[1], "mid-peak", weekday + "11:00 AM to 5:00 PM", "winter", "11,12,1,2,3"),
+            ("Base Winter On-Peak (Evening) Energy", winter_prices[2], "on-peak", weekday + "5:00 PM to 9:00 PM." + holiday_rule, "winter", "11,12,1,2,3"),
+            ("Base Winter Off-Peak Energy", winter_prices[3], "off-peak", weekday + "9:00 PM to 7:00 AM", "winter", "11,12,1,2,3"),
+        ]
+        detail = "Rate Code 89; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+        components = [
+            RateComponent("energy", name, round(price / 100, 6), "$/kWh", tou_period=period, tou_hours=hours,
+                          season=season, season_months=months, source_url=source_url, source_detail=detail,
+                          effective_date=effective, end_date=year_end)
+            for name, price, period, hours, season, months in energy
+        ]
+        return TariffRecord(
+            utility_name="Nova Scotia Power", province="NS", utility_type="electricity",
+            tariff_name="Multi-Unit Residential Buildings Time-of-Use (Rate 89)", tariff_code="89",
+            customer_class="residential", sub_class="multi-unit residential building time-of-use (house meter)",
+            rate_structure="tou", effective_date=effective, end_date=year_end,
+            eligibility="Optional tariff for customers eligible under the General Tariff. " + availability.group(1).strip(),
+            source_url=source_url, source_page=detail,
+            notes=(
+                f"No customer charge is published. The ${minimum.group(1)} monthly charge is a minimum-bill condition, not an additional fixed charge. "
+                "Base energy and the mandatory FAM, DSM and storm riders are separate. "
+                f"Primary metering readings are reduced by {metering.group(1)}%. Source Note 1: {weekend.group(1)} "
+                "The source does not separate the equal winter on-peak prices beyond this rule. "
+                "Effective date is the May 2026 Board-order date verified on the residential rate pages; no separate dated MURB product page is used."
+            ),
+            components=components + riders,
+        )
+
+    def _parse_solar_garden_rider(
+        self, pages: list[DocumentPage], context: tuple[int, str, str, str], source_url: str,
+    ) -> TariffRecord:
+        """Parse the optional Amherst Solar Garden subscription as an adjustment to the subscriber's own tariff."""
+        year, _effective, today, year_end = context
+        selected = self._continuous_pages(pages, r"(?:SCHEDULE A )?SOLAR GARDEN RATE RIDER Page (\d+) of (\d+)", "Solar Garden rider")
+        text = re.sub(r"\s+", " ", "\n".join(page.text for page in selected))
+        effective = self._footer_effective_date(selected)
+        if effective > today:
+            raise ValueError("Solar Garden rider is not yet effective")
+        exclusions = (
+            "Customers on a seasonal rate", "Customers who take Net Metering Service under Regulation 3.6",
+            "Section 3A or 3AA of the Electricity Act", "Subscribers to the Community Solar Energy Credit Rider",
+        )
+        availability = re.search(r"AVAILABILITY (.*?) APPLICABILITY", text)
+        if not availability or not all(phrase in availability.group(1) for phrase in exclusions) \
+                or "first-come, first-served" not in availability.group(1):
+            raise ValueError("Missing Solar Garden subscriber eligibility")
+        charge = re.search(
+            r"Monthly Solar Capacity Charge \$(\d+\.\d+) per kW subscribed\. The same charge will apply regardless of the customer.s rate class", text,
+        )
+        table = re.search(r"Solar Energy Credit Year \(cents per kWh\)(.*?)The same credit will apply regardless of the customer.s rate class", text)
+        if not charge or not table or "0.25 kW increments" not in text \
+                or "will also be billed in accordance with the otherwise applicable Tariffs" not in text \
+                or "does not change per distinct time-of-use, time-of-day, or critical peak period" not in text:
+            raise ValueError("Missing Solar Garden charge, credit table or billing basis")
+        credits = {int(row[0]): float(row[1]) for row in re.findall(r"\b(20\d{2}) (\d{1,2}\.\d{3})\b", table.group(1))}
+        years = sorted(credits)
+        if year not in credits or years != list(range(years[0], years[-1] + 1)):
+            raise ValueError("Missing current Solar Garden credit year")
+        if float(charge.group(1)) <= 0 or min(credits.values()) <= 0:
+            raise ValueError("Non-positive Solar Garden charge or credit")
+        if any(abs(credits[later] / credits[earlier] - 1.02) > 0.001 for earlier, later in zip(years, years[1:])):
+            raise ValueError("Changed Solar Garden credit escalation")
+        detail = "Solar Garden Rate Rider; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+        components = [
+            RateComponent(
+                "rider", "Solar Garden Monthly Capacity Charge", float(charge.group(1)), "$/kW-dc subscribed/month",
+                sub_component="optional", effective_date=effective,
+                notes="Published per subscribed kW-dc per month; subscriptions are purchased in 0.25 kW-dc increments. Applies for all days of the subscription month, even if generation is interrupted. Same rate for every customer class.",
+            ),
+            RateComponent(
+                "rebate", f"Solar Garden Energy Credit ({year})", -round(credits[year] / 100, 6), "$/kWh of subscriber's attributable Solar Garden production",
+                sub_component="optional", effective_date=date(year, 1, 1).isoformat(), end_date=year_end,
+                notes="Credit, not an energy price: it is applied only to the subscriber's attributable share of measured net Solar Garden output and does not vary by time-of-use period. Source credits rise about 2% per year.",
+            ),
+        ]
+        for component in components:
+            component.source_url = source_url
+            component.source_detail = detail
+        return TariffRecord(
+            utility_name="Nova Scotia Power", province="NS", utility_type="electricity",
+            tariff_name="Solar Garden Rate Rider (Optional Subscriber Adjustment)", tariff_code="Solar Garden Rider",
+            customer_class="other", sub_class="optional adjustment - Amherst Solar Garden subscribers only",
+            rate_structure="flat", effective_date=max(component.effective_date for component in components), source_url=source_url, source_page=detail,
+            eligibility=availability.group(1).strip(),
+            notes=(
+                "Applies on top of the subscriber's otherwise applicable tariff; it does not replace that tariff's energy, fixed, demand or rider charges. "
+                "Subscribers receive credits only on their attributable share of Solar Garden net production; no bill total or offset is calculated. "
+                "Renewable energy certificates are not offered."
+            ),
+            components=components,
+        )
+
+    def _parse_community_solar_rider(
+        self, pages: list[DocumentPage], context: tuple[int, str, str, str], source_url: str,
+    ) -> TariffRecord:
+        """Parse the Community Solar credit rider for project-owner-approved subscribers."""
+        _year, _effective, today, _year_end = context
+        selected = self._continuous_pages(pages, r"(?:A )?COMMUNITY SOLAR ENERGY CREDIT RIDER Page (\d+) of ?(\d+)", "Community Solar rider")
+        text = re.sub(r"\s+", " ", "\n".join(page.text for page in selected)).replace("\u2019", "'")
+        effective = self._footer_effective_date(selected)
+        if effective > today:
+            raise ValueError("Community Solar rider is not yet effective")
+        availability = re.search(r"AVAILABILITY (.*?) APPLICABILITY", text)
+        required = ("criteria, as set solely by the Project Owner", "Regulation 3.6", "Solar Garden Pilot Rate Rider", "all metered NS Power customer classes")
+        credit = re.search(r"Value of Solar Energy Credit is (\d+\.\d+) cents per kWh for the duration of the subscription", text)
+        if not availability or not all(phrase in availability.group(1) for phrase in required) or not credit \
+                or "The same credit will apply regardless of the customer's current applicable tariff" not in text \
+                or "NO ADDITIONAL FEES" not in text \
+                or "will also be billed in accordance with the otherwise applicable Tariffs" not in text:
+            raise ValueError("Missing Community Solar eligibility, credit or billing basis")
+        if float(credit.group(1)) <= 0:
+            raise ValueError("Non-positive Community Solar credit")
+        detail = "Community Solar Energy Credit Rider; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+        component = RateComponent(
+            "rebate", "Community Solar Energy Credit", -round(float(credit.group(1)) / 100, 6),
+            "$/kWh of subscriber's attributable Community Solar Garden production", sub_component="optional",
+            effective_date=effective, source_url=source_url, source_detail=detail,
+            notes="Fixed for the duration of the subscription unless amended under the Community Solar Program Regulations; credit only, applied to the attributable share of measured net garden production.",
+        )
+        return TariffRecord(
+            utility_name="Nova Scotia Power", province="NS", utility_type="electricity",
+            tariff_name="Community Solar Energy Credit Rider (Optional Subscriber Adjustment)", tariff_code="Community Solar Rider",
+            customer_class="other", sub_class="optional adjustment - approved Community Solar Garden subscribers only",
+            rate_structure="flat", effective_date=effective, source_url=source_url, source_page=detail,
+            eligibility=availability.group(1).strip(),
+            notes=(
+                "Applies on top of the subscriber's otherwise applicable tariff. The source states no additional subscription fees; project-owner contracts are outside this tariff. "
+                "Eligibility is set by each Project Owner and no bill total or offset is calculated."
+            ),
+            components=[component],
+        )
+
+    def _parse_building_option_tariffs(
+        self, pages: list[DocumentPage], products: dict[str, str], source_url: str,
+    ) -> list[TariffRecord]:
+        """Parse MURB and solar options independently; a failed class is logged and omitted."""
+        context = self._order_context(pages, {kind: parse_html(html).get_text(" ", strip=True) for kind, html in products.items()})
+        if not context:
+            return []
+        records: list[TariffRecord] = []
+        for label, parser in (
+            ("MURB Rate 89", self._parse_murb_tariff),
+            ("Solar Garden rider", self._parse_solar_garden_rider),
+            ("Community Solar rider", self._parse_community_solar_rider),
+        ):
+            try:
+                records.append(parser(pages, context, source_url))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("NSPower %s incomplete: %s", label, exc)
         return records
 
     def _try_live_commercial(self) -> Optional[list[TariffRecord]]:
