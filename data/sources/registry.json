@@ -398,13 +398,37 @@
           "is_primary": true
         },
         {
+          "url": "https://www.nspower.ca/your-home/residential-rates/time-of-day",
+          "source_type": "html",
+          "description": "Equipment-based residential time-of-day service requiring thermal storage and approved controls",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.nspower.ca/your-home/residential-rates/time-of-use",
+          "source_type": "html",
+          "description": "Residential time-of-use pilot: enrollment status and product publication date",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.nspower.ca/your-home/residential-rates/critical-peak",
+          "source_type": "html",
+          "description": "Residential critical-peak pilot: enrollment status and event conditions",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.nspower.ca/docs/default-source/regulatory/tariff-book-2026.pdf",
+          "source_type": "pdf",
+          "description": "May 2026 domestic tariffs, dated conditional pilot phases and FAM/DSM/storm riders",
+          "is_primary": false
+        },
+        {
           "url": "https://www.nspower.ca/your-business/save-money-energy/business-rates",
           "source_type": "html",
           "description": "Business rates page with Rate 10, 11, 12 (small commercial, commercial general, large commercial)",
           "is_primary": false
         }
       ],
-      "notes": "Nova Scotia Power is the sole electricity provider for the majority of Nova Scotia, a subsidiary of Emera Inc. Regulated by the Nova Scotia Utility and Review Board (NSUARB). Live parser fetches the standard-residential sub-page for actual rate values."
+      "notes": "Residential parsing separates standard 02/03/04, thermal-storage TOD 05/06 and closed-enrollment pilots 70/80. Published interim pilot variants are explicitly conditional on the tariff's restoration rules through October 31, 2026; they are not proof of any participant's operational status. Dated November rates are not activated early. Mandatory FAM/DSM/storm and optional Green Power components remain separate. Business 10/11/12 uses the existing HTML path. Broader building-service and optional rider coverage remains partial."
     },
     {
       "name": "Maritime Electric",

@@ -2,8 +2,9 @@
 nova_scotia_power.py — Scraper for Nova Scotia Power electricity rates (Nova Scotia).
 
 Nova Scotia Power Inc. (NSPI) is the primary electricity provider in
-Nova Scotia, an investor-owned utility (Emera subsidiary). Rates are
-predominantly flat for residential and small general customers.
+Nova Scotia, an investor-owned utility (Emera subsidiary). Residential
+coverage includes standard, equipment-based TOD and conditional pilot phases.
+Base energy and mandatory riders are parsed separately from the tariff book.
 
 Official source (landing page — no rate values):
   https://www.nspower.ca/products-services/rate-information
@@ -21,6 +22,8 @@ from __future__ import annotations
 
 import logging
 import re
+from dataclasses import replace
+from datetime import date, datetime
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
@@ -28,6 +31,10 @@ from scrapers.utils.parsing import (
     parse_html,
     find_text_near_label,
     extract_rate_from_text,
+    extract_effective_date,
+    extract_pdf_pages,
+    find_pdf_links,
+    DocumentPage,
 )
 from scrapers.utils.change_detection import (
     compare_to_seed,
@@ -44,6 +51,13 @@ RESIDENTIAL_URL = (
 BUSINESS_URL = (
     "https://www.nspower.ca/your-business/save-money-energy/business-rates"
 )
+RESIDENTIAL_PRODUCTS = {
+    "standard": RESIDENTIAL_URL,
+    "tod": RESIDENTIAL_URL.rsplit("/", 1)[0] + "/time-of-day",
+    "tou": RESIDENTIAL_URL.rsplit("/", 1)[0] + "/time-of-use",
+    "cpp": RESIDENTIAL_URL.rsplit("/", 1)[0] + "/critical-peak",
+}
+TARIFF_URL = "https://www.nspower.ca/docs/default-source/regulatory/tariff-book-2026.pdf"
 
 # Known rate values — used as seed/fallback data.
 SEED_RESIDENTIAL = {
@@ -123,48 +137,278 @@ class NovaScotiaPowerScraper(BaseScraper):
     # ── Live scraping ────────────────────────────────────────────
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Attempt to parse rates from the live Nova Scotia Power website."""
+        """Keep independent residential and business results with per-class fallbacks."""
+        live_records = self._try_live_residential()
         try:
-            html = self.fetch_page(RESIDENTIAL_URL)
-            soup = parse_html(html)
-
-            residential = self._parse_residential(soup)
-            if residential is None:
-                self.logger.warning("Could not parse residential rates from live page")
-                return None
-
-            # Build the live record list
-            live_records = [residential]
-
-            # Validate live residential data against seed using change detection
-            seed_residential = self._seed_data_residential()
-            alerts = compare_to_seed([residential], [seed_residential])
-            log_change_alerts(alerts)
-
-            if has_critical_alerts(alerts):
-                self.logger.error(
-                    "Critical deviation in live residential data vs seed — falling back to seed"
-                )
-                return None
-
-            # Attempt to parse commercial rates from business page
-            commercial_records = self._try_live_commercial()
-            if commercial_records:
-                live_records.extend(commercial_records)
-                return self.mark_live_parsed(live_records)
-
-            # Live residential succeeded but commercial did not: mark each honestly
-            self.logger.info("Using seed data for commercial rate classes")
-            seed_commercial = self.mark_fallback([
-                self._seed_data_rate10(),
-                self._seed_data_rate11(),
-                self._seed_data_rate12(),
-            ])
-            return self.mark_live_parsed(live_records) + seed_commercial
-
-        except Exception as e:
-            self.logger.warning("Could not fetch Nova Scotia Power page: %s", e)
+            live_records.extend(self._try_live_commercial() or [])
+        except (ValueError, TypeError, IndexError) as exc:
+            self.logger.warning("NSPower business parse failed; retaining residential results: %s", exc)
+        if not live_records:
             return None
+        covered = {record.tariff_name for record in live_records}
+        fallback = [record for record in self._seed_data() if record.tariff_name not in covered]
+        return self.mark_live_parsed(live_records) + (self.mark_fallback(fallback) if fallback else [])
+
+    def _try_live_residential(self) -> list[TariffRecord]:
+        products = {}
+        for kind, url in RESIDENTIAL_PRODUCTS.items():
+            try:
+                products[kind] = self.fetch_page(url)
+            except Exception as exc:
+                self.logger.warning("NSPower residential product unavailable %s: %s", kind, exc)
+        try:
+            links = find_pdf_links(parse_html(products.get("standard", "")), base_url=RESIDENTIAL_URL)
+            candidates = [url for url in dict.fromkeys(links) if "tariff-book" in url.lower()]
+            if len(candidates) > 1:
+                raise ValueError("Ambiguous current tariff books")
+            source_url = candidates[0] if candidates else TARIFF_URL
+            return self._parse_residential_tariffs(extract_pdf_pages(self.fetch_bytes(source_url)), products, source_url)
+        except Exception as exc:
+            self.logger.warning("NSPower residential tariff unavailable: %s", exc)
+            return []
+
+    def _parse_residential_tariffs(
+        self, pages: list[DocumentPage], products: dict[str, str], source_url: str,
+    ) -> list[TariffRecord]:
+        """Parse the current approved book, separating tariff phases and rider totals."""
+        product_text = {kind: parse_html(html).get_text(" ", strip=True) for kind, html in products.items()}
+        cover = next((page.text for page in pages if re.match(r"Tariffs\s+[A-Za-z]+\s+\d{4}", page.text)), "")
+        publication = re.search(r"Tariffs\s+([A-Za-z]+)\s+(\d{4})", cover)
+        if not publication or "Approved by" not in cover:
+            return []
+        year = int(publication.group(2))
+        dates = set()
+        for text in product_text.values():
+            match = re.search(r"Rates updated as of ([A-Za-z]+ \d{1,2}, \d{4})", text)
+            if match:
+                effective = extract_effective_date("Effective " + match.group(1))
+                if effective and datetime.strptime(effective, "%Y-%m-%d").strftime("%B %Y") == f"{publication.group(1)} {year}":
+                    dates.add(effective)
+        if len(dates) != 1:
+            return []
+        effective = next(iter(dates))
+        today = self.now_iso()[:10]
+        year_end = date(year, 12, 31).isoformat()
+        if not effective <= today <= year_end:
+            return []
+
+        titles = {
+            "DOMESTIC SERVICE": ("standard", "02, 03, 04"),
+            "DOMESTIC SERVICE TIME-OF-DAY": ("tod", "05, 06"),
+            "DOMESTIC SERVICE TIME OF USE": ("tou", "80"),
+            "DOMESTIC SERVICE CRITICAL PEAK PRICING": ("cpp", "70"),
+        }
+        sections: dict[str, list[tuple[int, int, DocumentPage]]] = {}
+        for page in pages:
+            text = re.sub(r"\s+", " ", page.text)
+            header = re.match(r"(?:SCHEDULE A )?(DOMESTIC SERVICE.*?) TARIFF(?: \(OPTIONAL\))? Page (\d+) of (\d+)", text)
+            if header and header.group(1) in titles:
+                kind, codes = titles[header.group(1)]
+                if re.search(r"Rate Codes? " + re.escape(codes) + r"\b", text):
+                    sections.setdefault(kind, []).append((int(header.group(2)), int(header.group(3)), page))
+
+        def amounts(row: str) -> list[float]:
+            values = re.findall(r"(?<![\w.])(\(?-?\d+\.\d+\)?)(?![\w.])", row)
+            return [-float(value[1:-1]) if value.startswith("(") and value.endswith(")") else float(value) for value in values]
+
+        def rider_row(heading: str, count: int) -> tuple[list[float], str]:
+            selected = [page for page in pages if page.text.startswith(heading)]
+            text = re.sub(r"\s+", " ", "\n".join(page.text for page in selected))
+            current = re.search(rf"\b{year}\b(.*?)(?:\b{year + 1}\b|$)", text)
+            row = re.search(r"Domestic Service,(.*?)Small General", current.group(1)) if current else None
+            if not row or not re.search(r"cents per\s+(?:kWh|kilowatt)", text, re.I):
+                raise ValueError(f"Missing domestic rider row: {heading}")
+            values = amounts(row.group(1))
+            if len(values) != count:
+                raise ValueError(f"Incomplete rider columns: {heading}")
+            for label in ("Time-of-Day", "Time of Use", "Critical Peak"):
+                normalized = re.sub(r"\s+", " ", re.sub(r"\d+\.\d+", "", row.group(1))).replace("Time-of-Use", "Time of Use")
+                if label not in normalized:
+                    raise ValueError(f"Missing rider class applicability: {heading}")
+            detail = heading + "; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+            return values, detail
+
+        try:
+            fam, fam_detail = rider_row("FUEL ADJUSTMENT MECHANISM (FAM) TARIFF", 2)
+            dsm, dsm_detail = rider_row("DEMAND SIDE MANAGEMENT COST RECOVERY RIDER", 3)
+            storm, storm_detail = rider_row("STORM COST RECOVERY RIDER", 1)
+            if abs(sum(dsm[:2]) - dsm[2]) > 0.001 or fam[0] != fam[1]:
+                raise ValueError("Changed domestic rider breakdown")
+        except ValueError as exc:
+            self.logger.warning("NSPower residential riders: %s", exc)
+            return []
+        riders = [
+            RateComponent("rider", "FAM Actual/Balance Adjustment (Combined)", round(fam[-1] / 100, 6), "$/kWh",
+                          source_detail=fam_detail, effective_date=effective),
+            RateComponent("rider", "DSM Cost Recovery Rider", round(dsm[-1] / 100, 6), "$/kWh",
+                          source_detail=dsm_detail, effective_date=date(year, 1, 1).isoformat(),
+                          notes=f"Combined PCR {dsm[0]} and BA {dsm[1]} cents/kWh; do not add the subcomponents again."),
+            RateComponent("rider", "Storm Cost Recovery Rider", round(storm[0] / 100, 6), "$/kWh",
+                          source_detail=storm_detail, effective_date=effective),
+        ]
+        for component in riders:
+            component.source_url = source_url
+            component.end_date = year_end
+
+        def numeric_line(text: str, count: int) -> tuple[list[float], str]:
+            for match in re.finditer(r"(?m)^\s*(\d+\.\d+(?:[ \t]+\d+\.\d+)*)[ \t]*$", text):
+                values = amounts(match.group(1))
+                if len(values) == count:
+                    return values, text[:match.start()]
+            raise ValueError("Missing complete energy rate row")
+
+        def current_charge(text: str, heading: str) -> float:
+            section = text.split(heading, 1)[1].split(f"Effective January 1, {year + 1}", 1)[0]
+            matches = re.findall(r"\$(\d+(?:\.\d+)?)", section)
+            if "per month" not in section or re.search(r"-\s*\$|\$\s*-|\(\s*\$", section) or len(matches) != 1 or float(matches[0]) <= 0:
+                raise ValueError("Missing current monthly charge")
+            return float(matches[0])
+
+        records: list[TariffRecord] = []
+        for kind, name, code in (
+            ("standard", "Domestic Service", "02/03/04"),
+            ("tod", "Domestic Service Time-of-Day (Rates 05/06)", "05/06"),
+            ("tou", "Domestic Service Time-of-Use Pilot (Rate 80)", "80"),
+            ("cpp", "Domestic Service Critical Peak Pricing Pilot (Rate 70)", "70"),
+        ):
+            selected = sorted(sections.get(kind, []), key=lambda item: item[0])
+            try:
+                if not selected or {item[1] for item in selected} != {len(selected)} or [item[0] for item in selected] != list(range(1, len(selected) + 1)):
+                    raise ValueError("Incomplete tariff continuation")
+                raw = "\n".join(item[2].text for item in selected)
+                text = re.sub(r"\s+", " ", raw)
+                if not all(label in text for label in ("FUEL ADJUSTMENT MECHANISM", "DSM COST RECOVERY RIDER", "STORM COST RECOVERY RIDER", "AVAILABILITY")):
+                    raise ValueError("Missing rider or eligibility context")
+                fixed = current_charge(text, "CUSTOMER CHARGE")
+                if fixed != current_charge(text, "MINIMUM MONTHLY CHARGE"):
+                    raise ValueError("Changed minimum-bill structure")
+                components = [RateComponent("fixed", "Basic Charge", fixed, "$/month")]
+                structure, variant, start, end = "flat", "standard", effective, year_end
+                conditions = "Minimum bill is the monthly customer charge. Base energy and mandatory riders are separate."
+                if kind == "standard":
+                    energy_section = raw.split("ENERGY CHARGE", 1)[1].split("FUEL ADJUSTMENT", 1)[0]
+                    match = re.search(r"cents per\s+kilowatt-hour\s+(\d+\.\d+)", energy_section)
+                    if not match:
+                        raise ValueError("Missing domestic base energy")
+                    components.append(RateComponent("energy", "Base Energy Charge", round(float(match.group(1)) / 100, 6), "$/kWh"))
+                elif kind == "tod":
+                    if "Electric Thermal Storage (ETS)" not in text or "timing and controls approved" not in text:
+                        raise ValueError("Missing storage-heating eligibility")
+                    energy_section = raw.split("ENERGY CHARGE", 1)[1].split("FUEL ADJUSTMENT", 1)[0]
+                    if not re.search(r"cents per\s+kilowatt-hour", energy_section):
+                        raise ValueError("Invalid TOD energy unit")
+                    winter, winter_header = numeric_line(energy_section, 4)
+                    shoulder_section = energy_section.split("Applicable from March to", 1)[1]
+                    shoulder, shoulder_header = numeric_line(shoulder_section, 2)
+                    if not all(month in winter_header for month in ("December", "January", "February")) or "November" not in shoulder_header:
+                        raise ValueError("Changed TOD seasons")
+                    if "For Saturdays, Sundays, and statutory holidays" not in energy_section or winter[-1] != shoulder[-1]:
+                        raise ValueError("Missing weekend/holiday pricing")
+                    for season, months, values, header, count in (
+                        ("winter", "12,1,2", winter, winter_header, 4),
+                        ("non-winter", "3,4,5,6,7,8,9,10,11", shoulder, shoulder_header, 2),
+                    ):
+                        clocks = re.findall(r"\d{1,2}:\d{2} [AP]M", header)
+                        if len(clocks) != count * 2:
+                            raise ValueError("Missing TOD clock windows")
+                        for index, price in enumerate(values):
+                            period = ("on-peak", "mid-peak", "on-peak", "off-peak")[index] if count == 4 else ("mid-peak", "off-peak")[index]
+                            hours = f"Monday-Friday excluding statutory holidays: {clocks[index]} to {clocks[index + count]}"
+                            if period == "off-peak":
+                                hours += "; all hours on Saturdays, Sundays and statutory holidays"
+                            components.append(RateComponent("energy", f"Base {season.title()} {period.title()} Energy ({index + 1})",
+                                                            round(price / 100, 6), "$/kWh", tou_period=period, tou_hours=hours,
+                                                            season=season, season_months=months))
+                    structure, variant = "tou", "thermal storage time-of-day"
+                else:
+                    product = product_text.get(kind, "")
+                    if "Applications for the Time-of-Use Rate Pilot and Critical Peak Pricing Rate Pilot are now closed" not in product:
+                        raise ValueError("Pilot enrollment status not verified")
+                    transition = re.search(r"until October 31, (\d{4})\. Effective November\s+1, \1", text)
+                    if not transition or "standard offer rates" not in text or "standard Smart Meter" not in text:
+                        raise ValueError("Missing interim transition or pilot eligibility")
+                    transition_date = date(int(transition.group(1)), 11, 1).isoformat()
+                    if today < transition_date:
+                        interim = text.split("INTERIM ENERGY CHARGE", 1)[1]
+                        match = re.search(r"Effective upon the date of the (?:n/a )?(\d+\.\d+) Board", interim)
+                        if not match or not re.search(r"cents per\s+(?:winter Period\)\s+)?kilowatt-hour", selected[0][2].text):
+                            raise ValueError("Missing published interim energy rate")
+                        end = date(int(transition.group(1)), 10, 31).isoformat()
+                        components.append(RateComponent("energy", "Interim Base Energy Charge (All Hours)", round(float(match.group(1)) / 100, 6), "$/kWh"))
+                        variant = "pilot - interim standard pricing"
+                        conditions += " This is the published interim standard-price variant, subject to the tariff's system-restoration provisions; no critical-peak events apply while interim pricing is in force. Scheduled winter rates begin " + transition_date + ". Product pages advertise the time-varying prices; they are not substituted for this dated tariff phase."
+                    else:
+                        start, structure, variant = transition_date, "tou", "pilot - time-varying pricing"
+                        energy_heading = re.search(r"(?m)^ENERGY CHARGE\s*$", raw)
+                        approved = re.sub(r"\s+", " ", raw[energy_heading.end():]) if energy_heading else ""
+                        if not re.search(r"cents per\s+kilowatt-hour", approved):
+                            raise ValueError("Missing approved pilot energy units")
+                        row = re.search(r"Effective November 1, " + str(year) + r" ((?:\d+\.\d+ ?)+)", approved)
+                        prices = amounts(row.group(1)) if row else []
+                        if kind == "tou":
+                            if len(prices) != 4 or prices[0] != prices[2] or prices[1] != prices[3]:
+                                raise ValueError("Incomplete current TOU energy columns")
+                            clocks = re.findall(r"\d{1,2}:\d{2} [AP]M", approved[:row.start()])
+                            if len(clocks) != 8 or "off-peak price also applies to all hours on Saturdays, Sundays" not in approved:
+                                raise ValueError("Missing TOU hours or weekend rule")
+                            windows = [f"{clocks[index]} to {clocks[index + 4]}" for index in range(4)]
+                            holidays = re.search(r"Note 1: (.*?)FUEL ADJUSTMENT MECHANISM", approved)
+                            if not holidays or "November 1 through March 31" not in approved:
+                                raise ValueError("Missing TOU seasonal or holiday conditions")
+                            conditions += " Published winter holiday rule: " + holidays.group(1)
+                            components.extend([
+                                RateComponent("energy", "Base Winter On-Peak Energy", round(prices[0] / 100, 6), "$/kWh",
+                                              tou_period="on-peak", tou_hours=f"Monday-Friday {windows[0]} and {windows[2]}, excluding listed holidays", season="winter", season_months="11,12,1,2,3"),
+                                RateComponent("energy", "Base Winter Off-Peak Energy", round(prices[1] / 100, 6), "$/kWh",
+                                              tou_period="off-peak", tou_hours=f"{windows[1]} and {windows[3]}; all weekends and listed/observed holidays", season="winter", season_months="11,12,1,2,3"),
+                            ])
+                        else:
+                            if len(prices) != 2 or "four-hour duration" not in text or "6:00 AM and 11:00 PM" not in text:
+                                raise ValueError("Missing CPP event rate or window")
+                            components.extend([
+                                RateComponent("energy", "Base Critical Peak Event Energy", round(prices[0] / 100, 6), "$/kWh",
+                                              tou_period="critical-peak", tou_hours="Declared four-hour events between 06:00 and 23:00; listed holidays excluded", season="winter", season_months="11,12,1,2,3"),
+                                RateComponent("energy", "Base Non-Critical Energy", round(prices[1] / 100, 6), "$/kWh", tou_period="non-critical", tou_hours="All hours outside declared critical-peak events"),
+                            ])
+                            events = re.search(r"CRITICAL PEAK EVENT PROCEDURE (.*?)FUEL ADJUSTMENT MECHANISM", approved)
+                            if not events or "No more than" not in events.group(1) or "day prior" not in events.group(1):
+                                raise ValueError("Missing critical-peak event limits or notice conditions")
+                            conditions += " Published event conditions: " + events.group(1)
+                    conditions += " Pilot enrollment is closed to new applications. No seasonal or net-metering service; start November 1 unless NSPI grants a waiver."
+                if any(component.charge_value is None or component.charge_value <= 0 for component in components):
+                    raise ValueError("Invalid residential charge values")
+                if "Optional Green Power Rider" in text:
+                    block = re.search(r"provide (\d+) kWh per month.*?cost of \$(\d+(?:\.\d+)?) per month", text)
+                    if not block:
+                        raise ValueError("Incomplete optional green-power rider")
+                    components.append(RateComponent("rider", "Optional Green Power Block", float(block.group(2)), "$/block/month",
+                                                    sub_component="optional", notes=f"Opt-in only: each purchased block supplies {block.group(1)} kWh/month from green sources. Additional to normal service charges."))
+                detail = f"Domestic tariff {code}; PDF pages " + ", ".join(str(item[2].page_number) for item in selected)
+                for component in components:
+                    component.source_url = source_url
+                    component.source_detail = detail
+                    component.effective_date = start
+                    component.end_date = end
+                availability = text.split("AVAILABILITY", 1)[1].split("Optional Green Power Rider", 1)[0]
+                if kind in {"tou", "cpp"}:
+                    availability += " Pilot closed to new applications; " + ("interim standard-price variant where interim provisions apply." if today < transition_date else "time-varying winter phase.")
+                    if today < transition_date:
+                        restoration = re.search(r"If system functionality is restored after (.*?shall remain in effect until October 31, \d{4})", text)
+                        if not restoration:
+                            raise ValueError("Missing interim applicability condition")
+                        availability = "Conditional interim variant only. If system functionality is restored after " + restoration.group(1) + ". " + availability
+                        conditions += " The scraper has not verified the participant's system-restoration status; this is not a claim that all pilot customers currently pay the interim price."
+                record_name = name + " - Conditional Pilot" if kind in {"tou", "cpp"} else name
+                records.append(TariffRecord(
+                    utility_name="Nova Scotia Power", province="NS", utility_type="electricity",
+                    tariff_name=record_name, tariff_code=code, customer_class="residential", sub_class=variant,
+                    rate_structure=structure, effective_date=start, end_date=end,
+                    eligibility=availability.strip(), source_url=source_url, source_page=detail,
+                    notes=conditions, components=components + [replace(component) for component in riders],
+                ))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("NSPower residential %s incomplete: %s", code, exc)
+        return records
 
     def _try_live_commercial(self) -> Optional[list[TariffRecord]]:
         """Parse Rate 10/11/12 from the NSUARB-approved business rate schedule page."""

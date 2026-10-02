@@ -1,12 +1,12 @@
 # Live Parser Gap Report
 
-**Updated:** 2026-10-01
+**Updated:** 2026-10-02
 **Scope:** Building-energy parser coverage, including single-family homes, with completed non-building schedules retained as reference.
 
-**Evidence:** October 1 local BC Hydro/SaskPower/Yukon results are combined with the October 1
-monthly CI observations. CI data was integrated while preserving local history and
-newer SaskPower classes. The current export has
-84 stored live versions (83 latest tariffs) and 480 seed tariffs across 84 registered utilities. A fixture or verifier
+**Evidence:** October 2 NSPower results are combined with October 1 local
+BC Hydro/SaskPower/Yukon and monthly CI observations. History remains preserved.
+The current export has
+88 stored live versions (86 latest tariffs) and 480 seed tariffs across 84 registered utilities. A fixture or verifier
 implementation alone is not evidence of a successful live run.
 
 **Provenance:** complete fresh extraction uses `mark_live_parsed()`; contextual
@@ -23,7 +23,7 @@ as cents or borrowing a value from a different class/column.
 |---------|----------|-----------|---------------|-------------|------------|------------|
 | **Manitoba Hydro** | MB | Server-rendered (line-pair text) | Live parser | Flat rate | GS Small Non-Demand/Demand/Seasonal, GS Medium, GS Large (3 voltage tiers) | High |
 | **NB Power** | NB | Server-rendered tables | Live parser | Flat rate | GS1 (tiered+demand), Small Industrial | High |
-| **Nova Scotia Power** | NS | Server-rendered h4/li | Live parser (residential + commercial) | Flat rate | Rate 10 (tiered), Rate 11 (demand), Rate 12 (demand) | High |
+| **Nova Scotia Power** | NS | Approved PDF + product pages; business HTML | Residential source parser, broader coverage partial | Standard, storage TOD, conditional interim TOU/CPP pilots | Existing Rate 10/11/12 HTML path | High for published rates; pilot applicability is explicitly conditional |
 | **BC Hydro** | BC | Approved residential PDF + business HTML | Live parser | Tiered, flat, both time-of-day combinations; closed dual fuel | SGS, MGS, LGS | High |
 | **Hydro-Québec** | QC | JS-rendered + PDF | PDF live parser | Rate D (tiered) | Rate G (mixed), Rate M (demand) | High |
 | **SaskPower** | SK | Rendered landing page + PDFs | Audited building scope implemented | E01/E03 standard + bulk-metered option; diesel E04 | General service, voltage/TOU/capacity and R23/R24; other records retained as reference | High for complete parsed classes |
@@ -50,12 +50,13 @@ as cents or borrowing a value from a different class/column.
 - **Seed update:** 2024-04-01 → 2026-04-14 (structural change: residential tiered→flat)
 
 ### Nova Scotia Power
-- **URL (residential):** `nspower.ca/your-home/residential-rates/standard-residential`
-- **URL (commercial):** `nspower.ca/your-business/save-money-energy/business-rates`
-- **Parser:** Label-based extraction via `find_text_near_label()` for residential; a section parser for commercial that slices each rate between its page header and the next rate/sample/minimum-charge marker (replacing the old table heuristic that always fell back because the page's cent glyph is not a literal `¢`)
-- **Coverage:** Residential (live parsed), Rate 10 Small Commercial (tiered, live parsed), Rate 11 Commercial General (demand, live parsed), Rate 12 Large Commercial (demand, live parsed)
-- **Immediate residential gap:** optional time-based residential products are missing. The user identified TOU; inspect current official TOU/TOD/pilot eligibility, seasons, hours and dates before parsing. This audit is not complete. Industrial process-only classes remain outside the active building scope.
-- **Seed update:** 2024-04-01 → 2026-01-01; commercial seeds refreshed to current values
+- **Sources:** official standard/TOD/TOU/critical-peak pages plus the linked May 2026 `tariff-book-2026.pdf`, all registered. The approved book and matching dated product pages establish the current rate version; future 2027 rows are not reused as current rates.
+- **Standard 02/03/04:** stable `Domestic Service` identity, $20.08/month, base energy $0.18324/kWh; separate FAM $0.00156, DSM $0.00648 and storm $0/kWh. The resulting published energy components agree with the advertised 19.128 cents/kWh, without adding riders twice. Optional $5/month Green Power blocks are labelled opt-in, each representing 125 kWh.
+- **TOD 05/06:** requires electric thermal storage or qualifying in-floor storage with approved controls. December-February has four weekday blocks; March-November has two. Weekends/holidays take the overnight rate. Seasonal month sets and source clock windows are preserved, not borrowed from the TOU pilot.
+- **TOU 80 and CPP 70:** enrollment is closed. October records are named `Conditional Pilot` with explicit interim-phase eligibility and an October 31 end date. The tariff makes interim applicability depend on system-restoration provisions; the scraper does not verify an individual participant's restoration status or assert that every customer is on this phase. Product pages' advertised time-varying prices are not substituted for dated interim charges.
+- **Dated transition:** November 1, 2026 winter prices are implemented and tested but not activated on October 2. TOU uses source-derived morning/evening windows and holiday rules; CPP uses declared four-hour events and published event/notice limits. Stable plan names let a newer phase supersede its old version in the latest-per-name browser. Rates after the supported 2026 tariff/rider year fail closed pending a new review.
+- **Verification:** 32 focused NSPower tests; 350 full-suite tests. Live dry run and targeted stored scrape returned seven valid live records: four residential variants and the three existing business records. The source fixture covers residential section boundaries and mandatory rider rows. Storage/export tests preserve conditions, dates, sources and snapshots. Desktop/mobile browser checks verified four residential options, storage eligibility, conditional notices and comparison scrolling. Non-NSPower data and prior snapshots were unchanged.
+- **Still incomplete:** operational confirmation of which pilot phase applies to existing participants, MURB TOU (listed at tariff-book page 35), Solar Garden and Community Solar riders (pages 69/80), and further building-service classes. The residential product pages are not the entire building tariff catalogue. Existing business 10/11/12 remains on its prior HTML parser; this batch does not certify its full rider/date coverage.
 
 ### BC Hydro
 - **Sources:** residential tiered/flat/time-of-day pages and the approved Electric Tariff PDF registered in `data/sources/registry.json`. Business service retains its separate HTML parser.
@@ -63,7 +64,7 @@ as cents or borrowing a value from a different class/column.
 - **Source values:** flat energy 12.70 cents/kWh and 25.00 cents/day; tiered energy 11.87/14.08 cents/kWh and 23.44 cents/day. Base schedules are effective April 1, 2026; current RS 2101 is effective July 1, 2026.
 - **Time-of-day:** daily overnight 23:00-07:00 credit of 5 cents/kWh, on-peak 16:00-21:00 surcharge of 5 cents/kWh, otherwise zero adjustment. These modify base energy, not replace it. Optional eligibility excludes separately metered common property; published EV-metering conditions remain in the tariff.
 - **Riders and conditions:** RS 1901 is source-verified -1.5%, RS 1904 is 0%; neither applies to 2101 adjustments. Transformer-ownership discount is conditional for premises with more than three units, not a universal household credit. Tier thresholds distinguish monthly/bi-monthly billing and daily prorating. Closed 1105 eligibility is explicit.
-- **Verification:** `bc_hydro_residential.json` holds source-derived page excerpts. Nineteen BC-focused tests cover products, source mutation, missing continuations/riders, future dates, divergent monthly prices and repeat storage. Full suite: 325 passing. Live dry run/store/export returned eight valid live tariffs; other utilities and prior snapshots were preserved.
+- **Verification:** `bc_hydro_residential.json` holds source-derived page excerpts. Nineteen BC-focused tests cover products, source mutation, missing continuations/riders, future dates, divergent monthly prices and repeat storage. Current full suite: 350 passing. Its completed live dry run/store/export returned eight valid live tariffs; other utilities and prior snapshots were preserved.
 
 ## Group B: PDF-Parsed — Live Data from Official PDFs
 
@@ -72,6 +73,7 @@ as cents or borrowing a value from a different class/column.
 - **PDF URL:** `hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf`
 - **Parser:** PDF text extraction via `pdfplumber` (`extract_pdf_text()`), regex parsing for ¢/kWh and $/kW patterns
 - **Coverage:** Rate D (residential, tiered), Rate G (commercial, mixed demand+tiered), Rate M (medium power, demand+tiered)
+- **October 2 residential catalogue audit:** the official residential catalogue also lists DP, DM, DN, Flex D, DT and the Winter Credit Option. These are source-confirmed gaps beyond D; do not treat the D/G/M parser as complete residential coverage. Net-metering is also linked and needs separate eligibility/settlement review; crop-production options remain excluded from the building campaign.
 - **Fix:** Rate G/M previously fell back to seed because the section extractor keyed on the generic "Rate G"/"Rate M" strings (first found in the table of contents) and the cent regex missed the PDF's glyph. Now anchored on the "Structure of Rate G"/"Structure of Rate M" sections with a glyph-agnostic energy pattern, so all three tariffs parse live.
 - **Seed update:** 2024-04-01 → 2026-04-01; values verified from official PDF
 
@@ -88,7 +90,7 @@ as cents or borrowing a value from a different class/column.
 - **Billing context:** preserve minimum-bill rules, demand ratchets and TOU hours from continuation pages. These are source conditions, not a calculated bill total. kVA eligibility is kept as text rather than written into kW-only fields.
 - **Safety gates:** require complete column counts, source dates that are not future dates, correct currency/units, and required continuation data. Reject malformed groups independently. Known failed classes retain unverified seeds; unknown classes are logged, not invented.
 - **Fixtures:** six SaskPower JSON fixtures cover residential, supplied/customer-owned transformation, renewable access and retained farm/oil-field PDFs, with source URLs, retrieval dates, page numbers and table/condition excerpts.
-- **Tests:** 53 focused SaskPower parser/storage/export cases; 325 tests in the full suite. Coverage includes source-value mutations, cent glyph variation, wrong units/signs, missing/reordered/divergent columns, dates, failed fetches, required continuations, per-unit billing, seasonal/equipment units, historical closure notices, repeated storage and shared-code/codeless-class identity.
+- **Tests:** 53 focused SaskPower parser/storage/export cases; 350 tests in the full suite. Coverage includes source-value mutations, cent glyph variation, wrong units/signs, missing/reordered/divergent columns, dates, failed fetches, required continuations, per-unit billing, seasonal/equipment units, historical closure notices, repeated storage and shared-code/codeless-class identity.
 - **Persistence:** targeted storage/export retained all 519 previous snapshots and unchanged non-SaskPower records. The two old generic commercial seed records remain labelled estimates; history was not deleted.
 
 **Building audit result:** the currently published building-service schedules linked
@@ -130,19 +132,19 @@ not excluded catalogue expansion.
 | Metric | Value |
 |--------|-------|
 | Registered utilities | 84 |
-| Stored/exported tariff versions | 564, including history and older retained estimates |
-| Rate components | 3,685 |
-| Latest live tariffs / utilities with live output | 83 / 10 |
-| Stored live versions | 84; includes older Yukon 1160 version |
+| Stored/exported tariff versions | 568, including history and older retained estimates |
+| Rate components | 3,713 |
+| Latest live tariffs / utilities with live output | 86 / 10 |
+| Stored live versions | 88; includes older Yukon and NSPower standard versions |
 | Seed tariffs | 480 |
 | Newly added SaskPower live tariffs | 40 since the original residential-only parser |
 | October 1 observations | Monthly CI snapshot plus newer local SaskPower results |
-| Deterministic suite | 325 passing |
+| Deterministic suite | 350 passing |
 
 ## Recommended Next Steps
 
 1. Maintain the implemented SaskPower building schedules; retain non-building classes as reference without expanding them.
-2. Immediate priority: NSPower residential time-based products, then an official-source audit of optional residential plans at all registered utilities. The broad audit is pending, not proven by existing default-rate records. Broader Yukon/NS/FortisBC building-service work follows.
+2. Continue the residential audit and implement source-confirmed gaps: Hydro-Quebec optional domestic products and FortisBC's current electric tariff are the next leads. NSPower's four core residential variants are implemented; participant pilot status and MURB/solar riders remain partial. The broad national audit is still incomplete.
 3. Continue building coverage across provinces/territories, nine gas utilities, Alberta wires/default retail and necessary market references, then Ontario's approved distributor schedules.
 4. Repair the existing non-blocking source-health workflow's browser setup and outcome reporting; keep normal tests network-free. Durable CI history and deployment triggering are separate operational follow-ups.
 

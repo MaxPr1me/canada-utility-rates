@@ -139,6 +139,21 @@ class TestNovaScotiaPowerSeed:
     def test_returns_four_tariffs(self):
         assert len(self.records) == 4
 
+    def test_optional_residential_products_are_discovered(self):
+        from scrapers.utilities.nova_scotia_power import NovaScotiaPowerScraper, RESIDENTIAL_URL
+
+        root = RESIDENTIAL_URL.rsplit("/", 1)[0]
+        product_urls = {root + "/time-of-day", root + "/time-of-use", root + "/critical-peak"}
+        html = '<h1>Standard Residential Service Rate</h1>' + ''.join(
+            f'<a href="{url}">Learn More</a>' for url in sorted(product_urls)
+        )
+        scraper = NovaScotiaPowerScraper()
+        with patch.object(scraper, "fetch_page", return_value=html) as fetch, \
+             patch.object(scraper, "_try_live_commercial", return_value=None):
+            scraper._try_live_scrape()
+        fetched = {call.args[0] for call in fetch.call_args_list}
+        assert product_urls <= fetched
+
     def test_residential_is_flat(self):
         res = [r for r in self.records if r.customer_class == "residential"][0]
         assert res.rate_structure == "flat"
@@ -169,6 +184,202 @@ class TestNovaScotiaPowerSeed:
         r12 = [r for r in self.records if r.tariff_code == "12"]
         assert len(r12) == 1
         assert r12[0].rate_structure == "demand"
+
+
+class TestNovaScotiaPowerResidential:
+    @pytest.fixture
+    def document(self):
+        import json
+        from pathlib import Path
+
+        fixture = Path(__file__).parent / "fixtures" / "nova_scotia_residential.json"
+        return json.loads(fixture.read_text(encoding="utf-8"))
+
+    @staticmethod
+    def parse(document, today="2026-10-02"):
+        from scrapers.utilities.nova_scotia_power import NovaScotiaPowerScraper
+        from scrapers.utils.parsing import DocumentPage
+
+        scraper = NovaScotiaPowerScraper()
+        products = {kind: product["html"] for kind, product in document["products"].items()}
+        with patch.object(scraper, "now_iso", return_value=today + "T00:00:00+00:00"):
+            records = scraper._parse_residential_tariffs([DocumentPage(**page) for page in document["pages"]], products, document["source_url"])
+        return {record.tariff_code: record for record in records}
+
+    def test_standard_rates_and_riders_are_separate(self, document):
+        records = self.parse(document)
+        assert set(records) == {"02/03/04", "05/06", "70", "80"}
+        standard = records["02/03/04"]
+        assert standard.tariff_name == "Domestic Service"
+        assert standard.effective_date == "2026-05-01"
+        assert standard.end_date == "2026-12-31"
+        assert standard.components[0].charge_value == 20.08
+        assert standard.components[1].charge_value == 0.18324
+        riders = {component.component_name: component for component in standard.components if component.component_type == "rider"}
+        assert riders["FAM Actual/Balance Adjustment (Combined)"].charge_value == 0.00156
+        assert riders["DSM Cost Recovery Rider"].charge_value == 0.00648
+        assert riders["Storm Cost Recovery Rider"].charge_value == 0
+        assert sum(component.charge_value for component in standard.components if component.charge_unit == "$/kWh") == pytest.approx(0.19128)
+        assert riders["Optional Green Power Block"].sub_component == "optional"
+        assert riders["Optional Green Power Block"].charge_unit == "$/block/month"
+        assert all(component.source_url == document["source_url"] and component.source_detail for component in standard.components)
+
+    def test_tod_requires_storage_and_preserves_seasonal_windows(self, document):
+        record = self.parse(document)["05/06"]
+        assert record.rate_structure == "tou"
+        assert "Electric Thermal Storage (ETS)" in record.eligibility
+        energy = [component for component in record.components if component.component_type == "energy"]
+        winter = [component for component in energy if component.season == "winter"]
+        shoulder = [component for component in energy if component.season == "non-winter"]
+        assert [component.charge_value for component in winter] == [0.24384, 0.19459, 0.24384, 0.11632]
+        assert [component.charge_value for component in shoulder] == [0.19459, 0.11632]
+        assert all(component.season_months == "12,1,2" for component in winter)
+        assert "7:00 AM to 12:00 PM" in winter[0].tou_hours
+        assert "4:00 PM to 11:00 PM" in winter[2].tou_hours
+        assert "Saturdays, Sundays and statutory holidays" in winter[3].tou_hours
+
+    def test_pilots_use_documented_interim_phase_in_october(self, document):
+        records = self.parse(document)
+        for code in ("70", "80"):
+            record = records[code]
+            assert record.rate_structure == "flat"
+            assert record.sub_class == "pilot - interim standard pricing"
+            assert record.end_date == "2026-10-31"
+            energy = [component for component in record.components if component.component_type == "energy"]
+            assert len(energy) == 1 and energy[0].charge_value == 0.18324
+            assert "closed to new applications" in record.eligibility
+            assert "interim provisions apply" in record.eligibility
+            assert "Conditional Pilot" in record.tariff_name
+            assert "Conditional interim variant only" in record.eligibility
+            assert "not a claim that all pilot customers" in record.notes
+            assert "2026-11-01" in record.notes
+        assert not any(component.charge_value in {0.37321, 1.82871, 0.13213} for record in records.values() for component in record.components)
+
+    def test_pilots_switch_only_on_published_november_date(self, document):
+        records = self.parse(document, today="2026-11-01")
+        october = self.parse(document)
+        tou, cpp = records["80"], records["70"]
+        assert all(records[code].tariff_name == october[code].tariff_name for code in ("70", "80"))
+        assert tou.effective_date == cpp.effective_date == "2026-11-01"
+        assert tou.rate_structure == cpp.rate_structure == "tou"
+        assert [component.charge_value for component in tou.components if component.component_type == "energy"] == [0.36517, 0.18324]
+        assert [component.charge_value for component in cpp.components if component.component_type == "energy"] == [1.82067, 0.15411]
+        assert "No more than 18 Critical Peak Events" in cpp.notes
+        assert "Nova Scotia Heritage Day" in tou.notes
+        assert all(record.end_date == "2026-12-31" for record in records.values())
+
+    @pytest.mark.parametrize(("page_number", "remaining"), [
+        (5, {"05/06", "70", "80"}), (7, {"02/03/04", "70", "80"}),
+        (10, {"02/03/04", "05/06", "80"}), (14, {"02/03/04", "05/06", "70"}),
+        (66, set()), (75, set()), (79, set()),
+    ])
+    def test_incomplete_source_sections_fail_by_class(self, document, page_number, remaining):
+        document["pages"] = [page for page in document["pages"] if page["page_number"] != page_number]
+        assert set(self.parse(document)) == remaining
+
+    def test_missing_equipment_eligibility_rejects_tod_only(self, document):
+        page = next(page for page in document["pages"] if page["page_number"] == 7)
+        page["text"] = page["text"].replace("Electric Thermal Storage (ETS)", "equipment not specified")
+        assert set(self.parse(document)) == {"02/03/04", "70", "80"}
+
+    def test_rider_and_tod_values_follow_live_source(self, document):
+        page = next(page for page in document["pages"] if page["page_number"] == 6)
+        page["text"] = page["text"].replace("24.384", "26.000")
+        record = self.parse(document)["05/06"]
+        assert record.components[1].charge_value == 0.26
+        page = next(page for page in document["pages"] if page["page_number"] == 66)
+        page["text"] = page["text"].replace("0.156", "0.200")
+        records = self.parse(document)
+        assert all(next(component for component in record.components if component.component_name.startswith("FAM")).charge_value == 0.002 for record in records.values())
+
+    def test_unverified_year_or_missing_source_date_fails_closed(self, document):
+        assert not self.parse(document, today="2027-01-01")
+        for product in document["products"].values():
+            product["html"] = product["html"].replace("Rates updated as of May 1, 2026.", "")
+        assert not self.parse(document)
+
+    @pytest.mark.parametrize(("page_number", "old", "new", "rejected"), [
+        (6, "cents per kilowatt-hour", "dollars per kilowatt-hour", "05/06"),
+        (4, "per month $20.08", "per week $20.08", "02/03/04"),
+        (4, "$20.08", "-$20.08", "02/03/04"),
+        (12, "cents per\nkilowatt-hour", "dollars per\nkilowatt-hour", "80"),
+    ])
+    def test_wrong_units_or_negative_fixed_charges_reject_only_affected_class(self, document, page_number, old, new, rejected):
+        page = next(page for page in document["pages"] if page["page_number"] == page_number)
+        page["text"] = page["text"].replace(old, new)
+        assert set(self.parse(document)) == {"02/03/04", "05/06", "70", "80"} - {rejected}
+
+    def test_pilot_requires_current_enrollment_evidence(self, document):
+        document["products"]["cpp"]["html"] = document["products"]["cpp"]["html"].replace("are now closed", "status unavailable")
+        assert set(self.parse(document)) == {"02/03/04", "05/06", "80"}
+
+    def test_source_column_wrapping_preserves_tou_units(self, document):
+        page = next(page for page in document["pages"] if page["page_number"] == 12)
+        page["text"] = page["text"].replace(
+            "Interim Energy Charge (Non-winter Period) cents per\nkilowatt-hour",
+            "Interim Energy Charge (Non- cents per\nwinter Period) kilowatt-hour",
+        )
+        records = self.parse(document)
+        assert records["80"].components[1].charge_value == 0.18324
+        page["text"] = page["text"].replace("cents per", "dollars per")
+        assert "80" not in self.parse(document)
+
+    def test_residential_sources_are_registered(self, document):
+        from scrapers.registry import get_utility
+
+        registered = {source["url"] for source in get_utility("Nova Scotia Power")["sources"]}
+        assert {product["source_url"] for product in document["products"].values()} | {document["source_url"]} <= registered
+
+    def test_residential_failure_keeps_business_live(self):
+        from scrapers.utilities.nova_scotia_power import NovaScotiaPowerScraper
+
+        scraper = NovaScotiaPowerScraper()
+        business = scraper._seed_data_rate10()
+        with patch.object(scraper, "_try_live_residential", return_value=[]), \
+             patch.object(scraper, "_try_live_commercial", return_value=[business]):
+            records = scraper.scrape()
+        assert len(records) == 4
+        assert [record.tariff_code for record in records if "live_parsed" in (record.notes or "")] == ["10"]
+        assert all(record.confidence == "unverified" for record in records if record.tariff_code != "10")
+
+    def test_business_parse_failure_keeps_residential_live(self, document):
+        from scrapers.utilities.nova_scotia_power import NovaScotiaPowerScraper
+
+        scraper = NovaScotiaPowerScraper()
+        with patch.object(scraper, "_try_live_residential", return_value=list(self.parse(document).values())), \
+             patch.object(scraper, "_try_live_commercial", side_effect=ValueError("Malformed business amount")):
+            records = scraper.scrape()
+        assert len([record for record in records if "live_parsed" in (record.notes or "")]) == 4
+        assert {record.tariff_code for record in records if "seed_fallback" in (record.notes or "")} == {"10", "11", "12"}
+
+    def test_residential_dates_components_and_history_survive_export(self, document, tmp_path, monkeypatch):
+        import json
+        import sqlite3
+        from pipeline import export_json
+        from pipeline.run_scrape import store_results
+        from scrapers.utilities.nova_scotia_power import NovaScotiaPowerScraper
+        from tests.test_phase5_hardening import database
+
+        records = NovaScotiaPowerScraper().mark_live_parsed(list(self.parse(document).values()))
+        connection = database()
+        for run_id in (1, 2):
+            store_results(records, run_id, connection)
+        assert connection.execute("SELECT count(*) FROM tariffs").fetchone()[0] == 4
+        assert connection.execute("SELECT count(*) FROM historical_snapshots").fetchone()[0] == 8
+        db_path = tmp_path / "rates.db"
+        persisted = sqlite3.connect(db_path)
+        connection.backup(persisted)
+        persisted.close()
+        connection.close()
+        monkeypatch.setattr(export_json, "DB_PATH", db_path)
+        monkeypatch.setattr(export_json, "SITE_DATA_DIR", tmp_path / "site")
+        export_json.export_all()
+        exported = json.loads((tmp_path / "site" / "rates.json").read_text(encoding="utf-8"))
+        assert len(exported) == 4
+        assert all(record["provenance"] == "live" for record in exported)
+        assert {record["tariff_code"]: len(record["components"]) for record in exported} == {record.tariff_code: len(record.components) for record in records}
+        assert {record["end_date"] for record in exported if record["tariff_code"] in {"70", "80"}} == {"2026-10-31"}
+        assert all(component["source_url"] and component["source_detail"] for record in exported for component in record["components"])
 
 
 # ─── BC Hydro ──────────────────────────────────────────────────
