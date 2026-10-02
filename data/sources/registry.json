@@ -284,7 +284,7 @@
         {
           "url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
           "source_type": "pdf",
-          "description": "Official electricity rates PDF: D/DP/DM/G/M; DP/DM page-aware values, dates, seasonal/multiplier conditions and conditional voltage credits",
+          "description": "Official electricity rates PDF: D/DP/DM/DN/G/M; page-aware DP/DM/DN values, dates, seasonal/multiplier conditions and conditional voltage credits; DN off-grid territory and continuation on pages 127-128",
           "is_primary": false
         },
         {
@@ -294,7 +294,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Rates are regulated by the Regie de l'energie du Quebec. D, DP, grandfathered DM, G and M are parsed from the current PDF. DP uses seasonal demand charges and monthly energy tiers; DM fixed/energy allowances use an approved multiplier, with a variable demand allowance. Minimum bills and transformation-loss rules remain source conditions, not additive charges. DN, DT, Flex D, Winter Credit and net-metering products remain pending; no full residential catalogue-completion claim."
+      "notes": "Rates are regulated by the Regie de l'energie du Quebec. D, DP, grandfathered DM, northern off-grid DN, G and M are parsed from the current PDF. DP uses seasonal demand charges and monthly energy tiers; DM/DN fixed and energy allowances use an approved multiplier. DN applies north of the 53rd parallel except Schefferville, defaults to multiplier 1 unless formerly DM-eligible, and excludes DT off-grid. Demand allowances, minimum bills and transformation-loss rules remain source conditions, not calculated totals. DT, Flex D, Winter Credit, the Inukjuak domestic variant and net-metering remain pending; no full residential catalogue-completion claim."
     },
     {
       "name": "Manitoba Hydro",

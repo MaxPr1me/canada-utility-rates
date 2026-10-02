@@ -622,7 +622,7 @@ class TestHydroQuebecDomestic:
     def test_dp_dm_rates_are_rebuilt_from_their_own_sections(self, document):
         records = self.scrape_document(document)
         live = {record.tariff_code: record for record in records if "live_parsed" in (record.notes or "")}
-        assert set(live) == {"DP", "DM"}
+        assert set(live) == {"DP", "DM", "DN"}
         dp = live["DP"]
         assert dp.customer_class == "residential" and dp.effective_date == "2026-04-01"
         energy = [component for component in dp.components if component.component_type == "energy"]
@@ -651,8 +651,33 @@ class TestHydroQuebecDomestic:
         assert credit.sub_component == "conditional"
         assert all(component.source_url == document["source_url"] and component.source_detail for record in live.values() for component in record.components)
 
+    def test_dn_off_grid_keeps_territory_multiplier_and_separate_prices(self, document):
+        live = {record.tariff_code: record for record in self.scrape_document(document) if "live_parsed" in (record.notes or "")}
+        assert set(live) == {"DP", "DM", "DN"}
+        dn = live["DN"]
+        assert dn.customer_class == "residential" and dn.effective_date == "2026-04-01"
+        assert "north of the 53rd parallel" in dn.eligibility
+        assert "except the Schefferville system" in dn.eligibility
+        assert "multiplier is 1, unless" in dn.notes and "May 31, 2009" in dn.notes
+        assert "65%" in dn.notes and "Rate DT described in Chapter 2 does not apply" in dn.notes
+        fixed = next(component for component in dn.components if component.component_type == "fixed")
+        assert fixed.charge_value == 0.46154 and fixed.charge_unit == "$/multiplier/day"
+        energy = [component for component in dn.components if component.component_type == "energy"]
+        assert [component.charge_value for component in energy] == [0.07065, 0.50469]
+        assert energy[0].tier_threshold == 40 and energy[0].tier_unit == "kWh/day/multiplier"
+        assert "grandfathered" not in energy[0].notes
+        demand = next(component for component in dn.components if component.component_type == "demand")
+        assert demand.charge_value == 7.266 and demand.demand_threshold_kw is None
+        assert "50 kilowatts" in demand.notes and "4 kilowatts times the multiplier" in demand.notes
+        credit = next(component for component in dn.components if component.component_type == "rebate")
+        assert credit.charge_value == -0.002818 and credit.sub_component == "conditional"
+        assert "9.2" in credit.notes and "12.3" in credit.notes
+        assert len(dn.components) == 5
+        assert all(component.source_url == document["source_url"] and component.source_detail for component in dn.components)
+
     @pytest.mark.parametrize(("page_number", "remaining"), [
-        (18, {"DM"}), (20, {"DP"}), (11, set()), (152, set()), (154, set()),
+        (18, {"DM", "DN"}), (20, {"DP", "DN"}), (11, set()), (152, set()), (154, set()),
+        (127, {"DP", "DM"}), (128, {"DP", "DM"}),
     ])
     def test_missing_conditions_fail_closed(self, document, page_number, remaining):
         document["pages"] = [page for page in document["pages"] if page["page_number"] != page_number]
@@ -665,12 +690,24 @@ class TestHydroQuebecDomestic:
         ("DP", 17, "1,200 kilowatthours", "1,200 kilowatts"),
         ("DM", 19, "May 31, 2009", "eligibility unknown"),
         ("DM", 19, "46.154\u00a2", "$46.154"),
+        ("DN", 127, "50.469\u00a2", "$50.469"),
+        ("DN", 127, "50.469\u00a2", "-50.469\u00a2"),
+        ("DN", 127, "46.154\u00a2", "-46.154\u00a2"),
+        ("DN", 127, "$7.266", "$-7.266"),
+        ("DN", 127, "north of the 53rd parallel", "south of the 53rd parallel"),
+        ("DN", 127, "except the Schefferville system", "including the Schefferville system"),
+        ("DN", 127, "multiplier is 1, unless", "multiplier is 2, unless"),
+        ("DN", 127, "as described in Article 12.3", "as described in Article 12.2"),
+        ("DN", 128, "1 for each additional room.", ""),
+        ("DN", 128, "65%", "unknown percentage"),
+        ("DN", 128, "4 kilowatts times the multiplier", "4 kilovoltamperes times the multiplier"),
+        ("DN", 128, "Rate D T described in Chapter 2 does not apply", "Rate D T described in Chapter 2 applies"),
     ])
     def test_tariff_drift_does_not_downgrade_other_class(self, document, code, page_number, old, new):
         page = next(page for page in document["pages"] if page["page_number"] == page_number)
         page["text"] = page["text"].replace(old, new)
         live = [record for record in self.scrape_document(document) if "live_parsed" in (record.notes or "")]
-        assert {record.tariff_code for record in live} == {"DP", "DM"} - {code}
+        assert {record.tariff_code for record in live} == {"DP", "DM", "DN"} - {code}
 
     def test_rates_and_thresholds_follow_source_changes(self, document):
         page = next(page for page in document["pages"] if page["page_number"] == 17)
@@ -679,6 +716,21 @@ class TestHydroQuebecDomestic:
         dp = next(record for record in records if record.tariff_code == "DP")
         energy = next(component for component in dp.components if component.component_type == "energy")
         assert energy.charge_value == 0.07125 and energy.tier_threshold == 1500
+
+    def test_dn_values_and_rules_follow_source_changes(self, document):
+        table = next(page for page in document["pages"] if page["page_number"] == 127)
+        table["text"] = table["text"].replace("50.469", "51.125").replace("40 kilowatthours", "45 kilowatthours")
+        continuation = next(page for page in document["pages"] if page["page_number"] == 128)
+        continuation["text"] = continuation["text"].replace("65%", "70%").replace("50 kilowatts", "60 kilowatts")
+        live = {record.tariff_code: record for record in self.scrape_document(document) if "live_parsed" in (record.notes or "")}
+        assert set(live) == {"DP", "DM", "DN"}
+        energy = [component for component in live["DN"].components if component.component_type == "energy"]
+        assert [component.charge_value for component in energy] == [0.07065, 0.51125]
+        assert energy[0].tier_threshold == 45
+        demand = next(component for component in live["DN"].components if component.component_type == "demand")
+        assert "60 kilowatts" in demand.notes and "70%" in live["DN"].notes
+        dm_energy = [component.charge_value for component in live["DM"].components if component.component_type == "energy"]
+        assert dm_energy == [0.07065, 0.11142]
 
     def test_missing_or_future_edition_date_cannot_borrow_grandfathering_date(self, document):
         document["pages"][0]["text"] = document["pages"][0]["text"].replace("2026", "2027")
@@ -690,11 +742,11 @@ class TestHydroQuebecDomestic:
         page = next(page for page in document["pages"] if page["page_number"] == 18)
         page["text"] = page["text"].replace("maximum-demand", "maximum\u2011demand")
         live = [record for record in self.scrape_document(document) if "live_parsed" in (record.notes or "")]
-        assert {record.tariff_code for record in live} == {"DP", "DM"}
+        assert {record.tariff_code for record in live} == {"DP", "DM", "DN"}
 
     def test_landing_failure_does_not_block_official_pdf(self, document):
         records = self.scrape_document(document, landing_unavailable=True)
-        assert {record.tariff_code for record in records if "live_parsed" in (record.notes or "")} == {"DP", "DM"}
+        assert {record.tariff_code for record in records if "live_parsed" in (record.notes or "")} == {"DP", "DM", "DN"}
 
     def test_multiplier_and_seasonal_components_survive_export(self, document, tmp_path, monkeypatch):
         import json
@@ -706,9 +758,9 @@ class TestHydroQuebecDomestic:
         records = [record for record in self.scrape_document(document) if "live_parsed" in (record.notes or "")]
         connection = database()
         for run_id in (1, 2):
-            assert store_results(records, run_id, connection) == 2
-        assert connection.execute("SELECT count(*) FROM tariffs").fetchone()[0] == 2
-        assert connection.execute("SELECT count(*) FROM historical_snapshots").fetchone()[0] == 4
+            assert store_results(records, run_id, connection) == 3
+        assert connection.execute("SELECT count(*) FROM tariffs").fetchone()[0] == 3
+        assert connection.execute("SELECT count(*) FROM historical_snapshots").fetchone()[0] == 6
         path = tmp_path / "rates.db"
         persisted = sqlite3.connect(path)
         connection.backup(persisted)
@@ -718,11 +770,15 @@ class TestHydroQuebecDomestic:
         monkeypatch.setattr(export_json, "SITE_DATA_DIR", tmp_path / "site")
         export_json.export_all()
         exported = json.loads((tmp_path / "site" / "rates.json").read_text(encoding="utf-8"))
-        assert len(exported) == 2 and all(record["provenance"] == "live" for record in exported)
+        assert len(exported) == 3 and all(record["provenance"] == "live" for record in exported)
         assert {record["tariff_code"]: len(record["components"]) for record in exported} == {record.tariff_code: len(record.components) for record in records}
         dm = next(record for record in exported if record["tariff_code"] == "DM")
         assert any(component["charge_unit"] == "$/multiplier/day" for component in dm["components"])
         assert any(component["tier_unit"] == "kWh/day/multiplier" for component in dm["components"])
+        dn = next(record for record in exported if record["tariff_code"] == "DN")
+        assert "except the Schefferville system" in dn["eligibility"]
+        assert "multiplier is 1, unless" in dn["notes"]
+        assert any(component["charge_value"] == 0.50469 for component in dn["components"])
         assert all(component["source_detail"] for record in exported for component in record["components"])
 
 

@@ -1,9 +1,9 @@
 # Phase 5 Completion Matrix
 
 **Updated:** 2026-10-02. Scope: all 84 registered utilities, not every utility
-in the broader Canadian inventory. The export has 570 stored tariff versions / 3,727
-components / **90 stored live versions / 480 seed**. Latest-per-name coverage is
-**88 live tariffs**; older Yukon/NSPower versions remain in history. The export combines
+in the broader Canadian inventory. The export has 571 stored tariff versions / 3,732
+components / **91 stored live versions / 480 seed**. Latest-per-name coverage is
+**89 live tariffs**; older Yukon/NSPower versions remain in history. The export combines
 October 1 observations with the October 2 NSPower/Hydro-Quebec updates. No gas or Ontario
 tariffs are live in this export.
 Counts include retained non-building reference records, not only building tariffs.
@@ -38,7 +38,7 @@ See the [gap report](live_parser_gap_report.md) for detailed findings and
 |---|---|---|---|
 | BC Hydro | 8 / Oct 1 | Approved PDF: tiered 1101, flat 1151, each +2101 TOD, closed dual-fuel 1105; three HTML business classes | Five residential options verified; preserve rider exclusions, prorated tiers and conditional discounts; other building-service audit remains |
 | FortisBC Electric | 0 / Oct 1 | Known-value verification for two seed classes | Oct 2 official residential page reachable through direct HTTP and links to Electric Tariff; actual residential extraction/catalogue completeness still pending |
-| Hydro-Quebec | 5 / Oct 2 | PDF: D/DP/DM/G/M; DP/DM page-aware fixture, seasons, multipliers and conditional voltage credits | DN, DT, Flex D, Winter Credit, Inukjuak domestic variant and net-metering remain; begin with DN pages 127-128 |
+| Hydro-Quebec | 6 / Oct 2 | PDF: D/DP/DM/DN/G/M; page-aware domestic fixtures, seasons, off-grid eligibility, multipliers and conditional credits | DT, Flex D, Winter Credit, Inukjuak domestic variant and net-metering remain; begin with DT pages 21-24 |
 | Manitoba Hydro | 8 / Oct 1 | HTML: residential and seven GS/voltage variants | Building-service audit; preserve kVA and seasonal rules |
 | SaskPower | **41 / Oct 1** | **Audited building schedules implemented**; six source fixtures; total includes reference records | Monitor current sources; no remaining identified building-schedule parser gap in the audited catalogue |
 | NB Power | 3 / Oct 1 | HTML: residential, GS1, small industrial | Remaining building-service schedules and fixtures |
@@ -224,7 +224,7 @@ Next gate: reviewed OCR or authoritative text for full building-class extraction
 
 ## Next Batches and Acceptance
 
-1. Continue the residential audit after Hydro-Quebec DP/DM: DN off-grid is the next bounded slice, followed by DT/Flex D/Winter Credit and FortisBC's current tariff. BC Hydro's five options and NSPower standard/TOD/conditional pilot phases are implemented; do not infer national product completeness.
+1. Continue the residential audit after Hydro-Quebec DP/DM/DN: DT dual-energy is the next bounded slice, followed by Flex D/Winter Credit and FortisBC's current tariff. BC Hydro's five options and NSPower standard/TOD/conditional pilot phases are implemented; do not infer national product completeness.
 2. Resume broader Yukon building classes/Rider A via reviewed OCR or text alternatives and other NS/FortisBC building-service gaps after the residential-priority audit.
 3. Territorial/provincial building-service depth, nine gas utilities, Alberta electricity, then the Ontario campaign.
 4. Separate operational track: browser-enabled source health, meaningful provenance counts,
@@ -292,7 +292,7 @@ from an old seed or a single residential page.
 |---|---|---|
 | BC Hydro | October 1 approved tariff and residential pages | Five options implemented: tiered/flat, both +TOD, closed dual-fuel. Preserve conditions/rider exclusions |
 | NSPower | October 2 [residential catalogue](https://www.nspower.ca/your-home/residential-rates/standard-residential) and [May 2026 tariff book](https://www.nspower.ca/docs/default-source/regulatory/tariff-book-2026.pdf) | Standard, thermal-storage TOD, TOU and CPP pilots implemented by dated tariff phase. Both pilots are closed to new applicants; October variants explicitly conditional. MURB TOU and solar riders still need extraction |
-| Hydro-Quebec | October 2 [domestic-rate catalogue](https://www.hydroquebec.com/residential/customer-space/rates/) and approved tariff | D/DP/DM are implemented, with seasonal demand and grandfathered multiplier rules. DN, DT, Flex D, Winter Credit, Inukjuak domestic variant and net-metering remain; catalogue links alone do not establish eligibility or current rates |
+| Hydro-Quebec | October 2 [domestic-rate catalogue](https://www.hydroquebec.com/residential/customer-space/rates/) and approved tariff | D/DP/DM/DN are implemented, with seasonal demand, grandfathered multipliers and DN's distinct off-grid/default-multiplier rules. DT, Flex D, Winter Credit, Inukjuak domestic variant and net-metering remain; catalogue links alone do not establish eligibility or current rates |
 | FortisBC Electric | October 2 [residential page](https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/residential-rates) through direct HTTP | Page links to the [official Electric Tariff](https://fbcdotcomprod.blob.core.windows.net/libraries/docs/default-source/about-us-documents/regulatory-affairs-documents/electric-utility/fortisbcelectrictariff.pdf). Current January 1, 2026 decision is mentioned; tariff extraction and full product audit are pending. Web-tool CSP failure is not proof of an inaccessible source |
 | Ontario shared prices | October 2 [OEB price catalogue](https://www.oeb.ca/consumer-information-and-protection/electricity-rates) | TOU, ULO and Tiered choices confirmed; displayed current prices effective November 1, 2025. RPP prices already include an estimate of GA. This does not verify any LDC's delivery charges or merger identity |
 | Manitoba, NB, PEI, Newfoundland, Labrador and remaining electricity entries | Existing matrix/source history only in this pass | Optional/conditional residential product catalogue audit remains pending; do not mark default-only outputs complete |
@@ -339,7 +339,7 @@ for the NSPower slice. The preview was restarted at http://127.0.0.1:8000/; rest
 with `python -m http.server --bind 127.0.0.1 --directory site 8000` if it has stopped.
 Keep the earlier context-checkpoint and scoped-push rules.
 
-## Current Checkpoint: Hydro-Quebec DP/DM (2026-10-02)
+## Historical Checkpoint: Hydro-Quebec DP/DM (2026-10-02)
 
 **Implemented:** domestic-demand DP and grandfathered bulk-metered DM, alongside
 unchanged D/G/M identities. All five read the April 1, 2026 publication date from
@@ -388,3 +388,42 @@ Follow with the full suite, targeted dry run, preserved-history storage/export a
 updated ledger before publishing the next batch. No frontend, schema or shared
 pipeline changes were needed for DP/DM. Stop at this verified bounded checkpoint
 before opening the next parser slice when approaching the context limit.
+
+## Current Checkpoint: Hydro-Quebec DN (2026-10-02)
+
+**Implemented:** DN domestic off-grid supply north of the 53rd parallel, excluding
+Schefferville. April 1, 2026 base charges are $0.46154/multiplier/day and energy
+$0.07065/$0.50469 per kWh, with the first 40 kWh/day/multiplier. DN defaults to
+multiplier one unless the contract was DM-eligible on May 31, 2009; this is not a
+closed-enrollment restriction on the entire DN tariff. The printed continuation
+confirms additive dwelling/room terms in the applicable exception branches.
+
+**Conditions retained:** complete winter demand-ratchet and variable kW allowance
+rules, $7.266/kW/month demand charge, DT's off-grid exclusion and the conditional
+supply credit incorporated by article 9.2 from article 12.3. The parser requires
+both DN pages and shared definitions/credit sources. Missing or malformed DN
+context rejects DN while independent DP/DM classes remain live. No bill is calculated.
+
+**Verified:** 37 Hydro-Quebec tests and 382 full-suite tests pass. The targeted
+dry run/store returned six valid live records (four domestic plus G/M). Export:
+571 versions / 3,732 components / 91 stored live / 89 latest live / 480 estimates.
+All 1,202 prior snapshot contents/hashes and 565 non-Hydro-Quebec records were
+unchanged; six snapshots were appended. Validation has zero errors and the two
+existing AESO class warnings. Desktop/mobile checks confirm DN's eligibility,
+multiplier, higher second tier and conditional credit, with estimates hidden and
+comparison scrolling without page overflow or JavaScript errors at 390px.
+No frontend, schema or shared pipeline changes were needed.
+
+**Exact next work:** inspect physical PDF pages 21-24 for DT dual-energy service,
+starting from `_parse_domestic_rates()` and `TestHydroQuebecDomestic`. Establish the
+required equipment, temperature-zone switching thresholds, eligibility variants,
+multiplier/demand rules and component sources before adding a fixture and failing
+coverage test. Do not model temperature switching as ordinary hourly TOU, or apply
+DT to DN off-grid customers. Then continue Flex D/Winter Credit, the Inukjuak
+domestic variant and net-metering review; FortisBC and other national residential
+groups remain queued. Broad Hydro-Quebec residential coverage is still incomplete.
+
+Use `./venv/Scripts/python.exe -m pytest -q tests/test_live_parsers.py -k HydroQuebec`
+for the focused checks. Preview remains http://127.0.0.1:8000/. Preserve all existing
+history and reference classes, leave unrelated worktrees untouched, and checkpoint
+the tested batch before opening new work near the context limit.

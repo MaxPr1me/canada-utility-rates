@@ -6,7 +6,7 @@
 **Evidence:** October 2 NSPower and Hydro-Quebec results are combined with October 1 local
 BC Hydro/SaskPower/Yukon and monthly CI observations. History remains preserved.
 The current export has
-90 stored live versions (88 latest tariffs) and 480 seed tariffs across 84 registered utilities. A fixture or verifier
+91 stored live versions (89 latest tariffs) and 480 seed tariffs across 84 registered utilities. A fixture or verifier
 implementation alone is not evidence of a successful live run.
 
 **Provenance:** complete fresh extraction uses `mark_live_parsed()`; contextual
@@ -25,7 +25,7 @@ as cents or borrowing a value from a different class/column.
 | **NB Power** | NB | Server-rendered tables | Live parser | Flat rate | GS1 (tiered+demand), Small Industrial | High |
 | **Nova Scotia Power** | NS | Approved PDF + product pages; business HTML | Residential source parser, broader coverage partial | Standard, storage TOD, conditional interim TOU/CPP pilots | Existing Rate 10/11/12 HTML path | High for published rates; pilot applicability is explicitly conditional |
 | **BC Hydro** | BC | Approved residential PDF + business HTML | Live parser | Tiered, flat, both time-of-day combinations; closed dual fuel | SGS, MGS, LGS | High |
-| **Hydro-Québec** | QC | Official PDF + product pages | PDF live parser, catalogue partial | D, seasonal-demand DP, grandfathered bulk-metered DM | Rate G (mixed), Rate M (demand) | High for parsed classes; conditional credits are explicit |
+| **Hydro-Québec** | QC | Official PDF + product pages | PDF live parser, catalogue partial | D, seasonal-demand DP, grandfathered bulk-metered DM, northern off-grid DN | Rate G (mixed), Rate M (demand) | High for parsed classes; conditional credits are explicit |
 | **SaskPower** | SK | Rendered landing page + PDFs | Audited building scope implemented | E01/E03 standard + bulk-metered option; diesel E04 | General service, voltage/TOU/capacity and R23/R24; other records retained as reference | High for complete parsed classes |
 | **NL Hydro** | NL | PDF + inline text | Official PDF component verification | Rural + Labrador | General Service | High when verified |
 | **Newfoundland Power** | NL | PDF-only | Dynamic PDF parser | Domestic 1.1 | General Service 2.1/2.3/2.4 | High for parsed classes |
@@ -64,18 +64,19 @@ as cents or borrowing a value from a different class/column.
 - **Source values:** flat energy 12.70 cents/kWh and 25.00 cents/day; tiered energy 11.87/14.08 cents/kWh and 23.44 cents/day. Base schedules are effective April 1, 2026; current RS 2101 is effective July 1, 2026.
 - **Time-of-day:** daily overnight 23:00-07:00 credit of 5 cents/kWh, on-peak 16:00-21:00 surcharge of 5 cents/kWh, otherwise zero adjustment. These modify base energy, not replace it. Optional eligibility excludes separately metered common property; published EV-metering conditions remain in the tariff.
 - **Riders and conditions:** RS 1901 is source-verified -1.5%, RS 1904 is 0%; neither applies to 2101 adjustments. Transformer-ownership discount is conditional for premises with more than three units, not a universal household credit. Tier thresholds distinguish monthly/bi-monthly billing and daily prorating. Closed 1105 eligibility is explicit.
-- **Verification:** `bc_hydro_residential.json` holds source-derived page excerpts. Nineteen BC-focused tests cover products, source mutation, missing continuations/riders, future dates, divergent monthly prices and repeat storage. Current full suite: 366 passing. Its completed live dry run/store/export returned eight valid live tariffs; other utilities and prior snapshots were preserved.
+- **Verification:** `bc_hydro_residential.json` holds source-derived page excerpts. Nineteen BC-focused tests cover products, source mutation, missing continuations/riders, future dates, divergent monthly prices and repeat storage. Current full suite: 382 passing. Its completed live dry run/store/export returned eight valid live tariffs; other utilities and prior snapshots were preserved.
 
 ## Group B: PDF-Parsed — Live Data from Official PDFs
 
 ### Hydro-Québec
 - **Sources:** [approved electricity-rates PDF](https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf) and registered D/DP/DM product pages. The PDF remains usable if the residential landing page fails. The edition date is read from its cover, not a seed or grandfathering notice; missing/future dates fail closed.
-- **Coverage:** D, DP, grandfathered DM, G and M. DP/DM use page-aware sections with required continuations and shared definitions/adjustments; existing D/G/M identities are unchanged. Rate D's charge anchor includes article 2.5 so it cannot borrow DP/DM rows.
+- **Coverage:** D, DP, grandfathered DM, northern off-grid DN, G and M. DP/DM/DN use page-aware sections with required continuations and shared definitions/adjustments; existing D/G/M identities are unchanged. Rate D's charge anchor includes article 2.5 so it cannot borrow another domestic schedule's rows.
 - **DP:** $0.06878/$0.10458 per kWh, first 1,200 kWh per 30-day monthly period. Demand above 50 kW is $5.369/kW/month in April-November and $7.266 in December-March. The 65-percent winter minimum-demand rule and $13.833 single-phase/$20.750 three-phase minimum bills remain conditions, not extra fixed charges. Non-30-day billing periods are prorated by the tariff rules.
 - **DM:** only qualifying bulk-metered contracts eligible on May 31, 2009. System access is $0.46154 per multiplier per day; $0.07065/$0.11142 per kWh with the first allowance of 40 kWh/day/multiplier. Demand is $7.266/kW/month above max(50 kW, 4 kW x multiplier), subject to the published minimum-demand rule. The multiplier depends on eligible dwellings/rooms and mixed-use conditions; no occupancy count or fixed demand threshold is invented.
-- **Conditional adjustments:** DP carries five alternative voltage-credit bands from article 12.2, not five cumulative rebates. DM carries the article 12.3 credit of $0.002818/kWh only for qualifying supply voltage/ownership. Transformation-loss conditions are retained as text, not a calculated adjustment or bill total.
-- **Fixture and verification:** [hydro_quebec_domestic.json](../tests/fixtures/hydro_quebec_domestic.json) retains cover, definitions, DP pages 17-18, DM pages 19-20, credits page 152 and monthly proration page 154. The DM multiplier page was also visually checked because plain extraction omits standalone plus signs. Twenty-one focused tests and 366 full-suite tests pass, covering missing pages, class isolation, units/signs, changed values/thresholds, edition dates, landing failure, Unicode hyphens and repeat storage/export. The October 2 dry run/store returned five valid live records. All 1,197 prior snapshots and 565 other-utility records were preserved; five snapshots were appended. Database validation: zero errors, two existing AESO class warnings.
-- **Remaining:** DN off-grid (pages 127-128), DT dual-energy (21-24), Flex D, Winter Credit, Inukjuak domestic dual-energy (139 onward), and net-metering eligibility/settlement. Winter Credit has a grandfathering restriction in the current edition; do not assume open enrollment. These are discovery leads, not implemented rates. Crop-production options remain excluded from the building campaign.
+- **DN:** domestic off-grid supply north of the 53rd parallel, except Schefferville, with the source's other eligibility exceptions retained. System access is $0.46154/multiplier/day; energy is $0.07065/$0.50469 per kWh with the first 40 kWh/day/multiplier. The multiplier defaults to one unless the contract was DM-eligible on May 31, 2009; the whole DN tariff is not grandfathered. Demand is $7.266/kW/month above the source-derived base allowance, with the 65-percent winter demand ratchet. The DT off-grid exclusion is explicit. Both pages and complete kW/percentage rules are required; malformed DN does not downgrade DP/DM.
+- **Conditional adjustments:** DP carries five alternative voltage-credit bands from article 12.2, not five cumulative rebates. DM carries the article 12.3 credit of $0.002818/kWh only for qualifying supply voltage/ownership; DN explicitly incorporates that conditional credit through article 9.2. Transformation-loss conditions are retained as text, not a calculated adjustment or bill total.
+- **Fixture and verification:** [hydro_quebec_domestic.json](../tests/fixtures/hydro_quebec_domestic.json) retains cover, definitions, DP pages 17-18, DM pages 19-20, DN pages 127-128, credits page 152 and monthly proration page 154. DM/DN multiplier continuations were visually checked because plain extraction omits standalone plus signs. Thirty-seven focused tests and 382 full-suite tests pass, including source mutation, territory/default-multiplier drift, missing continuations, units/signs, demand rules, publication dates and repeat storage/export. The October 2 DN dry run/store returned six valid live records. All 1,202 prior snapshots and 565 other-utility records were preserved; six snapshots were appended. Database validation: zero errors, two existing AESO class warnings. Desktop/mobile checks confirmed four domestic classes, DN eligibility/prices, estimate hiding and horizontal comparison scrolling without page overflow or JavaScript errors.
+- **Remaining:** DT dual-energy (pages 21-24), Flex D, Winter Credit, Inukjuak domestic dual-energy (139 onward), and net-metering eligibility/settlement. Winter Credit has a grandfathering restriction in the current edition; do not assume open enrollment. These are discovery leads, not implemented rates. Crop-production options remain excluded from the building campaign.
 
 ## SaskPower: October 1 Implementation
 
@@ -90,7 +91,7 @@ as cents or borrowing a value from a different class/column.
 - **Billing context:** preserve minimum-bill rules, demand ratchets and TOU hours from continuation pages. These are source conditions, not a calculated bill total. kVA eligibility is kept as text rather than written into kW-only fields.
 - **Safety gates:** require complete column counts, source dates that are not future dates, correct currency/units, and required continuation data. Reject malformed groups independently. Known failed classes retain unverified seeds; unknown classes are logged, not invented.
 - **Fixtures:** six SaskPower JSON fixtures cover residential, supplied/customer-owned transformation, renewable access and retained farm/oil-field PDFs, with source URLs, retrieval dates, page numbers and table/condition excerpts.
-- **Tests:** 53 focused SaskPower parser/storage/export cases; 366 tests in the current full suite. Coverage includes source-value mutations, cent glyph variation, wrong units/signs, missing/reordered/divergent columns, dates, failed fetches, required continuations, per-unit billing, seasonal/equipment units, historical closure notices, repeated storage and shared-code/codeless-class identity.
+- **Tests:** 53 focused SaskPower parser/storage/export cases; 382 tests in the current full suite. Coverage includes source-value mutations, cent glyph variation, wrong units/signs, missing/reordered/divergent columns, dates, failed fetches, required continuations, per-unit billing, seasonal/equipment units, historical closure notices, repeated storage and shared-code/codeless-class identity.
 - **Persistence:** targeted storage/export retained all 519 previous snapshots and unchanged non-SaskPower records. The two old generic commercial seed records remain labelled estimates; history was not deleted.
 
 **Building audit result:** the currently published building-service schedules linked
@@ -132,19 +133,19 @@ not excluded catalogue expansion.
 | Metric | Value |
 |--------|-------|
 | Registered utilities | 84 |
-| Stored/exported tariff versions | 570, including history and older retained estimates |
-| Rate components | 3,727 |
-| Latest live tariffs / utilities with live output | 88 / 10 |
-| Stored live versions | 90; includes older Yukon and NSPower standard versions |
+| Stored/exported tariff versions | 571, including history and older retained estimates |
+| Rate components | 3,732 |
+| Latest live tariffs / utilities with live output | 89 / 10 |
+| Stored live versions | 91; includes older Yukon and NSPower standard versions |
 | Seed tariffs | 480 |
 | Newly added SaskPower live tariffs | 40 since the original residential-only parser |
 | October 1 observations | Monthly CI snapshot plus newer local SaskPower results |
-| Deterministic suite | 366 passing |
+| Deterministic suite | 382 passing |
 
 ## Recommended Next Steps
 
 1. Maintain the implemented SaskPower building schedules; retain non-building classes as reference without expanding them.
-2. Continue the residential audit after Hydro-Quebec DP/DM: start with DN's off-grid continuation, then review DT/Flex D/Winter Credit and FortisBC's current electric tariff. NSPower's four core residential variants are implemented; participant pilot status and MURB/solar riders remain partial. The broad national audit is still incomplete.
+2. Continue after Hydro-Quebec DP/DM/DN: start with DT's dual-energy equipment and temperature-zone rules, then Flex D/Winter Credit and FortisBC's current electric tariff. NSPower's four core residential variants are implemented; participant pilot status and MURB/solar riders remain partial. The broad national audit is still incomplete.
 3. Continue building coverage across provinces/territories, nine gas utilities, Alberta wires/default retail and necessary market references, then Ontario's approved distributor schedules.
 4. Repair the existing non-blocking source-health workflow's browser setup and outcome reporting; keep normal tests network-free. Durable CI history and deployment triggering are separate operational follow-ups.
 

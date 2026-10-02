@@ -13,8 +13,8 @@ Hydro-Québec rates include:
   - Rate M: Medium-power (50–5,000 kW)
   - Rate L: Large industrial (> 5,000 kW, special contracts)
 
-This scraper handles D, DP, grandfathered DM, G and M. Other domestic options
-remain coverage gaps; multiplier and minimum-demand rules are not bill totals.
+This scraper handles D, DP, grandfathered DM, northern off-grid DN, G and M.
+Other domestic options remain gaps; multiplier and demand rules are not bill totals.
 
 The scraper downloads the official electricity-rates PDF and extracts
 rate values using pdfplumber text extraction + regex. If the PDF fetch
@@ -179,12 +179,18 @@ class HydroQuebecScraper(BaseScraper):
     def _parse_domestic_rates(
         self, pages: list[DocumentPage], effective_date: str,
     ) -> list[TariffRecord]:
-        """Rebuild DP and grandfathered DM without borrowing adjacent schedules."""
+        """Rebuild DP, grandfathered DM and off-grid DN from their own sections."""
         sections: dict[str, list[DocumentPage]] = {}
         for page in pages:
             heading = re.match(r"Section\s+\d+\s+\W?\s*Rate\s+(DP|DM)\b", page.text)
             if heading:
                 sections.setdefault(heading.group(1), []).append(page)
+            page_text = re.sub(r"\s+", " ", page.text)
+            if re.search(r"Application of Rate D\s*N\s+9\.1\b", page_text) or (
+                re.match(r"Section\s+1\b.*Conditions of Application of Domestic Rates.*Off[-\u2010-\u2015]Grid", page_text, re.I)
+                and re.search(r"Billing demand\s+9\.4\b", page_text)
+            ):
+                sections.setdefault("DN", []).append(page)
         records: list[TariffRecord] = []
         cent_amount = r"(-?\d+(?:\.\d+)?)\s*(?:\u00a2|\u023c|\ufffd|cents?)"
         definitions = re.sub(r"\s+", " ", "\n".join(page.text for page in pages if page.text.startswith("Interpretative Provisions")))
@@ -211,15 +217,18 @@ class HydroQuebecScraper(BaseScraper):
         adjustment_pages = [page for page in pages if "Credit for supply at medium or high voltage" in page.text and "12.2" in page.text]
         adjustment_text = re.sub(r"\s+", " ", "\n".join(page.text for page in adjustment_pages))
         adjustment_detail = "Conditional credits, Articles 12.2-12.4; PDF pages " + ", ".join(str(page.page_number) for page in adjustment_pages)
-        for code in ("DP", "DM"):
+        for code in ("DP", "DM", "DN"):
             selected = sections.get(code, [])
             if not selected:
                 continue
             text = re.sub(r"\s+", " ", "\n".join(page.text for page in selected))
-            text = re.sub(r"\bD\s+([PM])\b", r"D\1", text)
+            text = re.sub(r"\bD\s+([PMN])\b", r"D\1", text)
+            if code == "DN":
+                text = re.sub(r"\bD\s+T\b", "DT", text)
             try:
-                structure_match = re.search(rf"Structure of Rate {code}\b\s*\d+\.\d+(.*?)Billing demand\s+\d+\.\d+", text)
-                application = re.search(r"Application\s+\d+\.\d+(.*?)Structure of Rate", text)
+                following_heading = "Multiplier" if code == "DN" else "Billing demand"
+                structure_match = re.search(rf"Structure of Rate {code}\b\s*\d+\.\d+(.*?){following_heading}\s+\d+\.\d+", text)
+                application = re.search(rf"Application(?: of Rate {code})?\s+\d+\.\d+(.*?)Structure of Rate", text)
                 minimum = re.search(r"Minimum billing demand\s+\d+\.\d+\s+(.*?)(?=\d{4} Electricity Rates|$)", text)
                 if not structure_match or not application or not minimum:
                     raise ValueError("Missing charge, eligibility or minimum-demand section")
@@ -278,12 +287,31 @@ class HydroQuebecScraper(BaseScraper):
                     fixed = re.search(cent_amount + r"\s+system access charge for each day in the consumption period, times the multiplier", structure, re.I)
                     threshold_match = re.search(r"up to the product of ([\d,]+) kilowatthours, the number of days in the consumption period and the multiplier", structure)
                     demand = re.search(r"monthly charge of \$\s*(\d+(?:\.\d+)?)\s+per kilowatt of billing demand in excess of the base billing demand", structure)
-                    base_demand = re.search(r"Base billing demand\s+\d+\.\d+\s+(.*?)Multiplier\s+\d+\.\d+", text)
-                    multiplier = re.search(r"Multiplier\s+\d+\.\d+\s+(.*?)Mixed use\s+\d+\.\d+", text)
-                    if not all((fixed, threshold_match, demand, base_demand, multiplier)) or "May 31, 2009" not in eligibility or "bulk metering" not in eligibility:
-                        raise ValueError("Missing DM multiplier, grandfathering or demand conditions")
+                    base_end = r"Rate DT\s+9\.7" if code == "DN" else r"Multiplier\s+\d+\.\d+"
+                    multiplier_end = r"Billing demand\s+9\.4" if code == "DN" else r"Mixed use\s+\d+\.\d+"
+                    base_demand = re.search(rf"Base billing demand\s+\d+\.\d+\s+(.*?){base_end}", text)
+                    multiplier = re.search(rf"Multiplier\s+\d+\.\d+\s+(.*?){multiplier_end}", text)
+                    if not all((fixed, threshold_match, demand, base_demand, multiplier)):
+                        raise ValueError(f"Missing {code} multiplier or demand conditions")
+                    if code == "DM" and ("May 31, 2009" not in eligibility or "bulk metering" not in eligibility):
+                        raise ValueError("Missing DM grandfathering or bulk-metering eligibility")
+                    if code == "DN" and not all((
+                        "from an off-grid system located north of the 53rd parallel" in eligibility,
+                        "except the Schefferville system" in eligibility,
+                        "multiplier is 1, unless the contract was eligible for Rate DM on May 31, 2009" in multiplier.group(1),
+                        "1 for the first 9 rooms" in multiplier.group(1),
+                        "1 for each additional room" in multiplier.group(1),
+                        "Rate DT described in Chapter 2 does not apply to a contract for electricity supplied by an off-grid system" in text,
+                        "credit for supply, as described in Article 12.3, applies" in structure,
+                    )):
+                        raise ValueError("Missing DN territory, multiplier continuation, DT exclusion or supply-credit reference")
+                    if code == "DN":
+                        ratchet = re.search(r"equal to (\d+(?:\.\d+)?)% of the maximum power demand.*?falls wholly within the winter period.*?12 consecutive monthly periods", minimum.group(1))
+                        allowance = re.search(r"higher of the following values: a\) (\d+(?:\.\d+)?) kilowatts,? or b\) (\d+(?:\.\d+)?) kilowatts times the multiplier", base_demand.group(1))
+                        if not ratchet or not 0 < float(ratchet.group(1)) <= 100 or not allowance or min(float(value) for value in allowance.groups()) <= 0:
+                            raise ValueError("Incomplete DN winter minimum-demand or kW allowance rule")
                     if float(fixed.group(1)) <= 0 or float(demand.group(1)) <= 0:
-                        raise ValueError("Invalid DM charges")
+                        raise ValueError(f"Invalid {code} charges")
                     components.extend([
                         RateComponent("fixed", "Daily System Access per Multiplier", round(float(fixed.group(1)) / 100, 6), "$/multiplier/day",
                                       notes="Multiply by billing days and the approved tariff multiplier; not a flat per-account daily charge."),
@@ -293,9 +321,14 @@ class HydroQuebecScraper(BaseScraper):
                     threshold = float(threshold_match.group(1).replace(",", ""))
                     minimum_kw = None
                     tier_unit = "kWh/day/multiplier"
-                    tier_notes = "Multiply allowance by the number of billing days and the approved tariff multiplier; eligibility is grandfathered."
+                    tier_notes = "Multiply allowance by the number of billing days and the approved tariff multiplier. "
+                    tier_notes += "Eligibility is grandfathered." if code == "DM" else "DN defaults to multiplier 1 unless the exception in Article 9.3 applies."
                     notes += " Multiplier: " + multiplier.group(1).strip()
-                    notes += " Use the applicable occupancy branch only; dwelling and room terms within that branch are additive. The mixed-use increment is conditional; no multiplier is assumed."
+                    notes += " Use the applicable occupancy branch only; dwelling and room terms within that branch are additive."
+                    if code == "DM":
+                        notes += " The mixed-use increment is conditional; no multiplier is assumed."
+                    else:
+                        notes += " DN defaults to multiplier 1; the alternate occupancy branches apply only to contracts eligible for DM on May 31, 2009."
                     credit_section = re.search(r"Credit for supply applicable to domestic rates\s+12\.3(.*?)Adjustment for transformation losses\s+12\.4", adjustment_text)
                     credit = re.search(r"credit of " + cent_amount + r"\s+per kilowatthour", credit_section.group(1)) if credit_section else None
                     if not credit or float(credit.group(1)) < 0 or not re.search(r"Rate D\s*M\b", credit_section.group(1)):
@@ -303,9 +336,12 @@ class HydroQuebecScraper(BaseScraper):
                     components.append(RateComponent(
                         "rebate", "Conditional Domestic Supply Voltage Credit", -round(float(credit.group(1)) / 100, 6), "$/kWh",
                         sub_component="conditional", source_detail=adjustment_detail,
-                        notes=credit_section.group(1).strip() + " Only when these voltage and ownership conditions are met; not an automatic credit.",
+                        notes=("DN incorporates this conditional credit through Articles 9.2 and 12.3. " if code == "DN" else "") + credit_section.group(1).strip() + " Only when these voltage and ownership conditions are met; not an automatic credit.",
                     ))
-                    name, sub_class = "Rate DM - Grandfathered Bulk Domestic", "grandfathered bulk metered"
+                    if code == "DM":
+                        name, sub_class = "Rate DM - Grandfathered Bulk Domestic", "grandfathered bulk metered"
+                    else:
+                        name, sub_class = "Rate DN - Northern Off-Grid Domestic", "northern off-grid domestic"
                 if threshold <= 0:
                     raise ValueError("Invalid domestic energy threshold")
                 components.extend([

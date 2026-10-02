@@ -177,7 +177,7 @@ Never delete the real database to validate a parser change.
 - **Add notes** — explain anything unusual about the rate structure
 - **Preserve class boundaries** — a broken PDF or missing row must not mark an incomplete class live or downgrade an independent complete class. Never blanket-stamp returned mixed live/seed records.
 - **Preserve units** — kVA is not kW, and daily, monthly, seasonal and volume-tier charges must not be silently converted. Keep eligibility text when the schema has no matching unit-specific threshold field.
-- **Preserve billing multipliers** — for bulk-metered buildings, a daily charge or tier allowance can apply per approved dwelling/room multiplier, not per account. Retain units such as `$/multiplier/day` and `kWh/day/multiplier`, occupancy conditions and billing-period proration. Do not turn a variable demand allowance into a fixed threshold or add minimum bills as extra charges. Conditional voltage bands are alternatives, not cumulative rebates.
+- **Preserve billing multipliers** — for bulk-metered buildings, a daily charge or tier allowance can apply per approved dwelling/room multiplier, not per account. Retain units such as `$/multiplier/day` and `kWh/day/multiplier`, occupancy conditions and billing-period proration. Distinguish a default multiplier of one from a grandfathered exception; an exception does not close the whole tariff to new customers. Do not turn a variable demand allowance into a fixed threshold or add minimum bills as extra charges. Conditional voltage bands are alternatives, not cumulative rebates.
 - **Keep source configuration aligned** — update registry links and any URL constants the scraper actually fetches.
 
 ## Using parsing helpers for live scraping
