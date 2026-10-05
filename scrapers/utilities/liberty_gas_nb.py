@@ -163,8 +163,24 @@ class LibertyGasNBScraper(BaseScraper):
             raise ValueError("threshold boundaries are inconsistent")
         return {"groups": [self._num(value) for value in groups]}, detail
 
+    def _ops_values(self, text: str, detail_text: str) -> tuple[list[float], str]:
+        """Off-Peak summary row, confirmed by its own rate-schedule section (which may be a separate text)."""
+        row = re.search(r"Off-Peak N/A N/A " + RATE + r" N/A " + RATE + r"(?: |$)", text)
+        if not row:
+            raise ValueError("summary-table row missing or changed")
+        detail = self._detail(detail_text, "Off-Peak Service")
+        fixed = re.search(r"Monthly Distribution Customer Charge \(\$ per Month\): " + RATE, detail)
+        delivery = re.search(r"Monthly Distribution Delivery Charge \(\$ per GJ\): For all volumes delivered per month: "
+                             + RATE, detail)
+        if not fixed or not delivery or (fixed.group(1), delivery.group(1)) != row.groups():
+            raise ValueError("rate-schedule section does not repeat the summary-table rates")
+        values = [self._num(value) for value in row.groups()]
+        if min(values) <= 0:
+            raise ValueError("non-positive charge")
+        return values, detail
+
     def parse_pages(self, pages: dict[str, str], today: Optional[date] = None) -> list[TariffRecord]:
-        """Build SGS/MGS/LGS from texts keyed classes/home_supply/business_supply/carbon.
+        """Build SGS/MGS/LGS/OPS from texts keyed classes/home_supply/business_supply/carbon (optional ops).
 
         Missing carbon evidence rejects everything; each class is otherwise isolated.
         """
@@ -181,9 +197,14 @@ class LibertyGasNBScraper(BaseScraper):
             self.logger.warning("Liberty NB: distribution effective date missing or in the future")
             return []
         records: list[TariffRecord] = []
-        for code, supply_key in (("SGS", "home_supply"), ("MGS", "business_supply"), ("LGS", "business_supply")):
+        for code, supply_key in (("SGS", "home_supply"), ("MGS", "business_supply"), ("LGS", "business_supply"),
+                                 ("OPS", "business_supply")):
             try:
-                values, detail = self._class_values(text, code)
+                if code == "OPS":
+                    groups, detail = self._ops_values(text, pages.get("ops", text))
+                    values = {"groups": groups}
+                else:
+                    values, detail = self._class_values(text, code)
                 bills = re.search(r"Effective Date: To apply to all bills rendered for natural gas delivered on and "
                                   r"after " + DATE, detail)
                 if not bills or self._long_date(bills.group(1)) != effective:
@@ -202,7 +223,7 @@ class LibertyGasNBScraper(BaseScraper):
         eff = effective.isoformat()
         source = f"Current Natural Gas Distribution Rates & Charges, effective {effective.strftime('%B')} {effective.day}, {effective.year}"
         names = {"SGS": "Residential — Small General Service", "MGS": "Commercial — Mid-General Service",
-                 "LGS": "Commercial — Large General Service"}
+                 "LGS": "Commercial — Large General Service", "OPS": "Commercial — Off-Peak Service"}
 
         def comp(kind: str, name: str, value: float, unit: str, **extra) -> RateComponent:
             return RateComponent(kind, name, value, unit, effective_date=eff, source_url=url, source_detail=source, **extra)
@@ -214,6 +235,18 @@ class LibertyGasNBScraper(BaseScraper):
                            "within an apartment building, served through one meter.")
             if "individually gas metered, self-contained dwelling units within an apartment building" not in detail:
                 raise ValueError("SGS dwelling definition missing")
+        elif code == "OPS":
+            comps = [comp("fixed", "Monthly Distribution Customer Charge", groups[0], "$/month"),
+                     comp("delivery", "Monthly Distribution Delivery Charge", groups[1], "$/GJ")]
+            sentence = re.search(r"The Off-Peak Service \(OPS\) Rates are applied to any customer requiring the use of "
+                                 r"Liberty's Distribution System to have a supply of natural gas delivered to a single "
+                                 r"location served through one meter for the months of April through November\.", detail)
+            overrun = re.search(r"Seasonal Overrun Charge: Any volume of natural gas consumed during the months of "
+                                r"December through March inclusively will be subject to a Seasonal Overrun Charge of "
+                                r"\$10 per GJ in addition to the rates applicable to this service\.", detail)
+            if not sentence or not overrun or "There is no minimum annual charge." not in detail:
+                raise ValueError("Off-Peak eligibility or seasonal terms missing")
+            eligibility = sentence.group(0)
         else:
             low, fixed_low, _, fixed_high, block, rate1, _, *rest = groups
             comps = [
@@ -252,10 +285,15 @@ class LibertyGasNBScraper(BaseScraper):
         ]
         minimum = (" Minimum annual charge applies if qualifying monthly consumption is not met (difference versus "
                    "Mid-General Service plus 5%)." if code == "LGS" else "")
+        if code == "OPS":
+            minimum = (" No minimum annual charge. Seasonal Overrun Charge: volume consumed December through March is "
+                       "subject to $10 per GJ in addition to the rates for this service (not added to the components). "
+                       "Term of service: one year with automatic annual renewal. The page does not restrict OPS to "
+                       "commercial customers; it applies to any customer using gas only April through November.")
         return TariffRecord(
             utility_name="Liberty Utilities Gas NB", province="NB", utility_type="gas", tariff_name=names[code],
             tariff_code=code, customer_class="residential" if code == "SGS" else "commercial", eligibility=eligibility,
-            rate_structure="flat" if code == "SGS" else "tiered",
+            rate_structure="flat" if code in ("SGS", "OPS") else "tiered",
             pricing_method="regulated", effective_date=max(effective, supply_date, carbon_date).isoformat(),
             source_url=url, source_page=source, confidence="high",
             notes=("Minimum monthly charge is the customer charge." + minimum + " Distribution rates are subject to "

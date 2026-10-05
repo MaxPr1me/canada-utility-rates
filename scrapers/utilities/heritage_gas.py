@@ -29,6 +29,8 @@ PAGE_URLS = {
     "business": "https://eastwardenergy.com/for-business/rates/",
 }
 
+REGULATORY_URL = "https://eastwardenergy.com/regulatory/"
+
 MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER",
           "OCTOBER", "NOVEMBER", "DECEMBER"]
 MONEY = r"\$(\d[\d,]*\.\d+)"
@@ -79,7 +81,18 @@ class HeritageGasScraper(BaseScraper):
                 pages["rate_table"] = " ".join(page.text for page in pdf_pages)
             except Exception as exc:
                 self.logger.warning("Eastward Energy rate table unavailable: %s", exc)
-        records = self.parse_pages(pages, table_url=table_url)
+        tariff_url = None
+        try:
+            soup = parse_html(self.fetch_page(REGULATORY_URL))
+            for link in soup.find_all("a", href=True):
+                if link.get_text(" ", strip=True) == "Tariffs" and link["href"].lower().endswith(".pdf"):
+                    tariff_url = link["href"]
+                    break
+            if tariff_url:
+                pages["tariff"] = " ".join(p.text for p in extract_pdf_pages(self.fetch_bytes(tariff_url)))
+        except Exception as exc:
+            self.logger.warning("Eastward Energy tariff unavailable: %s", exc)
+        records = self.parse_pages(pages, table_url=table_url, tariff_url=tariff_url)
         return self.mark_live_parsed(records) if records else None
 
     # ── Parsing ──────────────────────────────────────────────
@@ -162,7 +175,7 @@ class HeritageGasScraper(BaseScraper):
         return effective, self._money(match.group(2)), self._money(match.group(3)), self._money(match.group(4))
 
     def parse_pages(self, pages: dict[str, str], today: Optional[date] = None,
-                    table_url: Optional[str] = None) -> list[TariffRecord]:
+                    table_url: Optional[str] = None, tariff_url: Optional[str] = None) -> list[TariffRecord]:
         """Build tariffs from texts keyed residential/business/rate_table.
 
         The rate table is authoritative; each class must also agree with its page summary
@@ -202,7 +215,94 @@ class HeritageGasScraper(BaseScraper):
                                        float(limit.group(1).replace(",", ""))))
         except ValueError as exc:
             self.logger.warning("Eastward Energy General Service not parsed live: %s", exc)
+        if pages.get("tariff"):
+            try:
+                if not tariff_url:
+                    raise ValueError("tariff URL missing")
+                rc3 = self._rc3(pages["rate_table"], pages["tariff"], pages.get("business", ""), values)
+                records.append(self._build_rc3(values, rc3, table_url, tariff_url))
+            except ValueError as exc:
+                self.logger.warning("Eastward Energy Rate Class 3 not parsed live: %s", exc)
         return records
+
+    def _rc3(self, table: str, tariff: str, business: str, values: dict) -> dict:
+        """Cross-check the Rate Class 3 column against the approved tariff schedule; raises ValueError on drift."""
+        base = re.search(r"Base Energy Charge \(\$/GJ\) " + MONEY + r" GS Tiers: " + MONEY, table)
+        demand = re.search(r"RC3 Demand Charge " + MONEY, table)
+        if not base or not demand:
+            raise ValueError("Rate Class 3 base energy or demand row missing or changed")
+        base_rate, demand_rate = self._money(base.group(2)), self._money(demand.group(1))
+        schedule = re.search(
+            r"Schedule 3 .{0,40}?Large General Service Rate Class 3 ELIGIBILITY Any Customer who is an end-user and "
+            r"whose total gas requirements at that location are greater than ([\d,]+) GJ per year\..{0,1500}?"
+            r"Effective for consumption on and after (January 1, 2024):\s*Fixed Monthly Customer Charge: \$ ?([\d.]+) per month "
+            r"Base Energy Charge: \$ ?([\d.]+) per GJ Demand Charge \* \$ ?([\d.]+) per GJ of Billing Demand per month "
+            r"\* The Billing Demand will be the greater of: 1\. 225 GJ per month 2\. The Contract Demand 3\. The greatest "
+            r"amount of gas in GJ in any consecutive 24-hour period during the current and preceding eleven billing periods\. "
+            r"MONTHLY BILL.{0,400}?MINIMUM MONTHLY BILL The Minimum Monthly Bill shall be the sum of the Fixed Monthly "
+            r"Customer Charge plus the Demand Charge\.", tariff)
+        if not schedule:
+            raise ValueError("Rate Class 3 tariff schedule missing or changed")
+        limit = float(schedule.group(1).replace(",", ""))
+        if (self._money(schedule.group(3)), self._money(schedule.group(4)), self._money(schedule.group(5))) != (
+                values["fixed"][2], base_rate, demand_rate):
+            raise ValueError("rate table does not match the approved Rate Class 3 tariff")
+        if not self._long_date(schedule.group(2)) <= values["effective"]:
+            raise ValueError("tariff rates are not yet in effect")
+        eligibility = re.search(r"Rate Class 3: (Any Customer who is an end-user and whose total gas requirements at that "
+                                r"location are greater than ([\d,]+) GJ per year)", business)
+        if not eligibility or float(eligibility.group(2).replace(",", "")) != limit:
+            raise ValueError("Rate Class 3 eligibility missing or inconsistent with the tariff")
+        parts = base_rate + values["tcrr"][2] + values["gcrr"][2] + values["rda"][2]
+        if abs(parts - values["total"][2]) > 0.006:
+            raise ValueError("published Rate Class 3 total variable does not reconcile with its components")
+        return {"base": base_rate, "demand": demand_rate, "limit": limit, "eligibility": eligibility.group(1) + "."}
+
+    def _build_rc3(self, values: dict, rc3: dict, url: str, tariff_url: str) -> TariffRecord:
+        effective = values["effective"]
+        eff = effective.isoformat()
+        detail = f"Eastward Energy Rate Table {MONTHS[effective.month - 1].title()} {effective.year}"
+        tariff_detail = "Eastward Energy Tariffs, Schedule 3 Large General Service Rate Class 3 (pages 9-10)"
+        approval = f"; delivery rates approved {values['approval']}" if values["approval"] else ""
+
+        def comp(kind, name, value, unit, source, source_detail, **kw):
+            return RateComponent(kind, name, value, unit, effective_date=eff, source_url=source,
+                                 source_detail=source_detail, **kw)
+
+        comps = [
+            comp("fixed", "Fixed Monthly Customer Charge", values["fixed"][2], "$/month", url, detail,
+                 notes="Delivery charge regulated by the Nova Scotia Energy Board" + approval),
+            comp("delivery", "Base Energy Charge", rc3["base"], "$/GJ", url, detail),
+            comp("demand", "Demand Charge", rc3["demand"], "$/GJ of Billing Demand/month", tariff_url, tariff_detail,
+                 notes="Billing Demand is the greater of 225 GJ per month, the Contract Demand, and the greatest amount "
+                       "of gas in GJ in any consecutive 24-hour period during the current and preceding eleven billing "
+                       "periods. Minimum monthly bill is the Fixed Monthly Customer Charge plus the Demand Charge."),
+            comp("transmission", "Transportation Cost Recovery Rate", values["tcrr"][2], "$/GJ", url, detail),
+            comp("commodity", "Gas Cost Recovery Rate", values["gcrr"][2], "$/GJ", url, detail,
+                 market_reference="Eastward Energy gas cost recovery",
+                 notes="Reviewed monthly and adjusted to current market pricing; passed through without mark-up."),
+            comp("rider", "RDA Recovery Rate", values["rda"][2], "$/GJ", url, detail,
+                 notes="Recovery of deferred Revenue Deficiency Account costs"),
+            RateComponent("carbon", "Federal Carbon Tax", 0.0, "$/GJ", effective_date=values["carbon_date"].isoformat(),
+                          source_url=url, source_detail=detail + ", note 4",
+                          notes="Federal fuel charge reduced to $0/GJ as of "
+                                f"{values['carbon_date'].strftime('%B')} {values['carbon_date'].day}, {values['carbon_date'].year}"),
+        ]
+        for letter, percent in zip("AB", values["riders"]):
+            comps.append(comp("rider", f"Municipal Tax — Rate Rider {letter}", percent, "%", url, detail + ", note 6",
+                              notes="Percentage assessed on fixed monthly, base energy and demand charges only, not on "
+                                    "commodity, transportation or RDA rates"))
+        return TariffRecord(
+            utility_name="Heritage Gas", province="NS", utility_type="gas", tariff_name="Rate Class 3",
+            tariff_code="RC3", customer_class="commercial", eligibility=rc3["eligibility"],
+            usage_min=rc3["limit"], usage_unit="GJ/year", rate_structure="flat", pricing_method="regulated",
+            effective_date=max(effective, values["carbon_date"]).isoformat(), source_url=url, source_page=detail,
+            confidence="high",
+            notes=("Eastward Energy (formerly Heritage Gas) Large General Service Rate Class 3; demand unit and billing "
+                   "demand from the approved tariff. Published Total Variable excludes the demand charge. Rate Class 4 "
+                   "rates are negotiated per site and not published. HST is not included."),
+            components=comps,
+        )
 
     def _build(self, values: dict, column: int, url: str, eligibility: Optional[str] = None,
                usage_max: Optional[float] = None) -> TariffRecord:

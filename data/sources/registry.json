@@ -46,7 +46,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Regulated by the Régie de l'énergie du Québec. Default Rate D1 is parsed live for residential and business listings: seven annual-volume basic-fee bands, nine daily distribution blocks, supply, transportation, conditional load balancing and renewable-gas socialization, and the cap-and-trade (CTEAS) price, all in native cents/m3 stored as $/m3. Rates D3/D4/D5, inventory-related adjustments, fixed-price/renewable supply options and load-factor balancing remain gaps."
+      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Regulated by the Régie de l'énergie du Québec. Default Rate D1 is parsed live for residential and business listings: seven annual-volume basic-fee bands, nine daily distribution blocks, supply, transportation, conditional load balancing and renewable-gas socialization, and the cap-and-trade (CTEAS) price, all in native cents/m3 stored as $/m3. Rates D3 and D4 (subscribed-volume minimum daily obligation bands, withdrawal prices, eligibility thresholds) are parsed from article 14.3 of the same tariff. Interruptible D5, inventory-related adjustments, the load-factor balancing formula, rate reductions and fixed-price/renewable supply options remain gaps."
     },
     {
       "name": "FortisBC Energy",
@@ -73,9 +73,21 @@
           "source_type": "html",
           "description": "Province of British Columbia notice that carbon tax was eliminated effective April 1, 2025; required carbon evidence",
           "is_primary": false
+        },
+        {
+          "url": "https://fbcdotcomprod.blob.core.windows.net/libraries/docs/default-source/about-us-documents/regulatory-affairs-documents/gas-utility/rateschedule_5.pdf",
+          "source_type": "pdf",
+          "description": "Rate Schedule 5 General Firm Service (Mainland/Vancouver Island); link rediscovered from the business rates page",
+          "is_primary": false
+        },
+        {
+          "url": "https://fbcdotcomprod.blob.core.windows.net/libraries/docs/default-source/about-us-documents/regulatory-affairs-documents/gas-utility/rateschedule_4.pdf",
+          "source_type": "pdf",
+          "description": "Rate Schedule 4 Seasonal Firm Gas Service; link rediscovered from the business rates page",
+          "is_primary": false
         }
       ],
-      "notes": "FortisBC Energy is the natural gas distribution arm of FortisBC, serving most of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC). Rates 1/2/3 are parsed live for Mainland/Vancouver Island and Fort Nelson with daily basic charges and $/GJ delivery, storage and transport and cost of gas; missing carbon evidence rejects live output. Revelstoke propane, Rate 4 seasonal, Rate 5 contract (large multi-family/commercial), Rates 6/7 and Customer Choice marketer prices remain gaps."
+      "notes": "FortisBC Energy is the natural gas distribution arm of FortisBC, serving most of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC). Rates 1/2/3 are parsed live for Mainland/Vancouver Island and Fort Nelson with daily basic charges and $/GJ delivery, storage and transport and cost of gas; Rate 5 (monthly basic, $/GJ/month daily-demand charge, riders) and Rate 4 seasonal (off-peak/extension periods) are parsed from their approved rate schedules for Mainland/Vancouver Island. Missing carbon evidence rejects live output. Fort Nelson Rates 4/5 (no published price table), Revelstoke propane, Rates 6/7 and Customer Choice marketer prices remain gaps."
     },
     {
       "name": "ATCO Gas",
@@ -206,9 +218,15 @@
           "source_type": "pdf",
           "description": "October 2026 rate table: fixed, base energy (GS tiers), TCRR, GCRR, RDA, zero federal carbon note and municipal riders (link is rediscovered monthly)",
           "is_primary": false
+        },
+        {
+          "url": "https://eastwardenergy.com/wp-content/uploads/2025/01/Eastward-Energy-Tariff-January-14-2025.pdf",
+          "source_type": "pdf",
+          "description": "Approved tariff (linked as 'Tariffs' on https://eastwardenergy.com/regulatory/): Rate Class 3 demand charge unit ($/GJ of Billing Demand per month), billing-demand rule and eligibility",
+          "is_primary": false
         }
       ],
-      "notes": "Eastward Energy (formerly Heritage Gas) distributes natural gas in Nova Scotia. Regulated by the Nova Scotia Energy Board (formerly NSUARB). Residential and General Service are parsed live from the monthly rate table and must agree with the page summaries; the table's own dated zero federal carbon note is required. Rate Class 3 (demand charge unit not printed) and Rate Class 4 remain gaps."
+      "notes": "Eastward Energy (formerly Heritage Gas) distributes natural gas in Nova Scotia. Regulated by the Nova Scotia Energy Board (formerly NSUARB). Residential, General Service and Rate Class 3 are parsed live from the monthly rate table and must agree with the page summaries (RC3 with the approved tariff, which defines its demand-charge unit and billing demand); the table's own dated zero federal carbon note is required. Rate Class 4 rates are negotiated per site and not published."
     },
     {
       "name": "Liberty Utilities NB",
@@ -243,7 +261,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Liberty Utilities acquired the former Enbridge Gas New Brunswick operations. Regulated by the New Brunswick Energy and Utilities Board (NBEUB). SGS, MGS and LGS are parsed live with alternative customer charges, monthly delivery blocks, LGS seasonal excess-volume rates, the current Liberty Utility Gas commodity and required zero-carbon evidence. Process-load CGS/ICGS are non-building exclusions; Off-Peak Service and marketer prices remain gaps."
+      "notes": "Liberty Utilities acquired the former Enbridge Gas New Brunswick operations. Regulated by the New Brunswick Energy and Utilities Board (NBEUB). SGS, MGS, LGS and Off-Peak Service are parsed live with alternative customer charges, monthly delivery blocks, LGS seasonal excess-volume rates, the current Liberty Utility Gas commodity and required zero-carbon evidence. Process-load CGS/ICGS are non-building exclusions; marketer prices are not included."
     },
     {
       "name": "BC Hydro",

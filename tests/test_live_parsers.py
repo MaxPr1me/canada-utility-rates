@@ -1734,6 +1734,115 @@ class TestFortisBCEnergyLive:
         assert self.parse(document)["Commercial — Rate 3"].components[0].charge_value == 4.5
 
 
+class TestFortisBCEnergyRate5Live:
+    @pytest.fixture
+    def document(self):
+        return _gas_fixture("fortisbc_energy")
+
+    @staticmethod
+    def parse(document):
+        from datetime import date
+        from scrapers.utilities.fortisbc_energy import FortisBCEnergyScraper
+
+        pages = {key: page["text"] for key, page in document["pages"].items()}
+        urls = {key: document["pages"][key]["url"] for key in ("rate4", "rate5")}
+        return {record.tariff_name: record for record in FortisBCEnergyScraper().parse_pages(
+            pages, date(2026, 10, 5), document_urls=urls)}
+
+    @staticmethod
+    def values(record, season=None):
+        return {(c.component_type, c.component_name, c.season): (c.charge_value, c.charge_unit)
+                for c in record.components if season is None or c.season in (None, season)}
+
+    def test_old_call_without_documents_is_unchanged(self, document):
+        from datetime import date
+        from scrapers.utilities.fortisbc_energy import FortisBCEnergyScraper
+
+        pages = {key: page["text"] for key, page in document["pages"].items()}
+        assert len(FortisBCEnergyScraper().parse_pages(pages, date(2026, 10, 5))) == 6
+
+    def test_rate5_components_units_and_eligibility(self, document):
+        records = self.parse(document)
+        assert len(records) == 8
+        rate5 = records["Commercial — Rate 5"]
+        assert rate5.tariff_code == "Rate 5" and rate5.customer_class == "commercial"
+        assert rate5.effective_date == "2026-07-01"
+        assert rate5.usage_min == 5000 and rate5.usage_unit == "GJ/year"
+        assert "written contract only" in rate5.eligibility and "5,000 GJ" in rate5.eligibility
+        assert "Minimum monthly charge" in rate5.notes
+        assert {(c.component_name, c.charge_value, c.charge_unit) for c in rate5.components} == {
+            ("Basic Charge", 469.00, "$/month"),
+            ("Rider 2 (Clean Growth Innovation Fund Account)", 0.40, "$/month"),
+            ("Demand Charge", 37.735, "$/GJ/month of daily demand"),
+            ("Delivery Charge", 1.352, "$/GJ"),
+            ("Storage and Transport Charge", 0.784, "$/GJ"),
+            ("Cost of Gas", 1.660, "$/GJ"),
+            ("Rider 6 (Midstream Cost Reconciliation Account)", 0.126, "$/GJ"),
+            ("Rider 8 (Storage and Transport RNG)", 0.909, "$/GJ"),
+            ("BC Carbon Tax", 0.0, "$/GJ"),
+        }
+        carbon = next(c for c in rate5.components if c.component_type == "carbon")
+        assert carbon.effective_date == "2025-04-01"
+        for component in rate5.components:
+            assert component.source_url and component.source_detail and component.effective_date
+        assert all(c.effective_date == "2026-07-01" for c in rate5.components if c is not carbon)
+        assert not any("Fort Nelson" in name for name in records if "Rate 4" in name or "Rate 5" in name)
+
+    def test_rate4_seasonal_components(self, document):
+        rate4 = self.parse(document)["Commercial — Rate 4"]
+        assert rate4.tariff_code == "Rate 4" and rate4.effective_date == "2026-07-01"
+        assert "written consent only" in rate4.eligibility and "April 1 and November 1" in rate4.eligibility
+        assert "$20.00/GJ" in rate4.notes
+        got = {(c.component_name, c.season): (c.charge_value, c.charge_unit) for c in rate4.components}
+        assert got[("Basic Charge", None)] == (14.4230, "$/day")
+        assert got[("Rider 2 (Clean Growth Innovation Fund Account)", None)] == (0.0131, "$/day")
+        assert got[("Delivery Charge", "Off-Peak Period")] == (2.204, "$/GJ")
+        assert got[("Delivery Charge", "Extension Period")] == (3.268, "$/GJ")
+        assert got[("Cost of Gas", "Off-Peak Period")] == got[("Cost of Gas", "Extension Period")] == (1.660, "$/GJ")
+        assert got[("Storage and Transport Charge", "Off-Peak Period")] == (0.784, "$/GJ")
+        assert got[("Rider 8 (Storage and Transport RNG)", None)] == (0.909, "$/GJ")
+        off = next(c for c in rate4.components if c.season == "Off-Peak Period")
+        assert off.season_months == "April 1 to November 1"
+
+    @pytest.mark.parametrize(("key", "old", "new", "missing"), [
+        ("rate5", "Demand Charge per Month per Gigajoule of Daily Demand1 $ 37.735",
+         "Demand Charge per Month per Gigajoule of Daily Demand1 37.735", "Commercial — Rate 5"),
+        ("rate5", "Subtotal of per Month Delivery Margin Related Charges $ 469.40",
+         "Subtotal of per Month Delivery Margin Related Charges $ 470.40", "Commercial — Rate 5"),
+        ("rate5", "Effective Date: July 1, 2026", "Effective Date: July 1, 2027", "Commercial — Rate 5"),
+        ("business_rate45", "Rate 5 is authorized by written contract only", "Rate 5 is open to all",
+         "Commercial — Rate 5"),
+        ("rate4", "(b) Extension Period $ 3.268", "(b) Extension Period 3.268", "Commercial — Rate 4"),
+        ("rate4", "Subtotal of per Day Delivery Margin Related Charges $ 14.4361",
+         "Subtotal of per Day Delivery Margin Related Charges $ 14.5000", "Commercial — Rate 4"),
+        ("rate4", "Effective Date: July 1, 2026", "Effective Date: July 1, 2027", "Commercial — Rate 4"),
+        ("business_rate45", "Rate 4 is authorized by written consent only", "Rate 4 is open to all",
+         "Commercial — Rate 4"),
+    ])
+    def test_each_rate_fails_closed_independently(self, document, key, old, new, missing):
+        assert old in document["pages"][key]["text"]
+        document["pages"][key]["text"] = document["pages"][key]["text"].replace(old, new)
+        records = self.parse(document)
+        assert missing not in records
+        other = {"Commercial — Rate 5", "Commercial — Rate 4"} - {missing}
+        assert other <= set(records) and len(records) == 7
+
+    def test_carbon_evidence_still_required(self, document):
+        document["pages"]["carbon"]["text"] = "Carbon tax applies."
+        assert self.parse(document) == {}
+
+    def test_price_follows_source(self, document):
+        page = document["pages"]["rate5"]
+        page["text"] = page["text"].replace("$ 37.735", "$ 40.000", 1)
+        rate5 = self.parse(document)["Commercial — Rate 5"]
+        assert next(c.charge_value for c in rate5.components if c.component_type == "demand") == 40.0
+        page = document["pages"]["rate4"]
+        page["text"] = page["text"].replace("Off-Peak Period $ 2.204", "Off-Peak Period $ 2.500", 1)
+        rate4 = self.parse(document)["Commercial — Rate 4"]
+        assert next(c.charge_value for c in rate4.components
+                    if c.component_type == "delivery" and c.season == "Off-Peak Period") == 2.5
+
+
 class TestHeritageGasLive:
     @pytest.fixture
     def document(self):
@@ -1781,6 +1890,90 @@ class TestHeritageGasLive:
         assert len(self.parse(document)) == count
 
 
+class TestHeritageGasRC3Live:
+    @pytest.fixture
+    def document(self):
+        return _gas_fixture("heritage_gas")
+
+    @staticmethod
+    def parse(document, key=None, old=None, new=None, tariff_url="default"):
+        from datetime import date
+        from scrapers.utilities.heritage_gas import HeritageGasScraper
+
+        pages = {k: v["text"] for k, v in document["pages"].items()}
+        pages["tariff"] = document["rc3_pages"]["tariff"]["text"]
+        if key:
+            assert old in pages[key], old
+            pages[key] = pages[key].replace(old, new)
+        url = document["rc3_pages"]["tariff"]["url"] if tariff_url == "default" else tariff_url
+        records = HeritageGasScraper().parse_pages(
+            pages, date(2026, 10, 5), table_url=document["pages"]["rate_table"]["url"], tariff_url=url)
+        return {record.tariff_code: record for record in records}
+
+    def test_rc3_values_and_units(self, document):
+        records = self.parse(document)
+        assert set(records) == {"Residential", "GS", "RC3"}
+        rc3 = records["RC3"]
+        assert rc3.customer_class == "commercial" and rc3.usage_min == 50000 and rc3.usage_unit == "GJ/year"
+        assert "greater than 50,000 GJ per year" in rc3.eligibility
+        values = {(c.component_type, c.component_name): (c.charge_value, c.charge_unit) for c in rc3.components}
+        assert values[("fixed", "Fixed Monthly Customer Charge")] == (1995.54, "$/month")
+        assert values[("delivery", "Base Energy Charge")] == (0.167, "$/GJ")
+        assert values[("demand", "Demand Charge")] == (30.85, "$/GJ of Billing Demand/month")
+        assert values[("transmission", "Transportation Cost Recovery Rate")] == (0.71, "$/GJ")
+        assert values[("commodity", "Gas Cost Recovery Rate")] == (8.10, "$/GJ")
+        assert values[("rider", "RDA Recovery Rate")] == (1.0, "$/GJ")
+        assert values[("carbon", "Federal Carbon Tax")] == (0.0, "$/GJ")
+        assert [c.charge_value for c in rc3.components if c.charge_unit == "%"] == [5.0, 0.6]
+        demand = next(c for c in rc3.components if c.component_type == "demand")
+        assert "225 GJ per month" in demand.notes and "Contract Demand" in demand.notes
+        assert demand.source_url == document["rc3_pages"]["tariff"]["url"]
+        carbon = next(c for c in rc3.components if c.component_type == "carbon")
+        assert carbon.effective_date == "2025-04-01"
+
+    def test_absent_tariff_keeps_existing_behaviour(self, document):
+        from datetime import date
+        from scrapers.utilities.heritage_gas import HeritageGasScraper
+
+        pages = {k: v["text"] for k, v in document["pages"].items()}
+        records = HeritageGasScraper().parse_pages(pages, date(2026, 10, 5), table_url="https://example.test/t.pdf")
+        assert {r.tariff_code for r in records} == {"Residential", "GS"}
+
+    @pytest.mark.parametrize(("key", "old", "new"), [
+        ("tariff", "Demand Charge * $ 30.850 per GJ of Billing Demand per month",
+         "Demand Charge * $ 30.850 per kW of Billing Demand per month"),
+        ("tariff", "Demand Charge * $ 30.850", "Demand Charge * $ 31.850"),
+        ("tariff", "1. 225 GJ per month", "1. 250 GJ per month"),
+        ("tariff", "Effective for consumption on and after January 1, 2024", "Effective for consumption on and after January 1, 2027"),
+        ("rate_table", "RC3 Demand Charge $30.85", "RC3 Demand Charge $29.85"),
+        ("rate_table", "GS Tiers: $0.167", "GS Tiers: $0.170"),
+        ("business", "greater than 50,000 GJ per year", "greater than 75,000 GJ per year"),
+    ])
+    def test_rc3_fails_closed_independently(self, document, key, old, new):
+        records = self.parse(document, key, old, new)
+        assert set(records) == {"Residential", "GS"}
+
+    def test_missing_tariff_url_rejects_only_rc3(self, document):
+        assert set(self.parse(document, tariff_url=None)) == {"Residential", "GS"}
+
+    def test_rc3_price_follows_source(self, document):
+        from datetime import date
+        from scrapers.utilities.heritage_gas import HeritageGasScraper
+
+        rc3 = self.parse(document, "rate_table", "$1,995.54", "$2,000.00")
+        assert "RC3" not in rc3  # tariff still says 1995.54, so the mismatch is rejected
+        both = self.parse(document, "tariff", "$ 1995.54 per month", "$ 2000.00 per month")
+        assert "RC3" not in both
+        text = document["rc3_pages"]["tariff"]["text"]
+        pages = {k: v["text"] for k, v in document["pages"].items()}
+        pages["rate_table"] = pages["rate_table"].replace("$1,995.54", "$2,000.00").replace("$30.85", "$31.50")
+        pages["tariff"] = text.replace("1995.54", "2000.00").replace("30.850", "31.500")
+        records = {r.tariff_code: r for r in HeritageGasScraper().parse_pages(
+            pages, date(2026, 10, 5), table_url="https://example.test/t.pdf", tariff_url="https://example.test/tariff.pdf")}
+        values = {c.component_type: c.charge_value for c in records["RC3"].components if c.component_type in ("fixed", "demand")}
+        assert values == {"fixed": 2000.0, "demand": 31.5}
+
+
 class TestEnergirLive:
     @pytest.fixture
     def document(self):
@@ -1797,7 +1990,7 @@ class TestEnergirLive:
 
     def test_rate_d1_bands_and_components(self, document):
         records = self.parse(document)
-        assert set(records) == {"Residential — Rate D1", "Business — Rate D1"}
+        assert set(records) == {"Residential — Rate D1", "Business — Rate D1", "Commercial — Rate D3", "Commercial — Rate D4"}
         record = records["Residential — Rate D1"]
         assert record.effective_date == "2026-10-01" and record.rate_structure == "tiered"
         basic = [(c.charge_value, c.tier_threshold) for c in record.components if c.component_type == "fixed"]
@@ -1812,23 +2005,23 @@ class TestEnergirLive:
         assert all(c.source_url == document["tariff_url"] and c.source_detail for c in record.components)
         assert [c.charge_value for c in records["Business — Rate D1"].components] == [c.charge_value for c in record.components]
 
-    @pytest.mark.parametrize(("old", "new"), [
-        ("15.535¢/m³", "15.535$/m³"),
-        ("is 8.727¢/m³", "is 8.727"),
-        ("from 30 to 100 21.376", "from 40 to 100 21.376"),
-        ("from 10,950 to 36,500 127.397", "from 10,950 to 36,500"),
-        ("¢/Metering device/Day", "$/Metering device/Month"),
-        ("as of October 1, 2026 is 2.165", "as of September 1, 2026 is 2.165"),
-        ("Rate D1 applies by default", "Rate D3 applies by default"),
+    @pytest.mark.parametrize(("old", "new", "surviving"), [
+        ("15.535¢/m³", "15.535$/m³", set()),
+        ("is 8.727¢/m³", "is 8.727", set()),
+        ("from 30 to 100 21.376", "from 40 to 100 21.376", {"D3", "D4"}),
+        ("from 10,950 to 36,500 127.397", "from 10,950 to 36,500", {"D3", "D4"}),
+        ("¢/Metering device/Day", "$/Metering device/Month", {"D3", "D4"}),
+        ("as of October 1, 2026 is 2.165", "as of September 1, 2026 is 2.165", set()),
+        ("Rate D1 applies by default", "Rate D3 applies by default", {"D3", "D4"}),
     ])
-    def test_required_source_failure_is_not_hidden(self, document, old, new):
+    def test_required_source_failure_is_not_hidden(self, document, old, new, surviving):
         changed = 0
         for page in document["tariff_pages"]:
             if old in page["text"] or old in " ".join(page["text"].split()):
                 page["text"] = " ".join(page["text"].split()).replace(old, new, 1)
                 changed += 1
         assert changed == 1
-        assert self.parse(document) == {}
+        assert {r.tariff_code for r in self.parse(document).values()} == surviving
 
     def test_edition_must_be_current_and_linked(self, document):
         from datetime import date
@@ -1843,6 +2036,95 @@ class TestEnergirLive:
             page["text"] = page["text"].replace("31.299", "32.000")
         record = self.parse(document)["Residential — Rate D1"]
         assert next(c for c in record.components if c.component_type == "delivery").charge_value == 0.32
+
+
+class TestEnergirD3D4Live:
+    @pytest.fixture
+    def document(self):
+        return _gas_fixture("energir")
+
+    @staticmethod
+    def parse(document, today=None):
+        from datetime import date
+        from scrapers.utilities.energir import EnergirScraper
+
+        return {record.tariff_name: record for record in EnergirScraper().parse_pages(
+            {"pricing": document["pricing"]["text"], "tariff": " ".join(page["text"] for page in document["tariff_pages"])},
+            today or date(2026, 10, 5), tariff_url=document["tariff_url"])}
+
+    @staticmethod
+    def mutate(document, old, new):
+        from scrapers.utilities.energir import EnergirScraper
+
+        changed = 0
+        for page in document["tariff_pages"]:
+            text = EnergirScraper._norm(page["text"])
+            if old in text:
+                page["text"] = text.replace(old, new, 1)
+                changed += 1
+        assert changed == 1, old
+
+    def test_d3_d4_prices_units_and_eligibility(self, document):
+        records = self.parse(document)
+        assert set(records) == {"Residential — Rate D1", "Business — Rate D1", "Commercial — Rate D3", "Commercial — Rate D4"}
+        for code in ("D3", "D4"):
+            record = records[f"Commercial — Rate {code}"]
+            assert record.tariff_code == code and record.customer_class == "commercial"
+            assert record.effective_date == "2026-10-01" and record.rate_structure == "demand"
+            assert all(c.effective_date == "2026-10-01" and c.source_url == document["tariff_url"]
+                       and "article" in c.source_detail for c in record.components)
+            mdo = [c for c in record.components if c.component_type == "demand"]
+            assert [(c.charge_value, c.tier_threshold) for c in mdo] == [
+                (0.11565, 333.0), (0.09317, 1000.0), (0.06356, 3000.0), (0.0527, 10000.0), (0.03863, 30000.0),
+                (0.0302, 100000.0), (0.02156, 300000.0), (0.01741, 1000000.0), (0.01185, None)]
+            assert {c.charge_unit for c in mdo} == {"$/m³/day"}
+            by_name = {c.component_name: c for c in record.components}
+            energy = by_name["Volume Withdrawn up to Subscribed Volume"]
+            assert (energy.charge_value, energy.charge_unit) == (0.0035, "$/m³")
+            excess = [c for c in record.components if c.component_name.startswith("Withdrawal Above Subscribed Volume")]
+            assert [c.charge_value for c in excess] == [0.18476, 0.13996, 0.10362, 0.07283, 0.05869, 0.04872, 0.04038]
+            assert all(c.sub_component == "conditional" for c in excess)
+            assert by_name["Natural Gas Supply"].charge_value == 0.15535
+            assert by_name["Cap-and-Trade Emission Allowances (CTEAS)"].charge_value == 0.08727
+            assert by_name["Load Balancing — Average Price"].sub_component == "conditional"
+        d3 = {c.component_name: c for c in records["Commercial — Rate D3"].components}
+        d4 = {c.component_name: c for c in records["Commercial — Rate D4"].components}
+        assert d3["Load Balancing — Average Price"].charge_value == 0.01237
+        assert d4["Load Balancing — Average Price"].charge_value == 0.0123
+        assert records["Commercial — Rate D3"].usage_min == 75000 and records["Commercial — Rate D3"].usage_unit == "m³/year"
+        assert "333 m³/day" in records["Commercial — Rate D3"].eligibility and "60%" in records["Commercial — Rate D3"].eligibility
+        assert "10,000 m³/day" in records["Commercial — Rate D4"].eligibility
+        assert records["Commercial — Rate D4"].usage_min is None
+
+    @pytest.mark.parametrize(("old", "new", "missing"), [
+        ("Distribution Service D3 For all withdrawals", "Distribution Service D3 For some withdrawals", {"D3"}),
+        ("Distribution Service D4 For all withdrawals", "Distribution Service D4 For some withdrawals", {"D4"}),
+        ("D4 1.230", "D4 n/a", {"D4"}),
+        ("D3 1.237", "D3 n/a", {"D3"}),
+        ("Subscribed Volume Price m³/Day ¢/m³/Day first 333", "Subscribed Volume Price m³/Day ¢/GJ/Day first 333", {"D3", "D4"}),
+        ("from 333 to 1,000 9.317", "from 400 to 1,000 9.317", {"D3", "D4"}),
+        ("the unit price is 0.350¢/m³", "the unit price is 0.350$/m³", {"D3", "D4"}),
+        ("15.535¢/m³", "15.535$/m³", {"D1", "D3", "D4"}),
+        ("¢/Metering device/Day", "$/Metering device/Month", {"D1"}),
+    ])
+    def test_rates_fail_independently(self, document, old, new, missing):
+        self.mutate(document, old, new)
+        codes = {record.tariff_code for record in self.parse(document).values()}
+        assert codes == {"D1", "D3", "D4"} - missing
+
+    def test_edition_failure_rejects_everything(self, document):
+        from datetime import date
+
+        assert self.parse(document, date(2026, 9, 30)) == {}
+
+    def test_price_follows_source(self, document):
+        self.mutate(document, "from 333 to 1,000 9.317", "from 333 to 1,000 9.500")
+        self.mutate(document, "D4 1.230", "D4 1.500")
+        records = self.parse(document)
+        assert [c.charge_value for c in records["Commercial — Rate D3"].components if c.component_type == "demand"][1] == 0.095
+        d4 = {c.component_name: c for c in records["Commercial — Rate D4"].components}
+        assert d4["Load Balancing — Average Price"].charge_value == 0.015
+        assert [c.charge_value for c in records["Residential — Rate D1"].components if c.component_type == "delivery"][0] == 0.31299
 
 
 class TestLibertyGasNBLive:
@@ -1888,6 +2170,70 @@ class TestLibertyGasNBLive:
         assert old in document["pages"][key]["text"]
         document["pages"][key]["text"] = document["pages"][key]["text"].replace(old, new, 1)
         assert len(self.parse(document)) == count
+
+
+class TestLibertyOffPeakLive:
+    @pytest.fixture
+    def document(self):
+        return _gas_fixture("liberty_gas_nb")
+
+    @staticmethod
+    def parse(document, with_ops=True):
+        from datetime import date
+        from scrapers.utilities.liberty_gas_nb import LibertyGasNBScraper
+
+        pages = {key: page["text"] for key, page in document["pages"].items()}
+        if with_ops:
+            pages["ops"] = document["ops_page"]["text"]
+        return {record.tariff_code: record for record in LibertyGasNBScraper().parse_pages(pages, date(2026, 10, 5))}
+
+    def test_ops_values_units_and_eligibility(self, document):
+        records = self.parse(document)
+        assert set(records) == {"SGS", "MGS", "LGS", "OPS"}
+        ops = records["OPS"]
+        assert ops.tariff_name == "Commercial — Off-Peak Service" and ops.customer_class == "commercial"
+        assert ops.effective_date == "2026-10-01" and ops.rate_structure == "flat"
+        assert ops.eligibility == (
+            "The Off-Peak Service (OPS) Rates are applied to any customer requiring the use of Liberty's "
+            "Distribution System to have a supply of natural gas delivered to a single location served through "
+            "one meter for the months of April through November.")
+        by_type = {c.component_type: c for c in ops.components}
+        assert (by_type["fixed"].charge_value, by_type["fixed"].charge_unit) == (50.0, "$/month")
+        assert (by_type["delivery"].charge_value, by_type["delivery"].charge_unit) == (5.6244, "$/GJ")
+        assert by_type["fixed"].effective_date == by_type["delivery"].effective_date == "2025-01-01"
+        assert (by_type["commodity"].charge_value, by_type["commodity"].effective_date) == (11.02, "2026-10-01")
+        assert (by_type["carbon"].charge_value, by_type["carbon"].effective_date) == (0.0, "2025-04-01")
+        assert len(ops.components) == 4
+        assert "$10 per GJ" in ops.notes and "No minimum annual charge" in ops.notes
+        assert all(c.source_url and c.source_detail for c in ops.components)
+
+    def test_ops_absent_without_detail_section(self, document):
+        assert set(self.parse(document, with_ops=False)) == {"SGS", "MGS", "LGS"}
+
+    @pytest.mark.parametrize(("page", "old", "new"), [
+        ("ops", "Delivery Charge ($ per GJ): For all volumes delivered per month: 5.6244",
+         "Delivery Charge ($ per GJ): For all volumes delivered per month: 5.7000"),
+        ("ops", "for the months of April through November.", "for the months of April through October."),
+        ("ops", "subject to a Seasonal Overrun Charge of $10 per GJ", "subject to a Seasonal Overrun Charge of $12 per GJ"),
+        ("ops", "on and after January 1, 2025.", "on and after January 1, 2026."),
+        ("classes", "Off-Peak N/A N/A 50.00 N/A 5.6244", "Off-Peak N/A N/A 50.00 N/A 0.0000"),
+    ])
+    def test_ops_rejected_independently(self, document, page, old, new):
+        if page == "ops":
+            assert old in document["ops_page"]["text"]
+            document["ops_page"]["text"] = document["ops_page"]["text"].replace(old, new, 1)
+        else:
+            assert old in document["pages"][page]["text"]
+            document["pages"][page]["text"] = document["pages"][page]["text"].replace(old, new, 1)
+        assert set(self.parse(document)) == {"SGS", "MGS", "LGS"}
+
+    def test_price_follows_source(self, document):
+        document["pages"]["classes"]["text"] = document["pages"]["classes"]["text"].replace(
+            "Off-Peak N/A N/A 50.00", "Off-Peak N/A N/A 55.00", 1)
+        document["ops_page"]["text"] = document["ops_page"]["text"].replace(
+            "Customer Charge ($ per Month): 50.00", "Customer Charge ($ per Month): 55.00", 1)
+        ops = self.parse(document)["OPS"]
+        assert next(c for c in ops.components if c.component_type == "fixed").charge_value == 55.0
 
 
 class TestNovaScotiaBuildingOptions:
@@ -2000,7 +2346,7 @@ class TestRegionalBatchStorage:
             from scrapers.utilities.energir import EnergirScraper
 
             records = EnergirScraper().mark_live_parsed(list(TestEnergirLive.parse(document).values()))
-            assert len(records) == 2
+            assert len(records) == 4
         elif family == "liberty_gas_nb":
             from scrapers.utilities.liberty_gas_nb import LibertyGasNBScraper
 

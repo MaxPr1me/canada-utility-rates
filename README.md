@@ -27,25 +27,25 @@ The export combines October 1 CI and targeted BC Hydro/SaskPower/Yukon observati
 with October 2 updates to Hydro-Quebec, NL Hydro, SaskEnergy, FortisBC Electric,
 Nova Scotia Power and Centra Gas. The latest implementation milestones are
 `6cdbc67` and `9b5980d`; the latter's GitHub Pages deployment succeeded.
-The export was regenerated on **2026-10-05** after the third regional (gas) batch. History was preserved.
+The export was regenerated on **2026-10-05** after the fourth regional (gas) batch. History was preserved.
 A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
 
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
-| Stored tariff versions / components | 632 / 4,044, including history and older estimates |
-| Live-sourced tariffs | **150 latest tariffs across 18 utilities**; 152 stored live versions |
-| Active regional campaign | **148 latest live records across all 16 target utilities** |
+| Stored tariff versions / components | 638 / 4,123, including history and older estimates |
+| Live-sourced tariffs | **156 latest tariffs across 18 utilities**; 158 stored live versions |
+| Active regional campaign | **154 latest live records across all 16 target utilities** |
 | Remaining seed-only campaign utilities | **0**; every target utility still has recorded catalogue gaps |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Deterministic tests | **507 passing** on Python 3.11 |
+| Deterministic tests | **551 passing** on Python 3.11 |
 
 Live output currently includes BC Hydro (8), FortisBC Electric (6), Manitoba Hydro (8), NB Power (3),
 Nova Scotia Power (10), Hydro-Quebec (9), Maritime Electric (10), Newfoundland Power (4),
-NL Hydro (18), SaskPower (41), SaskEnergy (6), Centra Gas Manitoba (12), FortisBC Energy (6),
-Energir (2), Heritage/Eastward (2), Liberty NB (3), FortisAlberta (1), and Yukon Energy (1).
+NL Hydro (18), SaskPower (41), SaskEnergy (6), Centra Gas Manitoba (12), FortisBC Energy (8),
+Energir (4), Heritage/Eastward (3), Liberty NB (4), FortisAlberta (1), and Yukon Energy (1).
 These counts use the latest version per tariff, not complete utility catalogues.
 They include conditional products, adjustment-only records and retained non-building
 references, not a count of complete building classes. The two live records outside
@@ -99,11 +99,23 @@ parses SGS/MGS/LGS with alternative customer charges and LGS seasonal blocks. Ea
 requires dated current carbon evidence: BC's carbon tax elimination, Quebec's
 cap-and-trade price, Eastward's own zero federal-charge note and the CRA's New Brunswick
 period. Larger contract/interruptible classes, marketer prices and inventory
-adjustments remain recorded gaps.
+adjustments were recorded gaps at that checkpoint.
+
+The fourth regional batch (October 5) adds gas contract and large-volume classes.
+FortisBC Energy parses Rate 5 General Firm Service (the tariff prints its basic
+charge monthly, although the business page says daily) and seasonal Rate 4 from the
+approved schedules; Fort Nelson Rates 4/5 have no published price table. Energir
+parses D3 and D4 with subscribed-volume bands in $/m³/day and conditional
+above-subscribed-volume and load-balancing prices. Eastward parses Rate Class 3 with
+its demand charge per GJ of Billing Demand from the approved tariff PDF (Rate Class 4
+is negotiated per site, not published). Liberty NB parses Off-Peak Service with its
+April-November eligibility and seasonal overrun as conditions. Remaining gas gaps:
+Revelstoke propane, Rates 6/7, Energir D5/inventory adjustments/load-factor formula,
+Liberty CGS/ICGS and marketer prices.
 
 **Resume order:** continue the outstanding building-catalogue and component audits
-at the sixteen live target utilities (gas gaps above plus the electricity rows in the
-matrix), with shared tests, registry, database/export and publication handled serially.
+at the sixteen live target utilities (remaining gas gaps above, SaskEnergy small
+industrial/fees and Centra PUB conditions, plus the electricity rows in the matrix), with shared tests, registry, database/export and publication handled serially.
 SaskPower's audited building schedules are implemented; the other utilities still have
 recorded catalogue or verification gaps. No source-blocked or unaudited class is
 considered finished.
@@ -268,7 +280,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 507 deterministic tests across 8 test modules
+├── tests/                    ← 551 deterministic tests across 8 test modules
 │   ├── fixtures/             ← Source-derived fixtures for nine utility modules; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
