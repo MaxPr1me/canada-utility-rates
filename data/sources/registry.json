@@ -31,22 +31,22 @@
       "utility_type": "gas",
       "scraper_module": "scrapers.utilities.energir",
       "scraper_class": "EnergirScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.energir.com/en/residential/billing-and-payments/understanding-my-bill/rates/",
+          "url": "https://energir.com/en/residential/customer-centre/billing-and-pricing/pricing",
           "source_type": "html",
-          "description": "Residential natural gas rates in Quebec",
+          "description": "Pricing page that links the current Conditions of Service and Tariff edition",
           "is_primary": true
         },
         {
-          "url": "https://www.energir.com/en/business/billing-and-payments/understanding-my-bill/rates/",
-          "source_type": "html",
-          "description": "Commercial and industrial gas rates",
+          "url": "https://energir.com/files/energir_common/import/Fichiers/Affaires/Tarif/CST-EN-1oct2026.pdf",
+          "source_type": "pdf",
+          "description": "Conditions of Service and Tariff as of October 1, 2026: supply, transportation, load balancing, Rate D1, renewable-gas socialization and cap-and-trade prices (link is rediscovered from the pricing page each run)",
           "is_primary": false
         }
       ],
-      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Regulated by the Régie de l'énergie du Québec."
+      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Regulated by the Régie de l'énergie du Québec. Default Rate D1 is parsed live for residential and business listings: seven annual-volume basic-fee bands, nine daily distribution blocks, supply, transportation, conditional load balancing and renewable-gas socialization, and the cap-and-trade (CTEAS) price, all in native cents/m3 stored as $/m3. Rates D3/D4/D5, inventory-related adjustments, fixed-price/renewable supply options and load-factor balancing remain gaps."
     },
     {
       "name": "FortisBC Energy",
@@ -54,22 +54,28 @@
       "utility_type": "gas",
       "scraper_module": "scrapers.utilities.fortisbc_energy",
       "scraper_class": "FortisBCEnergyScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.fortisbc.com/accounts-billing/billing-rates/natural-gas-rates/residential-rates",
+          "url": "https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/residential-rates",
           "source_type": "html",
-          "description": "Residential natural gas rates for FortisBC Energy service area",
+          "description": "Rate 1 residential tables for Mainland/Vancouver Island and Fort Nelson",
           "is_primary": true
         },
         {
-          "url": "https://www.fortisbc.com/accounts-billing/billing-rates/natural-gas-rates/commercial-rates",
+          "url": "https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/business-rates",
           "source_type": "html",
-          "description": "Commercial natural gas rates",
+          "description": "Rate 2 and Rate 3 commercial tables and annual-volume eligibility",
+          "is_primary": false
+        },
+        {
+          "url": "https://www2.gov.bc.ca/gov/content/taxes/sales-taxes/motor-fuel-carbon-tax",
+          "source_type": "html",
+          "description": "Province of British Columbia notice that carbon tax was eliminated effective April 1, 2025; required carbon evidence",
           "is_primary": false
         }
       ],
-      "notes": "FortisBC Energy is the natural gas distribution arm of FortisBC, serving most of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC)."
+      "notes": "FortisBC Energy is the natural gas distribution arm of FortisBC, serving most of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC). Rates 1/2/3 are parsed live for Mainland/Vancouver Island and Fort Nelson with daily basic charges and $/GJ delivery, storage and transport and cost of gas; missing carbon evidence rejects live output. Revelstoke propane, Rate 4 seasonal, Rate 5 contract (large multi-family/commercial), Rates 6/7 and Customer Choice marketer prices remain gaps."
     },
     {
       "name": "ATCO Gas",
@@ -181,22 +187,28 @@
       "utility_type": "gas",
       "scraper_module": "scrapers.utilities.heritage_gas",
       "scraper_class": "HeritageGasScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
           "url": "https://eastwardenergy.com/for-home/rates/",
           "source_type": "html",
-          "description": "Residential natural gas rates in Nova Scotia (Eastward Energy, formerly Heritage Gas)",
+          "description": "Residential rate summary (Eastward Energy, formerly Heritage Gas); cross-checked against the rate table",
           "is_primary": true
         },
         {
           "url": "https://eastwardenergy.com/for-business/rates/",
           "source_type": "html",
-          "description": "Commercial natural gas rates",
+          "description": "Commercial class definitions, General Service summary and the 'View Rates' link to the monthly rate table",
+          "is_primary": false
+        },
+        {
+          "url": "https://eastwardenergy.com/wp-content/uploads/2026/10/Rate-Table_2026-October-FINAL.pdf",
+          "source_type": "pdf",
+          "description": "October 2026 rate table: fixed, base energy (GS tiers), TCRR, GCRR, RDA, zero federal carbon note and municipal riders (link is rediscovered monthly)",
           "is_primary": false
         }
       ],
-      "notes": "Heritage Gas is the natural gas distribution utility in Nova Scotia, serving the Halifax-Dartmouth metro area and parts of the province along the Maritimes and Northeast Pipeline corridor. Regulated by the Nova Scotia Utility and Review Board (NSUARB)."
+      "notes": "Eastward Energy (formerly Heritage Gas) distributes natural gas in Nova Scotia. Regulated by the Nova Scotia Energy Board (formerly NSUARB). Residential and General Service are parsed live from the monthly rate table and must agree with the page summaries; the table's own dated zero federal carbon note is required. Rate Class 3 (demand charge unit not printed) and Rate Class 4 remain gaps."
     },
     {
       "name": "Liberty Utilities NB",
@@ -204,22 +216,34 @@
       "utility_type": "gas",
       "scraper_module": "scrapers.utilities.liberty_gas_nb",
       "scraper_class": "LibertyGasNBScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://naturalgasnb.com/en/for-home/accounts-billing/customer-rate-classes/#current-rate",
+          "url": "https://naturalgasnb.com/en/for-home/accounts-billing/customer-rate-classes/",
           "source_type": "html",
-          "description": "Residential natural gas rates in New Brunswick",
+          "description": "Distribution rates for all six classes and SGS/MGS/LGS rate schedules (effective January 1, 2025)",
           "is_primary": true
         },
         {
-          "url": "https://naturalgasnb.com/en/for-business/accounts-and-billing/customer-rate-classes/#current-rate",
+          "url": "https://naturalgasnb.com/en/for-home/accounts-billing/our-product-offering/",
           "source_type": "html",
-          "description": "Commercial natural gas rates in New Brunswick",
+          "description": "Liberty Utility Gas commodity rate history ($/GJ); current month required for SGS",
+          "is_primary": false
+        },
+        {
+          "url": "https://naturalgasnb.com/en/for-business/accounts-and-billing/our-product-offering/",
+          "source_type": "html",
+          "description": "Liberty Utility Gas commodity rate history ($/GJ); current month required for MGS/LGS",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/fcrates/fuel-charge-rates.html",
+          "source_type": "html",
+          "description": "Dated federal zero fuel charge and New Brunswick's charge period ending March 31, 2025; required carbon evidence",
           "is_primary": false
         }
       ],
-      "notes": "Liberty Utilities acquired the former Enbridge Gas New Brunswick operations. Regulated by the New Brunswick Energy and Utilities Board (NBEUB)."
+      "notes": "Liberty Utilities acquired the former Enbridge Gas New Brunswick operations. Regulated by the New Brunswick Energy and Utilities Board (NBEUB). SGS, MGS and LGS are parsed live with alternative customer charges, monthly delivery blocks, LGS seasonal excess-volume rates, the current Liberty Utility Gas commodity and required zero-carbon evidence. Process-load CGS/ICGS are non-building exclusions; Off-Peak Service and marketer prices remain gaps."
     },
     {
       "name": "BC Hydro",

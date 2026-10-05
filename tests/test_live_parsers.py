@@ -1677,6 +1677,219 @@ class TestCentraGasLive:
         assert next(component.charge_value for component in record.components if component.component_type == "fixed") == 86
 
 
+def _gas_fixture(name):
+    import json
+    from pathlib import Path
+
+    return json.loads((Path(__file__).parent / "fixtures" / f"{name}.json").read_text(encoding="utf-8"))
+
+
+class TestFortisBCEnergyLive:
+    @pytest.fixture
+    def document(self):
+        return _gas_fixture("fortisbc_energy")
+
+    @staticmethod
+    def parse(document):
+        from datetime import date
+        from scrapers.utilities.fortisbc_energy import FortisBCEnergyScraper
+
+        return {record.tariff_name: record for record in FortisBCEnergyScraper().parse_pages(
+            {key: page["text"] for key, page in document["pages"].items()}, date(2026, 10, 5))}
+
+    def test_service_areas_native_units_and_dates(self, document):
+        records = self.parse(document)
+        assert set(records) == {
+            "Residential — Rate 1", "Residential — Rate 1 (Fort Nelson)", "Commercial — Rate 2",
+            "Commercial — Rate 2 (Fort Nelson)", "Commercial — Rate 3", "Commercial — Rate 3 (Fort Nelson)"}
+        for record in records.values():
+            assert record.effective_date == "2026-07-01"
+            units = {component.component_type: component.charge_unit for component in record.components}
+            assert units == {"fixed": "$/day", "delivery": "$/GJ", "transmission": "$/GJ", "commodity": "$/GJ", "carbon": "$/GJ"}
+            carbon = next(component for component in record.components if component.component_type == "carbon")
+            assert carbon.charge_value == 0 and carbon.effective_date == "2025-04-01"
+            assert all(component.source_url and component.source_detail for component in record.components)
+        assert records["Residential — Rate 1"].components[1].charge_value == 8.469
+        assert records["Residential — Rate 1 (Fort Nelson)"].components[2].charge_value == 0.987
+        assert records["Commercial — Rate 2"].usage_max == 2000 and records["Commercial — Rate 3"].usage_min == 2000
+        assert "Revelstoke" not in " ".join(records)
+
+    @pytest.mark.parametrize(("key", "old", "new", "count"), [
+        ("carbon", "Carbon tax was eliminated effective April 1, 2025.", "Carbon tax applies.", 0),
+        ("carbon", "effective April 1, 2025.", "effective April 1, 2027.", 0),
+        ("residential", "Delivery charge per GJ $8.114", "Delivery charge per GJ 8.114", 5),
+        ("residential", "(Effective July 1, 2026) Basic charge per day $0.4216 Delivery charge per gigajoule",
+         "(Effective July 1, 2027) Basic charge per day $0.4216 Delivery charge per gigajoule", 5),
+        ("business", "Rate 3 You are", "Rate 3 is for", 2),
+        ("business", "use less than 2,000 gigajoules (GJ) annually", "use some gas", 4),
+        ("business", "Cost of gas per GJ $1.660", "Cost of gas per GJ $0.000", 5),
+    ])
+    def test_required_source_failure_is_not_hidden(self, document, key, old, new, count):
+        assert old in document["pages"][key]["text"]
+        document["pages"][key]["text"] = document["pages"][key]["text"].replace(old, new, 1)
+        assert len(self.parse(document)) == count
+
+    def test_price_follows_source(self, document):
+        document["pages"]["business"]["text"] = document["pages"]["business"]["text"].replace("$4.3526", "$4.5000", 1)
+        assert self.parse(document)["Commercial — Rate 3"].components[0].charge_value == 4.5
+
+
+class TestHeritageGasLive:
+    @pytest.fixture
+    def document(self):
+        return _gas_fixture("heritage_gas")
+
+    @staticmethod
+    def parse(document):
+        from datetime import date
+        from scrapers.utilities.heritage_gas import HeritageGasScraper
+
+        return {record.tariff_code: record for record in HeritageGasScraper().parse_pages(
+            {key: page["text"] for key, page in document["pages"].items()}, date(2026, 10, 5),
+            table_url=document["pages"]["rate_table"]["url"])}
+
+    def test_classes_components_and_tiers(self, document):
+        records = self.parse(document)
+        assert set(records) == {"Residential", "GS"}
+        residential, general = records["Residential"], records["GS"]
+        assert residential.effective_date == general.effective_date == "2026-10-01"
+        assert [c.charge_value for c in residential.components if c.component_type in ("fixed", "delivery", "commodity")] == [29.0, 12.349, 12.49]
+        tiers = [(c.charge_value, c.tier_threshold) for c in general.components if c.component_type == "delivery"]
+        assert tiers == [(9.142, 15.0), (5.943, 415.0), (5.693, None)]
+        assert general.usage_max == 50000 and "Rate Class 3" in general.eligibility
+        for record in records.values():
+            carbon = next(c for c in record.components if c.component_type == "carbon")
+            assert carbon.charge_value == 0 and carbon.effective_date == "2025-04-01"
+            assert [c.charge_value for c in record.components if c.charge_unit == "%"] == [5.0, 0.6]
+            assert all(c.source_url == document["pages"]["rate_table"]["url"] and c.source_detail for c in record.components)
+
+    @pytest.mark.parametrize(("key", "old", "new", "count"), [
+        ("rate_table", "$0.000 $0.000 $0.000", "$0.500 $0.500 $0.500", 0),
+        ("rate_table", "as of April 1, 2025", "as of April 1, 2027", 0),
+        ("rate_table", "RATE TABLE OCTOBER 2026", "RATE TABLE NOVEMBER 2026", 0),
+        ("rate_table", "Total Variable ($/GJ) $26.55", "Total Variable ($/GJ) $27.55", 0),
+        ("rate_table", "(>15 - 415 GJs/month)", "(>20 - 415 GJs/month)", 0),
+        ("rate_table", "Rate Rider A: 5%", "Rate Rider A: five percent", 0),
+        ("residential", "Variable Charge per GJ $12.349", "Variable Charge per GJ $12.000", 1),
+        ("residential", "as of October 1, 2026", "as of September 1, 2026", 1),
+        ("business", "Commodity Charge per GJ $8.10", "Commodity Charge per GJ $8.20", 1),
+        ("business", "General Service: Any Customer", "General Service: Some Customers", 1),
+    ])
+    def test_required_source_failure_is_not_hidden(self, document, key, old, new, count):
+        assert old in document["pages"][key]["text"]
+        document["pages"][key]["text"] = document["pages"][key]["text"].replace(old, new, 1)
+        assert len(self.parse(document)) == count
+
+
+class TestEnergirLive:
+    @pytest.fixture
+    def document(self):
+        return _gas_fixture("energir")
+
+    @staticmethod
+    def parse(document, today=None):
+        from datetime import date
+        from scrapers.utilities.energir import EnergirScraper
+
+        return {record.tariff_name: record for record in EnergirScraper().parse_pages(
+            {"pricing": document["pricing"]["text"], "tariff": " ".join(page["text"] for page in document["tariff_pages"])},
+            today or date(2026, 10, 5), tariff_url=document["tariff_url"])}
+
+    def test_rate_d1_bands_and_components(self, document):
+        records = self.parse(document)
+        assert set(records) == {"Residential — Rate D1", "Business — Rate D1"}
+        record = records["Residential — Rate D1"]
+        assert record.effective_date == "2026-10-01" and record.rate_structure == "tiered"
+        basic = [(c.charge_value, c.tier_threshold) for c in record.components if c.component_type == "fixed"]
+        assert basic[0] == (0.62525, 10950.0) and basic[-1] == (6.89394, None) and len(basic) == 7
+        blocks = [(c.charge_value, c.tier_threshold) for c in record.components if c.component_type == "delivery"]
+        assert blocks[0] == (0.31299, 30.0) and blocks[-1] == (0.04038, None) and len(blocks) == 9
+        by_name = {c.component_name: c for c in record.components}
+        assert by_name["Natural Gas Supply"].charge_value == 0.15535
+        assert by_name["Cap-and-Trade Emission Allowances (CTEAS)"].charge_value == 0.08727
+        assert by_name["Load Balancing"].sub_component == "conditional"
+        assert all(c.charge_unit == "$/m³" for c in record.components if c.component_type != "fixed")
+        assert all(c.source_url == document["tariff_url"] and c.source_detail for c in record.components)
+        assert [c.charge_value for c in records["Business — Rate D1"].components] == [c.charge_value for c in record.components]
+
+    @pytest.mark.parametrize(("old", "new"), [
+        ("15.535¢/m³", "15.535$/m³"),
+        ("is 8.727¢/m³", "is 8.727"),
+        ("from 30 to 100 21.376", "from 40 to 100 21.376"),
+        ("from 10,950 to 36,500 127.397", "from 10,950 to 36,500"),
+        ("¢/Metering device/Day", "$/Metering device/Month"),
+        ("as of October 1, 2026 is 2.165", "as of September 1, 2026 is 2.165"),
+        ("Rate D1 applies by default", "Rate D3 applies by default"),
+    ])
+    def test_required_source_failure_is_not_hidden(self, document, old, new):
+        changed = 0
+        for page in document["tariff_pages"]:
+            if old in page["text"] or old in " ".join(page["text"].split()):
+                page["text"] = " ".join(page["text"].split()).replace(old, new, 1)
+                changed += 1
+        assert changed == 1
+        assert self.parse(document) == {}
+
+    def test_edition_must_be_current_and_linked(self, document):
+        from datetime import date
+
+        assert self.parse(document, date(2026, 9, 30)) == {}
+        document["pricing"]["text"] = document["pricing"]["text"].replace(
+            "Conditions of Service and Tariff effective as of October 1, 2026", "Conditions of Service and Tariff", 1)
+        assert self.parse(document) == {}
+
+    def test_price_follows_source(self, document):
+        for page in document["tariff_pages"]:
+            page["text"] = page["text"].replace("31.299", "32.000")
+        record = self.parse(document)["Residential — Rate D1"]
+        assert next(c for c in record.components if c.component_type == "delivery").charge_value == 0.32
+
+
+class TestLibertyGasNBLive:
+    @pytest.fixture
+    def document(self):
+        return _gas_fixture("liberty_gas_nb")
+
+    @staticmethod
+    def parse(document):
+        from datetime import date
+        from scrapers.utilities.liberty_gas_nb import LibertyGasNBScraper
+
+        return {record.tariff_code: record for record in LibertyGasNBScraper().parse_pages(
+            {key: page["text"] for key, page in document["pages"].items()}, date(2026, 10, 5))}
+
+    def test_building_classes_alternatives_and_seasons(self, document):
+        records = self.parse(document)
+        assert set(records) == {"SGS", "MGS", "LGS"}
+        for record in records.values():
+            assert record.effective_date == "2026-10-01"
+            commodity = next(c for c in record.components if c.component_type == "commodity")
+            assert commodity.charge_value == 11.02 and commodity.effective_date == "2026-10-01"
+            carbon = next(c for c in record.components if c.component_type == "carbon")
+            assert carbon.charge_value == 0 and carbon.effective_date == "2025-04-01"
+            assert all(c.effective_date == "2025-01-01" for c in record.components if c.component_type in ("fixed", "delivery"))
+            assert all(c.source_url and c.source_detail for c in record.components)
+        assert [c.charge_value for c in records["MGS"].components if c.component_type == "fixed"] == [22.5, 52.5]
+        assert all(c.sub_component == "conditional" for c in records["LGS"].components if c.component_type == "fixed")
+        seasonal = {c.season_months: c.charge_value for c in records["LGS"].components if c.season_months}
+        assert seasonal == {"Sep-Apr": 6.565, "May-Aug": 2.4689}
+        assert "Minimum annual charge" in records["LGS"].notes
+
+    @pytest.mark.parametrize(("key", "old", "new", "count"), [
+        ("carbon", "New Brunswick from April 1, 2019", "Nova Scotia from April 1, 2019", 0),
+        ("classes", "effective as of January 1, 2025.", "effective as of January 1, 2027.", 0),
+        ("home_supply", "October 11.02 9.91", "October 9.91", 2),
+        ("business_supply", "October 11.02 9.91", "October 9.91", 1),
+        ("classes", "For all volumes delivered 11.2378", "For all volumes delivered 11.3000", 2),
+        ("classes", "between May 1 and Aug 31: 2.4689", "between May 1 and Aug 31: -2.4689", 2),
+        ("classes", "Service is limited to customers with a consumption less than 250 GJs per month.", "", 2),
+    ])
+    def test_required_source_failure_is_not_hidden(self, document, key, old, new, count):
+        assert old in document["pages"][key]["text"]
+        document["pages"][key]["text"] = document["pages"][key]["text"].replace(old, new, 1)
+        assert len(self.parse(document)) == count
+
+
 class TestNovaScotiaBuildingOptions:
     @pytest.fixture
     def document(self):
@@ -1737,7 +1950,8 @@ class TestNovaScotiaBuildingOptions:
 
 
 class TestRegionalBatchStorage:
-    @pytest.mark.parametrize("family", ["hydro_quebec", "nl_hydro", "saskenergy", "fortisbc_electric", "nova_scotia_power", "centra_gas"])
+    @pytest.mark.parametrize("family", ["hydro_quebec", "nl_hydro", "saskenergy", "fortisbc_electric", "nova_scotia_power", "centra_gas",
+                                        "fortisbc_energy", "heritage_gas", "energir", "liberty_gas_nb"])
     def test_new_classes_survive_repeat_storage_and_export(self, family, tmp_path, monkeypatch):
         import json
         import sqlite3
@@ -1772,6 +1986,26 @@ class TestRegionalBatchStorage:
 
             records = CentraGasScraper().mark_live_parsed(list(TestCentraGasLive.parse(document).values()))
             assert len(records) == 12
+        elif family == "fortisbc_energy":
+            from scrapers.utilities.fortisbc_energy import FortisBCEnergyScraper
+
+            records = FortisBCEnergyScraper().mark_live_parsed(list(TestFortisBCEnergyLive.parse(document).values()))
+            assert len(records) == 6
+        elif family == "heritage_gas":
+            from scrapers.utilities.heritage_gas import HeritageGasScraper
+
+            records = HeritageGasScraper().mark_live_parsed(list(TestHeritageGasLive.parse(document).values()))
+            assert len(records) == 2
+        elif family == "energir":
+            from scrapers.utilities.energir import EnergirScraper
+
+            records = EnergirScraper().mark_live_parsed(list(TestEnergirLive.parse(document).values()))
+            assert len(records) == 2
+        elif family == "liberty_gas_nb":
+            from scrapers.utilities.liberty_gas_nb import LibertyGasNBScraper
+
+            records = LibertyGasNBScraper().mark_live_parsed(list(TestLibertyGasNBLive.parse(document).values()))
+            assert len(records) == 3
         else:
             from scrapers.utilities.saskenergy import SaskEnergyScraper
 

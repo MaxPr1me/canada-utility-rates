@@ -14,7 +14,10 @@ it does not onboard additional inventory utilities or update ON/AB/YT/NT/NU. Use
 this guide to fill missing classes in the owning utility module, and consult the
 [current coverage matrix](phase5_completion_matrix.md) before choosing work.
 Current examples include page-aware domestic options, NL Hydro service alternatives,
-and SaskEnergy/Centra gas variants with separately dated required components. They
+and SaskEnergy/Centra gas variants with separately dated required components. The
+October 5 gas batch adds two more reusable patterns: following a page's current
+document link each run (Energir's tariff PDF, Eastward's monthly rate table) and
+requiring a page summary to agree with that document before accepting live output. They
 are reusable patterns, not proof that every class at those utilities is complete.
 
 ## 1. Research the utility

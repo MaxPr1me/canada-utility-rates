@@ -5,21 +5,34 @@ Heritage Gas Limited provides natural gas distribution to parts of
 Nova Scotia, including the Halifax Regional Municipality, Amherst,
 and other communities.
 
-Official source:
-  https://eastwardenergy.com/for-home/rates/
+Official sources:
+  https://eastwardenergy.com/for-home/rates/       (residential summary)
+  https://eastwardenergy.com/for-business/rates/   (class definitions and link to the monthly rate table PDF)
 
-Nova Scotia gas rates are regulated by the Nova Scotia Utility and
-Review Board (NSUARB).  Heritage Gas uses GJ as the primary billing unit.
+Nova Scotia gas rates are regulated by the Nova Scotia Energy Board (formerly
+NSUARB).  Eastward Energy (formerly Heritage Gas) uses GJ as the billing unit.
 """
 
 from __future__ import annotations
 
 import logging
+import re
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
 
 logger = logging.getLogger(__name__)
+
+PAGE_URLS = {
+    "residential": "https://eastwardenergy.com/for-home/rates/",
+    "business": "https://eastwardenergy.com/for-business/rates/",
+}
+
+MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER",
+          "OCTOBER", "NOVEMBER", "DECEMBER"]
+MONEY = r"\$(\d[\d,]*\.\d+)"
+DATE = r"([A-Z][a-z]+ \d{1,2}, \d{4})"
 
 # Seed data — limited public rate information available.
 SEED_RESIDENTIAL = {
@@ -39,20 +52,216 @@ class HeritageGasScraper(BaseScraper):
         super().__init__(utility_name="Heritage Gas", province="NS")
 
     def scrape(self) -> list[TariffRecord]:
-        records = []
-
-        live = self._try_live_scrape()
-        if live:
-            records.extend(live)
-        else:
-            self.logger.warning("Live scrape failed — using seed data for Heritage Gas")
+        records = list(self._try_live_scrape() or [])
+        if not any(record.customer_class == "residential" for record in records):
+            self.logger.warning("Residential live parse unavailable — using unverified seed for Heritage Gas")
             records.extend(self.mark_fallback(self._seed_data()))
-
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Verify every modelled component against the current official schedule."""
-        return self.verify_official_records(SEED_RESIDENTIAL["source_url"], self._seed_data())
+        """Fetch both rate pages and the monthly rate table they link to, then parse complete classes."""
+        from scrapers.utils.parsing import extract_pdf_pages, parse_html
+
+        pages: dict[str, str] = {}
+        table_url = None
+        for key, url in PAGE_URLS.items():
+            try:
+                soup = parse_html(self.fetch_page(url))
+                pages[key] = (soup.find("main") or soup).get_text(" ", strip=True)
+                for link in soup.find_all("a", href=True):
+                    if link.get_text(" ", strip=True) == "View Rates" and link["href"].lower().endswith(".pdf"):
+                        table_url = table_url or link["href"]
+            except Exception as exc:
+                self.logger.warning("Eastward Energy %s page unavailable: %s", key, exc)
+        if table_url:
+            try:
+                pdf_pages = extract_pdf_pages(self.fetch_bytes(table_url))
+                pages["rate_table"] = " ".join(page.text for page in pdf_pages)
+            except Exception as exc:
+                self.logger.warning("Eastward Energy rate table unavailable: %s", exc)
+        records = self.parse_pages(pages, table_url=table_url)
+        return self.mark_live_parsed(records) if records else None
+
+    # ── Parsing ──────────────────────────────────────────────
+
+    @staticmethod
+    def _norm(text: str) -> str:
+        return re.sub(r"\s+", " ", text.replace("\xa0", " ")).strip()
+
+    @staticmethod
+    def _long_date(value: str) -> Optional[date]:
+        try:
+            return datetime.strptime(value, "%B %d, %Y").date()
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _money(value: str) -> float:
+        return float(value.replace(",", ""))
+
+    def _row(self, table: str, label: str, columns: int = 3) -> list[float]:
+        match = re.search(label + " " + " ".join([MONEY] * columns), table)
+        if not match:
+            raise ValueError(f"rate-table row missing or changed: {label}")
+        return [self._money(value) for value in match.groups()]
+
+    def _table(self, table: str, today: date) -> dict:
+        """Strictly parse the monthly rate table; raises ValueError on any drift."""
+        title = re.search(r"RATE TABLE (" + "|".join(MONTHS) + r") (\d{4})", table)
+        if not title:
+            raise ValueError("rate-table month missing")
+        effective = date(int(title.group(2)), MONTHS.index(title.group(1)) + 1, 1)
+        if effective > today:
+            raise ValueError("future rate table")
+        values = {"effective": effective}
+        values["fixed"] = self._row(table, r"Fixed Monthly Customer Charge")
+        base = re.search(r"Base Energy Charge \(\$/GJ\) " + MONEY + r" GS Tiers: " + MONEY, table)
+        tiers = re.search(
+            r"GS Tier 1 \(\S ?(\d+) GJs/month\) " + MONEY + r" GS Tier 2 \(> ?(\d+) - (\d+) GJs/month\) " + MONEY
+            + r" GS Tier 3 \(> ?(\d+) GJs/month\) " + MONEY, table)
+        if not base or not tiers:
+            raise ValueError("base energy charge rows missing or changed")
+        first, rate1, low2, high2, rate2, low3, rate3 = tiers.groups()
+        if not (first == low2 and high2 == low3):
+            raise ValueError("General Service tier boundaries are inconsistent")
+        values["base_res"] = self._money(base.group(1))
+        values["gs_tiers"] = [(self._money(rate1), float(first)), (self._money(rate2), float(high2)),
+                              (self._money(rate3), None)]
+        values["tcrr"] = self._row(table, r"Transportation Cost Recovery Rate\d? \(\$/GJ\)")
+        values["gcrr"] = self._row(table, r"Gas Cost Recovery Rate\d? \(\$/GJ\)")
+        values["carbon"] = self._row(table, r"Federal Carbon Tax\d? \(\$/GJ\)")
+        values["rda"] = self._row(table, r"RDA Recovery Rate\d? \(\$/GJ\)")
+        values["total"] = self._row(table, r"Total Variable \(\$/GJ\)")
+        carbon_date = re.search(r"has been reduced to \$0/GJ by the Federal Government as of " + DATE, table)
+        carbon_effective = self._long_date(carbon_date.group(1)) if carbon_date else None
+        if any(values["carbon"]) or not carbon_effective or carbon_effective > today:
+            raise ValueError("zero federal carbon charge and its effective date are not both published")
+        values["carbon_date"] = carbon_effective
+        riders = re.search(r"Municipal Taxes \(Rate Rider A: (\d+(?:\.\d+)?)% & Rate Rider B: (\d+(?:\.\d+)?)%\) "
+                           r"are assessed on fixed monthly, base energy and demand charges", table)
+        if not riders:
+            raise ValueError("municipal tax riders A/B missing or changed")
+        values["riders"] = (float(riders.group(1)), float(riders.group(2)))
+        approval = re.search(r"Delivery Rates approved: " + DATE + r" - NSUARB Matter No\. (M\d+)", table)
+        values["approval"] = f"{approval.group(1)}, NSUARB Matter No. {approval.group(2)}" if approval else None
+        if min(values["fixed"][:2] + [values["base_res"], values["tcrr"][0], values["gcrr"][0], values["gcrr"][1]]) <= 0:
+            raise ValueError("non-positive charge")
+        for column, base_rate in ((0, values["base_res"]), (1, values["gs_tiers"][0][0])):
+            parts = base_rate + values["tcrr"][column] + values["gcrr"][column] + values["rda"][column]
+            if abs(parts - values["total"][column]) > 0.006:
+                raise ValueError("published total variable rate does not reconcile with its components")
+        return values
+
+    def _summary(self, text: str, heading: str, fixed_label: str) -> tuple[date, float, float, float]:
+        match = re.search(
+            heading + r" as of " + DATE + r"\..{0,300}?" + fixed_label + r" " + MONEY + r" .{0,40}?Variable Charge per GJ "
+            + MONEY + r" .{0,40}?Commodity Charge per GJ " + MONEY, text)
+        effective = self._long_date(match.group(1)) if match else None
+        if not effective:
+            raise ValueError(f"'{heading}' summary missing or changed")
+        return effective, self._money(match.group(2)), self._money(match.group(3)), self._money(match.group(4))
+
+    def parse_pages(self, pages: dict[str, str], today: Optional[date] = None,
+                    table_url: Optional[str] = None) -> list[TariffRecord]:
+        """Build tariffs from texts keyed residential/business/rate_table.
+
+        The rate table is authoritative; each class must also agree with its page summary
+        for the same effective date. Classes are parsed independently.
+        """
+        today = today or datetime.now(timezone.utc).date()
+        pages = {key: self._norm(text) for key, text in pages.items()}
+        try:
+            values = self._table(pages.get("rate_table", ""), today)
+        except ValueError as exc:
+            self.logger.warning("Eastward Energy rate table not parsed live: %s", exc)
+            return []
+        if not table_url:
+            self.logger.warning("Eastward Energy rate table URL missing")
+            return []
+        records: list[TariffRecord] = []
+        try:
+            summary = self._summary(pages.get("residential", ""), "Average Residential Rates",
+                                    r"Fixed Delivery Charge per month")
+            if summary != (values["effective"], values["fixed"][0], values["base_res"], values["gcrr"][0]):
+                raise ValueError("residential page summary does not match the rate table")
+            records.append(self._build(values, 0, table_url))
+        except ValueError as exc:
+            self.logger.warning("Eastward Energy residential not parsed live: %s", exc)
+        try:
+            business = pages.get("business", "")
+            summary = self._summary(business, "Rates for General Service Class", r"Fixed Delivery Charge")
+            if summary != (values["effective"], values["fixed"][1], values["gs_tiers"][0][0], values["gcrr"][1]):
+                raise ValueError("General Service page summary does not match the rate table")
+            definition = re.search(r"General Service: (Any Customer who is an end-user and whose rate class is not "
+                                   r"either Residential, Rate Class 3, or Rate Class 4\.)", business)
+            limit = re.search(r"Rate Class 3: Any Customer who is an end-user and whose total gas requirements at "
+                              r"that location are greater than ([\d,]+) GJ per year", business)
+            if not definition or not limit:
+                raise ValueError("General Service class definition missing")
+            records.append(self._build(values, 1, table_url, definition.group(1),
+                                       float(limit.group(1).replace(",", ""))))
+        except ValueError as exc:
+            self.logger.warning("Eastward Energy General Service not parsed live: %s", exc)
+        return records
+
+    def _build(self, values: dict, column: int, url: str, eligibility: Optional[str] = None,
+               usage_max: Optional[float] = None) -> TariffRecord:
+        effective = values["effective"]
+        eff = effective.isoformat()
+        detail = f"Eastward Energy Rate Table {MONTHS[effective.month - 1].title()} {effective.year}"
+        residential = column == 0
+        comps = [RateComponent(
+            "fixed", "Fixed Monthly Customer Charge", values["fixed"][column], "$/month", effective_date=eff,
+            source_url=url, source_detail=detail,
+            notes="Delivery charge regulated by the Nova Scotia Energy Board"
+                  + (f"; delivery rates approved {values['approval']}" if values["approval"] else ""))]
+        if residential:
+            comps.append(RateComponent("delivery", "Base Energy Charge", values["base_res"], "$/GJ",
+                                       effective_date=eff, source_url=url, source_detail=detail))
+        else:
+            for number, (rate, threshold) in enumerate(values["gs_tiers"], start=1):
+                comps.append(RateComponent(
+                    "delivery", f"Base Energy Charge — GS Tier {number}", rate, "$/GJ", tier_number=number,
+                    tier_threshold=threshold, tier_unit="GJ/month" if threshold else None, effective_date=eff,
+                    source_url=url, source_detail=detail,
+                    notes="Monthly volume block; threshold is the block's upper bound" if threshold else
+                          "Monthly volume above the Tier 2 upper bound"))
+        comps += [
+            RateComponent("transmission", "Transportation Cost Recovery Rate", values["tcrr"][column], "$/GJ",
+                          effective_date=eff, source_url=url, source_detail=detail),
+            RateComponent("commodity", "Gas Cost Recovery Rate", values["gcrr"][column], "$/GJ", effective_date=eff,
+                          source_url=url, source_detail=detail, market_reference="Eastward Energy gas cost recovery",
+                          notes=("Biannual residential GCRR: a six-month forecast set August 1 and February 1, subject "
+                                 "to interim adjustment" if residential else
+                                 "Reviewed monthly and adjusted to current market pricing")
+                          + "; passed through without mark-up."),
+            RateComponent("rider", "RDA Recovery Rate", values["rda"][column], "$/GJ", effective_date=eff,
+                          source_url=url, source_detail=detail,
+                          notes="Recovery of deferred Revenue Deficiency Account costs"),
+            RateComponent("carbon", "Federal Carbon Tax", 0.0, "$/GJ", effective_date=values["carbon_date"].isoformat(),
+                          source_url=url, source_detail=detail + ", note 4",
+                          notes="Federal fuel charge reduced to $0/GJ as of "
+                                f"{values['carbon_date'].strftime('%B')} {values['carbon_date'].day}, {values['carbon_date'].year}"),
+        ]
+        for letter, percent in zip("AB", values["riders"]):
+            comps.append(RateComponent(
+                "rider", f"Municipal Tax — Rate Rider {letter}", percent, "%", effective_date=eff, source_url=url,
+                source_detail=detail + ", note 6",
+                notes="Percentage assessed on fixed monthly, base energy and demand charges only, not on commodity, "
+                      "transportation or RDA rates"))
+        return TariffRecord(
+            utility_name="Heritage Gas", province="NS", utility_type="gas",
+            tariff_name="Residential" if residential else "General Service",
+            tariff_code="Residential" if residential else "GS",
+            customer_class="residential" if residential else "commercial", eligibility=eligibility,
+            usage_max=usage_max, usage_unit="GJ/year" if usage_max else None,
+            rate_structure="flat" if residential else "tiered", pricing_method="regulated",
+            effective_date=max(effective, values["carbon_date"]).isoformat(), source_url=url, source_page=detail,
+            confidence="high",
+            notes=("Eastward Energy (formerly Heritage Gas). Published in $/GJ. Rate Class 3 and Rate Class 4 are "
+                   "separate classes for customers above the General Service limit. HST is not included."),
+            components=comps,
+        )
 
     def _seed_data(self) -> list[TariffRecord]:
         records = []
