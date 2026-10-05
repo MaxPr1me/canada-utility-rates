@@ -87,7 +87,7 @@
           "is_primary": false
         }
       ],
-      "notes": "FortisBC Energy is the natural gas distribution arm of FortisBC, serving most of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC). Rates 1/2/3 are parsed live for Mainland/Vancouver Island and Fort Nelson with daily basic charges and $/GJ delivery, storage and transport and cost of gas; Rate 5 (monthly basic, $/GJ/month daily-demand charge, riders) and Rate 4 seasonal (off-peak/extension periods) are parsed from their approved rate schedules for Mainland/Vancouver Island. Missing carbon evidence rejects live output. Fort Nelson Rates 4/5 (no published price table), Revelstoke propane, Rates 6/7 and Customer Choice marketer prices remain gaps."
+      "notes": "FortisBC Energy is the natural gas distribution arm of FortisBC, serving most of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC). Rates 1/2/3 are parsed live for Mainland/Vancouver Island and Fort Nelson with daily basic charges and $/GJ delivery, storage and transport and cost of gas; Rate 5 (monthly basic, $/GJ/month daily-demand charge, riders) and Rate 4 seasonal (off-peak/extension periods) are parsed from their approved rate schedules for Mainland/Vancouver Island. Missing carbon evidence rejects live output. Fort Nelson Rates 4/5 (no published price table), Revelstoke propane, Rates 6/7 and Customer Choice marketer prices remain gaps. Batch 7 adds Residential Rate 1 Revelstoke propane (9 live total) from the residential page table, with its own motor-fuel-tax carbon evidence. Rates 6/7 and industrial service are excluded; the business Revelstoke table is ambiguous and remains a gap."
     },
     {
       "name": "ATCO Gas",
@@ -378,7 +378,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Nine live records include D/DP/DM/DN/DT/Flex D, the closed Winter Credit adjustment and G/M. DT switches on source-defined outdoor temperature zones, not hourly TOU, and excludes off-grid service. Flex D preserves seasonal tiers, notified events and mutually exclusive product eligibility. Winter Credit is a conditional adjustment to Rate D, retaining reference-energy rules and enrollment cutoff. Multiplier, minimum-bill and demand rules remain conditions, not calculated bills. Inukjuak, net metering and remaining building business options still need audit; no full catalogue-completion claim."
+      "notes": "Nine live records include D/DP/DM/DN/DT/Flex D, the closed Winter Credit adjustment and G/M. DT switches on source-defined outdoor temperature zones, not hourly TOU, and excludes off-grid service. Flex D preserves seasonal tiers, notified events and mutually exclusive product eligibility. Winter Credit is a conditional adjustment to Rate D, retaining reference-energy rules and enrollment cutoff. Multiplier, minimum-bill and demand rules remain conditions, not calculated bills. Inukjuak, net metering and remaining building business options still need audit; no full catalogue-completion claim. Batch 7 adds 11 live building options (20 live total): Inukjuak DN, Rate G9, Flex G/M/G9, three dual-energy rates, Winter Credit G and net-metering options I/III (option III keeps its own conditions). All components carry source URL, page detail and effective date. Industrial L/LG/H/MA, GD/BR and Rate M net-metering option I are excluded or remain gaps."
     },
     {
       "name": "Manitoba Hydro",
@@ -524,7 +524,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Ten live records include standard/TOD/conditional pilots, MURB house-meter TOU89, separate optional Solar Garden and Community Solar adjustments, and business 10/11/12 rebuilt from tariff book pages 16-17/25-26/38-39 with FAM/DSM/storm riders and conditional transformer discounts. MURB requires ten units, its own General/MURB rider rows and minimum-bill context; printed Note1 explicitly applies the peak price on weekends/holidays. Solar credits apply only to subscriber-attributed generation with base tariffs still separate. Pilot restoration status remains conditional; no early November/2027 prices. Business pilots 72/73/82/83 remain a gap; municipal wholesale is excluded."
+      "notes": "Ten live records include standard/TOD/conditional pilots, MURB house-meter TOU89, separate optional Solar Garden and Community Solar adjustments, and business 10/11/12 rebuilt from tariff book pages 16-17/25-26/38-39 with FAM/DSM/storm riders and conditional transformer discounts. MURB requires ten units, its own General/MURB rider rows and minimum-bill context; printed Note1 explicitly applies the peak price on weekends/holidays. Solar credits apply only to subscriber-attributed generation with base tariffs still separate. Pilot restoration status remains conditional; no early November/2027 prices. Business pilots 72/73/82/83 remain a gap; municipal wholesale is excluded. Batch 7 adds business pilots 72/73/82/83 (14 live total) as conditional records: October interim phase and November 1 pricing date-gated, closed to new applications, with restoration status not assumed. Industrial and municipal wholesale are excluded."
     },
     {
       "name": "Maritime Electric",

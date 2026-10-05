@@ -59,6 +59,12 @@ CLASSES = (
     AreaClassSpec("3", "business", FORT_NELSON, "Fort Nelson", "Commercial — Rate 3 (Fort Nelson)", "commercial"),
 )
 
+REVELSTOKE = r"Revelstoke"
+REVELSTOKE_CLASSES = (
+    AreaClassSpec("1", "residential", REVELSTOKE, "Revelstoke (propane)",
+                  "Residential — Rate 1 (Revelstoke propane)", "residential"),
+)
+
 # Seed data based on BCUC-approved rates.
 SEED_RESIDENTIAL = {
     "effective_date": "2024-10-01",
@@ -194,7 +200,7 @@ class FortisBCEnergyScraper(BaseScraper):
             r"\(Effective (?P<date>[A-Z][a-z]+ \d{1,2}, \d{4}) ?\) "
             r"Basic charge per day (?:\d )?\$(?P<basic>\d+\.\d+) "
             r"Delivery charge per (?:gigajoule \(GJ\)|GJ) \$(?P<delivery>\d+\.\d+) "
-            r"Storage and transport (?:charge|cost) per GJ \$(?P<storage>\d+\.\d+) "
+            r"Storage and transport(?: (?:charge|cost))?(?: per GJ)? \$(?P<storage>\d+\.\d+) "
             r"Cost of gas per GJ \$(?P<gas>\d+\.\d+) "
         )
         matches = list(re.finditer(pattern, text))
@@ -224,7 +230,7 @@ class FortisBCEnergyScraper(BaseScraper):
             self.logger.warning("FortisBC Energy: required current carbon-tax status could not be verified")
             return []
         records: list[TariffRecord] = []
-        for spec in CLASSES:
+        for spec in CLASSES + REVELSTOKE_CLASSES:
             try:
                 text = pages.get(spec.page, "")
                 eligibility = None
@@ -452,6 +458,10 @@ class FortisBCEnergyScraper(BaseScraper):
         url = PAGE_URLS[spec.page]
         detail = f"Rate {spec.rate}, {spec.area_label} (Effective {effective.strftime('%B')} {effective.day}, {effective.year})"
         carbon_date, carbon_note = carbon
+        propane = spec.area_pattern == REVELSTOKE
+        if propane:
+            carbon_note += (" The Province also states that motor fuel tax applies to propane for any use unless exempt; "
+                            "FortisBC publishes no propane tax amount in these tables, so none is included.")
         comps = [
             RateComponent("fixed", "Basic Charge", values["basic"], "$/day", effective_date=eff, source_url=url,
                           source_detail=detail, notes="Published per day; billed for the days in the billing period"),
@@ -459,8 +469,9 @@ class FortisBCEnergyScraper(BaseScraper):
                           source_url=url, source_detail=detail, notes="Reviewed annually by the BCUC"),
             RateComponent("transmission", "Storage and Transport Charge", values["storage"], "$/GJ",
                           effective_date=eff, source_url=url, source_detail=detail),
-            RateComponent("commodity", "Cost of Gas", values["gas"], "$/GJ", effective_date=eff, source_url=url,
-                          source_detail=detail, market_reference="FortisBC gas commodity portfolio",
+            RateComponent("commodity", "Cost of Propane" if propane else "Cost of Gas", values["gas"], "$/GJ",
+                          effective_date=eff, source_url=url, source_detail=detail,
+                          market_reference="FortisBC propane portfolio" if propane else "FortisBC gas commodity portfolio",
                           notes="FortisBC default commodity, reviewed by the BCUC every three months. Customer Choice "
                                 "gas-marketer prices are separate and not included."),
             RateComponent("carbon", "BC Carbon Tax", 0.0, "$/GJ", effective_date=carbon_date.isoformat(),

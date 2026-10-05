@@ -34,17 +34,17 @@ unverified fallback records remain estimates regardless of the export date.
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
-| Stored tariff versions / components | 659 / 4,225, including history and older estimates |
-| Live-sourced tariffs | **174 latest tariffs across 18 utilities**; 179 stored live versions |
-| Active regional campaign | **172 latest live records across all 16 target utilities** |
+| Stored tariff versions / components | 675 / 4,329, including history and older estimates |
+| Live-sourced tariffs | **190 latest tariffs across 18 utilities**; 195 stored live versions |
+| Active regional campaign | **188 latest live records across all 16 target utilities** |
 | Remaining seed-only campaign utilities | **0**; every target utility still has recorded catalogue gaps |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Deterministic tests | **661 passing** on Python 3.11 |
+| Deterministic tests | **733 passing** on Python 3.11 |
 
 Live output currently includes BC Hydro (9), FortisBC Electric (9), Manitoba Hydro (12), NB Power (9),
-Nova Scotia Power (10), Hydro-Quebec (9), Maritime Electric (10), Newfoundland Power (8),
-NL Hydro (18), SaskPower (41), SaskEnergy (6), Centra Gas Manitoba (12), FortisBC Energy (8),
+Nova Scotia Power (14), Hydro-Quebec (20), Maritime Electric (10), Newfoundland Power (8),
+NL Hydro (18), SaskPower (41), SaskEnergy (6), Centra Gas Manitoba (12), FortisBC Energy (9),
 Energir (4), Heritage/Eastward (3), Liberty NB (4), FortisAlberta (1), and Yukon Energy (1).
 These counts use the latest version per tariff, not complete utility catalogues.
 They include conditional products, adjustment-only records and retained non-building
@@ -282,7 +282,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 661 deterministic tests across 8 test modules
+├── tests/                    ← 733 deterministic tests across 8 test modules
 │   ├── fixtures/             ← Source-derived fixtures for nine utility modules; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation

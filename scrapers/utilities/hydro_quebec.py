@@ -127,6 +127,7 @@ class HydroQuebecScraper(BaseScraper):
                 return None
             records = self._parse_domestic_rates(pages, effective_date)
             records.extend(self._parse_optional_domestic_rates(pages, effective_date))
+            records.extend(self._parse_building_extras(pages, effective_date))
 
             rate_d = self._parse_rate_d(pdf_text)
             if rate_d:
@@ -165,6 +166,8 @@ class HydroQuebecScraper(BaseScraper):
                 record.source_page = record.source_page or "Official electricity-rates PDF"
                 for component in record.components:
                     component.source_detail = component.source_detail or record.source_page
+                    component.source_url = component.source_url or record.source_url or PDF_URL
+                    component.effective_date = component.effective_date or record.effective_date
             live = self.mark_live_parsed(records, source_url=PDF_URL)
 
             # Preserve any rates we couldn't parse live as labelled seed estimates
@@ -636,6 +639,590 @@ class HydroQuebecScraper(BaseScraper):
                 ))
             except (ValueError, IndexError) as exc:
                 self.logger.warning("Incomplete Hydro-Quebec Winter Credit Option: %s", exc)
+        return records
+
+    # ── Building extras: Inukjuak, G9, Flex G/M/G9, dual-energy, options ──
+
+    @staticmethod
+    def _run_section(pages: list[DocumentPage], heading: str, article: str) -> tuple[list[DocumentPage], str]:
+        """Consecutive pages of one section, starting at the page that carries its opening article."""
+        by_number = {page.page_number: page for page in pages}
+        first = next((page for page in sorted(pages, key=lambda p: p.page_number)
+                      if re.match(heading, page.text) and re.search(article, page.text)), None)
+        if first is None:
+            return [], ""
+        selected = [first]
+        number = first.page_number + 1
+        while number in by_number and re.match(heading, by_number[number].text):
+            selected.append(by_number[number])
+            number += 1
+        text = " ".join(page.text.split("\n", 1)[1] if "\n" in page.text else "" for page in selected)
+        text = text.replace("\u2011", "-").replace("\u2212", "-")
+        text = re.sub(r"(?:\b\d+\s+\u2013\s+)?\b20\d\d Electricity Rates(?:\s+\u2013\s+\d+)?", " ", text)
+        text = re.sub(r"\bG\s+9\b", "G9", text)
+        text = re.sub(r"\bD\s+([TMNP])\b", r"D\1", text)
+        return selected, re.sub(r"\s+", " ", text)
+
+    @staticmethod
+    def _period_months(text: str, name: str, year: int) -> str:
+        match = re.search(
+            rf"(?<![-\w]){name}: The period from ([A-Za-z]+) 1(?: of one year)? through ([A-Za-z]+) (\d+)(?: of the next year)?, inclusive", text)
+        if not match:
+            raise ValueError("Missing definition of " + name)
+        first, last = list(month_name).index(match.group(1)), list(month_name).index(match.group(2))
+        if not first or not last or int(match.group(3)) != monthrange(year, last)[1]:
+            raise ValueError("Invalid definition of " + name)
+        months = range(first, last + 1) if first <= last else [*range(first, 13), *range(1, last + 1)]
+        return ",".join(str(month) for month in months)
+
+    def _parse_building_extras(
+        self, pages: list[DocumentPage], effective_date: str,
+    ) -> list[TariffRecord]:
+        """Inukjuak dual-energy, G9, Flex G/M/G9, dual-energy heating rates, Winter Credit G and net metering."""
+        cent = r"(?<![\d.$])(-?\d+(?:\.\d+)?)\s*(?:\u00a2|\u023c|\ufffd|cents?)"
+        definitions = re.sub(r"\s+", " ", "\n".join(page.text for page in pages if page.text.startswith("Interpretative Provisions")))
+        billing = next((re.sub(r"\s+", " ", page.text) for page in pages if "Adjustment of rates to consumption periods" in page.text), "")
+        if "monthly: Relating to a period of 30 consecutive days" not in definitions or "consumption period is 30 consecutive days" not in billing:
+            self.logger.warning("Missing Hydro-Quebec billing-period definitions for building rates")
+            return []
+        year = int(effective_date[:4])
+        try:
+            winter_months = self._period_months(definitions, "winter period", year)
+            summer_months = self._period_months(definitions, "summer period", year)
+            if sorted((winter_months + "," + summer_months).split(","), key=int) != [str(month) for month in range(1, 13)]:
+                raise ValueError("Seasons do not cover the year")
+        except ValueError as exc:
+            self.logger.warning("Invalid Hydro-Quebec season definitions for building rates: %s", exc)
+            return []
+        credit_pages = [page for page in pages if "Credit for supply at medium or high voltage" in page.text and "12.2" in page.text]
+        credit_text = re.sub(r"\bG\s+9\b", "G9", re.sub(r"\s+", " ", "\n".join(page.text for page in credit_pages)))
+        credit_detail = "Conditional credits, Articles 12.2-12.4; PDF pages " + ", ".join(str(page.page_number) for page in credit_pages)
+        domestic_credit = re.search(r"Credit for supply applicable to domestic rates\s+12\.3(.*?)Adjustment for transformation losses\s+12\.4(.*?)Power factor improvement", credit_text)
+        credit_clause = "credit for supply at medium or high voltage and the adjustment for transformation losses, as described in articles 12.2 and 12.4, apply"
+
+        def voltage_credits() -> tuple[list[RateComponent], str]:
+            voltage = re.search(r"Credit for supply at medium or high voltage\s+12\.2(.*?)Credit for supply applicable to domestic rates\s+12\.3", credit_text)
+            if not voltage or not domestic_credit or "monthly credit in dollars per kilowatt" not in voltage.group(1) or "less than 30 days" not in voltage.group(1):
+                raise ValueError("Missing supply-voltage credit table or contract restriction")
+            rows = re.findall(r"(\d+)\s+k\s*V(?:, but less than (\d+)\s+k\s*V)?\s+(\d+\.\d+)", voltage.group(1))
+            if len(rows) != 5 or min(float(row[2]) for row in rows) <= 0:
+                raise ValueError("Incomplete supply-voltage credit table")
+            components = []
+            for lower, upper, credit in rows:
+                band = f"{lower} to under {upper} kV" if upper else f"{lower} kV or more"
+                components.append(RateComponent(
+                    "rebate", f"Conditional Supply Voltage Credit ({band})", -float(credit), "$/kW/month",
+                    sub_component="conditional", demand_unit="kW", source_detail=credit_detail,
+                    notes="Only the applicable voltage band is used, not all listed credits. Customer must use the supplied voltage or transform it at no cost to Hydro-Quebec. No credit for short-term contracts under 30 days or on the minimum monthly amount. See Article 12.2.",
+                ))
+            return components, " Conditional transformation-loss rule (not assumed to apply): " + domestic_credit.group(2).strip()
+
+        def domestic_supply_credit() -> RateComponent:
+            credit = re.search(r"credit of " + cent + r"\s+per kilowatthour on the price of all energy billed", domestic_credit.group(1)) if domestic_credit else None
+            if not credit or float(credit.group(1)) <= 0:
+                raise ValueError("Missing domestic conditional supply credit")
+            return RateComponent(
+                "rebate", "Conditional Domestic Supply Voltage Credit", -round(float(credit.group(1)) / 100, 6), "$/kWh",
+                sub_component="conditional", source_detail=credit_detail,
+                notes=domestic_credit.group(1).strip() + " Only when these voltage and ownership conditions are met; not an automatic credit.",
+            )
+
+        def finish(selected: list[DocumentPage], label: str, components: list[RateComponent], customer_class: str, **fields) -> TariffRecord:
+            detail = f"Electricity Rates {label}; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+            for component in components:
+                component.source_url = PDF_URL
+                component.source_detail = component.source_detail or detail
+                component.effective_date = effective_date
+            notes = fields.pop("notes") + " Monthly rates are prorated under Article 12.11 for billing periods other than 30 days. No bill total is calculated."
+            return TariffRecord(
+                utility_name=self.utility_name, province="QC", utility_type="electricity", customer_class=customer_class,
+                rate_structure="mixed", effective_date=effective_date, source_url=PDF_URL, source_page=detail,
+                notes=notes, components=components, **fields,
+            )
+
+        def need(text: str, headings: tuple[str, ...]) -> None:
+            for heading in headings:
+                if not re.search(re.escape(heading) + r"\s+\d+\.\d+", text):
+                    raise ValueError("Missing section: " + heading)
+
+        def clause(text: str, pattern: str, what: str) -> str:
+            match = re.search(pattern, text)
+            if not match:
+                raise ValueError("Missing " + what)
+            return match.group(1).strip()
+
+        def positive(*values: str) -> None:
+            if min(float(value.replace(",", "")) for value in values) <= 0:
+                raise ValueError("Non-positive published value")
+
+        def peak_rules(text: str, structure_text: str) -> tuple[re.Match, re.Match, re.Match]:
+            hours = re.search(r"peak hours: All hours from (\d\d:\d\d) to (\d\d:\d\d) and from (\d\d:\d\d) to (\d\d:\d\d) during the winter period, excluding:? (.*?) when the latter fall within the winter period", text)
+            events = re.search(r"Maximum number of events per day: (\d+) Minimum interval between 2 events \(hours\): (\d+) Duration of each event \(hours\): (\d+(?: or \d+)?) Maximum duration of events per winter period \(hours\): (\d+)", text)
+            notice = re.search(r"before (\d\d:\d\d) on the day prior to each peak demand event", text)
+            if not (hours and events and notice):
+                raise ValueError("Missing peak hours, event limits or notice rule")
+            if min(int(value) for value in re.findall(r"\d+", events.group(0).split("per day:", 1)[1])) <= 0:
+                raise ValueError("Invalid event limits")
+            return hours, events, notice
+
+        def flex_components(text: str, structure_text: str, hours, events, notice, winter_match, fixed_component: list[RateComponent]) -> list[RateComponent]:
+            peak_hours = f"{hours.group(1)}-{hours.group(2)},{hours.group(3)}-{hours.group(4)}"
+            rule = ("Applies only after enrolment is accepted. Winter rates apply only in the winter period; the event price applies only to peak demand events notified before "
+                    + notice.group(1) + " on the preceding day.")
+            return [
+                *fixed_component,
+                RateComponent("energy", "Winter Energy Outside Peak Demand Events", round(float(winter_match.group(1)) / 100, 6), "$/kWh",
+                              season="winter", season_months=winter_months, tou_period="outside peak demand events", notes=rule),
+                RateComponent("energy", "Winter Peak Demand Event Energy", round(float(winter_match.group(2)) / 100, 6), "$/kWh",
+                              season="winter", season_months=winter_months, tou_period="peak demand event", tou_hours=peak_hours,
+                              notes=f"Events may occur only in peak hours {peak_hours}, excluding {hours.group(5)}; at most {events.group(1)} per day, {events.group(2)} h apart, {events.group(3)} h each and {events.group(4)} h per winter. " + rule),
+            ]
+
+        def phase_minimum(structure_text: str) -> str:
+            minimum = re.search(r"minimum monthly bill is \$(\d+\.\d+) when single-phase electricity is delivered or \$(\d+\.\d+) when three-phase electricity is delivered", structure_text)
+            if not minimum or float(minimum.group(1)) <= 0 or float(minimum.group(2)) <= 0:
+                raise ValueError("Missing minimum monthly bill")
+            return f"Minimum monthly bill (not an additional charge): ${minimum.group(1)} single-phase, ${minimum.group(2)} three-phase."
+
+        winter_re = (r"a\) During the winter period: " + cent + r" per kilowatthour for energy consumed outside peak demand events, and "
+                     + cent + r" per kilowatthour for energy consumed during peak demand events;? or b\) During the summer period: ")
+        flex_checks = ("single communicating meter", "must not be supplied by an off-grid system", "Customer Space")
+        records: list[TariffRecord] = []
+
+        # Inukjuak dual-energy domestic
+        selected, text = self._run_section(pages, r"Section\s+6\s+\W?\s*Dual\W?Energy Domestic Rate\s*\W\s*Inukjuak System", r"Application\s+9\.40\b")
+        if selected:
+            try:
+                need(text, ("Application", "Definition", "Eligibility", "Sign-up procedure", "Multiplier", "Billing demand", "Minimum billing demand",
+                            "Base billing demand", "Non-compliance with conditions"))
+                application = clause(text, r"Application\s+9\.40\s+(This rate applies.*?)Definition\s+9\.41", "Inukjuak application")
+                eligibility = clause(text, r"Eligibility\s+9\.42\s+(.*?)Sign-up procedure\s+9\.43", "Inukjuak eligibility")
+                signup = clause(text, r"Sign-up procedure\s+9\.43\s+(.*?)Structure of the Dual-Energy Domestic Rate \W Inukjuak System\s+9\.44", "Inukjuak sign-up")
+                structure = clause(text, r"Structure of the Dual-Energy Domestic Rate \W Inukjuak System\s+9\.44\s+(.*?)Multiplier\s+9\.45", "Inukjuak structure")
+                multiplier = clause(text, r"Multiplier\s+9\.45\s+(.*?)Determination of prices under the Dual-Energy Domestic Rate \W Inukjuak System\s+9\.46", "Inukjuak multiplier")
+                pricing = clause(text, r"Determination of prices under the Dual-Energy Domestic Rate \W Inukjuak System\s+9\.46\s+(.*?)Billing demand\s+9\.47", "Inukjuak price determination")
+                minimum = clause(text, r"Minimum billing demand\s+9\.48\s+(.*?)Base billing demand\s+9\.49", "Inukjuak minimum demand")
+                base = clause(text, r"Base billing demand\s+9\.49\s+(.*?)Non-compliance with conditions\s+9\.50", "Inukjuak base demand")
+                noncompliance = clause(text, r"Non-compliance with conditions\s+9\.50\s+(.*?)Provision applicable to customers benefiting from the Efficient Energy Use Program\s+9\.51", "Inukjuak non-compliance")
+                efficiency = clause(text, r"Efficient Energy Use Program\s+9\.51\s+(.*)$", "Inukjuak efficiency-program rebate")
+                fixed = re.search(cent + r"\s+system access charge for each day in the consumption period, times the multiplier", structure)
+                energy = re.search(
+                    cent + r" per kilowatthour for energy consumed, up to the product of ([\d,]+) kilowatthours, the number of days in the consumption period and the multiplier, and "
+                    + cent + r" per kilowatthour for the remaining consumption", structure)
+                demand = re.search(r"monthly charge of \$\s*(\d+(?:\.\d+)?)\s+per kilowatt of billing demand in excess of the base billing demand", structure)
+                ratchet = re.search(r"equal to (\d+(?:\.\d+)?)% of the maximum power demand during a consumption period that falls wholly within the winter period included in the 12 consecutive monthly periods", minimum)
+                allowance = re.search(r"higher of the following values: a\) (\d+(?:\.\d+)?) kilowatts, or b\) (\d+(?:\.\d+)?) kilowatts times the multiplier", base)
+                if not (fixed and energy and demand and ratchet and allowance):
+                    raise ValueError("Missing Inukjuak charges, ratchet or base-demand allowance")
+                positive(fixed.group(1), energy.group(1), energy.group(2), energy.group(3), demand.group(1), allowance.group(1), allowance.group(2))
+                if not 0 < float(ratchet.group(1)) <= 100:
+                    raise ValueError("Invalid Inukjuak ratchet")
+                if not all((
+                    "Inukjuak off-grid system" in application and "Rate DN" in application,
+                    "switch remotely controlled by Hydro-Qu" in eligibility and "must not be used simultaneously" in eligibility,
+                    "Prices are set on an annual basis as specified in Article 9.46" in structure,
+                    "credit for supply, as described in Article 12.3, applies" in structure,
+                    "the multiplier is 1, unless the contract was eligible for Rate DM on May 31, 2009" in multiplier,
+                    "second-tier energy price is determined as follows" in pricing and "reference index" in pricing,
+                    "billed at" in noncompliance and "second-tier energy price at Rate DN" in noncompliance,
+                    "until March 31, 2029" in efficiency,
+                )):
+                    raise ValueError("Missing Inukjuak eligibility, multiplier, price-determination or conditional rules")
+                threshold = float(energy.group(2).replace(",", ""))
+                tier_note = "Multiply the allowance by billing days and the approved multiplier (1 unless the Rate DM exception applies)."
+                components = [
+                    RateComponent("fixed", "Daily System Access per Multiplier", round(float(fixed.group(1)) / 100, 6), "$/multiplier/day",
+                                  notes="Equal to Rate DN's charge (Article 9.46). Multiply by billing days and the multiplier."),
+                    RateComponent("energy", "First-Tier Energy", round(float(energy.group(1)) / 100, 6), "$/kWh",
+                                  tier_number=1, tier_threshold=threshold, tier_unit="kWh/day/multiplier", notes=tier_note + " Equal to Rate DN's first-tier price."),
+                    RateComponent("energy", "Remaining Energy (indexed fuel-mode price)", round(float(energy.group(3)) / 100, 6), "$/kWh",
+                                  tier_number=2, tier_threshold=threshold, tier_unit="kWh/day/multiplier",
+                                  notes=tier_note + " Second-tier price set from an oil-price formula and annual CPI index (Article 9.46); published value used. " + pricing),
+                    RateComponent("demand", "Demand Charge above Base Billing Demand", float(demand.group(1)), "$/kW/month", demand_unit="kW",
+                                  notes=base + " Apply to billing demand above this computed allowance, not a fixed 50-kW threshold."),
+                    domestic_supply_credit(),
+                ]
+                notes = ("Dual-energy off-grid domestic rate for Rate DN-eligible contracts at the Inukjuak system. Eligibility: " + eligibility + " Sign-up: " + signup
+                         + " Multiplier: " + multiplier + " Minimum billing demand: " + minimum + " Non-compliance: " + noncompliance
+                         + " Efficient Energy Use Program rebate on the second-tier price (conditional, not applied): " + efficiency)
+                records.append(finish(selected, "DN Inukjuak dual-energy", components, "residential", tariff_name="Rate DN Dual-Energy - Inukjuak System",
+                                      tariff_code="DN_INUKJUAK", sub_class="dual-energy off-grid (Inukjuak)", eligibility=application + " " + eligibility, notes=notes))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Inukjuak dual-energy domestic rate: %s", exc)
+
+        # Rate G9 and Rate Flex G9 share the same demand/energy base
+        def g9_common(text: str, structure: str, minimum_text: str) -> tuple[list[RateComponent], str, float]:
+            demand = re.search(r"\$\s*(\d+\.\d+) per kilowatt of billing demand plus ", structure)
+            excess = re.search(r"exceeds the real power during a consumption period, the excess is subject to a monthly charge of \$\s*(\d+\.\d+) per kilowatt", structure)
+            ratchet = re.search(r"equal to (\d+(?:\.\d+)?)% of the maximum power demand during a consumption period that falls wholly within the winter period", minimum_text)
+            if not (demand and excess and ratchet) or credit_clause not in structure:
+                raise ValueError("Missing G9 demand charge, apparent-power excess, ratchet or credit reference")
+            positive(demand.group(1), excess.group(1))
+            if not 0 < float(ratchet.group(1)) <= 100:
+                raise ValueError("Invalid minimum-demand ratchet")
+            credits, losses = voltage_credits()
+            components = [
+                RateComponent("demand", "Demand Charge", float(demand.group(1)), "$/kW/month", demand_unit="kW",
+                              notes="Per kilowatt of billing demand; billing demand is never less than the minimum billing demand (" + ratchet.group(1) + "% winter ratchet)."),
+                RateComponent("demand", "Excess of Maximum Power Demand over Real Power", float(excess.group(1)), "$/kW/month", demand_unit="kW", sub_component="conditional",
+                              notes="Applies only when the maximum power demand exceeds the real power during a consumption period; charged on the excess."),
+                *credits,
+            ]
+            return components, losses, float(ratchet.group(1))
+
+        selected, text = self._run_section(pages, r"Section\s+2\s+\W?\s*Rate G9\b", r"Application\s+4\.9\b")
+        if selected:
+            try:
+                need(text, ("Application", "Structure of Rate G9", "Billing demand", "Minimum billing demand", "Short-term contract", "Installation of maximum-demand meter"))
+                application = clause(text, r"Application\s+4\.9\s+(General Rate G9 applies.*?)Structure of Rate G9\s+4\.10", "G9 application")
+                structure = clause(text, r"Structure of Rate G9\s+4\.10\s+(.*?)Billing demand\s+4\.11", "G9 structure")
+                minimum = clause(text, r"Minimum billing demand\s+4\.12\s+(.*?)Short-term contract\s+4\.13", "G9 minimum demand")
+                short = clause(text, r"Short-term contract\s+4\.13\s+(.*?)Installation of maximum-demand meter\s+4\.14", "G9 short-term terms")
+                qualifying = re.search(r"maximum power demand has been at least ([\d,]+) kilowatts during one of the 12 consecutive monthly periods", application)
+                energy = re.search(r"per kilowatt of billing demand plus " + cent + r" per kilowatthour\.", structure)
+                surcharge = re.search(r"minimum monthly bill is increased by \$(\d+\.\d+)\. In the winter period, the monthly demand charge is increased by \$(\d+\.\d+)\.", short)
+                if not (qualifying and energy and surcharge) or "not offered to independent producers" not in application:
+                    raise ValueError("Missing G9 eligibility, energy price or short-term surcharge")
+                positive(qualifying.group(1), energy.group(1), surcharge.group(1), surcharge.group(2))
+                components, losses, _ = g9_common(text, structure, minimum)
+                components.insert(1, RateComponent(
+                    "energy", "Energy", round(float(energy.group(1)) / 100, 6), "$/kWh", notes="Single-price energy charge."))
+                components.append(RateComponent(
+                    "demand", "Short-Term Contract Winter Demand Surcharge", float(surcharge.group(2)), "$/kW/month", demand_unit="kW", sub_component="conditional",
+                    season="winter", season_months=winter_months,
+                    notes="Increase to the monthly demand charge in the winter period for a short-term contract (term under 12 monthly periods, at least 1 monthly period); prorated when a period overlaps the season boundary. " + short))
+                notes = ("Medium-power general rate for limited use of billing demand. " + phase_minimum(structure) + " Minimum billing demand: " + minimum
+                         + " Short-term contract minimum bill increase: $" + surcharge.group(1) + "." + losses)
+                records.append(finish(selected, "G9", components, "commercial", tariff_name="Rate G9 - General Limited Demand Use", tariff_code="G9",
+                                      sub_class="medium power, limited use of billing demand", demand_min_kw=float(qualifying.group(1).replace(",", "")),
+                                      eligibility=application, notes=notes))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Rate G9: %s", exc)
+
+        # Flex G
+        selected, text = self._run_section(pages, r"Section\s+4\s+\W?\s*Rate Flex G\b", r"Application\s+3\.17\b")
+        if selected:
+            try:
+                need(text, ("Application", "Definitions", "Sign-up procedure", "Eligibility", "Conditions applicable to peak demand events",
+                            "Peak demand event notifications", "Structure of Rate Flex G", "Termination"))
+                application = clause(text, r"Application\s+3\.17\s+(Rate Flex G applies.*?)Definitions\s+3\.18", "Flex G application")
+                signup = clause(text, r"Sign-up procedure\s+3\.19\s+(.*?)Eligibility\s+3\.20", "Flex G sign-up")
+                eligibility = clause(text, r"Eligibility\s+3\.20\s+(For the contract to be eligible.*?)Conditions applicable to peak demand events\s+3\.21", "Flex G eligibility")
+                structure = clause(text, r"Structure of Rate Flex G\s+3\.23\s+(.*?)Termination\s+3\.24", "Flex G structure")
+                termination = clause(text, r"Termination\s+3\.24\s+(.*?)Installation of maximum-demand meter\s+3\.25", "Flex G termination")
+                limit = re.search(r"maximum power demand for the contract is less than (\d+) kilowatts", application)
+                hours, events, notice = peak_rules(text, structure)
+                fixed = re.search(r"\$\s*(\d+\.\d+) system access charge plus ", structure)
+                winter = re.search(winter_re, structure + "")
+                summer = re.search(r"b\) During the summer period: " + cent + r" per kilowatthour\.", structure)
+                if not (limit and fixed and winter and summer):
+                    raise ValueError("Missing Flex G eligibility or charges")
+                positive(limit.group(1), fixed.group(1), winter.group(1), winter.group(2), summer.group(1))
+                if not all(item in eligibility for item in flex_checks) or "Winter Credit Option" not in eligibility or "Net Metering Option" not in eligibility \
+                        or "cannot sign up again during that same winter or the following winter period" not in eligibility or "within 5 business days" not in signup:
+                    raise ValueError("Missing Flex G eligibility or enrolment conditions")
+                components = flex_components(text, structure, hours, events, notice, winter, [
+                    RateComponent("fixed", "Monthly System Access", float(fixed.group(1)), "$/month", notes="Monthly system access charge; no multiplier applies.")])
+                components.append(RateComponent(
+                    "energy", "Summer Energy", round(float(summer.group(1)) / 100, 6), "$/kWh", season="summer", season_months=summer_months))
+                notes = ("Optional peak-event rate for a Rate G-eligible contract. " + phase_minimum(structure) + " Sign-up: " + signup + " Eligibility: " + eligibility + " Termination: " + termination)
+                records.append(finish(selected, "Flex G", components, "commercial", tariff_name="Rate Flex G - Small Power Peak Events", tariff_code="FLEX_G",
+                                      sub_class="optional peak demand event rate", demand_max_kw=float(limit.group(1)), eligibility=application + " " + eligibility, notes=notes))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Rate Flex G: %s", exc)
+
+        # Flex M
+        selected, text = self._run_section(pages, r"Section\s+7\s+\W?\s*Rate Flex M\b", r"Application\s+4\.29\b")
+        if selected:
+            try:
+                need(text, ("Application", "Definitions", "Sign-up procedure", "Eligibility", "Conditions applicable to peak demand events",
+                            "Peak demand event notifications", "Structure of Rate Flex M", "Billing demand", "Minimum billing demand", "Termination"))
+                application = clause(text, r"Application\s+4\.29\s+(Rate Flex M is an experimental peak rate.*?)Definitions\s+4\.30", "Flex M application")
+                signup = clause(text, r"Sign-up procedure\s+4\.31\s+(.*?)Eligibility\s+4\.32", "Flex M sign-up")
+                eligibility = clause(text, r"Eligibility\s+4\.32\s+(For the contract to be eligible.*?)Conditions applicable to peak demand events\s+4\.33", "Flex M eligibility")
+                structure = clause(text, r"Structure of Rate Flex M\s+4\.35\s+(.*?)Billing demand\s+4\.36", "Flex M structure")
+                minimum = clause(text, r"Minimum billing demand\s+4\.37\s+(.*?)Limitation\s+4\.38", "Flex M minimum demand")
+                termination = clause(text, r"Termination\s+4\.39\s+(.*?)Installation of maximum-demand meter\s+4\.40", "Flex M termination")
+                hours, events, notice = peak_rules(text, structure)
+                demand = re.search(r"\$\s*(\d+\.\d+) per kilowatt of billing demand plus ", structure)
+                winter = re.search(winter_re, structure)
+                summer = re.search(r"b\) During the summer period: " + cent + r" per kilowatthour for the first ([\d,]+) kilowatthours, and " + cent + r" per kilowatthour for the remaining consumption", structure)
+                ratchet = re.search(r"equal to (\d+(?:\.\d+)?)% of the maximum power demand during a consumption period that falls wholly within the winter period", minimum)
+                ceiling = re.search(r"minimum billing demand reaches or exceeds ([\d,]+) kilowatts, the contract ceases to be eligible", minimum)
+                if not (demand and winter and summer and ratchet and ceiling) or credit_clause not in structure:
+                    raise ValueError("Missing Flex M charges, ratchet, ceiling or credit reference")
+                positive(demand.group(1), winter.group(1), winter.group(2), summer.group(1), summer.group(2), summer.group(3), ceiling.group(1))
+                if not 0 < float(ratchet.group(1)) <= 100:
+                    raise ValueError("Invalid Flex M ratchet")
+                if not all(item in eligibility for item in flex_checks) or "Net Metering Option" not in eligibility or "by November 20" not in signup:
+                    raise ValueError("Missing Flex M eligibility or enrolment conditions")
+                credits, losses = voltage_credits()
+                threshold = float(summer.group(2).replace(",", ""))
+                components = [
+                    RateComponent("demand", "Demand Charge", float(demand.group(1)), "$/kW/month", demand_unit="kW",
+                                  notes=f"Per kilowatt of billing demand; never less than the minimum billing demand ({ratchet.group(1)}% winter ratchet)."),
+                ]
+                components.extend(flex_components(text, structure, hours, events, notice, winter, []))
+                components.extend([
+                    RateComponent("energy", "Summer First-Tier Energy", round(float(summer.group(1)) / 100, 6), "$/kWh",
+                                  tier_number=1, tier_threshold=threshold, tier_unit="kWh/month", season="summer", season_months=summer_months),
+                    RateComponent("energy", "Summer Remaining Energy", round(float(summer.group(3)) / 100, 6), "$/kWh",
+                                  tier_number=2, tier_threshold=threshold, tier_unit="kWh/month", season="summer", season_months=summer_months),
+                    *credits,
+                ])
+                notes = ("Experimental optional peak rate for a medium-power contract. " + phase_minimum(structure) + " Sign-up: " + signup + " Eligibility: " + eligibility
+                         + " Minimum billing demand: " + minimum + " Termination: " + termination + losses)
+                records.append(finish(selected, "Flex M", components, "commercial", tariff_name="Rate Flex M - Medium Power Peak Events", tariff_code="FLEX_M",
+                                      sub_class="experimental optional peak demand event rate", demand_max_kw=float(ceiling.group(1).replace(",", "")),
+                                      eligibility=application + " " + eligibility, notes=notes))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Rate Flex M: %s", exc)
+
+        # Flex G9
+        selected, text = self._run_section(pages, r"Section\s+8\s+\W?\s*Rate Flex G9\b", r"Application\s+4\.41\b")
+        if selected:
+            try:
+                need(text, ("Application", "Definitions", "Sign-up procedure", "Eligibility", "Conditions applicable to peak demand events",
+                            "Peak demand event notifications", "Structure of Rate Flex G9", "Billing demand", "Minimum billing demand", "Termination"))
+                application = clause(text, r"Application\s+4\.41\s+(Rate Flex G9 is an experimental peak rate.*?)Definitions\s+4\.42", "Flex G9 application")
+                signup = clause(text, r"Sign-up procedure\s+4\.43\s+(.*?)Eligibility\s+4\.44", "Flex G9 sign-up")
+                eligibility = clause(text, r"Eligibility\s+4\.44\s+(For the contract to be eligible.*?)Conditions applicable to peak demand events\s+4\.45", "Flex G9 eligibility")
+                structure = clause(text, r"Structure of Rate Flex G9\s+4\.47\s+(.*?)Billing demand\s+4\.48", "Flex G9 structure")
+                minimum = clause(text, r"Minimum billing demand\s+4\.49\s+(.*?)Limitation\s+4\.50", "Flex G9 minimum demand")
+                termination = clause(text, r"Termination\s+4\.51\s+(.*?)Installation of a maximum-demand meter\s+4\.52", "Flex G9 termination")
+                hours, events, notice = peak_rules(text, structure)
+                winter = re.search(winter_re, structure)
+                summer = re.search(r"b\) During the summer period: " + cent + r" per kilowatthour\.", structure)
+                if not (winter and summer) or "by November 20" not in signup or not all(item in eligibility for item in flex_checks):
+                    raise ValueError("Missing Flex G9 charges or eligibility")
+                positive(winter.group(1), winter.group(2), summer.group(1))
+                components, losses, _ = g9_common(text, structure, minimum)
+                components[2:2] = flex_components(text, structure, hours, events, notice, winter, [])
+                components.insert(4, RateComponent(
+                    "energy", "Summer Energy", round(float(summer.group(1)) / 100, 6), "$/kWh", season="summer", season_months=summer_months))
+                notes = ("Experimental optional peak rate for a medium-power contract with limited use of billing demand. " + phase_minimum(structure) + " Sign-up: " + signup
+                         + " Eligibility: " + eligibility + " Minimum billing demand: " + minimum + " Termination: " + termination + losses)
+                records.append(finish(selected, "Flex G9", components, "commercial", tariff_name="Rate Flex G9 - Limited Demand Peak Events", tariff_code="FLEX_G9",
+                                      sub_class="experimental optional peak demand event rate", eligibility=application + " " + eligibility, notes=notes))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Rate Flex G9: %s", exc)
+
+        # Small- and medium-power dual-energy heating rates
+        selected, text = self._run_section(
+            pages, r"(?:CHAPTER 8\b|Section\s+1\s+\W?\s*Small\W?\s*and Medium\W?\s*Power Dual\W?Energy Rate)", r"Application\s+8\.1\b")
+        if selected:
+            try:
+                need(text, ("Application", "Definitions", "Eligibility", "Characteristics of the dual-energy system", "Sign-up procedure", "Non-compliance", "Fraud"))
+                application = clause(text, r"Application\s+8\.1\s+(The Small- and Medium-Power Dual-Energy Rate.*?)Definitions\s+8\.2", "dual-energy application")
+                heating = self._period_months(text, "heating season", year)
+                non_heating = self._period_months(text, "non-heating season", year)
+                if sorted((heating + "," + non_heating).split(","), key=int) != [str(month) for month in range(1, 13)]:
+                    raise ValueError("Dual-energy seasons do not cover the year")
+                eligibility = clause(text, r"Eligibility\s+8\.3\s+(For the contract to be eligible.*?)Characteristics of the dual-energy system\s+8\.4", "dual-energy eligibility")
+                equipment = clause(text, r"Characteristics of the dual-energy system\s+8\.4\s+(.*?)Recovery after a power failure\s+8\.5", "dual-energy equipment")
+                signup = clause(text, r"Sign-up procedure\s+8\.6\s+(.*?)Non-compliance\s+8\.7", "dual-energy sign-up")
+                noncompliance = clause(text, r"Non-compliance\s+8\.7\s+(.*?)Fraud\s+8\.8", "dual-energy non-compliance")
+                fraud = clause(text, r"Fraud\s+8\.8\s+(.*?)(?:Structure of the Small-Power Dual-Energy Rate\s+8\.9|$)", "dual-energy fraud rule")
+                if not all((
+                    "metered separately" in eligibility, "must not benefit" in eligibility,
+                    "must not be supplied by an off-grid system" in eligibility,
+                    "automatic switch" in equipment and "temperature gauge" in equipment and "supplied and installed by Hydro-Qu" in equipment,
+                    "Certificate of Eligibility" in signup, "10 business days" in noncompliance, "365 days" in fraud,
+                    "only applies to the electricity consumed by the dual-energy system for space heating" in application,
+                )):
+                    raise ValueError("Missing dual-energy eligibility or equipment conditions")
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("Incomplete Hydro-Quebec dual-energy conditions: %s", exc)
+            else:
+                heat_re = (r"a\) During the heating season: " + cent + r" per kilowatthour when the temperature is equal to or higher than -(\d+)\u00b0C or -(\d+)\u00b0C, "
+                           r"depending on the climate zones defined by Hydro-Qu\S+bec, and " + cent + r" per kilowatthour when the temperature is below -(\d+)\u00b0C or -(\d+)\u00b0C, as applicable\.? or b\) During the non-heating season: ")
+                shared = ("Applies only to electricity used by the dual-energy system for space heating; other consumption is billed under a separate Rate G, M or G9 contract. Eligibility: "
+                          + eligibility + " Equipment: " + equipment + " Sign-up: " + signup + " Non-compliance: " + noncompliance + " Fraud: " + fraud)
+                variants = (
+                    ("small", r"Structure of the Small-Power Dual-Energy Rate\s+8\.9\s+(.*?)Structure of the Medium-Power Dual-Energy Rate\s+8\.10",
+                     "Small-Power Dual-Energy Rate (Space Heating)", "DUAL_ENERGY_SMALL", "small power"),
+                    ("medium", r"Structure of the Medium-Power Dual-Energy Rate\s+8\.10\s+(.*?)(?:Structure of the Medium-Power Dual-Energy Rate for contracts with low load factors\s+8\.11|$)",
+                     "Medium-Power Dual-Energy Rate (Space Heating)", "DUAL_ENERGY_MEDIUM", "medium power"),
+                    ("low", r"Structure of the Medium-Power Dual-Energy Rate for contracts with low load factors\s+8\.11\s+(.*?)Billing demand\s+8\.12",
+                     "Medium-Power Dual-Energy Rate - Low Load Factor (Space Heating)", "DUAL_ENERGY_MEDIUM_LLF", "medium power, limited use of billing demand"),
+                )
+                for kind, pattern, name, code, sub_class in variants:
+                    try:
+                        structure = clause(text, pattern, f"dual-energy {kind} structure")
+                        heat = re.search(heat_re, structure)
+                        if not heat:
+                            raise ValueError("Missing heating-season temperature prices")
+                        zones = (heat.group(2), heat.group(3))
+                        if zones != (heat.group(5), heat.group(6)) or len(set(zones)) != 2 or min(int(zone) for zone in zones) <= 0:
+                            raise ValueError("Inconsistent temperature zones")
+                        positive(heat.group(1), heat.group(4))
+                        zone_label = f"-{zones[0]} C or -{zones[1]} C depending on Hydro-Quebec climate zone"
+                        components = [
+                            RateComponent("energy", "Heating Season Electric Mode Energy (at or above switching temperature)", round(float(heat.group(1)) / 100, 6), "$/kWh",
+                                          season="heating", season_months=heating, tou_period="outdoor temperature at or above " + zone_label,
+                                          notes="Climate zone is not assumed. Temperature-based, not clock-based."),
+                            RateComponent("energy", "Heating Season Fuel Mode Energy (below switching temperature)", round(float(heat.group(4)) / 100, 6), "$/kWh",
+                                          season="heating", season_months=heating, tou_period="outdoor temperature below " + zone_label,
+                                          notes="Energy consumed when the outdoor temperature is below the zone threshold."),
+                        ]
+                        extra_notes, demand_min, demand_max = "", None, None
+                        if kind == "low":
+                            non = re.search(r"b\) During the non-heating season: \$\s*(\d+\.\d+) per kilowatt of billing demand, plus " + cent + r" per kilowatthour\.", structure)
+                            excess = re.search(r"in kilovoltamperes exceeds the highest real power demand during a consumption period included in whole or in part during a non-heating season, the excess is subject to a monthly charge of \$\s*(\d+\.\d+) per kilowatt", structure)
+                            qualifying = re.search(r"maximum power demand has been at least (\d+) kilowatts during the non-heating season", structure)
+                            billing_rule = clause(text, r"Billing demand\s+8\.12\s+(.*?)Division of consumption period\s+8\.13", "dual-energy billing demand")
+                            division = clause(text, r"Division of consumption period\s+8\.13\s+(.*?)Termination\s+8\.14", "dual-energy period division")
+                            if not (non and excess and qualifying) or "During the heating season, no billing demand applies" not in billing_rule:
+                                raise ValueError("Missing low-load-factor non-heating charges or billing-demand rule")
+                            positive(non.group(1), non.group(2), excess.group(1), qualifying.group(1))
+                            components.extend([
+                                RateComponent("demand", "Non-Heating Season Demand Charge", float(non.group(1)), "$/kW/month", demand_unit="kW",
+                                              season="non-heating", season_months=non_heating, notes=billing_rule),
+                                RateComponent("energy", "Non-Heating Season Energy", round(float(non.group(2)) / 100, 6), "$/kWh", season="non-heating", season_months=non_heating),
+                                RateComponent("demand", "Excess of Apparent over Real Power Demand (non-heating)", float(excess.group(1)), "$/kW/month", demand_unit="kW",
+                                              sub_component="conditional", season="non-heating", season_months=non_heating,
+                                              notes="Applies only when the kVA demand exceeds the highest real power demand in a period touching the non-heating season."),
+                            ])
+                            demand_min = float(qualifying.group(1))
+                            extra_notes = " Billing demand: " + billing_rule + " Division: " + division
+                        else:
+                            if kind == "small":
+                                non = re.search(r"b\) During the non-heating season: \$\s*(\d+\.\d+) per kilowatt of billing demand in excess of (\d+) kilowatts plus " + cent + r" per kilowatthour for the first ([\d,]+) kilowatthours, and " + cent + r" per kilowatthour for the remaining energy consumption", structure)
+                                limit = re.search(r"maximum power demand was less than (\d+) kilowatts during the non-heating season", structure)
+                                if not (non and limit):
+                                    raise ValueError("Missing small-power non-heating charges")
+                                positive(non.group(1), non.group(2), non.group(3), non.group(4), non.group(5), limit.group(1))
+                                free_kw, threshold, tier1, tier2 = float(non.group(2)), non.group(4), non.group(3), non.group(5)
+                                demand_max = float(limit.group(1))
+                                demand_value = non.group(1)
+                            else:
+                                non = re.search(r"b\) During the non-heating season: \$\s*(\d+\.\d+) per kilowatt of billing demand plus " + cent + r" per kilowatthour for the first ([\d,]+) kilowatthours, and " + cent + r" per kilowatthour for the remaining energy consumption", structure)
+                                limit = re.search(r"maximum power demand was at least (\d+) kilowatts during the non-heating season", structure)
+                                if not (non and limit):
+                                    raise ValueError("Missing medium-power non-heating charges")
+                                positive(non.group(1), non.group(2), non.group(3), non.group(4), limit.group(1))
+                                free_kw, threshold, tier1, tier2 = None, non.group(3), non.group(2), non.group(4)
+                                demand_min = float(limit.group(1))
+                                demand_value = non.group(1)
+                            if credit_clause not in structure:
+                                raise ValueError("Missing supply-voltage credit reference")
+                            components.extend([
+                                RateComponent("demand", "Non-Heating Season Demand Charge", float(demand_value), "$/kW/month", demand_unit="kW",
+                                              demand_threshold_kw=free_kw, season="non-heating", season_months=non_heating,
+                                              notes="Per kilowatt of billing demand" + (f" in excess of {int(free_kw)} kW." if free_kw else ".")),
+                                RateComponent("energy", "Non-Heating Season First-Tier Energy", round(float(tier1) / 100, 6), "$/kWh", tier_number=1,
+                                              tier_threshold=float(threshold.replace(",", "")), tier_unit="kWh/month", season="non-heating", season_months=non_heating),
+                                RateComponent("energy", "Non-Heating Season Remaining Energy", round(float(tier2) / 100, 6), "$/kWh", tier_number=2,
+                                              tier_threshold=float(threshold.replace(",", "")), tier_unit="kWh/month", season="non-heating", season_months=non_heating),
+                            ])
+                        if kind == "low" and credit_clause not in structure:
+                            raise ValueError("Missing supply-voltage credit reference")
+                        credits, losses = voltage_credits()
+                        components.extend(credits)
+                        notes = f"Dual-energy heating rate, {sub_class} contract. Heating season Oct-Apr and non-heating season May-Sep as defined by the tariff. " + shared + extra_notes + losses
+                        records.append(finish(selected, f"Dual-Energy {kind}", components, "commercial", tariff_name=name, tariff_code=code, sub_class="dual-energy heating, " + sub_class,
+                                              demand_min_kw=demand_min, demand_max_kw=demand_max, eligibility=application + " " + eligibility, notes=notes))
+                    except (ValueError, IndexError) as exc:
+                        self.logger.warning("Incomplete Hydro-Quebec dual-energy %s-power rate: %s", kind, exc)
+
+        # Closed Winter Credit Option for Rate G
+        selected, text = self._run_section(pages, r"Section\s+3\s+\W?\s*Winter Credit Option for Rate G Customers", r"Application\s+3\.9\b")
+        if selected:
+            try:
+                need(text, ("Application", "Definitions", "Sign-up procedure", "Eligibility", "Conditions applicable to peak demand events",
+                            "Peak demand event notifications", "Credit", "Termination"))
+                application = clause(text, r"Application\s+3\.9\s+(The Winter Credit Option.*?)Definitions\s+3\.10", "Winter Credit G application")
+                rules = clause(text, r"Definitions\s+3\.10\s+(.*?)Sign-up procedure\s+3\.11", "Winter Credit G definitions")
+                signup = clause(text, r"Sign-up procedure\s+3\.11\s+(.*?)Eligibility\s+3\.12", "Winter Credit G sign-up")
+                eligibility = clause(text, r"Eligibility\s+3\.12\s+(To be eligible for this option.*?)Conditions applicable to peak demand events\s+3\.13", "Winter Credit G eligibility")
+                notifications = clause(text, r"Peak demand event notifications\s+3\.14\s+(.*?)Credit\s+3\.15", "Winter Credit G notifications")
+                termination = clause(text, r"Termination\s+3\.16\s+(.*)$", "Winter Credit G termination")
+                cutoff = re.search(r"reserved for the Rate G contract to which it applied up to ([A-Za-z]+ \d{1,2}, \d{4})", application)
+                limit = re.search(r"maximum power demand under the contract is less than (\d+) kilowatts", application)
+                hours, events, _ = peak_rules(text, "")
+                credit = re.search(r"entitled to the following credit: " + cent + r" per kilowatthour of energy curtailed\. (No credit is given for a peak demand event .*?)Termination\s+3\.16", text)
+                if not (cutoff and limit and credit):
+                    raise ValueError("Missing Winter Credit G closed-enrolment date, demand limit or credit")
+                closed_on = datetime.strptime(cutoff.group(1), "%B %d, %Y").date().isoformat()
+                if closed_on > self.now_iso()[:10]:
+                    raise ValueError("Winter Credit G cutoff is in the future")
+                positive(credit.group(1), limit.group(1))
+                if not all((
+                    "single communicating meter" in eligibility, "must not be supplied by an off-grid system" in eligibility,
+                    "must not be signed up for a Net Metering Option" in eligibility,
+                    "reference energy:" in rules and "reference period:" in rules, "temperature adjustment:" in rules and "This value cannot be negative" in rules,
+                    "excluding the minimum and maximum values for each hour" in rules, "5 weekdays or 5 weekend days" in rules,
+                    "before 15:00 on the day prior" in notifications, "notification may be sent after 15:00" in notifications, "within 5 business days" in signup,
+                )):
+                    raise ValueError("Missing Winter Credit G eligibility conditions")
+                peak_hours = f"{hours.group(1)}-{hours.group(2)},{hours.group(3)}-{hours.group(4)}"
+                components = [RateComponent(
+                    "rebate", "Winter Credit per kWh Curtailed", -round(float(credit.group(1)) / 100, 6), "$/kWh curtailed",
+                    sub_component="conditional", season="winter", season_months=winter_months, tou_period="peak demand event", tou_hours=peak_hours,
+                    notes=f"Credit applies only to energy curtailed during notified peak demand events (peak hours {peak_hours}, excluding {hours.group(5)}). " + credit.group(2).strip(),
+                )]
+                notes = (f"Closed to new enrolment: {application} Eligibility: {eligibility} Peak demand events: at most {events.group(1)} per day, {events.group(2)} h apart, "
+                         f"{events.group(3)} h each and {events.group(4)} h per winter. Credit is conditional on enrolment, curtailment and notified events; Rate G charges remain separate. "
+                         f"Closed-enrolment cutoff in source: {closed_on}. Source calculation rules (not calculated here): " + rules + " Notifications: " + notifications
+                         + " Sign-up: " + signup + " Termination: " + termination)
+                records.append(finish(selected, "Winter Credit Option (Rate G)", components, "commercial", tariff_name="Winter Credit Option - Rate G", tariff_code="WINTER_CREDIT_G",
+                                      sub_class="closed to new enrollment", demand_max_kw=float(limit.group(1)), eligibility=application + " " + eligibility, notes=notes))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Winter Credit Option for Rate G: %s", exc)
+
+        # Net metering Option I (grid-connected)
+        selected, text = self._run_section(pages, r"Section\s+6\s+\W?\s*Net Metering for Customer\W?Generators\s*\W?\s*Option I(?!I)", r"Application\s+2\.45\b")
+        if selected:
+            try:
+                need(text, ("Application", "Definitions", "Eligibility", "Billing", "Surplus bank restrictions", "Restrictions", "Termination"))
+                application = clause(text, r"Application\s+2\.45\s+(The Net Metering Option.*?)Definitions\s+2\.46", "net metering application")
+                eligibility = clause(text, r"Eligibility\s+2\.48\s+(To be eligible.*?)Sign-up date\s+2\.49", "net metering eligibility")
+                billing_rule = clause(text, r"Billing\s+2\.50\s+(.*?)Surplus bank restrictions\s+2\.51", "net metering billing")
+                bank = clause(text, r"Surplus bank restrictions\s+2\.51\s+(.*?)Restrictions\s+2\.52", "net metering surplus-bank rules")
+                price = re.search(r"credited the balance at the price of the average cost of electricity supply, i\.e\., " + cent + r" per kilowatthour", bank)
+                g_selected, g_text = self._run_section(pages, r"Section\s+2\s+\W?\s*Net Metering for Customer\W?Generators\s*\W?\s*Option I(?!I)", r"Application\s+3\.8\b")
+                if not price or "Rate D, Rate DM or Rate DP" not in application or "1,000 kilowatts" not in application \
+                        or "The amount billed cannot be negative" not in billing_rule or not re.search(r"applies to the Rate G contract of a customer whose maximum self-generation capacity does not exceed 1,000 kilowatts", g_text):
+                    raise ValueError("Missing net metering price, applicability or billing rule")
+                positive(price.group(1))
+                components = [RateComponent(
+                    "rebate", "Surplus Bank Reset Credit (average cost of supply)", -round(float(price.group(1)) / 100, 6), "$/kWh of surplus-bank balance",
+                    sub_component="conditional", notes="Credited only when the surplus bank is reset to zero or the option ends. " + bank)]
+                notes = ("Billing option for customer-generators; the system access charge and the amount for electricity delivered follow the applicable rate, minus the surplus-bank balance. "
+                         + "Billing: " + billing_rule + " Eligibility: " + eligibility + " Rate G application (Chapter 3 Section 2): " + g_text)
+                records.append(finish(selected + g_selected, "Net Metering Option I", components, "residential", tariff_name="Net Metering Option I - Customer-Generators",
+                                      tariff_code="NET_METERING_I", sub_class="net metering option (also Rate G)", eligibility=application + " " + eligibility, notes=notes))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Net Metering Option I: %s", exc)
+
+        # Net metering Option III (off-grid)
+        selected, text = self._run_section(pages, r"Section\s+3\s+\W?\s*Net Metering for Customer\W?Generators\s*\W?\s*Option I\s?I\s?I", r"Application\s+9\.12\b")
+        if selected:
+            try:
+                need(text, ("Application", "Definitions", "Eligibility", "Surplus bank", "Billing", "Termination"))
+                application = clause(text, r"Application\s+9\.12\s+(The Net Metering Option.*?)Definitions\s+9\.13", "Option III application")
+                eligibility = clause(text, r"Eligibility\s+9\.15\s+(To be eligible.*?)Sign-up date\s+9\.16", "Option III eligibility")
+                bank = clause(text, r"Surplus bank\s+9\.17\s+(.*?)Billing\s+9\.18", "Option III surplus bank")
+                billing_rule = clause(text, r"Billing\s+9\.18\s+(.*?)Surplus bank restrictions\s+9\.19", "Option III billing")
+                rules = clause(text, r"Surplus bank restrictions\s+9\.19\s+(.*?)Termination\s+9\.20", "Option III bank resets")
+                prices = re.search(
+                    r"multiplied by: " + cent + r" per kilowatthour when the electricity is produced by a heavy diesel power plant, or " + cent
+                    + r" per kilowatthour when the electricity is produced by a light diesel power plant, or " + cent
+                    + r" per kilowatthour when the electricity is produced by an arctic diesel power plant", bank)
+                if not prices or "Rate D, Rate DM, Rate DN or Rate G" not in application or "off-grid system" not in application:
+                    raise ValueError("Missing off-grid net metering prices or applicability")
+                positive(*prices.groups())
+                names = ("heavy diesel", "light diesel", "arctic diesel")
+                components = [
+                    RateComponent("rebate", f"Injected Energy Credit ({label} plant)", -round(float(value) / 100, 6), "$/kWh injected", sub_component="conditional",
+                                  notes="Credited to the surplus bank per kWh injected; the rate depends on the type of power plant producing the off-grid electricity. " + rules)
+                    for label, value in zip(names, prices.groups())
+                ]
+                notes = "Off-grid net metering for customer-generators. Eligibility: " + eligibility + " Billing: " + billing_rule + " Surplus bank resets: " + rules
+                records.append(finish(selected, "Net Metering Option III", components, "residential", tariff_name="Net Metering Option III - Off-Grid Customer-Generators",
+                                      tariff_code="NET_METERING_III", sub_class="off-grid net metering option (also Rate G)", eligibility=application + " " + eligibility, notes=notes))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Net Metering Option III: %s", exc)
         return records
 
     # ── Rate D parser ─────────────────────────────────────────

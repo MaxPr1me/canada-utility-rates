@@ -1103,7 +1103,7 @@ class TestHydroQuebecDomestic:
         return json.loads(path.read_text(encoding="utf-8"))
 
     @staticmethod
-    def scrape_document(document, landing_unavailable=False):
+    def scrape_document(document, landing_unavailable=False, legacy=False):
         from scrapers.utilities.hydro_quebec import HydroQuebecScraper
         from scrapers.utils.parsing import DocumentPage
 
@@ -1112,9 +1112,9 @@ class TestHydroQuebecDomestic:
         with patch.object(scraper, "fetch_page", return_value="<h1>Residential rates</h1>", side_effect=ConnectionError("Landing page unavailable") if landing_unavailable else None), \
              patch.object(scraper, "fetch_bytes", return_value=b"pdf"), \
              patch.object(scraper, "now_iso", return_value="2026-10-02T00:00:00+00:00"), \
-             patch.object(scraper, "_parse_rate_d", return_value=None), \
-             patch.object(scraper, "_parse_rate_g", return_value=None), \
-             patch.object(scraper, "_parse_rate_m", return_value=None), \
+             patch.object(scraper, "_parse_rate_d", new=scraper._parse_rate_d if legacy else (lambda *_: None)), \
+             patch.object(scraper, "_parse_rate_g", new=scraper._parse_rate_g if legacy else (lambda *_: None)), \
+             patch.object(scraper, "_parse_rate_m", new=scraper._parse_rate_m if legacy else (lambda *_: None)), \
              patch("scrapers.utilities.hydro_quebec.extract_pdf_text", return_value="\n".join(page.text for page in pages)), \
              patch("scrapers.utilities.hydro_quebec.extract_pdf_pages", return_value=pages, create=True):
             return scraper.scrape()
@@ -1346,6 +1346,226 @@ class TestHydroQuebecOptional:
 
 
 # ─── SaskPower ──────────────────────────────────────────────────
+
+import copy
+HQX_EXTRAS = {
+    "DN_INUKJUAK", "G9", "FLEX_G", "FLEX_M", "FLEX_G9", "DUAL_ENERGY_SMALL", "DUAL_ENERGY_MEDIUM",
+    "DUAL_ENERGY_MEDIUM_LLF", "WINTER_CREDIT_G", "NET_METERING_I", "NET_METERING_III",
+}
+HQX_CREDIT_CARRIERS = {"G9", "FLEX_M", "FLEX_G9", "DUAL_ENERGY_SMALL", "DUAL_ENERGY_MEDIUM", "DUAL_ENERGY_MEDIUM_LLF", "DN_INUKJUAK"}
+
+
+
+HQX_LEGACY_TEXT = (
+    "Structure of Rate D 2.5 46.154 \u00a2 system access charge for each day 7.065 \u00a2 per kilowatthour 11.142 \u00a2 per kilowatthour "
+    "Structure of Rate G $15.426 system access charge $22.071 per kilowatt of billing demand in excess of 50 kilowatts "
+    "12.388 \u00a2 per kilowatthour 9.534 \u00a2 per kilowatthour "
+    "Structure of Rate M $18.242 per kilowatt of billing demand 6.292 \u00a2 per kilowatthour 4.666 \u00a2 per kilowatthour"
+)
+
+
+def HQX_build(document, remove=(), edits=(), legacy=False):
+    """Scrape the fixture with the new pages merged in; returns {tariff_code: record} for live records."""
+    document = copy.deepcopy(document)
+    extra = [page for page in document["building_extras_pages"] if page["page_number"] not in remove]
+    for page_number, old, new in edits:
+        for page in extra:
+            if page["page_number"] == page_number:
+                assert old in page["text"], (page_number, old)
+                page["text"] = page["text"].replace(old, new)
+    base = [page for page in document["pages"] if page["page_number"] not in remove]
+    document["pages"] = base + extra
+    if legacy:
+        document["pages"].insert(0, {"page_number": 9999, "text": HQX_LEGACY_TEXT})
+    records = TestHydroQuebecDomestic.scrape_document(document, legacy=legacy)
+    return {record.tariff_code: record for record in records if "live_parsed" in (record.notes or "")}
+
+
+def HQX_comp(record, name_part):
+    return next(component for component in record.components if name_part in component.component_name)
+
+
+class TestHydroQuebecBuildingExtrasLive:
+    @pytest.fixture
+    def document(self):
+        return json.loads((Path(__file__).parent / "fixtures" / "hydro_quebec_domestic.json").read_text(encoding="utf-8"))
+
+    def test_all_live_components_carry_source_url_detail_and_date(self, document):
+        live = HQX_build(document, legacy=True)
+        assert {"D", "G", "M", "DP", "DM", "DN"} <= set(live)
+        for code, record in live.items():
+            for component in record.components:
+                assert component.source_url and component.source_detail and component.effective_date, (code, component.component_name)
+
+    def test_eleven_records_added_beside_existing_live_classes(self, document):
+        live = HQX_build(document)
+        assert HQX_EXTRAS <= set(live) and {"DP", "DM", "DN"} <= set(live)
+        for code in HQX_EXTRAS:
+            record = live[code]
+            assert record.effective_date == "2026-04-01" and record.confidence != "unverified"
+            assert "Provenance: live_parsed" in record.notes
+            for component in record.components:
+                assert component.source_url == document["source_url"]
+                assert component.source_detail and component.effective_date == "2026-04-01"
+        for code in HQX_CREDIT_CARRIERS - {"DN_INUKJUAK"}:
+            credits = [c for c in live[code].components if c.component_type == "rebate"]
+            assert [c.charge_value for c in credits] == [-0.7131, -1.1427, -2.5512, -3.1208, -4.1239]
+            assert all(c.sub_component == "conditional" and c.charge_unit == "$/kW/month" for c in credits)
+
+    def test_inukjuak_keeps_multiplier_indexed_tier_and_conditions(self, document):
+        record = HQX_build(document)["DN_INUKJUAK"]
+        assert record.customer_class == "residential"
+        fixed = HQX_comp(record, "System Access")
+        assert fixed.charge_value == 0.46154 and fixed.charge_unit == "$/multiplier/day"
+        first, second = [c for c in record.components if c.component_type == "energy"]
+        assert (first.charge_value, second.charge_value) == (0.07065, 0.21064)
+        assert first.tier_threshold == 40 and first.tier_unit == "kWh/day/multiplier"
+        assert HQX_comp(record, "Demand").charge_value == 7.266 and HQX_comp(record, "Demand").demand_threshold_kw is None
+        credit = HQX_comp(record, "Supply Voltage Credit")
+        assert credit.charge_value == -0.002818 and credit.sub_component == "conditional"
+        assert "Rate DM on May 31, 2009" in record.notes and "65%" in record.notes
+        assert "50.469" in record.notes and "March 31, 2029" in record.notes
+        assert "Inukjuak" in record.eligibility
+
+    def test_g9_and_flex_g9_demand_energy_and_conditions(self, document):
+        live = HQX_build(document)
+        g9 = live["G9"]
+        assert g9.customer_class == "commercial" and g9.demand_min_kw == 65
+        assert HQX_comp(g9, "Demand Charge").charge_value == 5.292 and HQX_comp(g9, "Demand Charge").charge_unit == "$/kW/month"
+        assert HQX_comp(g9, "Energy").charge_value == 0.12611
+        excess = HQX_comp(g9, "Excess")
+        assert excess.charge_value == 12.95 and excess.sub_component == "conditional"
+        surcharge = HQX_comp(g9, "Short-Term")
+        assert surcharge.charge_value == 7.542 and surcharge.season == "winter" and surcharge.season_months == "12,1,2,3"
+        assert "46.278" in g9.notes and "75%" in g9.notes and "15.426" in g9.notes
+        flex = live["FLEX_G9"]
+        assert HQX_comp(flex, "Demand Charge").charge_value == 5.292
+        assert HQX_comp(flex, "Outside Peak").charge_value == 0.10133 and HQX_comp(flex, "Winter Peak Demand Event").charge_value == 0.62558
+        assert HQX_comp(flex, "Summer Energy").charge_value == 0.12611 and HQX_comp(flex, "Summer Energy").season_months == "4,5,6,7,8,9,10,11"
+        assert HQX_comp(flex, "Winter Peak Demand Event").tou_hours == "06:00-09:00,16:00-20:00"
+        assert "100 h per winter" in HQX_comp(flex, "Winter Peak Demand Event").notes and "17:00" in HQX_comp(flex, "Winter Peak Demand Event").notes
+
+    def test_flex_g_and_flex_m_events_seasons_and_tiers(self, document):
+        live = HQX_build(document)
+        flex_g = live["FLEX_G"]
+        assert flex_g.demand_max_kw == 50
+        assert HQX_comp(flex_g, "Monthly System Access").charge_value == 15.426 and HQX_comp(flex_g, "Monthly System Access").charge_unit == "$/month"
+        peak = HQX_comp(flex_g, "Winter Peak Demand Event")
+        assert peak.charge_value == 0.56516 and peak.season_months == "12,1,2,3" and peak.tou_hours == "06:00-10:00,16:00-20:00"
+        assert "120 h per winter" in peak.notes and "15:00" in peak.notes
+        assert HQX_comp(flex_g, "Outside Peak").charge_value == 0.10173 and HQX_comp(flex_g, "Summer Energy").charge_value == 0.12388
+        flex_m = live["FLEX_M"]
+        assert flex_m.demand_max_kw == 5000 and "experimental" in flex_m.sub_class
+        assert HQX_comp(flex_m, "Demand Charge").charge_value == 18.242
+        assert HQX_comp(flex_m, "Winter Peak Demand Event").charge_value == 0.62558 and HQX_comp(flex_m, "Outside Peak").charge_value == 0.03966
+        tiers = [c for c in flex_m.components if c.season == "summer"]
+        assert [c.charge_value for c in tiers] == [0.06292, 0.04666] and tiers[0].tier_threshold == 210000
+        assert "November 20" in flex_m.notes and "65%" in flex_m.notes
+
+    def test_dual_energy_variants_keep_temperature_zones_and_seasons(self, document):
+        live = HQX_build(document)
+        for code in ("DUAL_ENERGY_SMALL", "DUAL_ENERGY_MEDIUM", "DUAL_ENERGY_MEDIUM_LLF"):
+            record = live[code]
+            electric, fuel = [c for c in record.components if c.season == "heating"]
+            assert (electric.charge_value, fuel.charge_value) == (0.06995, 0.62558)
+            assert electric.season_months == "10,11,12,1,2,3,4" and "-12 C or -15 C" in electric.tou_period and electric.tou_hours is None
+            assert all(c.season_months == "5,6,7,8,9" for c in record.components if c.season == "non-heating")
+            assert "Certificate of Eligibility" in record.notes and "space heating" in record.notes
+        small, medium, low = live["DUAL_ENERGY_SMALL"], live["DUAL_ENERGY_MEDIUM"], live["DUAL_ENERGY_MEDIUM_LLF"]
+        assert small.demand_max_kw == 100 and HQX_comp(small, "Demand").charge_value == 22.071 and HQX_comp(small, "Demand").demand_threshold_kw == 50
+        assert [c.charge_value for c in small.components if c.tier_number] == [0.12388, 0.09534]
+        assert medium.demand_min_kw == 50 and HQX_comp(medium, "Demand").charge_value == 18.242
+        assert [c.tier_threshold for c in medium.components if c.tier_number] == [210000, 210000]
+        assert low.demand_min_kw == 65 and HQX_comp(low, "Non-Heating Season Demand").charge_value == 5.292
+        assert HQX_comp(low, "Excess").charge_value == 12.95 and "no billing demand applies" in low.notes
+
+    def test_winter_credit_g_and_net_metering_prices(self, document):
+        live = HQX_build(document)
+        credit = live["WINTER_CREDIT_G"]
+        assert credit.sub_class == "closed to new enrollment" and credit.demand_max_kw == 50
+        assert credit.components[0].charge_value == -0.62558 and credit.components[0].charge_unit == "$/kWh curtailed"
+        assert "2026-03-31" in credit.notes and "reference energy" in credit.notes.lower() and "Rate G charges remain separate" in credit.notes
+        option_one = live["NET_METERING_I"]
+        assert len(option_one.components) == 1 and option_one.components[0].charge_value == -0.0473
+        assert option_one.components[0].sub_component == "conditional" and "Rate G" in option_one.notes and "cannot be negative" in option_one.notes
+        option_three = live["NET_METERING_III"]
+        assert [c.charge_value for c in option_three.components] == [-0.2127, -0.41287, -0.60055]
+        assert all(c.charge_unit == "$/kWh injected" for c in option_three.components)
+        assert "heavy diesel" in option_three.components[0].component_name
+
+    @pytest.mark.parametrize(("page", "old", "new", "rejected"), [
+        (140, "unless the contract was eligible for Rate D M", "unless removed", {"DN_INUKJUAK"}),
+        (141, "65%", "165%", {"DN_INUKJUAK"}),
+        (49, "$5.292 per kilowatt of billing demand", "$-5.292 per kilowatt of billing demand", {"G9"}),
+        (49, "increased by $7.542", "increased by $-7.542", {"G9"}),
+        (44, "56.516", "-56.516", {"FLEX_G"}),
+        (58, "62.558", "-62.558", {"FLEX_M"}),
+        (59, "5,000 kilowatts, the contract ceases", "x kilowatts, the contract ceases", {"FLEX_M"}),
+        (61, "10.133", "-10.133", {"FLEX_G9"}),
+        (125, "6.995", "-6.995", {"DUAL_ENERGY_SMALL", "DUAL_ENERGY_MEDIUM"}),
+        (126, "$12.950", "$-12.950", {"DUAL_ENERGY_MEDIUM_LLF"}),
+        (124, "Certificate of Eligibility", "undocumented eligibility", {"DUAL_ENERGY_SMALL", "DUAL_ENERGY_MEDIUM", "DUAL_ENERGY_MEDIUM_LLF"}),
+        (42, "62.558", "-62.558", {"WINTER_CREDIT_G"}),
+        (40, "March 31, 2026", "March 31, 2030", {"WINTER_CREDIT_G"}),
+        (26, "4.730", "-4.730", {"NET_METERING_I"}),
+        (132, "41.287", "-41.287", {"NET_METERING_III"}),
+    ])
+    def test_source_mutation_rejects_only_the_affected_class(self, document, page, old, new, rejected):
+        live = HQX_build(document, edits=[(page, old, new)])
+        assert set(live) >= {"DP", "DM", "DN"}
+        assert HQX_EXTRAS - set(live) == rejected
+
+    @pytest.mark.parametrize(("page", "rejected"), [
+        (139, {"DN_INUKJUAK"}), (140, {"DN_INUKJUAK"}), (141, {"DN_INUKJUAK"}),
+        (49, {"G9"}), (50, {"G9"}),
+        (43, {"FLEX_G"}), (44, {"FLEX_G"}), (45, {"FLEX_G"}),
+        (57, {"FLEX_M"}), (58, {"FLEX_M"}), (59, {"FLEX_M"}),
+        (60, {"FLEX_G9"}), (61, {"FLEX_G9"}), (62, {"FLEX_G9"}),
+        (123, {"DUAL_ENERGY_SMALL", "DUAL_ENERGY_MEDIUM", "DUAL_ENERGY_MEDIUM_LLF"}),
+        (125, {"DUAL_ENERGY_SMALL", "DUAL_ENERGY_MEDIUM", "DUAL_ENERGY_MEDIUM_LLF"}), (126, {"DUAL_ENERGY_MEDIUM_LLF"}),
+        (40, {"WINTER_CREDIT_G"}), (41, {"WINTER_CREDIT_G"}), (42, {"WINTER_CREDIT_G"}),
+        (25, {"NET_METERING_I"}), (26, {"NET_METERING_I"}), (27, {"NET_METERING_I"}), (39, {"NET_METERING_I"}),
+        (131, {"NET_METERING_III"}), (132, {"NET_METERING_III"}), (133, {"NET_METERING_III"}),
+        (152, HQX_CREDIT_CARRIERS), (11, HQX_EXTRAS),
+    ])
+    def test_missing_pages_fail_by_class(self, document, page, rejected):
+        live = HQX_build(document, remove={page})
+        assert HQX_EXTRAS - set(live) == rejected
+
+    def test_published_prices_follow_the_source(self, document):
+        live = HQX_build(document, edits=[
+            (49, "$5.292", "$6.111"), (58, "$18.242", "$19.500"), (139, "21.064¢", "22.222¢"), (132, "41.287¢", "40.000¢"),
+        ])
+        assert HQX_comp(live["G9"], "Demand Charge").charge_value == 6.111
+        assert HQX_comp(live["FLEX_G9"], "Demand Charge").charge_value == 5.292
+        assert HQX_comp(live["FLEX_M"], "Demand Charge").charge_value == 19.5
+        assert [c.charge_value for c in live["DN_INUKJUAK"].components if c.component_type == "energy"] == [0.07065, 0.22222]
+        assert live["NET_METERING_III"].components[1].charge_value == -0.4
+
+    def test_repeat_storage_and_export_keep_new_classes(self, document, tmp_path, monkeypatch):
+        import sqlite3
+        from pipeline import export_json
+        from pipeline.run_scrape import store_results
+        from tests.test_phase5_hardening import database
+
+        live = HQX_build(document)
+        records = [live[code] for code in sorted(HQX_EXTRAS)]
+        connection = database()
+        for run_id in (1, 2):
+            assert store_results(records, run_id, connection) == len(records)
+        assert connection.execute("SELECT count(*) FROM tariffs").fetchone()[0] == len(records)
+        assert connection.execute("SELECT count(*) FROM historical_snapshots").fetchone()[0] == 2 * len(records)
+        path = tmp_path / "rates.db"
+        with sqlite3.connect(path) as persisted:
+            connection.backup(persisted)
+        connection.close()
+        monkeypatch.setattr(export_json, "DB_PATH", path)
+        monkeypatch.setattr(export_json, "SITE_DATA_DIR", tmp_path / "site")
+        export_json.export_all()
+        exported = json.loads((tmp_path / "site" / "rates.json").read_text(encoding="utf-8"))
+        assert {item["tariff_code"]: len(item["components"]) for item in exported} == {record.tariff_code: len(record.components) for record in records}
+        assert all(item["provenance"] == "live" for item in exported)
+
 
 class TestSaskPowerUpdated:
     @pytest.fixture(autouse=True)
@@ -2443,6 +2663,58 @@ class TestFortisBCEnergyRate5Live:
                     if c.component_type == "delivery" and c.season == "Off-Peak Period") == 2.5
 
 
+FBEX_NAME = "Residential — Rate 1 (Revelstoke propane)"
+
+
+class TestFortisBCEnergyRevelstokeLive:
+    @pytest.fixture
+    def document(self):
+        return _gas_fixture("fortisbc_energy")
+
+    @staticmethod
+    def parse(document, replace=None):
+        from scrapers.utilities.fortisbc_energy import FortisBCEnergyScraper
+
+        pages = {key: page["text"] for key, page in document["pages"].items()}
+        pages["residential"] += " " + document["revelstoke_residential"]["text"]
+        if replace:
+            pages["residential"] = pages["residential"].replace(*replace)
+        return {r.tariff_name: r for r in FortisBCEnergyScraper().parse_pages(pages, date(2026, 10, 5))}
+
+    def test_revelstoke_propane_record(self, document):
+        records = self.parse(document)
+        assert len(records) == 7 and FBEX_NAME in records
+        record = records[FBEX_NAME]
+        assert record.effective_date == "2026-07-01" and record.sub_class == "Revelstoke (propane)"
+        values = {c.component_type: (c.charge_value, c.charge_unit) for c in record.components}
+        assert values == {"fixed": (0.4216, "$/day"), "delivery": (8.469, "$/GJ"), "transmission": (2.472, "$/GJ"),
+                          "commodity": (1.66, "$/GJ"), "carbon": (0.0, "$/GJ")}
+        assert all(c.effective_date and c.source_url and c.source_detail for c in record.components)
+        carbon = next(c for c in record.components if c.component_type == "carbon")
+        assert carbon.effective_date == "2025-04-01" and "motor fuel tax applies to propane" in carbon.notes
+
+    def test_existing_records_unchanged_by_revelstoke(self, document):
+        records = self.parse(document)
+        assert len([n for n in records if "Revelstoke" not in n]) == 6
+
+    @pytest.mark.parametrize("replace", [
+        ("Revelstoke (Effective July 1, 2026)", "Revelstoke (Effective July 1, 2027)"),
+        ("Revelstoke (Effective July 1, 2026) Basic charge per day $0.4216 Delivery charge per GJ $8.469 Storage and transport charge per GJ $2.472 Cost of gas per GJ $1.660",
+         "Revelstoke (Effective July 1, 2026) Basic charge per day $0.4216 Delivery charge per GJ $8.469 Storage and transport charge per GJ $2.472 Cost of gas per GJ"),
+        ("Revelstoke (Effective July 1, 2026) Basic charge per day $0.4216 Delivery charge per GJ $8.469",
+         "Revelstoke (Effective July 1, 2026) Basic charge per day $0.4216 Delivery charge per GJ 8.469"),
+    ])
+    def test_failure_is_isolated(self, document, replace):
+        records = self.parse(document, replace)
+        assert FBEX_NAME not in records and len(records) == 6
+
+    def test_missing_table_yields_no_record(self, document):
+        from scrapers.utilities.fortisbc_energy import FortisBCEnergyScraper
+
+        pages = {key: page["text"] for key, page in document["pages"].items()}
+        assert FBEX_NAME not in {r.tariff_name for r in FortisBCEnergyScraper().parse_pages(pages, date(2026, 10, 5))}
+
+
 class TestHeritageGasLive:
     @pytest.fixture
     def document(self):
@@ -3063,6 +3335,160 @@ class TestNovaScotiaBusinessLive:
 
 
 # ─── Maritime Electric building classes ───
+
+NSPP_FIXTURE = Path(__file__).parent / "fixtures" / "nova_scotia_residential.json"
+NSPP_CODES = {"72", "73", "82", "83"}
+NSPP_INTERIM = "2026-10-05"
+NSPP_NOVEMBER = "2026-11-02"
+
+
+class TestNovaScotiaBusinessPilotsLive:
+    @pytest.fixture
+    def document(self):
+        return json.loads(NSPP_FIXTURE.read_text(encoding="utf-8"))
+
+    @staticmethod
+    def pages(document):
+        from scrapers.utils.parsing import DocumentPage
+
+        cover = DocumentPage(**document["pages"][0])
+        riders = document["building_pages"]["building_riders"]
+        return [cover] + [DocumentPage(**p) for p in document["business_pilot"]["pages"] + riders]
+
+    @classmethod
+    def parse(cls, document, today=NSPP_INTERIM, business_html=None):
+        from scrapers.utilities.nova_scotia_power import NovaScotiaPowerScraper
+
+        scraper = NovaScotiaPowerScraper()
+        products = {kind: product["html"] for kind, product in document["products"].items()}
+        html = business_html if business_html is not None else document["business_pilot"]["business_html"]
+        with patch.object(scraper, "now_iso", return_value=today + "T00:00:00+00:00"):
+            records = scraper._parse_business_pilot_tariffs(cls.pages(document), products, document["source_url"], html)
+        return {record.tariff_code: record for record in records}
+
+    @staticmethod
+    def edit(document, page_number, old, new):
+        page = next(p for p in document["business_pilot"]["pages"] if p["page_number"] == page_number)
+        assert old in page["text"]
+        page["text"] = page["text"].replace(old, new)
+
+    @staticmethod
+    def drop(document, page_number):
+        document["business_pilot"]["pages"] = [p for p in document["business_pilot"]["pages"] if p["page_number"] != page_number]
+
+    @staticmethod
+    def values(record, kind):
+        return {c.component_name: c.charge_value for c in record.components if c.component_type == kind}
+
+    def test_interim_phase_records_and_values(self, document):
+        records = self.parse(document)
+        assert set(records) == NSPP_CODES
+        small, general = records["72"], records["73"]
+        assert small.effective_date == "2026-05-01" and small.end_date == "2026-10-31"
+        assert "Conditional Pilot" in small.tariff_name and small.customer_class == "commercial"
+        assert "interim" in small.sub_class and "restoration" in small.notes
+        assert self.values(small, "fixed") == {"Customer Charge": 22.0}
+        assert self.values(small, "energy") == {
+            "Interim Energy Charge - First 200 kWh": 0.18919, "Interim Energy Charge - Balance": 0.17112}
+        assert self.values(general, "demand") == {"Demand Charge": 9.809}
+        assert self.values(general, "rebate") == {"Customer-Owned Transformer Demand Reduction": -0.32}
+        assert self.values(records["83"], "energy") == {
+            "Interim Energy Charge - First 200 kWh": 0.14782, "Interim Energy Charge - Balance": 0.11718}
+        tier = next(c for c in general.components if c.tier_number == 1)
+        assert tier.tier_unit == "kWh/kW of maximum demand/month" and tier.tier_threshold == 200.0
+        assert "No Critical Peak Events" in small.notes
+        assert "Rate Code 10" in records["82"].notes and "Rate Code 11" in records["83"].notes
+
+    def test_components_have_provenance_and_riders_separate(self, document):
+        for record in self.parse(document).values():
+            assert len(self.values(record, "rider")) == 3
+            for component in record.components:
+                assert component.effective_date and component.source_url and component.source_detail
+            assert not any("Interim" in c.component_name for c in record.components if c.component_type == "rider")
+        assert self.values(self.parse(document)["72"], "rider") == {
+            "FAM Actual/Balance Adjustment (Combined)": 0.00156,
+            "DSM Cost Recovery Rider": 0.00729,
+            "Storm Cost Recovery Rider": 0.0,
+        }
+        assert self.values(self.parse(document)["83"], "rider")["FAM Actual/Balance Adjustment (Combined)"] == 0.00207
+
+    def test_november_phase_is_date_gated(self, document):
+        records = self.parse(document, today=NSPP_NOVEMBER)
+        assert set(records) == NSPP_CODES
+        cpp = records["72"]
+        assert cpp.effective_date == "2026-11-01" and cpp.rate_structure == "tou"
+        assert self.values(cpp, "energy") == {
+            "Critical Peak Event Energy": 1.51941, "Non-Critical Energy - First 200 kWh": 0.16739,
+            "Non-Critical Energy - Balance": 0.15331}
+        assert "18" in cpp.notes and "holidays" in cpp.notes
+        assert self.values(records["73"], "energy")["Critical Peak Event Energy"] == 1.42972
+        tou = records["82"]
+        assert self.values(tou, "energy") == {"Winter On-Peak Energy": 0.37674, "Winter Off-Peak Energy": 0.18902}
+        on_peak = next(c for c in tou.components if c.tou_period == "on-peak")
+        assert "7:00 AM to 11:00 AM" in on_peak.tou_hours and "5:00 PM to 9:00 PM" in on_peak.tou_hours
+        off_peak = next(c for c in records["83"].components if c.tou_period == "off-peak")
+        assert "weekends" in off_peak.tou_hours and off_peak.charge_value == 0.14348
+        assert "interim" not in tou.sub_class
+        # Next-year columns are never used.
+        for record in records.values():
+            assert all(c.charge_value not in (0.39698, 0.19777, 0.12723, 0.28938, 0.167157, 0.17381) for c in record.components)
+
+    def test_dates_beyond_book_year_fail_closed(self, document):
+        assert self.parse(document, today="2027-01-02") == {}
+
+    def test_price_follows_source(self, document):
+        self.edit(document, 23, "18.919 17.112", "19.001 17.222")
+        records = self.parse(document)
+        assert self.values(records["82"], "energy")["Interim Energy Charge - First 200 kWh"] == 0.19001
+        assert self.values(records["72"], "energy")["Interim Energy Charge - First 200 kWh"] == 0.18919
+
+    def test_closure_notice_required_for_all(self, document):
+        assert self.parse(document, business_html="<p>Apply now for the pilot.</p>") == {}
+
+    def test_missing_continuation_rejects_only_that_pilot(self, document):
+        self.drop(document, 21)
+        records = self.parse(document)
+        assert set(records) == NSPP_CODES - {"72"}
+
+    def test_changed_demand_credit_rejects_only_rate_83(self, document):
+        self.edit(document, 31, "32 cents per kilowatt reduction", "40 cents per kilowatt reduction")
+        assert set(self.parse(document)) == NSPP_CODES - {"83"}
+
+    def test_missing_interim_condition_rejects_only_rate_72(self, document):
+        self.edit(document, 18, "If system functionality is restored after March 1, 2026", "If system is restored")
+        assert set(self.parse(document)) == NSPP_CODES - {"72"}
+
+    def test_november_incomplete_tou_row_rejects_only_rate_82(self, document):
+        self.edit(document, 23, "Effective November 1, 2026 37.674 18.902 37.674 18.902", "Effective November 1, 2026 37.674 18.902")
+        records = self.parse(document, today=NSPP_NOVEMBER)
+        assert set(records) == NSPP_CODES - {"82"}
+
+    def test_november_missing_event_limits_rejects_only_rate_73(self, document):
+        self.edit(document, 29, "No more than 18 Critical Peak Events", "Some Critical Peak Events")
+        assert set(self.parse(document, today=NSPP_NOVEMBER)) == NSPP_CODES - {"73"}
+
+    def test_missing_rider_row_rejects_pilots_but_not_others_when_class_differs(self, document):
+        for page in document["building_pages"]["building_riders"]:
+            page["text"] = page["text"].replace("Small General, Small General Time of Use", "Small General, Renamed")
+        records = self.parse(document)
+        assert set(records) == {"73", "83"}
+
+    def test_live_scrape_includes_pilots_without_changing_other_inputs(self, document):
+        from scrapers.utilities.nova_scotia_power import NovaScotiaPowerScraper
+
+        scraper = NovaScotiaPowerScraper()
+        products = {kind: product["html"] for kind, product in document["products"].items()}
+        scraper._book = (self.pages(document), products, document["source_url"])
+        html = document["business_pilot"]["business_html"]
+        with patch.object(scraper, "now_iso", return_value=NSPP_INTERIM + "T00:00:00+00:00"), \
+                patch.object(scraper, "fetch_page", return_value=html):
+            records = scraper._try_live_commercial()
+        assert {r.tariff_code for r in records} >= NSPP_CODES
+        with patch.object(scraper, "now_iso", return_value=NSPP_INTERIM + "T00:00:00+00:00"), \
+                patch.object(scraper, "fetch_page", side_effect=RuntimeError("down")):
+            records = scraper._try_live_commercial()
+        assert not records or not ({r.tariff_code for r in records} & NSPP_CODES)
+
 
 import json
 from pathlib import Path
