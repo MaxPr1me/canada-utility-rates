@@ -1,10 +1,11 @@
 # Phase 5 Completion Matrix
 
 **Updated:** 2026-10-05. Scope: all 84 registered utilities, not every utility
-in the broader Canadian inventory. The export has 638 stored tariff versions / 4,123
-components / **158 stored live versions / 480 seed**. Latest-per-name coverage is
-**156 live tariffs**; older versions remain in history. October 5 adds FortisBC Energy,
-Energir, Heritage/Eastward and Liberty NB; October 2 updated NSPower, Hydro-Quebec, NL
+in the broader Canadian inventory. The export has 648 stored tariff versions / 4,160
+components / **168 stored live versions / 480 seed**. Latest-per-name coverage is
+**166 live tariffs**; older versions remain in history. October 5 adds FortisBC Energy,
+Energir, Heritage/Eastward and Liberty NB gas, then batch 5 electricity classes and fees
+(NB Power, Newfoundland Power, Maritime Electric); October 2 updated NSPower, Hydro-Quebec, NL
 Hydro, FortisBC Electric, SaskEnergy and Centra Gas. Ontario and the five excluded-region
 gas utilities still have no live output.
 Counts include retained non-building reference records, not only building tariffs.
@@ -17,10 +18,11 @@ all three territories are excluded from this run, not removed from the database
 or website. Provincial off-grid service in Quebec and Newfoundland and Labrador
 remains in scope. No additional inventory utilities are being registered.
 
-**Current checkpoint:** gas batch 4 (October 5, after `6333ea8`). There are
-**154 latest live records at all 16 target utilities** and **551 passing tests**. No
+**Current checkpoint:** Regional Batch 5, electricity classes and fees (October 5, after
+`a2a78a9`). There are
+**164 latest live records at all 16 target utilities** and **602 passing tests**. No
 target utility is seed-only, and none is catalogue-complete except SaskPower's audited
-building scope. Local history contains 1,301 snapshots; prior snapshots and non-target
+building scope. Local history contains 1,328 snapshots; prior snapshots and non-target
 records were unchanged by the batch.
 
 **Historical starting baseline:** 382 passing tests, 87 latest in-scope live records,
@@ -585,7 +587,22 @@ PUB conditions), then the electricity catalogue audits listed above. Targeted se
 `FortisBCEnergyLive`, `EnergirLive`, `HeritageGasLive`, `LibertyGasNBLive` and
 `RegionalBatchStorage`. Keep ON/AB/YT/NT/NU excluded and shared integration serial.
 
-## Current Checkpoint: Regional Batch 4 — Gas classes (2026-10-05)
+## Current Checkpoint: Regional Batch 5 — Electricity classes and fees (2026-10-05)
+
+Follows `a2a78a9`; the user asked to continue with classes and fees and skip industrial.
+
+- **NB Power 9 live (was 3):** adds Residential Rural/Seasonal (Rate D, $33.82/billing period, $0.1584/kWh), residential and business water-heater rental (monthly), SureConnect (30 A $29.99/month), Recreational Lighting (first 5,000 kWh/billing period $0.1821, then $0.1304) and Public Fast Charging (load-factor bands; on-peak 7am-10pm / off-peak demand and energy; above 20% load factor uses General Service). All effective April 14, 2026 from the two official rate pages; energy totals equal base + variance. Existing Rate D, GS I and Small Industrial carry source URL/detail/date on every component. Skipped: Small/Large Industrial expansion, lighting, General Service II (merged into GS I April 1, 2025). One-time fees (service call/reconnection $76.44, new connection $117.16, seasonal reconnection $184.73, statement $25.28) are not modelled because the official table labels them "$/month". Fixture: `tests/fixtures/nb_power.json`.
+- **Newfoundland Power 8 live (was 4):** adds Domestic Seasonal Optional 1.1S (winter Dec-Apr +$0.00953/kWh, non-winter May-Nov -$0.01297/kWh, adjustments to Rate 1.1 energy, 12-month term), prompt-payment discount (-1.5% within 10 days, Rates 1.1/2.1/2.3/2.4), conditional primary-voltage demand discount (-$0.40/kVA 4-25 kV, -$0.90/kVA 33-138 kV) and service fees (reconnection $20 office hours/$40 other, application $8, dishonoured payment $16) from the July 1, 2026 RateBook (pages 11-13, 24-28). Municipal tax and Rate Stabilization riders are already embedded in printed rates. Skipped: curtailable option (industrial/process), lighting, net metering (no prices). Fixture: `tests/fixtures/newfoundland_power.json`.
+- **Maritime Electric 10 live (unchanged):** classes 110/130/131/133/232/233 confirmed complete against IRAC Section N-28 effective August 1, 2026; per-class fail-closed parsing; effective date must match header and URL; Rate 320 tier unit corrected to "kWh per kW billing demand"; industrial 310/320/330/340 retained as reference; lighting/short-term unmetered and one-time connection charges excluded; no recurring riders published. No further non-industrial building class is published. Fixture: `tests/fixtures/maritime_electric.json`.
+- **SaskEnergy:** service fees researched but not added (the page publishes no effective date; using the observation date would invent one and create a new version every run); municipal surcharge not on static pages; no new non-industrial classes; small industrial skipped (industrial, closed to new customers).
+
+**Verified:** 602 tests pass. The guarded store validated NB Power 9 / Newfoundland Power 8 / Maritime Electric 10 as live with complete component sources, appended 27 snapshots (1,328 total) and left prior snapshots and non-target tariffs unchanged. Database validation: 0 errors. Browser check: default 166 live; no JS errors; no overflow at 390px; 1.1S modal shows 0.00953.
+
+**Current counts:** 648 versions / 4,160 components / 168 stored live / 480 seed; 166 latest live across 18 utilities; 164 latest live across the 16 target utilities.
+
+**Exact next work:** BC Hydro business catalogue audit, Manitoba Hydro building audit, FortisBC Electric large commercial/optional schedules (non-industrial), HQ Inukjuak/net metering/business options, NSPower business/rider/pilot status, NL Hydro net metering; Centra PUB conditions; gas gaps (Energir D5 is industrial-type, inventory adjustments; FortisBC Revelstoke propane/Rates 6-7). Industrial classes are skipped per user. Keep ON/AB/YT/NT/NU excluded.
+
+## Historical Checkpoint: Regional Batch 4 — Gas classes (2026-10-05)
 
 **Delivered** (parallel per-utility workers, serial integration, after `6333ea8`):
 FortisBC Energy 8 (adds Rate 5 General Firm Service: basic $469.00/month as the tariff
@@ -605,7 +622,8 @@ and non-target tariffs unchanged. Database validation: 0 errors. Local browser p
 (batches 3 and 4): 156 live by default; FortisBC Energy 8 / Energir 4 / Heritage 3 /
 Liberty 4; no JS errors; no page overflow at 390px; modals show exact values.
 GitHub Pages deployment for `6333ea8` succeeded and its deployed `rates.json` contained
-the 13 batch-3 live gas records; the deployment for this batch is pending verification.
+the 13 batch-3 live gas records; Deploy Site for `a2a78a9` succeeded and the deployed
+`rates.json` had 638 records / 158 live.
 
 **Current counts:** 638 versions / 4,123 components / 158 stored live / 156 latest live
 across 18 utilities / 480 seed. Scope-only latest live count is 154 across all 16 target

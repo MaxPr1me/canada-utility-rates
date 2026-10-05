@@ -16,7 +16,10 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime
 from typing import Optional
+
+from bs4 import BeautifulSoup
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
 from scrapers.utils.parsing import (
@@ -90,11 +93,91 @@ def _extract_total_from_merged_cell(cell_text: str) -> Optional[float]:
     return clean_currency(cell_text)
 
 
+def _clean(text: str) -> str:
+    return re.sub(r"\s+", " ", text.replace("\xa0", " ")).strip()
+
+
+def _money(text: str) -> Optional[float]:
+    m = re.search(r"\$\s*(\d+(?:,\d{3})*(?:\.\d+)?)", text)
+    return float(m.group(1).replace(",", "")) if m else None
+
+
+def _cents_total(text: str) -> Optional[float]:
+    """Total ¢/kWh as $/kWh, only if base + variance reconciles to the printed total."""
+    base = re.search(r"(\d+(?:\.\d+)?)\s*¢\s*Base Rate", text)
+    var = re.search(r"\+\s*(\d+(?:\.\d+)?)\s*¢\s*Variance", text)
+    total = re.search(r"(\d+(?:\.\d+)?)\s*¢\s*Total", text)
+    if not (base and var and total):
+        return None
+    if abs(float(base.group(1)) + float(var.group(1)) - float(total.group(1))) > 0.005:
+        return None
+    return round(float(total.group(1)) / 100.0, 6)
+
+
+def _cents_triplet(base: str, var: str, total: str) -> Optional[float]:
+    vals = []
+    for cell in (base, var, total):
+        m = re.search(r"(\d+(?:\.\d+)?)\s*¢", cell)
+        if not m:
+            return None
+        vals.append(float(m.group(1)))
+    if abs(vals[0] + vals[1] - vals[2]) > 0.005:
+        return None
+    return round(vals[2] / 100.0, 6)
+
+
+def _component(ctype, name, value, unit, eff, url, detail, **kw) -> RateComponent:
+    return RateComponent(
+        component_type=ctype, component_name=name, charge_value=value, charge_unit=unit,
+        effective_date=eff, source_url=url, source_detail=detail, **kw,
+    )
+
+
+def _page_effective_date(soup, heading: str) -> Optional[str]:
+    for h in soup.find_all(["h1", "h2"]):
+        m = re.search(
+            heading + r"\s*\(effective\s+([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})\)",
+            _clean(h.get_text(" ")),
+        )
+        if m:
+            try:
+                return datetime.strptime(" ".join(m.groups()), "%B %d %Y").date().isoformat()
+            except ValueError:
+                return None
+    return None
+
+
+def _table_after(soup, heading: str):
+    """Table immediately following a bold '<heading>:' paragraph."""
+    for strong in soup.find_all("strong"):
+        if _clean(strong.get_text(" ")).rstrip(":").strip().lower() == heading.lower():
+            para = strong.find_parent("p")
+            nxt = para.find_next_sibling() if para else None
+            return nxt if nxt is not None and nxt.name == "table" else None
+    return None
+
+
+def _section_rows(soup, heading: str) -> list[tuple[str, str]]:
+    """[label, value] rows following a section header row until the next header/blank row."""
+    for cell in soup.find_all(["td", "th"]):
+        if _clean(cell.get_text(" ")) != heading:
+            continue
+        rows = []
+        for tr in cell.find_parent("tr").find_next_siblings("tr"):
+            cells = [_clean(c.get_text(" ")) for c in tr.find_all(["td", "th"])]
+            if len(cells) != 2 or not all(cells):
+                break
+            rows.append((cells[0], cells[1]))
+        return rows
+    return []
+
+
 class NBPowerScraper(BaseScraper):
     """Scrape NB Power electricity rates."""
 
     def __init__(self):
         super().__init__(utility_name="NB Power", province="NB")
+        self._extra_live: list[TariffRecord] = []
 
     def scrape(self) -> list[TariffRecord]:
         """
@@ -114,6 +197,8 @@ class NBPowerScraper(BaseScraper):
             self.logger.warning("Live scrape failed — using seed data for NB Power")
             records.extend(self.mark_fallback(self._seed_data()))
 
+        # Additional classes are parsed independently; failures are omitted, never seeded
+        records.extend(self._extra_live)
         return records
 
     # ── Live scraping ────────────────────────────────────────────
@@ -121,8 +206,10 @@ class NBPowerScraper(BaseScraper):
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
         """Attempt to parse rates from the live NB Power website."""
         try:
+            self._extra_live = []
             res_html = self.fetch_page(RESIDENTIAL_URL)
             biz_html = self.fetch_page(BUSINESS_URL)
+            self._extra_live = self._parse_additional(res_html, biz_html)
 
             if detect_js_rendered(res_html):
                 self.logger.warning("Residential page appears JS-rendered — skipping live parse")
@@ -140,10 +227,34 @@ class NBPowerScraper(BaseScraper):
             gs1 = self._parse_gs1(biz_html)
             small_ind = self._parse_small_industrial(biz_html)
 
+            res_soup = BeautifulSoup(res_html, "html.parser")
+            biz_soup = BeautifulSoup(biz_html, "html.parser")
+            self._stamp_sources(
+                residential, _page_effective_date(res_soup, "Residential Rates"),
+                RESIDENTIAL_URL, "Residential Rates table",
+                {"Basic Charge": "Urban row, Total Charge column",
+                 "Energy Charge": "Energy Charge all kWh row, Total Charge column"},
+            )
             live_records = [residential]
+            biz_date = _page_effective_date(biz_soup, "Business Rates")
             if gs1:
+                self._stamp_sources(
+                    gs1, biz_date, BUSINESS_URL, "General Service 1 (standard) section",
+                    {"Basic Charge": "Service Charge row",
+                     "Demand Charge": "Additional kilowatts of demand row",
+                     "Tier 1 Energy Charge": "First kilowatt hours row, Total Charge",
+                     "Tier 2 Energy Charge": "Balance kilowatt-hours row, Total Charge"},
+                )
                 live_records.append(gs1)
             if small_ind:
+                self._stamp_sources(
+                    small_ind, biz_date, BUSINESS_URL, "Small Industrial section",
+                    {"Basic Charge": "Service Charge row",
+                     "Demand Charge": "Demand Charge row",
+                     "Tier 1 Energy Charge": "First kWh per kilowatt row, Total Charge",
+                     "Tier 2 Energy Charge": "Balance kilowatt-hours row, Total Charge",
+                     "Energy Charge": "Energy charge row"},
+                )
                 live_records.append(small_ind)
 
             # Validate live data against seed using change detection
@@ -169,6 +280,17 @@ class NBPowerScraper(BaseScraper):
         except Exception as e:
             self.logger.warning("Could not fetch NB Power pages: %s", e)
             return None
+
+    @staticmethod
+    def _stamp_sources(rec: TariffRecord, eff: Optional[str], url: str, table: str,
+                       details: dict[str, str]) -> None:
+        if eff:
+            rec.effective_date = eff
+        rec.source_url = url
+        for c in rec.components:
+            c.effective_date = eff or rec.effective_date
+            c.source_url = url
+            c.source_detail = f"{table}: {details.get(c.component_name, c.component_name)}"
 
     # ── Residential parser ───────────────────────────────────────
 
@@ -581,6 +703,226 @@ class NBPowerScraper(BaseScraper):
             confidence="high",
             eligibility="Small industrial customers with loads up to 750 kW",
             notes="NB Power small industrial rate — live parsed",
+            components=components,
+        )
+
+    # ── Additional building classes and recurring fees ──────────
+
+    def _parse_additional(self, res_html: str, biz_html: str) -> list[TariffRecord]:
+        """Parse each extra class independently; a failed class is omitted."""
+        res = BeautifulSoup(res_html, "html.parser")
+        biz = BeautifulSoup(biz_html, "html.parser")
+        res_date = _page_effective_date(res, "Residential Rates")
+        biz_date = _page_effective_date(biz, "Business Rates")
+
+        jobs = [
+            ("residential rural/seasonal", self._parse_rural_residential, (res, res_date)),
+            ("residential water heater", self._parse_water_heater,
+             (res, res_date, RESIDENTIAL_URL, "Residential", "residential")),
+            ("residential SureConnect", self._parse_sureconnect, (res, res_date)),
+            ("business water heater", self._parse_water_heater,
+             (biz, biz_date, BUSINESS_URL, "Business", "commercial")),
+            ("recreational lighting", self._parse_recreational_lighting, (biz, biz_date)),
+            ("public fast charging", self._parse_fast_charging, (biz, biz_date)),
+        ]
+        records: list[TariffRecord] = []
+        for label, fn, args in jobs:
+            try:
+                rec = fn(*args)
+            except Exception as exc:  # fail closed per class
+                self.logger.warning("NB Power %s parse failed: %s", label, exc)
+                rec = None
+            if rec is None:
+                self.logger.warning("NB Power %s not parsed; omitted", label)
+                continue
+            records.append(rec)
+        return self.mark_live_parsed(records) if records else []
+
+    def _parse_rural_residential(self, soup, eff: Optional[str]) -> Optional[TariffRecord]:
+        if not eff or "per billing period" not in soup.get_text(" ").lower():
+            return None
+        rural = energy = None
+        for tr in soup.find_all("tr"):
+            cells = [_clean(c.get_text(" ")) for c in tr.find_all(["td", "th"])]
+            if len(cells) < 4:
+                continue
+            if cells[0] == "Rural/Seasonal" and rural is None:
+                rural = _money(cells[-1])
+            elif cells[0].startswith("Energy Charge all kWh") and energy is None:
+                energy = _cents_triplet(cells[1], cells[2], cells[3])
+        if rural is None or energy is None:
+            return None
+        detail = "Residential Rates page, Service Charge table (Rural/Seasonal) and Energy Charge row"
+        return TariffRecord(
+            utility_name="NB Power", province="NB", utility_type="electricity",
+            tariff_name="Residential Service (Rate D) - Rural/Seasonal",
+            tariff_code="D-RURAL", customer_class="residential", sub_class="rural/seasonal",
+            rate_structure="flat", effective_date=eff, source_url=RESIDENTIAL_URL,
+            source_page=detail, confidence="high",
+            notes="Rate D rural/seasonal service charge; same flat energy charge as urban",
+            components=[
+                _component("fixed", "Basic Charge", rural, "$/billing period", eff,
+                           RESIDENTIAL_URL, detail, notes="Rural/Seasonal service charge per billing period"),
+                _component("energy", "Energy Charge", energy, "$/kWh", eff,
+                           RESIDENTIAL_URL, detail, notes="Flat rate for all kWh per billing period"),
+            ],
+        )
+
+    def _parse_water_heater(
+        self, soup, eff: Optional[str], url: str, audience: str, customer_class: str,
+    ) -> Optional[TariffRecord]:
+        table = _table_after(soup, "Water Heater Rental")
+        if table is None or not eff or "$/month" not in _clean(table.get_text(" ")):
+            return None
+        components = []
+        detail = f"{audience} Rates page, Water Heater Rental table"
+        for tr in table.find_all("tr"):
+            cells = [_clean(c.get_text(" ")) for c in tr.find_all(["td", "th"])]
+            if len(cells) == 1:
+                continue  # header row
+            m = re.fullmatch(r"(\d+)\s*Gallons?\s*/\s*(\d+)\s*litres?(?:\s*\((.+)\))?", cells[0], re.I)
+            price = _money(cells[-1]) if len(cells) == 2 else None
+            if not m or price is None:
+                return None
+            name = f"Water Heater Rental {m.group(1)} gal/{m.group(2)} L"
+            if m.group(3):
+                name += f" ({m.group(3)})"
+            components.append(_component("fixed", name, price, "$/month", eff, url, detail,
+                                         notes="Monthly equipment rental"))
+        if not components:
+            return None
+        return TariffRecord(
+            utility_name="NB Power", province="NB", utility_type="electricity",
+            tariff_name=f"Water Heater Rental ({audience})",
+            tariff_code="WH-" + audience[:3].upper(), customer_class=customer_class,
+            sub_class="water heater rental", rate_structure="flat", effective_date=eff,
+            source_url=url, source_page=detail, confidence="high",
+            notes="Optional recurring equipment rental, priced by tank size; not an electricity tariff",
+            components=components,
+        )
+
+    def _parse_sureconnect(self, soup, eff: Optional[str]) -> Optional[TariffRecord]:
+        table = _table_after(soup, "SureConnect Service")
+        if table is None or not eff or "$/month" not in _clean(table.get_text(" ")):
+            return None
+        detail = "Residential Rates page, SureConnect Service table"
+        components = []
+        for tr in table.find_all("tr"):
+            cells = [_clean(c.get_text(" ")) for c in tr.find_all(["td", "th"])]
+            if len(cells) == 1:
+                continue
+            m = re.fullmatch(r"(\d+)\s*AMP", cells[0], re.I)
+            price = _money(cells[-1]) if len(cells) == 2 else None
+            if not m or price is None:
+                return None
+            components.append(_component("fixed", f"SureConnect Service {m.group(1)} A", price,
+                                         "$/month", eff, RESIDENTIAL_URL, detail,
+                                         notes="Monthly generator-connection service"))
+        if not components:
+            return None
+        return TariffRecord(
+            utility_name="NB Power", province="NB", utility_type="electricity",
+            tariff_name="SureConnect Service (Residential)", tariff_code="SURECONNECT",
+            customer_class="residential", sub_class="sureconnect", rate_structure="flat",
+            effective_date=eff, source_url=RESIDENTIAL_URL, source_page=detail,
+            confidence="high",
+            notes="Optional recurring SureConnect service charge; not an electricity tariff",
+            components=components,
+        )
+
+    def _parse_recreational_lighting(self, soup, eff: Optional[str]) -> Optional[TariffRecord]:
+        if not eff:
+            return None
+        rows = _section_rows(soup, "Recreational Lighting")
+        service = tier1 = tier2 = threshold = None
+        for label, value in rows:
+            low = label.lower()
+            if low.startswith("service charge") and "per billing period" in low:
+                service = _money(value)
+            elif low.startswith("first") and "per billing period" in low:
+                m = re.match(r"first\s+([\d,]+)\s*kwh", low)
+                threshold = float(m.group(1).replace(",", "")) if m else None
+                tier1 = _cents_total(value)
+            elif low.startswith("balance") and "per billing period" in low:
+                tier2 = _cents_total(value)
+        if None in (service, tier1, tier2, threshold):
+            return None
+        detail = "Business Rates page, Recreational Lighting section"
+        return TariffRecord(
+            utility_name="NB Power", province="NB", utility_type="electricity",
+            tariff_name="Recreational Lighting", tariff_code="RL", customer_class="commercial",
+            sub_class="recreational lighting", rate_structure="tiered", effective_date=eff,
+            source_url=BUSINESS_URL, source_page=detail, confidence="high",
+            notes="Energy blocks apply per billing period",
+            components=[
+                _component("fixed", "Basic Charge", service, "$/billing period", eff,
+                           BUSINESS_URL, detail),
+                _component("energy", "Tier 1 Energy Charge", tier1, "$/kWh", eff, BUSINESS_URL,
+                           detail, tier_number=1, tier_threshold=threshold, tier_unit="kWh/billing period"),
+                _component("energy", "Tier 2 Energy Charge", tier2, "$/kWh", eff, BUSINESS_URL,
+                           detail, tier_number=2, tier_threshold=threshold, tier_unit="kWh/billing period"),
+            ],
+        )
+
+    def _parse_fast_charging(self, soup, eff: Optional[str]) -> Optional[TariffRecord]:
+        table = _table_after(soup, "Public Fast Charging Rate")
+        if table is None or not eff:
+            return None
+        detail = "Business Rates page, Public Fast Charging Rate table"
+        service_values: set[float] = set()
+        components: list[RateComponent] = []
+        hours = {"on-peak": None, "off-peak": None}
+        fallback_rule = False
+        for tr in table.find_all("tr"):
+            cells = [_clean(c.get_text(" ")) for c in tr.find_all(["td", "th"])]
+            if len(cells) != 3 or tr.find("th"):
+                continue
+            service = re.fullmatch(r"\$(\d+(?:\.\d+)?) per Billing Period", cells[0])
+            if not service:
+                return None
+            service_values.add(float(service.group(1)))
+            band = re.match(r"LF:\s*(\d+)%\s*<\s*LF\s*[≤<]=?\s*(\d+)%\s*Demand:\s*\$(\d+(?:\.\d+)?) per kW per Billing Period$", cells[1])
+            if not band:
+                if re.match(r"LF:\s*>\s*20%$", cells[1]) and "General Service Rates apply" in cells[2]:
+                    fallback_rule = True
+                    continue
+                return None
+            lo, hi, demand = band.group(1), band.group(2), float(band.group(3))
+            on_m = re.match(r"On.Peak\s*(?:\(([^)]*)\))?\s*(.*?)\s*Off.Peak\s*(?:\(([^)]*)\))?\s*(.*)$", cells[2])
+            if not on_m:
+                return None
+            for key, hrs in (("on-peak", on_m.group(1)), ("off-peak", on_m.group(3))):
+                if hrs:
+                    hours[key] = hrs.replace("\u2011", "-").replace("\u2013", "-")
+            on_total = _cents_total(on_m.group(2))
+            off_total = _cents_total(on_m.group(4))
+            if on_total is None or off_total is None:
+                return None
+            lf = f"LF {lo}% < LF <= {hi}%"
+            components.append(_component(
+                "demand", f"Demand Charge ({lf})", demand, "$/kW/billing period", eff,
+                BUSINESS_URL, detail, demand_unit="kW", sub_component=lf,
+                notes="Per kW of demand per billing period, by load-factor band"))
+            for key, total in (("on-peak", on_total), ("off-peak", off_total)):
+                label = "On-Peak" if key == "on-peak" else "Off-Peak"
+                components.append(_component(
+                    "energy", f"{label} Energy Charge ({lf})", total, "$/kWh", eff,
+                    BUSINESS_URL, detail, sub_component=lf, tou_period=key,
+                    tou_hours=hours[key]))
+        if len(service_values) != 1 or not fallback_rule or None in hours.values():
+            return None
+        if sum(1 for c in components if c.component_type == "demand") != 4:
+            return None
+        components.insert(0, _component(
+            "fixed", "Basic Charge", service_values.pop(), "$/billing period", eff,
+            BUSINESS_URL, detail))
+        return TariffRecord(
+            utility_name="NB Power", province="NB", utility_type="electricity",
+            tariff_name="Public Fast Charging Rate", tariff_code="PFC", customer_class="commercial",
+            sub_class="public fast charging", rate_structure="tou", effective_date=eff,
+            source_url=BUSINESS_URL, source_page=detail, confidence="high",
+            eligibility="Load factor above 20%: General Service rates apply (Section N-3)",
+            notes="Demand and TOU energy depend on the load-factor (LF) band",
             components=components,
         )
 

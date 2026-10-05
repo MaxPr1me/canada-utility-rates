@@ -49,12 +49,14 @@
     "classes_present": [
       "commercial",
       "industrial",
+      "other",
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
       "General Service 0-100 kW (Rate 2.1)",
       "General Service 110 kVA - 1000 kVA (Rate 2.3)",
-      "General Service 1000 kVA and Over (Rate 2.4)"
+      "General Service 1000 kVA and Over (Rate 2.4)",
+      "Primary Voltage Demand Discount (Regulation 9(k))"
     ]
   },
   {

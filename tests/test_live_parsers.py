@@ -128,6 +128,197 @@ class TestNBPowerSeed:
 
 # ─── Nova Scotia Power ──────────────────────────────────────────
 
+# ─── NB Power building classes ───
+
+import json
+from pathlib import Path
+
+from scrapers.utilities.nb_power import NBPowerScraper, RESIDENTIAL_URL, BUSINESS_URL
+
+NBP_FIXTURE = json.loads(
+    (Path(__file__).parent / "fixtures" / "nb_power.json").read_text(encoding="utf-8")
+)
+
+NBP_RURAL = "Residential Service (Rate D) - Rural/Seasonal"
+NBP_WH_RES = "Water Heater Rental (Residential)"
+NBP_WH_BUS = "Water Heater Rental (Business)"
+NBP_SURE = "SureConnect Service (Residential)"
+NBP_RL = "Recreational Lighting"
+NBP_PFC = "Public Fast Charging Rate"
+NBP_NEW = {NBP_RURAL, NBP_WH_RES, NBP_WH_BUS, NBP_SURE, NBP_RL, NBP_PFC}
+
+
+def _NBP_scrape(res=None, biz=None):
+    pages = {
+        RESIDENTIAL_URL: NBP_FIXTURE["residential"]["html"] if res is None else res,
+        BUSINESS_URL: NBP_FIXTURE["business"]["html"] if biz is None else biz,
+    }
+    with patch.object(NBPowerScraper, "fetch_page", side_effect=lambda url, *a, **k: pages[url]):
+        records = NBPowerScraper().scrape()
+    return {r.tariff_name: r for r in records}
+
+
+def _NBP_comp(rec, name):
+    return next(c for c in rec.components if c.component_name == name)
+
+
+def _NBP_replace_last(text, old, new, before=None):
+    end = text.index(before) if before else len(text)
+    i = text.rindex(old, 0, end)
+    return text[:i] + new + text[i + len(old):]
+
+
+class TestNBPowerBuildingLive:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.recs = _NBP_scrape()
+
+    def test_fixture_is_source_derived(self):
+        for key in ("residential", "business"):
+            assert NBP_FIXTURE[key]["url"].startswith("https://www.nbpower.com/")
+            assert NBP_FIXTURE[key]["section"] and NBP_FIXTURE[key]["retrieved"]
+
+    def test_all_new_classes_live(self):
+        assert NBP_NEW <= set(self.recs)
+        for name in NBP_NEW:
+            assert "Provenance: live_parsed" in self.recs[name].notes
+            assert "seed_fallback" not in self.recs[name].notes
+
+    def test_existing_identities_preserved(self):
+        for name in ("Residential Service (Rate D)", "General Service I", "Small Industrial Service"):
+            assert name in self.recs and "live_parsed" in self.recs[name].notes
+
+    def test_every_component_has_date_source_detail(self):
+        for name in NBP_NEW:
+            for c in self.recs[name].components:
+                assert c.effective_date == "2026-04-14"
+                assert c.source_url in (RESIDENTIAL_URL, BUSINESS_URL)
+                assert c.source_detail
+
+    def test_existing_live_components_have_date_source_detail(self):
+        for name in ("Residential Service (Rate D)", "General Service I", "Small Industrial Service"):
+            for c in self.recs[name].components:
+                assert c.effective_date == "2026-04-14"
+                assert c.source_url in (RESIDENTIAL_URL, BUSINESS_URL)
+                assert c.source_detail
+
+    def test_rural_seasonal(self):
+        r = self.recs[NBP_RURAL]
+        assert r.customer_class == "residential"
+        fixed = _NBP_comp(r, "Basic Charge")
+        assert (fixed.charge_value, fixed.charge_unit) == (33.82, "$/billing period")
+        assert _NBP_comp(r, "Energy Charge").charge_value == pytest.approx(0.1584)
+
+    def test_water_heater_residential(self):
+        r = self.recs[NBP_WH_RES]
+        vals = {c.component_name: (c.charge_value, c.charge_unit) for c in r.components}
+        assert vals == {
+            "Water Heater Rental 22 gal/100 L": (10.99, "$/month"),
+            "Water Heater Rental 40 gal/180 L": (10.99, "$/month"),
+            "Water Heater Rental 60 gal/270 L": (13.99, "$/month"),
+        }
+
+    def test_water_heater_business(self):
+        r = self.recs[NBP_WH_BUS]
+        assert r.customer_class == "commercial"
+        assert len(r.components) == 6
+        assert _NBP_comp(r, "Water Heater Rental 100 gal/455 L (Commercial 600V)").charge_value == 50.49
+        assert _NBP_comp(r, "Water Heater Rental 100 gal/455 L").charge_value == 24.99
+
+    def test_sureconnect(self):
+        c = self.recs[NBP_SURE].components[0]
+        assert (c.component_name, c.charge_value, c.charge_unit) == ("SureConnect Service 30 A", 29.99, "$/month")
+
+    def test_recreational_lighting(self):
+        r = self.recs[NBP_RL]
+        assert r.rate_structure == "tiered"
+        t1, t2 = _NBP_comp(r, "Tier 1 Energy Charge"), _NBP_comp(r, "Tier 2 Energy Charge")
+        assert (t1.charge_value, t1.tier_threshold, t1.tier_unit) == (0.1821, 5000.0, "kWh/billing period")
+        assert t2.charge_value == 0.1304
+        assert _NBP_comp(r, "Basic Charge").charge_unit == "$/billing period"
+
+    def test_fast_charging_bands_units_and_hours(self):
+        r = self.recs[NBP_PFC]
+        assert "above 20%" in r.eligibility and "General Service" in r.eligibility
+        d = _NBP_comp(r, "Demand Charge (LF 15% < LF <= 20%)")
+        assert (d.charge_value, d.charge_unit, d.demand_unit) == (11.271, "$/kW/billing period", "kW")
+        on = _NBP_comp(r, "On-Peak Energy Charge (LF 0% < LF <= 5%)")
+        off = _NBP_comp(r, "Off-Peak Energy Charge (LF 0% < LF <= 5%)")
+        assert (on.charge_value, on.tou_hours) == (0.1223, "7:00 am-10:00 pm")
+        assert (off.charge_value, off.tou_hours) == (0.0638, "10:00 pm-7:00 am")
+        assert sum(c.component_type == "demand" for c in r.components) == 4
+        assert _NBP_comp(r, "Off-Peak Energy Charge (LF 15% < LF <= 20%)").charge_value == 0.0449
+
+    def test_no_industrial_street_lighting_or_one_time_fee_records(self):
+        names = " ".join(self.recs).lower()
+        assert "large industrial" not in names and "dusk" not in names and "flood" not in names
+
+    # ── Independent failure (mutation rejections) ──────────────────
+
+    def test_reject_rural_only(self):
+        res = NBP_FIXTURE["residential"]["html"].replace("Rural/Seasonal", "Rural", 1)
+        recs = _NBP_scrape(res=res)
+        assert NBP_RURAL not in recs
+        assert {NBP_WH_RES, NBP_SURE, NBP_WH_BUS, NBP_RL, NBP_PFC} <= set(recs)
+
+    def test_reject_residential_water_heater_only(self):
+        res = NBP_FIXTURE["residential"]["html"].replace("$13.99", "n/a", 1)
+        recs = _NBP_scrape(res=res)
+        assert NBP_WH_RES not in recs
+        assert {NBP_RURAL, NBP_SURE, NBP_WH_BUS} <= set(recs)
+
+    def test_reject_business_water_heater_only(self):
+        biz = NBP_FIXTURE["business"]["html"].replace("(Commercial 208V)", "(", 1)
+        recs = _NBP_scrape(biz=biz)
+        assert NBP_WH_BUS not in recs
+        assert {NBP_WH_RES, NBP_RL, NBP_PFC, "General Service I"} <= set(recs)
+
+    def test_reject_recreational_lighting_when_total_does_not_reconcile(self):
+        biz = NBP_FIXTURE["business"]["html"]
+        biz = _NBP_replace_last(biz, "13.04¢ Total Charge", "13.50¢ Total Charge", before="Small Industrial Service")
+        recs = _NBP_scrape(biz=biz)
+        assert NBP_RL not in recs
+        assert {NBP_PFC, NBP_WH_BUS, "General Service I"} <= set(recs)
+
+    def test_reject_fast_charging_without_over_20_rule(self):
+        biz = NBP_FIXTURE["business"]["html"].replace("General Service Rates apply", "See tariff", 1)
+        recs = _NBP_scrape(biz=biz)
+        assert NBP_PFC not in recs
+        assert {NBP_RL, NBP_WH_BUS} <= set(recs)
+
+    def test_reject_all_business_extras_without_page_date_keeps_residential(self):
+        biz = NBP_FIXTURE["business"]["html"].replace("(effective April 14, 2026)", "", 1)
+        recs = _NBP_scrape(biz=biz)
+        assert not ({NBP_RL, NBP_PFC, NBP_WH_BUS} & set(recs))
+        assert {NBP_RURAL, NBP_WH_RES, NBP_SURE} <= set(recs)
+
+    def test_reject_sureconnect_when_unit_not_monthly(self):
+        res = NBP_FIXTURE["residential"]["html"]
+        i = res.index("SureConnect Service:")
+        res = res[:i] + res[i:].replace("$/month", "$/year", 1)
+        recs = _NBP_scrape(res=res)
+        assert NBP_SURE not in recs
+        assert {NBP_RURAL, NBP_WH_RES} <= set(recs)
+
+    # ── Price follows source ───────────────────────────────────────
+
+    def test_price_follows_source(self):
+        res = NBP_FIXTURE["residential"]["html"].replace("$33.82", "$34.50", 1).replace("$29.99", "$31.25", 1)
+        biz = NBP_FIXTURE["business"]["html"].replace("$4.509", "$4.600", 1).replace("$24.99", "$25.49", 1)
+        recs = _NBP_scrape(res=res, biz=biz)
+        assert _NBP_comp(recs[NBP_RURAL], "Basic Charge").charge_value == 34.50
+        assert recs[NBP_SURE].components[0].charge_value == 31.25
+        assert _NBP_comp(recs[NBP_PFC], "Demand Charge (LF 0% < LF <= 5%)").charge_value == 4.6
+        assert _NBP_comp(recs[NBP_WH_BUS], "Water Heater Rental 100 gal/455 L").charge_value == 25.49
+
+    def test_effective_date_follows_source(self):
+        res = NBP_FIXTURE["residential"]["html"].replace("April 14, 2026", "May 1, 2027")
+        recs = _NBP_scrape(res=res)
+        assert recs[NBP_RURAL].effective_date == "2027-05-01"
+        assert recs[NBP_SURE].components[0].effective_date == "2027-05-01"
+        assert recs[NBP_RL].effective_date == "2026-04-14"
+
+
 class TestNovaScotiaPowerSeed:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -2295,6 +2486,152 @@ class TestNovaScotiaBuildingOptions:
         assert set(self.parse(document)) == {"89", "Solar Garden Rider", "Community Solar Rider"} - rejected
 
 
+# ─── Maritime Electric building classes ───
+
+import json
+from pathlib import Path
+
+import scrapers.utilities.maritime_electric as me
+from scrapers.utils.parsing import DocumentPage
+
+ME_FIXTURE = json.loads(
+    (Path(__file__).parent / "fixtures" / "maritime_electric.json").read_text(encoding="utf-8")
+)
+ME_URL = ME_FIXTURE["url"]
+ME_PAGE1 = next(p["text"] for p in ME_FIXTURE["pages"] if p["page_number"] == 1)
+
+ME_BUILDING = {"110", "130", "131", "133", "232", "233"}
+ME_INDUSTRIAL = {"320", "310", "340", "330"}
+
+
+def _ME_parse(text=ME_PAGE1, url=ME_URL):
+    scraper = me.MaritimeElectricScraper()
+    return {r.tariff_code: r for r in scraper._parse_pages([DocumentPage(1, text)], url)}
+
+
+def _ME_comp(record, ctype, tier=None):
+    return next(c for c in record.components if c.component_type == ctype and c.tier_number == tier)
+
+
+class TestMaritimeElectricBuildingLive:
+    def test_all_classes_parse(self):
+        assert set(_ME_parse()) == ME_BUILDING | ME_INDUSTRIAL
+
+    def test_residential_values_and_units(self):
+        recs = _ME_parse()
+        for code, service in (("110", 24.57), ("130", 26.92), ("131", 26.92), ("133", 37.50)):
+            r = recs[code]
+            fixed = _ME_comp(r, "fixed")
+            assert (fixed.charge_value, fixed.charge_unit) == (service, "$/month")
+            t1, t2 = _ME_comp(r, "energy", 1), _ME_comp(r, "energy", 2)
+            assert (t1.charge_value, t1.charge_unit, t1.tier_threshold, t1.tier_unit) == (0.1784, "$/kWh", 2000.0, "kWh")
+            assert (t2.charge_value, t2.charge_unit, t2.tier_threshold) == (0.1423, "$/kWh", None)
+            assert r.customer_class == "residential"
+
+    def test_general_service_values_and_units(self):
+        recs = _ME_parse()
+        for code in ("232", "233"):
+            r = recs[code]
+            assert _ME_comp(r, "fixed").charge_value == 24.57
+            demand = _ME_comp(r, "demand", 2)
+            assert (demand.charge_value, demand.charge_unit, demand.demand_unit) == (13.43, "$/kW", "kW")
+            assert _ME_comp(r, "energy", 1).charge_value == 0.2188
+            assert _ME_comp(r, "energy", 1).tier_threshold == 5000.0
+            assert _ME_comp(r, "energy", 2).charge_value == 0.1438
+            # First 20 kW is published as "$ -" and is not emitted as a charge.
+            assert len([c for c in r.components if c.component_type == "demand"]) == 1
+            assert r.customer_class == "commercial"
+
+    def test_industrial_retained_with_native_threshold_unit(self):
+        recs = _ME_parse()
+        assert _ME_comp(recs["320"], "energy", 1).tier_unit == "kWh per kW billing demand"
+        assert _ME_comp(recs["310"], "demand").charge_value == 14.50
+        assert recs["310"].customer_class == "industrial"
+
+    def test_provenance_fields_on_every_component(self):
+        for r in _ME_parse().values():
+            assert r.effective_date == "2026-08-01"
+            assert r.source_page == "PDF page 1"
+            for c in r.components:
+                assert c.effective_date == "2026-08-01"
+                assert c.source_url == ME_URL
+                assert c.source_detail.startswith("PDF page 1, Rate " + r.tariff_code)
+
+    def test_names_unchanged(self):
+        recs = _ME_parse()
+        assert recs["110"].tariff_name == "Residential Urban (Rate 110)"
+        assert recs["233"].tariff_name == "General Service - Seasonal Operators Option (Rate 233)"
+        assert _ME_comp(recs["110"], "energy", 1).component_name == "Energy Charge per kWh for first 2,000 kWh"
+
+    # Mutation rejections: each class fails alone.
+    def test_missing_service_charge_rejects_only_that_class(self):
+        recs = _ME_parse(ME_PAGE1.replace("Service Charge $ 26.92\n", "", 1))
+        assert "130" not in recs
+        assert {"110", "131", "133", "232"} <= set(recs)
+
+    def test_missing_balance_block_rejects_only_that_class(self):
+        text = ME_PAGE1.replace("Energy Charge per kWh for balance of kWh $ 0.1423\nService Charge $ 37.50", "Service Charge $ 37.50", 1)
+        text = text.replace("133 Residential Seasonal Option\nService Charge $ 37.50\nEnergy Charge per kWh for first 2,000 kWh $ 0.1784\nEnergy Charge per kWh for balance of kWh $ 0.1423\n",
+                            "133 Residential Seasonal Option\nService Charge $ 37.50\nEnergy Charge per kWh for first 2,000 kWh $ 0.1784\n")
+        recs = _ME_parse(text)
+        assert "133" not in recs
+        assert {"110", "131", "232"} <= set(recs)
+
+    def test_changed_tier_threshold_rejects_only_that_class(self):
+        text = ME_PAGE1.replace("first 5,000 kWh $ 0.2188", "first 6,000 kWh $ 0.2188", 1)
+        recs = _ME_parse(text)
+        assert "232" not in recs
+        assert "233" in recs and "110" in recs
+
+    def test_unparseable_charge_value_rejects_only_that_class(self):
+        text = ME_PAGE1.replace("Demand Charge per kW $ 14.50", "Demand Charge per kW $ -", 1)
+        recs = _ME_parse(text)
+        assert "310" not in recs
+        assert "320" in recs and "110" in recs
+
+    def test_missing_zero_first_block_demand_rejects_general_service_only(self):
+        text = ME_PAGE1.replace("Demand Charge - per kW for first 20 kW $ -\n", "", 1)
+        recs = _ME_parse(text)
+        assert "232" not in recs
+        assert "233" in recs and "110" in recs
+
+    def test_duplicate_class_header_rejects_that_class(self):
+        recs = _ME_parse(ME_PAGE1 + "\n130 Residential Rural\n")
+        # Appended after the page marker, so the body is unchanged.
+        assert "130" in recs
+        dup = ME_PAGE1.replace("131 Residential Seasonal\n", "130 Residential Rural\n", 1)
+        assert "130" not in _ME_parse(dup)
+
+    def test_missing_or_mismatched_date_rejects_all(self):
+        assert _ME_parse(ME_PAGE1.replace("Code August 1, 2026", "Code")) == {}
+        assert _ME_parse(ME_PAGE1.replace("August 1, 2026", "September 1, 2026")) == {}
+
+    def test_missing_rate_page_rejects_all(self):
+        assert _ME_parse(ME_PAGE1.replace("110 Residential Urban", "110 Residential")) == {}
+
+    def test_price_follows_source(self):
+        text = ME_PAGE1.replace("Service Charge $ 24.57", "Service Charge $ 25.01").replace("$ 0.1784", "$ 0.1900")
+        recs = _ME_parse(text)
+        assert _ME_comp(recs["110"], "fixed").charge_value == 25.01
+        assert _ME_comp(recs["130"], "energy", 1).charge_value == 0.1900
+        assert _ME_comp(recs["232"], "fixed").charge_value == 25.01
+
+    def test_scrape_marks_live_and_failure_falls_back(self, monkeypatch):
+        scraper = me.MaritimeElectricScraper()
+        html = f'<html><a href="{ME_URL}">Schedule of Adjusted Rates Section N-28</a></html>'
+        monkeypatch.setattr(scraper, "fetch_page", lambda url, **k: html)
+        monkeypatch.setattr(scraper, "fetch_bytes", lambda url, **k: b"%PDF")
+        monkeypatch.setattr(me, "_extract_pages", lambda b: [DocumentPage(1, ME_PAGE1)])
+        live = scraper.scrape()
+        assert len(live) == 10
+        assert all("Provenance: live_parsed" in r.notes for r in live)
+
+        monkeypatch.setattr(me, "_extract_pages", lambda b: [DocumentPage(1, "garbage")])
+        fallback = scraper.scrape()
+        assert all("Provenance: seed_fallback" in r.notes for r in fallback)
+        assert all(r.confidence == "unverified" for r in fallback)
+
+
 class TestRegionalBatchStorage:
     @pytest.mark.parametrize("family", ["hydro_quebec", "nl_hydro", "saskenergy", "fortisbc_electric", "nova_scotia_power", "centra_gas",
                                         "fortisbc_energy", "heritage_gas", "energir", "liberty_gas_nb"])
@@ -2420,6 +2757,144 @@ class TestNewfoundlandPowerUpdated:
 
 
 # ─── Cross-utility sanity checks ───────────────────────────────
+
+# ─── Newfoundland Power building classes ───
+
+import json
+from pathlib import Path
+
+from scrapers.utilities.newfoundland_power import NewfoundlandPowerScraper
+from scrapers.utils.parsing import DocumentPage
+
+NFP_FIXTURE = json.loads(
+    (Path(__file__).parent / "fixtures" / "newfoundland_power.json").read_text(encoding="utf-8")
+)
+NFP_URL = NFP_FIXTURE["source_url"]
+
+
+def _NFP_pages(mutate=None):
+    pages = {p["page_number"]: p["text"] for p in NFP_FIXTURE["pages"]}
+    if mutate:
+        mutate(pages)
+    return [DocumentPage(n, t) for n, t in sorted(pages.items())]
+
+
+def _NFP_parse(mutate=None):
+    scraper = NewfoundlandPowerScraper()
+    pages = _NFP_pages(mutate)
+    text = "\n".join(p.text for p in pages)
+    base = scraper._parse_ratebook(text, NFP_URL)
+    scraper._annotate_base(base, pages, NFP_URL)
+    extra = scraper._parse_pages(pages, NFP_URL, base)
+    return {r.tariff_code: r for r in base + extra}
+
+
+def _NFP_comp(record, name):
+    return next(c for c in record.components if c.component_name == name)
+
+
+class TestNewfoundlandPowerBuildingLive:
+    def test_all_records_present(self):
+        assert set(_NFP_parse()) == {"1.1", "2.1", "2.3", "2.4", "1.1S", "PPD", "RULE-9K", "FEES"}
+
+    def test_seasonal_domestic(self):
+        r = _NFP_parse()["1.1S"]
+        assert r.tariff_name == "Domestic Seasonal - Optional (Rate 1.1S)"
+        assert r.effective_date == "2026-07-01"
+        win = _NFP_comp(r, "Winter Season Premium Adjustment")
+        non = _NFP_comp(r, "Non-Winter Season Credit Adjustment")
+        assert (win.charge_value, win.charge_unit, win.season_months) == (0.00953, "$/kWh", "December-April")
+        assert (non.charge_value, non.charge_unit, non.season_months) == (-0.01297, "$/kWh", "May-November")
+        assert "12-month" in r.notes
+
+    def test_prompt_payment_percent(self):
+        c = _NFP_parse()["PPD"].components[0]
+        assert (c.charge_value, c.charge_unit) == (-1.5, "%")
+        assert "current month's bill" in c.notes
+
+    def test_primary_voltage_discount_kva(self):
+        r = _NFP_parse()["RULE-9K"]
+        vals = {c.component_name: (c.charge_value, c.charge_unit, c.demand_unit) for c in r.components}
+        assert vals == {
+            "Primary Voltage Demand Discount (4 kV to 25 kV)": (-0.40, "$/kVA", "kVA"),
+            "Primary Voltage Demand Discount (33 kV to 138 kV)": (-0.90, "$/kVA", "kVA"),
+        }
+
+    def test_fees(self):
+        r = _NFP_parse()["FEES"]
+        vals = {c.component_name: (c.charge_value, c.charge_unit) for c in r.components}
+        assert vals == {
+            "Reconnection Fee (normal office hours)": (20.0, "$/reconnection"),
+            "Reconnection Fee (other times)": (40.0, "$/reconnection"),
+            "Application Fee (name change / new premises)": (8.0, "$/application"),
+            "Dishonoured Payment Charge": (16.0, "$/payment"),
+        }
+
+    def test_base_identities_and_provenance(self):
+        recs = _NFP_parse()
+        assert recs["1.1"].tariff_name == "Domestic Service (Rate 1.1)"
+        assert recs["2.3"].tariff_name == "General Service 110 kVA - 1000 kVA (Rate 2.3)"
+        for r in recs.values():
+            for c in r.components:
+                assert c.effective_date == "2026-07-01"
+                assert c.source_url == NFP_URL
+                assert c.source_detail
+
+    def test_mutated_seasonal_rejected_independently(self):
+        recs = _NFP_parse(lambda p: p.__setitem__(25, p[25].replace("0.953¢", "0.953")))
+        assert "1.1S" not in recs
+        assert {"1.1", "PPD", "RULE-9K", "FEES"} <= set(recs)
+
+    def test_mutated_discount_rejected_independently(self):
+        recs = _NFP_parse(lambda p: p.__setitem__(27, p[27].replace("1.5%", "2%")))
+        assert "PPD" not in recs
+        assert {"1.1S", "RULE-9K", "FEES", "2.3"} <= set(recs)
+
+    def test_mutated_9k_rejected_independently(self):
+        recs = _NFP_parse(lambda p: p.__setitem__(12, p[12].replace("per kVA", "per kW")))
+        assert "RULE-9K" not in recs
+        assert {"1.1S", "PPD", "FEES"} <= set(recs)
+
+    def test_missing_date_rejects_only_that_page(self):
+        recs = _NFP_parse(lambda p: p.__setitem__(25, p[25].replace("Effective July 1, 2026", "")))
+        assert "1.1S" not in recs
+        assert "FEES" in recs and "RULE-9K" in recs
+
+    def test_one_fee_failure_keeps_other_fees(self):
+        recs = _NFP_parse(lambda p: p.__setitem__(13, p[13].replace("$8.00", "")))
+        names = {c.component_name for c in recs["FEES"].components}
+        assert "Application Fee (name change / new premises)" not in names
+        assert "Dishonoured Payment Charge" in names
+
+    def test_price_follows_source(self):
+        recs = _NFP_parse(lambda p: p.__setitem__(
+            25, p[25].replace("0.953¢", "1.100¢").replace("(1.297)¢", "(1.500)¢")))
+        assert _NFP_comp(recs["1.1S"], "Winter Season Premium Adjustment").charge_value == 0.011
+        assert _NFP_comp(recs["1.1S"], "Non-Winter Season Credit Adjustment").charge_value == -0.015
+
+    def test_scrape_marks_live_and_keeps_extras(self):
+        scraper = NewfoundlandPowerScraper()
+        pages = _NFP_pages()
+        text = "\n".join(p.text for p in pages)
+        html = '<body><a href="RateBook.pdf">Schedule of Rates</a></body>'
+        with patch.object(scraper, "fetch_page", return_value=html), \
+             patch.object(scraper, "fetch_bytes", return_value=b"pdf"), \
+             patch("scrapers.utilities.newfoundland_power.extract_pdf_text", return_value=text), \
+             patch("scrapers.utilities.newfoundland_power.extract_pdf_pages", return_value=pages):
+            records = scraper._try_live_scrape()
+        assert len(records) == 8
+        assert all("Provenance: live_parsed" in r.notes for r in records)
+
+    def test_pages_failure_keeps_base_records(self):
+        scraper = NewfoundlandPowerScraper()
+        text = "\n".join(p.text for p in _NFP_pages())
+        html = '<body><a href="RateBook.pdf">Schedule of Rates</a></body>'
+        with patch.object(scraper, "fetch_page", return_value=html), \
+             patch.object(scraper, "fetch_bytes", return_value=b"pdf"), \
+             patch("scrapers.utilities.newfoundland_power.extract_pdf_text", return_value=text):
+            records = scraper._try_live_scrape()
+        assert {r.tariff_code for r in records} == {"1.1", "2.1", "2.3", "2.4"}
+
 
 class TestAllTier1UtilitiesBasicSanity:
     """Verify all 8 Tier 1 utilities produce valid TariffRecords."""

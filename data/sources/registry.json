@@ -462,7 +462,7 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.nb_power",
       "scraper_class": "NBPowerScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
           "url": "https://www.nbpower.com/en/products-services/residential/rates",
@@ -477,7 +477,7 @@
           "is_primary": false
         }
       ],
-      "notes": "NB Power is a vertically integrated Crown corporation and the primary electricity provider in New Brunswick. Regulated by the New Brunswick Energy and Utilities Board (NBEUB)."
+      "notes": "NB Power is a vertically integrated Crown corporation and the primary electricity provider in New Brunswick. Regulated by the New Brunswick Energy and Utilities Board (NBEUB). Rural/Seasonal residential, residential and business water-heater rental, SureConnect, Recreational Lighting and Public Fast Charging are parsed live from the two official rate pages (effective April 14, 2026, parsed from the pages). Small/Large Industrial, lighting and one-time fees (published under a \"$/month\" heading) are excluded/not modelled. General Service II was merged into General Service I on April 1, 2025."
     },
     {
       "name": "Nova Scotia Power",
@@ -532,16 +532,22 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.maritime_electric",
       "scraper_class": "MaritimeElectricScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
           "url": "https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/",
           "source_type": "html",
           "description": "Rates and General Rules and Regulations — IRAC-approved Schedule of Adjusted Rates (PDF)",
           "is_primary": true
+        },
+        {
+          "url": "https://www.maritimeelectric.com/media/q1fcy52a/602000-section-n-28-effective-august-1-2026.pdf",
+          "source_type": "pdf",
+          "description": "Section N-28 Schedule of Adjusted Rates effective August 1, 2026 (PDF)",
+          "is_primary": false
         }
       ],
-      "notes": "Maritime Electric is the primary electricity distributor in Prince Edward Island, a subsidiary of Fortis Inc. Regulated by the Island Regulatory and Appeals Commission (IRAC)."
+      "notes": "Maritime Electric is the primary electricity distributor in Prince Edward Island, a subsidiary of Fortis Inc. Regulated by the Island Regulatory and Appeals Commission (IRAC). Building classes 110/130/131/133/232/233 are source-checked with per-class fail-closed parsing and a source fixture. Industrial 310/320/330/340 are retained as reference. Lighting and short-term service are excluded. No recurring riders are published."
     },
     {
       "name": "Newfoundland Power",
@@ -549,16 +555,22 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.newfoundland_power",
       "scraper_class": "NewfoundlandPowerScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
           "url": "https://www.newfoundlandpower.com/en/My-Account/Usage/Electricity-Rates",
           "source_type": "html",
           "description": "Electricity rates page with links to PDF rate schedules",
           "is_primary": true
+        },
+        {
+          "url": "https://www.newfoundlandpower.com/-/media/PDFs/Business-Services/Commercial-Rates/RateBook_July1_2026_20260612.pdf",
+          "source_type": "pdf",
+          "description": "RateBook effective July 1, 2026 (PDF)",
+          "is_primary": false
         }
       ],
-      "notes": "Newfoundland Power is a subsidiary of Fortis Inc. and the primary electricity distributor on the island of Newfoundland. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB). Rates available only in linked PDF 'Schedule of Rates, Rules and Regulations'."
+      "notes": "Newfoundland Power is a subsidiary of Fortis Inc. and the primary electricity distributor on the island of Newfoundland. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB). Rates available only in linked PDF 'Schedule of Rates, Rules and Regulations'. The July 1, 2026 RateBook also supplies Domestic Seasonal 1.1S adjustments, the prompt-payment discount (-1.5%), primary-voltage demand discounts and service fees (reconnection/application/dishonoured payment). Municipal tax and RSP riders are already embedded in printed rates. Curtailable and lighting service are excluded."
     },
     {
       "name": "NL Hydro",

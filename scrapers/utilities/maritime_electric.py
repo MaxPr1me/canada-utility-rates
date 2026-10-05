@@ -13,15 +13,14 @@ Regulated by: Island Regulatory and Appeals Commission (IRAC)
 
 from __future__ import annotations
 
+import io
 import logging
 import re
 from datetime import datetime
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
-from scrapers.utils.parsing import (
-    parse_html, find_pdf_links, extract_pdf_text, extract_effective_date,
-)
+from scrapers.utils.parsing import parse_html, find_pdf_links, DocumentPage
 
 logger = logging.getLogger(__name__)
 
@@ -70,28 +69,48 @@ def _tier_from_label(label: str, unit: str) -> tuple[Optional[int], Optional[flo
     return None, None
 
 
-def _resolve_effective_date(text: str, link: str) -> str:
-    """Resolve the schedule effective date from the text, then the URL, then seed."""
-    iso = extract_effective_date(text)
-    if iso:
-        return iso
-    bare = re.search(r"([A-Z][a-z]+)\s+(\d{1,2}),\s*(\d{4})", text)
-    if bare:
-        try:
-            return datetime.strptime(
-                f"{bare.group(1)} {bare.group(2)} {bare.group(3)}", "%B %d %Y"
-            ).date().isoformat()
-        except ValueError:
-            pass
+def _parse_date(raw: str) -> Optional[str]:
+    try:
+        return datetime.strptime(re.sub(r"\s+", " ", raw).replace(",", ""), "%B %d %Y").date().isoformat()
+    except ValueError:
+        return None
+
+
+def _schedule_date(text: str, link: str) -> Optional[str]:
+    """Rate-column header date; must agree with the date in the document URL when present."""
+    header = re.search(r"Rate\s+Code\s+([A-Z][a-z]+\s+\d{1,2},\s*\d{4})", text)
+    effective = _parse_date(header.group(1)) if header else None
+    if not effective:
+        return None
     fname = re.search(r"effective-([a-z]+)-(\d{1,2})-(\d{4})", link, re.I)
-    if fname:
-        try:
-            return datetime.strptime(
-                f"{fname.group(1)} {fname.group(2)} {fname.group(3)}", "%B %d %Y"
-            ).date().isoformat()
-        except ValueError:
-            pass
-    return SEED_RESIDENTIAL["effective_date"]
+    if fname and _parse_date(f"{fname.group(1).title()} {fname.group(2)} {fname.group(3)}") != effective:
+        return None
+    return effective
+
+
+def _extract_pages(pdf_bytes: bytes) -> list[DocumentPage]:
+    """Raw per-page text; the shared normalizer drops repeated rows, which this schedule relies on."""
+    import pdfplumber
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        return [DocumentPage(n, p.extract_text() or "") for n, p in enumerate(pdf.pages, 1)]
+
+
+# Expected (component_type, tier_number, tier_threshold) per rate code.
+_RES = [("fixed", None, None), ("energy", 1, 2000.0), ("energy", 2, None)]
+_GS = [("fixed", None, None), ("demand", 2, None),
+       ("energy", 1, 5000.0), ("energy", 2, None)]
+EXPECTED_SHAPES: dict[str, list[tuple]] = {
+    "110": _RES, "130": _RES, "131": _RES, "133": _RES,
+    "232": _GS, "233": _GS,
+    "320": [("demand", None, None), ("energy", 1, 100.0), ("energy", 2, None)],
+    "310": [("demand", None, None), ("energy", None, None)],
+    "340": [("demand", None, None), ("energy", None, None)],
+    "330": [("demand", None, None), ("energy", None, None), ("energy", 2, None)],
+}
+# General Service's first 20 kW of demand is published as "$ -" (no charge).
+_ZERO_DEMAND_CODES = {"232", "233"}
+_ZERO_DEMAND_LINE = re.compile(r"^demand charge.*first\s+20\s*kW\s*\$\s*-\s*$", re.I)
 
 
 class MaritimeElectricScraper(BaseScraper):
@@ -132,12 +151,10 @@ class MaritimeElectricScraper(BaseScraper):
             )
             for link in pdf_links[:6]:
                 try:
-                    text = extract_pdf_text(self.fetch_bytes(link))
+                    pages = _extract_pages(self.fetch_bytes(link))
                 except Exception:
                     continue
-                if "Residential Urban" not in text:
-                    continue
-                records = self._parse_all_classes(text, link)
+                records = self._parse_pages(pages, link)
                 if records:
                     return self.mark_live_parsed(records)
             return None
@@ -145,14 +162,21 @@ class MaritimeElectricScraper(BaseScraper):
             self.logger.exception("Error during Maritime Electric live scrape")
             return None
 
-    def _parse_all_classes(self, text: str, link: str) -> list[TariffRecord]:
-        """Parse all non-lighting service classes from the Schedule of Adjusted Rates."""
-        start = text.find("110 Residential")
-        if start == -1:
+    def _parse_pages(self, pages: list[DocumentPage], link: str) -> list[TariffRecord]:
+        """Parse non-lighting service classes from the rate page; each class fails alone."""
+        page = next(
+            (p for p in pages
+             if "Schedule of Rates" in p.text and "110 Residential Urban" in p.text),
+            None,
+        )
+        if page is None:
             return []
-        end = text.find("Page 1 of 3")
-        body = text[start:end] if end != -1 else text[start:]
-        effective = _resolve_effective_date(text, link)
+        effective = _schedule_date(page.text, link)
+        if not effective:
+            return []
+        start = page.text.find("110 Residential Urban")
+        end = page.text.find("Page 1 of")
+        body = page.text[start:end] if end > start else page.text[start:]
 
         codes = {code for code, _, _, _ in RATE_CLASSES}
         headers = [
@@ -160,34 +184,58 @@ class MaritimeElectricScraper(BaseScraper):
             for m in re.finditer(r"(?m)^\s*(\d{3})\s+\D.*$", body)
             if m.group(1) in codes
         ]
+        seen = [code for code, _ in headers]
         records: list[TariffRecord] = []
         for i, (code, pos) in enumerate(headers):
+            if seen.count(code) > 1:
+                continue
             seg_end = headers[i + 1][1] if i + 1 < len(headers) else len(body)
-            record = self._build_record(code, body[pos:seg_end], effective, link)
+            record = self._build_record(
+                code, body[pos:seg_end], effective, link, page.source_detail
+            )
             if record:
                 records.append(record)
         return records
 
     def _build_record(
-        self, code: str, block: str, effective: str, link: str
+        self, code: str, block: str, effective: str, link: str, page_detail: str
     ) -> Optional[TariffRecord]:
-        """Build one TariffRecord from a single rate-code block of the schedule."""
+        """Build one record; None unless the class has exactly its expected components."""
         meta = next((m for m in RATE_CLASSES if m[0] == code), None)
         if not meta:
             return None
         _, name, customer_class, structure = meta
         components: list[RateComponent] = []
-        for line in block.splitlines()[1:]:
-            component = self._parse_component_line(line.strip())
+        zero_demand_seen = False
+        for raw in block.splitlines()[1:]:
+            line = raw.strip()
+            if _ZERO_DEMAND_LINE.search(line):
+                zero_demand_seen = True
+                continue
+            component = self._parse_component_line(line)
             if component:
                 components.append(component)
-        if not components:
+            elif re.search(r"charge.*\$", line, re.I):
+                return None
+        if (code in _ZERO_DEMAND_CODES) != zero_demand_seen:
             return None
+        shape = sorted(
+            ((c.component_type, c.tier_number, c.tier_threshold) for c in components), key=repr
+        )
+        if shape != sorted(EXPECTED_SHAPES[code], key=repr):
+            return None
+        for c in components:
+            c.effective_date = effective
+            c.source_url = link
+            c.source_detail = f"{page_detail}, Rate {code} {name}"
+            if code == "320" and c.tier_unit:
+                c.tier_unit = "kWh per kW billing demand"
         return TariffRecord(
             utility_name="Maritime Electric", province="PE", utility_type="electricity",
             tariff_name=f"{name} (Rate {code})", tariff_code=code,
             customer_class=customer_class, rate_structure=structure,
-            effective_date=effective, source_url=link, confidence="high",
+            effective_date=effective, source_url=link, source_page=page_detail,
+            confidence="high",
             notes=(
                 "Parsed from the IRAC-approved Maritime Electric Schedule of "
                 "Adjusted Rates (Section N-28)."

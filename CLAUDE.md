@@ -63,7 +63,7 @@ python -m playwright install chromium     # headless browser for JS-rendered pag
 python -m pipeline.run_scrape --init-db   # first time
 python -m pipeline.run_scrape             # scrape all
 python -m pipeline.export_json            # export for site
-pytest                                    # run tests (551 tests)
+pytest                                    # run tests (602 tests)
 ```
 
 ## Adding a utility
@@ -78,7 +78,10 @@ pytest                                    # run tests (551 tests)
 - Province codes are 2-letter uppercase (BC, ON, QC, etc.).
 - Keep registry URLs and actual scraper URL constants synchronized; most modules do not consume registry sources dynamically.
 
-## Current snapshot and queue (2026-10-05)
+## Current snapshot and queue (2026-10-05, after batch 5)
+- Batch 5 (electricity classes and fees, after a2a78a9; industrial skipped per user): NB Power 9 (adds Rural/Seasonal Rate D, water-heater rental, SureConnect, tiered Recreational Lighting, Public Fast Charging; energy = base + variance; all April 14, 2026; fee table labelled "$/month" so one-time fees are not modelled), Newfoundland Power 8 (Domestic Seasonal 1.1S adjustments, prompt-payment discount, conditional primary-voltage demand discount, service fees from the July 1, 2026 RateBook), Maritime Electric 10 (building classes audited complete against IRAC N-28 effective Aug 1, 2026; per-class fail-closed; Rate 320 tier unit "kWh per kW billing demand"). SaskEnergy fees not added (no published effective date). Guarded store appended 27 snapshots (1,328 total). Export: 648 versions / 4,160 components / 168 stored live / 480 seed; 166 latest live across 18 utilities; 164 across the 16 targets. Tests: 602 passing. Remaining queue: BC Hydro business, Manitoba Hydro building audit, FortisBC Electric non-industrial large commercial/optional, HQ Inukjuak/net metering/business, NSPower business/rider/pilot status, NL Hydro net metering, Centra PUB conditions, gas gaps (Energir inventory adjustments; FortisBC Revelstoke propane/Rates 6-7).
+
+### Previous (gas batch 4) snapshot
 - Gas batch 3 (2026-10-05): FortisBC Energy 6 (Rates 1/2/3 × Mainland-VI/Fort Nelson, July 1 2026, $/day basic, BC carbon-tax elimination evidence), Energir 2 (default Rate D1 residential/business from the linked Oct 1 2026 CST PDF; CTEAS cap-and-trade 8.727¢/m³), Heritage/Eastward 2 (Residential + tiered General Service from the October 2026 rate table, cross-checked with page summaries) and Liberty NB 3 (SGS/MGS/LGS, Jan 1 2025 distribution + October LUG commodity + CRA NB carbon evidence). Guarded stores appended 13 snapshots (1,282 total) with all prior snapshots and non-target tariffs unchanged.
 - Gas batch 4 (2026-10-05, after 6333ea8): FortisBC Energy 8 (adds Rate 5 General Firm Service from rateschedule_5.pdf: basic $469.00/month as printed by the tariff though the business page says daily, Rider 2 $0.40/month, demand $37.735/GJ/month of daily demand; and seasonal Rate 4 Apr 1-Nov 1 from rateschedule_4.pdf: $14.4230/day basic, off-peak $2.204 / extension $3.268 per GJ; effective July 1 2026, BCUC G-131-26; Fort Nelson 4/5 have no price table), Energir 4 (D3/D4 from article 14.3: subscribed-volume bands in $/m³/day, conditional above-subscribed withdrawal and load-balancing; D1 and D3/D4 fail independently; live D3 supersedes the old estimate), Heritage/Eastward 3 (Rate Class 3: $1,995.54/month, $0.167/GJ, $30.85 per GJ Billing Demand/month from tariff PDF Schedule 3 page 10; Rate Class 4 negotiated, unpublished) and Liberty NB 4 (Off-Peak Service $50.00/month, $5.6244/GJ, Apr-Nov eligibility, $10/GJ Dec-Mar overrun as a note). Guarded store validated all 19 records, appended 19 snapshots (1,301 total); prior snapshots and non-target tariffs unchanged. Browser preview checked (156 live default, no JS errors, no mobile overflow).
 - Export: 638 stored versions / 4,123 components / 158 stored live / 480 seed; 156 latest live across 18 utilities; 154 latest live across all 16 target utilities. Tests: 551 passing.
@@ -106,7 +109,7 @@ Update these files when the task changes architecture, adds major features, chan
 - `scrapers.utils.parsing` provides `DocumentPage`, page-aware fail-closed PDF extraction/section selection, CSV/XLSX readers, content hashing, effective-date/unit/currency normalization, and contextual verification.
 - Snapshot serialization is canonical JSON with sorted component dictionaries. Ordering alone is ignored; all semantic fields remain hashed. `diff_runs` compares append-only per-run snapshots.
 - The no-build comparison state is an in-memory two-item array in `site/js/app.js`; it aligns exact type/name/unit keys and never totals them.
-- Deterministic tests block unmocked network access. Run `pytest -q` (551 tests); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.
+- Deterministic tests block unmocked network access. Run `pytest -q` (602 tests); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.
 
 ## Active Regional Implementation
 - Only 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL are in this run. ON/AB/YT/NT/NU remain untouched and retained in exports. Independent parser/fixture work may be parallel; shared tests/registry/docs/DB/export/git integration is serial. The active matrix queue supersedes its retained historical checkpoint instructions.
