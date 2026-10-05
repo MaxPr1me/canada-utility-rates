@@ -15,10 +15,10 @@ Rate classes scraped:
   - Small General Service (Rate 1300) — flat energy, no demand charge
   - Medium General Service (Rate 1500) — energy + demand charge
   - Large General Service (Rate 1600) — energy + demand charge (higher demand, lower energy)
+  - Standard service charges (Terms and Conditions Section 11), as a separate record
 
-Residential prices, dates and riders come from the approved Electric Tariff PDF;
-the tiered/flat/time-of-day sub-pages are product discovery references. Business
-rates continue to use the existing prose parser for the three supported classes.
+Residential and General Service prices, dates and riders come from the approved
+Electric Tariff PDF; the product/business web pages are discovery references.
 
 NOTE: BC Hydro redirects www.bchydro.com to app.bchydro.com.
 """
@@ -32,8 +32,7 @@ from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
 from scrapers.utils.parsing import (
-    parse_html, extract_rate_from_text, detect_js_rendered, extract_pdf_pages,
-    extract_effective_date, DocumentPage,
+    extract_pdf_pages, extract_effective_date, DocumentPage,
 )
 from scrapers.utils.change_detection import compare_to_seed, log_change_alerts, has_critical_alerts
 
@@ -86,6 +85,7 @@ class BCHydroScraper(BaseScraper):
 
     def __init__(self):
         super().__init__(utility_name="BC Hydro", province="BC")
+        self._tariff_pages: Optional[list[DocumentPage]] = None
 
     def scrape(self) -> list[TariffRecord]:
         """
@@ -155,10 +155,15 @@ class BCHydroScraper(BaseScraper):
             except Exception as exc:
                 self.logger.warning("BC Hydro product page unavailable %s: %s", url, exc)
         try:
-            return self._parse_residential_tariff(extract_pdf_pages(self.fetch_bytes(TARIFF_URL)))
+            return self._parse_residential_tariff(self._tariff_document())
         except Exception as exc:
             self.logger.warning("Could not parse BC Hydro residential tariff: %s", exc)
             return []
+
+    def _tariff_document(self) -> list[DocumentPage]:
+        if self._tariff_pages is None:
+            self._tariff_pages = extract_pdf_pages(self.fetch_bytes(TARIFF_URL))
+        return self._tariff_pages
 
     def _parse_residential_tariff(self, pages: list[DocumentPage]) -> list[TariffRecord]:
         sections: dict[str, list[DocumentPage]] = {}
@@ -307,301 +312,232 @@ class BCHydroScraper(BaseScraper):
         return records
 
     def _parse_business(self) -> Optional[list[TariffRecord]]:
-        """Parse SGS (1300), MGS (1500), and LGS (1600) from business-rates.html."""
+        """Parse non-industrial General Service schedules and standard charges from the approved tariff."""
         try:
-            html = self.fetch_page(BUSINESS_URL)
-            if detect_js_rendered(html):
-                self.logger.warning("Business rates page appears JS-rendered")
-                return None
-
-            soup = parse_html(html)
-            page_text = soup.get_text(" ", strip=True)
-
-            records: list[TariffRecord] = []
-
-            # --- Small General Service (Rate 1300) ---
-            sgs = self._parse_sgs(page_text)
-            if sgs:
-                records.append(sgs)
-
-            # --- Medium General Service (Rate 1500) ---
-            mgs = self._parse_mgs(page_text)
-            if mgs:
-                records.append(mgs)
-
-            # --- Large General Service (Rate 1600) ---
-            lgs = self._parse_lgs(page_text)
-            if lgs:
-                records.append(lgs)
-
-            return records if records else None
-
-        except Exception as e:
-            self.logger.warning("Error parsing business rates page: %s", e)
+            records = self._parse_business_tariff(self._tariff_document())
+        except Exception as exc:
+            self.logger.warning("Could not parse BC Hydro business tariff: %s", exc)
             return None
+        return records or None
 
-    def _parse_sgs(self, page_text: str) -> Optional[TariffRecord]:
-        """Extract Small General Service rates from page text."""
-        # Isolate the SGS section: between "Small General Service" and
-        # "Medium General Service" headers
-        sgs_section = self._extract_section(
-            page_text, "Small General Service", "Medium General Service"
-        )
-        if not sgs_section:
-            self.logger.warning("Could not find SGS section in business page")
-            return None
-
-        basic = self._extract_cents_per(sgs_section, "cents per day")
-        energy = self._extract_cents_per(sgs_section, "cents per kWh")
-
-        if basic is None or energy is None:
-            self.logger.warning(
-                "Could not extract SGS rates (basic=%s, energy=%s)",
-                basic, energy,
+    def _parse_business_tariff(self, pages: list[DocumentPage]) -> list[TariffRecord]:
+        sections: dict[str, list[DocumentPage]] = {}
+        for page in pages:
+            header = re.match(
+                r"BC Hydro Rate Schedules? (1300|1500|1600|1901|1904)\b(?:, \d{4}, \d{4}, \d{4})? \u2013", page.text,
             )
-            return None
+            if header:
+                sections.setdefault(header.group(1), []).append(page)
 
-        self.logger.info("Parsed SGS: basic=%.4f, energy=%.4f", basic, energy)
+        today = self.now_iso()[:10]
 
-        return TariffRecord(
-            utility_name="BC Hydro",
-            province="BC",
-            utility_type="electricity",
-            tariff_name="Small General Service (Rate 1300)",
-            tariff_code="1300",
-            customer_class="commercial",
-            sub_class="small general service",
-            rate_structure="flat",
-            effective_date=SEED_SMALL_GENERAL["effective_date"],
-            source_url=BUSINESS_URL,
-            confidence="high",
-            eligibility="Commercial customers with annual peak demand under 35 kW",
-            demand_max_kw=35,
-            notes="BC Hydro small commercial rate -- flat energy charge, no demand charge",
-            components=[
-                RateComponent(
-                    component_type="fixed",
-                    component_name="Basic Charge",
-                    charge_value=basic,
-                    charge_unit="$/day",
-                ),
-                RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge",
-                    charge_value=energy,
-                    charge_unit="$/kWh",
-                ),
-            ],
-        )
+        def schedule(code: str) -> tuple[str, str, str]:
+            selected = sections.get(code, [])
+            if not selected:
+                raise ValueError(f"Missing RS {code}")
+            dates = {extract_effective_date(page.text.split("Section", 1)[0]) for page in selected}
+            if len(dates) != 1 or None in dates or next(iter(dates)) > today:
+                raise ValueError(f"Missing, ambiguous or future RS {code} date")
+            detail = f"Electric Tariff RS {code}; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+            return re.sub(r"\s+", " ", "\n".join(page.text for page in selected)), next(iter(dates)), detail
 
-    def _parse_mgs(self, page_text: str) -> Optional[TariffRecord]:
-        """Extract Medium General Service rates from page text."""
-        # Isolate the MGS section: after "Medium General Service"
-        mgs_section = self._extract_section(
-            page_text, "Medium General Service", "Large General Service"
-        )
-        if not mgs_section:
-            # Try without end marker if LGS section doesn't appear
-            mgs_section = self._extract_section(
-                page_text, "Medium General Service", None
-            )
-        if not mgs_section:
-            self.logger.warning("Could not find MGS section in business page")
-            return None
+        riders: Optional[list[RateComponent]] = []
+        try:
+            for code, title in (("1901", "Deferral Account Rate Rider"), ("1904", "Trade Income Rate Rider")):
+                text, effective, detail = schedule(code)
+                amount = re.search(r"charge equal to\s+(\(?-?\d+(?:\.\d+)?\)?)%", text)
+                if not amount or "except for Rate Schedules 2101" not in text:
+                    raise ValueError(f"Missing RS {code} rate or exclusions")
+                raw = amount.group(1)
+                percent = -float(raw[1:-1]) if raw.startswith("(") and raw.endswith(")") else float(raw)
+                riders.append(RateComponent(
+                    "rider", f"Rate Rider -- {title}", round(percent / 100.0, 6), "fraction",
+                    effective_date=effective, source_url=TARIFF_URL, source_detail=detail,
+                    notes="Applies to all charges under the General Service schedules, before taxes and levies.",
+                ))
+        except ValueError as exc:
+            self.logger.warning("Incomplete BC Hydro business riders: %s", exc)
+            riders = None
 
-        basic = self._extract_cents_per(mgs_section, "cents per day")
-        energy = self._extract_cents_per(mgs_section, "cents per kWh")
-        demand = self._extract_dollar_per(mgs_section, r"\$\s*([\d.]+)\s*per\s*kW\b")
-
-        if basic is None or energy is None or demand is None:
-            self.logger.warning(
-                "Could not extract MGS rates (basic=%s, energy=%s, demand=%s)",
-                basic, energy, demand,
-            )
-            return None
-
-        self.logger.info(
-            "Parsed MGS: basic=%.4f, energy=%.4f, demand=%.2f",
-            basic, energy, demand,
-        )
-
-        return TariffRecord(
-            utility_name="BC Hydro",
-            province="BC",
-            utility_type="electricity",
-            tariff_name="Medium General Service (Rate 1500)",
-            tariff_code="1500",
-            customer_class="commercial",
-            sub_class="medium general service",
-            rate_structure="demand",
-            effective_date=SEED_MEDIUM_GENERAL["effective_date"],
-            source_url=BUSINESS_URL,
-            confidence="high",
-            eligibility="Commercial customers with annual peak demand between 35 and 150 kW",
-            demand_max_kw=150,
-            notes="BC Hydro medium commercial rate with demand charge; served at secondary voltage",
-            components=[
-                RateComponent(
-                    component_type="fixed",
-                    component_name="Basic Charge",
-                    charge_value=basic,
-                    charge_unit="$/day",
-                ),
-                RateComponent(
-                    component_type="demand",
-                    component_name="Demand Charge",
-                    charge_value=demand,
-                    charge_unit="$/kW",
-                    demand_unit="kW",
-                    notes="Applied to highest 15-minute demand average per billing period",
-                ),
-                RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge",
-                    charge_value=energy,
-                    charge_unit="$/kWh",
-                ),
-            ],
-        )
-
-    def _parse_lgs(self, page_text: str) -> Optional[TariffRecord]:
-        """Extract Large General Service rates from page text."""
-        # Isolate the LGS section: after "Large General Service" until end or next section
-        lgs_section = self._extract_section(
-            page_text, "Large General Service", "Declaration of Eligibility"
-        )
-        if not lgs_section:
-            lgs_section = self._extract_section(
-                page_text, "Large General Service", None
-            )
-        if not lgs_section:
-            self.logger.warning("Could not find LGS section in business page")
-            return None
-
-        basic = self._extract_cents_per(lgs_section, "cents per day")
-        energy = self._extract_cents_per(lgs_section, "cents per kWh")
-        demand = self._extract_dollar_per(lgs_section, r"\$\s*([\d.]+)\s*per\s*kW\b")
-
-        if basic is None or energy is None or demand is None:
-            self.logger.warning(
-                "Could not extract LGS rates (basic=%s, energy=%s, demand=%s)",
-                basic, energy, demand,
-            )
-            return None
-
-        self.logger.info(
-            "Parsed LGS: basic=%.4f, energy=%.4f, demand=%.2f",
-            basic, energy, demand,
-        )
-
-        return TariffRecord(
-            utility_name="BC Hydro",
-            province="BC",
-            utility_type="electricity",
-            tariff_name="Large General Service (Rate 1600)",
-            tariff_code="1600",
-            customer_class="commercial",
-            sub_class="large general service",
-            rate_structure="demand",
-            effective_date=SEED_LARGE_GENERAL["effective_date"],
-            source_url=BUSINESS_URL,
-            confidence="high",
-            eligibility="Commercial customers with annual peak demand of at least 150 kW, or using more than 550,000 kWh/year",
-            demand_min_kw=150,
-            notes="BC Hydro large commercial rate with demand charge; higher demand rate, lower energy rate than MGS",
-            components=[
-                RateComponent(
-                    component_type="fixed",
-                    component_name="Basic Charge",
-                    charge_value=basic,
-                    charge_unit="$/day",
-                ),
-                RateComponent(
-                    component_type="demand",
-                    component_name="Demand Charge",
-                    charge_value=demand,
-                    charge_unit="$/kW",
-                    demand_unit="kW",
-                    notes="Applied to highest 15-minute demand average per billing period",
-                ),
-                RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge",
-                    charge_value=energy,
-                    charge_unit="$/kWh",
-                ),
-            ],
-        )
-
-    # ── Text extraction helpers ───────────────────────────────
-
-    @staticmethod
-    def _extract_section(
-        text: str,
-        start_marker: str,
-        end_marker: Optional[str],
-    ) -> Optional[str]:
-        """
-        Extract the rate-bearing slice between start_marker and end_marker
-        (case-insensitive). The page repeats these service headers in a
-        summary/navigation list, so pick the occurrence whose following text
-        actually introduces a rate block ("cents per" / "per kW"), not the first.
-        """
-        lower = text.lower()
-        marker = start_marker.lower()
-
-        start_idx = -1
-        pos = 0
-        while True:
-            idx = lower.find(marker, pos)
-            if idx == -1:
+        cent = r"[\u00a2\u023c\ufffd]"
+        records: list[TariffRecord] = []
+        for code, name, sub_class, structure in (
+            ("1300", "Small General Service (Rate 1300)", "small general service", "flat"),
+            ("1500", "Medium General Service (Rate 1500)", "medium general service", "demand"),
+            ("1600", "Large General Service (Rate 1600)", "large general service", "demand"),
+        ):
+            if riders is None:
                 break
-            window = lower[idx:idx + 600]
-            if "cents per" in window or "per kw" in window:
-                start_idx = idx
-                break
-            pos = idx + len(marker)
+            try:
+                text, effective, detail = schedule(code)
+                family = {"1300": ("1300", "1301", "1310", "1311"),
+                          "1500": ("1500", "1501", "1510", "1511"),
+                          "1600": ("1600", "1601", "1610", "1611")}[code]
+                if any(not re.search(rf"Rate Schedule {member}:", text) for member in family):
+                    raise ValueError("Missing voltage/transformation schedule variants")
+                if "Rate Schedule 1901" not in text or "Rate Schedule 1904" not in text or "before taxes and levies" not in text:
+                    raise ValueError("Missing rider continuation")
+                rate_block = re.search(r"Rate Basic Charge:(.*?) Discounts ", text)
+                if not rate_block:
+                    raise ValueError("Missing rate block")
+                rate_text = "Basic Charge:" + rate_block.group(1)
 
-        if start_idx == -1:
-            start_idx = lower.find(marker)
-            if start_idx == -1:
-                return None
+                def amount(pattern: str, label: str) -> float:
+                    match = re.search(pattern, rate_text)
+                    if not match or float(match.group(1)) <= 0:
+                        raise ValueError(f"Missing {label}")
+                    return float(match.group(1))
 
-        content_start = start_idx + len(start_marker)
-        if end_marker:
-            end_idx = lower.find(end_marker.lower(), content_start)
-            if end_idx != -1:
-                return text[content_start:end_idx]
-        return text[content_start:]
+                basic = round(amount(rf"Basic Charge:\s*(\d+(?:\.\d+)?)\s*{cent}\s*per day", "basic charge") / 100.0, 6)
+                energy = round(amount(rf"Energy Charge:\s*(\d+(?:\.\d+)?)\s*{cent}\s*per kWh", "energy charge") / 100.0, 6)
+                demand = None
+                if structure == "demand":
+                    demand = amount(r"Demand Charge:\s*\$\s*(\d+(?:\.\d+)?) per kW of Billing Demand", "demand charge")
+                elif "Demand Charge" in rate_text:
+                    raise ValueError("Unexpected demand charge in small general service")
 
-    @staticmethod
-    def _extract_cents_per(text: str, unit_pattern: str) -> Optional[float]:
-        """
-        Find the first occurrence of "XX.XX <unit_pattern>" and return
-        the value converted to dollars.
+                primary = re.search(r"A discount of (\d+)(\u00bd)?\s*% will be applied to the above charges if [^.]*?metered at a Primary Voltage", text)
+                transformer = re.search(
+                    rf"A discount of (\d+(?:\.\d+)?)\s*{cent}\s*per (month|Billing Period) per kW of (?:Billing )?Demand will be applied (?:to the above charges )?if a Customer supplies\s+Transformation",
+                    text,
+                )
+                if not primary or not transformer or "primary voltage will be applied first" not in text.replace("Primary Voltage", "primary voltage"):
+                    raise ValueError("Missing discounts")
+                primary_fraction = round((int(primary.group(1)) + (0.5 if primary.group(2) else 0.0)) / 100.0, 6)
+                transformer_unit = "$/kW/month" if transformer.group(2) == "month" else "$/kW/billing period"
 
-        Example: _extract_cents_per(text, "cents per day") finds
-        "23.44 cents per day" and returns 0.2344.
-        """
-        pattern = rf"([\d]+\.?\d*)\s*{re.escape(unit_pattern)}"
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            return float(match.group(1)) / 100.0
-        return None
+                eligibility = None
+                demand_min = demand_max = usage_max = None
+                if code == "1300":
+                    limit = re.search(r"Demand, metered or estimated by BC Hydro, as applicable, is less than (\d+) kW", text)
+                    if not limit:
+                        raise ValueError("Missing availability")
+                    demand_max = float(limit.group(1))
+                    eligibility = f"General Service customers whose Demand, metered or estimated by BC Hydro, is less than {limit.group(1)} kW."
+                elif code == "1500":
+                    limit = re.search(r"Billing Demand is equal to or greater than (\d+) kW but less than (\d+) kW, and whose Energy consumption in any 12-month period is equal to or less than ([\d,]+) kWh", text)
+                    if not limit:
+                        raise ValueError("Missing availability")
+                    demand_min, demand_max = float(limit.group(1)), float(limit.group(2))
+                    usage_max = float(limit.group(3).replace(",", ""))
+                    eligibility = (f"General Service customers with Billing Demand of {limit.group(1)} kW or more but less than "
+                                   f"{limit.group(2)} kW and Energy consumption in any 12-month period of {limit.group(3)} kWh or less.")
+                else:
+                    limit = re.search(r"Billing Demand is equal to or greater than (\d+) kW, or whose Energy consumption in any 12 month period is greater than ([\d,]+) kWh", text)
+                    if not limit:
+                        raise ValueError("Missing availability")
+                    demand_min = float(limit.group(1))
+                    eligibility = (f"General Service customers with Billing Demand of {limit.group(1)} kW or more, "
+                                   f"or Energy consumption in any 12-month period above {limit.group(2)} kWh.")
 
-    @staticmethod
-    def _extract_dollar_per(text: str, pattern: str) -> Optional[float]:
-        """
-        Find a dollar amount matching the given regex pattern.
-        The pattern should have one capture group for the numeric value.
+                minimum = "Minimum Charge: The Basic Charge."
+                if structure == "demand":
+                    wrapped = r"(?: Minimum| Charge)*"  # side-heading words interleave with the body text
+                    if not re.search(rf"50% of the highest Demand Charge billed in any Billing Period wholly{wrapped} within an on-peak period during the immediately preceding{wrapped} 11 Billing{wrapped} Periods", text) \
+                            or "November 1" not in text or "March 31" not in text:
+                        raise ValueError("Missing minimum charge")
+                    minimum = ("Monthly minimum charge is 50% of the highest Demand Charge billed in any Billing Period wholly within an "
+                               "on-peak period (November 1 to March 31) during the preceding 11 Billing Periods; a condition, not an added charge.")
+                elif not re.search(r"Minimum Charge: The Basic Charge", text):
+                    raise ValueError("Missing minimum charge")
 
-        Example: _extract_dollar_per(text, r"\\$\\s*([\\d.]+)\\s*per\\s*kW")
-        finds "$6.07 per kW" and returns 6.07.
-        """
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            return float(match.group(1))
-        return None
+                components = [RateComponent("fixed", "Basic Charge", basic, "$/day")]
+                if demand is not None:
+                    components.append(RateComponent(
+                        "demand", "Demand Charge", demand, "$/kW", demand_unit="kW",
+                        notes="Per kW of Billing Demand, the highest kW Demand in the Billing Period.",
+                    ))
+                components.append(RateComponent("energy", "Energy Charge", energy, "$/kWh"))
+                components.append(RateComponent(
+                    "rebate", "Conditional Primary Voltage Discount", -primary_fraction, "fraction", sub_component="conditional",
+                    notes="Applies to the above charges only where supply is metered at Primary Voltage (RS %s01/%s11); applied before the transformation discount." % (code[:2], code[:2]),
+                ))
+                components.append(RateComponent(
+                    "rebate", "Conditional Transformer Ownership Discount", -round(float(transformer.group(1)) / 100.0, 6), transformer_unit,
+                    sub_component="conditional", demand_unit="kW",
+                    notes="Only where the Customer supplies Transformation (RS %s10/%s11)." % (code[:2], code[:2]),
+                ))
+                for component in components:
+                    component.source_url = TARIFF_URL
+                    component.source_detail = detail
+                    component.effective_date = effective
+                records.append(TariffRecord(
+                    utility_name="BC Hydro", province="BC", utility_type="electricity", tariff_name=name,
+                    tariff_code=code, customer_class="commercial", sub_class=sub_class, rate_structure=structure,
+                    effective_date=max([effective] + [rider.effective_date for rider in riders]),
+                    source_url=TARIFF_URL, source_page=detail, eligibility=eligibility,
+                    demand_min_kw=demand_min, demand_max_kw=demand_max,
+                    usage_max=usage_max, usage_unit="kWh/12 months" if usage_max else None,
+                    notes=(f"Covers Rate Schedules {', '.join(family)} (voltage and transformation variants share these prices). "
+                           f"{minimum} Rate Riders are shown separately; taxes and levies excluded."),
+                    components=components + [replace(rider) for rider in riders],
+                ))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("Incomplete BC Hydro RS %s: %s", code, exc)
+
+        fees = self._parse_standard_charges(pages)
+        if fees:
+            records.append(fees)
+        return records
+
+    def _parse_standard_charges(self, pages: list[DocumentPage]) -> Optional[TariffRecord]:
+        today = self.now_iso()[:10]
+        components: list[RateComponent] = []
+        dates: list[str] = []
+
+        def add(marker: str, specs: list[tuple[str, str, str, str, float]], note: str) -> None:
+            for page in pages:
+                if not re.match(r"BC Hydro Terms and Conditions, Section 11\b", page.text) or marker not in page.text:
+                    continue
+                effective = extract_effective_date(page.text.split("Page 11-", 1)[0])
+                if not effective or effective > today:
+                    return
+                text = re.sub(r"\s+", " ", page.text)
+                for name, pattern, unit, kind, scale in specs:
+                    match = re.search(pattern, text)
+                    if not match:
+                        continue
+                    value = round(float(match.group(1).replace(",", "")) * scale, 6)
+                    if value <= 0:
+                        continue
+                    components.append(RateComponent(
+                        kind, name, value, unit, effective_date=effective, source_url=TARIFF_URL,
+                        source_detail=f"Terms and Conditions {marker}; PDF page {page.page_number}", notes=note,
+                    ))
+                    dates.append(effective)
+                return
+
+        money = r"\$\s*([\d,]+\.\d\d)"
+        add("11.1 Minimum Connection Charges", [
+            ("Service Connection Call-Back Charge", rf"Service Connection Call-Back Charge {money}", "$/call-back", "other", 1.0),
+        ], "One-time charge per occurrence; excludes taxes.")
+        add("11.2 Metering Charges", [
+            ("Metering Work - One Meter", rf"One meter Note \d {money}", "$/meter", "other", 1.0),
+            ("Metering Work - Concurrent with Service Connection", rf"First and each additional meter Note \d {money}", "$/meter", "other", 1.0),
+            ("Instrument Metering (CT and PT)", rf"Instrument metering[^$]*{money}", "$/installation", "other", 1.0),
+        ], "One-time metering work charge; applies to services larger than 200 A for instrument metering.")
+        add("11.3 Minimum Reconnection Charges", [
+            ("Default Reconnection Charge", rf"Default Reconnection Charge: {money} per account", "$/account", "other", 1.0),
+            ("Overtime Reconnection Charge", rf"Overtime Reconnection Charge: {money} per account", "$/account", "other", 1.0),
+            ("Refused Access Reconnection Charge", rf"Refused Access Reconnection Charge: {money} per Service Connection", "$/service connection", "other", 1.0),
+        ], "One-time minimum reconnection charge; excludes taxes.")
+        add("11.4 Miscellaneous Standard Charges", [
+            ("Account Charge", rf"Account Charge Note \d {money}", "$/account", "other", 1.0),
+            ("Late Payment Charge", r"Late Payment Charge Note \d (\d+(?:\.\d+)?)% per month", "fraction/month", "other", 0.01),
+            ("Radio-off Meter Charge", rf"Radio-off Meter Charge Note \d {money} per month", "$/month", "other", 1.0),
+            ("Radio-off Meter Move Charge", rf"Radio-off Meter Move Charge Note \d {money}", "$/move", "other", 1.0),
+        ], "Standard charge; the late payment charge applies to an overdue balance of $30.00 or more.")
+        if not components:
+            return None
+        return TariffRecord(
+            utility_name="BC Hydro", province="BC", utility_type="electricity",
+            tariff_name="Standard Service Charges (Terms and Conditions Section 11)", tariff_code="T&C-11",
+            customer_class="other", sub_class="service fees", rate_structure="flat",
+            effective_date=max(dates), source_url=TARIFF_URL,
+            source_page="Terms and Conditions Section 11 - Schedule of Standard Charges",
+            notes="Standard charges that apply across rate classes under the Terms and Conditions; not recurring energy rates. Connection charges, transformer rental and net metering fees are not modelled.",
+            components=components,
+        )
 
     @staticmethod
     def _extract_step_rate(page_text: str, step: int) -> Optional[float]:

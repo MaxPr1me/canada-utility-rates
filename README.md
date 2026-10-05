@@ -27,22 +27,22 @@ The export combines October 1 CI and targeted BC Hydro/SaskPower/Yukon observati
 with October 2 updates to Hydro-Quebec, NL Hydro, SaskEnergy, FortisBC Electric,
 Nova Scotia Power and Centra Gas. The latest implementation milestones are
 `6cdbc67` and `9b5980d`; the latter's GitHub Pages deployment succeeded.
-The export was regenerated on **2026-10-05** after the fourth regional (gas) batch. History was preserved.
+The export was regenerated on **2026-10-05** after the sixth regional (electricity building classes) batch. History was preserved.
 A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
 
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
-| Stored tariff versions / components | 648 / 4,160, including history and older estimates |
-| Live-sourced tariffs | **166 latest tariffs across 18 utilities**; 168 stored live versions |
-| Active regional campaign | **164 latest live records across all 16 target utilities** |
+| Stored tariff versions / components | 659 / 4,225, including history and older estimates |
+| Live-sourced tariffs | **174 latest tariffs across 18 utilities**; 179 stored live versions |
+| Active regional campaign | **172 latest live records across all 16 target utilities** |
 | Remaining seed-only campaign utilities | **0**; every target utility still has recorded catalogue gaps |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Deterministic tests | **602 passing** on Python 3.11 |
+| Deterministic tests | **661 passing** on Python 3.11 |
 
-Live output currently includes BC Hydro (8), FortisBC Electric (6), Manitoba Hydro (8), NB Power (9),
+Live output currently includes BC Hydro (9), FortisBC Electric (9), Manitoba Hydro (12), NB Power (9),
 Nova Scotia Power (10), Hydro-Quebec (9), Maritime Electric (10), Newfoundland Power (8),
 NL Hydro (18), SaskPower (41), SaskEnergy (6), Centra Gas Manitoba (12), FortisBC Energy (8),
 Energir (4), Heritage/Eastward (3), Liberty NB (4), FortisAlberta (1), and Yukon Energy (1).
@@ -102,6 +102,8 @@ period. Larger contract/interruptible classes, marketer prices and inventory
 adjustments were recorded gaps at that checkpoint.
 
 The fourth regional batch (October 5) adds gas contract and large-volume classes.
+
+**Regional Batch 6 — electricity building classes (2026-10-05):** BC Hydro business 1300/1500/1600 (approved tariff pages 97-107, RS1901/1904 riders, conditional discounts, Section 11 standard service charges; 9 live), Manitoba Hydro residential seasonal/diesel and diesel commercial (12), FortisBC Electric RS30/RS32 large commercial primary and RS85 Green Power (9) and NSPower business 10/11/12 (10). Industrial classes were skipped. Remaining: HQ Inukjuak/net metering/business options, NSPower pilots 72/73/82/83, NL Hydro net metering, Centra PUB conditions, BC Hydro power-factor surcharge unit and gas gaps.
 FortisBC Energy parses Rate 5 General Firm Service (the tariff prints its basic
 charge monthly, although the business page says daily) and seasonal Rate 4 from the
 approved schedules; Fort Nelson Rates 4/5 have no published price table. Energir
@@ -280,7 +282,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 602 deterministic tests across 8 test modules
+├── tests/                    ← 661 deterministic tests across 8 test modules
 │   ├── fixtures/             ← Source-derived fixtures for nine utility modules; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation

@@ -12,6 +12,19 @@
     ]
   },
   {
+    "utility": "FortisBC Electric",
+    "province": "BC",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "other",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "Large Commercial Service - Primary (Rate 30)"
+    ]
+  },
+  {
     "utility": "Manitoba Hydro",
     "province": "MB",
     "utility_type": "electricity",
@@ -69,6 +82,8 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
+      "Commercial General Demand",
+      "Large Commercial",
       "Commercial General Demand",
       "Large Commercial"
     ]

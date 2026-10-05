@@ -298,17 +298,17 @@
         {
           "url": "https://www.bchydro.com/content/dam/BCHydro/customer-portal/documents/corporate/tariff-filings/electric-tariff/bchydro-electric-tariff.pdf",
           "source_type": "pdf",
-          "description": "Authoritative residential RS 1101/1105/1151/2101 and riders 1901/1904, with dates and conditions",
+          "description": "Authoritative residential RS 1101/1105/1151/2101, business 1300/1500/1600 (pages 97-107), riders 1901/1904 and Terms and Conditions Section 11 charges, with dates and conditions",
           "is_primary": false
         },
         {
           "url": "https://app.bchydro.com/accounts-billing/rates-energy-use/electricity-rates/business-rates.html",
           "source_type": "html",
-          "description": "Commercial electricity rate schedules (SGS, MGS, LGS)",
+          "description": "Commercial electricity rate schedules (SGS, MGS, LGS); approved tariff PDF is the parsed source",
           "is_primary": false
         }
       ],
-      "notes": "BCUC-regulated residential choices include tiered 1101, flat 1151, each with optional 2101 time-of-day, plus closed dual-fuel 1105. The live parser reads the approved PDF including dates, separate 1901/1904 riders and conditional transformer discounts; the riders exclude 2101 adjustments. Business parsing remains separate."
+      "notes": "BCUC-regulated residential choices include tiered 1101, flat 1151, each with optional 2101 time-of-day, plus closed dual-fuel 1105. The live parser reads the approved PDF including dates, separate 1901/1904 riders and conditional transformer discounts; the riders exclude 2101 adjustments. Business Rates 1300/1500/1600 are rebuilt from approved tariff pages 97-107 with separate RS1901/1904 riders and conditional primary-voltage/transformation discounts, plus Terms and Conditions Section 11 standard service charges. Industrial/transmission, irrigation, lighting, EV, IPP and net metering are skipped; the power-factor surcharge unit remains a gap."
     },
     {
       "name": "FortisBC Electric",
@@ -321,7 +321,7 @@
         {
           "url": "https://fbcdotcomprod.blob.core.windows.net/libraries/docs/default-source/about-us-documents/regulatory-affairs-documents/electric-utility/fortisbcelectrictariff.pdf",
           "source_type": "pdf",
-          "description": "Approved Electric Tariff; current RS 1/2A/20/21/22A/23A dates, rates, conditional credits and demand alternatives",
+          "description": "Approved Electric Tariff; current RS 1/2A/20/21/22A/23A/30/32/85 dates, rates, conditional credits and demand alternatives",
           "is_primary": true
         },
         {
@@ -337,7 +337,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Six live January 2026 building schedules: flat RS 1, closed residential TOU 2A, commercial 20/21 and TOU 22A/23A. Per-two-month and per-month charges remain native; RS21 kW/kVA components are alternative bases. Conditional voltage/transformation credits are negative rebates, not additive charges. Large commercial 30-33/37/38, Green Power85, financing91, net-metering95 and EV96 remain audit gaps. PDF extraction selects source sheets by printed footer to avoid table-of-contents extraction stalls."
+      "notes": "Six live January 2026 building schedules: flat RS 1, closed residential TOU 2A, commercial 20/21 and TOU 22A/23A. Per-two-month and per-month charges remain native; RS21 kW/kVA components are alternative bases. Conditional voltage/transformation credits are negative rebates, not additive charges. Nine live schedules: large commercial primary RS30 and RS32 (500 kVA contract demand) and optional RS85 Green Power rider were added. Industrial RS31/33 (5,000 kVA and above) and RS37/38 are skipped; RS96 EV, RS95 net metering and RS91 financing have no building price. PDF extraction selects source sheets by printed footer to avoid table-of-contents extraction stalls."
     },
     {
       "name": "Hydro-Québec",
@@ -401,7 +401,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Manitoba Hydro is a Crown corporation providing electricity in Manitoba. Electricity rates are among the lowest in Canada due to abundant hydroelectric generation. Regulated by the Manitoba Public Utilities Board (PUB)."
+      "notes": "Manitoba Hydro is a Crown corporation providing electricity in Manitoba. Electricity rates are among the lowest in Canada due to abundant hydroelectric generation. Regulated by the Manitoba Public Utilities Board (PUB). Twelve live January 2026 building records: residential standard, seasonal and diesel (basic charge also published for service over 200 A), plus general service small/medium/large/seasonal and diesel general service and diesel government/First Nation education. Industrial, curtailable and lighting classes are skipped."
     },
     {
       "name": "SaskPower",
@@ -514,7 +514,7 @@
         {
           "url": "https://www.nspower.ca/docs/default-source/regulatory/tariff-book-2026.pdf",
           "source_type": "pdf",
-          "description": "May 2026 domestic and MURB89 tariffs, dated conditional pilots, FAM/DSM/storm and optional Solar Garden/Community Solar riders",
+          "description": "May 2026 domestic, business 10/11/12 and MURB89 tariffs, dated conditional pilots, FAM/DSM/storm and optional Solar Garden/Community Solar riders",
           "is_primary": false
         },
         {
@@ -524,7 +524,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Ten live records include standard/TOD/conditional pilots, MURB house-meter TOU89, separate optional Solar Garden and Community Solar adjustments, and existing business10/11/12. MURB requires ten units, its own General/MURB rider rows and minimum-bill context; printed Note1 explicitly applies the peak price on weekends/holidays. Solar credits apply only to subscriber-attributed generation with base tariffs still separate. Pilot restoration status remains conditional; no early November/2027 prices. Other building business classes and rider/date coverage still need audit."
+      "notes": "Ten live records include standard/TOD/conditional pilots, MURB house-meter TOU89, separate optional Solar Garden and Community Solar adjustments, and business 10/11/12 rebuilt from tariff book pages 16-17/25-26/38-39 with FAM/DSM/storm riders and conditional transformer discounts. MURB requires ten units, its own General/MURB rider rows and minimum-bill context; printed Note1 explicitly applies the peak price on weekends/holidays. Solar credits apply only to subscriber-attributed generation with base tariffs still separate. Pilot restoration status remains conditional; no early November/2027 prices. Business pilots 72/73/82/83 remain a gap; municipal wholesale is excluded."
     },
     {
       "name": "Maritime Electric",

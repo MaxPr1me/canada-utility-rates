@@ -1,11 +1,11 @@
 # Phase 5 Completion Matrix
 
 **Updated:** 2026-10-05. Scope: all 84 registered utilities, not every utility
-in the broader Canadian inventory. The export has 648 stored tariff versions / 4,160
-components / **168 stored live versions / 480 seed**. Latest-per-name coverage is
-**166 live tariffs**; older versions remain in history. October 5 adds FortisBC Energy,
+in the broader Canadian inventory. The export has 659 stored tariff versions / 4,225
+components / **179 stored live versions / 480 seed**. Latest-per-name coverage is
+**174 live tariffs**; older versions remain in history. October 5 adds FortisBC Energy,
 Energir, Heritage/Eastward and Liberty NB gas, then batch 5 electricity classes and fees
-(NB Power, Newfoundland Power, Maritime Electric); October 2 updated NSPower, Hydro-Quebec, NL
+(NB Power, Newfoundland Power, Maritime Electric) and batch 6 building classes (BC Hydro, Manitoba Hydro, FortisBC Electric, NSPower); October 2 updated NSPower, Hydro-Quebec, NL
 Hydro, FortisBC Electric, SaskEnergy and Centra Gas. Ontario and the five excluded-region
 gas utilities still have no live output.
 Counts include retained non-building reference records, not only building tariffs.
@@ -18,11 +18,11 @@ all three territories are excluded from this run, not removed from the database
 or website. Provincial off-grid service in Quebec and Newfoundland and Labrador
 remains in scope. No additional inventory utilities are being registered.
 
-**Current checkpoint:** Regional Batch 5, electricity classes and fees (October 5, after
-`a2a78a9`). There are
-**164 latest live records at all 16 target utilities** and **602 passing tests**. No
+**Current checkpoint:** Regional Batch 6, electricity building classes (October 5, after
+`d2e6efa`; Deploy Site for `d2e6efa` succeeded). There are
+**172 latest live records at all 16 target utilities** and **661 passing tests**. No
 target utility is seed-only, and none is catalogue-complete except SaskPower's audited
-building scope. Local history contains 1,328 snapshots; prior snapshots and non-target
+building scope. Local history contains 1,368 snapshots; prior snapshots and non-target
 records were unchanged by the batch.
 
 **Historical starting baseline:** 382 passing tests, 87 latest in-scope live records,
@@ -74,13 +74,13 @@ See the [gap report](live_parser_gap_report.md) for detailed findings and
 
 | Utility | Live tariffs / source-check date | Implemented path and supported scope | Next work |
 |---|---|---|---|
-| BC Hydro | 8 / Oct 1 | Approved PDF: tiered 1101, flat 1151, each +2101 TOD, closed dual-fuel 1105; three HTML business classes | Five residential options verified; preserve rider exclusions, prorated tiers and conditional discounts; other building-service audit remains |
-| FortisBC Electric | 6 / Oct 2 | Approved PDF 1/2A/20/21/22A/23A, flat/TOU, conditional credits and kW/kVA alternatives | Large commercial 30-33/37/38, Green Power85, financing91, net-metering95 and EV96 remain |
+| BC Hydro | 9 / Oct 5 | Approved PDF: tiered 1101, flat 1151, each +2101 TOD, closed dual-fuel 1105; business 1300/1500/1600 (pages 97-107) with RS1901/1904 riders, conditional discounts and Section 11 standard service charges | Power-factor surcharge unit; industrial/irrigation/lighting/EV/IPP/net metering skipped |
+| FortisBC Electric | 9 / Oct 5 | Approved PDF 1/2A/20/21/22A/23A plus large commercial primary RS30/RS32 (500 kVA) and optional RS85 Green Power | RS31/33 industrial and RS37/38 skipped; RS96 EV, RS95/91 have no building price |
 | Hydro-Quebec | 9 / Oct 2 | D/DP/DM/DN/DT/Flex D, closed Winter Credit adjustment, G/M | Inukjuak, net-metering applicability and building business options remain; temperature/event conditions are not calculated bills |
-| Manitoba Hydro | 8 / Oct 1 | HTML: residential and seven GS/voltage variants | Building-service audit; preserve kVA and seasonal rules |
+| Manitoba Hydro | 12 / Oct 5 | HTML: residential (standard, seasonal, diesel; >200 A basic charge), GS small/medium/large/seasonal, diesel GS and diesel government/First Nation education | Industrial/curtailable/lighting skipped; preserve kVA and seasonal rules |
 | SaskPower | **41 / Oct 1** | **Audited building schedules implemented**; six source fixtures; total includes reference records | Monitor current sources; no remaining identified building-schedule parser gap in the audited catalogue |
 | NB Power | 3 / Oct 1 | HTML: residential, GS1, small industrial | Remaining building-service schedules and fixtures |
-| Nova Scotia Power | 10 latest / Oct 2 | Standard/TOD/conditional pilots, MURB89, two optional solar adjustments; existing business10/11/12 | Pilot restoration-status and broader business class/rider/date audit remain; unsupported 2027 dates fail closed |
+| Nova Scotia Power | 10 latest / Oct 5 | Standard/TOD/conditional pilots, MURB89, two optional solar adjustments; business 10/11/12 rebuilt from book pages 16-17/25-26/38-39 with FAM/DSM/storm riders and conditional transformer discounts | Business pilots 72/73/82/83 and pilot restoration status remain; municipal wholesale excluded; unsupported 2027 dates fail closed |
 | Maritime Electric | 10 / Oct 1 | IRAC PDF class-section extraction | Building-service audit and source-derived success/failure fixtures |
 | Newfoundland Power | 4 / Oct 1 | RateBook PDF: 1.1/2.1/2.3/2.4 | Building-relevant schedules and fixture coverage |
 | NL Hydro | 18 / Oct 2 | July PDF Island/Labrador/diesel, government distinctions, Burgeo school/library and two seasonal adjustments | Net-metering and commissioning scope plus contract-specific industrial applicability remain; preserve alternative fixed charges and conditional billing rules |
@@ -587,7 +587,22 @@ PUB conditions), then the electricity catalogue audits listed above. Targeted se
 `FortisBCEnergyLive`, `EnergirLive`, `HeritageGasLive`, `LibertyGasNBLive` and
 `RegionalBatchStorage`. Keep ON/AB/YT/NT/NU excluded and shared integration serial.
 
-## Current Checkpoint: Regional Batch 5 — Electricity classes and fees (2026-10-05)
+## Current Checkpoint: Regional Batch 6 — Electricity building classes (2026-10-05)
+
+Follows `d2e6efa` (Deploy Site succeeded); industrial classes skipped per user.
+
+- **BC Hydro 9 live (was 8):** business 1300/1500/1600 rebuilt from approved tariff pages 97-107 with RS1901/1904 riders and conditional primary-voltage/transformation discounts, plus Terms and Conditions Section 11 standard service charges. Industrial/transmission, irrigation, lighting, EV, IPP and net metering skipped. Fixture: `tests/fixtures/bc_hydro_business.json`.
+- **Manitoba Hydro 12 live (was 8):** residential seasonal and diesel residential, diesel general service and diesel government/First Nation education added; >200 A basic charge. Industrial/curtailable/lighting skipped. Fixture: `tests/fixtures/manitoba_hydro.json`.
+- **FortisBC Electric 9 live (was 6):** RS30 and RS32 large commercial primary (500 kVA contract demand) and RS85 Green Power optional rider. RS31/33 industrial (5,000 kVA and above) and RS37/38 skipped; RS96 EV, RS95/91 no building price.
+- **NSPower 10 live:** business 10/11/12 rebuilt from tariff book pages 16-17/25-26/38-39 with FAM/DSM/storm riders and conditional transformer discounts; business pilots 72/73/82/83 remain a gap; municipal wholesale excluded.
+
+**Verified:** 661 tests pass. The guarded store validated all 40 records as live with complete component sources, appended 40 snapshots (1,368 total) and left prior snapshots and non-target tariffs unchanged. Database validation: 0 errors.
+
+**Current counts:** 659 versions / 4,225 components / 179 stored live / 480 seed; 174 latest live across 18 utilities; 172 latest live across the 16 target utilities.
+
+**Exact next work:** HQ Inukjuak/net metering/business options, NSPower business pilots 72/73/82/83 and pilot status, NL Hydro net metering, Centra PUB conditions, BC Hydro power-factor surcharge unit, gas gaps (Energir inventory adjustments, FortisBC Revelstoke propane/Rates 6-7). Industrial classes are skipped per user. Keep ON/AB/YT/NT/NU excluded.
+
+## Historical Checkpoint: Regional Batch 5 — Electricity classes and fees (2026-10-05)
 
 Follows `a2a78a9`; the user asked to continue with classes and fees and skip industrial.
 

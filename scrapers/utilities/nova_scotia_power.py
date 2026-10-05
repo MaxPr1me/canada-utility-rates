@@ -36,11 +36,6 @@ from scrapers.utils.parsing import (
     find_pdf_links,
     DocumentPage,
 )
-from scrapers.utils.change_detection import (
-    compare_to_seed,
-    log_change_alerts,
-    has_critical_alerts,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -96,23 +91,13 @@ SEED_RATE12 = {
     "eligibility": "Billing demand ≥2,000 kVA or 1,800 kW",
 }
 
-# Commercial rate classes published on the business rates page.
-# (code, tariff_name, sub_class, rate_structure, page section header)
-_COMMERCIAL_RATES: list[tuple[str, str, str, str, str]] = [
-    ("10", "Small Commercial", "small commercial", "tiered",
-     "Small Commercial (Small General Tariff): Rate 10"),
-    ("11", "Commercial General Demand", "general demand", "demand",
-     "Commercial General Demand: Rate 11"),
-    ("12", "Large Commercial", "large commercial", "demand",
-     "Large Commercial (Large General Tariff): Rate 12"),
-]
-
 
 class NovaScotiaPowerScraper(BaseScraper):
     """Scrape Nova Scotia Power electricity rates."""
 
     def __init__(self):
         super().__init__(utility_name="Nova Scotia Power", province="NS")
+        self._book: Optional[tuple[list[DocumentPage], dict[str, str], str]] = None
 
     def scrape(self) -> list[TariffRecord]:
         """
@@ -154,6 +139,7 @@ class NovaScotiaPowerScraper(BaseScraper):
         return self.mark_live_parsed(live_records) + (self.mark_fallback(fallback) if fallback else [])
 
     def _try_live_residential(self) -> list[TariffRecord]:
+        self._book = None
         products = {}
         for kind, url in RESIDENTIAL_PRODUCTS.items():
             try:
@@ -170,6 +156,7 @@ class NovaScotiaPowerScraper(BaseScraper):
         except Exception as exc:
             self.logger.warning("NSPower residential tariff unavailable: %s", exc)
             return []
+        self._book = (pages, products, source_url)
         records: list[TariffRecord] = []
         for parse in (self._parse_residential_tariffs, self._parse_building_option_tariffs):
             try:
@@ -715,120 +702,234 @@ class NovaScotiaPowerScraper(BaseScraper):
                 self.logger.warning("NSPower %s incomplete: %s", label, exc)
         return records
 
+    # ── Business: Small General 10, General 11, Large General 12 ──
+
     def _try_live_commercial(self) -> Optional[list[TariffRecord]]:
-        """Parse Rate 10/11/12 from the NSUARB-approved business rate schedule page."""
-        try:
-            html = self.fetch_page(BUSINESS_URL)
-        except Exception as e:
-            self.logger.warning("Could not fetch business rates page: %s", e)
+        """Parse Rate 10/11/12 from the tariff book already fetched for residential service."""
+        book = self._book
+        if not book:
             return None
-
-        text = parse_html(html).get_text("\n", strip=True)
-        headers = [row[4] for row in _COMMERCIAL_RATES] + ["Large Industrial"]
-        eligibility = {
-            "10": SEED_RATE10["eligibility"],
-            "11": SEED_RATE11["eligibility"],
-            "12": SEED_RATE12["eligibility"],
-        }
-        records: list[TariffRecord] = []
-        for idx, (code, name, sub, structure, header) in enumerate(_COMMERCIAL_RATES):
-            section = self._commercial_section(text, header, headers[idx + 1:])
-            if not section:
-                continue
-            components = self._parse_commercial_components(section)
-            if not components:
-                continue
-            records.append(TariffRecord(
-                utility_name="Nova Scotia Power", province="NS", utility_type="electricity",
-                tariff_name=name, tariff_code=code, customer_class="commercial",
-                sub_class=sub, rate_structure=structure,
-                effective_date=SEED_RATE10["effective_date"], source_url=BUSINESS_URL,
-                confidence="high", eligibility=eligibility[code],
-                notes=(
-                    f"NS Power Rate {code} — {name} — live parsed from the "
-                    "NSUARB-approved business rate schedule."
-                ),
-                components=components,
-            ))
-
-        if not records:
-            self.logger.warning("Could not parse any commercial rates from business page")
-            return None
-
-        seed_commercial = [
-            self._seed_data_rate10(), self._seed_data_rate11(), self._seed_data_rate12(),
-        ]
-        alerts = compare_to_seed(records, seed_commercial)
-        log_change_alerts(alerts)
-        if has_critical_alerts(alerts):
-            self.logger.error(
-                "Critical deviation in live commercial data vs seed — falling back to seed"
-            )
-            return None
-        self.logger.info("Parsed %d commercial rate classes from business page", len(records))
-        return records
+        pages, products, source_url = book
+        return self._parse_business_tariffs(pages, products, source_url) or None
 
     @staticmethod
-    def _commercial_section(text: str, start_header: str, end_headers: list[str]) -> str:
-        """Return the primary-charge slice for a rate, cut before samples/minimum-charge notes."""
-        i = text.find(start_header)
-        if i == -1:
-            return ""
-        i += len(start_header)
-        end = len(text)
-        stops = list(end_headers) + [
-            "The minimum monthly", "The maximum charge", "minimum monthly bill", "Sample ",
-        ]
-        for marker in stops:
-            j = text.find(marker, i)
-            if j != -1:
-                end = min(end, j)
-        return text[i:end]
+    def _joined_rider_text(pages: list[DocumentPage], heading: str) -> tuple[str, str]:
+        selected = [page for page in pages if page.text.startswith(heading)]
+        detail = heading + "; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+        return re.sub(r"\s+", " ", "\n".join(page.text for page in selected)), detail
 
-    def _parse_commercial_components(self, section: str) -> list[RateComponent]:
-        """Extract base, demand and (flat/tiered) energy charges from one rate section."""
+    def _business_rider_components(
+        self, pages: list[DocumentPage], key: str, year: int, effective: str, year_end: str, source_url: str,
+    ) -> list[RateComponent]:
+        """Read this class's own FAM, DSM and storm rows (key: small, general or large)."""
+        def number(token: str) -> float:
+            return -float(token[1:-1]) if token.startswith("(") else float(token)
+
+        rows = {
+            "small": {
+                "label": "Small General, Small General TOU and Small General Critical Peak",
+                "fam": r"Small General, Small General Time of Use, Small General Critical Peak (\d+\.\d+) (\d+\.\d+) Pricing",
+                "dsm": r"Small General, Small General Time of Use, Small (\d+\.\d+) (\(?\d+\.\d+\)?) (\d+\.\d+) General Critical Peak Pricing",
+                "storm": r"Small General, Small General Time-of-Use, Small General Critical Peak (\d+\.\d+) Pricing",
+            },
+            "general": {
+                "label": "General, General TOU, General Critical Peak and Multi-Unit Residential Building (MURB) TOU",
+                "fam": r"(?<!Small )General, General Time of Use, (\d+\.\d+) (\d+\.\d+) General Critical Peak, Multi-Unit "
+                       r".*?Residential Building \(MURB\) Time of Use Large General",
+                "dsm": r"General, General Time of Use, General Critical Peak (\d+\.\d+) (\(?\d+\.\d+\)?) (\d+\.\d+) "
+                       r"Pricing, Multi-unit Residential Building Time-of-Use Large General",
+                "storm": r"General, General Time-of-Use, General Critical Peak Pricing, Multi-unit (\d+\.\d+) "
+                         r"Residential Building Time-of-Use Large General",
+            },
+            "large": {
+                "label": "Large General",
+                "fam": r"Residential Building \(MURB\) Time of Use Large General (\d+\.\d+) (\d+\.\d+) Small Industrial",
+                "dsm": r"Time-of-Use Large General (\d+\.\d+) (\(?\d+\.\d+\)?) (\d+\.\d+) Small Industrial",
+                "storm": r"Residential Building Time-of-Use Large General (\d+\.\d+) Small Industrial",
+            },
+        }[key]
+
+        text, fam_detail = self._joined_rider_text(pages, "FUEL ADJUSTMENT MECHANISM (FAM) TARIFF")
+        current = re.search(rf"\b{year}\b(.*?)(?:\b{year + 1}\b|$)", text)
+        row = re.search(rows["fam"], current.group(1) if current else "")
+        if not row or "cents per kWh" not in text or row.group(1) != row.group(2):
+            raise ValueError(f"Missing FAM row for {rows['label']}")
+        fam = number(row.group(2))
+
+        text, dsm_detail = self._joined_rider_text(pages, "DEMAND SIDE MANAGEMENT COST RECOVERY RIDER")
+        row = re.search(rows["dsm"], text)
+        if not row or f"January 1, {year} to December 31, {year}" not in text or "cents per kWh" not in text:
+            raise ValueError(f"Missing DSM row for {rows['label']}")
+        program, balance, dsm = number(row.group(1)), number(row.group(2)), number(row.group(3))
+        if abs(program + balance - dsm) > 0.0011:
+            raise ValueError(f"Changed DSM breakdown for {rows['label']}")
+
+        text, storm_detail = self._joined_rider_text(pages, "STORM COST RECOVERY RIDER")
+        row = re.search(rows["storm"], text)
+        if not row or f"SCRR RATES FOR {year}" not in text or "cents per kWh" not in text:
+            raise ValueError(f"Missing storm row for {rows['label']}")
+        storm = number(row.group(1))
+
+        note = f"Published row: {rows['label']}. Mandatory rider, separate from base energy."
+        riders = [
+            RateComponent("rider", "FAM Actual/Balance Adjustment (Combined)", round(fam / 100, 6), "$/kWh",
+                          source_detail=fam_detail, effective_date=effective, end_date=year_end, notes=note),
+            RateComponent("rider", "DSM Cost Recovery Rider", round(dsm / 100, 6), "$/kWh",
+                          source_detail=dsm_detail, effective_date=date(year, 1, 1).isoformat(), end_date=year_end,
+                          notes=f"Combined PCR {program} and BA {balance} cents/kWh; do not add the subcomponents again. {note}"),
+            RateComponent("rider", "Storm Cost Recovery Rider", round(storm / 100, 6), "$/kWh",
+                          source_detail=storm_detail, effective_date=effective, end_date=year_end, notes=note),
+        ]
+        for component in riders:
+            component.source_url = source_url
+        return riders
+
+    def _parse_business_tariff(
+        self, pages: list[DocumentPage], code: str, context: tuple[int, str, str, str], source_url: str,
+    ) -> TariffRecord:
+        """Parse one of Rate 10/11/12 with base charges, riders and minimum bill kept separate."""
+        year, effective, _today, year_end = context
+        nxt = f"Effective January 1, {year + 1}"
+        spec = {
+            "10": (r"SMALL GENERAL TARIFF Page (\d+) of (\d+) Rate Code 10", "Small General tariff",
+                   "Small Commercial", "small commercial", "tiered", "small"),
+            "11": (r"GENERAL TARIFF Page (\d+) of (\d+) Rate Code 11", "General tariff",
+                   "Commercial General Demand", "general demand", "demand", "general"),
+            "12": (r"LARGE GENERAL TARIFF Page (\d+) of (\d+) \(2,000 kVA or 1,800 kW and over\) Rate Code 12",
+                   "Large General tariff", "Large Commercial", "large commercial", "demand", "large"),
+        }[code]
+        selected = self._continuous_pages(pages, spec[0], spec[1])
+        text = re.sub(r"\s+", " ", "\n".join(page.text for page in selected)).replace("\u2019", "'")
+        detail = f"Rate Code {code}; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+        order = r"Effective upon the date of the \$(\d+\.\d+) Board's Order " + nxt + r" \$(\d+\.\d+)"
+        plain = r"Effective upon the date of the (\d+\.\d+) Board's Order " + nxt + r" (\d+\.\d+)"
         components: list[RateComponent] = []
 
-        base = re.search(r"\$\s*([\d.]+)\s*per month(?!\s*per\s*kilo)", section, re.I)
-        if base:
-            components.append(RateComponent(
-                component_type="fixed", component_name="Base Charge",
-                charge_value=float(base.group(1)), charge_unit="$/month",
-                notes="Monthly base charge",
-            ))
+        def positive(*values: float) -> None:
+            if min(values) <= 0:
+                raise ValueError(f"Non-positive Rate {code} amount")
 
-        demand = re.search(
-            r"\$\s*([\d.]+)\s*per month per (kilowatt|kilovolt ampere)", section, re.I
+        if code == "10":
+            fixed = re.search(r"CUSTOMER CHARGE per month \$(\d+\.\d{2}) " + nxt + r" \$(\d+\.\d{2}) ENERGY CHARGE", text)
+            energy = re.search(
+                r"ENERGY CHARGE cents per kilowatt-hour for the first 200 for all kilowatt-hours additional per month "
+                r"kilowatt-hours (\d+\.\d+) (\d+\.\d+) " + nxt + r" (\d+\.\d+) (\d+\.\d+) FUEL ADJUSTMENT", text)
+            minimum = re.search(
+                r"MINIMUM MONTHLY CHARGE The minimum monthly charge shall be as follows: per month \$(\d+\.\d{2}) "
+                r".*?per month " + nxt + r" \$(\d+\.\d{2}) AVAILABILITY", text)
+            availability = re.search(r"AVAILABILITY (.*?) Effective:", text)
+            required = ("less than 32,000 kWh per year", "less than 45,000 kWh per year", "written request", "minimum of six months")
+            if not (fixed and energy and minimum and availability) or not all(p in availability.group(1) for p in required):
+                raise ValueError("Missing or changed Small General charges or eligibility")
+            positive(float(fixed.group(1)), float(minimum.group(1)), *(float(v) for v in energy.groups()[:2]))
+            tiers = [("Energy Charge - First 200 kWh", float(energy.group(1)), 1, 200.0),
+                     ("Energy Charge - Balance", float(energy.group(2)), 2, None)]
+            components.append(RateComponent("fixed", "Customer Charge", float(fixed.group(1)), "$/month",
+                                            notes="Monthly customer charge"))
+            for name, price, tier, threshold in tiers:
+                components.append(RateComponent(
+                    "energy", name, round(price / 100, 6), "$/kWh", tier_number=tier, tier_threshold=threshold,
+                    tier_unit="kWh/month" if threshold else None,
+                    notes="First 200 kWh per month" if threshold else "All kWh beyond the first 200 kWh per month"))
+            floor = minimum.group(1)
+            conditions = (
+                f"The ${floor} minimum monthly charge is a minimum-bill condition, not an additional fixed charge. "
+                "General-tariff customers may elect this tariff on written request (two class switches per 24 months; six-month minimum stay)."
+            )
+        else:
+            large = code == "12"
+            unit, amount = ("kVA", "kilovolt ampere") if large else ("kW", "kilowatt")
+            if large:
+                demand = re.search(
+                    r"DEMAND CHARGE As follows, per month per kilovolt ampere of maximum demand of the current month or the maximum "
+                    r"actual demand of the previous December, January, or February occurring in the previous eleven \(11\) months\. "
+                    r"per month " + order + r" (\d+) cents per kilovolt ampere reduction in demand charge where the transformer is owned by the customer\.", text)
+                energy = re.search(r"ENERGY CHARGE cents per kilowatt-hour " + plain + r" FUEL ADJUSTMENT", text)
+                minimum = re.search(
+                    r"MINIMUM MONTHLY CHARGE The minimum monthly charge shall be as follows\. per month " + order + r" AVAILABILITY", text)
+                availability = re.search(r"AVAILABILITY (.*?) SPECIAL CONDITIONS", text)
+                required = ("any use except industrial", "2,000 kVA or 1,800 kW and over")
+            else:
+                demand = re.search(
+                    r"DEMAND CHARGE per month per kilowatt of maximum demand " + order + r" (\d+) cents per kilowatt reduction in demand charge where "
+                    r"the transformer was owned by the customer prior to February 1, 1974, or under Special Condition \(2\)", text)
+                energy = re.search(
+                    r"ENERGY CHARGE cents per kilowatt-hour for the first 200 kilowatt- for all additional hours per month per kilowatt "
+                    r"kilowatt-hours of maximum demand Effective upon the date of the (\d+\.\d+) (\d+\.\d+) Board's Order " + nxt +
+                    r" (\d+\.\d+) (\d+\.\d+) FUEL ADJUSTMENT", text)
+                minimum = re.search(
+                    r"MAXIMUM PER KWH CHARGE/MINIMUM BILL .*? per month " + order + r" AVAILABILITY", text)
+                availability = re.search(r"AVAILABILITY (.*?) SPECIAL CONDITIONS", text)
+                required = ("32,000 kWh, or greater", "written request", "minimum of six months")
+            if not (demand and energy and minimum and availability) or not all(p in availability.group(1) for p in required):
+                raise ValueError(f"Missing or changed Rate {code} charges or eligibility")
+            if demand.group(3) != "32":
+                raise ValueError("Changed transformer-ownership credit")
+            positive(float(demand.group(1)), float(minimum.group(1)), *(float(v) for v in energy.groups()[:2]))
+            components.append(RateComponent(
+                "demand", "Demand Charge", float(demand.group(1)), f"$/{unit}/month", demand_unit=unit,
+                notes=f"Per {amount} of maximum demand."))
+            components.append(RateComponent(
+                "rebate", "Customer-Owned Transformer Demand Reduction", -0.32, f"$/{unit}/month", demand_unit=unit,
+                sub_component="conditional", notes=f"32 cents per {amount} reduction in the demand charge, only where the customer owns the transformer as the tariff states."))
+            if large:
+                positive(float(energy.group(1)))
+                components.append(RateComponent("energy", "Energy Charge", round(float(energy.group(1)) / 100, 6), "$/kWh",
+                                                notes="Flat rate for all kWh."))
+            else:
+                components.append(RateComponent(
+                    "energy", "Energy Charge - First 200 kWh per kW", round(float(energy.group(1)) / 100, 6), "$/kWh",
+                    tier_number=1, tier_threshold=200.0, tier_unit="kWh/kW of maximum demand/month",
+                    notes="First 200 kWh per month per kW of maximum demand."))
+                components.append(RateComponent(
+                    "energy", "Energy Charge - Balance", round(float(energy.group(2)) / 100, 6), "$/kWh", tier_number=2,
+                    notes="All kWh beyond the first 200 kWh per kW of maximum demand per month."))
+            floor = minimum.group(1)
+            if large:
+                conditions = (
+                    f"The ${floor} minimum monthly charge is a minimum-bill condition, not an additional fixed charge. "
+                    "Demand is the higher of the current month or the previous December-February maximum within eleven months. "
+                    "Primary metering reads reduce by 1.1% (69 kV or higher, metered high side) or increase by 1.1% (below 69 kV, metered low side). "
+                    "Availability is withdrawn if billing demand is not consistently 2,000 kVA or 1,800 kW."
+                )
+            else:
+                conditions = (
+                    f"The ${floor} minimum monthly bill is a condition, not an additional fixed charge; the maximum charge per kWh is that for a 10% billing load factor. "
+                    "Primary metering reads reduce by 1.9%. Customers eligible for Small General may elect that tariff on written request."
+                )
+        for component in components:
+            component.source_url = source_url
+            component.source_detail = detail
+            component.effective_date = effective
+            component.end_date = year_end
+        riders = self._business_rider_components(pages, spec[5], year, effective, year_end, source_url)
+        return TariffRecord(
+            utility_name="Nova Scotia Power", province="NS", utility_type="electricity",
+            tariff_name=spec[2], tariff_code=code, customer_class="commercial", sub_class=spec[3],
+            rate_structure=spec[4], effective_date=effective, end_date=year_end, source_url=source_url, source_page=detail,
+            eligibility=re.sub(r"\s+", " ", availability.group(1)).strip(),
+            notes=(
+                f"NS Power Rate {code}; first published column of the approved May 2026 book (Board-order date verified on the residential rate pages; "
+                f"the {year + 1} column is not used). Base charges and the mandatory FAM, DSM and storm riders are separate; "
+                "no bill total is calculated. " + conditions
+            ),
+            components=components + riders,
         )
-        if demand:
-            unit = "kW" if "kilowatt" in demand.group(2).lower() else "kVA"
-            components.append(RateComponent(
-                component_type="demand", component_name="Demand Charge",
-                charge_value=float(demand.group(1)), charge_unit=f"$/{unit}", demand_unit=unit,
-                notes="Per unit of billing (maximum) demand",
-            ))
 
-        for em in re.finditer(
-            r"([\d.]+)\s*[^\d\s]{0,3}\s*per kilowatt hour([^\n.]*)", section, re.I
-        ):
-            qualifier = re.sub(r"\s+", " ", em.group(2)).strip()
-            tier_number: Optional[int] = None
-            threshold: Optional[float] = None
-            first = re.search(r"first ([\d,]+)", qualifier, re.I)
-            if first:
-                tier_number = 1
-                threshold = float(first.group(1).replace(",", ""))
-            elif "additional" in qualifier.lower():
-                tier_number = 2
-            label = ("Energy Charge " + qualifier).strip()[:110] if qualifier else "Energy Charge"
-            components.append(RateComponent(
-                component_type="energy", component_name=label,
-                charge_value=round(float(em.group(1)) / 100.0, 6), charge_unit="$/kWh",
-                tier_number=tier_number, tier_threshold=threshold,
-                tier_unit="kWh" if threshold else None,
-            ))
-
-        return components
+    def _parse_business_tariffs(
+        self, pages: list[DocumentPage], products: dict[str, str], source_url: str,
+    ) -> list[TariffRecord]:
+        """Parse Rate 10/11/12 independently; a failed class is logged and omitted."""
+        context = self._order_context(pages, {kind: parse_html(html).get_text(" ", strip=True) for kind, html in products.items()})
+        if not context:
+            return []
+        records: list[TariffRecord] = []
+        for code in ("10", "11", "12"):
+            try:
+                records.append(self._parse_business_tariff(pages, code, context, source_url))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("NSPower Rate %s incomplete: %s", code, exc)
+        return records
 
     def _parse_residential(self, soup) -> Optional[TariffRecord]:
         """

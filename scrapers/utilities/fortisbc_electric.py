@@ -13,9 +13,10 @@ Official sources:
   https://fbcdotcomprod.blob.core.windows.net/libraries/docs/default-source/about-us-documents/regulatory-affairs-documents/electric-utility/fortisbcelectrictariff.pdf
   https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/residential-rates
 
-Not yet covered (explicit gaps): RS 30-33 large commercial, RS 37/38, net metering
-(RS 95), EV charging (RS 96), Green Power rider (RS 85) and the residential landing
-page (it carries no static rate text).
+Also parsed: RS 30 / RS 32 large commercial primary (500 kVA+) and the RS 85 Green
+Power rider. Not covered (explicit gaps): RS 31/33 (industrial, 5,000 kVA+), RS 37
+stand-by (RS 31 only), RS 38 interruptible pilot, net metering (RS 95), EV charging
+(RS 96), financing (RS 91) and the residential landing page (no static rate text).
 
 Regulated by: British Columbia Utilities Commission (BCUC)
 """
@@ -41,11 +42,11 @@ TARIFF_URL = (
 RESIDENTIAL_RATES_URL = "https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/residential-rates"
 
 _CENT_GLYPHS = "¢ȼ"
-_TARIFF_PAGE_FOOTER = re.compile(r"Revision of Page (R-\d+[A-Z]?\.\d+)")
-_TARIFF_PAGE_FILTER = re.compile(r"Revision of Page R-(?:1|2A|20|21|22A|23A)\.\d+\b")
+_TARIFF_PAGE_FOOTER = re.compile(r"(?:Revision of|Original) Page (R-\d+[A-Z]?\.\d+)")
+_TARIFF_PAGE_FILTER = re.compile(r"(?:Revision of|Original) Page R-(?:1|2A|20|21|22A|23A|30|32|85)\.\d+\b")
 _EFFECTIVE_DATE = re.compile(r"Effective Date:\s*([A-Z][a-z]+ \d{1,2}, \d{4})")
 _CUSTOMER_CHARGE = re.compile(
-    r"CUSTOMER\s+(?:A\s+)?CHARGE:\s*\$(\d+(?:\.\d+)?) per (two Month period|Month)\b"
+    r"CUSTOMER\s+(?:A\s+)?CHARGE:\s*\$(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?) per (two Month period|Month)\b"
 )
 _PRIMARY_DISCOUNT = re.compile(
     r"discount of (\d+(?:\.\d+)?)% will be applied to the above rate if the electric "
@@ -174,7 +175,7 @@ def _today() -> date:
 def _schedule_page(pages: list[DocumentPage], code: str, sheet_number: int = 1) -> DocumentPage:
     """Find a schedule sheet by heading and printed footer (R-<code>.<sheet>)."""
     code_pattern = re.escape(code[:-1]) + r"\s?" + code[-1] if code.endswith("A") else re.escape(code)
-    heading = re.compile(rf"RATE SCHEDULE {code_pattern}\s+-\s")
+    heading = re.compile(rf"(?:RATE )?SCHEDULE {code_pattern}\s+-\s")
     footer = f"R-{code}.{sheet_number}"
     for page in pages:
         flat = _flatten(page.text)
@@ -233,7 +234,7 @@ def _customer_charge_component(source: _PageSource, flat: str) -> RateComponent:
         if unit == "$/two months" else
         "Published per month; FortisBC may bill bimonthly, in which case the charge is doubled."
     )
-    return _component(source, "fixed", "Customer Charge", float(match.group(1)), unit, notes=note)
+    return _component(source, "fixed", "Customer Charge", float(match.group(1).replace(",", "")), unit, notes=note)
 
 
 def _tariff(
@@ -536,6 +537,140 @@ def _parse_primary_tou(pages: list[DocumentPage]) -> TariffRecord:
     )
 
 
+# ─── Large commercial and optional schedules ───────────────────
+
+def _parse_large_commercial_primary(pages: list[DocumentPage]) -> TariffRecord:
+    first_page = _schedule_page(pages, "30")
+    second_page = _schedule_page(pages, "30", 2)
+    first_source = _page_source(first_page, "30")
+    second_source = _page_source(second_page, "30", 2)
+    flat = _flatten(first_page.text)
+    continuation = _flatten(second_page.text)
+
+    _require(
+        re.search(r"APPLICABLE: To power service to Customers for a contract Demand of 500 kVA or more, "
+                  r"subject to written agreement", flat),
+        "Rate 30 500 kVA contract-demand eligibility",
+    )
+    demand = _require(
+        re.search(r"Demand Charge of: \$(\d+(?:\.\d+)?) per kVA of Billing Demand", flat), "demand charge per kVA"
+    )
+    energy = _require(
+        re.search(rf"All kW\.h @ (\d+(?:\.\d+)?)\s*[{_CENT_GLYPHS}]\s*per kW\.h", flat), "energy charge in cents"
+    )
+    customer = _customer_charge_component(first_source, flat)
+    if customer.charge_unit != "$/month":
+        raise ValueError("unexpected Rate 30 customer charge period")
+    squashed = _squash(first_page.text)
+    for phrase in ("twenty-five percent (25%) of the Contract Demand",
+                   "the maximum Demand in kVA for the current billing Month",
+                   "seventy-five percent (75%) of the maximum Demand in kVA registered during the previous eleven Month period"):
+        if _squash(phrase) not in squashed:
+            raise ValueError(f"missing Billing Demand rule: {phrase!r}")
+
+    _require(
+        re.search(r"rate applies to power service when taken at FortisBC.s standard primary distribution voltage", continuation),
+        "primary-voltage basis of the rate",
+    )
+    metering = _require(
+        re.search(r"A discount of (\d+(?:\.\d+)?)% will be applied to the above rate if the electric service is "
+                  r"metered at a transmission line voltage", continuation),
+        "transmission metering discount",
+    )
+    transformation = _require(
+        re.search(r"A discount of \$(\d+(?:\.\d+)?) per kVA of billing Demand will be applied to(?: [A-Z])? the above "
+                  r"rate if the Customer supplies the transformation from the transmission line voltage to the "
+                  r"primary distribution voltage", continuation),
+        "customer-supplied transformation discount",
+    )
+    _require(
+        re.search(r"discount applicable to the metering at a transmission line voltage is to be applied first", continuation),
+        "discount ordering rule",
+    )
+    percent = float(metering.group(1))
+    if not 0 < percent < 100:
+        raise ValueError("invalid transmission metering discount")
+
+    billing_demand_note = (
+        "Billing Demand is the greatest of 25% of Contract Demand, the maximum demand in kVA for the "
+        "current billing month, or 75% of the maximum demand registered in the previous eleven months."
+    )
+    components = [
+        customer,
+        _component(first_source, "demand", "Demand Charge", float(demand.group(1)), "$/kVA", demand_unit="kVA",
+                   notes=f"Per kVA of Billing Demand. {billing_demand_note}"),
+        _component(first_source, "energy", "Energy Charge", _cents_to_dollars(energy.group(1)), "$/kWh"),
+        _component(second_source, "rebate", "Transmission Metering Voltage Discount", -percent, "%",
+                   sub_component="conditional",
+                   notes="Conditional: applies only if service is metered at a transmission line voltage; rates "
+                         "shown are for the standard primary distribution voltage. Applied before the transformation discount."),
+        _component(second_source, "rebate", "Customer-Supplied Transformation Discount",
+                   -float(transformation.group(1)), "$/kVA", demand_unit="kVA", sub_component="conditional",
+                   notes="Conditional: per kVA of Billing Demand when the customer supplies the transformation from "
+                         "the transmission line voltage to the primary distribution voltage."),
+    ]
+    return _tariff(
+        "30", "Large Commercial Service - Primary (Rate 30)", "commercial", "demand",
+        [first_source, second_source], components,
+        sub_class="large commercial primary",
+        eligibility="Contract Demand of 500 kVA or more, subject to written agreement; standard primary distribution voltage",
+        notes="FortisBC Electric Rate Schedule 30. Not restricted to industrial customers in the schedule text. "
+              "Permanent rates under BCUC Order G-293-25.",
+    )
+
+
+def _parse_large_commercial_primary_tou(pages: list[DocumentPage]) -> TariffRecord:
+    page = _schedule_page(pages, "32")
+    source = _page_source(page, "32")
+    flat = _flatten(page.text)
+    limits = _require(
+        re.search(r"contract Demand of (\d+) kVA or more, taking service at a standard primary distribution "
+                  r"voltage, subject to written agreement", flat),
+        "Rate 32 eligibility",
+    )
+    _require_tou_availability(page)
+    return _tariff(
+        "32", "Large Commercial Service - Primary - Time of Use (Rate 32)", "commercial", "tou", [source],
+        _tou_components(source, page, _PRIMARY_TOU_SEASONS),
+        sub_class="large commercial primary time of use",
+        eligibility=(
+            f"Contract Demand of {limits.group(1)} kVA or more at a standard primary distribution voltage, "
+            "subject to written agreement; satisfactory load factors; minimum 12 consecutive months, then at the "
+            "customer's election a minimum of 36 consecutive months."
+        ),
+        notes="FortisBC Electric Rate Schedule 32. No demand charge is published on this sheet; the schedule "
+              "text does not restrict it to industrial customers.",
+    )
+
+
+def _parse_green_power(pages: list[DocumentPage]) -> TariffRecord:
+    page = _schedule_page(pages, "85")
+    source = _page_source(page, "85")
+    flat = _flatten(page.text)
+    _require(re.search(r"APPLICABLE: To any current rate Schedules", flat), "Rate 85 applicability")
+    option_a = _require(
+        re.search(rf"OPTION A - In addition to all charges on the applicable rate Schedule, an additional charge, "
+                  rf"of all discounts, of (\d+(?:\.\d+)?)\s*[{_CENT_GLYPHS}]\s*per kW\.h is levied against all kW\.h sold",
+                  flat),
+        "Option A premium in cents per kWh",
+    )
+    option_b = _require(
+        re.search(r"OPTION B - .*?in no case will the amount be less than \$(\d+(?:\.\d+)?) per Month", flat),
+        "Option B monthly minimum",
+    )
+    return _tariff(
+        "85", "Green Power Rider (Rate 85)", "other", "flat", [source],
+        [_component(source, "rider", "Green Power Premium (Option A)", _cents_to_dollars(option_a.group(1)), "$/kWh",
+                    sub_component="optional",
+                    notes="Optional adder to all kWh sold under the customer's applicable rate schedule; Option B "
+                          f"instead adds a customer-chosen dollar amount of at least ${option_b.group(1)} per month.")],
+        sub_class="green power rider (optional)",
+        eligibility="Any current rate schedule, on the same terms as that schedule, for purchase of electricity "
+                    "from environmentally desirable technologies",
+        notes="FortisBC Electric Rate Schedule 85. Voluntary add-on to another tariff, not a replacement energy price.",
+    )
+
+
 _SCHEDULE_PARSERS: tuple[tuple[str, Callable[[list[DocumentPage]], TariffRecord]], ...] = (
     ("1", _parse_residential),
     ("2A", _parse_residential_tou),
@@ -543,6 +678,9 @@ _SCHEDULE_PARSERS: tuple[tuple[str, Callable[[list[DocumentPage]], TariffRecord]
     ("21", _parse_commercial),
     ("22A", _parse_secondary_tou),
     ("23A", _parse_primary_tou),
+    ("30", _parse_large_commercial_primary),
+    ("32", _parse_large_commercial_primary_tou),
+    ("85", _parse_green_power),
 )
 
 
