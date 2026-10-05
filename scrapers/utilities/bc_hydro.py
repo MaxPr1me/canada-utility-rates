@@ -360,6 +360,30 @@ class BCHydroScraper(BaseScraper):
             riders = None
 
         cent = r"[\u00a2\u023c\ufffd]"
+        power_factor_pages = [page for page in pages if re.match(r"BC Hydro Terms and Conditions, Section 7\b", page.text)
+                      and re.search(r"Page 7-[12]\b", page.text.split("7. LOAD CHANGES", 1)[0])]
+        power_factor: Optional[list[RateComponent]] = None
+        if len(power_factor_pages) == 2 and {page.page_number for page in power_factor_pages} == {53, 54}:
+            section = re.sub(r"\s+", " ", " ".join(page.text for page in sorted(power_factor_pages, key=lambda page: page.page_number)))
+            dates = {extract_effective_date(page.text.split("Page 7-", 1)[0]) for page in power_factor_pages}
+            bands = re.findall(r"Less than (\d+)% (?:but (\d+)% or more )?(\d+)(?=\s|$)", section)
+            if (len(dates) == 1 and None not in dates and next(iter(dates)) <= today
+                    and "Each Customer must maintain an average Power Factor between 90% lagging and 100%" in section
+                    and "to the sum of all charges specified in the Rate section of a Rate Schedule" in section
+                    and "No surcharge or credit will apply to any leading Power Factor" in section
+                    and re.search(r"90% or more Nil", section)
+                    and [(int(upper), int(lower) if lower else None) for upper, lower, _ in bands]
+                    == [(90, 88), (88, 85), (85, 80), (80, 75), (75, 70),
+                        (70, 65), (65, 60), (60, 55), (55, 50), (50, None)]
+                    and all(0 < int(percent) <= 100 for _, _, percent in bands)):
+                effective = next(iter(dates))
+                power_factor = [RateComponent(
+                    "adjustment", "Conditional Power Factor Surcharge", int(percent) / 100, "fraction of Rate section charges",
+                    sub_component="conditional", effective_date=effective, source_url=TARIFF_URL,
+                    source_detail="Electric Tariff Terms and Conditions section 7.2; PDF pages 53-54",
+                    notes=(f"Lagging Power Factor less than {upper}%" + (f" but {lower}% or more" if lower else "")
+                           + "; BC Hydro may apply after notification and failure to correct. Not a billing-demand adjustment."),
+                ) for upper, lower, percent in bands]
         records: list[TariffRecord] = []
         for code, name, sub_class, structure in (
             ("1300", "Small General Service (Rate 1300)", "small general service", "flat"),
@@ -369,6 +393,8 @@ class BCHydroScraper(BaseScraper):
             if riders is None:
                 break
             try:
+                if power_factor is None:
+                    raise ValueError("Missing or malformed Terms and Conditions section 7.2 power-factor surcharge")
                 text, effective, detail = schedule(code)
                 family = {"1300": ("1300", "1301", "1310", "1311"),
                           "1500": ("1500", "1501", "1510", "1511"),
@@ -470,7 +496,7 @@ class BCHydroScraper(BaseScraper):
                     usage_max=usage_max, usage_unit="kWh/12 months" if usage_max else None,
                     notes=(f"Covers Rate Schedules {', '.join(family)} (voltage and transformation variants share these prices). "
                            f"{minimum} Rate Riders are shown separately; taxes and levies excluded."),
-                    components=components + [replace(rider) for rider in riders],
+                    components=components + [replace(rider) for rider in riders] + [replace(component) for component in power_factor],
                 ))
             except (ValueError, IndexError) as exc:
                 self.logger.warning("Incomplete BC Hydro RS %s: %s", code, exc)

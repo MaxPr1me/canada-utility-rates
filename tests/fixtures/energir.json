@@ -47,5 +47,31 @@
       "page_number": 69,
       "text": "15. CAP-AND-TRADE EMISSION\nALLOWANCES SYSTEM 15.1 DISTRIBUTOR’S SERVICE\n15.1.1 APPLICATION\nFor any customer who withdraws natural gas and did not provide the exemption declaration approved by Énergir’s\nGHG emissions auditor for the period. 15.1.2 CAP-AND-TRADE EMISSION ALLOWANCES SYSTEM (CTEAS) SERVICE RATE\n15.1.2.1 CTEAS Price\nFor each m³ of traditional natural gas volume withdrawn, the CTEAS price as of October 1, 2026 is\n8.727¢/m³. The price may be adjusted quarterly to reflect the actual cost of acquisition.\n15.2 CUSTOMER-PROVIDED SERVICE\n15.2.1 APPLICATIONS\nFor any customer who is registered as an emitter in the latest list published by the Minister under Article 35 of the\nRegulation respecting a cap-and-trade system for greenhouse gas emission allowances (chapter Q-2, r. 46.1).\n15.2.2 RATE\n15.2.2.1 Service Price\nA customer shall not be billed for the price of cap-and-trade emission allowances system distributor’s\nservice. ÉNERGIR – CONDITIONS OF SERVICE AND TARIFF AS OF OCTOBER 1, 2026\n– 68 –"
     }
-  ]
+  ],
+  "inventory_reference": {
+    "url": "https://energir.com/files/energir_common/Fiche-Inventaire-EN_2021.pdf",
+    "pages": [
+      {
+        "page_number": 1,
+        "text": "Since the prices billed for these services are the prices in effect at the time the natural gas is consumed and not at the time it is stored, an adjustment is necessary."
+      },
+      {
+        "page_number": 2,
+        "text": "The adjustments are calculated separately for the natural gas supply and transportation services since the prices may vary over the course of the year."
+      },
+      {
+        "page_number": 3,
+        "text": "The difference between parameters W and A is zero and so in this case no inventory-related adjustment are billed such customers.",
+        "credit_text": "such customers will be given a credit which corresponds to their contribution to reducing the storage level for other customers."
+      },
+      {
+        "page_number": 4,
+        "text": "General Distribution Rate D1 customers whose annual consumption is below 75,000 m3 are also billed according to an average price."
+      }
+    ]
+  },
+  "supply_price_history": {
+    "url": "https://energir.com/en/business/natural-gas-supply-prices",
+    "text": "Price effective Description Unit Sep 1, 2026 Oct 1, 2026 NATURAL GAS SUPPLY PRICE $/GJ ¢/M³ 3.74 14.171 4.10 15.535 CAP-AND-TRADE EMISSION ALLOWANCES SYSTEM PRICE ¢/M³ 8.406 8.727"
+  }
 }

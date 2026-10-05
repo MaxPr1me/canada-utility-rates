@@ -1195,6 +1195,32 @@ class HydroQuebecScraper(BaseScraper):
             except (ValueError, IndexError) as exc:
                 self.logger.warning("Incomplete Hydro-Quebec Net Metering Option I: %s", exc)
 
+        m_selected, m_text = self._run_section(pages, r"Section\s+6\s+\W?\s*Net Metering for Customer\W?Generators\s*\W?\s*Option I(?!I)", r"Application\s+4\.28\b")
+        if m_selected:
+            try:
+                common_selected, common_text = self._run_section(pages, r"Section\s+6\s+\W?\s*Net Metering for Customer\W?Generators\s*\W?\s*Option I(?!I)", r"Application\s+2\.45\b")
+                need(common_text, ("Application", "Definitions", "Eligibility", "Billing", "Surplus bank restrictions", "Restrictions", "Termination"))
+                application = clause(common_text, r"Application\s+2\.45\s+(The Net Metering Option.*?)Definitions\s+2\.46", "Option I application")
+                eligibility = clause(common_text, r"Eligibility\s+2\.48\s+(To be eligible.*?)Sign-up date\s+2\.49", "Option I eligibility")
+                billing_rule = clause(common_text, r"Billing\s+2\.50\s+(.*?)Surplus bank restrictions\s+2\.51", "Option I billing")
+                bank = clause(common_text, r"Surplus bank restrictions\s+2\.51\s+(.*?)Restrictions\s+2\.52", "Option I surplus bank")
+                price = re.search(r"credited the balance at the price of the average cost of electricity supply, i\.e\., " + cent + r" per kilowatthour", bank)
+                m_application = re.search(r"Application\s+4\.28\s+(Net Metering Option I, described in Section 6 of Chapter 2, applies to the Rate M contract of a customer whose maximum self-generation capacity does not exceed 1,000 kilowatts\.)", m_text)
+                if not common_selected or not price or not m_application or "1,000 kilowatts" not in application \
+                        or "The amount billed cannot be negative" not in billing_rule:
+                    raise ValueError("Missing Rate M net metering applicability, credit or billing rule")
+                positive(price.group(1))
+                components = [RateComponent(
+                    "rebate", "Surplus Bank Reset Credit (average cost of supply)", -round(float(price.group(1)) / 100, 6), "$/kWh of surplus-bank balance",
+                    sub_component="conditional", notes="Credited only when the surplus bank is reset to zero or the option ends. " + bank)]
+                notes = ("Rate M charges remain separate; the applicable rate governs electricity delivered minus the surplus-bank balance. "
+                         + "Billing: " + billing_rule + " Eligibility: " + eligibility + " Rate M application: " + m_application.group(1))
+                records.append(finish(common_selected + m_selected, "Net Metering Option I (Rate M)", components, "commercial",
+                                      tariff_name="Net Metering Option I - Rate M Customer-Generators", tariff_code="NET_METERING_I_M",
+                                      sub_class="Rate M net metering option", eligibility=m_application.group(1) + " " + eligibility, notes=notes))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Net Metering Option I for Rate M: %s", exc)
+
         # Net metering Option III (off-grid)
         selected, text = self._run_section(pages, r"Section\s+3\s+\W?\s*Net Metering for Customer\W?Generators\s*\W?\s*Option I\s?I\s?I", r"Application\s+9\.12\b")
         if selected:

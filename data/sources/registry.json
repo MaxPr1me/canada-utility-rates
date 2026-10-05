@@ -46,7 +46,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Regulated by the Régie de l'énergie du Québec. Default Rate D1 is parsed live for residential and business listings: seven annual-volume basic-fee bands, nine daily distribution blocks, supply, transportation, conditional load balancing and renewable-gas socialization, and the cap-and-trade (CTEAS) price, all in native cents/m3 stored as $/m3. Rates D3 and D4 (subscribed-volume minimum daily obligation bands, withdrawal prices, eligibility thresholds) are parsed from article 14.3 of the same tariff. Interruptible D5, inventory-related adjustments, the load-factor balancing formula, rate reductions and fixed-price/renewable supply options remain gaps."
+      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Regulated by the Régie de l'énergie du Québec. Default Rate D1 is parsed live for residential and business listings: seven annual-volume basic-fee bands, nine daily distribution blocks, supply, transportation, conditional load balancing and renewable-gas socialization, and the cap-and-trade (CTEAS) price, all in native cents/m3 stored as $/m3. Rates D3 and D4 (subscribed-volume minimum daily obligation bands, withdrawal prices, eligibility thresholds) are parsed from article 14.3 of the same tariff. Interruptible D5, the load-factor balancing formula, rate reductions and fixed-price/renewable supply options remain gaps. Batch 8 audited inventory-related adjustments (Energir inventory fact sheet): they are customer-specific supply/transportation price-difference adjustments or credits computed from each customer's storage parameters, with no published unit price, so they are documented conditions and are never added as a component."
     },
     {
       "name": "FortisBC Energy",
@@ -85,9 +85,15 @@
           "source_type": "pdf",
           "description": "Rate Schedule 4 Seasonal Firm Gas Service; link rediscovered from the business rates page",
           "is_primary": false
+        },
+        {
+          "url": "https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/fortisbc-energy-inc.-gas-tariffs-mainland-vancouver-island-and-whistler",
+          "source_type": "html",
+          "description": "Approved gas tariff index; required evidence that Rate 2 small and Rate 3 large commercial service is available in the Municipality of Revelstoke",
+          "is_primary": false
         }
       ],
-      "notes": "FortisBC Energy is the natural gas distribution arm of FortisBC, serving most of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC). Rates 1/2/3 are parsed live for Mainland/Vancouver Island and Fort Nelson with daily basic charges and $/GJ delivery, storage and transport and cost of gas; Rate 5 (monthly basic, $/GJ/month daily-demand charge, riders) and Rate 4 seasonal (off-peak/extension periods) are parsed from their approved rate schedules for Mainland/Vancouver Island. Missing carbon evidence rejects live output. Fort Nelson Rates 4/5 (no published price table), Revelstoke propane, Rates 6/7 and Customer Choice marketer prices remain gaps. Batch 7 adds Residential Rate 1 Revelstoke propane (9 live total) from the residential page table, with its own motor-fuel-tax carbon evidence. Rates 6/7 and industrial service are excluded; the business Revelstoke table is ambiguous and remains a gap."
+      "notes": "FortisBC Energy is the natural gas distribution arm of FortisBC, serving most of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC). Rates 1/2/3 are parsed live for Mainland/Vancouver Island and Fort Nelson with daily basic charges and $/GJ delivery, storage and transport and cost of gas; Rate 5 (monthly basic, $/GJ/month daily-demand charge, riders) and Rate 4 seasonal (off-peak/extension periods) are parsed from their approved rate schedules for Mainland/Vancouver Island. Missing carbon evidence rejects live output. Fort Nelson Rates 4/5 (no published price table), Revelstoke propane, Rates 6/7 and Customer Choice marketer prices remain gaps. Batch 7 adds Residential Rate 1 Revelstoke propane (9 live total) from the residential page table, with its own motor-fuel-tax carbon evidence. Rates 6/7 and industrial service are excluded. Batch 8 adds Commercial Rates 2/3 Revelstoke propane (11 live total): the business-page Revelstoke tables are accepted only when the approved tariff index authorizes each class in Revelstoke and the residential page confirms propane service; each class fails independently."
     },
     {
       "name": "ATCO Gas",
@@ -154,9 +160,15 @@
           "source_type": "html",
           "description": "Dated federal zero fuel-charge applicability naming Manitoba; required for complete carbon evidence",
           "is_primary": false
+        },
+        {
+          "url": "https://www.hydro.mb.ca/docs/billing/schedule-of-sales-and-transportation-services-and-rates-v0826.pdf",
+          "source_type": "pdf",
+          "description": "PUB-approved Schedule of Sales and Transportation Services and Rates (November 1, 2025, Order 138/25); required class eligibility, billing-demand, T-service and alternate-supply conditions",
+          "is_primary": false
         }
       ],
-      "notes": "Twelve current residential/commercial Sales, T-service and marketer-supply variants. Source cents/m3 are normalized to dollars/m3, without heat-content conversion; native volumetric demand units and component dates are preserved. Delivery/demand totals are checked against their parts, not added twice. Private marketer commodity is excluded and explicit carbon evidence is mandatory. Fixed-term products, full PUB tariff/eligibility and alternate-supply conditions remain review gaps; no full catalogue-completion claim."
+      "notes": "Twelve current residential/commercial Sales, T-service and marketer-supply variants. Source cents/m3 are normalized to dollars/m3, without heat-content conversion; native volumetric demand units and component dates are preserved. Delivery/demand totals are checked against their parts, not added twice. Private marketer commodity is excluded and explicit carbon evidence is mandatory. Batch 8 requires the PUB-approved schedule (Order 138/25) for class annual-volume boundaries, one-year elections/contracts, Mainline pressure, winter-month billing demand, T-service 200 GJ/day nomination and interruptible alternate-supply pass-through conditions; missing schedule context rejects only the affected classes. Fixed-term commodity contracts are noted as a separate optional product, not priced. No full catalogue-completion claim."
     },
     {
       "name": "SaskEnergy",
@@ -308,7 +320,7 @@
           "is_primary": false
         }
       ],
-      "notes": "BCUC-regulated residential choices include tiered 1101, flat 1151, each with optional 2101 time-of-day, plus closed dual-fuel 1105. The live parser reads the approved PDF including dates, separate 1901/1904 riders and conditional transformer discounts; the riders exclude 2101 adjustments. Business Rates 1300/1500/1600 are rebuilt from approved tariff pages 97-107 with separate RS1901/1904 riders and conditional primary-voltage/transformation discounts, plus Terms and Conditions Section 11 standard service charges. Industrial/transmission, irrigation, lighting, EV, IPP and net metering are skipped; the power-factor surcharge unit remains a gap."
+      "notes": "BCUC-regulated residential choices include tiered 1101, flat 1151, each with optional 2101 time-of-day, plus closed dual-fuel 1105. The live parser reads the approved PDF including dates, separate 1901/1904 riders and conditional transformer discounts; the riders exclude 2101 adjustments. Business Rates 1300/1500/1600 are rebuilt from approved tariff pages 97-107 with separate RS1901/1904 riders and conditional primary-voltage/transformation discounts, plus Terms and Conditions Section 11 standard service charges. Industrial/transmission, irrigation, lighting, EV, IPP and net metering are skipped. Batch 8 adds the Terms and Conditions section 7.2 power-factor surcharge (PDF pages 53-54) to each business record as ten conditional bands in the source unit 'fraction of Rate section charges' (lagging power factor below 90%; nil at 90% or more; no leading-power-factor charge); a missing or malformed clause rejects business records only."
     },
     {
       "name": "FortisBC Electric",
@@ -378,7 +390,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Nine live records include D/DP/DM/DN/DT/Flex D, the closed Winter Credit adjustment and G/M. DT switches on source-defined outdoor temperature zones, not hourly TOU, and excludes off-grid service. Flex D preserves seasonal tiers, notified events and mutually exclusive product eligibility. Winter Credit is a conditional adjustment to Rate D, retaining reference-energy rules and enrollment cutoff. Multiplier, minimum-bill and demand rules remain conditions, not calculated bills. Inukjuak, net metering and remaining building business options still need audit; no full catalogue-completion claim. Batch 7 adds 11 live building options (20 live total): Inukjuak DN, Rate G9, Flex G/M/G9, three dual-energy rates, Winter Credit G and net-metering options I/III (option III keeps its own conditions). All components carry source URL, page detail and effective date. Industrial L/LG/H/MA, GD/BR and Rate M net-metering option I are excluded or remain gaps."
+      "notes": "Nine live records include D/DP/DM/DN/DT/Flex D, the closed Winter Credit adjustment and G/M. DT switches on source-defined outdoor temperature zones, not hourly TOU, and excludes off-grid service. Flex D preserves seasonal tiers, notified events and mutually exclusive product eligibility. Winter Credit is a conditional adjustment to Rate D, retaining reference-energy rules and enrollment cutoff. Multiplier, minimum-bill and demand rules remain conditions, not calculated bills. Inukjuak, net metering and remaining building business options still need audit; no full catalogue-completion claim. Batch 7 adds 11 live building options (20 live total): Inukjuak DN, Rate G9, Flex G/M/G9, three dual-energy rates, Winter Credit G and net-metering options I/III (option III keeps its own conditions). All components carry source URL, page detail and effective date. Industrial L/LG/H/MA and GD/BR are excluded. Batch 8 adds Net Metering Option I for Rate M (21 live total): Rate M application 4.28 (self-generation up to 1,000 kW) plus the shared Option I surplus-bank reset credit as a conditional $/kWh credit; Rate M charges stay separate."
     },
     {
       "name": "Manitoba Hydro",

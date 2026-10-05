@@ -29,6 +29,7 @@ RATES_BASE_URL = "https://www.fortisbc.com/accounts/billing-rates/natural-gas-ra
 PAGE_URLS = {
     "residential": RATES_BASE_URL + "residential-rates",
     "business": RATES_BASE_URL + "business-rates",
+    "tariffs": RATES_BASE_URL + "fortisbc-energy-inc.-gas-tariffs-mainland-vancouver-island-and-whistler",
     "carbon": "https://www2.gov.bc.ca/gov/content/taxes/sales-taxes/motor-fuel-carbon-tax",
 }
 
@@ -63,6 +64,10 @@ REVELSTOKE = r"Revelstoke"
 REVELSTOKE_CLASSES = (
     AreaClassSpec("1", "residential", REVELSTOKE, "Revelstoke (propane)",
                   "Residential — Rate 1 (Revelstoke propane)", "residential"),
+    AreaClassSpec("2", "business", REVELSTOKE, "Revelstoke (propane)",
+                  "Commercial — Rate 2 (Revelstoke propane)", "commercial"),
+    AreaClassSpec("3", "business", REVELSTOKE, "Revelstoke (propane)",
+                  "Commercial — Rate 3 (Revelstoke propane)", "commercial"),
 )
 
 # Seed data based on BCUC-approved rates.
@@ -234,6 +239,13 @@ class FortisBCEnergyScraper(BaseScraper):
             try:
                 text = pages.get(spec.page, "")
                 eligibility = None
+                if spec.page == "business" and spec.area_pattern == REVELSTOKE:
+                    self._require(pages.get("residential", ""), "Revelstoke (for propane customers)")
+                    index = pages.get("tariffs", "")
+                    class_label = "Small" if spec.rate == "2" else "Large"
+                    if not re.search(rf"Rate {spec.rate} {class_label} commercial rate for businesses [^.]+?"
+                                     r"available in [^.]*?the Municipality of Revelstoke", index):
+                        raise ValueError("approved Revelstoke business class unavailable")
                 if spec.page == "business":
                     text = self._rate_section(text, spec.rate)
                     sentence = re.match(rf"Rate {spec.rate} You are (.+?\(e\.g\. [^)]+\)\.)", text)

@@ -3949,3 +3949,340 @@ class TestAllTier1UtilitiesBasicSanity:
     def test_total_tariff_count(self):
         """8 utilities should produce at least 19 tariff records total."""
         assert len(self.all_records) >= 19
+
+
+# ======================================================================
+# BC Hydro power-factor surcharge
+# ======================================================================
+import json
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from scrapers.utilities.bc_hydro import BCHydroScraper, TARIFF_URL
+from scrapers.utils.parsing import DocumentPage
+
+
+BCHPF_FIXTURE = Path(__file__).parent / "fixtures" / "bc_hydro_business.json"
+BCHPF_BUSINESS = {"1300", "1500", "1600"}
+
+
+@pytest.fixture
+def BCHPF_document():
+    return json.loads(BCHPF_FIXTURE.read_text(encoding="utf-8"))
+
+
+def BCHPF_parse(BCHPF_document):
+    scraper = BCHydroScraper()
+    with patch.object(scraper, "now_iso", return_value="2026-10-05T00:00:00+00:00"):
+        return scraper._parse_business_tariff([DocumentPage(**page) for page in BCHPF_document["pages"]])
+
+
+def BCHPF_surcharge(record):
+    return [component for component in record.components if component.component_name == "Conditional Power Factor Surcharge"]
+
+
+def test_bchpf_power_factor_tiers_are_conditional_rate_section_fractions(BCHPF_document):
+    records = BCHPF_parse(BCHPF_document)
+    assert {record.tariff_code for record in records if record.tariff_code in BCHPF_BUSINESS} == BCHPF_BUSINESS
+    for record in records:
+        if record.tariff_code not in BCHPF_BUSINESS:
+            continue
+        tiers = BCHPF_surcharge(record)
+        assert [component.charge_value for component in tiers] == [.02, .04, .09, .16, .24, .34, .44, .57, .72, .80]
+        assert all(component.component_type == "adjustment" and component.sub_component == "conditional"
+                   and component.charge_unit == "fraction of Rate section charges"
+                   and component.source_url == TARIFF_URL
+                   and component.source_detail == "Electric Tariff Terms and Conditions section 7.2; PDF pages 53-54"
+                   and component.effective_date == "2025-04-01" for component in tiers)
+        assert "less than 90% but 88% or more" in tiers[0].notes
+        assert "less than 50%" in tiers[-1].notes
+        assert all("Not a billing-demand adjustment" in component.notes for component in tiers)
+
+
+def test_bchpf_changed_official_percentage_propagates(BCHPF_document):
+    page = next(page for page in BCHPF_document["pages"] if page["page_number"] == 54)
+    page["text"] = page["text"].replace("Less than 90% but 88% or more 2", "Less than 90% but 88% or more 3")
+    records = BCHPF_parse(BCHPF_document)
+    assert {record.tariff_code for record in records if record.tariff_code in BCHPF_BUSINESS} == BCHPF_BUSINESS
+    assert all(BCHPF_surcharge(record)[0].charge_value == .03 for record in records if record.tariff_code in BCHPF_BUSINESS)
+
+
+@pytest.mark.parametrize("missing_page", [53, 54])
+def test_bchpf_missing_clause_rejects_business_only(BCHPF_document, missing_page):
+    BCHPF_document["pages"] = [page for page in BCHPF_document["pages"] if page["page_number"] != missing_page]
+    records = BCHPF_parse(BCHPF_document)
+    assert {record.tariff_code for record in records if record.tariff_code in BCHPF_BUSINESS} == set()
+    assert [record.tariff_name for record in records] == ["Standard Service Charges (Terms and Conditions Section 11)"]
+
+
+def test_bchpf_malformed_clause_rejects_business_only(BCHPF_document):
+    page = next(page for page in BCHPF_document["pages"] if page["page_number"] == 54)
+    page["text"] = page["text"].replace("Less than 88% but 85% or more 4", "Less than 88% but 85% or more unknown")
+    assert [record.tariff_name for record in BCHPF_parse(BCHPF_document)] == ["Standard Service Charges (Terms and Conditions Section 11)"]
+
+
+# ======================================================================
+# Centra Gas PUB schedule conditions
+# ======================================================================
+import json
+from datetime import date
+from pathlib import Path
+
+import pytest
+
+from scrapers.utilities.centra_gas import CentraGasScraper, PAGE_URLS
+
+
+@pytest.fixture
+def CGC_pages():
+    fixture = json.loads((Path(__file__).resolve().parent / "fixtures" / "centra_gas.json").read_text(encoding="utf-8"))
+    return {key: page["text"] for key, page in fixture["pages"].items()}
+
+
+def CGC_parse(CGC_pages):
+    return {record.tariff_code: record for record in CentraGasScraper().parse_pages(CGC_pages, date(2026, 10, 5))}
+
+
+def test_cgc_approved_conditions_and_sources(CGC_pages):
+    records = CGC_parse(CGC_pages)
+    assert len(records) == 12
+    assert records["SGS"].usage_max == records["COM-LGS"].usage_max == 680000
+    assert records["COM-HVF-S"].usage_min == records["COM-MFS-T"].usage_min == 680000
+    assert "one year" in records["COM-LGS"].eligibility
+    assert "highest daily m³" in records["COM-HVF-S"].eligibility
+    assert "preceding eleven months" in records["COM-MFS-S"].eligibility
+    assert "200 GJ/day" in records["COM-HVF-T"].eligibility
+    assert "pass-through commodity/transport" in records["COM-IS-S"].eligibility
+    assert PAGE_URLS["schedule"] in records["COM-HVF-T"].notes
+    assert "PDF page 34" in next(component.source_detail for component in records["COM-HVF-T"].components
+                                 if component.component_type == "demand")
+
+
+@pytest.mark.parametrize(("old", "new", "missing"), [
+    ("PDF page 17", "PDF page 77", {"SGS", "SGS-MKT", "COM-SGS", "COM-SGS-MKT", "COM-LGS", "COM-LGS-MKT"}),
+    ("PDF page 34", "PDF page 74", {"COM-HVF-S", "COM-HVF-T", "COM-MFS-S", "COM-MFS-T", "COM-IS-S", "COM-IS-T"}),
+    ("equals or exceeds 200 GJ", "equals or exceeds some GJ", {"COM-HVF-T", "COM-MFS-T", "COM-IS-T"}),
+    ("pass-through cost of acquiring additional gas commodity", "unspecified cost of gas", {"COM-IS-S", "COM-IS-T"}),
+])
+def test_cgc_required_schedule_section_rejects_affected_classes(CGC_pages, old, new, missing):
+    assert old in CGC_pages["schedule"]
+    original = set(CGC_parse(CGC_pages))
+    CGC_pages["schedule"] = CGC_pages["schedule"].replace(old, new, 1)
+    assert set(CGC_parse(CGC_pages)) == original - missing
+
+
+def test_cgc_published_boundary_mutation_propagates(CGC_pages):
+    CGC_pages["schedule"] = CGC_pages["schedule"].replace("equals or exceeds 680,000 m3", "equals or exceeds 690,000 m3", 1)
+    records = CGC_parse(CGC_pages)
+    assert records["COM-HVF-S"].usage_min == records["COM-HVF-T"].usage_min == 690000
+    assert "690,000 m³" in records["COM-HVF-S"].eligibility
+    assert records["COM-MFS-S"].usage_min == 680000
+
+
+# ======================================================================
+# Energir inventory-related adjustments (evidence only)
+# ======================================================================
+import json
+from datetime import date
+from pathlib import Path
+
+from scrapers.utilities.energir import EnergirScraper
+
+
+def ENI_fixture():
+    return json.loads((Path(__file__).resolve().parent / "fixtures" / "energir.json").read_text(encoding="utf-8"))
+
+
+def ENI_parse(document):
+    return EnergirScraper().parse_pages(
+        {"pricing": document["pricing"]["text"],
+         "tariff": " ".join(page["text"] for page in document["tariff_pages"])},
+        date(2026, 10, 5), tariff_url=document["tariff_url"])
+
+
+def test_eni_inventory_evidence_does_not_invent_a_price():
+    document = ENI_fixture()
+    assert "adjustment is necessary" in document["inventory_reference"]["pages"][0]["text"]
+    assert "calculated separately" in document["inventory_reference"]["pages"][1]["text"]
+    assert "credit" in document["inventory_reference"]["pages"][2]["credit_text"]
+    assert "15.535" in document["supply_price_history"]["text"]
+    records = ENI_parse(document)
+    assert {record.tariff_name for record in records} == {
+        "Residential — Rate D1", "Business — Rate D1", "Commercial — Rate D3", "Commercial — Rate D4"}
+    for record in records:
+        components = {component.component_name: component for component in record.components}
+        assert not any("inventory" in name.lower() for name in components)
+        assert (components["Natural Gas Supply"].charge_value,
+                components["Transportation"].charge_value) == (0.15535, 0.02165)
+        assert all(component.source_url == document["tariff_url"] and component.source_detail
+                   for component in record.components)
+
+
+def test_eni_shared_prices_follow_published_values():
+    document = ENI_fixture()
+    for page in document["tariff_pages"]:
+        page["text"] = page["text"].replace("15.535¢/m³", "15.700¢/m³")
+        page["text"] = page["text"].replace("2.165¢/m³", "2.300¢/m³")
+    for record in ENI_parse(document):
+        values = {component.component_name: component.charge_value for component in record.components}
+        assert values["Natural Gas Supply"] == 0.157
+        assert values["Transportation"] == 0.023
+        assert not any("inventory" in name.lower() for name in values)
+
+
+def test_eni_missing_required_dated_supply_price_rejects_live_records():
+    document = ENI_fixture()
+    for page in document["tariff_pages"]:
+        page["text"] = page["text"].replace("as of October 1, 2026 is\n15.535¢/m³",
+                                             "as of October 1, 2026 is\nnot published")
+    assert ENI_parse(document) == []
+
+
+# ======================================================================
+# FortisBC Energy Revelstoke business Rates 2/3
+# ======================================================================
+import json
+from datetime import date
+from pathlib import Path
+
+import pytest
+
+from scrapers.utilities.fortisbc_energy import FortisBCEnergyScraper
+
+
+@pytest.fixture
+def FBER_document():
+    path = Path(__file__).parent / "fixtures" / "fortisbc_energy.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def FBER_parse(FBER_document, rate2=None, rate3=None, index=None):
+    pages = {key: page["text"] for key, page in FBER_document["pages"].items()}
+    for rate, replacement in (("rate2", rate2), ("rate3", rate3)):
+        if replacement is not None:
+            excerpt = FBER_document["revelstoke_business"][rate]
+            assert excerpt in pages["business"]
+            pages["business"] = pages["business"].replace(excerpt, replacement, 1)
+    pages["tariffs"] = index if index is not None else FBER_document["revelstoke_tariffs"]["text"]
+    return {record.tariff_name: record for record in FortisBCEnergyScraper().parse_pages(pages, date(2026, 10, 5))}
+
+
+FBER_RATE2 = "Commercial — Rate 2 (Revelstoke propane)"
+FBER_RATE3 = "Commercial — Rate 3 (Revelstoke propane)"
+
+
+def test_fber_revelstoke_business_prices_units_and_provenance(FBER_document):
+    records = FBER_parse(FBER_document)
+    assert len(records) == 8
+    for name, basic, delivery, storage in ((FBER_RATE2, 1.4309, 5.877, 2.493),
+                                           (FBER_RATE3, 4.3526, 5.377, 2.268)):
+        record = records[name]
+        assert record.effective_date == "2026-07-01" and record.sub_class == "Revelstoke (propane)"
+        assert {component.component_type: (component.charge_value, component.charge_unit)
+                for component in record.components} == {
+                    "fixed": (basic, "$/day"), "delivery": (delivery, "$/GJ"),
+                    "transmission": (storage, "$/GJ"), "commodity": (1.660, "$/GJ"),
+                    "carbon": (0.0, "$/GJ")}
+        assert next(c for c in record.components if c.component_type == "commodity").component_name == "Cost of Propane"
+        assert all(c.source_url and c.source_detail and c.effective_date for c in record.components)
+        assert "motor fuel tax applies to propane" in next(c for c in record.components if c.component_type == "carbon").notes
+    assert records[FBER_RATE2].usage_max == 2000 and records[FBER_RATE3].usage_min == 2000
+
+
+def test_fber_prices_follow_business_source(FBER_document):
+    rate2 = FBER_document["revelstoke_business"]["rate2"].replace("$5.877", "$6.000")
+    rate3 = FBER_document["revelstoke_business"]["rate3"].replace("$4.3526", "$4.5000")
+    records = FBER_parse(FBER_document, rate2=rate2, rate3=rate3)
+    assert next(c.charge_value for c in records[FBER_RATE2].components if c.component_type == "delivery") == 6.0
+    assert next(c.charge_value for c in records[FBER_RATE3].components if c.component_type == "fixed") == 4.5
+
+
+@pytest.mark.parametrize(("rate", "old", "new", "missing"), [
+    ("rate2", "$2.493", "2.493", FBER_RATE2),
+    ("rate2", "July 1, 2026", "July 1, 2027", FBER_RATE2),
+    ("rate3", "$5.377", "5.377", FBER_RATE3),
+    ("rate3", "Cost of gas per GJ $1.660", "Cost of gas per GJ", FBER_RATE3),
+])
+def test_fber_missing_or_future_table_is_isolated(FBER_document, rate, old, new, missing):
+    excerpt = FBER_document["revelstoke_business"][rate]
+    assert old in excerpt
+    records = FBER_parse(FBER_document, **{rate: excerpt.replace(old, new)})
+    assert missing not in records and ({FBER_RATE2, FBER_RATE3} - {missing}) <= set(records)
+    assert len(records) == 7
+
+
+@pytest.mark.parametrize(("old", "new", "missing"), [
+    ("Rate 2 Small commercial rate", "Rate 2 Unspecified rate", FBER_RATE2),
+    ("Rate 3 Large commercial rate", "Rate 3 Unspecified rate", FBER_RATE3),
+])
+def test_fber_missing_class_authorization_is_isolated(FBER_document, old, new, missing):
+    index = FBER_document["revelstoke_tariffs"]["text"]
+    records = FBER_parse(FBER_document, index=index.replace(old, new))
+    assert missing not in records and ({FBER_RATE2, FBER_RATE3} - {missing}) <= set(records)
+
+
+def test_fber_rate2_cannot_borrow_rate3_revelstoke_authorization(FBER_document):
+    index = FBER_document["revelstoke_tariffs"]["text"]
+    index = index.replace("the Municipality of Revelstoke, and the Fort Nelson Service Area.",
+                          "the Fort Nelson Service Area.", 1)
+    records = FBER_parse(FBER_document, index=index)
+    assert FBER_RATE2 not in records and FBER_RATE3 in records
+
+
+def test_fber_missing_propane_evidence_rejects_both_business_classes(FBER_document):
+    FBER_document["pages"]["residential"]["text"] = FBER_document["pages"]["residential"]["text"].replace(
+        "Revelstoke (for propane customers)", "Revelstoke")
+    assert not ({FBER_RATE2, FBER_RATE3} & set(FBER_parse(FBER_document)))
+
+
+# ======================================================================
+# Hydro-Quebec Rate M net metering Option I
+# ======================================================================
+import json
+from pathlib import Path
+
+import pytest
+
+
+
+@pytest.fixture
+def HQM_document():
+    return json.loads((Path(__file__).parent / "fixtures" / "hydro_quebec_domestic.json").read_text(encoding="utf-8"))
+
+
+def test_hqm_rate_m_option_i_uses_shared_surplus_bank_credit(HQM_document):
+    live = HQX_build(HQM_document)
+    assert len(live) == 15
+    rate = live["NET_METERING_I_M"]
+    assert rate.tariff_name == "Net Metering Option I - Rate M Customer-Generators"
+    assert rate.customer_class == "commercial" and rate.effective_date == "2026-04-01"
+    assert "Rate M contract" in rate.eligibility and "1,000 kilowatts" in rate.eligibility
+    assert "estimated maximum power demand" in rate.eligibility and "photovoltaic power" in rate.eligibility
+    assert "Rate M charges remain separate" in rate.notes and "cannot be negative" in rate.notes
+    assert len(rate.components) == 1
+    credit = rate.components[0]
+    assert credit.charge_value == -0.0473 and credit.charge_unit == "$/kWh of surplus-bank balance"
+    assert credit.sub_component == "conditional" and "reset to zero" in credit.notes
+    assert credit.source_url == HQM_document["source_url"]
+    assert all(str(page) in credit.source_detail for page in (25, 26, 27, 56))
+    assert credit.effective_date == "2026-04-01"
+
+
+@pytest.mark.parametrize(("page", "absent"), [(56, {"NET_METERING_I_M"}), (26, {"NET_METERING_I", "NET_METERING_I_M"})])
+def test_hqm_missing_section_isolated(HQM_document, page, absent):
+    live = HQX_build(HQM_document, remove={page})
+    assert set(HQX_build(HQM_document)) - set(live) == absent
+
+
+def test_hqm_rate_m_application_mutation_isolated(HQM_document):
+    live = HQX_build(HQM_document, edits=[(56, "Rate M contract", "Rate G contract")])
+    assert "NET_METERING_I_M" not in live
+    assert "NET_METERING_I" in live and "FLEX_M" in live
+
+
+def test_hqm_common_credit_value_propagates(HQM_document):
+    live = HQX_build(HQM_document, edits=[(26, "4.730", "5.125")])
+    assert live["NET_METERING_I_M"].components[0].charge_value == -0.05125
+    assert live["NET_METERING_I"].components[0].charge_value == -0.05125

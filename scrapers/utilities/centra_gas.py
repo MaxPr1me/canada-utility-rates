@@ -32,6 +32,7 @@ PAGE_URLS = {
     "residential": HYDRO_BASE_URL + "residential/",
     "commercial": HYDRO_BASE_URL + "commercial/",
     "supply": HYDRO_BASE_URL + "natural-gas/",
+    "schedule": "https://www.hydro.mb.ca/docs/billing/schedule-of-sales-and-transportation-services-and-rates-v0826.pdf",
     "carbon": (
         "https://www.canada.ca/en/revenue-agency/services/forms-publications/"
         "publications/fcrates/fuel-charge-rates.html"
@@ -116,6 +117,18 @@ class CentraGasScraper(BaseScraper):
         pages: dict[str, str] = {}
         for key, url in PAGE_URLS.items():
             try:
+                if key == "schedule":
+                    import io
+                    import pdfplumber
+                    import requests
+                    response = requests.get(url, timeout=(10, 45))
+                    response.raise_for_status()
+                    with pdfplumber.open(io.BytesIO(response.content)) as document:
+                        pages[key] = " ".join(
+                            "PDF page " + str(number) + " " + re.sub(
+                                r"(?m)^\d{1,2} ", "", document.pages[number - 1].extract_text() or "")
+                            for number in (14, 17, 18, 19, 34, 44, 51))
+                    continue
                 html = self.fetch_page(url)
                 if "Request Rejected" in html[:600]:
                     html = self.fetch_rendered_page(url) or html
@@ -250,6 +263,7 @@ class CentraGasScraper(BaseScraper):
         """
         today = today or datetime.now(timezone.utc).date()
         pages = {key: self._norm(text) for key, text in pages.items()}
+        schedule = pages.get("winter", "") + " " + pages.get("schedule", "")
         carbon = self._carbon(pages.get("carbon", ""), today)
         if carbon is None:
             self.logger.warning("Centra Gas: required current carbon applicability could not be verified")
@@ -259,11 +273,15 @@ class CentraGasScraper(BaseScraper):
         marketer_ok = bool(re.search(
             r"If you sign an agreement with a natural gas marketer for your gas commodity supply, we will continue "
             r"to provide all other components of your natural gas supply and service", supply))
+        fixed_terms = bool(re.search(
+            r"Fixed rate service for natural gas supply is available during designated enrollment periods "
+            r"throughout the year\. It provides you the option to choose a fixed rate for your natural gas "
+            r"for a one, three or five-year term through Manitoba Hydro", supply))
 
         records: list[TariffRecord] = []
 
         def build(**kwargs) -> None:
-            records.append(self._build(carbon=carbon, **kwargs))
+            records.append(self._build(carbon=carbon, fixed_terms=fixed_terms, **kwargs))
 
         def headline_for(page_key: str) -> tuple[date, float]:
             headline = self._commodity_headline(pages.get(page_key, ""), today)
@@ -289,14 +307,17 @@ class CentraGasScraper(BaseScraper):
             section = text[start + len("Residential natural gas rates "):end if end > 0 else len(text)].strip()
             values = self._table_values(section, True, False, False)
             values["commodity"] = sales_commodity(headline, values["commodity"])
+            condition, usage_min, usage_max, schedule_detail = self._schedule_conditions(
+                schedule, "SGS")
             build(name=SEED_RESIDENTIAL_NAME, code="SGS", customer_class="residential", sub_class=None,
-                  eligibility=None, usage_min=None, usage_max=None, values=values, sales=True,
-                  effective=headline[0], url=PAGE_URLS["residential"], has_demand=False, alternate=False)
+                  eligibility=condition, usage_min=usage_min, usage_max=usage_max, values=values, sales=True,
+                  effective=headline[0], url=PAGE_URLS["residential"], has_demand=False, alternate=False,
+                  schedule_detail=schedule_detail)
             if marketer_ok:
                 build(name=SEED_RESIDENTIAL_NAME + MARKETER_SUFFIX, code="SGS-MKT", customer_class="residential",
-                      sub_class=None, eligibility=None, usage_min=None, usage_max=None, values=values,
+                      sub_class=None, eligibility=condition, usage_min=usage_min, usage_max=usage_max, values=values,
                       sales=False, effective=headline[0], url=PAGE_URLS["residential"], has_demand=False,
-                      alternate=False, marketer=True)
+                      alternate=False, marketer=True, schedule_detail=schedule_detail)
         except ValueError as exc:
             self.logger.warning("Centra Gas residential not parsed live: %s", exc)
 
@@ -307,6 +328,13 @@ class CentraGasScraper(BaseScraper):
             try:
                 headline = headline_for("commercial")
                 eligibility, usage_min, usage_max = self._eligibility(commercial, spec.option_label)
+                condition, usage_min, usage_max, schedule_detail = self._schedule_conditions(
+                    schedule, spec.tariff_code)
+                if usage_min is not None:
+                    eligibility = re.sub(r"^More than [\d,]+ m³", f"At least {usage_min:,.0f} m³", eligibility)
+                else:
+                    eligibility = re.sub(r"^Less than [\d,]+ m³", f"Less than {usage_max:,.0f} m³", eligibility)
+                eligibility += " " + condition
                 section = self._section(
                     commercial, spec.table_heading, [h for h in headings if h != spec.table_heading],
                     "Contact your Energy Service Advisor for information about natural gas rates")
@@ -316,7 +344,7 @@ class CentraGasScraper(BaseScraper):
                 common = dict(customer_class="commercial", sub_class=spec.sub_class, eligibility=eligibility,
                               usage_min=usage_min, usage_max=usage_max, values=values,
                               effective=headline[0], url=PAGE_URLS["commercial"], has_demand=spec.has_demand,
-                              alternate=spec.has_alternate_supply)
+                              alternate=spec.has_alternate_supply, schedule_detail=schedule_detail)
                 build(name=spec.tariff_name, code=spec.tariff_code, sales=spec.sales_service, **common)
                 if spec.marketer_variant and marketer_ok:
                     build(name=spec.tariff_name + MARKETER_SUFFIX, code=spec.tariff_code + "-MKT", sales=False,
@@ -352,11 +380,91 @@ class CentraGasScraper(BaseScraper):
             raise ValueError("non-positive annual-volume limit")
         return eligibility, (limit if volume.group(1) == "More" else None), (limit if volume.group(1) == "Less" else None)
 
+    def _schedule_conditions(self, text: str, code: str) -> tuple[str, Optional[float], Optional[float], str]:
+        pages = {}
+        for number in (14, 17, 18, 19, 34, 44, 51):
+            match = re.search(rf"PDF page {number} (.*?)(?=PDF page \d+ |$)", text)
+            pages[number] = match.group(1) if match else ""
+        required = ({17, 18} if code.startswith("COM-LGS") else
+                    {17} if "SGS" in code else
+                    {18, 34} if "HVF" in code else {19, 34})
+        if code.endswith("-T"):
+            required.add(44)
+        if code.startswith("COM-IS"):
+            required.add(51)
+        if any(class_code in code for class_code in ("HVF", "MFS", "-IS")):
+            required.add(14)
+        if not all("November 1, 2025" in pages[number] and "Order 138/25" in pages[number]
+                   for number in required):
+            raise ValueError("approved Centra schedule context missing")
+        if code in ("SGS", "SGS-MKT", "COM-SGS", "COM-SGS-MKT", "COM-LGS", "COM-LGS-MKT"):
+            section = pages[17]
+            heading = "Small General Class" if "SGS" in code else "Large General Class"
+            match = re.search(rf"{heading}.*?annual consumption of less than ([\d,]+) m3", section)
+            if not match:
+                raise ValueError("SGC/LGC annual eligibility missing")
+            limit = float(match.group(1).replace(",", ""))
+            if limit <= 0:
+                raise ValueError("invalid schedule annual boundary")
+            condition = f"PUB schedule page 16: annual consumption less than {limit:,.0f} m³; T-service is not available."
+            if code.startswith("COM-"):
+                if not re.search(r"each election must remain effective for a minimum of one year", pages[17] + " " + pages[18]):
+                    raise ValueError("SGC/LGC election term missing")
+                condition += " SGC/LGC class elections last at least one year."
+            return condition, None, limit, "PDF page 17 (schedule page 16)"
+
+        number = 18 if "HVF" in code else 19
+        section = pages[number]
+        class_heading = ("High Volume Firm" if number == 18 else
+                 "Mainline Class" if "MFS" in code else "Interruptible Service is available to Customers")
+        match = re.search(rf"{class_heading}.*?(?:equals or exceeds|equal or exceed) ([\d,]+)\s*(?:m3|3 m)", section)
+        if not match:
+            raise ValueError("approved high-volume boundary missing")
+        limit = float(match.group(1).replace(",", ""))
+        if limit <= 0:
+            raise ValueError("invalid schedule annual boundary")
+        condition = f"PUB schedule page {number - 1}: annual consumption at least {limit:,.0f} m³ through one meter."
+        if "MFS" in code:
+            if not re.search(r"pressures in excess of medium pressure.*?minimum of one year", section):
+                raise ValueError("Mainline pressure/contract condition missing")
+            condition += " Direct transmission or dedicated distribution above medium pressure; one-year contract."
+        elif "HVF" in code:
+            if not re.search(r"binding agreement.*?minimum term of one year", section):
+                raise ValueError("HVF contract condition missing")
+            condition += " Firm service with a binding agreement for at least one year."
+        else:
+            if not re.search(r"minimum of one year, or to Customers that have received Interruptible Service continuously since December 31, 1996", section):
+                raise ValueError("interruptible enrollment context missing")
+            condition += " Interruptible by notice; one-year contract or continuous service since December 31, 1996."
+        demand = pages[34]
+        if not re.search(r"Winter Month.*?months of November, December, January, February, and March", pages[14]):
+            raise ValueError("winter month definition missing")
+        if not re.search(r"Monthly Billing Demand will be the highest daily consumption.*?any Winter Month of the preceding eleven months.*?may be estimated or otherwise specified by the Company", demand):
+            raise ValueError("monthly billing demand definition missing")
+        if not re.search(r"During the months of November and March.*?without invoking a higher Monthly Billing Demand", demand):
+            raise ValueError("winter demand exception missing")
+        condition += (" Winter months are November through March. Monthly billing demand: highest daily m³ "
+                  "consumed in a winter month or a winter month "
+                  "of the preceding eleven months, subject to schedule exceptions; Centra may estimate it without "
+                      "12 months of data and may allow November/March use without increasing it.")
+        if code.endswith("-T"):
+            if not re.search(r"minimum term of one year.*?daily nomination equals or exceeds 200 GJ", pages[44]):
+                raise ValueError("T-service agreement/nomination missing")
+            condition += " T-service requires a one-year agreement and normally at least 200 GJ/day nomination."
+        if code.startswith("COM-IS"):
+            if not re.search(r"pass-through cost of acquiring additional gas commodity and transportation to Manitoba.*?Alternate Supply Service Delivery Rate", pages[51]):
+                raise ValueError("alternate supply pass-through context missing")
+            condition += (" Alternate supply during curtailment has a pass-through commodity/transport price plus "
+                          "the published alternate delivery rate; it is not the default commodity price.")
+        return condition, limit, None, (f"PDF page {number} (schedule page {number - 1}); "
+                        "PDF page 14 (schedule page 13); PDF page 34 (schedule page 33)")
+
     def _build(
         self, *, name: str, code: str, customer_class: str, sub_class: Optional[str],
         eligibility: Optional[str], usage_min: Optional[float], usage_max: Optional[float],
         values: dict[str, float], sales: bool, effective: date, url: str, has_demand: bool,
-        alternate: bool, carbon: tuple[date, str], marketer: bool = False,
+        alternate: bool, carbon: tuple[date, str], marketer: bool = False, fixed_terms: bool = False,
+        schedule_detail: str = "",
     ) -> TariffRecord:
         eff = effective.isoformat()
         detail = f"Rates effective {effective.strftime('%B')} {effective.day}, {effective.year}"
@@ -387,22 +495,24 @@ class CentraGasScraper(BaseScraper):
             if composed:
                 comps.append(RateComponent(
                     "demand", "Demand Transportation Charge", dollars(str(values["demand_transport"])),
-                    "$/m³/month", effective_date=eff, source_url=url, source_detail=detail,
+                    "$/m³/month", effective_date=eff, source_url=url,
+                    source_detail=detail + "; demand definition: " + PAGE_URLS["schedule"] + " " + schedule_detail,
                     sub_component="transportation",
                     notes=f"Published demand total {values['demand']:.2f}¢/m³/month is this plus the demand "
                           "distribution charge; not additive."))
             comps.append(RateComponent(
                 "demand", "Demand Distribution Charge",
                 dollars(str(values["demand_distribution"] if composed else values["demand"])),
-                "$/m³/month", effective_date=eff, source_url=url, source_detail=detail,
+                "$/m³/month", effective_date=eff, source_url=url,
+                source_detail=detail + "; demand definition: " + PAGE_URLS["schedule"] + " " + schedule_detail,
                 sub_component="distribution",
                 notes="Published native unit is cents per m³ per month"))
         if alternate:
             comps.append(RateComponent(
                 "other", "Alternate Supply Service", dollars(str(values["alternate"])), unit,
                 effective_date=eff, source_url=url, source_detail=detail,
-                notes="Listed in the published table without further explanation; applicability conditions "
-                      "are not stated on the page."))
+                    notes="Conditional delivery charge during interruptible curtailment; acquired gas and transport "
+                        "are pass-through costs, not the default commodity rate (approved schedule page 50)."))
         carbon_date, carbon_note = carbon
         comps.append(RateComponent(
             "carbon", "Federal Carbon Charge", 0.0, unit, effective_date=carbon_date.isoformat(),
@@ -412,6 +522,10 @@ class CentraGasScraper(BaseScraper):
                            "negotiated, unpublished and not included; Centra supplies and bills all other components.")
         elif sales:
             supply_note = "Centra Gas supplies the gas commodity under the default quarterly rate service."
+            if fixed_terms:
+                supply_note += (" A separate fixed-rate commodity contract is offered during designated enrollment "
+                                "periods for one, three or five years; it does not fix delivery or the total bill "
+                                f"(Manitoba Hydro gas supply: {PAGE_URLS['supply']}).")
         else:
             supply_note = "T-service: no Gas Commodity row is published; commodity is not included."
         return TariffRecord(
@@ -421,7 +535,8 @@ class CentraGasScraper(BaseScraper):
             rate_structure="demand" if has_demand else "flat", pricing_method="regulated",
             effective_date=max(effective, carbon_date).isoformat(), source_url=url, source_page=detail,
             confidence="high",
-            notes=(supply_note + " Published in cents per m³ and stored as $/m³. Regulated by the Public Utilities "
+                 notes=(supply_note + f" Approved schedule {schedule_detail} (November 1, 2025, PUB Order 138/25): "
+                     f"{PAGE_URLS['schedule']}. Published in cents per m³ and stored as $/m³. Regulated by the Public Utilities "
                    "Board of Manitoba. Taxes are not published on these pages and are not included."),
             components=comps,
         )

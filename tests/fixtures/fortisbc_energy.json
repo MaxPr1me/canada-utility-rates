@@ -37,5 +37,16 @@
     "url": "https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/residential-rates",
     "section": "Rate 1 Revelstoke (for propane customers) table, trimmed",
     "text": "Revelstoke (Effective July 1, 2026) Basic charge per day $0.4216 Delivery charge per GJ $8.469 Storage and transport charge per GJ $2.472 Cost of gas per GJ $1.660 Example: how to calculate a monthly bill Average monthly consumption 1 8 GJ Basic charge 2 $13.07 Delivery charge $67.75 Storage and transport charge $19.78 Cost of gas $13.28 Total monthly bill 3 $ 113.88 1 Please note this is an example of a bill and your consumption may vary from this average. 2 Based on a 31 day month. 3 Does not include other applic"
+  },
+  "revelstoke_business": {
+    "url": "https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/business-rates",
+    "section": "Separate Revelstoke Rate 2 and Rate 3 tables, July 1, 2026",
+    "rate2": "Revelstoke (Effective July 1, 2026) Basic charge per day 1 $1.4309 Delivery charge per GJ $5.877 Storage and transport charge per GJ $2.493 Cost of gas per GJ $1.660",
+    "rate3": "Revelstoke (Effective July 1, 2026 ) Basic charge per day 1 $4.3526 Delivery charge per GJ $5.377 Storage and transport $2.268 Cost of gas per GJ $1.660"
+  },
+  "revelstoke_tariffs": {
+    "url": "https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/fortisbc-energy-inc.-gas-tariffs-mainland-vancouver-island-and-whistler",
+    "section": "Tariff index: Rate 2 and Rate 3 availability in the Municipality of Revelstoke",
+    "text": "Rate 2 Small commercial rate for businesses with consumption of less than 2,000 GJ annually, available in the Mainland and Vancouver Island Service Area, the Municipality of Revelstoke, and the Fort Nelson Service Area. Rate 3 Large commercial rate for businesses with consumption of greater than 2,000 GJ annually, available in the Mainland and Vancouver Island Service Area, the Municipality of Revelstoke, and the Fort Nelson Service Area."
   }
 }

@@ -1,11 +1,11 @@
 # Phase 5 Completion Matrix
 
 **Updated:** 2026-10-05. Scope: all 84 registered utilities, not every utility
-in the broader Canadian inventory. The export has 675 stored tariff versions / 4,329
-components / **195 stored live versions / 480 seed**. Latest-per-name coverage is
-**190 live tariffs**; older versions remain in history. October 5 adds FortisBC Energy,
+in the broader Canadian inventory. The export has 678 stored tariff versions / 4,370
+components / **198 stored live versions / 480 seed**. Latest-per-name coverage is
+**193 live tariffs**; older versions remain in history. October 5 adds FortisBC Energy,
 Energir, Heritage/Eastward and Liberty NB gas, then batch 5 electricity classes and fees
-(NB Power, Newfoundland Power, Maritime Electric) batch 6 building classes (BC Hydro, Manitoba Hydro, FortisBC Electric, NSPower) and batch 7 extras (Hydro-Québec, NSPower business pilots, FortisBC Revelstoke propane); October 2 updated NSPower, Hydro-Quebec, NL
+(NB Power, Newfoundland Power, Maritime Electric) batch 6 building classes (BC Hydro, Manitoba Hydro, FortisBC Electric, NSPower), batch 7 extras (Hydro-Québec, NSPower business pilots, FortisBC Revelstoke propane) and batch 8 conditions (BC Hydro power factor, Centra PUB conditions, FortisBC Revelstoke business, HQ Rate M net metering, Energir inventory audit); October 2 updated NSPower, Hydro-Quebec, NL
 Hydro, FortisBC Electric, SaskEnergy and Centra Gas. Ontario and the five excluded-region
 gas utilities still have no live output.
 Counts include retained non-building reference records, not only building tariffs.
@@ -18,11 +18,11 @@ all three territories are excluded from this run, not removed from the database
 or website. Provincial off-grid service in Quebec and Newfoundland and Labrador
 remains in scope. No additional inventory utilities are being registered.
 
-**Current checkpoint:** Regional Batch 7, building extras (October 5, after
-`c272a6f`; Deploy Site for `c272a6f` succeeded). There are
-**188 latest live records at all 16 target utilities** and **733 passing tests**. No
+**Current checkpoint:** Regional Batch 8, conditions and remaining extras (October 5,
+after `8a88448`; Deploy Site for `8a88448` succeeded). There are
+**191 latest live records at all 16 target utilities** and **762 passing tests**. No
 target utility is seed-only, and none is catalogue-complete except SaskPower's audited
-building scope. Local history contains 1,411 snapshots; prior snapshots and non-target
+building scope. Local history contains 1,464 snapshots; prior snapshots and non-target
 records were unchanged by the batch.
 
 **Historical starting baseline:** 382 passing tests, 87 latest in-scope live records,
@@ -33,8 +33,8 @@ class does not establish complete building coverage.
 
 | Priority | Utility queue | Next work |
 |---|---|---|
-| Gas catalogue gaps | FortisBC Energy; Energir; Heritage/Eastward; Liberty NB; SaskEnergy; Centra Gas | FortisBC Rates 6/7, Fort Nelson 4/5 (no price table) and Revelstoke propane; Energir D5, inventory adjustments, load-factor formula and fixed-price/renewable supply; Liberty CGS/ICGS (process loads) and marketer prices; SaskEnergy small industrial/fees; Centra PUB conditions |
-| Remaining electricity audits | BC Hydro; FortisBC Electric; Hydro-Quebec; Manitoba Hydro; NB Power; Nova Scotia Power; Maritime Electric; Newfoundland Power; NL Hydro | Finish the class, optional-product, component and fixture gaps in the utility rows below; maintain completed SaskPower building coverage |
+| Gas catalogue gaps | FortisBC Energy; Energir; Heritage/Eastward; Liberty NB; SaskEnergy; Centra Gas | FortisBC Rates 6/7 (industrial, skipped) and Fort Nelson 4/5 (no price table); Energir D5, load-factor formula and fixed-price/renewable supply; Liberty CGS/ICGS (process loads) and marketer prices; SaskEnergy small industrial/fees (no published fee date); Centra fixed-term commodity prices |
+| Remaining electricity audits | BC Hydro; FortisBC Electric; Hydro-Quebec; Manitoba Hydro; NB Power; Nova Scotia Power; Maritime Electric; Newfoundland Power; NL Hydro | NL Hydro net metering/commissioning first; then the class, optional-product, component and fixture gaps in the utility rows below; maintain completed SaskPower building coverage |
 
 Utility parser and fixture work may proceed in parallel. Shared tests, registry,
 database writes, exports, documentation and publication are integrated serially.
@@ -74,9 +74,9 @@ See the [gap report](live_parser_gap_report.md) for detailed findings and
 
 | Utility | Live tariffs / source-check date | Implemented path and supported scope | Next work |
 |---|---|---|---|
-| BC Hydro | 9 / Oct 5 | Approved PDF: tiered 1101, flat 1151, each +2101 TOD, closed dual-fuel 1105; business 1300/1500/1600 (pages 97-107) with RS1901/1904 riders, conditional discounts and Section 11 standard service charges | Power-factor surcharge unit; industrial/irrigation/lighting/EV/IPP/net metering skipped |
+| BC Hydro | 9 / Oct 5 | Approved PDF: tiered 1101, flat 1151, each +2101 TOD, closed dual-fuel 1105; business 1300/1500/1600 (pages 97-107) with RS1901/1904 riders, conditional discounts, Section 11 standard service charges and the section 7.2 conditional power-factor surcharge (ten bands, fraction of Rate section charges) | Industrial/irrigation/lighting/EV/IPP/net metering skipped |
 | FortisBC Electric | 9 / Oct 5 | Approved PDF 1/2A/20/21/22A/23A plus large commercial primary RS30/RS32 (500 kVA) and optional RS85 Green Power | RS31/33 industrial and RS37/38 skipped; RS96 EV, RS95/91 have no building price |
-| Hydro-Quebec | 20 / Oct 5 | D/DP/DM/DN/DT/Flex D, Winter Credit D/G, G/M, Inukjuak DN dual-energy, G9, Flex G/M/G9, three space-heating dual-energy rates, net-metering options I/III; every component carries source URL/detail/date | Rate M net-metering option I and other business options remain; industrial L/LG/H/MA and GD/BR excluded; temperature/event conditions are not calculated bills |
+| Hydro-Quebec | 21 / Oct 5 | D/DP/DM/DN/DT/Flex D, Winter Credit D/G, G/M, Inukjuak DN dual-energy, G9, Flex G/M/G9, three space-heating dual-energy rates, net-metering options I/III and Option I for Rate M (application 4.28, up to 1,000 kW); every component carries source URL/detail/date | Other business options remain; industrial L/LG/H/MA and GD/BR excluded; temperature/event conditions are not calculated bills |
 | Manitoba Hydro | 12 / Oct 5 | HTML: residential (standard, seasonal, diesel; >200 A basic charge), GS small/medium/large/seasonal, diesel GS and diesel government/First Nation education | Industrial/curtailable/lighting skipped; preserve kVA and seasonal rules |
 | SaskPower | **41 / Oct 1** | **Audited building schedules implemented**; six source fixtures; total includes reference records | Monitor current sources; no remaining identified building-schedule parser gap in the audited catalogue |
 | NB Power | 3 / Oct 1 | HTML: residential, GS1, small industrial | Remaining building-service schedules and fixtures |
@@ -225,11 +225,11 @@ utility is yet certified complete for its published building catalogue.
 | Registry utility | Region / campaign | Latest live records | Implemented path and remaining work |
 |---|---|---|---|
 | Enbridge Gas | ON / excluded | 0 | Seed verification; legacy rate zones and full component extraction remain deferred |
-| Énergir | QC / live, partial catalogue | 4 / Oct 5 | Default Rate D1 (residential and business listings) from the pricing page's linked October 1, 2026 tariff PDF: seven basic-fee bands, nine daily distribution blocks, supply, transportation, conditional load balancing and renewable-gas socialization, cap-and-trade (CTEAS); D3 and D4 (article 14.3) with subscribed-volume bands in $/m³/day and conditional above-subscribed withdrawal/load-balancing prices. Remaining: interruptible D5, inventory-related adjustments, load-factor formula, rate reductions, fixed-price/renewable supply |
-| FortisBC Energy | BC / live, partial catalogue | 9 / Oct 5 | Rates 1/2/3 for Mainland/Vancouver Island and Fort Nelson (July 1, 2026; $/day basic, $/GJ components) with the BC carbon-tax elimination notice required; Rate 5 General Firm Service (basic $469.00 per month as the tariff prints it) and seasonal Rate 4 (Apr 1-Nov 1) for Mainland/Vancouver Island from the approved schedules. Residential Rate 1 Revelstoke propane added (own motor-fuel-tax carbon evidence). Remaining: business Revelstoke ambiguity, Rates 6/7, Fort Nelson 4/5 (no published price table), marketer prices |
+| Énergir | QC / live, partial catalogue | 4 / Oct 5 | Default Rate D1 (residential and business listings) from the pricing page's linked October 1, 2026 tariff PDF: seven basic-fee bands, nine daily distribution blocks, supply, transportation, conditional load balancing and renewable-gas socialization, cap-and-trade (CTEAS); D3 and D4 (article 14.3) with subscribed-volume bands in $/m³/day and conditional above-subscribed withdrawal/load-balancing prices. Inventory-related adjustments audited October 5: customer-specific price-difference adjustments/credits from each customer's storage parameters with no published unit price, so documented and never priced. Remaining: interruptible D5, load-factor formula, rate reductions, fixed-price/renewable supply |
+| FortisBC Energy | BC / live, partial catalogue | 11 / Oct 5 | Rates 1/2/3 for Mainland/Vancouver Island and Fort Nelson (July 1, 2026; $/day basic, $/GJ components) with the BC carbon-tax elimination notice required; Rate 5 General Firm Service (basic $469.00 per month as the tariff prints it) and seasonal Rate 4 (Apr 1-Nov 1) for Mainland/Vancouver Island from the approved schedules. Residential Rate 1 and Commercial Rates 2/3 Revelstoke propane (business classes require the approved tariff index's Revelstoke availability plus residential propane evidence; each class fails independently). Remaining: Rates 6/7 (industrial, skipped), Fort Nelson 4/5 (no published price table), marketer prices |
 | ATCO Gas | AB / excluded | 0 | Seed verification; current approved delivery classes/riders remain deferred |
 | EPCOR Natural Gas | AB registry entry / excluded | 0 | Seed verification; product, jurisdiction and identity still need confirmation |
-| Centra Gas Manitoba | MB / live, partial catalogue | 12 / Oct 2 | Residential/commercial Sales/T-service/marketer variants; full PUB class/demand/alternate-supply conditions and fixed-term products remain under review |
+| Centra Gas Manitoba | MB / live, partial catalogue | 12 / Oct 5 | Residential/commercial Sales/T-service/marketer variants. October 5: approved PUB schedule (November 1, 2025, Order 138/25) now required for annual-volume boundaries, one-year elections/contracts, Mainline pressure, winter-month billing demand, T-service nomination and interruptible alternate-supply pass-through; missing context rejects only affected classes. Fixed-term commodity contracts noted but not priced |
 | SaskEnergy | SK / live, partial catalogue | 6 / Oct 2 | Residential/small/large-commercial full/delivery-only variants; small-industrial applicability, fees and municipal-payment scope remain under audit |
 | Heritage Gas / Eastward Energy | NS / live, partial catalogue | 3 / Oct 5 | Residential and tiered General Service from the October 2026 monthly rate table linked by 'View Rates', cross-checked with page summaries; dated zero federal charge note required; municipal riders A/B as percentages; Rate Class 3 ($1,995.54/month, $0.167/GJ, $30.85 per GJ Billing Demand/month, unit and rule from the approved tariff PDF). Rate Class 4 is negotiated per site and unpublished (exclusion, not a parser gap) |
 | Liberty Utilities NB / Natural Gas NB | NB / live, partial catalogue | 4 / Oct 5 | SGS, MGS, LGS (January 1, 2025 distribution; alternative customer charges; LGS seasonal blocks) and Off-Peak Service ($50.00/month, April-November eligibility, December-March overrun note) with the current Liberty Utility Gas month and CRA New Brunswick evidence. CGS/ICGS are process-load exclusions; marketer prices not included |
@@ -587,7 +587,23 @@ PUB conditions), then the electricity catalogue audits listed above. Targeted se
 `FortisBCEnergyLive`, `EnergirLive`, `HeritageGasLive`, `LibertyGasNBLive` and
 `RegionalBatchStorage`. Keep ON/AB/YT/NT/NU excluded and shared integration serial.
 
-## Current Checkpoint: Regional Batch 7 — Building extras (2026-10-05)
+## Current Checkpoint: Regional Batch 8 — Conditions and remaining extras (2026-10-05)
+
+Follows `8a88448` (Deploy Site succeeded); industrial classes remain skipped per user.
+
+- **BC Hydro 9 live:** Terms and Conditions section 7.2 (PDF pages 53-54) power-factor surcharge added to business 1300/1500/1600 as ten conditional bands in the source unit "fraction of Rate section charges" (lagging below 90%; nil at 90%+; none for leading). Missing/malformed clause rejects business records only.
+- **Centra Gas 12 live:** approved PUB schedule conditions (annual-volume boundaries, one-year elections/contracts, Mainline pressure, winter billing demand, T-service 200 GJ/day nomination, interruptible alternate-supply pass-through) stamped on eligibility/notes and demand sources; fixed-term commodity noted, not priced.
+- **FortisBC Energy 11 live (was 9):** Commercial Rates 2/3 Revelstoke propane, authorized by the approved tariff index and residential propane evidence.
+- **Hydro-Québec 21 live (was 20):** Net Metering Option I for Rate M (application 4.28, up to 1,000 kW) with the conditional surplus-bank reset credit.
+- **Energir 4 live (unchanged):** inventory-related adjustments audited; customer-specific, no published unit price, so documented and not priced. Tests prove no inventory component is invented.
+
+**Verified:** 762 tests pass. The guarded store validated all 53 records (9/12/11/21) as live with complete component sources, appended 53 snapshots (1,464 total) and left prior snapshots and non-target tariffs unchanged. Database validation: 0 errors.
+
+**Current counts:** 678 versions / 4,370 components / 198 stored live / 480 seed; 193 latest live across 18 utilities; 191 latest live across the 16 target utilities.
+
+**Exact next work:** NL Hydro net metering/commissioning (Schedule of Rates July 2026; NM class was logged as unmodelled), then the remaining non-industrial catalogue gaps in the utility rows (Energir D5/load-factor/fixed-price supply, Liberty marketer prices, SaskEnergy fees once dated, Centra fixed-term prices, other HQ business options, Yukon OCR outside this campaign). Industrial classes are skipped per user. Keep ON/AB/YT/NT/NU excluded.
+
+## Historical Checkpoint: Regional Batch 7 — Building extras (2026-10-05)
 
 Follows `c272a6f` (Deploy Site succeeded); industrial L/LG/H/MA, GD/BR and Rates 6/7 skipped per user.
 
