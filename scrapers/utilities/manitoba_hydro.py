@@ -302,23 +302,17 @@ class ManitobaHydroScraper(BaseScraper):
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
         """Attempt to parse rates from the live Manitoba Hydro website."""
         try:
-            # Fetch both rate pages
-            residential_html = self.fetch_page(RESIDENTIAL_URL)
-            commercial_html = self.fetch_page(COMMERCIAL_URL)
-
-            # Check if pages are JS-rendered (would need a headless browser)
-            if detect_js_rendered(residential_html):
-                self.logger.warning("Residential page appears JS-rendered — cannot parse")
-                return None
-            if detect_js_rendered(commercial_html):
-                self.logger.warning("Commercial page appears JS-rendered — cannot parse")
-                return None
-
-            # Parse each page
-            residential_records = self._parse_residential(residential_html)
-            commercial_records = self._parse_commercial(commercial_html)
-
-            live_records = residential_records + commercial_records
+            live_records: list[TariffRecord] = []
+            for url, parse in ((RESIDENTIAL_URL, self._parse_residential),
+                               (COMMERCIAL_URL, self._parse_commercial)):
+                try:
+                    html = self.fetch_page(url)
+                    if detect_js_rendered(html):
+                        self.logger.warning("Manitoba Hydro page appears JS-rendered: %s", url)
+                        continue
+                    live_records.extend(parse(html))
+                except Exception as exc:
+                    self.logger.warning("Manitoba Hydro page unavailable: %s: %s", url, exc)
             if not live_records:
                 self.logger.warning("Could not parse any tariffs from live pages")
                 return None

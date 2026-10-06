@@ -13,39 +13,37 @@ service: the tariffs needed for building electricity, heating and other building
 Tariff eligibility still comes from the utility's published schedule; this project
 does not determine building-code applicability or certify NECB compliance.
 
-Agricultural and oil-field processes, irrigation, standalone street lighting, wholesale
-and other non-building-specific services are **not completion requirements**. Already
+Process-specific farm and oil-field service, irrigation, NGV fuelling, EV charging,
+lighting, wholesale/reseller and standby-only service are **not completion requirements**. Already
 implemented schedules and data remain as reference, including farm/oil-field work,
 but further expansion of those classes is deferred. Shared general-service tariffs may
 still be relevant to buildings even when the utility also offers them to other users.
 Inventory counts below include reference-only records, not just building tariffs.
 
-## Current Status (2026-10-02)
+## Current Status (2026-10-06)
 
 The framework and website are implemented; **nationwide live-rate coverage is not complete**.
-The export combines October 1 CI and targeted BC Hydro/SaskPower/Yukon observations
-with October 2 updates to Hydro-Quebec, NL Hydro, SaskEnergy, FortisBC Electric,
-Nova Scotia Power and Centra Gas. The latest implementation milestones are
-`6cdbc67` and `9b5980d`; the latter's GitHub Pages deployment succeeded.
-The export was regenerated on **2026-10-05** after the eighth regional (conditions and remaining extras) batch. History was preserved.
+The export was regenerated on **2026-10-06** after batch 9. History was preserved.
 A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
 
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
-| Stored tariff versions / components | 678 / 4,370, including history and older estimates |
-| Live-sourced tariffs | **193 latest tariffs across 18 utilities**; 198 stored live versions |
-| Active regional campaign | **191 latest live records across all 16 target utilities** |
-| Remaining seed-only campaign utilities | **0**; every target utility still has recorded catalogue gaps |
+| Stored tariff versions / components | 694 / 4,453, including history and older estimates |
+| Live-sourced tariffs | **209 latest tariffs across 18 utilities**; 214 stored live versions |
+| Active regional campaign | **207 latest live records across all 16 target utilities** |
+| Remaining seed-only campaign utilities | **0**; SaskPower's scoped building schedules are audited, while other targets have recorded gaps |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Deterministic tests | **762 passing** on Python 3.11 |
+| Historical snapshots | **1,570**; batch 9 appended 106 without changing prior snapshots |
+| DB validation | **0 errors, 2 existing AESO warnings** |
+| Deterministic tests | **801 passing** across 8 modules |
 
-Live output currently includes BC Hydro (9), FortisBC Electric (9), Manitoba Hydro (12), NB Power (9),
-Nova Scotia Power (14), Hydro-Quebec (21), Maritime Electric (10), Newfoundland Power (8),
-NL Hydro (18), SaskPower (41), SaskEnergy (6), Centra Gas Manitoba (12), FortisBC Energy (11),
-Energir (4), Heritage/Eastward (3), Liberty NB (4), FortisAlberta (1), and Yukon Energy (1).
+Live output currently includes BC Hydro (11), FortisBC Electric (11), Manitoba Hydro (12), NB Power (10),
+Nova Scotia Power (14), Hydro-Quebec (25), Maritime Electric (10), Newfoundland Power (11),
+NL Hydro (21), SaskPower (41), SaskEnergy (6), Centra Gas Manitoba (12), FortisBC Energy (11),
+Energir (5), Heritage/Eastward (3), Liberty NB (4), FortisAlberta (1), and Yukon Energy (1).
 These counts use the latest version per tariff, not complete utility catalogues.
 They include conditional products, adjustment-only records and retained non-building
 references, not a count of complete building classes. The two live records outside
@@ -57,75 +55,13 @@ and [parser gap report](docs/live_parser_gap_report.md) for class-level details.
 A successful scrape can return only seeds; success counts and an empty missing-data log
 do **not** prove live coverage.
 
-NSPower now includes standard residential, equipment-based time-of-day, and the two
-closed-enrollment pilots. The October pilot records are explicitly **conditional interim
-tariff variants**, not a claim that every participant is currently on that rate. The
-published November 1 transition is tested and is not activated early. Base energy,
-FAM, DSM, storm and optional Green Power charges remain separate. Participant restoration
-status and remaining building business/rider coverage still need review. MURB Rate
-89 and two optional solar-program adjustments are now parsed from the approved
-book. Its unusual MURB weekend/holiday peak-price note was checked visually.
-
-Hydro-Quebec now includes domestic demand DP, grandfathered bulk-metered DM and
-northern off-grid DN, alongside D/G/M. DP preserves seasonal demand; DM/DN retain
-daily multiplier-based charges and energy allowances. DN excludes Schefferville
-and defaults to multiplier one unless its older DM-eligibility exception applies.
-Conditional credits remain separate; minimum bills are conditions, not extra charges.
-DT and Flex D now preserve temperature switching and notified-event pricing,
-respectively. The closed Winter Credit option retains reference-energy and notice
-rules as a conditional adjustment to Rate D. Inukjuak, net metering and remaining
-building business options still need review.
-
-The active long run covers **16 registered utilities outside Ontario, Alberta and
-the territories**, with parallel utility work and serial data/publication gates.
-NL Hydro now parses 18 Island/Labrador/diesel building-service and seasonal-option
-records. SaskEnergy has six residential/commercial full-service and delivery-only
-variants; missing current carbon evidence fails closed. Private retailer commodity
-prices are not included in delivery-only records. None of these counts certifies
-the remaining catalogue or calculates a complete bill.
-
-The second regional batch adds six FortisBC Electric schedules, including its
-current flat residential and closed TOU products, and twelve Centra gas service
-variants. Credits, kW/kVA alternatives and native volumetric demand units remain
-explicit.
-
-The third regional batch (October 5) gives every target utility live output. FortisBC
-Energy parses Rates 1/2/3 for Mainland/Vancouver Island and Fort Nelson (daily basic
-charge, $/GJ components); Energir parses default Rate D1 from its current tariff PDF
-(volume-band basic fees, daily distribution blocks, supply, transportation, conditional
-load balancing and renewable-gas socialization, and cap-and-trade); Eastward Energy
-parses Residential and tiered General Service from its monthly rate table; Liberty NB
-parses SGS/MGS/LGS with alternative customer charges and LGS seasonal blocks. Each
-requires dated current carbon evidence: BC's carbon tax elimination, Quebec's
-cap-and-trade price, Eastward's own zero federal-charge note and the CRA's New Brunswick
-period. Larger contract/interruptible classes, marketer prices and inventory
-adjustments were recorded gaps at that checkpoint.
-
-The fourth regional batch (October 5) adds gas contract and large-volume classes.
-
-**Regional Batch 6 — electricity building classes (2026-10-05):** BC Hydro business 1300/1500/1600 (approved tariff pages 97-107, RS1901/1904 riders, conditional discounts, Section 11 standard service charges; 9 live), Manitoba Hydro residential seasonal/diesel and diesel commercial (12), FortisBC Electric RS30/RS32 large commercial primary and RS85 Green Power (9) and NSPower business 10/11/12 (10). Industrial classes were skipped. Remaining at that checkpoint: HQ Inukjuak/net metering/business options, NSPower pilots 72/73/82/83, NL Hydro net metering, Centra PUB conditions, BC Hydro power-factor surcharge unit and gas gaps.
-
-**Regional Batch 7 — building extras (2026-10-05):** Hydro-Quebec adds Inukjuak, G9, Flex G/M/G9, three dual-energy rates, Winter Credit G and net metering I/III (20); NSPower adds conditional business pilots 72/73/82/83 (14); FortisBC Energy adds Residential Rate 1 Revelstoke propane (9).
-
-**Regional Batch 8 — conditions and remaining extras (2026-10-05):** BC Hydro business records carry the Terms and Conditions section 7.2 power-factor surcharge as ten conditional bands (fraction of Rate section charges). Centra Gas requires the approved PUB schedule for eligibility, billing-demand, T-service and alternate-supply conditions. FortisBC Energy adds Commercial Rates 2/3 Revelstoke propane (11). Hydro-Quebec adds Net Metering Option I for Rate M (21). Energir inventory-related adjustments were audited: customer-specific, with no published unit price, so they are documented and never priced.
-FortisBC Energy parses Rate 5 General Firm Service (the tariff prints its basic
-charge monthly, although the business page says daily) and seasonal Rate 4 from the
-approved schedules; Fort Nelson Rates 4/5 have no published price table. Energir
-parses D3 and D4 with subscribed-volume bands in $/m³/day and conditional
-above-subscribed-volume and load-balancing prices. Eastward parses Rate Class 3 with
-its demand charge per GJ of Billing Demand from the approved tariff PDF (Rate Class 4
-is negotiated per site, not published). Liberty NB parses Off-Peak Service with its
-April-November eligibility and seasonal overrun as conditions. Gas gaps at that checkpoint:
-Revelstoke propane, Rates 6/7, Energir D5/inventory adjustments/load-factor formula,
-Liberty CGS/ICGS and marketer prices.
-
-**Resume order:** NL Hydro net metering/commissioning, then the remaining non-industrial
-building-catalogue and component gaps at the sixteen live target utilities (Energir D5/load-factor
-formula/fixed-price supply, Liberty marketer prices, SaskEnergy fees once dated, Centra fixed-term
-prices and the electricity rows in the matrix), with shared tests, registry, database/export and publication handled serially.
-SaskPower's audited building schedules are implemented; the other utilities still have
-recorded catalogue or verification gaps. No source-blocked or unaudited class is
-considered finished.
+The active campaign covers 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL;
+Ontario, Alberta and the territories are excluded from this run. From October 6,
+building-related industrial general facility classes are in scope, including those
+defined by size, voltage or interruptibility. Process-specific farm, oil-field,
+irrigation, NGV fuelling, EV charging, lighting, wholesale/reseller and standby-only
+services remain excluded. See the [coverage matrix](docs/phase5_completion_matrix.md)
+for the queue and the [parser gap report](docs/live_parser_gap_report.md) for parser rules.
 
 ---
 
@@ -133,10 +69,10 @@ considered finished.
 
 1. **Scrapes** utility rate data from official Canadian utility websites.
 2. **Stores** everything in a normalized SQLite database that preserves every rate detail — not just a single "cost per kWh" number.
-3. **Tracks local history** — each stored scrape appends snapshots. Keep the database to preserve them; durable history across CI runs still needs an explicit restore/save mechanism.
+3. **Tracks history** — each stored scrape appends snapshots. Keep the local database; CI restore/save via a release asset is implemented but awaits its first CI run verification.
 4. **Exports** the data as JSON for the GitHub Pages static site.
 5. **Serves** a browsable web interface with multi-select filters, confidence indicators, source attribution, and an interactive Market Pricing dashboard with heatmaps and charts.
-6. **Provides automation** through monthly scraping, separate Pages deployment, and non-blocking source-health workflows. Publication reliability is a remaining work item.
+6. **Provides automation** through monthly scraping, separate Pages deployment, and non-blocking source-health workflows. The new publication handoff still awaits its first CI run verification.
 
 ---
 
@@ -287,8 +223,8 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 762 deterministic tests across 8 test modules
-│   ├── fixtures/             ← Source-derived fixtures for nine utility modules; other tests also use inline text
+├── tests/                    ← 801 deterministic tests across 8 test modules
+│   ├── fixtures/             ← Source-derived fixtures; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
 │
@@ -356,17 +292,22 @@ See [docs/adding-a-utility.md](docs/adding-a-utility.md) for a detailed guide.
 
 The [Monthly Scrape workflow](.github/workflows/scrape.yml) runs on the 1st at
 08:00 UTC or on manual dispatch. It installs dependencies and Chromium, runs tests,
-scrapes, validates, rejects empty exports, and commits updated data.
+scrapes, validates, rejects empty exports, and commits updated data. It now restores
+`data/db/rates.db` from the GitHub Release asset tagged `data-history` and uploads it
+only after validation and export succeed. Failure issues cover tests, scraping and
+validation/export failures.
 
-[Deploy Site](.github/workflows/deploy.yml) is a separate push/manual workflow.
+[Deploy Site](.github/workflows/deploy.yml) is a separate push/manual workflow with a
+`workflow_run` trigger after a successful Monthly Scrape; it checks out `main`.
 [Non-blocking Source Health](.github/workflows/source-health.yml) runs on the 15th
-and uploads a dry-run log without publishing.
+and uploads a dry-run log without publishing; it now installs Playwright Chromium.
 
-**Remaining operational gaps:** the default Actions token's push does not automatically
-trigger the separate push workflow; failure notification paths need verification;
-source health lacks browser installation; and the ignored database has no explicit
-CI restore/save step. Local snapshots are append-only, but durable monthly CI history
-and automatic deployment must not be assumed. Manual workflows are available in **Actions**.
+**Remaining operational gaps:** these workflow changes are implemented but have not
+been exercised in CI. Verify release-asset history restoration/upload, failure issues,
+browser-enabled source health and the deployment handoff on the first CI run; do not
+assume durable CI history or automatic deployment yet. GitHub Pages must use **GitHub
+Actions** as its source, and `workflow_run` fires from the default branch. Manual
+workflows are available in **Actions**.
 
 ---
 
@@ -469,12 +410,12 @@ features, **not evidence that all registered utilities or published classes are 
 |---|---|---|
 | 5A: Baseline | Dated inventory, honest README, shared class-level coverage ledger | Updated October 1 |
 | 5B: SaskPower | Standard/bulk-metered/diesel residential, general-service/voltage/TOU and renewable-access schedules | Audited building scope implemented October 1; 41 live tariffs total including retained non-building reference records |
-| 5C: Residential products and building-service expansion | Review optional residential plans and retain building-service gaps | Two regional batches delivered HQ optional products, FortisBC Electric schedules and NSPower MURB/solar; remaining building catalogues still incomplete |
-| 5D: Provincial/territorial depth | Building-class audits at already-live utilities; later territorial coverage | NL Hydro 18 records implemented; current regional campaign excludes the territories |
-| 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | SaskEnergy/Centra live variants implemented; four remaining in-scope gas utilities next. ON/AB gas excluded from this run |
+| 5C: Residential products and building-service expansion | Review optional residential plans and retain building-service gaps | Nine batches delivered; remaining building catalogues still incomplete |
+| 5D: Provincial/territorial depth | Building-class audits at already-live utilities; later territorial coverage | NL Hydro 21 records implemented; current regional campaign excludes the territories |
+| 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | All six in-scope gas utilities have live output; building-service gaps remain. ON/AB gas excluded from this run |
 | 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Planned |
 | 5G: Ontario | Reconcile 53 registry identities; source approved distributor tariffs; pilot three layouts before rollout | Dedicated later campaign |
-| 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Independent operational follow-up |
+| 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; first CI run verification and provenance reporting remain |
 
 **Definition of done for each utility:** account for the standard published classes
 relevant to building energy costs, including single-family homes,

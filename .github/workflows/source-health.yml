@@ -19,6 +19,8 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt && pip install -e .
+      - name: Install Playwright browser
+        run: python -m playwright install --with-deps chromium
       - name: Exercise all official sources without publishing
         run: python -m pipeline.run_scrape --dry-run 2>&1 | tee source-health.txt
       - uses: actions/upload-artifact@v4

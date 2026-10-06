@@ -1,13 +1,16 @@
 # Deploy to GitHub Pages
 #
-# Runs automatically on every push to main — so any code change,
-# scraper data update, or site tweak triggers a fresh deploy.
+# Runs on pushes to main and after a successful monthly scrape.
 
 name: Deploy Site
 
 on:
   push:
     branches: [main]
+
+  workflow_run:
+    workflows: ["Monthly Scrape"]
+    types: [completed]
 
   # Also allow manual deploys
   workflow_dispatch:
@@ -23,6 +26,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     environment:
@@ -32,6 +36,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || github.ref }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

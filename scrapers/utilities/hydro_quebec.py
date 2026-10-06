@@ -128,6 +128,8 @@ class HydroQuebecScraper(BaseScraper):
             records = self._parse_domestic_rates(pages, effective_date)
             records.extend(self._parse_optional_domestic_rates(pages, effective_date))
             records.extend(self._parse_building_extras(pages, effective_date))
+            records.extend(self._parse_large_power_rates(pages, effective_date))
+            records.extend(self._parse_dr_leeway(pages, effective_date))
 
             rate_d = self._parse_rate_d(pdf_text)
             if rate_d:
@@ -1250,6 +1252,207 @@ class HydroQuebecScraper(BaseScraper):
             except (ValueError, IndexError) as exc:
                 self.logger.warning("Incomplete Hydro-Quebec Net Metering Option III: %s", exc)
         return records
+
+    def _parse_large_power_rates(
+        self, pages: list[DocumentPage], effective_date: str,
+    ) -> list[TariffRecord]:
+        """Read the independent large-power schedules, without estimating missing classes."""
+        by_number = {page.page_number: page for page in pages}
+        credit_page = by_number.get(152)
+        billing_page = by_number.get(154)
+        definitions = re.sub(r"\s+", " ", "\n".join(page.text for page in pages if page.text.startswith("Interpretative Provisions")))
+        credit_text = re.sub(r"\s+", " ", credit_page.text) if credit_page else ""
+        billing_text = re.sub(r"\s+", " ", billing_page.text) if billing_page else ""
+        if not credit_page or not billing_page or "Power factor improvement 12.5" not in credit_text \
+            or "permanent and significant improvement" not in credit_text \
+            or "720 consecutive hours" not in billing_text or "winter period: The period from December 1" not in definitions:
+            self.logger.warning("Missing Hydro-Quebec large-power general provisions")
+            return []
+
+        voltage = re.search(r"Credit for supply at medium or high voltage\s+12\.2(.*?)Credit for supply applicable to domestic rates\s+12\.3", credit_text)
+        loss = re.search(r"Adjustment for transformation losses\s+12\.4(.*?)Power factor improvement\s+12\.5", credit_text)
+        power_factor = re.search(r"Power factor improvement\s+12\.5(.*)$", credit_text)
+        if not voltage or not loss or not power_factor or "less than 30 days" not in voltage.group(1) \
+                or "20.689" not in loss.group(1):
+            self.logger.warning("Missing Hydro-Quebec large-power conditional credit rules")
+            return []
+        bands = re.findall(r"(\d+)\s+k\s*V(?:, but less than (\d+)\s+k\s*V)?\s+(\d+\.\d+)", voltage.group(1))
+        if len(bands) != 5 or any(float(value) <= 0 for _, _, value in bands):
+            self.logger.warning("Incomplete Hydro-Quebec large-power voltage credits")
+            return []
+
+        def clause(text: str, heading: str, article: str, end: str) -> str:
+            match = re.search(rf"{heading}\s+{article}\s+(.*?)(?={end}\s+\d+\.\d+|$)", text)
+            if not match:
+                raise ValueError(f"Missing {heading} {article}")
+            return match.group(1).strip()
+
+        def amount(text: str, pattern: str) -> float:
+            match = re.search(pattern, text)
+            if not match or float(match.group(1)) <= 0:
+                raise ValueError("Missing or invalid large-power price: " + pattern)
+            return float(match.group(1))
+
+        def build(code: str, selected: list[DocumentPage], components: list[RateComponent], notes: str, eligibility: str) -> TariffRecord:
+            detail = f"Electricity Rates Rate {code}; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+            for component in components:
+                component.source_url = PDF_URL
+                component.source_detail = component.source_detail or detail
+                component.effective_date = effective_date
+            return TariffRecord(
+                utility_name=self.utility_name, province="QC", utility_type="electricity",
+                customer_class="industrial" if code == "L" else "commercial", tariff_name=f"Rate {code} - Large Power",
+                tariff_code=code, demand_min_kw=5000, rate_structure="mixed", eligibility=eligibility,
+                effective_date=effective_date, source_url=PDF_URL, source_page=detail,
+                notes=notes + " Conditional supply-voltage credits are alternatives, not cumulative. "
+                + "Transformation-loss discount applies only to qualifying metering; Article 12.4: " + loss.group(1).strip()
+                + " Power-factor correction adjusts minimum billing demand only on request and with measured lasting improvement; Article 12.5: "
+                + power_factor.group(1).strip() + " Article 12.11 prorates monthly large-power charges over 720 hours; no bill total is calculated.",
+                components=components,
+            )
+
+        def credits() -> list[RateComponent]:
+            return [RateComponent(
+                "rebate", f"Conditional Supply Voltage Credit ({lower} to under {upper} kV)" if upper else f"Conditional Supply Voltage Credit ({lower} kV or more)",
+                -float(value), "$/kW/month", sub_component="conditional", demand_unit="kW",
+                source_detail="Article 12.2; PDF page 152",
+                notes="Only the applicable voltage band; customer must use supplied voltage or transform it at no cost to Hydro-Quebec. No credit for contracts under 30 days.",
+            ) for lower, upper, value in bands]
+
+        records: list[TariffRecord] = []
+        selected, text = self._run_section(pages, r"(?:CHAPTER\s+5|Section\s+1\s+\W?\s*Rate L\b)", r"Application\s+5\.1\b")
+        if selected:
+            try:
+                application = clause(text, "Application", r"5\.1", "Structure of Rate L")
+                structure = clause(text, "Structure of Rate L", r"5\.2", "Contract power")
+                contract = clause(text, "Contract power", r"5\.3", "Billing demand")
+                demand_rule = clause(text, "Billing demand", r"5\.4", "Condition related to the power factor")
+                factor = clause(text, "Condition related to the power factor for power demand less than 5,000 kilowatts", r"5\.5", "Optimization charge")
+                optimization = clause(text, "Optimization charge", r"5\.6", "Increase in contract power")
+                if "principally related to an industrial activity" not in application or "not be less than 5,000 kilowatts" not in contract \
+                        or "never less than the contract power" not in demand_rule or "highest real power demand" not in factor \
+                        or "Power demand excluded for billing 5.11" not in text or "Credits for reduction in or interruption of electricity supply 5.12" not in text \
+                        or "110% of the contract power" not in optimization or "monthly optimization charge" not in optimization:
+                    raise ValueError("Incomplete Rate L contract, overrun or continuation")
+                demand = amount(structure, r"\$(\d+\.\d+) per kilowatt of billing demand")
+                energy = round(amount(structure, r"(\d+\.\d+)\s*(?:\u00a2|cents?) per kilowatthour") / 100, 6)
+                daily = amount(optimization, r"\$(\d+\.\d+) per kilowatt")
+                monthly = amount(optimization, r"monthly optimization charge.*?\$(\d+\.\d+) per kilowatt")
+                components = [
+                    RateComponent("demand", "Billing Demand", demand, "$/kW/month", demand_unit="kW"),
+                    RateComponent("energy", "Energy", energy, "$/kWh"),
+                    RateComponent("demand", "Conditional Winter Daily Optimization Overrun", daily, "$/kW/day", season="winter", season_months="12,1,2,3", sub_component="conditional", demand_unit="kW", source_detail="Article 5.6; PDF page 64", notes="Only daily power exceeding 110% of contract power; total overrun amount capped at the published monthly optimization charge of $" + str(monthly) + "/kW."),
+                    *credits(),
+                ]
+                records.append(build("L", selected, components, "Contract power is the minimum billing demand; Article 5.5 power-factor difference below 5,000 kW is conditional. Article 5.12 interruption credit requires an eligible incident and written request within 60 days. " + optimization, application))
+            except ValueError as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Rate L: %s", exc)
+
+        selected, text = self._run_section(pages, r"Section\s+2\s+\W?\s*Rate L\s?G\b", r"Application\s+5\.14\b")
+        if selected:
+            try:
+                application = clause(text, "Application", r"5\.14", "Structure of Rate L G")
+                structure = clause(text, "Structure of Rate L G", r"5\.15", "Billing demand")
+                minimum = clause(text, "Minimum billing demand", r"5\.18", "Minimum billing demand of less than")
+                unused = clause(text, "Charge for unused available power", r"5\.20", "Power demand excluded for billing")
+                if "unless the contract is principally related to an industrial activity" not in application \
+                        or "never less than the minimum billing demand" not in text or "75% of the maximum" not in minimum \
+                        or "less than 5,000 kilowatts" not in minimum or "highest real power demand" not in unused \
+                        or "Condition related to the power factor for power demand less than 5,000 kilowatts 5.17" not in text \
+                        or "Credits for reduction in or interruption of electricity supply 5.22" not in text:
+                    raise ValueError("Incomplete Rate LG minimum demand, unused power or interruption rules")
+                components = [
+                    RateComponent("demand", "Billing Demand", amount(structure, r"\$(\d+\.\d+) per kilowatt of billing demand"), "$/kW/month", demand_unit="kW"),
+                    RateComponent("energy", "Energy", round(amount(structure, r"(\d+\.\d+)\s*(?:\u00a2|cents?) per kilowatthour") / 100, 6), "$/kWh"),
+                    RateComponent("demand", "Conditional Unused Available Power", amount(unused, r"\$(\d+\.\d+) per kilowatt"), "$/kW", sub_component="conditional", demand_unit="kW", source_detail="Article 5.20; PDF page 68", notes="Only if the highest real demand in the last 12 periods is below 60% of available power; charged on the shortfall, not on all demand."),
+                    *credits(),
+                ]
+                records.append(build("LG", selected, components, "Minimum billing demand is the greater of 5,000 kW and 75% of the highest wholly winter-period demand in the preceding 12 periods. Article 5.17 power-factor difference below 5,000 kW and Article 5.22 interruption credits are conditional; the latter requires a written request within 60 days. " + minimum, application))
+            except ValueError as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Rate LG: %s", exc)
+
+        selected, text = self._run_section(pages, r"Section\s+4\s+\W?\s*Rate H\b", r"Application\s+5\.25\b")
+        if selected:
+            try:
+                application = clause(text, "Application", r"5\.25", "Definition")
+                winter = clause(text, "Definition", r"5\.26", "Structure of Rate H")
+                structure = clause(text, "Structure of Rate H", r"5\.27", "Billing demand")
+                billing = clause(text, "Billing demand", r"5\.28", r"NO_NEXT_ARTICLE")
+                if "outside winter weekdays" not in application or "not offered to independent producers" not in application \
+                        or "06:00 and 22:00" not in winter or "Saturdays and Sundays" not in winter \
+                        or "24 monthly periods" not in billing or "cannot be less than 5,000 kilowatts" not in billing:
+                    raise ValueError("Incomplete Rate H eligibility or demand ratchet")
+                outside = round(amount(structure, r"(\d+\.\d+)\s*(?:\u00a2|cents?) per kilowatthour for the energy consumed outside winter weekdays") / 100, 6)
+                inside = round(amount(structure, r"(\d+\.\d+)\s*(?:\u00a2|cents?) per kilowatthour for the energy consumed on winter weekdays") / 100, 6)
+                components = [
+                    RateComponent("demand", "Billing Demand", amount(structure, r"\$(\d+\.\d+) per kilowatt of billing demand"), "$/kW/month", demand_unit="kW"),
+                    RateComponent("energy", "Energy Outside Winter Weekdays", outside, "$/kWh", tou_period="outside winter weekdays"),
+                    RateComponent("energy", "Winter Weekday Energy", inside, "$/kWh", season="winter", season_months="12,1,2,3", tou_period="winter weekday", tou_hours="06:00-22:00", notes="Business days only, excluding the published holidays; Hydro-Quebec may add winter weekends by verbal notice."),
+                    *credits(),
+                ]
+                records.append(build("H", selected, components, "Billing demand is the greater of contract power (at least 5,000 kW) and highest maximum power demand in the last 24 monthly periods. On rate change, the published 90%/75%/65% ratchets apply to L/LG or G9/M respectively. " + winter, application))
+            except ValueError as exc:
+                self.logger.warning("Incomplete Hydro-Quebec Rate H: %s", exc)
+        return records
+
+    def _parse_dr_leeway(self, pages: list[DocumentPage], effective_date: str) -> list[TariffRecord]:
+        selected, text = self._run_section(
+            pages, r"Section\s+3\s+\W?\s*Demand Response\s+\W\s*Leeway Option", r"Application\s+6\.37\b")
+        if not selected:
+            return []
+        try:
+            required = ("Application 6.37", "Definitions 6.38", "Sign-up procedure 6.39", "Eligibility 6.40",
+                        "Conditions applicable to peak demand events 6.42", "Peak demand event notifications 6.43",
+                        "Credit 6.44", "Termination 6.45")
+            if len(selected) != 5 or any(item not in text for item in required):
+                raise ValueError("Missing Demand Response Leeway continuation")
+            if not re.search(r"Rate DM, Rate DP, Rate G, Rate H, Rate M, Rate G9 or Rate L\s?G", text) \
+                    or "Rate L contract" not in text or "lower than 50,000 kilowatts" not in text \
+                    or "Demand Response - Commitment Option" not in text.replace("\u2013", "-") \
+                    or "communicating meter" not in text or "off-grid system or a municipal system" not in text \
+                    or "September 30" not in text or "less than 10 kilowatts" not in text \
+                    or "No later than 15:00" not in text or "No later than noon" not in text \
+                    or "Maximum number of events per day: 2" not in text or "Minimum interval between 2 events (hours): 7" not in text \
+                    or "no credit is granted" not in text.lower():
+                raise ValueError("Missing Demand Response Leeway eligibility, event or credit rules")
+            credit = re.search(r"Credit\s+6\.44\s+(.*?)Termination\s+6\.45", text)
+            if not credit:
+                raise ValueError("Missing Demand Response Leeway credit clause")
+            weekday = re.findall(r"Sub-option\s+(I(?:\s+I){0,2}|I\s?V|V):\s*\$(\d+\.\d+) per kilowatt of weekday effective interruptible power", credit.group(1))
+            weekend = re.search(r"Sub-option W\s?E:\s*\$(\d+\.\d+) per kilowatt of power reduction on the weekend for a 3-hour interruption and\s*\$(\d+\.\d+) per kilowatt of power reduction on the weekend for a 4-hour interruption", credit.group(1))
+            if len(weekday) != 5 or not weekend or len({code.replace(" ", "") for code, _ in weekday}) != 5:
+                raise ValueError("Incomplete Demand Response Leeway credit schedule")
+            components = [RateComponent(
+                "rebate", f"Conditional Weekday Curtailment Credit (Sub-option {code.replace(' ', '')})",
+                -float(value), "$/kW of effective interruptible power/winter", season="winter", season_months="12,1,2,3",
+                sub_component="conditional", demand_unit="kW", source_detail="Article 6.44; PDF page 97",
+                notes="Mutually exclusive weekday sub-options; requires accepted enrollment and at least 10 kW of actual effective interruption during notified winter events. No credit is assumed for an unenrolled customer.",
+            ) for code, value in weekday]
+            components.extend(RateComponent(
+                "rebate", f"Conditional Weekend Curtailment Credit ({duration}-hour event)",
+                -float(value), "$/kW of weekend power reduction/event", season="winter", season_months="12,1,2,3",
+                sub_component="conditional", demand_unit="kW", source_detail="Article 6.44; PDF page 97",
+                notes="Optional Sub-option WE requires a weekday sub-option and actual weekend power reduction during a notified event.",
+            ) for duration, value in ((3, weekend.group(1)), (4, weekend.group(2))))
+            detail = "Electricity Rates Demand Response - Leeway Option; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+            for component in components:
+                component.source_url = PDF_URL
+                component.effective_date = effective_date
+            return [TariffRecord(
+                utility_name=self.utility_name, province="QC", utility_type="electricity", customer_class="commercial",
+                tariff_name="Demand Response - Leeway Option (Business)", tariff_code="DR_LEEWAY_BUSINESS",
+                sub_class="conditional adjustment to eligible base tariff", rate_structure="mixed",
+                effective_date=effective_date, source_url=PDF_URL, source_page=detail,
+                eligibility="Only accepted Rate DP, DM, G, M, G9, H, LG or eligible Rate L contracts (<50,000 kW prior demand); communicating meter; no off-grid or municipal service; no simultaneous Commitment Option.",
+                notes="Base-rate energy and demand charges remain separate. Credits depend on the accepted weekday sub-option and measured winter curtailment; WE weekend credits require an enrolled weekday option. "
+                "Events occur only in the published winter peak hours with holidays excluded; at most two per day, seven hours apart, up to the selected 20-100-hour winter duration. "
+                "Article 6.44 also has a capped alternative when no weekday events are called, and permits denial after insufficient participation; neither a bill total nor an automatic credit is calculated. "
+                "Enrollment and same-day/prior-day notices are governed by Articles 6.39-6.43. " + detail,
+                components=components,
+            )]
+        except ValueError as exc:
+            self.logger.warning("Incomplete Hydro-Quebec business Demand Response Leeway: %s", exc)
+            return []
 
     # ── Rate D parser ─────────────────────────────────────────
 

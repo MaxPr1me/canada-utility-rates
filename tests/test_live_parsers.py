@@ -411,9 +411,9 @@ class TestNBPowerBuildingLive:
         assert sum(c.component_type == "demand" for c in r.components) == 4
         assert _NBP_comp(r, "Off-Peak Energy Charge (LF 15% < LF <= 20%)").charge_value == 0.0449
 
-    def test_no_industrial_street_lighting_or_one_time_fee_records(self):
+    def test_no_street_lighting_or_one_time_fee_records(self):
         names = " ".join(self.recs).lower()
-        assert "large industrial" not in names and "dusk" not in names and "flood" not in names
+        assert "dusk" not in names and "flood" not in names
 
     # ── Independent failure (mutation rejections) ──────────────────
 
@@ -4286,3 +4286,649 @@ def test_hqm_common_credit_value_propagates(HQM_document):
     live = HQX_build(HQM_document, edits=[(26, "4.730", "5.125")])
     assert live["NET_METERING_I_M"].components[0].charge_value == -0.05125
     assert live["NET_METERING_I"].components[0].charge_value == -0.05125
+
+
+# ======================================================================
+# NL Hydro industrial firm and net metering (batch 9)
+# ======================================================================
+from scrapers.utilities.nl_hydro import NLHydroScraper as NLB9_NLHydroScraper
+import copy
+import json
+from datetime import date
+from pathlib import Path
+
+from pipeline.export_json import derive_provenance
+from scrapers.utils.parsing import DocumentPage
+
+
+def NLB9__document():
+    return json.loads((Path(__file__).resolve().parent / "fixtures" / "nl_hydro.json").read_text(encoding="utf-8"))
+
+
+def NLB9__parse(document):
+    scraper = NLB9_NLHydroScraper()
+    pages = [DocumentPage(**page) for page in document["pages"] + document["wp1_pages"]]
+    records = scraper.parse_schedule_pages(pages, document["source_url"], today=date(2026, 10, 6))
+    return {record.tariff_code: record for record in records}
+
+
+def test_nlb9_nl_hydro_industrial_firm_prices_and_provenance():
+    document = NLB9__document()
+    records = NLB9__parse(document)
+    assert len(records) == 21
+    island = records["IND-FIRM"]
+    assert [(part.charge_value, part.charge_unit) for part in island.components[:4]] == [
+        (10.73, "$/kW/month"), (0.04428, "$/kWh"), (0.01987, "$/kWh"), (0.00007, "$/kWh")]
+    assert all(part.sub_component == "conditional" and part.charge_unit == "$/year"
+               for part in island.components[4:])
+    labrador = records["LAB-IND"]
+    assert [(part.charge_value, part.charge_unit) for part in labrador.components] == [
+        (1.08, "$/kW/month"), (0.41, "$/kW/month"), (29.22, "$/MWh"), (78.61, "$/MWh")]
+    assert labrador.components[0].sub_component == "conditional"
+    assert "forecast-weighted" in labrador.notes
+    for code in ("IND-FIRM", "LAB-IND", "NM"):
+        record = records[code]
+        assert record.effective_date == "2026-07-01"
+        assert derive_provenance(record.confidence, record.notes) == "live"
+        assert all(part.source_url == document["source_url"] and part.source_detail and
+                   part.effective_date == record.effective_date for part in record.components)
+
+
+def test_nlb9_nl_hydro_net_metering_rule_is_conditional_not_a_flat_price():
+    option = NLB9__parse(NLB9__document())["NM"]
+    assert option.rate_structure == "mixed"
+    assert len(option.components) == 1
+    credit = option.components[0]
+    assert credit.charge_value == -1.0
+    assert credit.charge_unit == "fraction of applicable class energy rate per eligible kWh"
+    assert credit.sub_component == "conditional"
+    assert "not a replacement tariff" in option.notes
+    assert "variable rates" not in credit.charge_unit
+
+
+def test_nlb9_nl_hydro_industrial_and_option_pages_fail_independently():
+    baseline = NLB9__parse(NLB9__document())
+    for page_number, expected in ((9, "IND-FIRM"), (63, "LAB-IND"), (68, "NM")):
+        document = copy.deepcopy(NLB9__document())
+        document["wp1_pages"] = [page for page in document["wp1_pages"]
+                                 if page["page_number"] != page_number]
+        assert set(NLB9__parse(document)) == set(baseline) - {expected}
+
+
+def test_nlb9_nl_hydro_industrial_source_mutations_fail_closed():
+    for page_number, old, replacement, expected in (
+        (9, "$10.73", "missing", "IND-FIRM"),
+        (10, "Corner Brook Pulp and Paper Limited", "Unknown Company", "IND-FIRM"),
+        (62, "66 kV or greater", "unknown voltage", "LAB-IND"),
+        (63, "$29.22/MWh", "unknown", "LAB-IND"),
+        (67, "5.0 MW", "unknown", "NM"),
+        (68, "Banked Energy Credits", "unknown", "NM"),
+    ):
+        document = NLB9__document()
+        page = next(page for page in document["wp1_pages"] if page["page_number"] == page_number)
+        assert old in page["text"]
+        page["text"] = page["text"].replace(old, replacement)
+        assert expected not in NLB9__parse(document)
+
+
+# ======================================================================
+# Energir D5 interruptible and RNG supply (batch 9)
+# ======================================================================
+from scrapers.utilities.energir import EnergirScraper as END5_EnergirScraper
+import json
+from datetime import date
+from pathlib import Path
+
+
+
+def END5__document():
+    path = Path(__file__).resolve().parent / "fixtures" / "energir.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def END5__parse(document):
+    pages = document["tariff_pages"] + document["d5_pages"]
+    return {record.tariff_code: record for record in END5_EnergirScraper().parse_pages(
+        {"pricing": document["pricing"]["text"], "tariff": " ".join(page["text"] for page in pages)},
+        today=date(2026, 10, 6), tariff_url=document["tariff_url"])}
+
+
+def test_end5_energir_d5_units_eligibility_and_source():
+    document = END5__document()
+    records = END5__parse(document)
+    assert set(records) == {"D1", "D3", "D4", "D5"}
+    d5 = records["D5"]
+    assert d5.tariff_name == "Commercial — Rate D5" and d5.effective_date == "2026-10-01"
+    assert "3,200 m³/day" in d5.eligibility and "Category A or B, not both" in d5.eligibility
+    delivery = [component for component in d5.components if component.component_type == "delivery"]
+    assert [(component.charge_value, component.tier_threshold) for component in delivery] == [
+        (0.15389, 3000), (0.11254, 10000), (0.09759, 30000), (0.06491, 100000),
+        (0.05401, 300000), (0.04784, None)]
+    assert all(component.charge_unit == "$/m³" and "14.4.2.1" in component.source_detail for component in delivery)
+    balancing = [component for component in d5.components if component.component_name.startswith("Load Balancing")]
+    assert [(component.charge_value, component.sub_component) for component in balancing] == [
+        (-0.01665, "conditional"), (0.02477, "conditional")]
+    assert all(component.source_url == document["tariff_url"] and component.source_detail
+               and component.effective_date == "2026-10-01" for component in d5.components)
+    assert "$5.00" not in [component.component_name for component in d5.components]
+    assert "pass-through" in d5.notes and "minimum annual obligation" in d5.notes
+
+
+def test_end5_energir_d5_malformed_section_fails_independently():
+    document = END5__document()
+    document["d5_pages"][0]["text"] = document["d5_pages"][0]["text"].replace(
+        "from 3,000 to 10,000 11.254", "from 4,000 to 10,000 11.254")
+    assert set(END5__parse(document)) == {"D1", "D3", "D4"}
+
+
+def test_end5_energir_d5_missing_interruption_terms_fails_independently():
+    document = END5__document()
+    document["d5_pages"][2]["text"] = document["d5_pages"][2]["text"].replace(
+        "14.4.3 MINIMUM ANNUAL OBLIGATION", "14.4.3 UNKNOWN")
+    assert set(END5__parse(document)) == {"D1", "D3", "D4"}
+
+
+def test_end5_energir_renewable_supply_is_optional_not_additive():
+    records = END5__parse(END5__document())
+    for record in records.values():
+        supply = [component for component in record.components if component.component_type == "commodity"]
+        assert [(component.component_name, component.charge_value, component.charge_unit) for component in supply] == [
+            ("Natural Gas Supply", 0.15535, "$/m³"),
+            ("Gas from Renewable Sources Supply", 0.85239, "$/m³")]
+        assert supply[1].sub_component == "conditional"
+        assert "replacement" in supply[1].notes
+
+
+def test_end5_energir_missing_renewable_price_keeps_base_rates():
+    document = END5__document()
+    document["tariff_pages"][0]["text"] = document["tariff_pages"][0]["text"].replace(
+        "85.239¢/m³", "price to be determined")
+    records = END5__parse(document)
+    assert set(records) == {"D1", "D3", "D4", "D5"}
+    assert all(not any(component.component_name == "Gas from Renewable Sources Supply"
+                       for component in record.components) for record in records.values())
+
+
+# ======================================================================
+# Manitoba Hydro per-page failure isolation (batch 9)
+# ======================================================================
+from scrapers.utilities.manitoba_hydro import COMMERCIAL_URL as MBB9_COMMERCIAL_URL, RESIDENTIAL_URL as MBB9_RESIDENTIAL_URL, ManitobaHydroScraper as MBB9_ManitobaHydroScraper
+import html
+import json
+from pathlib import Path
+from unittest.mock import patch
+
+from pipeline.export_json import derive_provenance
+from scrapers.base import BaseScraper
+
+
+MBB9_PAGES = json.loads((Path(__file__).resolve().parent / "fixtures" / "manitoba_hydro.json").read_text(encoding="utf-8"))["pages"]
+
+
+def MBB9__html(page):
+    return "<html><body>" + "".join(f"<p>{html.escape(line)}</p>" for line in MBB9_PAGES[page]["lines"]) + "</body></html>"
+
+
+def test_mbb9_ManitobaHydro_commercial_survives_residential_fetch_failure():
+    def fetch(scraper, url, delay=1.0):
+        if url == MBB9_RESIDENTIAL_URL:
+            raise ConnectionError("residential unavailable")
+        assert url == MBB9_COMMERCIAL_URL
+        return MBB9__html("commercial")
+
+    with patch.object(BaseScraper, "fetch_page", fetch):
+        records = MBB9_ManitobaHydroScraper().scrape()
+
+    live = [record for record in records if derive_provenance(record.confidence, record.notes) == "live"]
+    assert len(live) == 9
+    assert all(record.source_url == MBB9_COMMERCIAL_URL for record in live)
+    assert all(component.source_url and component.source_detail and component.effective_date
+               for record in live for component in record.components)
+    assert any(record.tariff_name == "Residential Service" and
+               derive_provenance(record.confidence, record.notes) == "seed" for record in records)
+
+
+def test_mbb9_ManitobaHydro_residential_survives_commercial_fetch_failure():
+    def fetch(scraper, url, delay=1.0):
+        if url == MBB9_COMMERCIAL_URL:
+            raise ConnectionError("commercial unavailable")
+        assert url == MBB9_RESIDENTIAL_URL
+        return MBB9__html("residential")
+
+    with patch.object(BaseScraper, "fetch_page", fetch):
+        records = MBB9_ManitobaHydroScraper().scrape()
+
+    live = [record for record in records if derive_provenance(record.confidence, record.notes) == "live"]
+    assert {record.tariff_name for record in live} == {
+        "Residential Service", "Residential Seasonal Service", "Residential Diesel Service"
+    }
+    assert all(component.source_url and component.source_detail and component.effective_date
+               for record in live for component in record.components)
+    assert any(record.tariff_name == "General Service Medium" and
+               derive_provenance(record.confidence, record.notes) == "seed" for record in records)
+
+
+# ======================================================================
+# Newfoundland Power curtailable and net metering (batch 9)
+# ======================================================================
+from scrapers.utilities.newfoundland_power import NewfoundlandPowerScraper as NPB9_NewfoundlandPowerScraper
+import json
+from pathlib import Path
+from unittest.mock import patch
+
+from scrapers.utils.parsing import DocumentPage
+
+
+NPB9_FIXTURE = json.loads(
+    (Path(__file__).resolve().parent / "fixtures" / "newfoundland_power.json").read_text(encoding="utf-8")
+)
+NPB9_URL = NPB9_FIXTURE["source_url"]
+
+
+def NPB9__pages(mutate=None):
+    pages = {page["page_number"]: page["text"] for page in NPB9_FIXTURE["pages"] + NPB9_FIXTURE["optional_pages"]}
+    if mutate:
+        mutate(pages)
+    return [DocumentPage(number, text) for number, text in sorted(pages.items())]
+
+
+def NPB9__parse(mutate=None):
+    scraper = NPB9_NewfoundlandPowerScraper()
+    pages = NPB9__pages(mutate)
+    base = scraper._parse_ratebook("\n".join(page.text for page in pages), NPB9_URL)
+    scraper._annotate_base(base, pages, NPB9_URL)
+    return {rate.tariff_code: rate for rate in base + scraper._parse_pages(pages, NPB9_URL, base)}
+
+
+def test_npb9_newfoundland_power_options_source_prices_and_dates():
+    records = NPB9__parse()
+    assert len(records) == 11
+    for code in ("2.3-CURT1", "2.4-CURT1"):
+        rate = records[code]
+        credit = rate.components[0]
+        assert (credit.charge_value, credit.charge_unit, credit.demand_unit) == (-29.0, "$/kVA", "kVA")
+        assert rate.effective_date == credit.effective_date == "2026-07-01"
+        assert "Option 2" in rate.notes and "May" in rate.notes
+        assert "pages 30-31" in credit.source_detail
+    net = records["1.1-NM"]
+    assert (net.components[0].charge_value, net.components[0].charge_unit) == (-0.15587, "$/kWh")
+    assert "pages 32-34" in net.components[0].source_detail
+    assert "annual cash settlement is priced here" in net.notes
+    assert all(component.source_url == NPB9_URL and component.source_detail
+               for rate in records.values() for component in rate.components)
+
+
+def test_npb9_newfoundland_power_options_fail_independently_on_missing_page():
+    records = NPB9__parse(lambda pages: pages.pop(31))
+    assert "2.3-CURT1" not in records and "2.4-CURT1" not in records
+    assert "1.1-NM" in records and "FEES" in records
+
+
+def test_npb9_newfoundland_power_net_metering_rejects_missing_date():
+    records = NPB9__parse(lambda pages: pages.__setitem__(33, pages[33].replace("Effective July 1, 2026", "")))
+    assert "1.1-NM" not in records
+    assert "2.3-CURT1" in records
+
+
+def test_npb9_newfoundland_power_curtail_credit_tracks_source():
+    records = NPB9__parse(lambda pages: pages.__setitem__(30, pages[30].replace("$29 per kVA", "$31 per kVA")))
+    assert records["2.3-CURT1"].components[0].charge_value == -31.0
+    assert records["2.4-CURT1"].components[0].charge_value == -31.0
+
+
+def test_npb9_newfoundland_power_optional_scrape_marks_live():
+    scraper = NPB9_NewfoundlandPowerScraper()
+    pages = NPB9__pages()
+    text = "\n".join(page.text for page in pages)
+    with patch.object(scraper, "fetch_page", return_value='<a href="RateBook.pdf">Schedule of Rates</a>'),\
+         patch.object(scraper, "fetch_bytes", return_value=b"pdf"),\
+         patch("scrapers.utilities.newfoundland_power.extract_pdf_text", return_value=text),\
+         patch("scrapers.utilities.newfoundland_power.extract_pdf_pages", return_value=pages):
+        records = scraper.scrape()
+    assert len(records) == 11
+    assert all("Provenance: live_parsed" in rate.notes for rate in records)
+
+
+# ======================================================================
+# NB Power small and large industrial (batch 9)
+# ======================================================================
+from scrapers.utilities.nb_power import BUSINESS_URL as NBB9_BUSINESS_URL, RESIDENTIAL_URL as NBB9_RESIDENTIAL_URL, NBPowerScraper as NBB9_NBPowerScraper
+import json
+from pathlib import Path
+from unittest.mock import patch
+
+from pipeline.export_json import derive_provenance
+
+
+NBB9_FIXTURE = json.loads(
+    (Path(__file__).resolve().parent / "fixtures" / "nb_power.json").read_text(encoding="utf-8")
+)
+
+
+def NBB9__records(business=None):
+    pages = {
+        NBB9_RESIDENTIAL_URL: NBB9_FIXTURE["residential"]["html"],
+        NBB9_BUSINESS_URL: NBB9_FIXTURE["business"]["html"] if business is None else business,
+    }
+    with patch.object(NBB9_NBPowerScraper, "fetch_page", side_effect=pages.__getitem__):
+        return {record.tariff_name: record for record in NBB9_NBPowerScraper().scrape()}
+
+
+def test_nbb9_nb_power_industrial_live_charges_and_identity():
+    records = NBB9__records()
+    small = records["Small Industrial Service"]
+    large = records["Large Industrial Service"]
+    assert small.demand_max_kw == 750
+    assert large.demand_min_kw == 750
+    assert [(component.charge_value, component.charge_unit) for component in small.components] == [
+        (9.39, "$/kW"), (0.1863, "$/kWh"), (0.0903, "$/kWh"),
+    ]
+    assert small.components[1].tier_threshold == 100
+    assert small.components[1].tier_unit == "kWh per kilowatt"
+    assert [(component.charge_value, component.charge_unit) for component in large.components] == [
+        (19.98, "$/kW/month"), (0.0785, "$/kWh"),
+    ]
+    assert large.components[0].demand_unit == "kW"
+    assert "90% of the maximum kVA" in large.notes
+    assert "100% of the total contracted amount" in large.notes
+    for record in (small, large):
+        assert record.effective_date == "2026-04-14"
+        assert derive_provenance(record.confidence, record.notes) == "live"
+        assert all(component.source_url == NBB9_BUSINESS_URL and component.source_detail
+                   and component.effective_date == record.effective_date for component in record.components)
+
+
+def test_nbb9_nb_power_large_industrial_rejects_incomplete_billing_demand():
+    business = NBB9_FIXTURE["business"]["html"].replace("90% of the maximum kVA demand", "N/A", 1)
+    records = NBB9__records(business)
+    assert "Large Industrial Service" not in records
+    assert derive_provenance(records["Small Industrial Service"].confidence,
+                             records["Small Industrial Service"].notes) == "live"
+
+
+def test_nbb9_nb_power_large_industrial_rejects_mismatched_energy_total():
+    business = NBB9_FIXTURE["business"]["html"].replace("7.85¢ Total Charge", "7.99¢ Total Charge", 1)
+    records = NBB9__records(business)
+    assert "Large Industrial Service" not in records
+    assert "General Service I" in records
+
+
+def test_nbb9_nb_power_small_industrial_rejects_missing_tier():
+    business = NBB9_FIXTURE["business"]["html"].replace("9.03¢ Total Charge", "N/A", 1)
+    records = NBB9__records(business)
+    small = records["Small Industrial Service"]
+    assert derive_provenance(small.confidence, small.notes) == "seed"
+    assert derive_provenance(records["Large Industrial Service"].confidence,
+                             records["Large Industrial Service"].notes) == "live"
+
+
+def test_nbb9_nb_power_small_industrial_rejects_wrong_demand_unit():
+    business = NBB9_FIXTURE["business"]["html"].replace("$9.39 /kW", "$9.39 /kVA", 1)
+    records = NBB9__records(business)
+    small = records["Small Industrial Service"]
+    assert derive_provenance(small.confidence, small.notes) == "seed"
+    assert derive_provenance(records["Large Industrial Service"].confidence,
+                             records["Large Industrial Service"].notes) == "live"
+
+
+# ======================================================================
+# BC Hydro transmission and net metering (batch 9)
+# ======================================================================
+from scrapers.utilities.bc_hydro import BCHydroScraper as BCHB9_BCHydroScraper, TARIFF_URL as BCHB9_TARIFF_URL
+import json
+from dataclasses import replace
+from pathlib import Path
+from unittest.mock import patch
+
+from scrapers.utils.parsing import DocumentPage
+from scrapers.utils.validation import validate_batch
+from pipeline.export_json import derive_provenance
+
+
+BCHB9_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "bc_hydro_business.json"
+
+
+def BCHB9_transmission_pages():
+    document = json.loads(BCHB9_FIXTURE.read_text(encoding="utf-8"))
+    return [DocumentPage(**page) for page in document["pages"]]
+
+
+def test_bchb9_BCHydro_transmission_values_and_provenance():
+    records = BCHB9_BCHydroScraper()._parse_transmission_tariff(BCHB9_transmission_pages())
+    assert len(records) == 1
+    record = records[0]
+    assert (record.tariff_code, record.effective_date, record.customer_class) == ("1830", "2026-04-01", "industrial")
+    assert [(part.charge_value, part.charge_unit) for part in record.components] == [
+        (12.178, "$/kVA/billing period"), (0.04914, "$/kWh"), (-0.015, "fraction"), (0.0, "fraction"),
+    ]
+    assert all(part.effective_date and part.source_url == BCHB9_TARIFF_URL and part.source_detail for part in record.components)
+    assert "minimum" in record.notes.lower() and "50% of contract demand" in record.notes
+
+
+def test_bchb9_BCHydro_transmission_fails_closed_without_continuation():
+    pages = [page for page in BCHB9_transmission_pages() if page.page_number != 139]
+    assert BCHB9_BCHydroScraper()._parse_transmission_tariff(pages) == []
+
+
+def test_bchb9_BCHydro_transmission_fails_closed_on_changed_unit():
+    pages = [replace(page, text=page.text.replace("per kVA of Billing Demand", "per kW of Billing Demand"))
+             if page.page_number == 138 else page for page in BCHB9_transmission_pages()]
+    assert BCHB9_BCHydroScraper()._parse_transmission_tariff(pages) == []
+
+
+def test_bchb9_BCHydro_transmission_fails_closed_on_future_date():
+    pages = [replace(page, text=page.text.replace("April 1, 2026", "April 1, 2027"))
+             if page.page_number in (138, 139, 140) else page for page in BCHB9_transmission_pages()]
+    assert BCHB9_BCHydroScraper()._parse_transmission_tariff(pages) == []
+
+
+def test_bchb9_BCHydro_closed_net_metering_credit_is_not_cash_price():
+    records = BCHB9_BCHydroScraper()._parse_net_metering_tariff(BCHB9_transmission_pages())
+    assert len(records) == 1
+    record = records[0]
+    assert (record.tariff_code, record.effective_date) == ("1289", "2026-07-01")
+    assert [(part.charge_value, part.charge_unit, part.sub_component) for part in record.components] == [
+        (-1.0, "kWh credit/kWh net generation", "conditional"),
+    ]
+    assert all(part.source_url == BCHB9_TARIFF_URL and part.source_detail and part.effective_date for part in record.components)
+    assert "Mid-Columbia" in record.notes and "not a replacement" in record.notes.lower()
+
+
+def test_bchb9_BCHydro_net_metering_missing_price_rule_fails_closed_without_affecting_transmission():
+    pages = [page for page in BCHB9_transmission_pages() if page.page_number != 224]
+    scraper = BCHB9_BCHydroScraper()
+    assert scraper._parse_net_metering_tariff(pages) == []
+    assert len(scraper._parse_transmission_tariff(pages)) == 1
+
+
+def test_bchb9_BCHydro_net_metering_changed_credit_rule_fails_closed():
+    pages = [replace(page, text=page.text.replace("credit the Customer’s Generation Account with the Net Generation", "record exported power"))
+             if page.page_number == 227 else page for page in BCHB9_transmission_pages()]
+    assert BCHB9_BCHydroScraper()._parse_net_metering_tariff(pages) == []
+
+
+def test_bchb9_BCHydro_net_metering_future_date_fails_closed():
+    pages = [replace(page, text=page.text.replace("July 1, 2026", "July 1, 2027"))
+             if page.page_number in range(223, 232) else page for page in BCHB9_transmission_pages()]
+    assert BCHB9_BCHydroScraper()._parse_net_metering_tariff(pages) == []
+
+
+def test_bchb9_BCHydro_full_document_wrapper_publishes_both_new_records():
+    scraper = BCHB9_BCHydroScraper()
+    residential = json.loads((BCHB9_FIXTURE.parent / "bc_hydro_residential.json").read_text(encoding="utf-8"))
+    business_pages = BCHB9_transmission_pages()
+    business_numbers = {page.page_number for page in business_pages}
+    pages = ([DocumentPage(1, "BC Hydro Electric Tariff, Title Page\nEffective: April 1, 2025")]
+             + business_pages + [DocumentPage(**page) for page in residential["pages"]
+                                 if page["page_number"] not in business_numbers])
+    with patch.object(scraper, "fetch_page", return_value=""),\
+         patch.object(scraper, "fetch_bytes", return_value=b"pdf"),\
+         patch("scrapers.utilities.bc_hydro.extract_pdf_pages", return_value=pages):
+        records = scraper.scrape()
+    valid, invalid = validate_batch(records)
+    assert len(valid) == 11 and not invalid
+    assert {record.tariff_code for record in valid} >= {"1830", "1289"}
+    assert all(derive_provenance(record.confidence, record.notes) == "live" for record in valid)
+    assert all(part.source_url and part.source_detail and part.effective_date for record in valid for part in record.components)
+
+
+# ======================================================================
+# FortisBC Electric RS31/RS33 (batch 9)
+# ======================================================================
+from scrapers.utilities.fortisbc_electric import FortisBCElectricScraper as FBEB9_FortisBCElectricScraper, TARIFF_URL as FBEB9_TARIFF_URL
+import json
+from datetime import date
+from pathlib import Path
+from unittest.mock import patch
+
+from scrapers.utils.parsing import DocumentPage
+
+
+def FBEB9__records():
+    fixture = json.loads((Path(__file__).resolve().parent / "fixtures" / "fortisbc_electric.json")
+                         .read_text(encoding="utf-8"))
+    pages = [DocumentPage(**page) for key in ("pages", "large_commercial_pages", "industrial_pages")
+             for page in fixture[key]]
+    with patch("scrapers.utilities.fortisbc_electric._today", return_value=date(2026, 10, 6)):
+        return {record.tariff_code: record for record in FBEB9_FortisBCElectricScraper().parse_schedule_pages(pages)}
+
+
+def test_fbeb9_FortisBCElectric_industrial_values_and_source():
+    records = FBEB9__records()
+    assert set(records) == {"01", "2A", "20", "21", "22A", "23A", "30", "31", "32", "33", "85"}
+    rs31 = records["31"]
+    assert rs31.customer_class == "industrial" and "5,000 kVA" in rs31.eligibility
+    assert [(component.component_name, component.charge_value, component.charge_unit)
+            for component in rs31.components] == [
+                ("Customer Charge", 4077.97, "$/month"), ("Wires Charge", 6.29, "$/kVA"),
+                ("Power Supply Charge", 4.39, "$/kVA"), ("Energy Charge", 0.06851, "$/kWh")]
+    assert [component.demand_unit for component in rs31.components if component.component_type == "demand"] == ["kVA", "kVA"]
+    assert "stand-by" in rs31.components[1].notes
+    rs33 = records["33"]
+    assert rs33.customer_class == "industrial" and rs33.rate_structure == "tou"
+    assert [(component.charge_value, component.charge_unit) for component in rs33.components] == [
+        (3785.34, "$/month"), (0.23221, "$/kWh"), (0.06576, "$/kWh"),
+        (0.30968, "$/kWh"), (0.05119, "$/kWh"), (0.0743, "$/kWh"), (0.03918, "$/kWh")]
+    for code, sheet in (("31", "R-31.1"), ("33", "R-33.1")):
+        assert records[code].effective_date == "2026-01-01"
+        assert all(component.effective_date == "2026-01-01" and component.source_url == FBEB9_TARIFF_URL
+                   and sheet in component.source_detail for component in records[code].components)
+
+
+def test_fbeb9_FortisBCElectric_industrial_schedules_fail_independently():
+    fixture = json.loads((Path(__file__).resolve().parent / "fixtures" / "fortisbc_electric.json")
+                         .read_text(encoding="utf-8"))
+    pages = [DocumentPage(**page) for page in fixture["industrial_pages"]]
+    scraper = FBEB9_FortisBCElectricScraper()
+    assert {record.tariff_code for record in scraper.parse_schedule_pages(pages[1:])} == {"33"}
+    assert {record.tariff_code for record in scraper.parse_schedule_pages(pages[:1])} == {"31"}
+    broken = pages[0].text.replace("$6.29 per kVA", "$6.29 per kW")
+    assert broken != pages[0].text
+    assert {record.tariff_code for record in scraper.parse_schedule_pages(
+        [DocumentPage(pages[0].page_number, broken), pages[1]])} == {"33"}
+
+
+def test_fbeb9_FortisBCElectric_industrial_future_date_rejected():
+    fixture = json.loads((Path(__file__).resolve().parent / "fixtures" / "fortisbc_electric.json")
+                         .read_text(encoding="utf-8"))
+    pages = [DocumentPage(**page) for page in fixture["industrial_pages"]]
+    future = pages[1].text.replace("Effective Date: January 1, 2026", "Effective Date: January 1, 2030")
+    with patch("scrapers.utilities.fortisbc_electric._today", return_value=date(2026, 10, 6)):
+        assert {record.tariff_code for record in FBEB9_FortisBCElectricScraper().parse_schedule_pages(
+            [pages[0], DocumentPage(pages[1].page_number, future)])} == {"31"}
+
+
+# ======================================================================
+# Hydro-Quebec L/LG/H and business DR (batch 9)
+# ======================================================================
+from scrapers.utilities.hydro_quebec import HydroQuebecScraper as HQB9_HydroQuebecScraper
+import json
+from pathlib import Path
+
+from scrapers.utils.parsing import DocumentPage
+
+
+def HQB9__large_power_records(removed=(), edits=()):
+    path = Path(__file__).resolve().parent / "fixtures" / "hydro_quebec_domestic.json"
+    fixture = json.loads(path.read_text(encoding="utf-8"))
+    pages = fixture["pages"] + fixture["large_power_pages"]
+    for page_number, old, new in edits:
+        page = next(page for page in pages if page["page_number"] == page_number and old in page["text"])
+        page["text"] = page["text"].replace(old, new)
+    selected = [DocumentPage(**page) for page in pages if page["page_number"] not in removed]
+    records = HQB9_HydroQuebecScraper()._parse_large_power_rates(selected, "2026-04-01")
+    return {record.tariff_code: record for record in records}
+
+
+def test_hqb9_HydroQuebec_large_power_classes_from_official_pages():
+    records = HQB9__large_power_records()
+    assert set(records) == {"L", "LG", "H"}
+    assert all(record.effective_date == "2026-04-01" and record.demand_min_kw == 5000 for record in records.values())
+    assert all(component.source_url and component.source_detail and component.effective_date == "2026-04-01"
+               for record in records.values() for component in record.components)
+
+
+def test_hqb9_HydroQuebec_large_power_prices_and_conditions():
+    records = HQB9__large_power_records()
+    demand = {code: next(component for component in record.components if component.component_name == "Billing Demand")
+              for code, record in records.items()}
+    assert {code: (component.charge_value, component.charge_unit) for code, component in demand.items()} == {
+        "L": (15.027, "$/kW/month"), "LG": (16.571, "$/kW/month"), "H": (6.630, "$/kW/month")}
+    energies = {code: [(component.charge_value, component.charge_unit) for component in record.components
+                       if component.component_type == "energy"] for code, record in records.items()}
+    assert energies == {"L": [(0.03821, "$/kWh")], "LG": [(0.04324, "$/kWh")],
+                        "H": [(0.06695, "$/kWh"), (0.2262, "$/kWh")]}
+    assert "110%" in records["L"].notes and "26.420" in records["L"].notes
+    assert "75%" in records["LG"].notes and "60%" in records["LG"].components[2].notes
+    assert "24 monthly periods" in records["H"].notes and "weekends" in records["H"].components[2].notes
+    assert records["H"].components[2].season_months == "12,1,2,3"
+    for record in records.values():
+        credits = [component for component in record.components if component.component_type == "rebate"]
+        assert [credit.charge_value for credit in credits] == [-0.7131, -1.1427, -2.5512, -3.1208, -4.1239]
+        assert all(credit.sub_component == "conditional" and credit.source_detail == "Article 12.2; PDF page 152" for credit in credits)
+        assert "Article 12.5" in record.notes and "720 hours" in record.notes
+
+
+def test_hqb9_HydroQuebec_large_power_missing_pages_reject_only_affected_class():
+    for page, missing in ((64, "L"), (65, "L"), (66, "L"), (68, "LG"), (71, "H")):
+        assert set(HQB9__large_power_records(removed=(page,))) == {"L", "LG", "H"} - {missing}
+
+
+def test_hqb9_HydroQuebec_large_power_bad_price_and_shared_context_fail_closed():
+    assert set(HQB9__large_power_records(edits=((67, "4.324 cents", "price not published"),))) == {"L", "H"}
+    assert not HQB9__large_power_records(removed=(152,))
+    assert not HQB9__large_power_records(removed=(154,))
+
+
+def HQB9__dr_record(removed=(), old=None, new=None):
+    path = Path(__file__).resolve().parent / "fixtures" / "hydro_quebec_domestic.json"
+    fixture = json.loads(path.read_text(encoding="utf-8"))
+    pages = fixture["dr_leeway_pages"]
+    if old is not None:
+        page = next(page for page in pages if old in page["text"])
+        page["text"] = page["text"].replace(old, new)
+    selected = [DocumentPage(**page) for page in pages if page["page_number"] not in removed]
+    return HQB9_HydroQuebecScraper()._parse_dr_leeway(selected, "2026-04-01")
+
+
+def test_hqb9_HydroQuebec_business_dr_leeway_conditional_credits():
+    records = HQB9__dr_record()
+    assert len(records) == 1
+    record = records[0]
+    assert record.tariff_code == "DR_LEEWAY_BUSINESS" and record.effective_date == "2026-04-01"
+    assert "Rate L" in record.eligibility and "no simultaneous Commitment Option" in record.eligibility
+    assert "Base-rate energy and demand charges remain separate" in record.notes
+    assert [component.charge_value for component in record.components] == [
+        -44.638, -74.743, -85.124, -92.391, -99.658, -1.879, -2.512]
+    assert all(component.charge_unit.startswith("$/kW") and component.sub_component == "conditional"
+               and component.source_url == record.source_url and component.source_detail == "Article 6.44; PDF page 97"
+               and component.effective_date == "2026-04-01" for component in record.components)
+    assert all(component.season_months == "12,1,2,3" for component in record.components)
+
+
+def test_hqb9_HydroQuebec_business_dr_leeway_missing_page_or_price_fails_closed():
+    for page in (94, 95, 96, 97, 98):
+        assert not HQB9__dr_record(removed=(page,))
+    assert not HQB9__dr_record(old="$85.124", new="price not published")
+    assert not HQB9__dr_record(old="No credit is granted if the weekday effective interruptible power is less than 10 kilowatts.",
+                          new="")

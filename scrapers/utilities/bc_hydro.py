@@ -120,6 +120,17 @@ class BCHydroScraper(BaseScraper):
             if biz_records:
                 records.extend(biz_records)
 
+            if any(page.page_number == 1 and page.text.startswith("BC Hydro Electric Tariff, Title Page")
+                   for page in self._tariff_document()):
+                try:
+                    records.extend(self._parse_transmission_tariff(self._tariff_document()))
+                except Exception as exc:
+                    self.logger.warning("Could not parse BC Hydro transmission tariff: %s", exc)
+                try:
+                    records.extend(self._parse_net_metering_tariff(self._tariff_document()))
+                except Exception as exc:
+                    self.logger.warning("Could not parse BC Hydro net metering tariff: %s", exc)
+
             if not records:
                 return None
 
@@ -319,6 +330,108 @@ class BCHydroScraper(BaseScraper):
             self.logger.warning("Could not parse BC Hydro business tariff: %s", exc)
             return None
         return records or None
+
+    def _parse_transmission_tariff(self, pages: list[DocumentPage]) -> list[TariffRecord]:
+        sections: dict[str, list[DocumentPage]] = {}
+        for page in pages:
+            match = re.match(r"BC Hydro Rate Schedule (1830|1901|1904)\b", page.text)
+            if match:
+                sections.setdefault(match.group(1), []).append(page)
+
+        def section(code: str, count: int) -> tuple[str, str, str]:
+            selected = sections.get(code, [])
+            if len(selected) != count or (code == "1830" and
+                    {page.page_number for page in selected} != {138, 139, 140}):
+                raise ValueError(f"Missing RS {code} continuation")
+            dates = {extract_effective_date(page.text.split("Section", 1)[0]) for page in selected}
+            if len(dates) != 1 or None in dates or next(iter(dates)) > self.now_iso()[:10]:
+                raise ValueError(f"Missing, ambiguous or future RS {code} date")
+            detail = f"Electric Tariff RS {code}; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+            return re.sub(r"\s+", " ", "\n".join(page.text for page in selected)), next(iter(dates)), detail
+
+        try:
+            text, effective, detail = section("1830", 3)
+            if not all(phrase in text for phrase in (
+                "Availability For all purposes", "Supply is at 60 kV or higher",
+                "50% of the Contract Demand", "75% of the highest Billing Demand",
+                "initial two Billing Periods", "06:00 to 22:00 Monday to Saturday",
+                "Monthly Minimum Charge", "Rate Schedule 1901", "Rate Schedule 1904",
+            )):
+                raise ValueError("Incomplete RS 1830 availability or billing conditions")
+            demand = re.search(r"Demand Charge:\s*\$([\d.]+) per kVA of Billing Demand per Billing Period", text)
+            energy = re.search(r"Energy Charge:\s*([\d.]+)\s*[\u00a2\u023c\ufffd] per kWh for all kWh per Billing Period", text)
+            minimum = re.search(r"Monthly Minimum Charge:\s*\$([\d.]+) per kVA of Billing Demand", text)
+            if not demand or not energy or not minimum or demand.group(1) != minimum.group(1):
+                raise ValueError("Incomplete RS 1830 rates or minimum")
+            components = [
+                RateComponent("demand", "Billing Demand Charge", float(demand.group(1)), "$/kVA/billing period", demand_unit="kVA"),
+                RateComponent("energy", "Energy Charge", round(float(energy.group(1)) / 100, 6), "$/kWh"),
+            ]
+            for component in components:
+                component.effective_date = effective
+                component.source_url = TARIFF_URL
+                component.source_detail = detail
+            for code, title in (("1901", "Deferral Account Rate Rider"), ("1904", "Trade Income Rate Rider")):
+                rider_text, rider_date, rider_detail = section(code, 1)
+                amount = re.search(r"charge equal to\s+(\(?-?\d+(?:\.\d+)?\)?)%", rider_text)
+                if not amount or "except for Rate Schedules 2101 and 3817" not in rider_text:
+                    raise ValueError(f"Incomplete RS {code} rider")
+                raw = amount.group(1)
+                percent = -float(raw[1:-1]) if raw.startswith("(") and raw.endswith(")") else float(raw)
+                components.append(RateComponent(
+                    "rider", f"Rate Rider -- {title}", round(percent / 100, 6), "fraction",
+                    effective_date=rider_date, source_url=TARIFF_URL, source_detail=rider_detail,
+                    notes="Applies to RS 1830 charges before taxes and levies.",
+                ))
+            return [TariffRecord(
+                utility_name="BC Hydro", province="BC", utility_type="electricity",
+                tariff_name="Transmission Service (Rate 1830)", tariff_code="1830",
+                customer_class="industrial", sub_class="general transmission service", rate_structure="demand",
+                effective_date=max(component.effective_date for component in components),
+                source_url=TARIFF_URL, source_page=detail,
+                eligibility="All customers supplied at 60 kV or higher in the applicable Integrated Service Area; former RS 1823 customers move at the billing year starting nearest April 1, 2026.",
+                notes="Billing Demand is the greatest of HLH kVA, 75% of the preceding November-February plant maximum, or 50% of contract demand; new customers use the daily-highest average for the first two billing periods. HLH is 06:00-22:00 Monday-Saturday except statutory holidays. Monthly minimum is the demand charge, not an additional charge. Transmission supply terms are in Electric Tariff Supplements 5/6 or 87/88.",
+                components=components,
+            )]
+        except ValueError as exc:
+            self.logger.warning("Incomplete BC Hydro RS 1830: %s", exc)
+            return []
+
+    def _parse_net_metering_tariff(self, pages: list[DocumentPage]) -> list[TariffRecord]:
+        selected = [page for page in pages if re.match(r"BC Hydro Rate Schedule 1289\b", page.text)]
+        if len(selected) != 9 or {page.page_number for page in selected} != set(range(223, 232)):
+            return []
+        dates = {extract_effective_date(page.text.split("Section", 1)[0]) for page in selected}
+        if len(dates) != 1 or None in dates or next(iter(dates)) > self.now_iso()[:10]:
+            return []
+        text = re.sub(r"\s+", " ", "\n".join(page.text for page in sorted(selected, key=lambda page: page.page_number)))
+        if not all(phrase in text for phrase in (
+            "NET METERING SERVICE (CLOSED)", "as of June 30, 2026", "Rate Schedule 2289",
+            "Charges for the Customer’s Net Consumption will be in accordance with the Rate Schedule",
+            "daily average Mid-Columbia prices for the previous", "average annual exchange rate",
+            "not more than 100 kilowatts", "apply any credits in the Generation Account Balance to the Net Consumption",
+            "credit the Customer’s Generation Account with the Net Generation",
+            "Basic Charge and Demand Charge (if applicable)", "At the Anniversary Date",
+            "monthly or bi-monthly under BC Hydro’s regular billing plan",
+            "Rate Rider as set out in Rate Schedule 1901", "Rate Rider as set out in Rate Schedule 1904",
+        )):
+            return []
+        effective = next(iter(dates))
+        detail = "Electric Tariff RS 1289; PDF pages 223-231"
+        return [TariffRecord(
+            utility_name="BC Hydro", province="BC", utility_type="electricity",
+            tariff_name="Net Metering Generation Credit (Rate 1289, Closed)", tariff_code="1289",
+            customer_class="other", sub_class="conditional net metering adjustment", rate_structure="other",
+            effective_date=effective, source_url=TARIFF_URL, source_page=detail,
+            eligibility="Only customers continuously on RS 1289 since June 30, 2026, with an eligible generating facility no larger than 100 kW and an active base service on the regular monthly or bi-monthly billing plan; customers transition to RS 2289 upon termination.",
+            notes="Each billing period net generation is credited in kWh to the generation account and applied against later net consumption; the underlying rate schedule's basic and applicable demand charges remain payable. At the anniversary date or termination, remaining generation is purchased at a customer-independent annual formula based on prior-year daily average Mid-Columbia prices and Bank of Canada annual exchange rate; no published fixed cash price is implied here. Not a replacement retail energy price or an automatic cash rebate.",
+            components=[RateComponent(
+                "rebate", "Conditional Net Generation Account Credit", -1.0,
+                "kWh credit/kWh net generation", sub_component="conditional",
+                effective_date=effective, source_url=TARIFF_URL, source_detail=detail,
+                notes="One kWh of net generation adds one kWh to the generation account; later net consumption draws down this balance. Cash settlement has a separate variable annual price, not this component.",
+            )],
+        )]
 
     def _parse_business_tariff(self, pages: list[DocumentPage]) -> list[TariffRecord]:
         sections: dict[str, list[DocumentPage]] = {}

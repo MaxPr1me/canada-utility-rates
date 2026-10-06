@@ -207,10 +207,7 @@ _GAP_RATES = {
 }
 _GAP_SCHEDULES = {
     "UT": "Utility: wholesale supply to Newfoundland Power (a retailer)",
-    "IND": "Island Industrial Firm/Non-Firm/Wheeling: 66 kV+ bulk-grid contract customers under Industrial Service Agreements",
-    "LAB-IND": "Labrador Industrial: 66 kV+ contract customers with formula energy rates",
     "CP": "Commissioning Power non-firm rate",
-    "NM": "Net Metering Service Option (billing option, not a tariff)",
 }
 _UNMODELLED_TERMS = re.compile(r"\b(?:subsid\w*|rider|surcharge|credit|rebate|curtail\w*)\b", re.I)
 
@@ -635,7 +632,141 @@ class NLHydroScraper(BaseScraper):
                 records.append(record)
             except _Reject as exc:
                 self.logger.warning("NL Hydro Rate %s not live-verified: %s", spec.code, exc)
+        for code, parser in (("IND-FIRM", self._parse_island_industrial),
+                             ("LAB-IND", self._parse_labrador_industrial),
+                             ("NM", self._parse_net_metering)):
+            try:
+                records.append(parser(pages, source_url, today))
+            except _Reject as exc:
+                self.logger.warning("NL Hydro %s not live-verified: %s", code, exc)
         return records
+
+    def _published_sections(
+        self, pages: list[DocumentPage], prefix: str, count: int, today: date,
+    ) -> list[DocumentPage]:
+        sections = []
+        for number in range(1, count + 1):
+            footer = rf"Effective ([A-Z][a-z]+ \d{{1,2}}, \d{{4}}) {re.escape(prefix)}-{number}\b"
+            matches = [page for page in pages if re.search(footer, _flat(page.text))]
+            if len(matches) != 1:
+                raise _Reject(f"{prefix}-{number} missing or duplicated")
+            effective = re.search(footer, _flat(matches[0].text))
+            if not effective or datetime.strptime(effective.group(1), "%B %d, %Y").date() != date(2026, 7, 1):
+                raise _Reject(f"{prefix}-{number} unsupported effective date")
+            if datetime.strptime(effective.group(1), "%B %d, %Y").date() > today:
+                raise _Reject(f"{prefix}-{number} is not yet effective")
+            sections.append(matches[0])
+        return sections
+
+    def _new_record(
+        self, code: str, name: str, eligibility: str, notes: str, components: list[RateComponent],
+        pages: list[DocumentPage], source_url: str, structure: str,
+    ) -> TariffRecord:
+        for component in components:
+            component.effective_date = "2026-07-01"
+        record = TariffRecord(
+            utility_name=self.utility_name, province=self.province, utility_type="electricity",
+            tariff_name=name, tariff_code=code, customer_class="industrial" if code != "NM" else "other",
+            sub_class="industrial firm" if code != "NM" else "net metering option",
+            eligibility=eligibility, rate_structure=structure, pricing_method="regulated",
+            effective_date="2026-07-01", confidence="high", notes=notes, components=components,
+        )
+        record = self.mark_live_parsed(
+            [record], source_url=source_url,
+            detail="PDF pages " + ", ".join(str(page.page_number) for page in pages))[0]
+        return record
+
+    def _parse_island_industrial(
+        self, pages: list[DocumentPage], source_url: str, today: date,
+    ) -> TariffRecord:
+        firm, conditions = self._published_sections(pages, "IND", 2, today)
+        first, second = _flat(firm.text), _flat(conditions.text)
+        required = ("INDUSTRIAL – FIRM", "other than a retailer", "66 kV or greater",
+                    "Industrial Service Agreements", "Project Cost Recovery Rider", "CDM Cost Recovery Adjustment")
+        if not all(term in first for term in required) or not all(term in second for term in (
+            "Specifically Assigned Charges", "RSP Adjustments", "Adjustment for Losses")):
+            raise _Reject("firm eligibility or additional charge conditions missing")
+        demand = re.search(r"shall be \$(\d+\.\d+) per kilowatt \(kW\) per month", first)
+        energy = re.findall(r"(?:Base Rate|Project Cost Recovery Rider|CDM Cost Recovery Adjustment)\s*[.…]+\s*@\s*(\d+\.\d+)¢ per kWh", first)
+        assigned = re.findall(r"(Corner Brook Pulp and Paper Limited|Braya Renewable Fuels \(Newfoundland\) GP Inc\.|Teck Resources Limited|Vale)\s*\$([\d,]+)", second)
+        if not demand or len(energy) != 3 or len(assigned) != 4:
+            raise _Reject("firm demand, energy, rider or specifically assigned charge missing")
+        components = [RateComponent("demand", "Firm Billing Demand", float(demand.group(1)),
+                                    "$/kW/month", demand_unit="kW", notes="As defined in the Industrial Service Agreement.")]
+        components.extend(RateComponent(kind, label, _cents(value), "$/kWh") for kind, label, value in (
+            ("energy", "Firm Base Energy", energy[0]), ("rider", "Project Cost Recovery Rider", energy[1]),
+            ("rider", "CDM Cost Recovery Adjustment", energy[2])))
+        components.extend(RateComponent(
+            "fixed", f"Specifically Assigned: {company}", float(value.replace(",", "")), "$/year",
+            sub_component="conditional", notes="Only for the named customer's specifically assigned plant.")
+            for company, value in assigned)
+        return self._new_record(
+            "IND-FIRM", "Island Industrial Firm", "Island bulk grid, 66 kV or greater; firm service contract, not resale.",
+            "Contract-specific demand, RSP adjustments and transformer losses remain conditions; "
+            "the named annual charges apply only to their respective customers, not to every account.",
+            components, [firm, conditions], source_url, "mixed")
+
+    def _parse_labrador_industrial(
+        self, pages: list[DocumentPage], source_url: str, today: date,
+    ) -> TariffRecord:
+        sections = self._published_sections(pages, "LAB-IND", 4, today)
+        first, energy, conditions, block = (_flat(page.text) for page in sections)
+        if not all(term in first for term in ("LABRADOR INDUSTRIAL", "other than a retailer", "66 kV or greater",
+                                          "Industrial Service Agreement", "Closed Rate", "Specifically Assigned")):
+            raise _Reject("industrial eligibility or closed transmission terms missing")
+        if not all(term in energy for term in ("Firm Energy Rate", "Imbalance Energy Charge", "Market Block Energy Rate")) or \
+                "Adjustment for Losses" not in conditions or "Development Energy Block" not in block:
+            raise _Reject("energy formula, imbalance, losses or block schedule missing")
+        demand = re.findall(r"shall be \$(\d+\.\d+) per month per kilowatt of Billing Demand", first)
+        prices = re.findall(r"\$(\d+\.\d+)/MWh", energy)
+        months = re.findall(r"\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,3},\d{3}\b", block)
+        if len(demand) != 2 or len(prices) != 2 or len(months) != 12:
+            raise _Reject(f"demand, annual energy block prices or monthly allocations missing "
+                          f"({len(demand)} demand, {len(prices)} prices, {len(months)} months)")
+        components = [
+            RateComponent("demand", "Transmission Firm Demand (existing customers only)", float(demand[0]),
+                          "$/kW/month", demand_unit="kW", sub_component="conditional"),
+            RateComponent("demand", "Generation Firm Demand", float(demand[1]), "$/kW/month", demand_unit="kW"),
+            RateComponent("energy", "Development Energy Block (2026)", float(prices[0]), "$/MWh",
+                          end_date="2026-12-31", sub_component="conditional"),
+            RateComponent("energy", "Market Energy Block (2026)", float(prices[1]), "$/MWh",
+                          end_date="2026-12-31", sub_component="conditional"),
+        ]
+        return self._new_record(
+            "LAB-IND", "Labrador Industrial Firm", "Labrador bulk grid, 66 kV or greater; Industrial Service Agreement, not resale.",
+            "Firm energy is a forecast-weighted blend of the two conditional blocks, not their sum; "
+            "monthly block allocations in Schedule A, excess-energy imbalance price, specifically assigned "
+            "transmission charges, billing demand and transformer losses are customer/month-specific. "
+            "Closed transmission demand rate is available only to existing customers.",
+            components, sections, source_url, "mixed")
+
+    def _parse_net_metering(
+        self, pages: list[DocumentPage], source_url: str, today: date,
+    ) -> TariffRecord:
+        sections = self._published_sections(pages, "NM", 4, today)
+        availability, billing, conditions, continuation = (_flat(page.text) for page in sections)
+        if not all(term in availability for term in ("NET METERING SERVICE OPTION", "metered service rates",
+                                                   "5.0 MW", "two directions")) or not all(term in billing for term in (
+            "Customer Generation Credit equals the Generation Energy Credit", "rate applicable to the",
+            "shall not exceed the energy supplied by Hydro", "carried forward to the following month",
+            "Banked Energy Credits", "marginal wholesale rate", "imbalance rate", "excess energy rate")) or \
+                not all(term in conditions for term in ("100 kW", "renewable energy", "Interconnection Agreement")) or \
+                "participation in the Net Metering Service Option is discontinued" not in continuation:
+            raise _Reject("net metering eligibility, credit rule or settlement terms missing")
+        component = RateComponent(
+            "rebate", "Conditional Generation Energy Credit", -1.0,
+            "fraction of applicable class energy rate per eligible kWh", sub_component="conditional",
+            notes="Applies only to exported/banked kWh up to the month's imported kWh; not a standalone "
+                  "energy price. Surplus banked kWh settle at the published class-specific wholesale, "
+                  "imbalance or diesel excess rate, which varies by month.")
+        return self._new_record(
+            "NM", "Net Metering Service Option", "Metered distribution service, customer-owned renewable generation up to 100 kW; "
+            "subject to the provincial 5 MW enrollment cap and interconnection approval.",
+            "Optional adjustment to the customer's applicable base rate, not a replacement tariff. "
+            "Monthly generation credit is the applicable class rate times eligible kWh; excess kWh bank "
+            "and settle at location-specific variable rates. Metering upgrades and interconnection are "
+            "customer-funded; no invented monthly settlement or bill total.",
+            [component], sections, source_url, "mixed")
 
     def _parse_spec(
         self, spec: _Spec, pages: list[DocumentPage], source_url: str, landing: dict[str, float], today: date,

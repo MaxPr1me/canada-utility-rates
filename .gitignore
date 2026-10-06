@@ -38,6 +38,9 @@ data/excel/
 logs/
 *.log
 
+# Local task tracker and campaign history
+.local/
+
 # Environment
 .env
 .env.local

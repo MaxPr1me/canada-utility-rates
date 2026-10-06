@@ -9,7 +9,7 @@
 #   3. Validates the scraped data
 #   4. Exports JSON for the static site
 #   5. Runs a diff report comparing to the previous run
-#   6. Commits updated data files (which triggers deploy.yml)
+#   6. Commits updated data files (deploy.yml follows this workflow)
 #   7. Creates a GitHub Issue if any sources broke or data changed
 
 name: Monthly Scrape
@@ -57,11 +57,25 @@ jobs:
       - name: Install Playwright browser
         run: python -m playwright install --with-deps chromium
 
+      - name: Restore database history
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/db
+          if gh release view data-history >/dev/null 2>&1; then
+            gh release download data-history -p rates.db -D data/db
+          else
+            echo "No data-history release yet; starting a new database."
+          fi
+
       - name: Initialize database (if needed)
-        run: python -m pipeline.run_scrape --init-db
+        run: |
+          if [ ! -f data/db/rates.db ]; then
+            python -m pipeline.run_scrape --init-db
+          fi
 
       - name: Run deterministic tests before scraping
-        run: pytest -q
+        run: pytest -q 2>&1 | tee test_output.txt
 
       - name: Run scrapers
         id: scrape
@@ -90,6 +104,13 @@ jobs:
                   raise SystemExit(f"Refusing to publish empty {name}")
           PY
 
+      - name: Save database history
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view data-history >/dev/null 2>&1 || gh release create data-history --title "Data history" --notes "Rolling SQLite history; do not delete." --latest=false
+          gh release upload data-history data/db/rates.db --clobber
+
       - name: Generate diff report
         id: diff
         continue-on-error: true
@@ -99,7 +120,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add site/data/ data/db/
+          git add site/data/
           if git diff --staged --quiet; then
             echo "No data changes to commit."
           else
@@ -107,13 +128,21 @@ jobs:
             git push
           fi
 
-      - name: Create issue on validation errors
-        if: steps.validate.outcome == 'failure'
+      - name: Create issue on workflow errors
+        if: failure()
         uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
-            const validateOutput = fs.readFileSync('validate_output.txt', 'utf8');
+            const testOutput = fs.existsSync('test_output.txt')
+              ? fs.readFileSync('test_output.txt', 'utf8')
+              : 'No test output available.';
+            const scrapeOutput = fs.existsSync('scrape_output.txt')
+              ? fs.readFileSync('scrape_output.txt', 'utf8')
+              : 'No scrape output available.';
+            const validateOutput = fs.existsSync('validate_output.txt')
+              ? fs.readFileSync('validate_output.txt', 'utf8')
+              : 'No validation output available.';
             const diffOutput = fs.existsSync('diff_output.txt')
               ? fs.readFileSync('diff_output.txt', 'utf8')
               : 'No diff report available.';
@@ -121,7 +150,7 @@ jobs:
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Scrape issue: validation errors on ${new Date().toISOString().split('T')[0]}`,
-              body: `## Validation Report\n\n\`\`\`\n${validateOutput.slice(0, 3000)}\n\`\`\`\n\n## Diff Report\n\n\`\`\`\n${diffOutput.slice(0, 3000)}\n\`\`\`\n\nThis issue was created automatically by the monthly scrape workflow.`,
+              title: `Scrape issue: workflow failure on ${new Date().toISOString().split('T')[0]}`,
+              body: `## Test Output\n\n\`\`\`\n${testOutput.slice(-3000)}\n\`\`\`\n\n## Scrape Output\n\n\`\`\`\n${scrapeOutput.slice(0, 3000)}\n\`\`\`\n\n## Validation Report\n\n\`\`\`\n${validateOutput.slice(0, 3000)}\n\`\`\`\n\n## Diff Report\n\n\`\`\`\n${diffOutput.slice(0, 3000)}\n\`\`\`\n\nThis issue was created automatically by the monthly scrape workflow.`,
               labels: ['scrape-issue', 'automated'],
             });

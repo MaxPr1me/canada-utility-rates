@@ -13,9 +13,9 @@ Official sources:
   https://fbcdotcomprod.blob.core.windows.net/libraries/docs/default-source/about-us-documents/regulatory-affairs-documents/electric-utility/fortisbcelectrictariff.pdf
   https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/residential-rates
 
-Also parsed: RS 30 / RS 32 large commercial primary (500 kVA+) and the RS 85 Green
-Power rider. Not covered (explicit gaps): RS 31/33 (industrial, 5,000 kVA+), RS 37
-stand-by (RS 31 only), RS 38 interruptible pilot, net metering (RS 95), EV charging
+Also parsed: RS 30 / RS 32 large commercial primary (500 kVA+), RS 31 / RS 33
+industrial transmission (5,000 kVA+) and the RS 85 Green Power rider. Not covered:
+RS 37 stand-by (RS 31 only), RS 38 interruptible pilot, net metering (RS 95), EV charging
 (RS 96), financing (RS 91) and the residential landing page (no static rate text).
 
 Regulated by: British Columbia Utilities Commission (BCUC)
@@ -43,7 +43,7 @@ RESIDENTIAL_RATES_URL = "https://www.fortisbc.com/accounts-billing/billing-rates
 
 _CENT_GLYPHS = "¢ȼ"
 _TARIFF_PAGE_FOOTER = re.compile(r"(?:Revision of|Original) Page (R-\d+[A-Z]?\.\d+)")
-_TARIFF_PAGE_FILTER = re.compile(r"(?:Revision of|Original) Page R-(?:1|2A|20|21|22A|23A|30|32|85)\.\d+\b")
+_TARIFF_PAGE_FILTER = re.compile(r"(?:Revision of|Original) Page R-(?:1|2A|20|21|22A|23A|30|31|32|33|85)\.\d+\b")
 _EFFECTIVE_DATE = re.compile(r"Effective Date:\s*([A-Z][a-z]+ \d{1,2}, \d{4})")
 _CUSTOMER_CHARGE = re.compile(
     r"CUSTOMER\s+(?:A\s+)?CHARGE:\s*\$(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?) per (two Month period|Month)\b"
@@ -643,6 +643,65 @@ def _parse_large_commercial_primary_tou(pages: list[DocumentPage]) -> TariffReco
     )
 
 
+def _parse_industrial_transmission(pages: list[DocumentPage]) -> TariffRecord:
+    page = _schedule_page(pages, "31")
+    source = _page_source(page, "31")
+    flat = _flatten(page.text)
+    _require(re.search(r"AVAILABLE: In all areas served by FortisBC for supply at 60 hertz, three phase with a "
+                       r"nominal potential of 60,000 volts or higher as available", flat), "Rate 31 voltage")
+    _require(re.search(r"Applicable to industrial Customers with loads of 5,000 kVA or more, subject to "
+                       r"written agreement", flat), "Rate 31 eligibility")
+    wires = _require(re.search(r"Wires Charge of: \$(\d+(?:\.\d+)?) per kVA of Billing Demand", flat), "wires charge")
+    supply = _require(re.search(r"Power Supply Charge of: \$(\d+(?:\.\d+)?) per kVA of maximum Demand in "
+                                r"current billing Month", flat), "power supply demand charge")
+    energy = _require(re.search(rf"All kW\.h @ (\d+(?:\.\d+)?)\s*[{_CENT_GLYPHS}]\s*per kW\.h", flat),
+                      "energy charge")
+    customer = _customer_charge_component(source, flat)
+    if customer.charge_unit != "$/month":
+        raise ValueError("unexpected Rate 31 customer charge period")
+    for phrase in ("eighty percent (80%) of the Contract Demand",
+                   "maximum Demand in kVA for the current billing Month",
+                   "eighty percent (80%) of the maximum Demand in kVA recorded during the previous eleven Month period",
+                   "Stand-by Billing Demand under Rate Schedule 37",
+                   "except when Rate Schedule 37, Special Provision 7 applies"):
+        if _squash(phrase) not in _squash(flat):
+            raise ValueError(f"missing Rate 31 Billing Demand condition: {phrase}")
+    return _tariff(
+        "31", "Large Commercial Service - Transmission (Rate 31)", "industrial", "demand", [source],
+        [customer,
+         _component(source, "demand", "Wires Charge", float(wires.group(1)), "$/kVA", demand_unit="kVA",
+                    notes="Per kVA of Billing Demand: greatest of 80% of contract demand, current-month maximum, "
+                          "or 80% of the prior eleven-month maximum; applicable Rate 37 stand-by billing demand "
+                          "is added except under its Special Provision 7."),
+         _component(source, "demand", "Power Supply Charge", float(supply.group(1)), "$/kVA", demand_unit="kVA",
+                    notes="Per kVA of maximum demand in the current billing month, not Billing Demand."),
+         _component(source, "energy", "Energy Charge", _cents_to_dollars(energy.group(1)), "$/kWh")],
+        sub_class="industrial transmission", eligibility="Industrial load of 5,000 kVA or more; three-phase "
+        "60 Hz supply at 60,000 volts or higher where available, subject to written agreement",
+        notes="FortisBC Electric Rate Schedule 31, BCUC Order G-293-25. No voltage or transformation credit "
+              "is published on this schedule.",
+    )
+
+
+def _parse_industrial_transmission_tou(pages: list[DocumentPage]) -> TariffRecord:
+    page = _schedule_page(pages, "33")
+    source = _page_source(page, "33")
+    flat = _flatten(page.text)
+    _require(re.search(r"nominal potential of 60,000 volts or higher as available", flat), "Rate 33 voltage")
+    _require(re.search(r"Applicable to industrial Customers with loads of 5,000 kVA or more, subject to "
+                       r"written agreement", flat), "Rate 33 eligibility")
+    _require_tou_availability(page)
+    return _tariff(
+        "33", "Large Commercial Service - Transmission - Time of Use (Rate 33)", "industrial", "tou",
+        [source], _tou_components(source, page, _PRIMARY_TOU_SEASONS),
+        sub_class="industrial transmission time of use",
+        eligibility="Industrial load of 5,000 kVA or more; three-phase 60 Hz supply at 60,000 volts or higher "
+                    "where available, written agreement and satisfactory load factor; minimum 12 consecutive "
+                    "months, then at the customer's election a minimum of 36 consecutive months.",
+        notes="FortisBC Electric Rate Schedule 33. No demand charge or transmission voltage credit is published.",
+    )
+
+
 def _parse_green_power(pages: list[DocumentPage]) -> TariffRecord:
     page = _schedule_page(pages, "85")
     source = _page_source(page, "85")
@@ -679,7 +738,9 @@ _SCHEDULE_PARSERS: tuple[tuple[str, Callable[[list[DocumentPage]], TariffRecord]
     ("22A", _parse_secondary_tou),
     ("23A", _parse_primary_tou),
     ("30", _parse_large_commercial_primary),
+    ("31", _parse_industrial_transmission),
     ("32", _parse_large_commercial_primary_tou),
+    ("33", _parse_industrial_transmission_tou),
     ("85", _parse_green_power),
 )
 

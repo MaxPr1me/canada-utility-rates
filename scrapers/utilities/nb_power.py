@@ -237,7 +237,7 @@ class NBPowerScraper(BaseScraper):
             )
             live_records = [residential]
             biz_date = _page_effective_date(biz_soup, "Business Rates")
-            if gs1:
+            if gs1 and biz_date:
                 self._stamp_sources(
                     gs1, biz_date, BUSINESS_URL, "General Service 1 (standard) section",
                     {"Basic Charge": "Service Charge row",
@@ -246,7 +246,7 @@ class NBPowerScraper(BaseScraper):
                      "Tier 2 Energy Charge": "Balance kilowatt-hours row, Total Charge"},
                 )
                 live_records.append(gs1)
-            if small_ind:
+            if small_ind and biz_date:
                 self._stamp_sources(
                     small_ind, biz_date, BUSINESS_URL, "Small Industrial section",
                     {"Basic Charge": "Service Charge row",
@@ -256,6 +256,9 @@ class NBPowerScraper(BaseScraper):
                      "Energy Charge": "Energy charge row"},
                 )
                 live_records.append(small_ind)
+            large_ind = self._parse_large_industrial(biz_soup, biz_date)
+            if large_ind:
+                live_records.append(large_ind)
 
             # Validate live data against seed using change detection
             alerts = compare_to_seed(live_records, self._seed_data())
@@ -600,6 +603,13 @@ class NBPowerScraper(BaseScraper):
         energy_rate = None
         energy_tier1 = None
         energy_tier2 = None
+        threshold = None
+        soup = BeautifulSoup(html, "html.parser")
+        heading = next((cell for cell in soup.find_all("th")
+                        if _clean(cell.get_text(" ")) == "Small Industrial Service"), None)
+        eligibility = (heading is not None and
+                       _clean(heading.find_parent("tr").find_next_sibling("tr").get_text(" "))
+                       == "(loads up to 750kilowatts)")
 
         for row in si_rows:
             label = row[0].lower()
@@ -613,20 +623,21 @@ class NBPowerScraper(BaseScraper):
 
             # Demand charge
             elif "demand" in label and "charge" in label:
-                val = _extract_total_from_merged_cell(value_cell)
-                if val is not None and 0.5 < val < 100.0:
-                    demand_charge = val
+                match = re.fullmatch(r"\$(\d+\.\d{2})\s*/kW", value_cell)
+                if match:
+                    demand_charge = float(match.group(1))
 
             # Energy — "first" block
             elif "first" in label and ("kwh" in label or "kilowatt" in label):
-                val = _extract_total_from_merged_cell(value_cell)
+                threshold = re.fullmatch(r"first\s+(\d+)\s+kwh per kilowatt", label)
+                val = _cents_total(value_cell)
                 if val is not None and 0.01 < val < 1.0:
                     energy_tier1 = val
 
             # Energy — "balance" or single energy line
             elif ("balance" in label or "remaining" in label) and \
                     ("kilowatt" in label or "kwh" in label):
-                val = _extract_total_from_merged_cell(value_cell)
+                val = _cents_total(value_cell)
                 if val is not None and 0.01 < val < 1.0:
                     energy_tier2 = val
 
@@ -636,8 +647,9 @@ class NBPowerScraper(BaseScraper):
                 if val is not None and 0.01 < val < 1.0:
                     energy_rate = val
 
-        if demand_charge is None:
-            self.logger.warning("Incomplete Small Industrial parse: no demand charge found")
+        if (demand_charge is None or energy_tier1 is None or energy_tier2 is None
+            or threshold is None or not eligibility):
+            self.logger.warning("Incomplete Small Industrial parse: missing demand or energy tier")
             return None
 
         # Build components
@@ -669,7 +681,9 @@ class NBPowerScraper(BaseScraper):
                 charge_value=energy_tier1,
                 charge_unit="$/kWh",
                 tier_number=1,
-                notes="First block energy charge",
+                tier_threshold=float(threshold.group(1)),
+                tier_unit="kWh per kilowatt",
+                notes="First 100 kWh per kilowatt",
             ))
             if energy_tier2 is not None:
                 components.append(RateComponent(
@@ -678,6 +692,8 @@ class NBPowerScraper(BaseScraper):
                     charge_value=energy_tier2,
                     charge_unit="$/kWh",
                     tier_number=2,
+                    tier_threshold=float(threshold.group(1)),
+                    tier_unit="kWh per kilowatt",
                     notes="Balance energy charge",
                 ))
         elif energy_rate is not None:
@@ -704,6 +720,61 @@ class NBPowerScraper(BaseScraper):
             eligibility="Small industrial customers with loads up to 750 kW",
             notes="NB Power small industrial rate — live parsed",
             components=components,
+        )
+
+    def _parse_large_industrial(self, soup, eff: Optional[str]) -> Optional[TariffRecord]:
+        if not eff:
+            return None
+        heading = next((cell for cell in soup.find_all("th")
+                        if _clean(cell.get_text(" ")) == "Large Industrial Service"), None)
+        if heading is None:
+            return None
+        rows = []
+        for row in heading.find_parent("tr").find_next_siblings("tr"):
+            if row.find("th"):
+                break
+            rows.append(row)
+        if len(rows) != 5:
+            return None
+        eligibility = _clean(rows[0].get_text(" "))
+        billing = rows[1]
+        clauses = [_clean(item.get_text(" ")) for item in billing.find_all("li")]
+        if (eligibility != "(minimum contracted demand of 750 kilowatts)"
+                or not _clean(billing.get_text(" ")).startswith("Billing Demand The greatest of:")
+                or len(clauses) != 5
+                or not all(term in clause for term, clause in zip(
+                    ("monthly maximum kW", "90% of the maximum kVA",
+                     "non-curtailable", "current calendar year excluding April through November",
+                     "previous calendar year excluding April through November"), clauses))):
+            return None
+        demand_cells = [_clean(cell.get_text(" ")) for cell in rows[2].find_all("td")]
+        energy_cells = [_clean(cell.get_text(" ")) for cell in rows[3].find_all("td")]
+        discount = _clean(rows[4].get_text(" "))
+        if (len(demand_cells) != 2 or demand_cells[0] != "Demand Charge"
+                or len(energy_cells) != 2 or energy_cells[0] != "Energy Charge"
+                or not discount.startswith("Declining Discount Firm Rate New facilities")
+                or "additional firm load" not in discount):
+            return None
+        match = re.fullmatch(r"\$(\d+\.\d{2}) per kW of the billing demand per month", demand_cells[1])
+        energy = _cents_total(energy_cells[1])
+        if match is None or energy is None:
+            return None
+        detail = "Business Rates page, Large Industrial Service section (Billing Demand and charge rows)"
+        return TariffRecord(
+            utility_name="NB Power", province="NB", utility_type="electricity",
+            tariff_name="Large Industrial Service",
+            customer_class="industrial", sub_class="large industrial",
+            rate_structure="demand", demand_min_kw=750,
+            effective_date=eff, source_url=BUSINESS_URL, source_page=detail,
+            confidence="high", eligibility="Minimum contracted demand of 750 kW",
+            notes=("Billing demand is the greatest of: " + "; ".join(clauses)
+                   + ". Declining Discount Firm Rate applies only to eligible additional firm load; no universal discount price."),
+            components=[
+                _component("demand", "Demand Charge", float(match.group(1)),
+                           "$/kW/month", eff, BUSINESS_URL, detail, demand_unit="kW"),
+                _component("energy", "Energy Charge", energy, "$/kWh", eff,
+                           BUSINESS_URL, detail),
+            ],
         )
 
     # ── Additional building classes and recurring fees ──────────

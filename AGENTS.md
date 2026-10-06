@@ -17,13 +17,13 @@ It works in three stages:
 3. **Display** — A simple website reads the database and shows the rates in a browsable format.
 
 GitHub Actions schedules a monthly scrape. Deployment and durable history across
-cloud runs still need reliability work; see the roadmap in [README.md](README.md).
-The latest export has 193 latest live tariffs and 480 estimates; stored history contains
-198 live versions. Registry coverage is not the same as live coverage.
-Within the active 16-utility campaign, all 16 utilities have live output (191 latest
-live records). That includes conditional products and reference-only services, not 172
-fully audited building classes. Every utility still has the remaining gaps listed in the
-[coverage matrix](docs/phase5_completion_matrix.md).
+cloud runs have new workflows awaiting first CI run verification; see [README.md](README.md).
+The latest export has 209 latest live tariffs and 480 estimates; stored history contains
+214 live versions and 1,570 snapshots. Registry coverage is not the same as live coverage.
+Within the active 16-utility campaign, all 16 utilities have live output (207 latest
+live records). That includes conditional products and reference-only services, not 207
+fully audited building classes. SaskPower's scoped building schedules are audited;
+remaining utility gaps are listed in the [coverage matrix](docs/phase5_completion_matrix.md).
 
 ---
 
@@ -58,11 +58,12 @@ Some rates in the code are *seed values* — hand-entered fallback numbers used 
 If a task is unclear, or there is more than one sensible way to do it, stop and ask which path to take before making changes. Guessing wastes effort and can hide problems. A short question is always better than an assumption.
 
 **Current focus: building energy costs.** Prioritize residential (including single-family
-homes), commercial, institutional and building-related industrial service. NECB 2025
+homes), commercial, institutional and, from October 6, building-related industrial
+general facility service defined by size, voltage or interruptibility. NECB 2025
 is a use-case reference, not a utility-rate eligibility rule or a compliance claim.
-Do not spend the live-parser campaign expanding farm/oil-field processes, irrigation,
-standalone street lighting, wholesale or other non-building services. Completed work
-and historical data for those classes remain as reference; do not delete them.
+Process-specific farm, oil-field, irrigation, NGV fuelling, EV charging, lighting,
+wholesale/reseller and standby-only services are excluded. Completed work and history
+for those classes remain as reference; do not delete them.
 
 **Context checkpoint rule:** when approaching the context/token limit (target: about
 90%), stop opening new work. Leave room to finish the bounded batch, run its checks,
@@ -208,18 +209,20 @@ python -m pipeline.run_scrape --utility "BC Hydro" --dry-run
 The file `.github/workflows/scrape.yml` tells GitHub Actions to:
 
 1. **On the 1st of every month**, start a computer in the cloud.
-2. Install Python and all the project tools.
-3. Run `python -m pipeline.run_scrape` (same command you'd run locally).
-4. Run `python -m pipeline.validate` to check data quality.
-5. Run `python -m pipeline.export_json` to update the website data.
-6. Save the changes to the repository.
-7. Leave deployment to the separate **Deploy Site** workflow.
-8. Attempt to create a GitHub Issue for validation failures.
+2. Install Python, the project tools and Playwright Chromium.
+3. Restore the database from the `data-history` GitHub Release asset.
+4. Run `python -m pipeline.run_scrape` (same command you'd run locally).
+5. Run `python -m pipeline.validate` to check data quality.
+6. Run `python -m pipeline.export_json` to update the website data.
+7. Upload the database asset only after validation and export succeed, then save the updated site data to the repository.
+8. Leave deployment to the separate **Deploy Site** workflow, now triggered by a successful **Monthly Scrape** run and checking out `main`.
+9. Attempt to create a GitHub Issue for test, scrape or validation/export failures.
 
-**Known limitations:** the scrape workflow's default-token push does not automatically
-start the separate deployment workflow, and failure notification paths need testing.
-The ignored local database also has no explicit cloud restore/save step. Keep your
-local database to preserve history; do not delete it when updating a parser.
+**Known limitations:** these workflow changes, including source-health's Chromium
+installation, have not yet been exercised in CI. Verify the first run's database
+restore/upload, failure issues and deployment trigger before trusting them. GitHub
+Pages must use **GitHub Actions** as its source; `workflow_run` fires from the default
+branch. Keep your local database to preserve history; do not delete it when updating a parser.
 
 **To run it early (not waiting for the 1st of the month):**
 1. Go to the repository on GitHub.
@@ -227,8 +230,8 @@ local database to preserve history; do not delete it when updating a parser.
 3. Click **"Monthly Scrape"** on the left.
 4. Click the **"Run workflow"** button on the right.
 
-After a successful data update, **Deploy Site** can be run manually while the
-automatic handoff is being fixed.
+After a successful data update, **Deploy Site** can still be run manually if the
+new automatic handoff has not yet been verified.
 
 ---
 
@@ -444,13 +447,15 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 762 tests across 8 test modules, including `test_phase5_hardening` for
+There are 801 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
-The BC Hydro, FortisBC Electric, Hydro-Quebec, NL Hydro, NSPower, SaskPower,
-SaskEnergy, Centra Gas, FortisBC Energy, Energir, Heritage Gas (Eastward), Liberty NB
-and Yukon Energy fixtures in `tests/fixtures/` hold official
+The BC Hydro, FortisBC Electric, Hydro-Quebec, NL Hydro, Manitoba Hydro, NB Power,
+Newfoundland Power, Maritime Electric, NSPower, SaskPower, SaskEnergy, Centra Gas,
+FortisBC Energy, Energir, Heritage Gas (Eastward), Liberty NB and Yukon Energy
+fixtures in `tests/fixtures/` hold official
 HTML/PDF-text excerpts, source URLs and page/section details for repeatable parser
-tests. A fixture covers only the saved classes and conditions; it does not prove
+tests. Batch 9 expands source-derived coverage for the eight updated electricity/gas
+parsers; a fixture covers only the saved classes and conditions and does not prove
 the entire utility catalogue is complete.
 
 If everything passes, you'll see green output. If something fails, it will show you exactly what went wrong and where.
@@ -500,8 +505,9 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - Hydro-Quebec DP, grandfathered DM and northern off-grid DN are now parsed alongside D/G/M. DP has summer/winter demand charges; DM/DN charges and energy allowances depend on the approved multiplier. DN applies north of the 53rd parallel except Schefferville and normally uses multiplier one; its older DM-eligibility exception is not a restriction on every DN customer. Conditional supply-voltage credits do not apply to everyone. Minimum bills, demand allowances and transformation-loss rules remain conditions, not extra charges or calculated totals. Missing continuation pages reject only the affected class. The remaining domestic catalogue is still incomplete.
 - Completing a utility means auditing its building-relevant standard published classes, not just replacing existing seed values or completing every unrelated service. A complete class can stay live when another class fails, but never stamp a mixed live/seed list as entirely live.
 - The current campaign covers only the 16 registered utilities outside Ontario, Alberta and the territories. Parallel workers own separate utility files; database/export/registry/test integration and publication are serial. Preserve excluded regions and all earlier snapshots.
-- Published milestones `6cdbc67` and `9b5980d` added coverage at six utilities; the October 5 gas batches added FortisBC Energy, Energir, Eastward (Heritage Gas) and Liberty NB. The current checkpoint has 762 passing tests and 1,464 local snapshots (batch 5 added NB Power 9, Newfoundland Power 8 and hardened Maritime Electric 10; batch 6 added BC Hydro business and fees, Manitoba Hydro seasonal/diesel, FortisBC Electric RS30/32/85 and NSPower business 10/11/12 — BC Hydro 9, Manitoba Hydro 12, FortisBC Electric 9, NSPower 10; industrial skipped; batch 7 added Hydro-Quebec 20 with Inukjuak/G9/Flex/dual-energy/Winter Credit G/net-metering options, NSPower 14 with conditional business pilots 72/73/82/83 and FortisBC Energy 9 with Revelstoke propane; industrial L/LG/H/MA, GD/BR and Rates 6/7 excluded; batch 8 added the BC Hydro power-factor surcharge, Centra PUB schedule conditions, FortisBC Energy Revelstoke business Rates 2/3 (11), Hydro-Quebec Rate M net metering Option I (21) and an Energir inventory-adjustment audit; Deploy Site for 8a88448 succeeded). The campaign is not finished; source-check dates, live-record counts and full-catalogue completion are separate facts. Historical checkpoint instructions must not override the current matrix queue.
-- Gas batch 3: FortisBC Energy's basic charge is per **day**; Revelstoke propane and Rates 4-7 are not parsed. Energir and Eastward follow a link on the official page to the current document each run; if the linked edition/month does not match the page, no live record is produced. Energir's load balancing and renewable-gas charges are conditional, and cap-and-trade is Quebec's carbon cost (no federal charge). Eastward's municipal riders are percentages on fixed/base-energy/demand charges only. Liberty's MGS/LGS customer charges are alternatives chosen by peak monthly use, not two charges added together.
+- Batch 9 is stored and exported: 801 passing tests, 1,570 snapshots (106 new, prior snapshots unchanged), 694 versions / 4,453 components / 214 stored live / 480 seed; 209 latest live across 18 utilities, 207 at all 16 campaign utilities. DB validation: 0 errors and 2 existing AESO warnings. Source-check dates, live-record counts and catalogue completion are different facts. Follow the current [coverage matrix](docs/phase5_completion_matrix.md) and [parser gap report](docs/live_parser_gap_report.md).
+- Batch 9 added NL Hydro Island/Labrador Industrial Firm and conditional net metering; Energir D5 and optional replacement RNG supply; Newfoundland Power Curtailable Option 1 and domestic net metering; NB Power Large Industrial; BC Hydro RS1830 and closed RS1289; FortisBC Electric RS31/33; Hydro-Quebec L/LG/H and business Demand Response Leeway. Manitoba Hydro isolates residential/commercial page failures without adding records. Source-blocked and conditional prices are not universal charges.
+- FortisBC Energy Rates 1-3 have per-day basic charges; Rates 4/5 and Revelstoke propane are also parsed. Energir and Eastward follow the current document link and fail closed on edition/month mismatch. Energir's load balancing and renewable-gas charges are conditional; Eastward's municipal riders have a limited charge base; Liberty's MGS/LGS customer charges are alternatives.
 - Gas batch 4: FortisBC Energy now also parses Rate 5 (written contract, about 5,000 GJ+/yr) and seasonal Rate 4 (April 1-November 1) from their approved schedules; the Rate 5 basic charge is **monthly** as printed in the tariff, even though the business page says daily, so Rate 5 is not interchangeable with the daily Rates 1-3. Fort Nelson Rates 4/5 have no published price table (gap). Energir D3/D4 share one schedule: minimum daily obligation bands are per m³/day of **subscribed volume**, and above-subscribed-volume withdrawal and average load-balancing prices are conditional. Eastward Rate Class 3's demand charge is per GJ of Billing Demand per month (greater of 225 GJ, contract demand or maximum 24-hour use), a unit taken from the approved tariff PDF rather than the rate table; Rate Class 4 is negotiated per site and not published, so it is an exclusion, not a parser gap. Liberty's Off-Peak Service is April-November eligibility only, with the December-March overrun as a note.
 - Hydro-Quebec DT uses temperature switching, not clock-based TOU. Flex D uses notified events; Winter Credit is a closed, conditional adjustment to Rate D and retains the published reference-energy rules. NL Hydro's phase/amperage fixed charges are alternatives, not cumulative charges; seasonal options require their matching base schedules. SaskEnergy delivery-only service excludes private commodity prices. A missing carbon source cannot be hidden under a live label; assembled tariff dates reflect the latest required component while component dates remain intact.
 - FortisBC Electric's current residential price is flat; its older tiered version remains history. Rate 21's kW/kVA charges are alternatives, and voltage/transformation discounts are conditional negative credits. NSPower MURB has its own rider rows and minimum-bill condition; the approved book explicitly applies its peak price on weekends/holidays. Solar Garden and Community Solar records are subscriber adjustments to another tariff, not replacement household energy prices. Centra keeps published delivery/demand parts separate, with no guessed heat conversion or private marketer commodity price.

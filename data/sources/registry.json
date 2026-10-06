@@ -46,7 +46,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Regulated by the Régie de l'énergie du Québec. Default Rate D1 is parsed live for residential and business listings: seven annual-volume basic-fee bands, nine daily distribution blocks, supply, transportation, conditional load balancing and renewable-gas socialization, and the cap-and-trade (CTEAS) price, all in native cents/m3 stored as $/m3. Rates D3 and D4 (subscribed-volume minimum daily obligation bands, withdrawal prices, eligibility thresholds) are parsed from article 14.3 of the same tariff. Interruptible D5, the load-factor balancing formula, rate reductions and fixed-price/renewable supply options remain gaps. Batch 8 audited inventory-related adjustments (Energir inventory fact sheet): they are customer-specific supply/transportation price-difference adjustments or credits computed from each customer's storage parameters, with no published unit price, so they are documented conditions and are never added as a component."
+      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Regulated by the Régie de l'énergie du Québec. Default Rate D1 is parsed live for residential and business listings: seven annual-volume basic-fee bands, nine daily distribution blocks, supply, transportation, conditional load balancing and renewable-gas socialization, and the cap-and-trade (CTEAS) price, all in native cents/m3 stored as $/m3. Rates D3 and D4 (subscribed-volume minimum daily obligation bands, withdrawal prices, eligibility thresholds) are parsed from article 14.3 of the same tariff. Interruptible D5, the load-factor balancing formula, rate reductions and fixed-price/renewable supply options remain gaps. Batch 8 audited inventory-related adjustments (Energir inventory fact sheet): they are customer-specific supply/transportation price-difference adjustments or credits computed from each customer's storage parameters, with no published unit price, so they are documented conditions and are never added as a component. Batch 9 adds interruptible Rate D5 (PDF pages 62-65; Category A/B load-balancing alternatives conditional) and the dated RNG supply price (page 38) as an optional replacement component on D1/D3/D4/D5. Fixed-price supply is supplier-specific and unpriced."
     },
     {
       "name": "FortisBC Energy",
@@ -320,7 +320,7 @@
           "is_primary": false
         }
       ],
-      "notes": "BCUC-regulated residential choices include tiered 1101, flat 1151, each with optional 2101 time-of-day, plus closed dual-fuel 1105. The live parser reads the approved PDF including dates, separate 1901/1904 riders and conditional transformer discounts; the riders exclude 2101 adjustments. Business Rates 1300/1500/1600 are rebuilt from approved tariff pages 97-107 with separate RS1901/1904 riders and conditional primary-voltage/transformation discounts, plus Terms and Conditions Section 11 standard service charges. Industrial/transmission, irrigation, lighting, EV, IPP and net metering are skipped. Batch 8 adds the Terms and Conditions section 7.2 power-factor surcharge (PDF pages 53-54) to each business record as ten conditional bands in the source unit 'fraction of Rate section charges' (lagging power factor below 90%; nil at 90% or more; no leading-power-factor charge); a missing or malformed clause rejects business records only."
+      "notes": "BCUC-regulated residential choices include tiered 1101, flat 1151, each with optional 2101 time-of-day, plus closed dual-fuel 1105. The live parser reads the approved PDF including dates, separate 1901/1904 riders and conditional transformer discounts; the riders exclude 2101 adjustments. Business Rates 1300/1500/1600 are rebuilt from approved tariff pages 97-107 with separate RS1901/1904 riders and conditional primary-voltage/transformation discounts, plus Terms and Conditions Section 11 standard service charges. Batch 9 adds Transmission Service RS1830 (PDF pages 138-140) and closed RS1289 net-metering generation credit as a conditional adjustment (pages 223-231); transmission pilots 2801/2802/2821/2822, RS1892 and RS2289/2290 remain open, RS1828 needs a scope decision, and irrigation, lighting, EV, IPP and standby-only service are excluded. Batch 8 adds the Terms and Conditions section 7.2 power-factor surcharge (PDF pages 53-54) to each business record as ten conditional bands in the source unit 'fraction of Rate section charges' (lagging power factor below 90%; nil at 90% or more; no leading-power-factor charge); a missing or malformed clause rejects business records only."
     },
     {
       "name": "FortisBC Electric",
@@ -349,7 +349,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Six live January 2026 building schedules: flat RS 1, closed residential TOU 2A, commercial 20/21 and TOU 22A/23A. Per-two-month and per-month charges remain native; RS21 kW/kVA components are alternative bases. Conditional voltage/transformation credits are negative rebates, not additive charges. Nine live schedules: large commercial primary RS30 and RS32 (500 kVA contract demand) and optional RS85 Green Power rider were added. Industrial RS31/33 (5,000 kVA and above) and RS37/38 are skipped; RS96 EV, RS95 net metering and RS91 financing have no building price. PDF extraction selects source sheets by printed footer to avoid table-of-contents extraction stalls."
+      "notes": "Six live January 2026 building schedules: flat RS 1, closed residential TOU 2A, commercial 20/21 and TOU 22A/23A. Per-two-month and per-month charges remain native; RS21 kW/kVA components are alternative bases. Conditional voltage/transformation credits are negative rebates, not additive charges. Nine live schedules: large commercial primary RS30 and RS32 (500 kVA contract demand) and optional RS85 Green Power rider were added. Batch 9 adds industrial transmission RS31 and TOU RS33 (sheets R-31.1/R-33.1); RS37 standby-only is excluded and Mid-C-indexed RS38 needs a decision; RS96 EV, RS95 net metering and RS91 financing have no building price. PDF extraction selects source sheets by printed footer to avoid table-of-contents extraction stalls."
     },
     {
       "name": "Hydro-Québec",
@@ -390,7 +390,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Nine live records include D/DP/DM/DN/DT/Flex D, the closed Winter Credit adjustment and G/M. DT switches on source-defined outdoor temperature zones, not hourly TOU, and excludes off-grid service. Flex D preserves seasonal tiers, notified events and mutually exclusive product eligibility. Winter Credit is a conditional adjustment to Rate D, retaining reference-energy rules and enrollment cutoff. Multiplier, minimum-bill and demand rules remain conditions, not calculated bills. Inukjuak, net metering and remaining building business options still need audit; no full catalogue-completion claim. Batch 7 adds 11 live building options (20 live total): Inukjuak DN, Rate G9, Flex G/M/G9, three dual-energy rates, Winter Credit G and net-metering options I/III (option III keeps its own conditions). All components carry source URL, page detail and effective date. Industrial L/LG/H/MA and GD/BR are excluded. Batch 8 adds Net Metering Option I for Rate M (21 live total): Rate M application 4.28 (self-generation up to 1,000 kW) plus the shared Option I surplus-bank reset credit as a conditional $/kWh credit; Rate M charges stay separate."
+      "notes": "Nine live records include D/DP/DM/DN/DT/Flex D, the closed Winter Credit adjustment and G/M. DT switches on source-defined outdoor temperature zones, not hourly TOU, and excludes off-grid service. Flex D preserves seasonal tiers, notified events and mutually exclusive product eligibility. Winter Credit is a conditional adjustment to Rate D, retaining reference-energy rules and enrollment cutoff. Multiplier, minimum-bill and demand rules remain conditions, not calculated bills. Inukjuak, net metering and remaining building business options still need audit; no full catalogue-completion claim. Batch 7 adds 11 live building options (20 live total): Inukjuak DN, Rate G9, Flex G/M/G9, three dual-energy rates, Winter Credit G and net-metering options I/III (option III keeps its own conditions). All components carry source URL, page detail and effective date. Industrial MA is not in the current edition; GD (backup), BR (EV), LD/LP (auxiliary/standby) are excluded. Batch 8 adds Net Metering Option I for Rate M (21 live total): Rate M application 4.28 (self-generation up to 1,000 kW) plus the shared Option I surplus-bank reset credit as a conditional $/kWh credit; Rate M charges stay separate. Batch 9 adds large-power Rates L (pages 63-66), LG (67-69) and H (71) with conditional voltage credits, plus the business Demand Response Leeway Option (pages 94-98) as alternative conditional credits (25 live). DR Commitment Option and Rate F/FP remain open."
     },
     {
       "name": "Manitoba Hydro",
@@ -413,7 +413,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Manitoba Hydro is a Crown corporation providing electricity in Manitoba. Electricity rates are among the lowest in Canada due to abundant hydroelectric generation. Regulated by the Manitoba Public Utilities Board (PUB). Twelve live January 2026 building records: residential standard, seasonal and diesel (basic charge also published for service over 200 A), plus general service small/medium/large/seasonal and diesel general service and diesel government/First Nation education. Industrial, curtailable and lighting classes are skipped."
+      "notes": "Manitoba Hydro is a Crown corporation providing electricity in Manitoba. Electricity rates are among the lowest in Canada due to abundant hydroelectric generation. Regulated by the Manitoba Public Utilities Board (PUB). Twelve live January 2026 building records: residential standard, seasonal and diesel (basic charge also published for service over 200 A), plus general service small/medium/large/seasonal and diesel general service and diesel government/First Nation education. Large general-service voltage tiers cover building-related industrial service. Curtailable, LUBD and surplus-energy programs publish no complete dated price; the net-billing credit lacks a published start date; standard service charges remain unaudited. A failed residential or commercial page no longer discards the other page's live classes. Lighting is excluded."
     },
     {
       "name": "SaskPower",
@@ -489,7 +489,7 @@
           "is_primary": false
         }
       ],
-      "notes": "NB Power is a vertically integrated Crown corporation and the primary electricity provider in New Brunswick. Regulated by the New Brunswick Energy and Utilities Board (NBEUB). Rural/Seasonal residential, residential and business water-heater rental, SureConnect, Recreational Lighting and Public Fast Charging are parsed live from the two official rate pages (effective April 14, 2026, parsed from the pages). Small/Large Industrial, lighting and one-time fees (published under a \"$/month\" heading) are excluded/not modelled. General Service II was merged into General Service I on April 1, 2025."
+      "notes": "NB Power is a vertically integrated Crown corporation and the primary electricity provider in New Brunswick. Regulated by the New Brunswick Energy and Utilities Board (NBEUB). Rural/Seasonal residential, residential and business water-heater rental, SureConnect, Recreational Lighting and Public Fast Charging are parsed live from the two official rate pages (effective April 14, 2026, parsed from the pages). Small and Large Industrial Service are parsed live (batch 9, native $/kW demand, billing-demand rules as conditions); lighting and one-time fees (published under a \"$/month\" heading) are excluded/not modelled. General Service II was merged into General Service I on April 1, 2025."
     },
     {
       "name": "Nova Scotia Power",
@@ -559,7 +559,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Maritime Electric is the primary electricity distributor in Prince Edward Island, a subsidiary of Fortis Inc. Regulated by the Island Regulatory and Appeals Commission (IRAC). Building classes 110/130/131/133/232/233 are source-checked with per-class fail-closed parsing and a source fixture. Industrial 310/320/330/340 are retained as reference. Lighting and short-term service are excluded. No recurring riders are published."
+      "notes": "Maritime Electric is the primary electricity distributor in Prince Edward Island, a subsidiary of Fortis Inc. Regulated by the Island Regulatory and Appeals Commission (IRAC). Building classes 110/130/131/133/232/233 are source-checked with per-class fail-closed parsing and a source fixture. Industrial 310/320/330/340 are parsed as reference and need a building-industrial audit. Lighting and short-term service are excluded. No recurring riders are published."
     },
     {
       "name": "Newfoundland Power",
@@ -582,7 +582,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Newfoundland Power is a subsidiary of Fortis Inc. and the primary electricity distributor on the island of Newfoundland. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB). Rates available only in linked PDF 'Schedule of Rates, Rules and Regulations'. The July 1, 2026 RateBook also supplies Domestic Seasonal 1.1S adjustments, the prompt-payment discount (-1.5%), primary-voltage demand discounts and service fees (reconnection/application/dishonoured payment). Municipal tax and RSP riders are already embedded in printed rates. Curtailable and lighting service are excluded."
+      "notes": "Newfoundland Power is a subsidiary of Fortis Inc. and the primary electricity distributor on the island of Newfoundland. Regulated by the Newfoundland and Labrador Board of Commissioners of Public Utilities (PUB). Rates available only in linked PDF 'Schedule of Rates, Rules and Regulations'. The July 1, 2026 RateBook also supplies Domestic Seasonal 1.1S adjustments, the prompt-payment discount (-1.5%), primary-voltage demand discounts and service fees (reconnection/application/dishonoured payment). Municipal tax and RSP riders are already embedded in printed rates. Batch 9 adds conditional Curtailable Option 1 credits for Rates 2.3/2.4 (-$29/kVA, PDF pages 30-31) and the Domestic 1.1 net-metering generation credit (pages 32-34); Option 2 load-factor formula and GS/seasonal net-metering credits are unmodelled. Lighting is excluded."
     },
     {
       "name": "NL Hydro",
@@ -605,7 +605,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Eighteen current building-service and seasonal-option records are parsed from individually dated July 2026 pages. Phase/amperage basic charges are mutually exclusive alternatives. kW/kVA, monthly diesel blocks, government/non-government service, required minimum/maximum bills and optional adjustment conditions are retained. Seasonal options require their base schedule; no bill totals. Lighting/wholesale are outside scope; net-metering, commissioning and contract-specific industrial applicability remain explicit catalogue gaps."
+      "notes": "Eighteen current building-service and seasonal-option records are parsed from individually dated July 2026 pages. Phase/amperage basic charges are mutually exclusive alternatives. kW/kVA, monthly diesel blocks, government/non-government service, required minimum/maximum bills and optional adjustment conditions are retained. Seasonal options require their base schedule; no bill totals. Batch 9 adds Island Industrial Firm (pages 9-10), Labrador Industrial Firm (pages 62-65) and the conditional Net Metering Service Option credit (pages 67-70); 21 live. 5.1L is source-blocked (monthly futures pricing); CP is transmission commissioning; lighting/UT wholesale are outside scope."
     },
     {
       "name": "Yukon Energy",

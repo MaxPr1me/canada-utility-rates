@@ -12,16 +12,32 @@
     ]
   },
   {
+    "utility": "BC Hydro",
+    "province": "BC",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "industrial",
+      "other",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "Transmission Service (Rate 1830)"
+    ]
+  },
+  {
     "utility": "FortisBC Electric",
     "province": "BC",
     "utility_type": "electricity",
     "classes_present": [
       "commercial",
+      "industrial",
       "other",
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "Large Commercial Service - Primary (Rate 30)"
+      "Large Commercial Service - Primary (Rate 30)",
+      "Large Commercial Service - Transmission (Rate 31)"
     ]
   },
   {
@@ -47,6 +63,8 @@
     "utility_type": "electricity",
     "classes_present": [
       "commercial",
+      "industrial",
+      "other",
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
@@ -69,7 +87,9 @@
       "General Service 0-100 kW (Rate 2.1)",
       "General Service 110 kVA - 1000 kVA (Rate 2.3)",
       "General Service 1000 kVA and Over (Rate 2.4)",
-      "Primary Voltage Demand Discount (Regulation 9(k))"
+      "Primary Voltage Demand Discount (Regulation 9(k))",
+      "Curtailable Service Option 1 (Rate 2.3)",
+      "Curtailable Service Option 1 (Rate 2.4)"
     ]
   },
   {

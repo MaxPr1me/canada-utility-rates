@@ -163,6 +163,8 @@ class NewfoundlandPowerScraper(BaseScraper):
             lambda: self._prompt_payment(pages, link),
             lambda: self._primary_voltage_discount(pages, link),
             lambda: self._service_fees(pages, link),
+            lambda: self._curtailable(pages, link, base),
+            lambda: self._net_metering_domestic(pages, link, base),
         ):
             try:
                 record = builder()
@@ -170,8 +172,91 @@ class NewfoundlandPowerScraper(BaseScraper):
                 self.logger.warning("Newfoundland Power page parser failed", exc_info=True)
                 record = None
             if record:
-                records.append(record)
+                if isinstance(record, list):
+                    records.extend(record)
+                else:
+                    records.append(record)
         return records
+
+    def _curtailable(
+        self, pages: list[DocumentPage], link: str, base: list[TariffRecord]
+    ) -> list[TariffRecord]:
+        rate = self._find_page(pages, r"CURTAILABLE SERVICE OPTION", r"Contracted Demand Reduction x \$\d+ per kVA")
+        conditions = self._find_page(pages, r"CURTAILABLE SERVICE OPTION", r"Failure to Curtail:")
+        if not rate or not conditions or self._page_date(rate) != self._page_date(conditions):
+            return []
+        date = self._page_date(rate)
+        if not date or not re.search(
+            r"Curtailment Credit = Contracted Demand Reduction x \$(\d+) per kVA", rate.text
+        ) or not all(term in rate.text for term in ("300 kW (330 kVA)", "5000 kW (5500 kVA)", "during May billing")):
+            return []
+        if not all(term in conditions.text for term in ("25% for each", "12.5% for", "no Curtailment Credit")):
+            return []
+        amount = float(re.search(
+            r"Curtailment Credit = Contracted Demand Reduction x \$(\d+) per kVA", rate.text
+        ).group(1))
+        detail = f"PDF pages {rate.page_number}-{conditions.page_number}, Curtailable Service Option"
+        return [TariffRecord(
+            utility_name="Newfoundland Power", province="NL", utility_type="electricity",
+            tariff_name=f"Curtailable Service Option 1 (Rate {code})", tariff_code=f"{code}-CURT1",
+            customer_class=base_rate.customer_class, rate_structure="demand", effective_date=date,
+            source_url=link, source_page=detail, confidence="high",
+            eligibility=("Rate 2.3 or 2.4 customers demonstrating 300-5000 kW "
+                         "(330-5500 kVA) contracted winter demand reduction; enrollment required."),
+            notes=("Conditional May billing credit for successful December-March curtailment, "
+                   "not a standard demand-charge reduction. Failures reduce or eliminate the "
+                   "credit. Option 2 uses a separate load-factor formula and is not represented here."),
+            components=[RateComponent(
+                component_type="rebate", component_name="Curtailment Credit - Option 1",
+                charge_value=-amount, charge_unit="$/kVA", demand_unit="kVA",
+                effective_date=date, source_url=link, source_detail=detail, confidence="high",
+                notes="Per kVA of contracted demand reduction, credited in May only if conditions are met",
+            )],
+        ) for code in ("2.3", "2.4")
+            if (base_rate := next((r for r in base if r.tariff_code == code and r.effective_date == date), None))]
+
+    def _net_metering_domestic(
+        self, pages: list[DocumentPage], link: str, base: list[TariffRecord]
+    ) -> Optional[TariffRecord]:
+        availability = self._find_page(pages, r"NET METERING SERVICE OPTION", r"Availability:")
+        billing = self._find_page(pages, r"NET METERING SERVICE OPTION", r"Customer Generation Credit equals")
+        conditions = self._find_page(pages, r"NET METERING SERVICE OPTION", r"nameplate capacity rating")
+        domestic = next((r for r in base if r.tariff_code == "1.1"), None)
+        if not all((availability, billing, conditions, domestic)):
+            return None
+        date = self._page_date(billing)
+        if not date or any(self._page_date(page) != date for page in (availability, conditions)):
+            return None
+        if domestic.effective_date != date or not all(term in billing.text for term in (
+            "rate applicable to the Customer’s class", "shall not exceed the energy supplied",
+            "then-current 2nd block energy charge",
+        )) or not all(term in conditions.text for term in (
+            "not more than 100 kW", "annual energy requirements", "renewable energy source",
+        )) or "not available for unmetered service accounts" not in availability.text:
+            return None
+        energy = [c for c in domestic.components if c.component_type == "energy" and c.charge_unit == "$/kWh"]
+        if len(energy) != 1 or not energy[0].source_detail or energy[0].effective_date != date:
+            return None
+        detail = (f"{energy[0].source_detail}; PDF pages {availability.page_number}-"
+                  f"{conditions.page_number}, Net Metering Service Option")
+        return TariffRecord(
+            utility_name="Newfoundland Power", province="NL", utility_type="electricity",
+            tariff_name="Domestic Net Metering Service Option (Rate 1.1)", tariff_code="1.1-NM",
+            customer_class="residential", rate_structure="flat", effective_date=date,
+            source_url=link, source_page=detail, confidence="high",
+            eligibility=("Metered Rate 1.1 customer with approved renewable generation up to 100 kW, "
+                         "designed not to exceed annual premises energy needs; provincial cap applies."),
+            notes=("Conditional generation credit against monthly purchases at the Rate 1.1 energy price; "
+                   "limited to purchased kWh, with unused kWh banked. Annual bank settlement uses NL "
+                   "Hydro's then-current second-block Utility Rate, not this retail price; no "
+                   "annual cash settlement is priced here. Fixed charges and taxes remain applicable."),
+            components=[RateComponent(
+                component_type="rebate", component_name="Domestic Monthly Generation Credit",
+                charge_value=-energy[0].charge_value, charge_unit="$/kWh", effective_date=date,
+                source_url=link, source_detail=detail, confidence="high",
+                notes="Per credited kWh, up to monthly energy purchased; surplus kWh banked",
+            )],
+        )
 
     def _seasonal_domestic(
         self, pages: list[DocumentPage], link: str, base: list[TariffRecord]

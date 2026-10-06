@@ -1,6 +1,27 @@
 {
  "_note": "Official Manitoba Hydro electricity rate page text, one line per element (parse_html get_text with newline separator); footnote marker lines kept. Trimmed to the electricity tables.",
  "retrieved": "2026-10-05",
+ "catalogue_review": {
+  "retrieved": "2026-10-06",
+  "rate_index": {
+   "url": "https://www.hydro.mb.ca/accounts_and_services/rates/",
+   "schedule_url": "https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf",
+    "excerpt": "Electric Rate Schedule - January 1, 2026"
+  },
+  "net_billing": {
+   "url": "https://www.hydro.mb.ca/service/generate-your-own-electricity/",
+   "excerpt": "The excess energy price is $0.07173/kWh until March 31, 2027.",
+   "date_gap": "No effective start date for the current price is stated on this page."
+  },
+  "net_billing_rule": {
+   "url": "https://www.hydro.mb.ca/service/generate-your-own-electricity/net-billing/",
+   "excerpt": "We use net billing instead of net metering. Net billing allows you to generate electricity for your own use and sell your excess electricity to us to receive a monetary credit on your Manitoba Hydro account."
+  },
+  "large_generators": {
+   "url": "https://www.hydro.mb.ca/service/generate-your-own-electricity/sell-excess/",
+   "excerpt": "The excess energy price for projects 100 kW in size or greater is determined on a case-by-case basis"
+  }
+ },
  "pages": {
   "residential": {
    "url": "https://www.hydro.mb.ca/accounts_and_services/rates/residential_rates/",

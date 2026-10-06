@@ -149,7 +149,7 @@ class EnergirScraper(BaseScraper):
 
     def parse_pages(self, pages: dict[str, str], today: Optional[date] = None,
                     tariff_url: Optional[str] = None) -> list[TariffRecord]:
-        """Build Rate D1, D3 and D4 records from texts keyed pricing/tariff; each rate fails closed on its own."""
+        """Build D1, D3, D4 and D5 from pricing/tariff texts; each rate fails closed on its own."""
         today = today or datetime.now(timezone.utc).date()
         pages = {key: self._norm(text) for key, text in pages.items()}
         tariff = pages.get("tariff", "")
@@ -173,6 +173,10 @@ class EnergirScraper(BaseScraper):
                 records.append(self._parse_stable_load(code, tariff, edition, tariff_url))
             except ValueError as exc:
                 self.logger.warning("Energir Rate %s not parsed live: %s", code, exc)
+        try:
+            records.append(self._parse_d5(tariff, edition, tariff_url))
+        except ValueError as exc:
+            self.logger.warning("Energir Rate D5 not parsed live: %s", exc)
         return records
 
     def _parse_d1(self, tariff: str, edition: date, tariff_url: str) -> list[TariffRecord]:
@@ -232,6 +236,12 @@ class EnergirScraper(BaseScraper):
         values["rider"] = (self._dollars(rider.group(1)), rider.group(2), rider.group(3))
         if min(values["social"][0], values["rider"][0]) <= 0:
             raise ValueError("non-positive adjustment price")
+        try:
+            values["renewable"] = self._dated_price(
+                tariff, r"the gas from renewable sources supply price, as of " + DATE + r", is " + CENTS,
+                "renewable supply", edition)
+        except ValueError:
+            values["renewable"] = None
         return values
 
     def _build(self, values: dict, edition: date, url: str, customer_class: str) -> TariffRecord:
@@ -255,13 +265,13 @@ class EnergirScraper(BaseScraper):
                 tier_threshold=upper, tier_unit="m³/day" if upper else None,
                 notes="Daily volume block (upper bound shown) multiplied by the days in the billing period"))
         threshold, balancing = values["balancing"]
-        supply, transport, social, rider, cteas = self._shared_components(component, values)
+        shared = self._shared_components(component, values)
         comps += [
-            supply, transport,
+            *shared[:-3],
             component("other", "Load Balancing", balancing, "$/m³", "13.1.2.1", sub_component="conditional",
                       notes=f"Applies to customers whose annual volume is less than {threshold:,.0f} m³; other "
                             "customers pay a load-factor formula price."),
-            social, rider, cteas,
+            *shared[-3:],
         ]
         residential = customer_class == "residential"
         return TariffRecord(
@@ -282,7 +292,7 @@ class EnergirScraper(BaseScraper):
     def _shared_components(component, values: dict) -> list[RateComponent]:
         social, social_percent = values["social"]
         rider, rider_percent, rider_year = values["rider"]
-        return [
+        result = [
             component("commodity", "Natural Gas Supply", values["supply"][1], "$/m³", "11.1.2.1",
                       market_reference="Energir traditional natural gas supply",
                       notes="Distributor's traditional supply price, adjustable monthly. Customers may supply their own "
@@ -302,6 +312,13 @@ class EnergirScraper(BaseScraper):
                       notes="Quebec cap-and-trade allowance cost per m³ of traditional gas, adjustable quarterly; "
                             "registered emitters are not billed this service."),
         ]
+        if values["renewable"]:
+            result.insert(1, component(
+                "commodity", "Gas from Renewable Sources Supply", values["renewable"][1], "$/m³",
+                "11.1.2.1", sub_component="conditional",
+                notes="Optional replacement for traditional supply on the subscribed share, not an added charge. "
+                      "Written request at least 60 days ahead; availability and allocation apply (article 11.1.3.5)."))
+        return result
 
     def _parse_stable_load(self, code: str, tariff: str, edition: date, url: str) -> TariffRecord:
         """Rate D3 or D4 (article 14.3); both share one price schedule and differ in eligibility and balancing."""
@@ -397,16 +414,16 @@ class EnergirScraper(BaseScraper):
                       "the band matching the subscribed volume (unit as printed, upper bound shown). Withdrawals above "
                       "150% from November 1 to March 31 are unauthorized (50 ¢/m³ penalty plus Iroquois price), "
                       "not parsed as a charge."))
-        supply, transport, social, rider, cteas = self._shared_components(component, values)
+        shared = self._shared_components(component, values)
         comps += [
-            supply, transport,
+            *shared[:-3],
             component("other", "Load Balancing — Average Price", values["balancing"], "$/m³", "13.1.2.3",
                       sub_component="conditional",
                       notes=f"Rate {code} average load-balancing price; applies only when the firm or interruptible "
                             "volume withdrawn from Oct 1, 2025 to Sep 30, 2026 is nil or does not represent 12 "
                             "consecutive months. Otherwise the load-factor formula price (article 13.1.2.2, capped at "
                             "23.602 ¢/m³) applies and is not parsed as a fixed value."),
-            social, rider, cteas,
+            *shared[-3:],
         ]
         return TariffRecord(
             utility_name="Energir", province="QC", utility_type="gas",
@@ -419,6 +436,76 @@ class EnergirScraper(BaseScraper):
                    "published in cents and stored as dollars; subscribed volume stays in m³/day. Contract-term and "
                    "additional reductions, minimum annual obligations, negotiated peak service, inventory adjustments "
                    "and taxes are not included. Regulated by the Régie de l'énergie."),
+            components=comps,
+        )
+
+    def _parse_d5(self, tariff: str, edition: date, url: str) -> TariffRecord:
+        start = tariff.find("14.4.1 APPLICATION")
+        price_start = tariff.find("14.4.2.1 Unit Prices for the Volume Withdrawn", start)
+        price_end = tariff.find("14.4.2.2 Reduction According to Minimum Annual Obligation", price_start)
+        end = tariff.find("14.5 RECEIPT SERVICE", price_end)
+        if not 0 <= start < price_start < price_end < end:
+            raise ValueError("D5 application or price sections missing")
+        application = tariff[start:price_start]
+        eligibility = re.search(r"at least (" + VOLUME + r") m³/day", application)
+        if not eligibility or self._volume(eligibility.group(1)) != 3200 or not all(
+            phrase in application for phrase in (
+                "withdrawals of interruptible service natural gas", "use the distributor’s transportation service",
+                "demonstrate the ability to interrupt", "cannot withdraw natural gas, at a single metering point, "
+                "under both Category A and Category B")):
+            raise ValueError("D5 eligibility or exclusive categories changed")
+        section = tariff[price_start:price_end]
+        if "m³/Day ¢/m³" not in section or "weighted average" not in section:
+            raise ValueError("D5 distribution unit or weighting rule changed")
+        bands = self._blocks(section, "D5 distribution")
+        if len(bands) != 6:
+            raise ValueError("D5 distribution band count changed")
+        conditions = tariff[price_end:end]
+        required = ("14.4.2.6 Unauthorized Withdrawals During Interruptions", "$5.00/m³",
+                    "14.4.3 MINIMUM ANNUAL OBLIGATION", "14.4.6 INTERRUPTIONS",
+                    "at least 2 hours before the beginning of the interruption")
+        if not all(phrase in conditions for phrase in required):
+            raise ValueError("D5 interruption or minimum-volume terms missing")
+        averages = re.search(r"D5 – Category A \((\d+\.\d{3})\) D5 – Category B (\d+\.\d{3})", tariff)
+        if not averages:
+            raise ValueError("D5 category load-balancing alternatives missing")
+        values = self._shared_values(tariff, edition)
+        eff = edition.isoformat()
+        detail = f"Conditions of Service and Tariff as of {edition.strftime('%B')} {edition.day}, {edition.year}"
+
+        def component(kind: str, name: str, value: float, unit: str, article: str, **extra) -> RateComponent:
+            return RateComponent(kind, name, value, unit, effective_date=eff, source_url=url,
+                                 source_detail=f"{detail}, article {article}", **extra)
+
+        comps = [component("delivery", f"Interruptible Distribution — Band {number}", value, "$/m³",
+                           "14.4.2.1", tier_number=number, tier_threshold=upper,
+                           tier_unit="m³/day" if upper else None,
+                           notes="Weighted average by combined firm subscribed and projected interruptible daily "
+                                 "volume; the resulting price applies to each m³ withdrawn (not six additive rates).")
+                 for number, (value, upper) in enumerate(bands, 1)]
+        comps.extend(self._shared_components(component, values))
+        for category, price in (("A", -self._dollars(averages.group(1))),
+                                ("B", self._dollars(averages.group(2)))):
+            comps.append(component("rebate" if price < 0 else "other",
+                                   f"Load Balancing — Category {category} Average", price, "$/m³",
+                                   "13.1.2.3", sub_component="conditional",
+                                   notes=f"Only for D5 Category {category} with nil or fewer than 12 consecutive "
+                                         "months' prior consumption; A and B are mutually exclusive. Otherwise "
+                                         "article 13.1.2.2 uses the interruption-adjusted load-factor formula."))
+        return TariffRecord(
+            utility_name="Energir", province="QC", utility_type="gas", tariff_name="Commercial — Rate D5",
+            tariff_code="D5", customer_class="commercial", sub_class="interruptible service",
+            eligibility="Interruptible service at one metering point; combined firm subscribed volume and 1/365 "
+                        "of the interruptible minimum contract volume at least 3,200 m³/day. Requires distributor "
+                        "transportation and demonstrated ability to interrupt. Category A or B, not both; "
+                        "Category B requires operational and economic availability.",
+            rate_structure="tiered", pricing_method="regulated", effective_date=eff, source_url=url,
+            source_page=f"{detail}, articles 14.4.1–14.4.6 (PDF pages 62–65)", confidence="high",
+            notes="Written contract; minimum annual obligation is adjusted for interruption days, not an added "
+                  "charge. Reductions depend on MAO and term. Notice at least 2 hours before interruption; "
+                  "maximum interruption days depend on volume and category. Unauthorized withdrawals have "
+                  "conditional penalties; unable-to-interrupt customers may face customer-specific make-up gas "
+                  "or supply and transportation pass-through prices. No negotiated amounts are assumed.",
             components=comps,
         )
 
