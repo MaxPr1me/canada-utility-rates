@@ -208,7 +208,7 @@ in-scope gas and building-catalogue gaps. Ontario and Alberta work stays deferre
 
 1. Batch 11 closed the campaign's priced, dated gaps (FortisBC Energy U/RNG variants, SaskEnergy fees, Centra Mainline Interruptible transcription, NTPC Taltson heating). Monitor Qulliq's final GRA instruction, NTPC Snare TPSP, Centra Appendix A editions and the monthly Yukon joint-book file name. Maintain SaskPower's audited building schedules and retained references.
 2. Re-check source-blocked items periodically (see the matrix reconciliation table). Do not invent source-blocked prices. Market-indexed FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing and NL Hydro monthly non-firm prices wait for the Alberta/Ontario market-rate work. See the [matrix](phase5_completion_matrix.md).
-3. Ontario batch 2: configure the 23 remaining distributors from their OEB-approved tariff sheets, then retry the rejected Kingston/Midland/Oakville classes. Alberta stays excluded and retained in the data.
+3. Ontario batch 2: configure the 23 remaining distributors from their OEB-approved tariff sheets, then retry the rejected Kingston/Midland classes. Rejected Residential/GS<50 classes (Oakville) will stop re-emitting estimates. Alberta stays excluded and retained in the data.
 4. Browser-enabled source health, test/scrape failure issues, release-asset database history and a successful Monthly Scrape deployment trigger are implemented, pending first CI run verification. Outcome/provenance reporting remains on the separate operational track; do not claim the automation works until exercised.
 
 ## Phase 5-wide Status

@@ -422,7 +422,7 @@ features, **not evidence that all registered utilities or published classes are 
 | 5D: Provincial/territorial depth | Building-class audits at already-live utilities; later territorial coverage | NL Hydro 21 records implemented; territories reopened October 7 (NTPC, Qulliq, Yukon Energy and ATCO Electric Yukon live) |
 | 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | All six in-scope gas utilities have live output; building-service gaps remain. ON/AB gas excluded from this run |
 | 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Planned |
-| 5G: Ontario | Batch 1 done (24 distributors live from OEB tariff sheets; merged identities reconciled); batch 2: 23 remaining distributors | In progress |
+| 5G: Ontario | Batch 1 done October 7 (24 distributors live from OEB tariff sheets; merged identities reconciled). Next: batch 2 for the 23 remaining distributors, plus stopping re-emitted estimates for rejected Residential/GS<50 classes (Oakville) | In progress |
 | 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; first CI run verification and provenance reporting remain |
 
 **Definition of done for each utility:** account for the standard published classes

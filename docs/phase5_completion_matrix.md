@@ -305,8 +305,12 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
 ## Next Batches and Acceptance
 
 0. **Ontario batch 2 (next):** configure the 23 remaining distributors (list in the Ontario
-   section) from their OEB-approved tariff sheets. Then retry Kingston/Midland GS 50-4,999 and
-   Oakville GS<50 ($/kW LRAM rider). Ontario demand-class commodity/GA stays with the market-rate work.
+   section) from their OEB-approved tariff sheets. Wave A: three parallel research workers
+   (south, central/east, north) find each approved 2026 tariff and test-parse it. Wave B:
+   parallel code with one owner each for `oeb_tariff.py` and `ontario_ldc.py`; integration is
+   serial. Also retry Kingston/Midland GS 50-4,999, and stop re-emitting estimates for rejected
+   Residential/GS<50 classes such as Oakville (decision October 7; older copies stay labelled
+   history). Ontario demand-class commodity/GA stays with the market-rate work.
 
 1. The campaign's priced, dated gaps are closed (batch 11). Monitor: Qulliq final GRA instruction, NTPC Snare TPSP reconciliation, Centra Appendix A edition changes, monthly Yukon joint-book file name.
 2. Re-check source-blocked items periodically (reconciliation table). Market-indexed FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing and NL Hydro monthly non-firm prices wait for the Alberta/Ontario market-rate work.
@@ -333,4 +337,5 @@ database or invent rates to make completion metrics look better.
 
 Detailed checkpoints are kept in the maintainer's local tracker; earlier published
 checkpoints are in git history (commits `0e43ca6` through `08531d2`). Batch 9 was
-stored and exported October 6. Use the current queue above for next work.
+stored and exported October 6. Ontario batch 1 was stored and pushed October 7 (`1f3ae6c`);
+the log cap and recorded decisions followed in `91c15cc`. Use the current queue above for next work.
