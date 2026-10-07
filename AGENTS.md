@@ -463,7 +463,8 @@ territories; a fixture covers only the saved classes and conditions and does not
 the entire utility catalogue is complete.
 
 If the test run seems to freeze, check the size of `logs/scrape.log`. PDF libraries
-can write huge debug logs; `setup_logging()` now keeps them quiet.
+can write huge debug logs; `setup_logging()` now keeps them quiet and caps the file at
+10 MB (three older copies kept). The log is only a debug diary: deleting it is safe.
 
 If everything passes, you'll see green output. If something fails, it will show you exactly what went wrong and where.
 

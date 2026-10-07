@@ -9,10 +9,13 @@ from __future__ import annotations
 
 import logging
 import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 
 LOG_DIR = Path(__file__).resolve().parent.parent.parent / "logs"
+LOG_MAX_BYTES = 10 * 1024 * 1024
+LOG_BACKUP_COUNT = 3
 
 
 def setup_logging(level: int = logging.INFO, log_file: str = "scrape.log") -> None:
@@ -20,7 +23,8 @@ def setup_logging(level: int = logging.INFO, log_file: str = "scrape.log") -> No
     Configure logging for the project.
 
     - Console output: INFO and above, compact format
-    - File output: DEBUG and above, detailed format with timestamps
+    - File output: DEBUG and above, detailed format with timestamps; rotates at
+      LOG_MAX_BYTES, keeping LOG_BACKUP_COUNT older files
     """
     LOG_DIR.mkdir(exist_ok=True)
 
@@ -42,7 +46,8 @@ def setup_logging(level: int = logging.INFO, log_file: str = "scrape.log") -> No
     root.addHandler(console)
 
     # File handler
-    file_handler = logging.FileHandler(LOG_DIR / log_file, encoding="utf-8")
+    file_handler = RotatingFileHandler(LOG_DIR / log_file, maxBytes=LOG_MAX_BYTES,
+                                       backupCount=LOG_BACKUP_COUNT, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
     file_fmt = logging.Formatter(
         "%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",

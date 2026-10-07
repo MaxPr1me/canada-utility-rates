@@ -172,9 +172,15 @@ Open GS classes with a floor at or below 1,000 kW map to commercial, otherwise t
 | Oakville Hydro | 5 / 4 | GS<50 TOU/Tiered/ULO stay seed (LRAM rider in $/kW) |
 
 Total: **319 live records across 24 distributors** (stored October 7, 2026, scrape run 25;
-plus 25 labelled seed records). Rejected
-demand classes produce no record; their old seed estimates are not re-emitted alongside
-live demand records. Every failure is per class (fail-closed).
+plus 25 labelled seed records). Rejected classes get no new estimate (decision October 7:
+follow live sources); older estimates stored earlier remain in history, labelled as estimates
+and hidden by default. Every failure is per class (fail-closed).
+
+**Confirmed decisions (October 7):** the open-GS rule above. Hydro One Seasonal: the R2 page
+prints a Seasonal service charge ($92.43) beside the year-round charge ($151.14); Seasonal
+records use it with R2's shared lines and no RRRP credit, while year-round R2 records show the
+RRRP credit (-$60.50) as conditional. Seasonal properties in UR/R1 areas use the UR/R1 records.
+The R2 Distribution Rate Protection cap is not modelled.
 
 **Still unconfigured (seed only, batch 2):** Algoma, Atikokan, Canadian Niagara,
 Centre Wellington, Festival, Fort Frances, Grimsby, Hearst, Hydro 2000, Hydro Hawkesbury,
