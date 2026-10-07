@@ -54,7 +54,13 @@
       "General Service Medium",
       "General Service Large (>750 V to 30 kV)",
       "General Service Large (>30 kV to 100 kV)",
-      "General Service Large (>100 kV)"
+      "General Service Large (>100 kV)",
+      "LUBD General Service Small (Single Phase)",
+      "LUBD General Service Small (Three Phase)",
+      "LUBD General Service Medium",
+      "LUBD General Service Large (>750 V to 30 kV)",
+      "LUBD General Service Large (>30 kV to 100 kV)",
+      "LUBD General Service Large (>100 kV)"
     ]
   },
   {
@@ -98,6 +104,7 @@
     "utility_type": "electricity",
     "classes_present": [
       "commercial",
+      "industrial",
       "other",
       "residential"
     ],
@@ -107,7 +114,11 @@
       "Commercial General Demand",
       "Large Commercial",
       "General Critical Peak Pricing Pilot (Rate 73) - Conditional Pilot",
-      "General Time-of-Use Pilot (Rate 83) - Conditional Pilot"
+      "General Time-of-Use Pilot (Rate 83) - Conditional Pilot",
+      "Small Industrial",
+      "Medium Industrial",
+      "Large Industrial - Firm",
+      "Large Industrial - Interruptible Rider"
     ]
   },
   {
@@ -119,7 +130,50 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "General Service — Yellowknife Zone"
+      "General Service — Yellowknife Zone",
+      "General Service Government — Behchokǫ̀ (Snare Zone)",
+      "General Service Government — Dettah (Snare Zone)",
+      "General Service — Snare Zone",
+      "General Service Government — Wha Ti (Thermal Zone)",
+      "General Service Government — Gameti (Thermal Zone)",
+      "General Service Government — Łutselk’e (Thermal Zone)",
+      "General Service Government — Fort Simpson (Thermal Zone)",
+      "General Service Government — Fort Liard (Thermal Zone)",
+      "General Service Government — Wrigley (Thermal Zone)",
+      "General Service Government — Nahanni Butte (Thermal Zone)",
+      "General Service Government — Jean Marie River (Thermal Zone)",
+      "General Service Government — Inuvik (Thermal Zone)",
+      "General Service Government — Tuktoyaktuk (Thermal Zone)",
+      "General Service Government — Fort McPherson (Thermal Zone)",
+      "General Service Government — Aklavik (Thermal Zone)",
+      "General Service Government — Délı̨nę (Thermal Zone)",
+      "General Service Government — Fort Good Hope (Thermal Zone)",
+      "General Service Government — Paulatuk (Thermal Zone)",
+      "General Service Government — Sachs Harbour (Thermal Zone)",
+      "General Service Government — Tsiigehtchic (Thermal Zone)",
+      "General Service Government — Colville Lake (Thermal Zone)",
+      "General Service Government — Ulukhaktok (Thermal Zone)",
+      "General Service Government — Tulita (Thermal Zone)",
+      "General Service — Thermal Zone",
+      "General Service Government — Norman Wells (Norman Wells Zone)",
+      "General Service — Norman Wells Zone",
+      "General Service Government — Hay River (Taltson Zone)",
+      "General Service Government — Fort Smith (Taltson Zone)",
+      "General Service Government — Fort Resolution (Taltson Zone)",
+      "General Service — Taltson Zone (Hay River)",
+      "General Service — Taltson Zone (Fort Smith/Fort Resolution)"
+    ]
+  },
+  {
+    "utility": "Qulliq Energy Corporation",
+    "province": "NU",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "Commercial Service"
     ]
   },
   {
@@ -129,13 +183,12 @@
     "classes_present": [
       "commercial",
       "industrial",
+      "other",
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
       "General Service (Rate 232)",
       "General Service - Seasonal Operators Option (Rate 233)",
-      "Small Industrial (Rate 320)",
-      "Large Industrial (Rate 310)",
       "Long Term Contract (Rate 340)",
       "Short Term Contract (Rate 330)"
     ]
@@ -181,7 +234,19 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "General Service"
+      "General Service",
+      "General Service Hydro, Non-Government (Rate 2160)",
+      "General Service Small Diesel, Non-Government (Rate 2260)",
+      "General Service Large Diesel, Non-Government (Rate 2360)",
+      "General Service Old Crow Diesel, Non-Government (Rate 2460)",
+      "General Service Hydro, Municipal Government (Rate 2170)",
+      "General Service Small Diesel, Municipal Government (Rate 2270)",
+      "General Service Large Diesel, Municipal Government (Rate 2370)",
+      "General Service Old Crow Diesel, Municipal Government (Rate 2470)",
+      "General Service Hydro, Federal & Territorial Government (Rate 2180)",
+      "General Service Small Diesel, Federal & Territorial Government (Rate 2280)",
+      "General Service Large Diesel, Federal & Territorial Government (Rate 2380)",
+      "General Service Old Crow Diesel, Federal & Territorial Government (Rate 2480)"
     ]
   },
   {
@@ -193,7 +258,19 @@
       "residential"
     ],
     "demand_tariffs_missing_thresholds": [
-      "General Service"
+      "General Service",
+      "General Service Hydro, Non-Government (Rate 2160)",
+      "General Service Small Diesel, Non-Government (Rate 2260)",
+      "General Service Large Diesel, Non-Government (Rate 2360)",
+      "General Service Old Crow Diesel, Non-Government (Rate 2460)",
+      "General Service Hydro, Municipal Government (Rate 2170)",
+      "General Service Small Diesel, Municipal Government (Rate 2270)",
+      "General Service Large Diesel, Municipal Government (Rate 2370)",
+      "General Service Old Crow Diesel, Municipal Government (Rate 2470)",
+      "General Service Hydro, Federal & Territorial Government (Rate 2180)",
+      "General Service Small Diesel, Federal & Territorial Government (Rate 2280)",
+      "General Service Large Diesel, Federal & Territorial Government (Rate 2380)",
+      "General Service Old Crow Diesel, Federal & Territorial Government (Rate 2480)"
     ]
   }
 ]

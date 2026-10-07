@@ -6,12 +6,14 @@
   "rate_index": {
    "url": "https://www.hydro.mb.ca/accounts_and_services/rates/",
    "schedule_url": "https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf",
-    "excerpt": "Electric Rate Schedule - January 1, 2026"
+   "excerpt": "Electric Rate Schedule - January 1, 2026"
   },
   "net_billing": {
    "url": "https://www.hydro.mb.ca/service/generate-your-own-electricity/",
    "excerpt": "The excess energy price is $0.07173/kWh until March 31, 2027.",
-   "date_gap": "No effective start date for the current price is stated on this page."
+   "date_gap": "Re-checked 2026-10-07: still no effective start date for the current $0.07173/kWh price; the historical table ends at 2025 April 1 ($0.04390). Not added.",
+   "rechecked": "2026-10-07",
+   "recheck_excerpt": "The excess energy price is $0.07173/kWh until March 31, 2027. ... Historical prices Effective date Excess energy price ($/kWh) 2025 April 1 $0.04390"
   },
   "net_billing_rule": {
    "url": "https://www.hydro.mb.ca/service/generate-your-own-electricity/net-billing/",
@@ -20,6 +22,13 @@
   "large_generators": {
    "url": "https://www.hydro.mb.ca/service/generate-your-own-electricity/sell-excess/",
    "excerpt": "The excess energy price for projects 100 kW in size or greater is determined on a case-by-case basis"
+  },
+  "service_charges": {
+   "url": "https://www.hydro.mb.ca/account/loans/help/",
+   "excerpt": "Reconnection fees range from $70 to $100 plus GST for gas service and $150 plus GST for electric service and a security deposit may also be required.",
+   "glossary_url": "https://www.hydro.mb.ca/account/billing/glossary/",
+   "glossary_excerpt": "Reconnect Fee The amount charged to reconnect a service during normal working hours.",
+   "date_gap": "No effective date and no published electricity service-charge schedule; the approved Electric Rate Schedule (January 1, 2026, Order 1/26) contains no service charges. Not added."
   }
  },
  "pages": {
@@ -221,5 +230,30 @@
     "Back to top"
    ]
   }
+ },
+ "rate_schedule": {
+  "url": "https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf",
+  "index_url": "https://www.hydro.mb.ca/account/rates/",
+  "index_link_text": "Electric Rate Schedule – January 1, 2026 (PDF, 334 KB)",
+  "retrieved": "2026-10-07",
+  "_note": "scrapers.utils.parsing.extract_pdf_pages() text of the cover (PDF page 1) and the three Limited Use of Billing Demand pages (PDF pages 14-16; printed pages 12-14 of 24). Extraction drops lines repeated >2 times per page (PLUS; Minimum Bill: Demand Charge on PDF page 16).",
+  "pages": [
+   {
+    "page_number": 1,
+    "text": "ELECTRICITY RATES\nEFFECTIVE JANUARY 1, 2026\nAPPROVED IN ORDER 1/26\nAvailable in accessible formats upon request"
+   },
+   {
+    "page_number": 14,
+    "text": "Page 12 of 24\nGENERAL SERVICE\nLIMITED USE OF BILLING DEMAND RATE OPTION 0 TO NOT EXCEEDING 200 kVA\n(Utility-Owned Transformation) LUBD SMALL SINGLE PHASE - TARIFF NO. 2026-50\nBasic Charge: $ 21.57\nEnergy Charge: @ 11.831 ¢ / kWh\nDemand Charge: First 50 kVA of Monthly Recorded Demand No Charge\nBalance of Recorded Demand @ $ 3.06 / kVA\nMinimum Bill:\nDemand Charge PLUS Basic Charge: LUBD SMALL THREE PHASE - TARIFF NO. 2026-51\nBasic Charge: $ 35.04\nEnergy Charge: @ 11.831 ¢ / kWh\nDemand Charge: First 50 kVA of Monthly Recorded Demand No Charge\nBalance of Recorded Demand @ $ 3.06 / kVA\nMinimum Bill:\nDemand Charge PLUS Basic Charge: Primary metering of multiple Utility-Owned transformation services has an additional 2%\nadded to the kVA for each transformation greater than one. There is also a 1% reduction on\nrecorded demand and energy to account for transformer losses.\nEligibility:\nAny customer eligible for service on the General Service Small rate can request billing on this option, except customers who have been billed on this option during the 12 months prior to\ntheir request, but subsequently reverted to billing at regular General Service Small rates."
+   },
+   {
+    "page_number": 15,
+    "text": "Page 13 of 24\nGENERAL SERVICE\nLIMITED USE OF BILLING DEMAND RATE OPTION EXCEEDING 200 kVA\n(Utility-Owned Transformation) LUBD MEDIUM - TARIFF NO. 2026-52\nBasic Charge: $ 35.81\nPLUS Energy Charge: @ 11.831 ¢ / kWh\nPLUS\n* Demand Charge: First 50 kVA of Monthly Recorded Demand No Charge\nBalance of Recorded Demand @ $ 3.06 / kVA\nMinimum Bill:\nDemand Charge PLUS Basic Charge\n*Monthly Billing Demand\nThe greatest of the following (expressed in kVA):\na) measured demand; or b) 25% of contract demand; or\nc) 25% of the highest measured demand in the previous 12 months.\nPrimary metering of multiple Utility-Owned transformation services has an additional 2%\nadded to the kVA for each transformation greater than one. There is also a 1% reduction on\nrecorded demand and energy to account for transformer losses.\nEligibility:\nAny customer eligible for service on the General Service Medium rate can request billing on this option, except customers who have been billed on this option during the 12 months prior\nto their request, but subsequently reverted to billing at regular General Service Medium\nrates."
+   },
+   {
+    "page_number": 16,
+    "text": "Page 14 of 24\nGENERAL SERVICE\nLIMITED USE OF BILLING DEMAND RATE OPTION\n(Customer-Owned Transformation) LUBD LARGE 750 V TO NOT EXCEEDING 30 KV - TARIFF NO. 2026-53\nEnergy Charge: @ 10.466 ¢ / kWh\n* Demand Charge: @ $ 2.60 / kVA\nLUBD LARGE 30 KV TO NOT EXCEEDING 100 KV - TARIFF NO. 2026-54\nEnergy Charge: @ 9.083 ¢ / kWh\n* Demand Charge: @ $ 2.17 / kVA\nLUBD LARGE EXCEEDING 100 KV - TARIFF NO. 2026-55\nEnergy Charge: @ 8.418 ¢ / kWh\n* Demand Charge: @ $ 1.93 / kVA\n*Monthly Billing Demand\nThe greatest of the following (expressed in kVA):\na) measured demand; or b) 25 % of contract demand; or\nc) 25% of the highest measured demand in the previous 12 months.\nEligibility:\nAny customer eligible for service on the General Service Large rate can request billing on this option, except customers who have been billed on this option during the 12 months prior to\ntheir request, but subsequently reverted to billing at regular General Service Large rates."
+   }
+  ]
  }
 }

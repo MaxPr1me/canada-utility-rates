@@ -20,10 +20,12 @@ Official source:
 
 from __future__ import annotations
 
+import copy
 import logging
 import re
 from datetime import date
 from typing import Optional
+from urllib.parse import urljoin
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
 from scrapers.utils.parsing import (
@@ -34,6 +36,116 @@ from scrapers.utils.parsing import (
 logger = logging.getLogger(__name__)
 
 RATE_SCHEDULES_URL = "https://yukonenergy.ca/customer-service/rates/rate-schedules/"
+
+# Cross-reference residential sections: (start, end lookahead, [(code, row label, title, sub_class)]).
+# Codes sharing one section share one printed column; 1160 anchors the document.
+RESIDENTIAL_SECTIONS = (
+    (r"Residential Rate Schedules\s+1160 Hydro Non-Govt", r"\n1460 Old Crow Non-Govt", (
+        ("1160", "Hydro Non-Govt", "Hydro", "hydro non-government"),
+        ("1260", "Small Diesel Non-Govt", "Small Diesel", "small diesel non-government"),
+        ("1360", "Large Diesel Non-Govt", "Large Diesel", "large diesel non-government"),
+    )),
+    (r"\n1460 Old Crow Non-Govt", r"\n1180 Hydro Govt", (
+        ("1460", "Old Crow Non-Govt", "Old Crow Diesel", "old crow diesel non-government"),
+    )),
+    (r"\n1180 Hydro Govt", r"\n1480 Old Crow Govt", (
+        ("1180", "Hydro Govt", "Hydro, Government", "hydro government"),
+        ("1280", "Small Diesel Govt", "Small Diesel, Government", "small diesel government"),
+        ("1380", "Large Diesel Govt", "Large Diesel, Government", "large diesel government"),
+    )),
+    (r"\n1480 Old Crow Govt", r"\nGeneral Service Rate Schedules|\Z", (
+        ("1480", "Old Crow Govt", "Old Crow Diesel, Government", "old crow diesel government"),
+    )),
+)
+
+# Joint YECL/YEC rate-schedule book (text PDF) published by ATCO Electric Yukon; it carries the
+# minimum bills, availability and general-service terms that Yukon Energy's own PDFs show only as images.
+JOINT_RATES_PAGE_URL = "https://www.atcoelectricyukon.com/en-ca/services-rates/understanding-rates.html"
+JOINT_SCHEDULE_URL = (
+    "https://www.atcoelectricyukon.com/content/dam/aey-website/en-ca/assets/services-rates/"
+    "yecl-yec-rate-schedules-10-2026.pdf"
+)
+
+GENERAL_SERVICE_SCHEDULES = {
+    "2160": ("Hydro, Non-Government", "hydro non-government"),
+    "2260": ("Small Diesel, Non-Government", "small diesel non-government"),
+    "2360": ("Large Diesel, Non-Government", "large diesel non-government"),
+    "2460": ("Old Crow Diesel, Non-Government", "old crow diesel non-government"),
+    "2170": ("Hydro, Municipal Government", "hydro municipal government"),
+    "2270": ("Small Diesel, Municipal Government", "small diesel municipal government"),
+    "2370": ("Large Diesel, Municipal Government", "large diesel municipal government"),
+    "2470": ("Old Crow Diesel, Municipal Government", "old crow diesel municipal government"),
+    "2180": ("Hydro, Federal & Territorial Government", "hydro federal/territorial government"),
+    "2280": ("Small Diesel, Federal & Territorial Government", "small diesel federal/territorial government"),
+    "2380": ("Large Diesel, Federal & Territorial Government", "large diesel federal/territorial government"),
+    "2480": ("Old Crow Diesel, Federal & Territorial Government", "old crow diesel federal/territorial government"),
+}
+
+_KWH = r"\s?[^\d\s$]{1,2}/kW\.h"
+
+
+def parse_joint_schedules(pages: list[DocumentPage], today: str) -> dict[str, dict]:
+    """Return complete residential/general-service terms by code; incomplete schedules are omitted."""
+    texts = {page.page_number: re.sub(r"\s+", " ", page.text.replace("\u2013", "-")) for page in pages}
+    terms: dict[str, dict] = {}
+    seen: set[str] = set()
+    for number, text in texts.items():
+        head = re.search(r"RATE SCHEDULE -? ?([12][1-4][678]0)\b", text)
+        if not head:
+            continue
+        code = head.group(1)
+        if code in seen:
+            terms.pop(code, None)
+            continue
+        seen.add(code)
+        header = re.search(r"Effective: (\d{4}) (\d{2}) (\d{2})", text)
+        scope = re.search(r"AVAILABLE: (.*?) APPLICABLE: (.*?) RATE:", text)
+        if not header or not scope:
+            continue
+        effective = date(*(int(part) for part in header.groups())).isoformat()
+        if effective > today:
+            continue
+        entry: dict = {"page": number, "effective": effective,
+                       "available": scope.group(1).strip(), "applicable": scope.group(2).strip()}
+        if code[0] == "1":
+            customer = re.search(r"\(a\) Customer Charge \$(\d+\.\d+)", text)
+            blocks = [re.search(label + r" (\d+\.\d+)" + _KWH, text) for label in (
+                r"For the first 1,000 kW\.h", r"Between 1,001 - 2,500 kW\.h", r"For energy in excess 2,500 kW\.h")]
+            minimum = re.search(r"The minimum monthly charge is the customer charge of \$(\d+\.\d+)\.", text)
+            if not customer or not all(blocks) or not minimum or minimum.group(1) != customer.group(1):
+                continue
+            entry.update(customer=float(customer.group(1)), minimum=float(minimum.group(1)),
+                         blocks=[float(block.group(1)) for block in blocks])
+        else:
+            demand = re.search(r"Demand Charge All kW of billing demand \$(\d+\.\d+) / kW", text)
+            blocks = [re.search(label + r" (\d+\.\d+)" + _KWH, text) for label in (
+                r"For the first 2,000 kW\.h", r"Between 2,001 - 15,000 kW\.h",
+                r"Between 15,001 - 20,000 kW\.h", r"For energy in excess of 20,000 kW\.h")]
+            minimum = re.search(r"Shall be the Demand Charge but not less than \$(\d+\.\d+)\.", text)
+            billing = all(rule in text.lower() for rule in (
+                "billing demand may be estimated or measured", "excluding the months april through september",
+                "(d) 5 kilowatts"))
+            continuation = texts.get(number + 1, "")
+            power_factor = (re.search(rf"Rate Schedule -? ?{code} \(Continued\)", continuation)
+                            and "power factor of 90 percent" in continuation
+                            and "one kV.A shall be taken as one kW" in continuation)
+            if not demand or not all(blocks) or not minimum or not billing or not power_factor:
+                continue
+            entry.update(demand=float(demand.group(1)), minimum=float(minimum.group(1)),
+                         blocks=[float(block.group(1)) for block in blocks])
+        terms[code] = entry
+    return terms
+
+
+def rider_a_terms(pages: list[DocumentPage]) -> Optional[str]:
+    """Return the Rider A multiple-residence rule only when its full text is present."""
+    text = re.sub(r"\s+", " ", " ".join(page.text for page in pages))
+    if ("RIDER A MULTIPLE RESIDENCE SERVICE" in text and "Not applicable to apartments of multiple dwelling facilities" in text
+            and "multiplied by the number of dwelling units" in text and "billed at the appropriate general service rate" in text):
+        return ("Rider A: single detached dwellings serving more than one household are normally billed at general service; "
+                "existing multiple residences on one meter may stay on the residential schedule with the minimum charge and "
+                "each block's kWh multiplied by the number of dwelling units. Not applicable to apartments.")
+    return None
 
 # ── Seed / fallback rate data ─────────────────────────────────────
 # Values below are approximate published rates as of early 2025.
@@ -94,7 +206,21 @@ class YukonEnergyScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Parse residential base rates and current riders; other classes stay estimates."""
+        """Parse live residential/general-service schedules; unparsed seed classes stay labelled estimates."""
+        live = self.live_records()
+        if not live:
+            return None
+        replaced = {"Residential Service"}
+        if any(record.sub_class and "diesel non-government" in record.sub_class
+               for record in live if record.customer_class == "residential"):
+            replaced.add("Residential Service — Diesel Communities")
+        if any(record.customer_class == "commercial" for record in live):
+            replaced.add("General Service")
+        seed_only = [r for r in self._seed_data() if r.tariff_name not in replaced]
+        return live + (self.mark_fallback(seed_only) if seed_only else [])
+
+    def live_records(self) -> Optional[list[TariffRecord]]:
+        """Return only live-parsed records (no seeds), or None when 1160 cannot be proven."""
         try:
             html = self.fetch_page(RATE_SCHEDULES_URL)
             if not html or detect_js_rendered(html):
@@ -105,21 +231,37 @@ class YukonEnergyScraper(BaseScraper):
                 parse_html(html), keywords=["base", "rate", "cross", "reference", "rider", "rebate"],
                 base_url=RATE_SCHEDULES_URL,
             )
-            residential = self._parse_residential_pdf(pdf_links)
-            if not residential:
-                return None
-
-            live = self.mark_live_parsed([residential])
-            seed_only = [r for r in self._seed_data() if r.tariff_name != "Residential Service"]
-            if seed_only:
-                live = live + self.mark_fallback(seed_only)
-            return live
+            records = self._parse_residential_pdfs(pdf_links)
+            return self.mark_live_parsed(records) if records else None
         except Exception:
             self.logger.exception("Error during Yukon Energy live scrape")
             return None
 
-    def _parse_residential_pdf(self, pdf_links: list[str]) -> Optional[TariffRecord]:
-        """Return 1160 only when base, percentage riders, fuel and relief are proven."""
+    def _joint_schedule(self) -> Optional[tuple[str, list[DocumentPage]]]:
+        """Fetch the joint YECL/YEC rate-schedule book; None if unavailable or not the expected document."""
+        url = JOINT_SCHEDULE_URL
+        try:
+            # The ATCO page is a JS shell that never settles for the shared networkidle renderer; static links only.
+            html = self.fetch_page(JOINT_RATES_PAGE_URL)
+            links = {urljoin(JOINT_RATES_PAGE_URL, a["href"]) for a in parse_html(html or "").find_all("a", href=True)
+                     if re.search(r"rate-schedules[^/]*\.pdf$", a["href"], re.I)}
+            if len(links) == 1:
+                url = links.pop()
+        except Exception as exc:
+            self.logger.info("Joint rate page link discovery failed (%s); using %s", exc, url)
+        try:
+            pages = extract_pdf_pages(self.fetch_bytes(url))
+        except Exception as exc:
+            self.logger.warning("Joint YECL/YEC rate schedules unavailable: %s", exc)
+            return None
+        text = " ".join(page.text for page in pages or [])
+        if "YECL/YEC Joint" not in text or "Approved in Board Order 2011-06" not in text:
+            self.logger.warning("Joint YECL/YEC rate schedule document not recognised at %s", url)
+            return None
+        return url, pages
+
+    def _parse_residential_pdfs(self, pdf_links: list[str]) -> Optional[list[TariffRecord]]:
+        """Return residential schedules only when 1160, percentage riders, fuel and relief are proven."""
         tokens = {
             "base": "cross-reference", "j1": "rider_j1.pdf",
             "fuel": "rider_f_rate_schedule.pdf", "relief": "affordability_rate_relief.pdf",
@@ -138,37 +280,8 @@ class YukonEnergyScraper(BaseScraper):
 
         base_url, base_pages = documents["base"]
         base_text = "\n".join(page.text for page in base_pages)
-        section_match = re.search(
-            r"Residential Rate Schedules\s+1160 Hydro Non-Govt(.*?)\n1460 Old Crow Non-Govt",
-            base_text, re.S,
-        )
-        if not section_match:
-            return None
-        section = section_match.group(1)
-        base_values: list[float] = []
-        labels = [
-            r"Customer", r"First 1000 kWh Energy Block 1", r"1001-2500 kWh Energy Block 2",
-            r">2500 kWh Energy Block 3",
-        ]
-        for index, label in enumerate(labels):
-            unit = r"" if index == 0 else r"\s*[^\d\w\s/$+-]{1,2}/kWh"
-            row = re.search(label + unit + r"([^\n]*)", section)
-            if row and (re.search(r"[-()]", row.group(1)) or (index > 0 and "$" in row.group(1))):
-                return None
-            values = re.findall(r"\$\s*(\d+(?:\.\d+)?)" if index == 0 else r"\d+(?:\.\d+)?", row.group(1)) if row else []
-            if len(values) != 4 or any(float(value) <= 0 for value in values):
-                return None
-            base_values.append(float(values[0]))
-
-        components = [RateComponent("fixed", "Base Customer Charge", base_values[0], "$/month")]
-        for index, (label, threshold) in enumerate((
-            ("Energy Block 1 (first 1,000 kWh)", 1000),
-            ("Energy Block 2 (1,001-2,500 kWh)", 2500),
-            ("Energy Block 3 (over 2,500 kWh)", 2500),
-        ), start=1):
-            components.append(RateComponent("energy", "Base " + label, round(base_values[index] / 100.0, 6), "$/kWh",
-                                            tier_number=index, tier_threshold=threshold, tier_unit="kWh"))
-        effective_dates: list[str] = []
+        percentages: dict[str, float] = {}
+        rate_riders: list[RateComponent] = []
         for code, label in (("R", "AEY Rider R"), ("J", "YEC Rider J")):
             match = re.search(label + r":\s*([A-Z][a-z]+\s+\d{1,2},\s*\d{4})\s+(\d+(?:\.\d+)?)%", base_text)
             if not match:
@@ -176,12 +289,12 @@ class YukonEnergyScraper(BaseScraper):
             effective = extract_effective_date("Effective " + match.group(1))
             if not effective or effective > self.now_iso()[:10]:
                 return None
-            effective_dates.append(effective)
-            components.append(RateComponent("rider", f"Rider {code} - Base Rate Adjustment", float(match.group(2)), "%",
-                                            effective_date=effective, notes="Applies to base fixed and energy charges, not to other riders."))
-        for component in components:
-            component.source_url = base_url
-            component.source_detail = "PDF page 1; Rate 1160 base-rate column and Rider R/J headers"
+            percentages[code] = float(match.group(2))
+            rate_riders.append(RateComponent("rider", f"Rider {code} - Base Rate Adjustment", float(match.group(2)), "%",
+                                             effective_date=effective, source_url=base_url,
+                                             source_detail=f"PDF page {self._page_of(base_pages, label)}; Rider R/J effective-date header",
+                                             notes="Applies to base fixed and energy charges, not to other riders."))
+        shared: dict[str, RateComponent] = {}
 
         for kind, title in (("j1", "RIDER J1"), ("fuel", "FUEL ADJUSTMENT RIDER"), ("relief", "AFFORDABILITY RATE RELIEF REBATE")):
             source_url, pages = documents[kind]
@@ -192,7 +305,6 @@ class YukonEnergyScraper(BaseScraper):
             effective = date(*(int(part) for part in header.groups())).isoformat()
             if effective > self.now_iso()[:10]:
                 return None
-            effective_dates.append(effective)
             if kind == "j1":
                 match = re.search(r"Rider J1 at (\d+(?:\.\d+)?)% applicable to the base rates", text)
                 if not match or "To all electric service retail rates except Rate Schedule 32, Rate Schedule 42 and Rate Schedule 43" not in text:
@@ -225,21 +337,168 @@ class YukonEnergyScraper(BaseScraper):
             component.effective_date = effective
             component.source_url = source_url
             component.source_detail = "PDF page 1; " + title
-            components.append(component)
+            shared[kind] = component
 
-        base_effective = max(component.effective_date for component in components[:6] if component.effective_date)
-        for component in components[:4]:
-            component.effective_date = base_effective
-            component.notes = "Published base rate before the separately listed percentage riders."
-        return TariffRecord(
-            utility_name="Yukon Energy", province="YT", utility_type="electricity",
-            tariff_name="Residential Service Hydro (Rate 1160)", tariff_code="1160",
-            customer_class="residential", sub_class="hydro non-government", rate_structure="tiered",
-            effective_date=max(effective_dates), source_url=base_url, source_page="PDF page 1; Rate 1160",
-            eligibility="Single-phase secondary-voltage hydro service through one meter for one non-government household (Rate 1160).",
-            notes="Base rates, Riders R/J/J1, current Rider F and dated residential relief are separate components; no bill total is calculated. Multiple-residence Rider A and other classes are not included in this record.",
-            components=components,
-        )
+        base_effective = max(component.effective_date for component in rate_riders)
+        book = self._joint_schedule()
+        book_terms = parse_joint_schedules(book[1], self.now_iso()[:10]) if book else {}
+        rider_a = rider_a_terms(book[1]) if book else None
+        records: list[TariffRecord] = []
+        for start, end, schedules in RESIDENTIAL_SECTIONS:
+            match = re.search(start + r"(.*?)(?=" + end + r")", base_text, re.S)
+            base_values = self._residential_base_values(match.group(1), percentages) if match else None
+            if not base_values:
+                if schedules[0][0] == "1160":
+                    return None
+                self.logger.warning("Yukon cross-reference section %s is incomplete; not published live", schedules[0][0])
+                continue
+            for position, (code, label, title, sub_class) in enumerate(schedules):
+                if position and f"{code} {label}" not in match.group(1):
+                    self.logger.warning("Yukon cross-reference no longer lists Rate %s in its column", code)
+                    continue
+                terms = book_terms.get(code)
+                if terms and [terms["customer"], *terms["blocks"]] != base_values:
+                    self.logger.warning("Rate %s joint schedule disagrees with the cross-reference", code)
+                    if code == "1160":
+                        return None
+                    continue
+                if not terms and code != "1160":
+                    self.logger.warning("Rate %s minimum bill/availability not available as text; not published live", code)
+                    continue
+                page = self._page_of(base_pages, f"{schedules[0][0]} {schedules[0][1]}")
+                government = not sub_class.endswith("non-government")
+                components = [RateComponent("fixed", "Base Customer Charge", base_values[0], "$/month")]
+                for index, (tier_label, threshold) in enumerate((
+                    ("Energy Block 1 (first 1,000 kWh)", 1000),
+                    ("Energy Block 2 (1,001-2,500 kWh)", 2500),
+                    ("Energy Block 3 (over 2,500 kWh)", 2500),
+                ), start=1):
+                    components.append(RateComponent("energy", "Base " + tier_label, round(base_values[index] / 100.0, 6), "$/kWh",
+                                                    tier_number=index, tier_threshold=threshold, tier_unit="kWh"))
+                for component in components:
+                    component.effective_date = base_effective
+                    component.source_url = base_url
+                    component.source_detail = f"PDF page {page}; Rate {code} base-rate column" + (
+                        f"; matches joint schedule page {terms['page']}" if terms else "")
+                    component.notes = "Published base rate before the separately listed percentage riders."
+                extras = rate_riders + [shared["j1"], shared["fuel"]] + ([] if government else [shared["relief"]])
+                components.extend(copy.deepcopy(component) for component in extras)
+                name = "Residential Service Hydro (Rate 1160)" if code == "1160" else f"Residential Service {title} (Rate {code})"
+                if terms:
+                    eligibility = f"Rate {code}. Available in {terms['available']} Applicable {terms['applicable']}"
+                    conditions = (f" Minimum monthly bill: the customer charge of ${terms['minimum']:.2f} (a condition, not an "
+                                  f"extra charge); base schedule effective {terms['effective']}, joint rate schedules page "
+                                  f"{terms['page']}. " + (rider_a or "Multiple-residence Rider A is not included."))
+                else:
+                    eligibility = "Single-phase secondary-voltage hydro service through one meter for one non-government household (Rate 1160)."
+                    conditions = " Multiple-residence Rider A is not included."
+                records.append(TariffRecord(
+                    utility_name="Yukon Energy", province="YT", utility_type="electricity",
+                    tariff_name=name, tariff_code=code,
+                    customer_class="residential", sub_class=sub_class, rate_structure="tiered",
+                    effective_date=max(component.effective_date for component in components),
+                    source_url=base_url,
+                    source_page=f"PDF page {page}; Rate {code}" + (f"; {book[0]} page {terms['page']}" if terms else ""),
+                    eligibility=eligibility,
+                    notes=("Base rates, Riders R/J/J1 and current Rider F are separate components"
+                           + ("; the non-government affordability relief does not apply" if government
+                              else ", with dated non-government residential relief")
+                           + "; no bill total is calculated. Joint YEC/ATCO Electric Yukon schedule; the serving utility "
+                           "depends on location." + conditions),
+                    components=components,
+                ))
+        if book:
+            records.extend(self._general_service_records(
+                base_text, base_url, base_pages, percentages, book[0], book_terms, rate_riders, shared))
+        return records
+
+    def _general_service_records(
+        self, base_text: str, base_url: str, base_pages: list[DocumentPage], percentages: dict[str, float],
+        book_url: str, book_terms: dict[str, dict], rate_riders: list[RateComponent], shared: dict[str, RateComponent],
+    ) -> list[TariffRecord]:
+        """Build GS schedules from the joint book; block 4 must match a reconciled cross-reference row."""
+        r_share, j_share = percentages["R"] / 100.0, percentages["J"] / 100.0
+        block4: set[float] = set()
+        for row in re.finditer(r">20000 kWh Energy Block 4\s*[^\d\w\s/$+-]{1,2}/kWh (\d+\.\d+) (\d+\.\d+) (\d+\.\d+) (\d+\.\d+)", base_text):
+            base, rider_r, rider_j, total = (float(value) for value in row.groups())
+            if (abs(base * r_share - rider_r) <= 0.006 and abs(base * j_share - rider_j) <= 0.006
+                    and abs(base * (1 + r_share + j_share) - total) <= 0.006):
+                block4.add(base)
+        xref_page = self._page_of(base_pages, "General Service Rate Schedules")
+        records: list[TariffRecord] = []
+        for code, (title, sub_class) in GENERAL_SERVICE_SCHEDULES.items():
+            terms = book_terms.get(code)
+            if not terms or code not in base_text or terms["blocks"][3] not in block4:
+                self.logger.warning("Rate %s general service is incomplete or not cross-checked; not published live", code)
+                continue
+            components = [RateComponent(
+                "demand", "Base Demand Charge", terms["demand"], "$/kW", demand_unit="kW",
+                notes=("Published base rate before the separately listed percentage riders. Billing demand is the greatest "
+                       "of the period's highest metered demand, the highest metered demand in the 12 months ending with the "
+                       "billing month excluding April-September, the estimated demand, or 5 kW; below 90% power factor "
+                       "kVA is billed as kW."),
+            )]
+            for index, (tier_label, threshold) in enumerate((
+                ("first 2,000 kWh", 2000), ("2,001-15,000 kWh", 15000),
+                ("15,001-20,000 kWh", 20000), ("over 20,000 kWh", 20000),
+            ), start=1):
+                components.append(RateComponent(
+                    "energy", f"Base Energy Block {index} ({tier_label})", round(terms["blocks"][index - 1] / 100.0, 6),
+                    "$/kWh", tier_number=index, tier_threshold=threshold, tier_unit="kWh",
+                    notes="Published base rate before the separately listed percentage riders."))
+            for component in components:
+                component.effective_date = terms["effective"]
+                component.source_url = book_url
+                component.source_detail = f"PDF page {terms['page']}; Rate {code}" + (
+                    f"; block 4 matches cross-reference page {xref_page}" if component.tier_number == 4 else "")
+            for rider in rate_riders + [shared["j1"], shared["fuel"]]:
+                rider = copy.deepcopy(rider)
+                rider.notes = (rider.notes or "").replace("base fixed and energy", "base demand and energy")
+                components.append(rider)
+            records.append(TariffRecord(
+                utility_name="Yukon Energy", province="YT", utility_type="electricity",
+                tariff_name=f"General Service {title} (Rate {code})", tariff_code=code,
+                customer_class="commercial", sub_class=sub_class, rate_structure="demand",
+                effective_date=max(component.effective_date for component in components),
+                source_url=book_url, source_page=f"PDF pages {terms['page']}-{terms['page'] + 1}; Rate {code}",
+                eligibility=f"Rate {code}. Available in {terms['available']} Applicable {terms['applicable']}",
+                notes=(f"Minimum monthly bill: the demand charge but not less than ${terms['minimum']:.2f} (a condition, not an "
+                       f"extra charge). Base schedule effective {terms['effective']} (Board Order 2011-06); Riders R/J/J1 apply "
+                       "to base demand and energy charges and Rider F to all kWh; the residential affordability relief does not "
+                       "apply. Unmetered Rider B is not modelled; no bill total is calculated. Joint YEC/ATCO Electric Yukon "
+                       "schedule; the serving utility depends on location."),
+                components=components,
+            ))
+        return records
+
+    @staticmethod
+    def _page_of(pages: list[DocumentPage], text: str) -> int:
+        return next((page.page_number for page in pages if text in page.text), pages[0].page_number)
+
+    @staticmethod
+    def _residential_base_values(section: str, percentages: dict[str, float]) -> Optional[list[float]]:
+        """Return base customer and block values; R/J and total columns must reconcile to the header percentages."""
+        base_values: list[float] = []
+        labels = [
+            r"Customer", r"First 1000 kWh Energy Block 1", r"1001-2500 kWh Energy Block 2",
+            r">2500 kWh Energy Block 3",
+        ]
+        r_share, j_share = percentages["R"] / 100.0, percentages["J"] / 100.0
+        for index, label in enumerate(labels):
+            unit = r"" if index == 0 else r"\s*[^\d\w\s/$+-]{1,2}/kWh"
+            row = re.search(label + unit + r"([^\n]*)", section)
+            if not row or re.search(r"[-()]", row.group(1)) or (index > 0 and "$" in row.group(1)):
+                return None
+            values = [float(value) for value in re.findall(
+                r"\$\s*(\d+(?:\.\d+)?)" if index == 0 else r"\d+(?:\.\d+)?", row.group(1))]
+            if len(values) != 4 or any(value <= 0 for value in values):
+                return None
+            base, rider_r, rider_j, total = values
+            if (abs(base * r_share - rider_r) > 0.006 or abs(base * j_share - rider_j) > 0.006
+                    or abs(base * (1 + r_share + j_share) - total) > 0.006):
+                return None
+            base_values.append(base)
+        return base_values
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""

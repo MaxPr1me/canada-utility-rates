@@ -130,6 +130,7 @@ class HydroQuebecScraper(BaseScraper):
             records.extend(self._parse_building_extras(pages, effective_date))
             records.extend(self._parse_large_power_rates(pages, effective_date))
             records.extend(self._parse_dr_leeway(pages, effective_date))
+            records.extend(self._parse_dr_commitment(pages, effective_date))
 
             rate_d = self._parse_rate_d(pdf_text)
             if rate_d:
@@ -1452,6 +1453,111 @@ class HydroQuebecScraper(BaseScraper):
             )]
         except ValueError as exc:
             self.logger.warning("Incomplete Hydro-Quebec business Demand Response Leeway: %s", exc)
+            return []
+
+    def _parse_dr_commitment(self, pages: list[DocumentPage], effective_date: str) -> list[TariffRecord]:
+        selected, text = self._run_section(
+            pages, r"Section\s+2\s+\W\s*Demand Response\s+\W\s*Commitment Option", r"Application\s+6\.13\b")
+        if not selected:
+            return []
+        try:
+            required = ("Application 6.13", "Definitions 6.14", "Sign-up date 6.15", "Eligibility 6.16", "Limitation 6.17",
+                        "Commitment 6.18", "Conditions applicable to peak demand events 6.19", "Peak demand event notifications 6.20",
+                        "Nominal credits 6.21", "Effective credits applicable to the contract 6.22",
+                        "Calculation of contribution coefficient 6.23", "Recovery periods 6.24", "Deductions 6.25",
+                        "Subsection 2.3", "Commitment 6.31", "Nominal credits 6.34", "Deductions 6.36")
+            missing = [item for item in required if item not in text]
+            if missing or any(f"(hours): {hours} {hours}" not in text for hours in (20, 40, 60, 80, 100)):
+                raise ValueError("Missing Demand Response Commitment continuation: " + ", ".join(missing))
+            if not re.search(r"Rate G, Rate M, Rate L or Rate L\s?G contract", text) \
+                    or "Demand Response - Leeway Option" not in text.replace("\u2013", "-") \
+                    or "load factor that is higher than 60%" not in text or "must not be less than 10 kilowatts" not in text \
+                    or "before September 30" not in text or "comes into effect December 1" not in text \
+                    or "No later than 15:00 on the business day preceding" not in text \
+                    or "No later than noon of the same day" not in text or "minimum of 2 hours prior" not in text \
+                    or "cannot exceed 150% of the total fixed credits" not in text \
+                    or "maximum of three consecutive winter periods" not in text:
+                raise ValueError("Missing Demand Response Commitment eligibility, event, notice or penalty rules")
+
+            nominal = re.search(r"Nominal credits 6\.21(.*?)Effective credits applicable to the contract 6\.22", text)
+            effective = re.search(r"Effective credits applicable to the contract 6\.22(.*?)Calculation of contribution coefficient 6\.23", text)
+            deductions = re.search(r"Deductions 6\.25(.*?)Billing conditions for Rate L customers", text)
+            if not nominal or not effective or not deductions:
+                raise ValueError("Missing Demand Response Commitment credit or deduction clause")
+            romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+                      "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"]
+            rows = [(code.replace(" ", ""), float(fixed), float(variable)) for code, fixed, variable in re.findall(
+                r"Sub-option ([IVX](?: [IVX])*) \$(\d+\.\d+) per kilowatt of effective (\d+\.\d+)\s*\u00a2 per kilowatthour of effective",
+                nominal.group(1))]
+            if [code for code, _, _ in rows] != romans or any(fixed <= 0 or variable <= 0 for _, fixed, variable in rows):
+                raise ValueError("Incomplete Demand Response Commitment nominal credit schedule")
+            multi = re.search(r"two consecutive winter periods: (\d+)% multiplied by the effective fixed credit.*?"
+                              r"three consecutive winter periods: (\d+)% multiplied by the effective fixed credit", effective.group(1))
+            notice = re.search(r"(\d+\.\d+)\s*\u00a2 per kilowatthour of effective hourly interruptible power for each peak demand event hour", effective.group(1))
+            first = re.search(r"deduction of \$(\d+\.\d+) for each kilowatt included in the sum of overruns during the first peak demand event", deductions.group(1))
+            later = re.search(r"deduction of \$(\d+\.\d+) for each kilowatt included in the sum of overruns during any subsequent peak demand event", deductions.group(1))
+            caps = re.findall(r"contribution coefficient for the consumption period in question and \$(\d+\.\d+) per kilowatt", deductions.group(1))
+            if not multi or not notice or not first or not later or len(caps) != 2 \
+                    or "50% of the credits calculated according to subparagraph a)" not in effective.group(1) \
+                    or "No variable credit is granted for an hour to which a deduction applies" not in deductions.group(1):
+                raise ValueError("Incomplete Demand Response Commitment effective credit or deduction rules")
+
+            winter = {"season": "winter", "season_months": "12,1,2,3", "sub_component": "conditional"}
+            choice = "Mutually exclusive sub-options; only the accepted sub-option's fixed and variable credits apply. Requires an accepted winter commitment of at least 10 kW interruptible power."
+            components: list[RateComponent] = []
+            for code, fixed, variable in rows:
+                components.append(RateComponent(
+                    "rebate", f"Conditional Fixed Credit (Sub-option {code})", -fixed,
+                    "$/kW of effective interruptible power/winter", demand_unit="kW", source_detail="Article 6.21",
+                    notes=choice + " Prorated by consumption-period hours over winter-period hours (Article 6.22 a); effective interruptible power = interruptible power x contribution coefficient.", **winter))
+                components.append(RateComponent(
+                    "rebate", f"Conditional Variable Credit (Sub-option {code})", -round(variable / 100, 6),
+                    "$/kWh of effective hourly interruptible power", source_detail="Article 6.21",
+                    notes=choice + " Applies only to peak demand event hours (Article 6.22 b); no variable credit for an hour subject to a deduction.", **winter))
+            components.extend(RateComponent(
+                "adjustment", f"Conditional Multi-Year Commitment Credit ({years} consecutive winters)", int(percent) / 100,
+                "fraction of effective fixed credit (added credit)", source_detail="Article 6.22 c)",
+                notes="Added to the effective fixed credit only for an accepted multi-year commitment; early termination deducts 50% of the year's fixed credits per remaining year. Hydro-Quebec may cancel after any winter period.", **winter,
+            ) for years, percent in (("2", multi.group(1)), ("3", multi.group(2))))
+            components.append(RateComponent(
+                "rebate", "Conditional Shorter-Notice Credit", -round(float(notice.group(1)) / 100, 6),
+                "$/kWh of effective hourly interruptible power", source_detail="Article 6.22 d)",
+                notes="Only for event hours after an exceptional notice shorter than Article 6.20 (minimum 2 hours); non-performance triggers Article 6.25 deductions.", **winter))
+            components.extend(RateComponent(
+                "adjustment", name, float(value), "$/kW of overrun (deducted from fixed credit)", demand_unit="kW", source_detail="Article 6.25 a)",
+                notes=f"Only for overruns above base power plus 5% of interruptible power during a non-complied event; per-event deduction capped at interruptible power x contribution coefficient x ${cap}/kW; total winter deductions capped at 150% of fixed credits.", **winter,
+            ) for name, value, cap in (("Conditional Overrun Deduction (first non-complied event)", first.group(1), caps[0]),
+                                       ("Conditional Overrun Deduction (subsequent non-complied events)", later.group(1), caps[1])))
+            def page_of(marker: str) -> str:
+                return next(str(page.page_number) for page in selected if marker in page.text.replace("\u2011", "-"))
+
+            article_pages = {
+                "Article 6.21": page_of("Nominal credits 6.21") + "-" + page_of("Sub-option X X $"),
+                "Article 6.22 c)": page_of("Multi-year commitment credit"),
+                "Article 6.22 d)": page_of("Credit for shorter notice"),
+                "Article 6.25 a)": page_of("Deductions 6.25"),
+            }
+            detail = "Electricity Rates Demand Response - Commitment Option; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+            for component in components:
+                component.source_url = PDF_URL
+                component.source_detail = f"{component.source_detail}; PDF page(s) {article_pages[component.source_detail]}"
+                component.effective_date = effective_date
+            return [TariffRecord(
+                utility_name=self.utility_name, province="QC", utility_type="electricity", customer_class="commercial",
+                tariff_name="Demand Response - Commitment Option (Business)", tariff_code="DR_COMMITMENT_BUSINESS",
+                sub_class="conditional adjustment to eligible base tariff", rate_structure="mixed",
+                effective_date=effective_date, source_url=PDF_URL, source_page=detail,
+                eligibility="Only accepted Rate G, M, L or LG contracts with a load factor above 60% over the prior 12 consumption periods; interruptible power at least 10 kW and not above maximum contract/available power; "
+                "not under a special interruptible contract or sections 7-8 (running in/testing equipment); no simultaneous Leeway Option. Hydro-Quebec may limit or prorate total interruptible power.",
+                notes="Base-rate energy and demand charges remain separate; credits are conditional adjustments, not replacement prices. Sign-up before September 30 with a 30-day review; commitment runs December 1 for the winter period (up to three consecutive winters) and the sub-option cannot change. "
+                "Article 6.19 sub-options set 1-2 events/day, 4- or 12-hour minimum intervals, 5-25 events and 20-100 planned hours per winter, with weekend inclusion by sub-option; Hydro-Quebec may exceed planned hours by up to 4 hours. "
+                "Notices by 15:00 the prior business day for events before 16:00 or two same-day events, by noon same day for events at 16:00 or later; two November test notices earn no credit. "
+                "Rate L recovery-period consumption is billed at Rate L energy up to the credited kWh, then at the Article 6.52 additional-electricity price. Hydro-Quebec may terminate after overruns in 4 or more events. "
+                "The Additional Interruptible Load Trial (Articles 6.27-6.36; at least 1,000 kW prior maximum demand and 500 kW added load) uses the same sub-option credits, requires at least one compliant event, and has no fixed-credit deductions. No bill total or automatic credit is calculated. " + detail,
+                components=components,
+            )]
+        except (ValueError, StopIteration) as exc:
+            self.logger.warning("Incomplete Hydro-Quebec business Demand Response Commitment: %s", exc)
             return []
 
     # ── Rate D parser ─────────────────────────────────────────

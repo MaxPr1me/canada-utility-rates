@@ -93,7 +93,7 @@
           "is_primary": false
         }
       ],
-      "notes": "FortisBC Energy is the natural gas distribution arm of FortisBC, serving most of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC). Rates 1/2/3 are parsed live for Mainland/Vancouver Island and Fort Nelson with daily basic charges and $/GJ delivery, storage and transport and cost of gas; Rate 5 (monthly basic, $/GJ/month daily-demand charge, riders) and Rate 4 seasonal (off-peak/extension periods) are parsed from their approved rate schedules for Mainland/Vancouver Island. Missing carbon evidence rejects live output. Fort Nelson Rates 4/5 (no published price table), Revelstoke propane, Rates 6/7 and Customer Choice marketer prices remain gaps. Batch 7 adds Residential Rate 1 Revelstoke propane (9 live total) from the residential page table, with its own motor-fuel-tax carbon evidence. Rates 6/7 and industrial service are excluded. Batch 8 adds Commercial Rates 2/3 Revelstoke propane (11 live total): the business-page Revelstoke tables are accepted only when the approved tariff index authorizes each class in Revelstoke and the residential page confirms propane service; each class fails independently."
+      "notes": "FortisBC Energy is the natural gas distribution arm of FortisBC, serving most of British Columbia. Regulated by the British Columbia Utilities Commission (BCUC). Rates 1/2/3 are parsed live for Mainland/Vancouver Island and Fort Nelson with daily basic charges and $/GJ delivery, storage and transport and cost of gas; Rate 5 (monthly basic, $/GJ/month daily-demand charge, riders) and Rate 4 seasonal (off-peak/extension periods) are parsed from their approved rate schedules for Mainland/Vancouver Island. Missing carbon evidence rejects live output. Fort Nelson Rates 4/5 (no published price table), Revelstoke propane, Rates 6/7 and Customer Choice marketer prices remain gaps. Batch 7 adds Residential Rate 1 Revelstoke propane (9 live total) from the residential page table, with its own motor-fuel-tax carbon evidence. Rates 6/7 and industrial service are excluded. Batch 8 adds Commercial Rates 2/3 Revelstoke propane (11 live total): the business-page Revelstoke tables are accepted only when the approved tariff index authorizes each class in Revelstoke and the residential page confirms propane service; each class fails independently. Batch 10 adds Rate 7 General Interruptible Service (monthly basic as printed; curtailment-limited delivery; Sumas-indexed overrun as a condition) and delivery-only transportation Rates 22/23/25/27 (16 live). Rate 7 PDF links are rediscovered from the business page and Rate 22-27 PDFs from the approved tariff index; marketer commodity is excluded, Rate 22 firm/interruptible charges are conditional, and Rates 6/6P/26 NGV and 22A/22B shipper-specific service are excluded. Fort Nelson 4/5/7/22-27 have no price table; RNG (B) and Customer Choice (U) variants remain gaps."
     },
     {
       "name": "ATCO Gas",
@@ -168,7 +168,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Twelve current residential/commercial Sales, T-service and marketer-supply variants. Source cents/m3 are normalized to dollars/m3, without heat-content conversion; native volumetric demand units and component dates are preserved. Delivery/demand totals are checked against their parts, not added twice. Private marketer commodity is excluded and explicit carbon evidence is mandatory. Batch 8 requires the PUB-approved schedule (Order 138/25) for class annual-volume boundaries, one-year elections/contracts, Mainline pressure, winter-month billing demand, T-service 200 GJ/day nomination and interruptible alternate-supply pass-through conditions; missing schedule context rejects only the affected classes. Fixed-term commodity contracts are noted as a separate optional product, not priced. No full catalogue-completion claim."
+      "notes": "Twelve current residential/commercial Sales, T-service and marketer-supply variants. Source cents/m3 are normalized to dollars/m3, without heat-content conversion; native volumetric demand units and component dates are preserved. Delivery/demand totals are checked against their parts, not added twice. Private marketer commodity is excluded and explicit carbon evidence is mandatory. Batch 8 requires the PUB-approved schedule (Order 138/25) for class annual-volume boundaries, one-year elections/contracts, Mainline pressure, winter-month billing demand, T-service 200 GJ/day nomination and interruptible alternate-supply pass-through conditions; missing schedule context rejects only the affected classes. Fixed-term commodity contracts are noted as a separate optional product, not priced. Batch 10 audits the schedule class list (PDF p.17) and commercial options on each run: Special Contract (single negotiated customer) and Power Station (generation fuel) are excluded with schedule evidence (p.20); Mainline Interruptible with firm delivery is priced only in scanned Appendix A pages (pp.80/82) and remains blocked pending reviewed text. No full catalogue-completion claim."
     },
     {
       "name": "SaskEnergy",
@@ -203,7 +203,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Six live residential/small-commercial/large-commercial full-service and delivery-only variants. Base charges are published effective October 1, 2023; the assembled tariff begins April 1, 2025 when its separately dated, source-verified zero carbon component applies. Missing carbon evidence rejects live output. Private retailer commodity prices are excluded from delivery-only records, not invented. Small industrial eligibility and billing fees/municipal payments remain audit gaps; no full building-catalogue completion claim."
+      "notes": "Six live residential/small-commercial/large-commercial full-service and delivery-only variants. Base charges are published effective October 1, 2023; the assembled tariff begins April 1, 2025 when its separately dated, source-verified zero carbon component applies. Missing carbon evidence rejects live output. Private retailer commodity prices are excluded from delivery-only records, not invented. Batch 10 adds closed full-service Small Industrial (660,001-970,000 m3/yr; monthly delivery blocks; no Gas Retailer variant) using the general April 1, 2025 zero Part I fuel-charge row as carbon evidence (7 live); new firm delivery above 660,000 m3 is TransGas service. Billing fees/municipal payments remain audit gaps; no full building-catalogue completion claim."
     },
     {
       "name": "Heritage Gas",
@@ -320,7 +320,7 @@
           "is_primary": false
         }
       ],
-      "notes": "BCUC-regulated residential choices include tiered 1101, flat 1151, each with optional 2101 time-of-day, plus closed dual-fuel 1105. The live parser reads the approved PDF including dates, separate 1901/1904 riders and conditional transformer discounts; the riders exclude 2101 adjustments. Business Rates 1300/1500/1600 are rebuilt from approved tariff pages 97-107 with separate RS1901/1904 riders and conditional primary-voltage/transformation discounts, plus Terms and Conditions Section 11 standard service charges. Batch 9 adds Transmission Service RS1830 (PDF pages 138-140) and closed RS1289 net-metering generation credit as a conditional adjustment (pages 223-231); transmission pilots 2801/2802/2821/2822, RS1892 and RS2289/2290 remain open, RS1828 needs a scope decision, and irrigation, lighting, EV, IPP and standby-only service are excluded. Batch 8 adds the Terms and Conditions section 7.2 power-factor surcharge (PDF pages 53-54) to each business record as ten conditional bands in the source unit 'fraction of Rate section charges' (lagging power factor below 90%; nil at 90% or more; no leading-power-factor charge); a missing or malformed clause rejects business records only."
+      "notes": "BCUC-regulated residential choices include tiered 1101, flat 1151, each with optional 2101 time-of-day, plus closed dual-fuel 1105. The live parser reads the approved PDF including dates, separate 1901/1904 riders and conditional transformer discounts; the riders exclude 2101 adjustments. Business Rates 1300/1500/1600 are rebuilt from approved tariff pages 97-107 with separate RS1901/1904 riders and conditional primary-voltage/transformation discounts, plus Terms and Conditions Section 11 standard service charges. Batch 9 adds Transmission Service RS1830 (PDF pages 138-140) and closed RS1289 net-metering generation credit as a conditional adjustment (pages 223-231); batch 10 adds transmission pilots 2801/2802/2821/2822 (pages 187-216, conditional enrollment alternatives to RS1830, ending March 31, 2030) and conditional generation credits RS2289/2290 (pages 234-248) for 17 live; RS1892 freshet energy is Mid-C index priced and deferred with market-rate work, RS1828 is excluded (biomass contract), and irrigation, lighting, EV, IPP and standby-only service are excluded. Batch 8 adds the Terms and Conditions section 7.2 power-factor surcharge (PDF pages 53-54) to each business record as ten conditional bands in the source unit 'fraction of Rate section charges' (lagging power factor below 90%; nil at 90% or more; no leading-power-factor charge); a missing or malformed clause rejects business records only."
     },
     {
       "name": "FortisBC Electric",
@@ -349,7 +349,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Six live January 2026 building schedules: flat RS 1, closed residential TOU 2A, commercial 20/21 and TOU 22A/23A. Per-two-month and per-month charges remain native; RS21 kW/kVA components are alternative bases. Conditional voltage/transformation credits are negative rebates, not additive charges. Nine live schedules: large commercial primary RS30 and RS32 (500 kVA contract demand) and optional RS85 Green Power rider were added. Batch 9 adds industrial transmission RS31 and TOU RS33 (sheets R-31.1/R-33.1); RS37 standby-only is excluded and Mid-C-indexed RS38 needs a decision; RS96 EV, RS95 net metering and RS91 financing have no building price. PDF extraction selects source sheets by printed footer to avoid table-of-contents extraction stalls."
+      "notes": "Six live January 2026 building schedules: flat RS 1, closed residential TOU 2A, commercial 20/21 and TOU 22A/23A. Per-two-month and per-month charges remain native; RS21 kW/kVA components are alternative bases. Conditional voltage/transformation credits are negative rebates, not additive charges. Nine live schedules: large commercial primary RS30 and RS32 (500 kVA contract demand) and optional RS85 Green Power rider were added. Batch 9 adds industrial transmission RS31 and TOU RS33 (sheets R-31.1/R-33.1); RS37 standby-only is excluded and Mid-C-indexed RS38 is deferred to the Alberta/Ontario market-rate work; RS96 EV, RS95 net metering and RS91 financing have no building price. PDF extraction selects source sheets by printed footer to avoid table-of-contents extraction stalls."
     },
     {
       "name": "Hydro-Québec",
@@ -390,7 +390,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Nine live records include D/DP/DM/DN/DT/Flex D, the closed Winter Credit adjustment and G/M. DT switches on source-defined outdoor temperature zones, not hourly TOU, and excludes off-grid service. Flex D preserves seasonal tiers, notified events and mutually exclusive product eligibility. Winter Credit is a conditional adjustment to Rate D, retaining reference-energy rules and enrollment cutoff. Multiplier, minimum-bill and demand rules remain conditions, not calculated bills. Inukjuak, net metering and remaining building business options still need audit; no full catalogue-completion claim. Batch 7 adds 11 live building options (20 live total): Inukjuak DN, Rate G9, Flex G/M/G9, three dual-energy rates, Winter Credit G and net-metering options I/III (option III keeps its own conditions). All components carry source URL, page detail and effective date. Industrial MA is not in the current edition; GD (backup), BR (EV), LD/LP (auxiliary/standby) are excluded. Batch 8 adds Net Metering Option I for Rate M (21 live total): Rate M application 4.28 (self-generation up to 1,000 kW) plus the shared Option I surplus-bank reset credit as a conditional $/kWh credit; Rate M charges stay separate. Batch 9 adds large-power Rates L (pages 63-66), LG (67-69) and H (71) with conditional voltage credits, plus the business Demand Response Leeway Option (pages 94-98) as alternative conditional credits (25 live). DR Commitment Option and Rate F/FP remain open."
+      "notes": "Nine live records include D/DP/DM/DN/DT/Flex D, the closed Winter Credit adjustment and G/M. DT switches on source-defined outdoor temperature zones, not hourly TOU, and excludes off-grid service. Flex D preserves seasonal tiers, notified events and mutually exclusive product eligibility. Winter Credit is a conditional adjustment to Rate D, retaining reference-energy rules and enrollment cutoff. Multiplier, minimum-bill and demand rules remain conditions, not calculated bills. Inukjuak, net metering and remaining building business options still need audit; no full catalogue-completion claim. Batch 7 adds 11 live building options (20 live total): Inukjuak DN, Rate G9, Flex G/M/G9, three dual-energy rates, Winter Credit G and net-metering options I/III (option III keeps its own conditions). All components carry source URL, page detail and effective date. Industrial MA is not in the current edition; GD (backup), BR (EV), LD/LP (auxiliary/standby) are excluded. Batch 8 adds Net Metering Option I for Rate M (21 live total): Rate M application 4.28 (self-generation up to 1,000 kW) plus the shared Option I surplus-bank reset credit as a conditional $/kWh credit; Rate M charges stay separate. Batch 9 adds large-power Rates L (pages 63-66), LG (67-69) and H (71) with conditional voltage credits, plus the business Demand Response Leeway Option (pages 94-98) as alternative conditional credits (25 live). Batch 10 adds the business Demand Response Commitment Option (articles 6.13-6.36, PDF pages 83-93; 20 mutually exclusive sub-options, multi-year/short-notice credits and capped overrun deductions, all conditional adjustments to G/M/L/LG; 26 live). Rate F/FP (unmetered) is excluded; Load Retention, Additional Electricity (monthly announced price), closed Economic Development and Industrial Revitalization rates are not general published building prices."
     },
     {
       "name": "Manitoba Hydro",
@@ -411,9 +411,15 @@
           "source_type": "html",
           "description": "Commercial and industrial electricity rates",
           "is_primary": false
+        },
+        {
+          "url": "https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf",
+          "source_type": "pdf",
+          "description": "Approved Electric Rate Schedule (January 1, 2026, PUB Order 1/26); Limited Use of Billing Demand tariffs 2026-50 to 2026-55",
+          "is_primary": false
         }
       ],
-      "notes": "Manitoba Hydro is a Crown corporation providing electricity in Manitoba. Electricity rates are among the lowest in Canada due to abundant hydroelectric generation. Regulated by the Manitoba Public Utilities Board (PUB). Twelve live January 2026 building records: residential standard, seasonal and diesel (basic charge also published for service over 200 A), plus general service small/medium/large/seasonal and diesel general service and diesel government/First Nation education. Large general-service voltage tiers cover building-related industrial service. Curtailable, LUBD and surplus-energy programs publish no complete dated price; the net-billing credit lacks a published start date; standard service charges remain unaudited. A failed residential or commercial page no longer discards the other page's live classes. Lighting is excluded."
+      "notes": "Manitoba Hydro is a Crown corporation providing electricity in Manitoba. Electricity rates are among the lowest in Canada due to abundant hydroelectric generation. Regulated by the Manitoba Public Utilities Board (PUB). Twelve live January 2026 building records: residential standard, seasonal and diesel (basic charge also published for service over 200 A), plus general service small/medium/large/seasonal and diesel general service and diesel government/First Nation education. Large general-service voltage tiers cover building-related industrial service. Batch 10 adds six Limited Use of Billing Demand options 2026-50 to 2026-55 from the approved schedule as conditional alternatives that replace standard General Service charges (18 live); a schedule failure keeps the page classes and vice versa. Curtailable and surplus-energy programs publish no complete dated price; the net-billing credit lacks a published start date; standard service charges are not in the approved schedule and the $150 reconnection fee is undated. A failed residential or commercial page no longer discards the other page's live classes. Lighting is excluded."
     },
     {
       "name": "SaskPower",
@@ -536,7 +542,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Ten live records include standard/TOD/conditional pilots, MURB house-meter TOU89, separate optional Solar Garden and Community Solar adjustments, and business 10/11/12 rebuilt from tariff book pages 16-17/25-26/38-39 with FAM/DSM/storm riders and conditional transformer discounts. MURB requires ten units, its own General/MURB rider rows and minimum-bill context; printed Note1 explicitly applies the peak price on weekends/holidays. Solar credits apply only to subscriber-attributed generation with base tariffs still separate. Pilot restoration status remains conditional; no early November/2027 prices. Business pilots 72/73/82/83 remain a gap; municipal wholesale is excluded. Batch 7 adds business pilots 72/73/82/83 (14 live total) as conditional records: October interim phase and November 1 pricing date-gated, closed to new applications, with restoration status not assumed. Industrial and municipal wholesale are excluded."
+      "notes": "Ten live records include standard/TOD/conditional pilots, MURB house-meter TOU89, separate optional Solar Garden and Community Solar adjustments, and business 10/11/12 rebuilt from tariff book pages 16-17/25-26/38-39 with FAM/DSM/storm riders and conditional transformer discounts. MURB requires ten units, its own General/MURB rider rows and minimum-bill context; printed Note1 explicitly applies the peak price on weekends/holidays. Solar credits apply only to subscriber-attributed generation with base tariffs still separate. Pilot restoration status remains conditional; no early November/2027 prices. Business pilots 72/73/82/83 remain a gap; municipal wholesale is excluded. Batch 7 adds business pilots 72/73/82/83 (14 live total) as conditional records: October interim phase and November 1 pricing date-gated, closed to new applications, with restoration status not assumed. Batch 10 adds Small (21), Medium (22) and Large Industrial firm (23) and the Large Industrial Interruptible Rider (25) from book pages 40-49 with their own FAM/DSM/storm rows, conditional distribution-cost adder, transformer reduction and interruptible demand credit (18 live). ELIADC and Load Retention are contract-specific exclusions; one-part real-time pricing is market-indexed and deferred with market-rate work; municipal wholesale, shore power and standby are excluded."
     },
     {
       "name": "Maritime Electric",
@@ -559,7 +565,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Maritime Electric is the primary electricity distributor in Prince Edward Island, a subsidiary of Fortis Inc. Regulated by the Island Regulatory and Appeals Commission (IRAC). Building classes 110/130/131/133/232/233 are source-checked with per-class fail-closed parsing and a source fixture. Industrial 310/320/330/340 are parsed as reference and need a building-industrial audit. Lighting and short-term service are excluded. No recurring riders are published."
+      "notes": "Maritime Electric is the primary electricity distributor in Prince Edward Island, a subsidiary of Fortis Inc. Regulated by the Island Regulatory and Appeals Commission (IRAC). Building classes 110/130/131/133/232/233 are source-checked with per-class fail-closed parsing and a source fixture. Batch 10 audits Small Industrial 320 and Large Industrial 310 as complete against N-28 plus the Section N rates page (billing-demand rules and kVA tests as conditions; 310 losses and transformation charges conditional; no curtailable credit published). 330/340 are the Wholesale Rate Schedule for the City of Summerside and are retained as reference only. Lighting, unmetered and short-term service are excluded. No recurring riders are published."
     },
     {
       "name": "Newfoundland Power",
@@ -605,7 +611,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Eighteen current building-service and seasonal-option records are parsed from individually dated July 2026 pages. Phase/amperage basic charges are mutually exclusive alternatives. kW/kVA, monthly diesel blocks, government/non-government service, required minimum/maximum bills and optional adjustment conditions are retained. Seasonal options require their base schedule; no bill totals. Batch 9 adds Island Industrial Firm (pages 9-10), Labrador Industrial Firm (pages 62-65) and the conditional Net Metering Service Option credit (pages 67-70); 21 live. 5.1L is source-blocked (monthly futures pricing); CP is transmission commissioning; lighting/UT wholesale are outside scope."
+      "notes": "Eighteen current building-service and seasonal-option records are parsed from individually dated July 2026 pages. Phase/amperage basic charges are mutually exclusive alternatives. kW/kVA, monthly diesel blocks, government/non-government service, required minimum/maximum bills and optional adjustment conditions are retained. Seasonal options require their base schedule; no bill totals. Batch 9 adds Island Industrial Firm (pages 9-10), Labrador Industrial Firm (pages 62-65) and the conditional Net Metering Service Option credit (pages 67-70); 21 live. 5.1L is source-blocked (monthly futures pricing); CP is transmission commissioning; lighting/UT wholesale are outside scope. Batch 10 audits Island Industrial Non-Firm (pages 11-12: futures- and fuel-formula pricing with no printed price, source-blocked) and Island Industrial Wheeling (page 13: transmission wheeling under an Industrial Service Agreement, excluded)."
     },
     {
       "name": "Yukon Energy",
@@ -644,9 +650,21 @@
           "source_type": "pdf",
           "description": "Dated non-government residential energy rebate, with usage limit and fuel/fixed-charge exclusions",
           "is_primary": false
+        },
+        {
+          "url": "https://www.atcoelectricyukon.com/en-ca/services-rates/understanding-rates.html",
+          "source_type": "html",
+          "description": "ATCO Electric Yukon rates page linking the joint YECL/YEC rate-schedule book",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.atcoelectricyukon.com/content/dam/aey-website/en-ca/assets/services-rates/yecl-yec-rate-schedules-10-2026.pdf",
+          "source_type": "pdf",
+          "description": "Joint YECL/YEC rate schedules (text; Board Order 2011-06 base rates): residential 1160-1480 and general service 2160-2480 terms, minimum bills, billing demand and Rider A; file name changes monthly",
+          "is_primary": false
         }
       ],
-      "notes": "Yukon Energy Corporation is regulated by the Yukon Utilities Board. Rate 1160 parses base rates, R/J/J1 percentages, current fuel Rider F and dated residential relief separately. Detailed 1160/2160 base PDFs are image-only; broader building classes and Rider A need OCR or authoritative text alternatives. General-service and representative diesel fallbacks remain unverified."
+      "notes": "Yukon Energy Corporation is regulated by the Yukon Utilities Board. Rate 1160 parses base rates, R/J/J1 percentages, current fuel Rider F and dated residential relief separately. Yukon Energy's own detailed base PDFs are image-only; batch 10 uses ATCO's text joint YECL/YEC rate-schedule book, cross-checked against Yukon Energy's April 2026 R/J cross-reference, for 8 residential (1160-1480) and 12 general-service (2160-2480) building classes (20 live). Without the book only 1160 is published live. Riders R1/S/E (currently zero), the unpriced winter rebate and Rider B are not modelled; lighting and Rates 32/39/42/43 are excluded."
     },
     {
       "name": "Yukon Electrical Company",
@@ -654,16 +672,22 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.yukon_electrical",
       "scraper_class": "YukonElectricalScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.atcoelectricyukon.com/en-ca/rates.html",
+          "url": "https://www.atcoelectricyukon.com/en-ca/services-rates/understanding-rates.html",
           "source_type": "html",
-          "description": "ATCO Electric Yukon (formerly Yukon Electrical Company) distribution rates",
+          "description": "ATCO Electric Yukon rates page (JavaScript-rendered) linking the joint rate-schedule book and riders",
           "is_primary": true
+        },
+        {
+          "url": "https://www.atcoelectricyukon.com/content/dam/aey-website/en-ca/assets/services-rates/yecl-yec-rate-schedules-10-2026.pdf",
+          "source_type": "pdf",
+          "description": "Joint YECL/YEC rate schedules (text); same 20 residential/general-service building classes as Yukon Energy; file name changes monthly",
+          "is_primary": false
         }
       ],
-      "notes": "Yukon Electrical Company (now operating as ATCO Electric Yukon) is the distribution utility in Yukon. Regulated by the Yukon Utilities Board (YUB)."
+      "notes": "Yukon Electrical Company (now operating as ATCO Electric Yukon) is the distribution utility in Yukon. Regulated by the Yukon Utilities Board (YUB). Batch 10 reuses the Yukon Energy joint-schedule parser for the same 20 YUB-approved tariffs in ATCO service areas, with Yukon Energy's cross-reference, J1, Rider F and relief evidence; they are the same schedules, not 20 additional classes. The old rates.html URL returns 404 and the shared renderer stalls on ATCO's page, so the book URL is static and output falls back to 1160 only if it is renamed."
     },
     {
       "name": "Northwest Territories Power Corporation",
@@ -671,16 +695,34 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ntpc",
       "scraper_class": "NTPCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.ntpc.com/customer-service/residential-service/understanding-your-power-bill/current-rates",
+          "url": "https://www.ntpc.com/node/796",
           "source_type": "html",
-          "description": "Current residential electricity rates for NWT communities",
+          "description": "Rate schedule index; the current PUB-approved schedule PDF (June 1, 2026) is rediscovered each run and its date must match the PDF",
           "is_primary": true
+        },
+        {
+          "url": "https://www.ntpc.com/customer-service/residential-service/residential-electrical-rates",
+          "source_type": "html",
+          "description": "Residential rates by zone: cross-check of the schedule plus GNWT Cost of Living Subsidy and TPSP first-block prices",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.ntpc.com/customer-service/territorial-power-support-program-tpsp",
+          "source_type": "html",
+          "description": "TPSP seasonal first-block thresholds and residential eligibility",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.ntpc.com/node/976",
+          "source_type": "html",
+          "description": "Rider explanations and Cost of Living Subsidy eligibility",
+          "is_primary": false
         }
       ],
-      "notes": "NTPC is a territorial Crown corporation generating and distributing electricity across the Northwest Territories. Rates vary significantly by community (hydro vs. diesel generation). Regulated by the Northwest Territories Public Utilities Board (PUB)."
+      "notes": "NTPC is a territorial Crown corporation generating and distributing electricity across the Northwest Territories. Regulated by the Northwest Territories Public Utilities Board (PUB). Batch 10 parses the June 1, 2026 schedule live: non-government residential and general service by zone (Snare, Thermal, Norman Wells, Taltson split for Hay River vs Fort Smith/Fort Resolution) and government residential/general service per community (62 live). Riders are separate; GNWT Cost of Living Subsidy is a conditional dated credit and the TPSP subsidised first-block price is a conditional alternative energy price, both only where the residential page reconciles with the schedule. Snare TPSP saving does not reconcile and is omitted; no subsidy amounts are published for general service or government accounts. Interruptible heating (Taltson) needs a scope decision; standby, Naka wholesale, Con Mine and streetlighting are excluded. Yellowknife retail is served by Naka Power, so the old Yellowknife seeds are no longer produced."
     },
     {
       "name": "Qulliq Energy Corporation",
@@ -688,16 +730,34 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.qulliq",
       "scraper_class": "QulliqScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.qec.nu.ca/customer-care/accounts-and-billing/power-rates",
+          "url": "https://www.qec.nu.ca/customer-care/accounts-and-billing/customer-rates",
           "source_type": "html",
-          "description": "Electricity rate information for Nunavut communities",
+          "description": "Territory-wide customer rates by class, Nunavut Electricity Subsidy Program terms and public-housing conditions (page date label is stale; values must match the interim notice)",
           "is_primary": true
+        },
+        {
+          "url": "https://www.qec.nu.ca/interim-electricity-rates-effective-april-1-2025-general-rate-application",
+          "source_type": "html",
+          "description": "Interim rates effective April 1, 2025 pending final approval, including residential customer and non-government commercial demand charges",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.qec.nu.ca/customer-care/rate-application",
+          "source_type": "html",
+          "description": "Rate application status; a later effective date rejects live output",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.qec.nu.ca/customer-care/general-information/what-fuel-stabilization-rate",
+          "source_type": "html",
+          "description": "Fuel Stabilization Rate context; no approved current rider value is published",
+          "is_primary": false
         }
       ],
-      "notes": "Qulliq Energy Corporation is the sole electricity provider in Nunavut, operating diesel generation in each community. Rates vary by community and include territorial subsidy components. Regulated by the Utility Rates Review Council of Nunavut (URRC)."
+      "notes": "Qulliq Energy Corporation is the sole electricity provider in Nunavut, with diesel generation in each community and territory-wide rates by customer type. Regulated by the Minister responsible for QEC on Utility Rates Review Council (URRC) advice. Batch 10 parses six building classes (non-government, government and municipal tax-based residential/commercial) live from the April 1, 2025 interim rates (medium confidence, labelled interim). NESP seasonal kWh allowances are conditional components without an invented price; the public-housing tenant arrangement is a note. Government/municipal commercial base charges, the subsidised NESP price and any approved fuel rider are not published as text. Streetlights and standby are excluded."
     },
     {
       "name": "Alectra Utilities",

@@ -711,6 +711,7 @@ class NovaScotiaPowerScraper(BaseScraper):
             return None
         pages, products, source_url = book
         records = self._parse_business_tariffs(pages, products, source_url)
+        records.extend(self._parse_industrial_tariffs(pages, products, source_url))
         try:
             business_html = self.fetch_page(BUSINESS_URL)
         except Exception as exc:
@@ -728,9 +729,12 @@ class NovaScotiaPowerScraper(BaseScraper):
     def _business_rider_components(
         self, pages: list[DocumentPage], key: str, year: int, effective: str, year_end: str, source_url: str,
     ) -> list[RateComponent]:
-        """Read this class's own FAM, DSM and storm rows (key: small, general or large)."""
+        """Read this class's own FAM, DSM and storm rows (key: small, general, large or an industrial key)."""
         def number(token: str) -> float:
             return -float(token[1:-1]) if token.startswith("(") else float(token)
+
+        N = r"\(?\d+\.\d+\)?"
+        C = rf"({N})"
 
         rows = {
             "small": {
@@ -753,6 +757,31 @@ class NovaScotiaPowerScraper(BaseScraper):
                 "fam": r"Residential Building \(MURB\) Time of Use Large General (\d+\.\d+) (\d+\.\d+) Small Industrial",
                 "dsm": r"Time-of-Use Large General (\d+\.\d+) (\(?\d+\.\d+\)?) (\d+\.\d+) Small Industrial",
                 "storm": r"Residential Building Time-of-Use Large General (\d+\.\d+) Small Industrial",
+            },
+            # Industrial row labels are unique within each current-year rider table; capture only this class's values.
+            "small_industrial": {
+                "label": "Small Industrial",
+                "fam": rf"Small Industrial {C} {C} Medium Industrial",
+                "dsm": rf"Small Industrial {C} {C} {C} Medium Industrial",
+                "storm": rf"Small Industrial {C} Medium Industrial",
+            },
+            "medium_industrial": {
+                "label": "Medium Industrial",
+                "fam": rf"Medium Industrial {C} {C} Large Industrial Firm",
+                "dsm": rf"Medium Industrial {C} {C} {C} Large Industrial including Interruptible Rider",
+                "storm": rf"Medium Industrial {C} Large Industrial including Interruptible Rider",
+            },
+            "large_firm": {
+                "label": "Large Industrial Firm (FAM); Large Industrial including Interruptible Rider (DSM, storm)",
+                "fam": rf"Large Industrial Firm {C} {C} Large Industrial Interruptible",
+                "dsm": rf"Large Industrial including Interruptible Rider {C} {C} {C} Municipal",
+                "storm": rf"Large Industrial including Interruptible Rider {C} Municipal",
+            },
+            "large_interruptible": {
+                "label": "Large Industrial Interruptible (FAM); Large Industrial including Interruptible Rider (DSM, storm)",
+                "fam": rf"Large Industrial Interruptible {C} {C} Municipal",
+                "dsm": rf"Large Industrial including Interruptible Rider {C} {C} {C} Municipal",
+                "storm": rf"Large Industrial including Interruptible Rider {C} Municipal",
             },
         }[key]
 
@@ -936,6 +965,193 @@ class NovaScotiaPowerScraper(BaseScraper):
                 records.append(self._parse_business_tariff(pages, code, context, source_url))
             except (ValueError, IndexError) as exc:
                 self.logger.warning("NSPower Rate %s incomplete: %s", code, exc)
+        return records
+
+    # ── Industrial: Small 21, Medium 22, Large 23 firm and Interruptible Rider 25 ──
+
+    def _parse_industrial_tariff(
+        self, pages: list[DocumentPage], code: str, context: tuple[int, str, str, str], source_url: str,
+    ) -> TariffRecord:
+        """Parse one industrial size class; base charges, conditional credits, riders and minimum bill stay separate."""
+        year, effective, _today, year_end = context
+        nxt = f"Effective January 1, {year + 1}"
+        order = r"Effective upon the date of the \$(\d+\.\d+) Board's Order " + nxt + r" \$(\d+\.\d+)"
+        header, label = {
+            "21": (r"SMALL INDUSTRIAL TARIFF Page (\d+) of (\d+) \(up to 249 kVA or 224 kW\) Rate Code 21", "Small Industrial tariff"),
+            "22": (r"MEDIUM INDUSTRIAL TARIFF Page (\d+) of (\d+) \(250 kVA or 225 kW to 1,999 kVA or 1,799 kW\) Rate Code 22",
+                   "Medium Industrial tariff"),
+            "23": (r"LARGE INDUSTRIAL TARIFF Page (\d+) of (\d+) \(2,000 kVA or 1,800 kW and over\) Rate Code 23", "Large Industrial tariff"),
+            "25": (r"LARGE INDUSTRIAL TARIFF Page (\d+) of (\d+) \(2,000 kVA or 1,800 kW and over\) Rate Code 23", "Large Industrial tariff"),
+        }[code]
+        selected = self._continuous_pages(pages, header, label)
+        text = re.sub(r"\s+", " ", "\n".join(page.text for page in selected)).replace("\u2019", "'")
+        detail = "Rate Code 23" + (" Interruptible Rider (Rate Code 25)" if code == "25" else "") if code in ("23", "25") else f"Rate Code {code}"
+        detail += "; PDF pages " + ", ".join(str(page.page_number) for page in selected)
+        availability = re.search(r"AVAILABILITY (.*?) SPECIAL CONDITIONS", text)
+
+        def demand_component(value: str) -> RateComponent:
+            return RateComponent("demand", "Demand Charge", float(value), "$/kVA/month", demand_unit="kVA",
+                                 notes="Per kilovolt ampere of maximum demand.")
+
+        def transformer_credit(cents: str, condition: str) -> RateComponent:
+            if cents != "32":
+                raise ValueError("Changed transformer-ownership credit")
+            return RateComponent(
+                "rebate", "Customer-Owned Transformer Demand Reduction", -0.32, "$/kVA/month", demand_unit="kVA",
+                sub_component="conditional", notes=f"32 cents per kilovolt ampere reduction in the demand charge, only where {condition}.")
+
+        components: list[RateComponent] = []
+        if code == "21":
+            demand = re.search(
+                r"DEMAND CHARGE per month per kilovolt ampere of maximum demand " + order + r" (\d+) cents per kilovolt ampere "
+                r"reduction in demand charge where the transformer was owned by the customer prior to February 1, 1974, or under "
+                r"Special Condition \(2\)", text)
+            energy = re.search(
+                r"ENERGY CHARGE cents per kilowatt-hour for the first 200 kilowatt-hours for all additional per month per kilovolt ampere "
+                r"kilowatt-hours of maximum demand Effective upon the date of the (\d+\.\d+) (\d+\.\d+) Board's Order " + nxt +
+                r" (\d+\.\d+) (\d+\.\d+) FUEL ADJUSTMENT", text)
+            minimum = re.search(r"MAXIMUM PER KWH CHARGE/MINIMUM BILL The maximum charge per kWh will be that for a billing load "
+                                r"factor of 10% .*?per month " + order + r" AVAILABILITY", text)
+            required = ("for industrial use", "regular billing demand is less than 250 kVA or 225 kW")
+            if not (demand and energy and minimum and availability) or not all(p in availability.group(1) for p in required) \
+                    or "Meter readings shall then be reduced by 1.9%" not in text:
+                raise ValueError("Missing or changed Small Industrial charges or eligibility")
+            first, balance = float(energy.group(1)), float(energy.group(2))
+            if min(float(demand.group(1)), float(minimum.group(1)), first, balance) <= 0:
+                raise ValueError("Non-positive Rate 21 amount")
+            components += [
+                demand_component(demand.group(1)),
+                transformer_credit(demand.group(3), "the customer owned the transformer prior to February 1, 1974, or under Special Condition (2)"),
+                RateComponent("energy", "Energy Charge - First 200 kWh per kVA", round(first / 100, 6), "$/kWh", tier_number=1,
+                              tier_threshold=200.0, tier_unit="kWh/kVA of maximum demand/month",
+                              notes="First 200 kWh per month per kVA of maximum demand."),
+                RateComponent("energy", "Energy Charge - Balance", round(balance / 100, 6), "$/kWh", tier_number=2,
+                              notes="All kWh beyond the first 200 kWh per kVA of maximum demand per month."),
+            ]
+            name, sub_class, rider_key = "Small Industrial", "small industrial", "small_industrial"
+            conditions = (
+                f"The ${minimum.group(1)} minimum monthly bill is a condition, not an additional fixed charge; the maximum charge per kWh is that for a "
+                "10% billing load factor. High-voltage-side metering reads reduce by 1.9%."
+            )
+        elif code == "22":
+            demand = re.search(
+                r"DEMAND CHARGE per month per kilovolt ampere of maximum demand " + order + r" (\d+) cents per kilovolt ampere "
+                r"reduction in demand charge where the transformer is owned by the customer\.", text)
+            energy = re.search(r"ENERGY CHARGE cents per kilowatt- hour Effective upon the date of the (\d+\.\d+) Board's Order " + nxt +
+                               r" (\d+\.\d+) FUEL ADJUSTMENT", text)
+            minimum = re.search(r"MINIMUM MONTHLY CHARGE The minimum monthly charge shall be as follows\..*?per month " + order + r" AVAILABILITY", text)
+            required = ("any industrial customer having a regular billing demand of 250 kVA (225 kW) and over",)
+            if not (demand and energy and minimum and availability) or not all(p in availability.group(1) for p in required) \
+                    or "Meter readings shall then be reduced by 1.1%" not in text:
+                raise ValueError("Missing or changed Medium Industrial charges or eligibility")
+            if min(float(demand.group(1)), float(minimum.group(1)), float(energy.group(1))) <= 0:
+                raise ValueError("Non-positive Rate 22 amount")
+            components += [
+                demand_component(demand.group(1)),
+                transformer_credit(demand.group(3), "the customer owns the transformer"),
+                RateComponent("energy", "Energy Charge", round(float(energy.group(1)) / 100, 6), "$/kWh", notes="Flat rate for all kWh."),
+            ]
+            name, sub_class, rider_key = "Medium Industrial", "medium industrial", "medium_industrial"
+            conditions = (
+                f"The ${minimum.group(1)} minimum monthly charge is a minimum-bill condition, not an additional fixed charge. "
+                "High-voltage-side metering reads reduce by 1.1%. NSPI may withdraw availability if billing demand of 250 kVA (225 kW) is not maintained."
+            )
+        else:
+            demand = re.search(
+                r"DEMAND CHARGE As follows, per kilovolt ampere of maximum demand of the current month or the maximum actual demand of the "
+                r"previous December, January, or February occurring in the previous eleven \(11\) months\. per month \$(\d+\.\d+) " + nxt +
+                r" \$(\d+\.\d+) DISTRIBUTION COST ADDER For customers connected at distribution level, the following charge also applies, "
+                r"subject to the same provisions as the Demand Charge section above\. per month \$(\d+\.\d+) " + nxt + r" \$(\d+\.\d+) "
+                r"(\d+) cents per kilovolt ampere reduction in demand charge where the transformer is owned by the customer\.", text)
+            energy = re.search(r"ENERGY CHARGE cents per kilowatt-hour Firm Interruptible Customers Customers (\d+\.\d+) (\d+\.\d+) " + nxt +
+                               r" (\d+\.\d+) (\d+\.\d+) FUEL ADJUSTMENT", text)
+            minimum = re.search(r"MINIMUM MONTHLY CHARGE The minimum monthly charge shall be the greater of the demand charge or the amounts "
+                                r"in the table below\. per month " + order + r" AVAILABILITY", text)
+            required = ("three phase", "low voltage side of the bulk power transformer",
+                        "any industrial customer having a regular billing demand of 2,000 kVA or 1,800 kW and over")
+            if not (demand and energy and minimum and availability) or not all(p in availability.group(1) for p in required) \
+                    or "Meter readings shall be increased by 1.1% for each transformation" not in text:
+                raise ValueError("Missing or changed Large Industrial charges or eligibility")
+            interruptible = code == "25"
+            price = float(energy.group(2 if interruptible else 1))
+            if min(float(demand.group(1)), float(demand.group(3)), float(minimum.group(1)), price) <= 0:
+                raise ValueError(f"Non-positive Rate {code} amount")
+            components += [
+                demand_component(demand.group(1)),
+                RateComponent("demand", "Distribution Cost Adder", float(demand.group(3)), "$/kVA/month", demand_unit="kVA",
+                              sub_component="conditional",
+                              notes="Applies only to customers connected at distribution level, on the same billing demand as the Demand Charge."),
+                transformer_credit(demand.group(5), "the customer owns the transformer"),
+                RateComponent("energy", "Energy Charge - " + ("Interruptible" if interruptible else "Firm") + " Customers",
+                              round(price / 100, 6), "$/kWh",
+                              notes="Published Large Industrial energy price for " + ("interruptible" if interruptible else "firm") + " customers."),
+            ]
+            conditions = (
+                f"The minimum monthly charge is the greater of the demand charge or ${minimum.group(1)}; it is a condition, not an additional fixed charge. "
+                "Billing demand is the higher of the current month or the previous December-February maximum within eleven months. "
+                "Meter readings increase by 1.1% per transformation between meter and the bulk-supply transformer low-voltage side and are reduced "
+                "for transmission-voltage metering. A written operating agreement and separate service agreement may be required."
+            )
+            if interruptible:
+                rider = re.search(
+                    r"INTERRUPTIBLE RIDER TO THE LARGE INDUSTRIAL TARIFF \(RATE CODE 25\) (.*?) reduction per kilovolt ampere reduction in "
+                    r"demand charge " + order + r" AVAILABILITY (.*?) SPECIAL CONDITIONS", text)
+                terms = ("interruptible billing demand at 90% Power Factor", "written notice", "within ten (10) minutes", "Performance Penalty", "five (5) year advance written notice",
+                         "Interruption is limited to 16 hours per day and 5 days per week to a maximum of 30% of the hours per month and 15% of the hours in a year")
+                if not rider or "billed interruptible demand" not in rider.group(1) or not all(t in rider.group(4) for t in terms) \
+                        or float(rider.group(2)) <= 0:
+                    raise ValueError("Missing or changed Interruptible Rider credit or terms")
+                components.append(RateComponent(
+                    "rebate", "Interruptible Demand Credit", -float(rider.group(2)), "$/kVA/month", demand_unit="kVA",
+                    sub_component="conditional",
+                    notes=("Reduction applies only to billed interruptible demand (total billing demand minus contracted firm demand; "
+                           "none when billing demand is below contracted firm demand). Not a credit on all demand.")))
+                name, sub_class, rider_key = "Large Industrial - Interruptible Rider", "large industrial interruptible", "large_interruptible"
+                conditions += (
+                    " Interruptible service requires an agreed interruptible billing demand at 90% power factor, written notice, a dedicated telephone "
+                    "and load reduction within 10 minutes of NSPI notice; interruption is limited to 16 h/day, 5 days/week, 30% of monthly and 15% of "
+                    "annual hours. Non-compliance incurs Threshold and Performance Penalties (not modelled); return to firm service needs five years' "
+                    "notice. The Demand Charge applies to total billing demand and the credit reduces it only for billed interruptible demand."
+                )
+                eligibility = (availability.group(1).strip() + " Interruptible Rider (Rate Code 25): an agreed interruptible billing demand "
+                               "at 90% power factor, on written notice identifying firm and interruptible load.")
+            else:
+                name, sub_class, rider_key = "Large Industrial - Firm", "large industrial firm", "large_firm"
+                conditions += " NSPI may withdraw availability from firm-only customers not consistently maintaining 2,000 kVA or 1,800 kW."
+        for component in components:
+            component.source_url = source_url
+            component.source_detail = detail
+            component.effective_date = effective
+            component.end_date = year_end
+        riders = self._business_rider_components(pages, rider_key, year, effective, year_end, source_url)
+        if code != "25":
+            eligibility = re.sub(r"\s+", " ", availability.group(1)).strip()
+        return TariffRecord(
+            utility_name="Nova Scotia Power", province="NS", utility_type="electricity",
+            tariff_name=name, tariff_code=code, customer_class="industrial", sub_class=sub_class,
+            rate_structure="demand", effective_date=effective, end_date=year_end, source_url=source_url, source_page=detail,
+            eligibility=eligibility,
+            notes=(
+                f"NS Power Rate {code}; first published column of the approved May 2026 book (Board-order date verified on the residential rate pages; "
+                f"the {year + 1} column is not used). Base charges, conditional credits and the mandatory FAM, DSM and storm riders are separate; "
+                "no bill total is calculated. " + conditions
+            ),
+            components=components + riders,
+        )
+
+    def _parse_industrial_tariffs(
+        self, pages: list[DocumentPage], products: dict[str, str], source_url: str,
+    ) -> list[TariffRecord]:
+        """Parse Rate 21/22/23 and the Rate 25 Interruptible Rider independently; a failed class is logged and omitted."""
+        context = self._order_context(pages, {kind: parse_html(html).get_text(" ", strip=True) for kind, html in products.items()})
+        if not context:
+            return []
+        records: list[TariffRecord] = []
+        for code in ("21", "22", "23", "25"):
+            try:
+                records.append(self._parse_industrial_tariff(pages, code, context, source_url))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("NSPower industrial Rate %s incomplete: %s", code, exc)
         return records
 
     # ── Business time-varying pilots 72/73/82/83 ──

@@ -1,6 +1,7 @@
 {
   "_note": "Excerpts of official SaskEnergy pages (main content text via parse_html get_text, whitespace-normalised). Section scope per page key.",
   "retrieved": "2026-10-02",
+  "rechecked": "2026-10-07 (live residential/business/carbon/retailers text unchanged, including Small Industrial)",
   "pages": {
     "residential": {
       "url": "https://www.saskenergy.com/manage-account/rates/residential-rates",
@@ -41,10 +42,20 @@
         "basic": 171.5,
         "delivery": 0.0772,
         "commodity": 0.1264
+      },
+      "Small Industrial": {
+        "basic": 226.5,
+        "delivery_first_40000_m3_month": 0.0507,
+        "delivery_remaining": 0.0446,
+        "commodity": 0.1264,
+        "annual_m3": [660001, 970000],
+        "closed_to_new_customers": "2022-09-08",
+        "delivery_only": false
       }
     },
     "excluded": [
-      "Small Industrial (closed to new customers since 2022-09-08; no retailer access)"
+      "Small Industrial Delivery Service (page states Small Industrial customers are not eligible to purchase gas from a Gas Retailer)",
+      "Firm delivery above 660,000 m3/year for new customers (TransGas service, not a SaskEnergy rate page)"
     ]
   }
 }

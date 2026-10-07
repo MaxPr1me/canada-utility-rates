@@ -130,6 +130,18 @@ class BCHydroScraper(BaseScraper):
                     records.extend(self._parse_net_metering_tariff(self._tariff_document()))
                 except Exception as exc:
                     self.logger.warning("Could not parse BC Hydro net metering tariff: %s", exc)
+                try:
+                    records.extend(self._parse_transmission_pilots(self._tariff_document()))
+                except Exception as exc:
+                    self.logger.warning("Could not parse BC Hydro transmission pilots: %s", exc)
+                try:
+                    records.extend(self._parse_self_generation_tariff(self._tariff_document()))
+                except Exception as exc:
+                    self.logger.warning("Could not parse BC Hydro self-generation tariff: %s", exc)
+                try:
+                    records.extend(self._parse_community_generation_tariff(self._tariff_document()))
+                except Exception as exc:
+                    self.logger.warning("Could not parse BC Hydro community generation tariff: %s", exc)
 
             if not records:
                 return None
@@ -430,6 +442,241 @@ class BCHydroScraper(BaseScraper):
                 "kWh credit/kWh net generation", sub_component="conditional",
                 effective_date=effective, source_url=TARIFF_URL, source_detail=detail,
                 notes="One kWh of net generation adds one kWh to the generation account; later net consumption draws down this balance. Cash settlement has a separate variable annual price, not this component.",
+            )],
+        )]
+
+    def _numbered_section(self, pages: list[DocumentPage], code: str, section: int, count: int) -> tuple[str, str, str]:
+        """Return one schedule's text only when every numbered continuation page is present and dated."""
+        selected = sorted((page for page in pages if re.match(rf"BC Hydro Rate Schedule {code}\b", page.text)),
+                          key=lambda page: page.page_number)
+        labels = [re.search(rf"Section {section}-{code} [\u2013-] Page (\d+)\b", page.text[:200]) for page in selected]
+        if (len(selected) != count or any(label is None for label in labels)
+                or [int(label.group(1)) for label in labels] != list(range(1, count + 1))
+                or [page.page_number for page in selected] != list(range(selected[0].page_number, selected[0].page_number + count))):
+            raise ValueError(f"Missing RS {code} continuation")
+        dates = {extract_effective_date(page.text.split("Section", 1)[0]) for page in selected}
+        if len(dates) != 1 or None in dates or next(iter(dates)) > self.now_iso()[:10]:
+            raise ValueError(f"Missing, ambiguous or future RS {code} date")
+        first, last = selected[0].page_number, selected[-1].page_number
+        detail = f"Electric Tariff RS {code}; PDF page{'s' if count > 1 else ''} {first}" + (f"-{last}" if count > 1 else "")
+        return re.sub(r"\s+", " ", "\n".join(page.text for page in selected)), next(iter(dates)), detail
+
+    def _parse_transmission_pilots(self, pages: list[DocumentPage]) -> list[TariffRecord]:
+        """Optional RS 2801/2802/2821/2822 pilots offered in place of RS 1830; each fails closed independently."""
+        cent = r"\s*[\u00a2\u023c\ufffd]\s*per kWh"
+        riders: list[RateComponent] = []
+        try:
+            for code, title in (("1901", "Deferral Account Rate Rider"), ("1904", "Trade Income Rate Rider")):
+                text, effective, detail = self._numbered_section(pages, code, 6, 1)
+                amount = re.search(r"charge equal to\s+(\(?-?\d+(?:\.\d+)?\)?)%", text)
+                if not amount or "except for Rate Schedules 2101 and 3817" not in text:
+                    raise ValueError(f"Incomplete RS {code} rider")
+                raw = amount.group(1)
+                percent = -float(raw[1:-1]) if raw.startswith("(") and raw.endswith(")") else float(raw)
+                riders.append(RateComponent(
+                    "rider", f"Rate Rider -- {title}", round(percent / 100, 6), "fraction",
+                    effective_date=effective, source_url=TARIFF_URL, source_detail=detail,
+                    notes="Applies to all charges payable under the pilot schedule, before taxes and levies.",
+                ))
+        except ValueError as exc:
+            self.logger.warning("BC Hydro transmission pilot riders unavailable: %s", exc)
+            return []
+
+        winter = "Four billing periods from the one commencing nearest November 1"
+        on_peak_hours = "16:00-20:00 Winter Period weekdays, excluding statutory holidays"
+        periods = {
+            "Winter On-Peak Period": ("Winter On-Peak Energy Charge", "winter on-peak", on_peak_hours, "winter", winter),
+            "Winter Off-Peak Period": ("Winter Off-Peak Energy Charge", "winter off-peak", "All other Winter Period hours", "winter", winter),
+            "Spring Period": ("Spring Energy Charge", None, None, "spring", "Three billing periods from the one commencing nearest May 1"),
+            "Remaining Period": ("Remaining Period Energy Charge", None, None, "remaining", "All billing periods outside the Winter and Spring Periods"),
+            "All other kWh": ("All Other Energy Charge", None, None, None, None),
+        }
+        tou = ["Winter On-Peak Period", "Winter Off-Peak Period", "Spring Period", "Remaining Period"]
+        specs = (
+            ("2801", 7, "\u2013 TIME-OF-USE", "Transmission Time-of-Use Pilot (Rate 2801)", tou),
+            ("2802", 8, "\u2013 TIME-OF-USE WITH MODIFIED WINTER DEMAND",
+             "Transmission Time-of-Use with Modified Winter Demand Pilot (Rate 2802)", tou),
+            ("2821", 7, "CRITICAL PEAK PRICING", "Transmission Critical Peak Pricing Pilot (Rate 2821)",
+             ["Critical Peak Pricing Period", "All other kWh"]),
+            ("2822", 8, "\u2013 CRITICAL PEAK PRICING WITH TIME-OF-USE",
+             "Transmission Critical Peak Pricing with Time-of-Use Pilot (Rate 2822)", ["Critical Peak Pricing Period"] + tou),
+        )
+        records: list[TariffRecord] = []
+        for code, count, title, name, labels in specs:
+            try:
+                text, effective, detail = self._numbered_section(pages, code, 5, count)
+                required = [
+                    "Rate Schedule 1830 or are eligible to take Service under Rate Schedule 1830",
+                    "is a pilot effective until March 31, 2030", "Supply is at 60 kV or higher",
+                    "This Rate Schedule will terminate effective March 31, 2030",
+                    "The Pilot Period is April 1, 2026, to March 31, 2030", "completed enrollment form by March 19",
+                    "BC Hydro will provide a bill guarantee",
+                    f"may not participate in the Industrial Load Curtailment (ILC) Program while taking service under Rate Schedule {code}",
+                    "50% of the Contract Demand", "06:00 to 22:00 Monday to Saturday",
+                    "four Billing Periods starting with the first day of the Billing Period that commences nearest to November 1",
+                ]
+                if "Spring Period" in labels:
+                    required.append("three Billing Periods starting with the first day of the Billing Period that commences nearest to May 1")
+                if "Winter On-Peak Period" in labels and not re.search(r"hours from 16:00 to 20:00 during (?:the )?Winter Period weekdays", text):
+                    raise ValueError("Missing Winter On-Peak hours")
+                if "Critical Peak Pricing Period" in labels:
+                    required += ["up to 15 Critical Peak Pricing events over the Winter Period and each event is from 16:00 to 20:00 on Winter Period weekdays",
+                                 "day ahead notification"]
+                if code == "2802":
+                    required.append("hours from 6:00 to 16:00 and 20:00 to 22:00 during the Winter Period weekdays")
+                missing = [phrase for phrase in required if phrase not in text]
+                if (missing or not re.search(rf"RATE SCHEDULE {code} \u2013 TRANSMISSION SERVICE {title} Availability", text)
+                        or any(not re.search(rf"Rate Schedule {rider} applies to all charges payable under this Rate Schedule, before taxes and levies", text)
+                               for rider in ("1901", "1904"))):
+                    raise ValueError(f"Incomplete availability, definitions or riders: {missing}")
+                block = re.search(r" (Rate (?:Winter )?Demand Charges?:.*?) Definitions 1\. Billing Year", text)
+                if not block:
+                    raise ValueError("Missing rate block")
+                rate = block.group(1)
+
+                components: list[RateComponent] = []
+                if code == "2802":
+                    demand = re.search(
+                        r"Rate Winter Demand Charges: \$([\d.]+) per kVA of Winter On-Peak Billing Demand per Billing Period "
+                        r"plus \$([\d.]+) per kVA of Winter Non-Peak Billing Demand per Billing Period "
+                        r"or Non-Winter Demand Charge: \$([\d.]+) per kVA of Non-Winter Billing Demand per Billing Period", rate)
+                    if not demand:
+                        raise ValueError("Missing seasonal demand charges")
+                    components += [
+                        RateComponent("demand", "Winter On-Peak Billing Demand Charge", float(demand.group(1)), "$/kVA/billing period",
+                                      demand_unit="kVA", season="winter", season_months=winter, tou_period="winter on-peak", tou_hours=on_peak_hours,
+                                      notes="Winter Period only, together with the Winter Non-Peak demand charge; highest kVA in Winter On-Peak hours."),
+                        RateComponent("demand", "Winter Non-Peak Billing Demand Charge", float(demand.group(2)), "$/kVA/billing period",
+                                      demand_unit="kVA", season="winter", season_months=winter, tou_period="winter non-peak",
+                                      tou_hours="06:00-16:00 and 20:00-22:00 Winter Period weekdays, excluding statutory holidays",
+                                      notes="Winter Period only; greatest of the period's highest kVA, 75% of prior November-February Winter Non-Peak billing demand, or 50% of contract demand."),
+                        RateComponent("demand", "Non-Winter Billing Demand Charge", float(demand.group(3)), "$/kVA/billing period",
+                                      demand_unit="kVA", season="non-winter", season_months="All billing periods outside the Winter Period",
+                                      notes="Alternative to the two Winter demand charges, applying only outside the Winter Period; HLH kVA with the RS 1830-style ratchet."),
+                    ]
+                else:
+                    demand = re.search(r"Rate Demand Charge: \$([\d.]+) per kVA of Billing Demand per Billing Period", rate)
+                    if not demand:
+                        raise ValueError("Missing demand charge")
+                    components.append(RateComponent("demand", "Billing Demand Charge", float(demand.group(1)), "$/kVA/billing period", demand_unit="kVA"))
+                minimum = re.search(r"Monthly Minimum Charge: \$([\d.]+) per kVA of Billing Demand", rate)
+                if (code == "2821") != bool(minimum) or (minimum and minimum.group(1) != demand.group(1)):
+                    raise ValueError("Unexpected or inconsistent monthly minimum")
+
+                energy = re.findall(rf"(\d)\. ([A-Z][A-Za-z -]*?) (\d+\.\d+){cent}", rate)
+                if [label for _, label, _ in energy] != labels or [int(number) for number, _, _ in energy] != list(range(1, len(labels) + 1)):
+                    raise ValueError("Missing or changed energy periods")
+                for _, label, amount in energy:
+                    value = round(float(amount) / 100, 6)
+                    if label == "Critical Peak Pricing Period":
+                        components.append(RateComponent(
+                            "energy", "Critical Peak Pricing Energy Charge", value, "$/kWh", sub_component="conditional",
+                            tou_period="critical peak", season="winter", season_months=winter,
+                            tou_hours="16:00-20:00 on BC Hydro-called Winter Period weekdays (up to 15 events; day-ahead email notice)",
+                            notes="Applies only to kWh in called events. Published as its own energy-period price, not as a surcharge on another period price.",
+                        ))
+                        continue
+                    component_name, period, hours, season, months = periods[label]
+                    components.append(RateComponent("energy", component_name, value, "$/kWh", tou_period=period, tou_hours=hours,
+                                                    season=season, season_months=months))
+                if any(component.charge_value <= 0 for component in components):
+                    raise ValueError("Non-positive pilot charge")
+                for component in components:
+                    component.effective_date = effective
+                    component.source_url = TARIFF_URL
+                    component.source_detail = detail
+                minimum_note = " Monthly minimum equals the demand charge on Billing Demand; it is a floor, not an added charge." if code == "2821" else ""
+                records.append(TariffRecord(
+                    utility_name="BC Hydro", province="BC", utility_type="electricity", tariff_name=name, tariff_code=code,
+                    customer_class="industrial", sub_class="optional transmission pilot (conditional enrollment)", rate_structure="mixed",
+                    effective_date=max([effective] + [rider.effective_date for rider in riders]), end_date="2030-03-31",
+                    source_url=TARIFF_URL, source_page=detail,
+                    eligibility=("Optional pilot (April 1, 2026 to March 31, 2030) for customers taking, or eligible for, RS 1830 Transmission Service at 60 kV or higher "
+                                 "in the Integrated Service Area excluding Kingsgate-Yahk and Lardeau-Shutty Bench; not available with RS 1828, 1894 or 1895. "
+                                 "Requires an enrollment form (March 19 for 2026, March 1 later), starts at the Billing Year for a multi-year term, and excludes ILC participation."),
+                    notes=("Pilot alternative to RS 1830, not an adjustment to it. Billing demand uses HLH kVA (06:00-22:00 Monday-Saturday except statutory holidays) "
+                           "with 75%/50% ratchets. A one-time first-year bill guarantee refunds any excess over RS 1830 billing; it is conditional and not modelled. "
+                           "Self-generators face RS 1880 restrictions in peak periods. Riders shown separately; taxes excluded." + minimum_note),
+                    components=components + [replace(rider) for rider in riders],
+                ))
+            except ValueError as exc:
+                self.logger.warning("Incomplete BC Hydro RS %s: %s", code, exc)
+        return records
+
+    def _parse_self_generation_tariff(self, pages: list[DocumentPage]) -> list[TariffRecord]:
+        try:
+            text, effective, detail = self._numbered_section(pages, "2289", 6, 4)
+        except ValueError as exc:
+            self.logger.warning("Incomplete BC Hydro RS 2289: %s", exc)
+            return []
+        price = re.search(r"Energy Price: BC Hydro will pay an Energy Price of (\d+(?:\.\d+)?)\s*[\u00a2\u023c\ufffd] per kWh for all Net Generation", text)
+        if not price or float(price.group(1)) <= 0 or not all(phrase in text for phrase in (
+            "RATE SCHEDULE 2289 \u2013 SELF-GENERATION SERVICE", "For Customers taking Service at distribution voltage who",
+            "accepted by BC Hydro in writing and have received Interconnection Approval",
+            "not available to Customer Premises taking Service under Rate Schedules 1253, 1268, 1289 or 2290",
+            "aggregated nameplate rating of not more than 100 kW",
+            "Net Generation Credit is the Net Generation during each billing period multiplied by the Energy Price",
+            "BC Hydro will credit the Customer\u2019s bill by the Net Generation Credit",
+            "responsible for paying any balance owing", "credit balance on April 30 each year",
+        )):
+            self.logger.warning("Incomplete BC Hydro RS 2289 price or credit rules")
+            return []
+        return [TariffRecord(
+            utility_name="BC Hydro", province="BC", utility_type="electricity",
+            tariff_name="Self-Generation Net Generation Credit (Rate 2289)", tariff_code="2289",
+            customer_class="other", sub_class="conditional self-generation credit", rate_structure="other",
+            effective_date=effective, source_url=TARIFF_URL, source_page=detail,
+            eligibility=("Distribution-voltage customers with an accepted application and Interconnection Approval for an on-site or adjacent clean or renewable "
+                         "Generating Facility of no more than 100 kW nameplate (or 100 kW per phase net injection limit); not for premises on RS 1253, 1268, 1289 or 2290."),
+            notes=("Credit for electricity delivered to BC Hydro in each billing period, applied to the customer's bill; consumption stays billed under the "
+                   "customer's own rate schedule. Not a replacement retail energy price or a savings estimate. Credit balances may be carried forward, "
+                   "transferred, or paid out (on request above $50; any balance on April 30). No rate riders are attached to this payment."),
+            components=[RateComponent(
+                "rebate", "Conditional Net Generation Credit", -round(float(price.group(1)) / 100, 6), "$/kWh net generation",
+                sub_component="conditional", effective_date=effective, source_url=TARIFF_URL, source_detail=detail,
+                notes="Per kWh of net generation delivered to BC Hydro, not per kWh consumed.",
+            )],
+        )]
+
+    def _parse_community_generation_tariff(self, pages: list[DocumentPage]) -> list[TariffRecord]:
+        try:
+            text, effective, detail = self._numbered_section(pages, "2290", 6, 11)
+        except ValueError as exc:
+            self.logger.warning("Incomplete BC Hydro RS 2290: %s", exc)
+            return []
+        price = re.search(r"Community Energy Price: BC Hydro will pay a Community Energy Price of (\d+(?:\.\d+)?)\s*[\u00a2\u023c\ufffd] per kWh for all Net Generation", text)
+        if not price or float(price.group(1)) <= 0 or not all(phrase in text for phrase in (
+            "RATE SCHEDULE 2290 \u2013 COMMUNITY GENERATION SERVICE", "For Customers taking Service at distribution voltage who",
+            "new Shared Generating Facility to generate Electricity on or after July 1, 2026",
+            "accepted by BC Hydro in writing and received Interconnection Approval",
+            "not available to any Premises where Service is already provided under Rate Schedule 1253, 1268, 1289 or 2289",
+            "Who holds an account for Residential Service or General Service",
+            "Community Generation Credit is the Net Generation during each billing period multiplied by the Energy Price",
+            "(a) 50% if the Shared Generating Facility has four or fewer", "(c) 10% if the Shared Generating Facility has 10 or more",
+            "multiplied by 24 kW", "multiplied by 100 kW", "(b) A 2 MW injection limit at the Point of Delivery",
+            "BC Hydro may charge a fee for the Community Generation Credit Billing Service",
+            "not entitled to any credit or payments for Electricity delivered to BC Hydro in excess of its Shared Generating Facility\u2019s Maximum Injection Limit",
+        )):
+            self.logger.warning("Incomplete BC Hydro RS 2290 price, allocation or injection rules")
+            return []
+        return [TariffRecord(
+            utility_name="BC Hydro", province="BC", utility_type="electricity",
+            tariff_name="Community Generation Credit (Rate 2290)", tariff_code="2290",
+            customer_class="other", sub_class="conditional community generation credit", rate_structure="other",
+            effective_date=effective, source_url=TARIFF_URL, source_page=detail,
+            eligibility=("Distribution-voltage Community Generator Customers with an accepted application and Interconnection Approval for a new "
+                         "clean or renewable Shared Generating Facility in service on or after July 1, 2026; injection limited to the lesser of 24 kW per "
+                         "benefitting Residential account plus 100 kW per benefitting General Service account, or 2 MW. Not for premises on RS 1253, 1268, "
+                         "1289 or 2289; benefitting accounts must be Residential or General Service and not on RS 1289/2289."),
+            notes=("Credit for net generation delivered to BC Hydro, recorded in a Community Generation Account and applied to the generator's bill "
+                   "or, under the optional Credit Billing Service, allocated to benefitting accounts (maximum 50%/25%/10% per account for 1-4/5-9/10+ accounts). "
+                   "Benefitting customers' consumption stays billed under their own rate schedules; this is not a replacement retail energy price or a "
+                   "savings estimate. The optional Credit Billing Service fee and any generator-authorized deductions are unpublished and not modelled. "
+                   "No credit above the Maximum Injection Limit. No rate riders are attached to this payment."),
+            components=[RateComponent(
+                "rebate", "Conditional Community Generation Credit", -round(float(price.group(1)) / 100, 6), "$/kWh net generation",
+                sub_component="conditional", effective_date=effective, source_url=TARIFF_URL, source_detail=detail,
+                notes="Per kWh of net generation delivered to BC Hydro within the Maximum Injection Limit, not per kWh consumed.",
             )],
         )]
 

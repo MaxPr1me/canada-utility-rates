@@ -27,12 +27,18 @@ def setup_logging(level: int = logging.INFO, log_file: str = "scrape.log") -> No
     # Root logger
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
+    # pdfminer emits per-token DEBUG records that can grow the log file to gigabytes.
+    for noisy in ("pdfminer", "pdfplumber", "urllib3", "PIL"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+    if any(getattr(h, "_setup_logging", False) for h in root.handlers):
+        return
 
     # Console handler
     console = logging.StreamHandler(sys.stdout)
     console.setLevel(level)
     console_fmt = logging.Formatter("%(levelname)-8s %(name)s - %(message)s")
     console.setFormatter(console_fmt)
+    console._setup_logging = True
     root.addHandler(console)
 
     # File handler
@@ -43,6 +49,7 @@ def setup_logging(level: int = logging.INFO, log_file: str = "scrape.log") -> No
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     file_handler.setFormatter(file_fmt)
+    file_handler._setup_logging = True
     root.addHandler(file_handler)
 
     logging.info("Logging initialized — console=%s, file=%s",

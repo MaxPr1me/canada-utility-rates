@@ -81,6 +81,20 @@ COMMERCIAL_CLASSES = (
                  "Commercial — Interruptible Service (T-Service)", "COM-IS-T", "interruptible", False, True, True),
 )
 
+MODELLED_SCHEDULE_CLASSES = frozenset({
+    "Small General Class", "Large General Class", "High Volume Firm Class", "Interruptible Class", "Mainline Class"})
+# Class -> (approved-schedule evidence that the exclusion still holds, reason).
+EXCLUDED_SCHEDULE_CLASSES = {
+    "Special Contract Class": (
+        r"Special Contract Class The Company provides Special Contract service through a written agreement "
+        r"between the Company and a Customer.*?governed by the terms of the individual contract",
+        "individually negotiated written agreement, not a general class"),
+    "Power Station Class": (
+        r"Power Station Class The Company provides service to electrical generating stations which use natural "
+        r"gas in the production of electricity",
+        "process-specific gas for electricity generation under an individual contract"),
+}
+
 MONTHS = {name: number for number, name in enumerate(
     ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], start=1)}
 
@@ -102,6 +116,7 @@ class CentraGasScraper(BaseScraper):
 
     def __init__(self):
         super().__init__(utility_name="Centra Gas Manitoba", province="MB")
+        self.unmodelled_classes: list[str] = []
 
     def scrape(self) -> list[TariffRecord]:
         records = list(self._try_live_scrape() or [])
@@ -127,7 +142,7 @@ class CentraGasScraper(BaseScraper):
                         pages[key] = " ".join(
                             "PDF page " + str(number) + " " + re.sub(
                                 r"(?m)^\d{1,2} ", "", document.pages[number - 1].extract_text() or "")
-                            for number in (14, 17, 18, 19, 34, 44, 51))
+                            for number in (14, 17, 18, 19, 20, 34, 44, 51))
                     continue
                 html = self.fetch_page(url)
                 if "Request Rejected" in html[:600]:
@@ -351,7 +366,36 @@ class CentraGasScraper(BaseScraper):
                           marketer=True, **common)
             except ValueError as exc:
                 self.logger.warning("Centra Gas %s not parsed live: %s", spec.tariff_name, exc)
+        self.unmodelled_classes = self._class_audit(schedule + " " + pages.get("classes", ""), commercial)
         return records
+
+    def _class_audit(self, schedule: str, commercial: str) -> list[str]:
+        """Published classes/options this parser does not model; logged as gaps, never priced."""
+        gaps: list[str] = []
+        listed = re.search(r"Customers are classified as either (.+?)\.", schedule)
+        if not listed:
+            self.logger.warning("Centra Gas: approved schedule class list not found; class coverage unaudited")
+            gaps.append("approved schedule class list")
+        else:
+            for name in re.split(r", | or ", listed.group(1)):
+                if name in MODELLED_SCHEDULE_CLASSES:
+                    continue
+                evidence, reason = EXCLUDED_SCHEDULE_CLASSES.get(name, (None, ""))
+                if evidence and re.search(evidence, schedule):
+                    self.logger.info("Centra Gas: %s excluded: %s", name, reason)
+                    continue
+                self.logger.warning("Centra Gas: approved schedule class %s is not modelled (gap)", name)
+                gaps.append(name)
+        start = commercial.find("Commercial rate options ")
+        end = commercial.find("Small general service Small general service Small general service", start)
+        if start >= 0 and end > start:
+            known = {spec.option_label for spec in COMMERCIAL_CLASSES}
+            for label in re.findall(r"(?:^|\. )([A-Z][a-z]+(?: [a-z]+)*) \S{1,2} (?:Less|More) than",
+                                    commercial[start + len("Commercial rate options "):end]):
+                if label not in known:
+                    self.logger.warning("Centra Gas: commercial gas option %s is not modelled (gap)", label)
+                    gaps.append(label)
+        return gaps
 
     def _eligibility(self, text: str, option_label: str) -> tuple[str, Optional[float], Optional[float]]:
         """Published eligibility sentence and its annual-volume bound for one commercial option."""

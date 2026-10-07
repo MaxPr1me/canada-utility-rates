@@ -6,7 +6,8 @@ Columbia, serving over one million customers.
 
 Official sources:
   https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/residential-rates  (Rate 1)
-  https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/business-rates     (Rates 2 and 3)
+  https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/business-rates     (Rates 2 and 3; Rate 4/5/7 PDF links)
+  .../fortisbc-energy-inc.-gas-tariffs-mainland-vancouver-island-and-whistler          (Rate 22/23/25/27 PDF links)
   https://www2.gov.bc.ca/gov/content/taxes/sales-taxes/motor-fuel-carbon-tax          (carbon tax status)
 
 BC gas rates are regulated by the British Columbia Utilities Commission (BCUC).
@@ -31,6 +32,30 @@ PAGE_URLS = {
     "business": RATES_BASE_URL + "business-rates",
     "tariffs": RATES_BASE_URL + "fortisbc-energy-inc.-gas-tariffs-mainland-vancouver-island-and-whistler",
     "carbon": "https://www2.gov.bc.ca/gov/content/taxes/sales-taxes/motor-fuel-carbon-tax",
+}
+
+TRANSPORT_CODES = "22|23|25|27"
+# code: (tariff name, customer class, description, tariff-index lead phrase, required PDF applicability text)
+TRANSPORT_SPECS = {
+    "22": ("Industrial — Rate 22 (Transportation)", "industrial", "Large Volume Transportation Service",
+           "Large volume transportation rate for customers that may be curtailed",
+           "This Rate Schedule applies to the provision of firm and/or interruptible transportation Service (subject "
+           "to a minimum of 12,000 Gigajoules per Month)"),
+    "23": ("Commercial — Rate 23 (Transportation)", "commercial", "Large Commercial Transportation Service",
+           "Large commercial transportation rate for customers purchasing gas directly from a licensed marketer",
+           "This Rate Schedule is applicable to Shippers with a normalized annual consumption at one Premises of "
+           "greater than 2,000 Gigajoules of firm Gas, for use in approved appliances in commercial, institutional "
+           "or small industrial operations"),
+    "25": ("Commercial — Rate 25 (Transportation)", "commercial", "General Firm Transportation Service",
+           "General firm transportation service rate for large volume commercial, institutional, multi-family and "
+           "other accounts purchasing gas directly from a licensed marketer",
+           "This Rate Schedule applies to the provision of firm transportation Service through the FortisBC Energy "
+           "System and through one meter station to one Shipper"),
+    "27": ("Industrial — Rate 27 (Transportation)", "industrial", "General Interruptible Transportation Service",
+           "Interruptible transportation service rate for large volume customers purchasing gas directly from a "
+           "licensed marketer",
+           "This Rate Schedule applies to the provision of interruptible transportation Service through the "
+           "FortisBC Energy System and through one meter station to one Shipper"),
 }
 
 MAINLAND = r"Mainland and Vancouver Island \(including North and South Interior, Whistler(?: and Revelstoke)?\)"
@@ -113,18 +138,17 @@ class FortisBCEnergyScraper(BaseScraper):
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
         """Fetch each official page independently and parse complete classes."""
         pages: dict[str, str] = {}
-        business_html = ""
+        html_by_key: dict[str, str] = {}
         for key, url in PAGE_URLS.items():
             try:
                 html = self.fetch_page(url)
                 if key == "carbon" and "Carbon tax was eliminated" not in html:
                     html = self.fetch_rendered_page(url) or html
-                if key == "business":
-                    business_html = html
+                html_by_key[key] = html
                 pages[key] = self._page_text(html)
             except Exception as exc:
                 self.logger.warning("FortisBC Energy %s page unavailable: %s", key, exc)
-        urls = self._discover_documents(business_html)
+        urls = self._discover_documents(html_by_key.get("business", ""), html_by_key.get("tariffs", ""))
         if "business" in pages:
             pages["business_rate45"] = pages["business"]
         for key, url in urls.items():
@@ -137,19 +161,31 @@ class FortisBCEnergyScraper(BaseScraper):
         return self.mark_live_parsed(records) if records else None
 
     @staticmethod
-    def _discover_documents(html: str) -> dict[str, str]:
-        """Rate 4 and Rate 5 (Mainland/Vancouver Island) tariff PDFs linked from the business page."""
+    def _discover_documents(html: str, index_html: str = "") -> dict[str, str]:
+        """Rate 4/5/7 PDFs linked from the business page; transportation 22/23/25/27 PDFs from the tariff index."""
         from urllib.parse import urljoin
         from scrapers.utils.parsing import parse_html
         found: dict[str, str] = {}
-        for anchor in parse_html(html).find_all("a", href=True) if html else []:
-            match = re.search(r"/rateschedule_([45])\.pdf(?:\?|$)", anchor["href"])
-            if match:
-                found.setdefault(f"rate{match.group(1)}", urljoin(PAGE_URLS["business"], anchor["href"]))
+        for source, page_key, codes in ((html, "business", "4|5|7"), (index_html, "tariffs", TRANSPORT_CODES)):
+            for anchor in parse_html(source).find_all("a", href=True) if source else []:
+                match = re.search(rf"/rateschedule_({codes})\.pdf(?:\?|$)", anchor["href"])
+                if match:
+                    found.setdefault(f"rate{match.group(1)}", urljoin(PAGE_URLS[page_key], anchor["href"]))
         return found
 
     def _document_text(self, pages, key: str) -> str:
-        """Table-of-charges pages (plus the Rate 4 definition/extension pages) as one string."""
+        """Table-of-charges pages (plus Rate 4 definition and transportation applicability pages) as one string."""
+        if key[4:] in TRANSPORT_CODES.split("|"):
+            start = next((i for i, page in enumerate(pages)
+                          if re.search(r"Table of Charges\s+Mainland and\s+Vancouver Island", page.text)), None)
+            if start is None:
+                raise ValueError("table of charges not found")
+            chosen = {i: pages[i].text for i in range(start, min(start + 4, len(pages)))}
+            applicability = next((i for i, page in enumerate(pages)
+                                  if re.search(r"2\.1 Description of Applicability\s+This Rate Schedule", page.text)), None)
+            if applicability is not None:
+                chosen[applicability] = pages[applicability].text
+            return "\n".join(chosen[i] for i in sorted(chosen))
         start = next((i for i, page in enumerate(pages)
                       if "Delivery Margin Related Charges" in page.text and "Basic Charge per" in page.text), None)
         if start is None:
@@ -224,7 +260,8 @@ class FortisBCEnergyScraper(BaseScraper):
                     document_urls: Optional[dict[str, str]] = None) -> list[TariffRecord]:
         """Build tariffs from page texts keyed residential/business/carbon.
 
-        Rate 4/5 tariff PDFs (keys rate4/rate5) are parsed only when document_urls supplies their source URL.
+        Rate 4/5/7 and transportation 22/23/25/27 tariff PDFs (keys rate4 ... rate27) are parsed only when
+        document_urls supplies their source URL; transportation rates also need the tariff-index text (key tariffs).
 
         Missing carbon status rejects everything; each rate/area table is otherwise isolated.
         """
@@ -261,15 +298,20 @@ class FortisBCEnergyScraper(BaseScraper):
                 records.append(self._build(spec, effective, values, eligibility, usage, carbon))
             except ValueError as exc:
                 self.logger.warning("FortisBC Energy %s not parsed live: %s", spec.tariff_name, exc)
-        for key, parser in (("rate5", self._rate5), ("rate4", self._rate4)):
+        description = pages.get("business_rate45", pages.get("business", ""))
+        parsers = [("rate5", self._rate5, description), ("rate4", self._rate4, description),
+                   ("rate7", self._rate7, description)]
+        parsers += [(f"rate{code}", self._transport, pages.get("tariffs", "")) for code in TRANSPORT_CODES.split("|")]
+        for key, parser, context in parsers:
             if key not in pages or not (document_urls or {}).get(key):
                 continue
             try:
-                url = document_urls[key]
-                description = pages.get("business_rate45", pages.get("business", ""))
-                records.append(parser(pages[key], description, url, carbon, today))
+                if parser == self._transport:
+                    records.append(parser(key[4:], pages[key], context, document_urls[key], carbon, today))
+                else:
+                    records.append(parser(pages[key], context, document_urls[key], carbon, today))
             except ValueError as exc:
-                self.logger.warning("FortisBC Energy Rate %s not parsed live: %s", key[-1], exc)
+                self.logger.warning("FortisBC Energy Rate %s not parsed live: %s", key[4:], exc)
         return records
 
     # ── Rates 4 and 5 (tariff PDFs) ──────────────────────────
@@ -461,6 +503,214 @@ class FortisBCEnergyScraper(BaseScraper):
                    "$20.00/GJ or 1.5 x the Sumas Daily Price (a penalty condition, not a rate component). The minimum "
                    "monthly charge, for months with consumption, is the Basic Charge plus any Municipal Operating Fee. "
                    "Fort Nelson is not published for this schedule here. Regulated by the BCUC."),
+            components=comps,
+        )
+
+    def _footer_after(self, text: str, pos: int, today: date) -> tuple[date, str]:
+        """Effective date and order number from the page footer that follows position pos."""
+        footer = re.search(r"Order No\.: (G-[\dG/-]+?) .*?Effective Date: ([A-Z][a-z]+ \d{1,2}, \d{4})", text[pos:])
+        effective = self._long_date(footer.group(2)) if footer else None
+        if not effective or effective > today:
+            raise ValueError("missing or future effective date")
+        return effective, footer.group(1)
+
+    def _rate7(self, text: str, business: str, url: str, carbon: tuple[date, str], today: date) -> TariffRecord:
+        money = r"\$ (?P<{}>[\d,]+\.\d+)"
+        pattern = (
+            r"Table of Charges Mainland and Vancouver Island Service Area Delivery Margin Related Charges? "
+            r"1\. Basic Charge per Month " + money.format("basic") + r" 2\. Rider 2 per Month " + money.format("r2")
+            + r" Subtotal of per Month Delivery Margin Related Charges " + money.format("sub1")
+            + r" 3\. Delivery Charge per Gigajoule \(not in excess of curtailment notice\) " + money.format("delivery")
+            + r" Commodity Related Charges 4\. Cost of Gas \(Commodity Cost Recovery Charge\) per Gigajoule ?1,2 "
+            + money.format("gas") + r" 5\. Storage and Transport Charge per Gigajoule ?1 " + money.format("st")
+            + r" 6\. Rider 6 per Gigajoule " + money.format("r6") + r" 7\. Rider 8 per Gigajoule " + money.format("r8")
+            + r"(?: A)? Subtotal of per Gigajoule Commodity Related Charges " + money.format("sub2")
+            + r"(?: A)? 8\. Charge for Unauthorized Overrun Gas \(a\) Per Gigajoule on first 5 percent of specified "
+            r"quantity Sumas Daily Price ?3 \(b\) Per Gigajoule on all Gas over 5 percent of The greater of specified "
+            r"quantity \$20\.00/GJ or 1\.5 x the Sumas Daily Price ?3"
+        )
+        match, effective, order = self._tariff_table(text, pattern, today)
+        v = self._money(match, "basic", "r2", "sub1", "delivery", "gas", "st", "r6", "r8", "sub2")
+        if abs(v["basic"] + v["r2"] - v["sub1"]) > 1e-6 or abs(v["gas"] + v["st"] + v["r6"] + v["r8"] - v["sub2"]) > 1e-6:
+            raise ValueError("charges do not reconcile to the published subtotals")
+        if min(v["basic"], v["delivery"], v["gas"], v["st"]) <= 0:
+            raise ValueError("non-positive charge")
+        self._require(
+            text, "Rider 2 Clean Growth Innovation Fund Account", "Rider 6 Midstream Cost Reconciliation Account",
+            "Rider 8 Storage and Transport Renewable Natural Gas (S&T RNG) Rider",
+            "The minimum charge per Month will be the aggregate of the Basic Charge and the Municipal Operating Fee charge",
+            "are subject to change in accordance with changes to the Rate Schedule 5 Cost of Gas")
+        phrases = ("You are a large-volume customer with the ability to switch to an alternative energy source.",
+                   "Rate 7 is authorized by written contract only and specific terms and conditions may apply.",
+                   "Interruption of service can typically occur during the coldest days of the year and you may be "
+                   "required to stop using natural gas.")
+        self._require(self._rate_section(self._norm(business), "7"), *phrases)
+        carbon_date, carbon_note = carbon
+        eff = effective.isoformat()
+        detail = f"Rate Schedule 7 Table of Charges, Mainland and Vancouver Island Service Area (Order {order}, effective {effective.strftime('%B')} {effective.day}, {effective.year})"
+
+        def comp(kind: str, name: str, value: float, unit: str, **extra) -> RateComponent:
+            return RateComponent(kind, name, value, unit, effective_date=eff, source_url=url, source_detail=detail, **extra)
+
+        comps = [
+            comp("fixed", "Basic Charge", v["basic"], "$/month", notes="Printed per month in the Rate 7 Table of Charges."),
+            comp("rider", "Rider 2 (Clean Growth Innovation Fund Account)", v["r2"], "$/month"),
+            comp("delivery", "Delivery Charge", v["delivery"], "$/GJ",
+                 notes="Applies to gas not in excess of a curtailment notice; gas above a curtailed quantity is "
+                       "Unauthorized Overrun Gas."),
+            comp("transmission", "Storage and Transport Charge", v["st"], "$/GJ",
+                 notes="Changes with the Rate Schedule 5 Storage and Transport Charge."),
+            comp("commodity", "Cost of Gas", v["gas"], "$/GJ", market_reference="FortisBC gas commodity portfolio",
+                 notes="Commodity Cost Recovery Charge; changes with Rate Schedule 5 and is reduced pro rata by any "
+                       "RNG Blend Service share. Gas-marketer prices are separate and not included."),
+            comp("rider", "Rider 6 (Midstream Cost Reconciliation Account)", v["r6"], "$/GJ"),
+            comp("rider", "Rider 8 (Storage and Transport RNG)", v["r8"], "$/GJ"),
+            RateComponent("carbon", "BC Carbon Tax", 0.0, "$/GJ", effective_date=carbon_date.isoformat(),
+                          source_url=PAGE_URLS["carbon"], source_detail="Motor fuel tax and carbon tax", notes=carbon_note),
+        ]
+        return TariffRecord(
+            utility_name="FortisBC Energy", province="BC", utility_type="gas", tariff_name="Industrial — Rate 7",
+            tariff_code="Rate 7", customer_class="industrial", sub_class="Mainland and Vancouver Island Service Area",
+            description="General Interruptible Service", eligibility=" ".join(phrases), rate_structure="flat",
+            pricing_method="regulated", effective_date=max(effective, carbon_date).isoformat(), source_url=url,
+            source_page=detail, confidence="high",
+            notes=("Bundled interruptible transportation with firm gas supply under a written General Interruptible "
+                   "Service Agreement; service may be curtailed. Gas taken above a curtailment notice is Unauthorized "
+                   "Overrun Gas: the Sumas Daily Price on the first 5 percent of the specified quantity and the greater "
+                   "of $20.00/GJ or 1.5 x the Sumas Daily Price above that (a penalty condition, not a rate component). "
+                   "Minimum monthly charge is the Basic Charge plus any Municipal Operating Fee (a condition, not an "
+                   "extra charge). A Municipal Operating Fee applies where FortisBC must remit one and is not included. "
+                   "No Fort Nelson Rate 7 table is published. Regulated by the BCUC."),
+            components=comps,
+        )
+
+    def _transport(self, code: str, text: str, index: str, url: str, carbon: tuple[date, str],
+                   today: date) -> TariffRecord:
+        """Delivery-only transportation service (Rates 22/23/25/27); the shipper's marketer gas is not priced."""
+        name, customer_class, description, index_phrase, applicability = TRANSPORT_SPECS[code]
+        text = self._norm(text)
+        money = r"\$ (?P<{}>[\d,]+\.\d+)(?: A)?"
+        head = (r"Table of Charges Mainland and Vancouver Island Service Area Transportation 1\. Basic Charge per Month "
+                + money.format("basic") + r" 2\. Rider 2 per Month " + money.format("r2")
+                + r" Subtotal of the Basic Charge and (?:Rate )?Rider 2 per Month Related Charges " + money.format("sub1"))
+        if code == "22":
+            body = (r" 3\. Delivery Charge for firm transportation Service \(a\) per Month per Gigajoule of Firm DTQ "
+                    + money.format("dtq") + r" \(b\) per Gigajoule of Firm MTQ " + money.format("mtq")
+                    + r" 4\. Delivery Charge per Gigajoule of Interruptible MTQ " + money.format("imtq")
+                    + r" 5\. Unauthorized Overrun Gas Charges")
+        elif code == "25":
+            body = (r" 3\. Demand Charge per Month per Gigajoule of Daily Demand " + money.format("demand")
+                    + r" 4\. Delivery Charge per Gigajoule " + money.format("delivery")
+                    + r" 5\. Administrative Charge per Month " + money.format("admin") + r" Sales 6\. Unauthorized")
+        else:
+            body = (r" 3\. Delivery Charge per Gigajoule " + money.format("delivery")
+                    + r" 4\. Administrative Charge per Month " + money.format("admin") + r" Sales 5\. Unauthorized")
+        match, effective, order = self._tariff_table(text, head + body, today)
+        v = {key: float(value.replace(",", "")) for key, value in match.groupdict().items()}
+        if abs(v["basic"] + v["r2"] - v["sub1"]) > 1e-6:
+            raise ValueError("monthly charges do not reconcile to the published subtotal")
+        dated: dict[str, tuple[float, date, str]] = {}
+        extras = {"22": (("surcharge", r"\(c\) Demand surcharge per Gigajoule of Demand Surcharge Quantity "),
+                         ("admin", r"10\. Administration Charge per Month ")),
+                  "23": (("r5", r"9\. Rider 5 per Gigajoule "),)}.get(code, ())
+        for key, label in extras:
+            found = list(re.finditer(label + r"\$ ([\d,]+\.\d+)", text[match.end():]))
+            if len(found) != 1:
+                raise ValueError(f"expected one {key} charge, found {len(found)}")
+            page_date, page_order = self._footer_after(text, match.end() + found[0].start(), today)
+            dated[key] = (float(found[0].group(1).replace(",", "")), page_date, page_order)
+        if min(value for key, value in v.items() if key != "r2") <= 0 or min(x[0] for x in dated.values() or [(1,)]) <= 0:
+            raise ValueError("non-positive charge")
+        required = ["Rider 2 Clean Growth Innovation Fund Account", "A Municipal Operating Fee charge is payable",
+                    applicability]
+        if code == "23":
+            required += ["Rider 5 Revenue Stabilization Adjustment Charge",
+                         "The minimum charge per Month will be the aggregate of the Basic Charge, the transportation "
+                         "Administration Charge and the Municipal Operating Fee charge"]
+        elif code == "25":
+            required += ["The minimum charge per Month will be the aggregate of the Basic Charge, Demand Charges, the "
+                         "transportation Administration Charge and the Municipal Operating Fee charge",
+                         "Daily Demand is equal to 1.10 multiplied by the greater of"]
+        elif code == "27":
+            required += ["The minimum charge per Month will be the aggregate of the Basic Charge, the transportation "
+                         "Administration Charge and the Municipal Operating Fee charge"]
+        self._require(text, *required)
+        sentence = re.search(rf"(?:^| )Rate {code} (.+?)(?= Rate \d+[A-Z]* [A-Z]|$)", self._norm(index))
+        if not sentence or not sentence.group(1).startswith(index_phrase):
+            raise ValueError("tariff-index description missing")
+        volume = re.search(r"consumption of (?:greater than|approximately) ([\d,]+) GJ", sentence.group(1))
+        if code in ("23", "25") and not volume:
+            raise ValueError("annual-volume description missing")
+        carbon_date, carbon_note = carbon
+        detail = f"Rate Schedule {code} Table of Charges, Mainland and Vancouver Island Service Area (Order {order}, effective {effective.strftime('%B')} {effective.day}, {effective.year})"
+
+        def comp(kind: str, label: str, value: float, unit: str, when: date = effective, page: str = detail,
+                 **extra) -> RateComponent:
+            return RateComponent(kind, label, value, unit, effective_date=when.isoformat(), source_url=url,
+                                 source_detail=page, **extra)
+
+        def extra_detail(key: str) -> str:
+            _, when, page_order = dated[key]
+            return (f"Rate Schedule {code} Table of Charges, Mainland and Vancouver Island Service Area "
+                    f"(Order {page_order}, effective {when.strftime('%B')} {when.day}, {when.year})")
+
+        comps = [
+            comp("fixed", "Basic Charge", v["basic"], "$/month", notes="Printed per month in the Table of Charges."),
+            comp("rider", "Rider 2 (Clean Growth Innovation Fund Account)", v["r2"], "$/month"),
+        ]
+        if code == "22":
+            comps += [
+                comp("fixed", "Administration Charge", dated["admin"][0], "$/month", dated["admin"][1], extra_detail("admin")),
+                comp("demand", "Delivery Charge — Firm DTQ", v["dtq"], "$/GJ/month of Firm DTQ", demand_unit="GJ/day",
+                     sub_component="conditional",
+                     notes="Firm transportation service only; per GJ of the contracted Firm DTQ as defined in Rate "
+                           "Schedule 22."),
+                comp("delivery", "Delivery Charge — Firm MTQ", v["mtq"], "$/GJ", sub_component="conditional",
+                     notes="Firm transportation service only; per GJ of Firm MTQ."),
+                comp("delivery", "Delivery Charge — Interruptible MTQ", v["imtq"], "$/GJ", sub_component="conditional",
+                     notes="Interruptible transportation service only; per GJ of Interruptible MTQ. A shipper may "
+                           "contract firm, interruptible or both; each charge applies to its own quantity."),
+                comp("other", "Demand Surcharge", dated["surcharge"][0], "$/GJ of Demand Surcharge Quantity",
+                     dated["surcharge"][1], extra_detail("surcharge"), sub_component="conditional",
+                     notes="Applies only after unauthorized overrun or unauthorized transportation during curtailment."),
+            ]
+        else:
+            comps.append(comp("fixed", "Administrative Charge", v["admin"], "$/month"))
+            if code == "25":
+                comps.append(comp("demand", "Demand Charge", v["demand"], "$/GJ/month of daily demand",
+                                  demand_unit="GJ/day",
+                                  notes="Daily Demand is 1.10 x the greater of the highest winter (Nov 1-Mar 31) "
+                                        "monthly average daily consumption or half the highest summer (Apr 1-Oct 31) "
+                                        "monthly average, from the preceding Contract Year. Not a calculated bill."))
+            comps.append(comp("delivery", "Delivery Charge", v["delivery"], "$/GJ",
+                              notes="Interruptible transportation service." if code == "27" else None))
+            if code == "23":
+                comps.append(comp("rider", "Rider 5 (Revenue Stabilization Adjustment Charge)", dated["r5"][0], "$/GJ",
+                                  dated["r5"][1], extra_detail("r5")))
+        comps.append(RateComponent("carbon", "BC Carbon Tax", 0.0, "$/GJ", effective_date=carbon_date.isoformat(),
+                                   source_url=PAGE_URLS["carbon"], source_detail="Motor fuel tax and carbon tax",
+                                   notes=carbon_note))
+        minimum = {"22": "Service is subject to a minimum of 12,000 GJ per month, which sets a minimum monthly charge "
+                         "(a condition, not an extra charge).",
+                   "25": "Minimum monthly charge is the Basic Charge, Demand Charges, Administrative Charge and any "
+                         "Municipal Operating Fee (a condition, not an extra charge).",
+                   }.get(code, "Minimum monthly charge is the Basic Charge, Administrative Charge and any Municipal "
+                               "Operating Fee (a condition, not an extra charge).")
+        return TariffRecord(
+            utility_name="FortisBC Energy", province="BC", utility_type="gas", tariff_name=name, tariff_code=f"Rate {code}",
+            customer_class=customer_class, sub_class="Mainland and Vancouver Island Service Area", description=description,
+            eligibility=f"Rate {code}: {sentence.group(1).rstrip()}. Tariff applicability: {applicability}.",
+            usage_min=float(volume.group(1).replace(",", "")) if volume else None,
+            usage_unit="GJ/year" if volume else None,
+            rate_structure="demand" if code in ("22", "25") else "flat", pricing_method="regulated",
+            effective_date=max([effective, carbon_date] + [x[1] for x in dated.values()]).isoformat(),
+            source_url=url, source_page=detail, confidence="high",
+            notes=("Delivery-only transportation service under a written Transportation Agreement: the shipper buys gas "
+                   "from a licensed marketer, whose commodity price is private and not included. Balancing, "
+                   "backstopping, replacement-gas and unauthorized-overrun charges depend on imbalances or curtailment "
+                   "and are conditions, not included rate components. " + minimum + " A Municipal Operating Fee applies "
+                   "where FortisBC must remit one and is not included. No Fort Nelson table is published in this "
+                   "schedule. Regulated by the BCUC."),
             components=comps,
         )
 

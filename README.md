@@ -20,43 +20,46 @@ but further expansion of those classes is deferred. Shared general-service tarif
 still be relevant to buildings even when the utility also offers them to other users.
 Inventory counts below include reference-only records, not just building tariffs.
 
-## Current Status (2026-10-06)
+## Current Status (2026-10-07)
 
 The framework and website are implemented; **nationwide live-rate coverage is not complete**.
-The export was regenerated on **2026-10-06** after batch 9. History was preserved.
+The export was regenerated on **2026-10-07** after batch 10. History was preserved.
 A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
 
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
-| Stored tariff versions / components | 694 / 4,453, including history and older estimates |
-| Live-sourced tariffs | **209 latest tariffs across 18 utilities**; 214 stored live versions |
-| Active regional campaign | **207 latest live records across all 16 target utilities** |
+| Stored tariff versions / components | 824 / 5,286, including history and older estimates |
+| Live-sourced tariffs | **339 latest tariffs across 21 utilities**; 344 stored live versions |
+| Active regional campaign | **230 latest live records across all 16 provincial target utilities**; 108 across the four territorial utilities |
 | Remaining seed-only campaign utilities | **0**; SaskPower's scoped building schedules are audited, while other targets have recorded gaps |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Historical snapshots | **1,570**; batch 9 appended 106 without changing prior snapshots |
+| Historical snapshots | **1,790**; batch 10 appended 220 without changing prior snapshots |
 | DB validation | **0 errors, 2 existing AESO warnings** |
-| Deterministic tests | **801 passing** across 8 modules |
+| Deterministic tests | **994 passing** across 8 modules |
 
-Live output currently includes BC Hydro (11), FortisBC Electric (11), Manitoba Hydro (12), NB Power (10),
-Nova Scotia Power (14), Hydro-Quebec (25), Maritime Electric (10), Newfoundland Power (11),
-NL Hydro (21), SaskPower (41), SaskEnergy (6), Centra Gas Manitoba (12), FortisBC Energy (11),
-Energir (5), Heritage/Eastward (3), Liberty NB (4), FortisAlberta (1), and Yukon Energy (1).
+Live output currently includes BC Hydro (17), FortisBC Electric (11), Manitoba Hydro (18), NB Power (10),
+Nova Scotia Power (18), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
+NL Hydro (21), SaskPower (41), SaskEnergy (7), Centra Gas Manitoba (12), FortisBC Energy (16),
+Energir (5), Heritage/Eastward (3), Liberty NB (4), NTPC (62), Qulliq Energy (6), Yukon Energy (20),
+ATCO Electric Yukon (20) and FortisAlberta (1).
 These counts use the latest version per tariff, not complete utility catalogues.
 They include conditional products, adjustment-only records and retained non-building
-references, not a count of complete building classes. The two live records outside
-the campaign are FortisAlberta and Yukon Energy, retained without a new regional-run
-scrape. Ontario and the other five gas utilities (all outside the campaign) still have no live records.
+references, not a count of complete building classes. Yukon Energy and ATCO Electric Yukon
+publish the same 20 joint YUB schedules; NTPC's 62 include 52 per-community government
+records. FortisAlberta is retained without a new regional-run scrape. Ontario and the
+five Ontario/Alberta gas utilities still have no live records.
 
 See the [coverage matrix](docs/phase5_completion_matrix.md) for the implementation queue
 and [parser gap report](docs/live_parser_gap_report.md) for class-level details.
 A successful scrape can return only seeds; success counts and an empty missing-data log
 do **not** prove live coverage.
 
-The active campaign covers 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL;
-Ontario, Alberta and the territories are excluded from this run. From October 6,
+The active campaign covers 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL plus,
+from October 7, the four territorial utilities (non-market regulated service).
+Ontario and Alberta remain excluded from this run. From October 6,
 building-related industrial general facility classes are in scope, including those
 defined by size, voltage or interruptibility. Process-specific farm, oil-field,
 irrigation, NGV fuelling, EV charging, lighting, wholesale/reseller and standby-only
@@ -223,7 +226,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 801 deterministic tests across 8 test modules
+├── tests/                    ← 994 deterministic tests across 8 test modules
 │   ├── fixtures/             ← Source-derived fixtures; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
@@ -411,7 +414,7 @@ features, **not evidence that all registered utilities or published classes are 
 | 5A: Baseline | Dated inventory, honest README, shared class-level coverage ledger | Updated October 1 |
 | 5B: SaskPower | Standard/bulk-metered/diesel residential, general-service/voltage/TOU and renewable-access schedules | Audited building scope implemented October 1; 41 live tariffs total including retained non-building reference records |
 | 5C: Residential products and building-service expansion | Review optional residential plans and retain building-service gaps | Nine batches delivered; remaining building catalogues still incomplete |
-| 5D: Provincial/territorial depth | Building-class audits at already-live utilities; later territorial coverage | NL Hydro 21 records implemented; current regional campaign excludes the territories |
+| 5D: Provincial/territorial depth | Building-class audits at already-live utilities; later territorial coverage | NL Hydro 21 records implemented; territories reopened October 7 (NTPC, Qulliq, Yukon Energy and ATCO Electric Yukon live) |
 | 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | All six in-scope gas utilities have live output; building-service gaps remain. ON/AB gas excluded from this run |
 | 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Planned |
 | 5G: Ontario | Reconcile 53 registry identities; source approved distributor tariffs; pilot three layouts before rollout | Dedicated later campaign |

@@ -15,14 +15,15 @@ aligned with Yukon Energy's published rates, though distribution
 charges differ slightly.
 
 The company now operates as ATCO Electric Yukon; the former
-yukonelectrical.com domain no longer resolves. Rates are published
-as Yukon Utilities Board rate-order PDFs and via a JavaScript single-
-page app that does not expose rate tables to headless rendering, so
-the residential/general-service figures below are carried as labelled
-seed until a machine-readable official schedule is wired up.
+yukonelectrical.com domain no longer resolves and the old rates.html
+page returns 404. Its JavaScript "Understanding Rates" page links the
+joint YECL/YEC rate-schedule book (text PDF). Residential and general
+service schedules are the same YUB-approved joint schedules parsed by
+the Yukon Energy scraper, so that parser is reused here; seeds remain
+labelled fallbacks when it cannot prove a class.
 
 Official source:
-  https://www.atcoelectricyukon.com/en-ca/rates.html
+  https://www.atcoelectricyukon.com/en-ca/services-rates/understanding-rates.html
 """
 
 from __future__ import annotations
@@ -31,6 +32,7 @@ import logging
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
+from scrapers.utilities.yukon_energy import YukonEnergyScraper
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +86,22 @@ class YukonElectricalScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Verify every community/tier component against the official schedule."""
-        return self.verify_official_records(SEED_RESIDENTIAL["source_url"], self._seed_data())
+        """Reuse the joint-schedule parser; unproven seed classes stay labelled estimates."""
+        source = YukonEnergyScraper()
+        for name in ("fetch_page", "fetch_bytes", "fetch_rendered_page", "now_iso"):
+            setattr(source, name, getattr(self, name))
+        live = source.live_records()
+        if not live:
+            return None
+        for record in live:
+            record.utility_name = self.utility_name
+            record.notes = (record.notes or "") + (
+                " Same YUB-approved joint YECL/YEC schedule and riders as Yukon Energy, listed for ATCO Electric Yukon service areas.")
+        replaced = {"Residential Service"}
+        if any(record.customer_class == "commercial" for record in live):
+            replaced.add("General Service")
+        seeds = [record for record in self._seed_data() if record.tariff_name not in replaced]
+        return live + (self.mark_fallback(seeds) if seeds else [])
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""

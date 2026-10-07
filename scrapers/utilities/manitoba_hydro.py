@@ -8,6 +8,7 @@ of the lowest electricity rates in Canada.
 Official sources:
   Residential: https://www.hydro.mb.ca/accounts_and_services/rates/residential_rates/
   Commercial:  https://www.hydro.mb.ca/accounts_and_services/rates/commercial_rates/
+  Schedule:    https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf (LUBD options)
 
 Regulated by: Public Utilities Board of Manitoba (PUB Manitoba)
 """
@@ -20,7 +21,7 @@ from datetime import date, datetime
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
-from scrapers.utils.parsing import detect_js_rendered, parse_html
+from scrapers.utils.parsing import DocumentPage, detect_js_rendered, extract_pdf_pages, parse_html
 from scrapers.utils.change_detection import compare_to_seed, log_change_alerts, has_critical_alerts
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 # ── URLs ──────────────────────────────────────────────────────────
 RESIDENTIAL_URL = "https://www.hydro.mb.ca/accounts_and_services/rates/residential_rates/"
 COMMERCIAL_URL = "https://www.hydro.mb.ca/accounts_and_services/rates/commercial_rates/"
+SCHEDULE_URL = "https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf"
 
 # ── Seed / fallback data (updated to January 1, 2026 published rates) ──
 
@@ -271,6 +273,44 @@ _MB_COMMERCIAL_SHAPE = {
 }
 
 
+# LUBD tariff suffix -> (tariff_name, customer_class, schedule heading, base GS rate, has basic charge)
+_MB_LUBD = {
+    "50": ("LUBD General Service Small (Single Phase)", "commercial", "LUBD SMALL SINGLE PHASE", "Small", True),
+    "51": ("LUBD General Service Small (Three Phase)", "commercial", "LUBD SMALL THREE PHASE", "Small", True),
+    "52": ("LUBD General Service Medium", "commercial", "LUBD MEDIUM", "Medium", True),
+    "53": ("LUBD General Service Large (>750 V to 30 kV)", "industrial",
+           "LUBD LARGE 750 V TO NOT EXCEEDING 30 KV", "Large", False),
+    "54": ("LUBD General Service Large (>30 kV to 100 kV)", "industrial",
+           "LUBD LARGE 30 KV TO NOT EXCEEDING 100 KV", "Large", False),
+    "55": ("LUBD General Service Large (>100 kV)", "industrial", "LUBD LARGE EXCEEDING 100 KV", "Large", False),
+}
+_MB_LUBD_HEADING = re.compile(r"(LUBD [A-Z0-9 ]+?) - TARIFF NO\. (\d{4})-(\d{2})")
+_MB_CENTS = r"([\d.]+)\s*\S{0,2}\s*/\s*kWh"
+
+
+def _mb_flat(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _mb_schedule_effective(pages: list[DocumentPage]) -> Optional[tuple[str, str, str]]:
+    """Cover-page 'EFFECTIVE <date>' and 'APPROVED IN ORDER <n>' -> (iso, printed, order); rejects future dates."""
+    cover = next((p for p in pages if p.page_number == 1), None)
+    if cover is None:
+        return None
+    flat = _mb_flat(cover.text)
+    m = re.search(r"ELECTRICITY RATES EFFECTIVE ([A-Z]+ \d{1,2}, \d{4})", flat, re.I)
+    order = re.search(r"APPROVED IN ORDER (\d+/\d+)", flat, re.I)
+    if not m or not order:
+        return None
+    try:
+        parsed = datetime.strptime(m.group(1).title(), "%B %d, %Y").date()
+    except ValueError:
+        return None
+    if parsed > date.today():
+        return None
+    return parsed.isoformat(), f"{parsed:%B} {parsed.day}, {parsed.year}", order.group(1)
+
+
 class ManitobaHydroScraper(BaseScraper):
     """Scrape Manitoba Hydro electricity rates."""
 
@@ -313,6 +353,10 @@ class ManitobaHydroScraper(BaseScraper):
                     live_records.extend(parse(html))
                 except Exception as exc:
                     self.logger.warning("Manitoba Hydro page unavailable: %s: %s", url, exc)
+            try:
+                live_records.extend(self._parse_lubd(extract_pdf_pages(self.fetch_bytes(SCHEDULE_URL))))
+            except Exception as exc:
+                self.logger.warning("Manitoba Hydro rate schedule unavailable: %s: %s", SCHEDULE_URL, exc)
             if not live_records:
                 self.logger.warning("Could not parse any tariffs from live pages")
                 return None
@@ -500,6 +544,98 @@ class ManitobaHydroScraper(BaseScraper):
                 components=components,
             ), iso, COMMERCIAL_URL, f"Commercial rates page, '{name}' table; rates effective {printed}"))
         return records
+
+    def _parse_lubd(self, pages: list[DocumentPage]) -> list[TariffRecord]:
+        """Parse the Limited Use of Billing Demand options from the approved electricity rate schedule PDF."""
+        eff = _mb_schedule_effective(pages)
+        if eff is None:
+            self.logger.warning("Manitoba Hydro rate schedule effective date/order missing or in the future")
+            return []
+        iso, printed, order = eff
+        records: list[TariffRecord] = []
+        seen: set[str] = set()
+        for page in pages:
+            if "LIMITED USE OF BILLING DEMAND RATE OPTION" not in page.text:
+                continue
+            flat = _mb_flat(page.text)
+            printed_page = re.search(r"Page (\d+) of \d+", flat)
+            heads = list(_MB_LUBD_HEADING.finditer(flat))
+            for n, head in enumerate(heads):
+                suffix = head.group(3)
+                spec = _MB_LUBD.get(suffix)
+                body = flat[head.end(): heads[n + 1].start() if n + 1 < len(heads) else len(flat)]
+                if spec is None or suffix in seen:
+                    self.logger.warning("Manitoba Hydro LUBD tariff %s unexpected or repeated", head.group(0))
+                    continue
+                name, cclass, heading, base, has_basic = spec
+                if head.group(1).strip() != heading or head.group(2) != iso[:4]:
+                    self.logger.warning("Manitoba Hydro %s rejected: heading or tariff year drifted", name)
+                    continue
+                record = self._lubd_record(name, cclass, base, has_basic, f"{head.group(2)}-{suffix}", body, flat)
+                if record is None:
+                    self.logger.warning("Manitoba Hydro %s rejected: schedule incomplete or drifted", name)
+                    continue
+                seen.add(suffix)
+                detail = (f"Electric Rate Schedule effective {printed} (PUB Order {order}), Tariff No. "
+                          f"{record.tariff_code}, PDF page {page.page_number}"
+                          + (f" (printed page {printed_page.group(1)})" if printed_page else ""))
+                records.append(_mb_stamp(record, iso, SCHEDULE_URL, detail))
+        return records
+
+    @staticmethod
+    def _lubd_record(name: str, cclass: str, base: str, has_basic: bool, code: str,
+                     body: str, page: str) -> Optional[TariffRecord]:
+        eligible = (f"Any customer eligible for service on the General Service {base} rate can request billing on "
+                    "this option, except customers who have been billed on this option during the 12 months prior "
+                    f"to their request, but subsequently reverted to billing at regular General Service {base}")
+        if eligible not in page:
+            return None
+        energy = re.search(r"Energy Charge: @ " + _MB_CENTS, body)
+        components: list[RateComponent] = []
+        if has_basic:
+            basic = re.search(r"Basic Charge: \$ ([\d,]+\.\d{2})", body)
+            demand = re.search(r"First 50 kVA of Monthly Recorded Demand No Charge Balance of Recorded Demand "
+                               r"@ \$ ([\d.]+) / kVA", body)
+            if not (basic and energy and demand and "Minimum Bill: Demand Charge PLUS Basic Charge" in body):
+                return None
+            components.append(RateComponent(
+                component_type="fixed", component_name="Basic Charge",
+                charge_value=float(basic.group(1).replace(",", "")), charge_unit="$/month",
+            ))
+            demand_note = "Applied to recorded demand above the first 50 kVA (first 50 kVA no charge)"
+            minimum = "Minimum bill is the demand charge plus basic charge."
+        else:
+            demand = re.search(r"Demand Charge: @ \$ ([\d.]+) / kVA", body)
+            if not (energy and demand):
+                return None
+            demand_note = "Applied to monthly billing demand"
+            minimum = ""
+        if base in ("Medium", "Large"):
+            if "Monthly Billing Demand The greatest of the following (expressed in kVA): a) measured demand; or " \
+                    "b) 25" not in page or "25% of the highest measured demand in the previous 12 months" not in page:
+                return None
+            minimum += (" Monthly billing demand is the greatest of measured demand, 25% of contract demand or 25% "
+                        "of the highest measured demand in the previous 12 months.")
+        components.append(RateComponent(
+            component_type="energy", component_name="Energy Charge",
+            charge_value=round(float(energy.group(1)) / 100.0, 6), charge_unit="$/kWh",
+            notes="All kWh",
+        ))
+        components.append(RateComponent(
+            component_type="demand", component_name="Demand Charge",
+            charge_value=float(demand.group(1)), charge_unit="$/kVA", demand_unit="kVA", notes=demand_note,
+        ))
+        return TariffRecord(
+            utility_name="Manitoba Hydro", province="MB", utility_type="electricity",
+            tariff_name=name, tariff_code=code, customer_class=cclass, sub_class=name.lower(),
+            rate_structure="demand", confidence="high",
+            eligibility=(f"Optional, on request, for customers eligible for General Service {base}; not available "
+                         f"to customers billed on LUBD in the prior 12 months who reverted to regular General "
+                         f"Service {base} rates."),
+            notes=(f"Conditional optional rate: Limited Use of Billing Demand alternative to the standard "
+                   f"General Service {base} rate, replacing (not added to) its charges. " + minimum).strip(),
+            components=components,
+        )
 
     # ── Seed / fallback data ─────────────────────────────────────
 

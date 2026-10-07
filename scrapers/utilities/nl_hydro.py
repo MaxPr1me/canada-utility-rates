@@ -566,6 +566,7 @@ class NLHydroScraper(BaseScraper):
     def __init__(self):
         super().__init__(utility_name="NL Hydro", province="NL")
         self.unmodelled_published: dict[str, str] = {}
+        self.excluded_published: dict[str, str] = {}
 
     def scrape(self) -> list[TariffRecord]:
         """
@@ -606,6 +607,7 @@ class NLHydroScraper(BaseScraper):
         landing = _landing_rates(landing_text) if landing_text else {}
         modelled = {spec.code for spec in _SPECS} | _EXCLUDED_CODES
         self.unmodelled_published = {}
+        self.excluded_published = {}
         for page in pages:
             for code in re.findall(r"^RATE NO\. (\S+)\s*$", page.text, re.M):
                 if code in _GAP_RATES:
@@ -615,6 +617,9 @@ class NLHydroScraper(BaseScraper):
             for prefix in re.findall(r"Effective [A-Z][a-z]+ \d{1,2}, \d{4} ([A-Z]+(?:-IND)?)-\d+", page.text):
                 if prefix in _GAP_SCHEDULES:
                     self.unmodelled_published[prefix] = _GAP_SCHEDULES[prefix]
+        self._audit_island_industrial_other(pages, today)
+        for code, reason in self.excluded_published.items():
+            self.logger.info("NL Hydro: published schedule %s excluded from building scope: %s", code, reason)
         for code, reason in self.unmodelled_published.items():
             self.logger.warning("NL Hydro: published schedule %s is not modelled (gap): %s", code, reason)
         records: list[TariffRecord] = []
@@ -642,10 +647,10 @@ class NLHydroScraper(BaseScraper):
         return records
 
     def _published_sections(
-        self, pages: list[DocumentPage], prefix: str, count: int, today: date,
+        self, pages: list[DocumentPage], prefix: str, count: int, today: date, start: int = 1,
     ) -> list[DocumentPage]:
         sections = []
-        for number in range(1, count + 1):
+        for number in range(start, start + count):
             footer = rf"Effective ([A-Z][a-z]+ \d{{1,2}}, \d{{4}}) {re.escape(prefix)}-{number}\b"
             matches = [page for page in pages if re.search(footer, _flat(page.text))]
             if len(matches) != 1:
@@ -705,6 +710,50 @@ class NLHydroScraper(BaseScraper):
             "Contract-specific demand, RSP adjustments and transformer losses remain conditions; "
             "the named annual charges apply only to their respective customers, not to every account.",
             components, [firm, conditions], source_url, "mixed")
+
+    def _audit_island_industrial_other(self, pages: list[DocumentPage], today: date) -> None:
+        """Classify IND-3/4 non-firm (formula-priced gap) and IND-5 wheeling (excluded); never priced."""
+        try:
+            first, second = (_flat(page.text) for page in self._published_sections(pages, "IND", 2, today, 3))
+        except _Reject as exc:
+            if any(re.search(r"\d{4} IND-[34]\b", page.text) for page in pages):
+                self.unmodelled_published["IND-NONFIRM"] = f"Island Industrial Non-Firm pages incomplete: {exc}"
+        else:
+            factors = re.findall(r"conversion factor of (\d+) kWh/bbl", second)
+            losses = re.search(r"ending in 2016 \((\d+\.\d+)%\)", second)
+            required = all(term in first for term in (
+                "INDUSTRIAL – NON-FIRM", "other than a retailer", "66 kV or greater", "greater of",
+                "Rate No. 2.4L", "NYISO Zone A", "ISO New England Mass Hub", "21st day of the month")) and \
+                "{(A ÷ B) x (1 ÷ (1 – C))} x 100" in second and "monthly average cost of fuel" in second
+            printed = re.search(r"\d+\.\d+\s*¢|¢\s*\d", first + " " + second)
+            if not required or len(factors) != 3 or not losses or printed:
+                self.unmodelled_published["IND-NONFIRM"] = (
+                    "Island Industrial Non-Firm page changed (formula terms missing or a printed price "
+                    "appeared); review the schedule before modelling")
+            else:
+                self.unmodelled_published["IND-NONFIRM"] = (
+                    "source-blocked: Island Industrial Non-Firm (IND-3/IND-4, 66 kV+ interruptible energy) "
+                    "prints no price. Non-thermal: greater of the Rate 2.4L energy charge and an on-/off-peak "
+                    "rate from NYISO Zone A and ISO-NE Mass Hub 5 MW month-ahead futures (CAD, loss/fee "
+                    "adjusted), set monthly by customer notice. Thermal: {(A / B) x (1 / (1 - C))} x 100 "
+                    f"cents/kWh, A = monthly fuel cost per barrel, B = {'/'.join(factors)} kWh/bbl "
+                    f"(Holyrood/gas turbines/diesels), C = {losses.group(1)}% losses")
+        try:
+            (wheeling,) = (_flat(page.text) for page in self._published_sections(pages, "IND", 1, today, 5))
+        except _Reject as exc:
+            if any(re.search(r"\d{4} IND-5\b", page.text) for page in pages):
+                self.unmodelled_published["IND-WHEELING"] = f"Island Industrial Wheeling page incomplete: {exc}"
+            return
+        charge = re.search(r"All kWh \(net of losses\)\*\s*[.…]+\s*@\s*(\d+\.\d+)¢ per kWh", wheeling)
+        if not charge or not all(term in wheeling for term in (
+                "INDUSTRIAL – WHEELING", "other than a retailer", "66 kV or greater",
+                "whose Industrial Service Agreement so provides")):
+            self.unmodelled_published["IND-WHEELING"] = "Island Industrial Wheeling page changed; review scope"
+            return
+        self.excluded_published["IND-WHEELING"] = (
+            f"Island Industrial Wheeling (IND-5, {charge.group(1)} cents/kWh net of losses): transmission "
+            "wheeling over the 66 kV+ bulk grid, available only where an Industrial Service Agreement so "
+            "provides; not a building energy supply tariff")
 
     def _parse_labrador_industrial(
         self, pages: list[DocumentPage], source_url: str, today: date,

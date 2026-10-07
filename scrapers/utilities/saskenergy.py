@@ -129,6 +129,35 @@ class SaskEnergyScraper(BaseScraper):
             out["delivery_only"] = {"basic": self._num(delivery_only.group(1)), "delivery": self._num(delivery_only.group(2))}
         return out
 
+    def _industrial_rows(self, section: str) -> dict[str, object]:
+        """Parse the closed Small Industrial full-service row with its monthly delivery blocks."""
+        amount = r"\$\s*(\d[\d,]*(?:\.\d+)?)"
+        closed = re.search(
+            r"As of ([A-Z][a-z]+ \d{1,2}, \d{4}), this class is no longer accepting new customers\. "
+            r"Existing customers \(prior to \1\) are eligible to maintain this service\.", section)
+        closed_on = self._date(closed.group(1)) if closed else None
+        if not closed_on:
+            raise ValueError("closure/eligibility statement missing")
+        full = re.search(
+            rf"Full Service Basic Monthly Charge ?: ?{amount} Delivery Charge ?: ?First ([\d,]+) m3 ?/month ?: ?"
+            rf"{amount} per m3 Remaining volumes ?: ?{amount} per m3 "
+            rf"Commodity Rate ?: ?{amount} (?:per )?m3(?: \({amount}/GJ\))?", section)
+        if not full:
+            raise ValueError("incomplete Full Service block row or wrong unit")
+        if min(self._num(value) for value in full.groups() if value is not None) <= 0:
+            raise ValueError("non-positive published value")
+        if not re.search(r"Small Industrial customers are not eligible to purchase gas from a Gas Retailer", section):
+            raise ValueError("retailer eligibility statement missing")
+        return {
+            "basic": self._num(full.group(1)),
+            "block": self._num(full.group(2)),
+            "delivery": self._num(full.group(3)),
+            "delivery_remaining": self._num(full.group(4)),
+            "commodity": self._num(full.group(5)),
+            "commodity_gj": self._num(full.group(6)) if full.group(6) else None,
+            "closed_on": closed_on,
+        }
+
     def _carbon(self, text: str, today: date) -> Optional[tuple[date, str]]:
         """Return (effective date, note) only for an explicit, current, zero published charge."""
         match = re.search(
@@ -165,6 +194,7 @@ class SaskEnergyScraper(BaseScraper):
             ("residential", None, "Residential", "Res", "residential", None),
             ("business", "Small Commercial", "Small Commercial", "SC", "commercial", "small"),
             ("business", "Large Commercial", "Large Commercial", "LC", "commercial", "large"),
+            ("business", "Small Industrial", "Small Industrial", "SI", "industrial", "small"),
         ]
         records: list[TariffRecord] = []
         for page_key, label, name, code, cclass, sub in specs:
@@ -193,6 +223,12 @@ class SaskEnergyScraper(BaseScraper):
                         umin, umax = self._num(rng.group(1)), self._num(rng.group(2))
                     else:
                         raise ValueError("unrecognised eligibility")
+                if code == "SI":
+                    if not umin:
+                        raise ValueError("unrecognised eligibility")
+                    records.append(self._build(name, code, cclass, sub, self._industrial_rows(seg), None, eff,
+                                               PAGE_URLS[page_key], umin, umax, carbon, retail_limit))
+                    continue
                 rows = self._service_rows(seg)
                 if not rows:
                     raise ValueError("incomplete Full Service row or wrong unit")
@@ -209,7 +245,7 @@ class SaskEnergyScraper(BaseScraper):
 
     def _build(
         self, name: str, code: str, cclass: str, sub: Optional[str],
-        full: Optional[dict[str, Optional[float]]], delivery_only: Optional[dict[str, Optional[float]]],
+        full: Optional[dict], delivery_only: Optional[dict[str, Optional[float]]],
         eff: date, url: str, umin: Optional[float], umax: Optional[float],
         carbon: tuple[date, str], retail_limit: Optional[float],
     ) -> TariffRecord:
@@ -220,9 +256,22 @@ class SaskEnergyScraper(BaseScraper):
             RateComponent("fixed", "Basic Monthly Charge", vals["basic"], "$/month",
                           effective_date=eff_s, source_url=url, source_detail=detail,
                           notes="Minimum bill equals the Basic Monthly Charge"),
-            RateComponent("delivery", "Delivery Charge", vals["delivery"], "$/m³",
-                          effective_date=eff_s, source_url=url, source_detail=detail),
         ]
+        block = vals.get("block")
+        if block:
+            comps += [
+                RateComponent("delivery", "Delivery Charge - First Block", vals["delivery"], "$/m³",
+                              tier_number=1, tier_threshold=block, tier_unit="m³/month",
+                              effective_date=eff_s, source_url=url, source_detail=detail,
+                              notes=f"First {block:,.0f} m³ per month"),
+                RateComponent("delivery", "Delivery Charge - Remaining Volumes", vals["delivery_remaining"], "$/m³",
+                              tier_number=2, tier_threshold=block, tier_unit="m³/month",
+                              effective_date=eff_s, source_url=url, source_detail=detail,
+                              notes=f"Monthly volumes above {block:,.0f} m³"),
+            ]
+        else:
+            comps.append(RateComponent("delivery", "Delivery Charge", vals["delivery"], "$/m³",
+                                       effective_date=eff_s, source_url=url, source_detail=detail))
         if full:
             gj = f" Published as ${full['commodity_gj']:.2f}/GJ." if full["commodity_gj"] is not None else ""
             comps.append(RateComponent(
@@ -234,6 +283,13 @@ class SaskEnergyScraper(BaseScraper):
                  "published, not included). Retailer access requires annual consumption below "
                  f"{retail_limit:,.0f} m³. ")
         carbon_date, carbon_note = carbon
+        if full and full.get("closed_on"):
+            closed_on = full["closed_on"]
+            notes += (f"Closed class: not accepting new customers since {closed_on.isoformat()}; customers served "
+                      "before that date may keep it until their contract ends. New firm delivery above 660,000 m³/year "
+                      "is TransGas service (not priced here). Not eligible for Gas Retailer supply. ")
+            carbon_note += (". SaskEnergy's zero-charge statement names residential and commercial classes; this "
+                            "industrial value is the page's published April schedule row for Part I natural gas")
         comps.append(RateComponent(
             "carbon", "Federal Carbon Charge", 0.0, "$/m³",
             effective_date=carbon_date.isoformat(), source_url=PAGE_URLS["carbon"],
@@ -242,12 +298,14 @@ class SaskEnergyScraper(BaseScraper):
         if umax:
             elig = (f"Annual consumption {umin:,.0f} to {umax:,.0f} m³" if umin
                     else f"Annual consumption below {umax:,.0f} m³")
+        if full and full.get("closed_on"):
+            elig += f"; existing customers served before {full['closed_on'].isoformat()} only"
         return TariffRecord(
             utility_name="SaskEnergy", province="SK", utility_type="gas", tariff_name=name,
             tariff_code=code, customer_class=cclass, sub_class=sub,
             eligibility=elig,
             usage_min=umin, usage_max=umax, usage_unit="m³/year" if umax else None,
-            rate_structure="flat", pricing_method="regulated", effective_date=max(eff, carbon_date).isoformat(),
+            rate_structure="tiered" if block else "flat", pricing_method="regulated", effective_date=max(eff, carbon_date).isoformat(),
             source_url=url, source_page=detail, confidence="high",
             notes=notes + "Regulated by the Saskatchewan Rate Review Panel. GST/PST and municipal payments are separate.",
             components=comps,

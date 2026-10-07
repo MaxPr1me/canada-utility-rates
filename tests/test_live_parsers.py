@@ -2118,7 +2118,7 @@ class TestSaskEnergyLive:
 
     def test_complete_service_variants_and_component_periods(self, pages):
         records = self.parse(pages)
-        assert set(records) == {"Res", "SC", "LC", "Res-DS", "SC-DS", "LC-DS"}
+        assert set(records) == {"Res", "SC", "LC", "Res-DS", "SC-DS", "LC-DS", "SI"}
         for code, fixed, delivery in (("Res", 26.5, 0.1113), ("SC", 47.5, 0.0887), ("LC", 171.5, 0.0772)):
             record = records[code]
             components = {component.component_type: component for component in record.components}
@@ -2150,14 +2150,14 @@ class TestSaskEnergyLive:
     def test_residential_drift_preserves_complete_commercial_classes(self, pages, old, new):
         assert old in pages["residential"]
         pages["residential"] = pages["residential"].replace(old, new)
-        assert set(self.parse(pages)) == {"SC", "SC-DS", "LC", "LC-DS"}
+        assert set(self.parse(pages)) == {"SC", "SC-DS", "LC", "LC-DS", "SI"}
 
     def test_source_values_and_retailer_eligibility(self, pages):
         pages["residential"] = pages["residential"].replace("$26.50", "$27.50")
         records = self.parse(pages)
         assert next(component.charge_value for component in records["Res"].components if component.component_type == "fixed") == 27.5
         pages["retailers"] = ""
-        assert set(self.parse(pages)) == {"Res", "SC", "LC"}
+        assert set(self.parse(pages)) == {"Res", "SC", "LC", "SI"}
 
     def test_failed_carbon_fetch_returns_only_unverified_seed(self, pages):
         from scrapers.utilities.saskenergy import SaskEnergyScraper, PAGE_URLS
@@ -3620,7 +3620,8 @@ class TestMaritimeElectricBuildingLive:
 
     def test_scrape_marks_live_and_failure_falls_back(self, monkeypatch):
         scraper = me.MaritimeElectricScraper()
-        html = f'<html><a href="{ME_URL}">Schedule of Adjusted Rates Section N-28</a></html>'
+        schedule = "\n".join(ME_FIXTURE["rates_page"]["html_lines"])
+        html = f'<html><a href="{ME_URL}">Schedule of Adjusted Rates Section N-28</a>{schedule}</html>'
         monkeypatch.setattr(scraper, "fetch_page", lambda url, **k: html)
         monkeypatch.setattr(scraper, "fetch_bytes", lambda url, **k: b"%PDF")
         monkeypatch.setattr(me, "_extract_pages", lambda b: [DocumentPage(1, ME_PAGE1)])
@@ -3697,7 +3698,7 @@ class TestRegionalBatchStorage:
             scraper = SaskEnergyScraper()
             records = scraper.mark_live_parsed(scraper.parse_pages(
                 {key: page["text"] for key, page in document["pages"].items()}, date(2026, 10, 2)))
-            assert len(records) == 6
+            assert len(records) == 7
         connection = database()
         for run_id in (1, 2):
             assert store_results(records, run_id, connection) == len(records)
@@ -4932,3 +4933,2020 @@ def test_hqb9_HydroQuebec_business_dr_leeway_missing_page_or_price_fails_closed(
     assert not HQB9__dr_record(old="$85.124", new="price not published")
     assert not HQB9__dr_record(old="No credit is granted if the weekday effective interruptible power is less than 10 kilowatts.",
                           new="")
+
+
+# ======================================================================
+# NSPower industrial 21/22/23/25 (batch 10)
+# ======================================================================
+from scrapers.utilities.nova_scotia_power import NovaScotiaPowerScraper as NSPB10_NovaScotiaPowerScraper
+"""Pending NS Power industrial tests (Rate 21/22/23 and Interruptible Rider 25)."""
+
+import copy
+import json
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from scrapers.utils.parsing import DocumentPage
+
+NSPB10_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+NSPB10_INDUSTRIAL = json.loads((NSPB10_FIXTURES / "nova_scotia_industrial.json").read_text(encoding="utf-8"))
+NSPB10_RESIDENTIAL = json.loads((NSPB10_FIXTURES / "nova_scotia_residential.json").read_text(encoding="utf-8"))
+NSPB10_ALL_CODES = {"21", "22", "23", "25"}
+NSPB10_TODAY = "2026-10-07"
+
+
+@pytest.fixture
+def NSPB10_industrial():
+    return copy.deepcopy(NSPB10_INDUSTRIAL)
+
+
+def NSPB10__pages(NSPB10_industrial, drop=()):
+    merged = {page["page_number"]: page for page in NSPB10_RESIDENTIAL["pages"]}
+    for group in NSPB10_RESIDENTIAL["building_pages"].values():
+        merged.update({page["page_number"]: page for page in group})
+    merged.update({page["page_number"]: page for page in NSPB10_RESIDENTIAL["business_pages"]["rates"]})
+    merged.update({page["page_number"]: page for page in NSPB10_industrial["pages"]})
+    return [DocumentPage(**page) for number, page in sorted(merged.items()) if number not in drop]
+
+
+def NSPB10__products():
+    return {kind: product["html"] for kind, product in NSPB10_RESIDENTIAL["products"].items()}
+
+
+def NSPB10__parse(NSPB10_industrial, today=NSPB10_TODAY, drop=()):
+    scraper = NSPB10_NovaScotiaPowerScraper()
+    with patch.object(scraper, "now_iso", return_value=today + "T00:00:00+00:00"):
+        records = scraper._parse_industrial_tariffs(NSPB10__pages(NSPB10_industrial, drop), NSPB10__products(), NSPB10_industrial["source_url"])
+    return {record.tariff_code: record for record in records}
+
+
+def NSPB10__edit(NSPB10_industrial, page_number, old, new):
+    page = next(page for page in NSPB10_industrial["pages"] if page["page_number"] == page_number)
+    assert old in page["text"]
+    page["text"] = page["text"].replace(old, new)
+
+
+def NSPB10__by_name(record):
+    return {c.component_name: c for c in record.components}
+
+
+def NSPB10__riders(record):
+    return [round(NSPB10__by_name(record)[name].charge_value, 6) for name in (
+        "FAM Actual/Balance Adjustment (Combined)", "DSM Cost Recovery Rider", "Storm Cost Recovery Rider")]
+
+
+def test_nspb10_all_industrial_classes_parse_from_source(NSPB10_industrial):
+    records = NSPB10__parse(NSPB10_industrial)
+    assert set(records) == NSPB10_ALL_CODES
+    for record in records.values():
+        assert record.customer_class == "industrial" and record.rate_structure == "demand"
+        assert record.effective_date == "2026-05-01" and record.end_date == "2026-12-31"
+        assert "no bill total is calculated" in record.notes
+        for component in record.components:
+            assert component.source_url == NSPB10_industrial["source_url"] and component.source_detail and component.effective_date
+
+
+def test_nspb10_small_industrial_values_units_and_riders(NSPB10_industrial):
+    record = NSPB10__parse(NSPB10_industrial)["21"]
+    c = NSPB10__by_name(record)
+    assert record.tariff_name == "Small Industrial" and record.sub_class == "small industrial"
+    assert (c["Demand Charge"].charge_value, c["Demand Charge"].charge_unit, c["Demand Charge"].demand_unit) == (7.496, "$/kVA/month", "kVA")
+    credit = c["Customer-Owned Transformer Demand Reduction"]
+    assert (credit.charge_value, credit.charge_unit, credit.sub_component) == (-0.32, "$/kVA/month", "conditional")
+    first, balance = c["Energy Charge - First 200 kWh per kVA"], c["Energy Charge - Balance"]
+    assert (first.charge_value, first.tier_threshold, first.tier_unit) == (0.13832, 200.0, "kWh/kVA of maximum demand/month")
+    assert (balance.charge_value, balance.tier_number) == (0.11516, 2)
+    assert NSPB10__riders(record) == [0.00144, 0.00555, 0.0]
+    assert not [x for x in record.components if x.component_type == "fixed"]
+    assert "$22.00 minimum monthly bill" in record.notes and "less than 250 kVA or 225 kW" in record.eligibility
+    assert "PDF pages 40, 41" in c["Demand Charge"].source_detail
+
+
+def test_nspb10_medium_industrial_values_units_and_riders(NSPB10_industrial):
+    record = NSPB10__parse(NSPB10_industrial)["22"]
+    c = NSPB10__by_name(record)
+    assert record.tariff_name == "Medium Industrial"
+    assert c["Demand Charge"].charge_value == 10.71 and c["Demand Charge"].charge_unit == "$/kVA/month"
+    assert c["Customer-Owned Transformer Demand Reduction"].sub_component == "conditional"
+    assert (c["Energy Charge"].charge_value, c["Energy Charge"].charge_unit) == (0.10682, "$/kWh")
+    assert NSPB10__riders(record) == [0.00206, 0.00479, 0.0]
+    assert "250 kVA (225 kW) and over" in record.eligibility and "$22.00" in record.notes
+
+
+def test_nspb10_large_industrial_firm_values_and_conditional_adder(NSPB10_industrial):
+    record = NSPB10__parse(NSPB10_industrial)["23"]
+    c = NSPB10__by_name(record)
+    assert record.tariff_name == "Large Industrial - Firm"
+    assert c["Demand Charge"].charge_value == 9.268
+    adder = c["Distribution Cost Adder"]
+    assert (adder.charge_value, adder.charge_unit, adder.sub_component) == (2.161, "$/kVA/month", "conditional")
+    assert c["Energy Charge - Firm Customers"].charge_value == 0.10295
+    assert "Interruptible Demand Credit" not in c
+    assert NSPB10__riders(record) == [0.00247, 0.00663, 0.0]
+    assert "greater of the demand charge or $22.00" in record.notes
+    assert "2,000 kVA or 1,800 kW and over" in record.eligibility
+
+
+def test_nspb10_interruptible_rider_record_is_conditional_and_uses_own_rows(NSPB10_industrial):
+    record = NSPB10__parse(NSPB10_industrial)["25"]
+    c = NSPB10__by_name(record)
+    assert record.tariff_name == "Large Industrial - Interruptible Rider"
+    assert c["Energy Charge - Interruptible Customers"].charge_value == 0.10334
+    credit = c["Interruptible Demand Credit"]
+    assert (credit.charge_value, credit.charge_unit, credit.sub_component) == (-7.638, "$/kVA/month", "conditional")
+    assert "billed interruptible demand" in credit.notes
+    assert NSPB10__riders(record) == [0.00224, 0.00663, 0.0]
+    assert "10 minutes" in record.notes and "Penalties" in record.notes
+    assert "Rate Code 25" in credit.source_detail and "PDF pages 44, 45, 46, 47, 48, 49" in credit.source_detail
+
+
+def test_nspb10_2027_columns_are_never_used(NSPB10_industrial):
+    values = {c.charge_value for record in NSPB10__parse(NSPB10_industrial).values() for c in record.components}
+    assert not values & {8.143, 0.13795, 0.1128, 11.269, 0.09941, 10.006, 2.327, 0.09709, 0.09688, -7.667, 22.73}
+
+
+def test_nspb10_prices_follow_source(NSPB10_industrial):
+    NSPB10__edit(NSPB10_industrial, 40, "$7.496", "$7.600")
+    NSPB10__edit(NSPB10_industrial, 42, "10.682", "10.900")
+    NSPB10__edit(NSPB10_industrial, 44, "10.295 10.334", "10.300 10.400")
+    NSPB10__edit(NSPB10_industrial, 47, "$7.638", "$7.700")
+    records = NSPB10__parse(NSPB10_industrial)
+    assert NSPB10__by_name(records["21"])["Demand Charge"].charge_value == 7.6
+    assert NSPB10__by_name(records["22"])["Energy Charge"].charge_value == 0.109
+    assert NSPB10__by_name(records["23"])["Energy Charge - Firm Customers"].charge_value == 0.103
+    assert NSPB10__by_name(records["25"])["Energy Charge - Interruptible Customers"].charge_value == 0.104
+    assert NSPB10__by_name(records["25"])["Interruptible Demand Credit"].charge_value == -7.7
+
+
+@pytest.mark.parametrize(("page", "old", "new", "rejected"), [
+    (40, "Rate Code 21", "Rate Code 99", {"21"}),
+    (40, "32 cents per kilovolt", "40 cents per kilovolt", {"21"}),
+    (41, "for industrial use", "for any use", {"21"}),
+    (42, "$10.710", "-$10.710", {"22"}),
+    (43, "reduced by 1.1%", "reduced by 1.5%", {"22"}),
+    (44, "Firm Interruptible", "Firm", {"23", "25"}),
+    (44, "For customers connected at distribution level", "For all customers", {"23", "25"}),
+    (47, "within ten (10) minutes", "within thirty (30) minutes", {"25"}),
+    (47, "$7.638", "", {"25"}),
+    (67, "Large Industrial Interruptible 0.224 0.224", "Large Industrial Interruptible 0.224 0.300", {"25"}),
+    (67, "Small Industrial 0.144 0.144", "Small Industrial 0.144 0.150", {"21"}),
+    (76, "Medium Industrial 0.483 (0.004) 0.479", "Medium Industrial 0.483 (0.004) 0.999", {"22"}),
+    (76, "Large Industrial including Interruptible Rider 0.612 0.051 0.663",
+     "Large Industrial including Interruptible Rider 0.612 0.051 0.900", {"23", "25"}),
+    (79, "Small Industrial 0.000", "Small Industrial", {"21"}),
+])
+def test_nspb10_one_class_fails_independently(NSPB10_industrial, page, old, new, rejected):
+    NSPB10__edit(NSPB10_industrial, page, old, new)
+    assert set(NSPB10__parse(NSPB10_industrial)) == NSPB10_ALL_CODES - rejected
+
+
+@pytest.mark.parametrize(("drop", "rejected"), [
+    ({41}, {"21"}), ({43}, {"22"}), ({48}, {"23", "25"}),
+])
+def test_nspb10_missing_continuation_page_rejects_only_that_class(NSPB10_industrial, drop, rejected):
+    assert set(NSPB10__parse(NSPB10_industrial, drop=drop)) == NSPB10_ALL_CODES - rejected
+
+
+def test_nspb10_negative_rider_value_is_read_as_credit(NSPB10_industrial):
+    NSPB10__edit(NSPB10_industrial, 67, "Medium Industrial 0.206 0.206", "Medium Industrial (0.010) (0.010)")
+    assert NSPB10__by_name(NSPB10__parse(NSPB10_industrial)["22"])["FAM Actual/Balance Adjustment (Combined)"].charge_value == -0.0001
+
+
+def test_nspb10_unsupported_year_or_missing_book_date_fails_closed(NSPB10_industrial):
+    assert NSPB10__parse(NSPB10_industrial, today="2027-01-01") == {}
+    scraper = NSPB10_NovaScotiaPowerScraper()
+    products = {k: v.replace("Rates updated as of May 1, 2026.", "") for k, v in NSPB10__products().items()}
+    with patch.object(scraper, "now_iso", return_value=NSPB10_TODAY + "T00:00:00+00:00"):
+        assert scraper._parse_industrial_tariffs(NSPB10__pages(NSPB10_industrial), products, NSPB10_industrial["source_url"]) == []
+
+
+def test_nspb10_existing_business_classes_preserved_with_full_rider_pages(NSPB10_industrial):
+    scraper = NSPB10_NovaScotiaPowerScraper()
+    with patch.object(scraper, "now_iso", return_value=NSPB10_TODAY + "T00:00:00+00:00"):
+        business = {r.tariff_code: r for r in scraper._parse_business_tariffs(NSPB10__pages(NSPB10_industrial), NSPB10__products(), NSPB10_industrial["source_url"])}
+    assert set(business) == {"10", "11", "12"}
+    assert NSPB10__riders(business["12"]) == [0.00158, 0.00458, 0.0]
+    assert NSPB10__riders(business["11"]) == [0.00207, 0.00749, 0.0]
+
+
+def test_nspb10_cached_book_adds_industrial_live_records_without_seeds(NSPB10_industrial):
+    scraper = NSPB10_NovaScotiaPowerScraper()
+    scraper._book = (NSPB10__pages(NSPB10_industrial), NSPB10__products(), NSPB10_industrial["source_url"])
+    with patch.object(scraper, "now_iso", return_value=NSPB10_TODAY + "T00:00:00+00:00"),\
+         patch.object(scraper, "_try_live_residential", return_value=[]),\
+         patch.object(scraper, "fetch_page", side_effect=RuntimeError("offline")):
+        records = scraper._try_live_scrape()
+    by_code = {record.tariff_code: record for record in records}
+    assert NSPB10_ALL_CODES | {"10", "11", "12"} <= set(by_code)
+    for code in NSPB10_ALL_CODES:
+        assert "live_parsed" in by_code[code].notes and "seed_fallback" not in by_code[code].notes
+
+
+def test_nspb10_failed_industrial_class_has_no_seed_fallback(NSPB10_industrial):
+    NSPB10__edit(NSPB10_industrial, 42, "Rate Code 22", "Rate Code 98")
+    scraper = NSPB10_NovaScotiaPowerScraper()
+    scraper._book = (NSPB10__pages(NSPB10_industrial), NSPB10__products(), NSPB10_industrial["source_url"])
+    with patch.object(scraper, "now_iso", return_value=NSPB10_TODAY + "T00:00:00+00:00"),\
+         patch.object(scraper, "_try_live_residential", return_value=[]),\
+         patch.object(scraper, "fetch_page", side_effect=RuntimeError("offline")):
+        records = scraper._try_live_scrape()
+    codes = [record.tariff_code for record in records]
+    assert "22" not in codes and {"21", "23", "25"} <= set(codes)
+
+
+# ======================================================================
+# FortisBC Energy Rate 7 and transportation 22/23/25/27 (batch 10)
+# ======================================================================
+from scrapers.utilities.fortisbc_energy import FortisBCEnergyScraper as FBEB10_FortisBCEnergyScraper
+import json
+from datetime import date
+from pathlib import Path
+
+import pytest
+
+
+FBEB10_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "fortisbc_energy.json"
+FBEB10_NEW_KEYS = ("rate7", "rate22", "rate23", "rate25", "rate27")
+FBEB10_NAMES = {"rate7": "Industrial — Rate 7", "rate22": "Industrial — Rate 22 (Transportation)",
+         "rate23": "Commercial — Rate 23 (Transportation)", "rate25": "Commercial — Rate 25 (Transportation)",
+         "rate27": "Industrial — Rate 27 (Transportation)"}
+FBEB10_EXISTING = {"Residential — Rate 1", "Residential — Rate 1 (Fort Nelson)", "Commercial — Rate 2",
+            "Commercial — Rate 2 (Fort Nelson)", "Commercial — Rate 3", "Commercial — Rate 3 (Fort Nelson)",
+            "Commercial — Rate 4", "Commercial — Rate 5"}
+
+
+def FBEB10__document():
+    return json.loads(FBEB10_FIXTURE.read_text(encoding="utf-8"))
+
+
+def FBEB10__inputs(document):
+    pages = {key: page["text"] for key, page in document["pages"].items()}
+    pages["business_rate45"] += " " + document["business_rate7"]["text"]
+    pages["tariffs"] = document["tariffs_transport"]["text"]
+    urls = {key: document["pages"][key]["url"] for key in ("rate4", "rate5")}
+    for key in FBEB10_NEW_KEYS:
+        pages[key] = document[key]["text"]
+        urls[key] = document[key]["url"]
+    return pages, urls
+
+
+def FBEB10__parse(pages, urls):
+    return {r.tariff_name: r for r in FBEB10_FortisBCEnergyScraper().parse_pages(pages, date(2026, 10, 7), document_urls=urls)}
+
+
+def FBEB10__records(document=None):
+    return FBEB10__parse(*FBEB10__inputs(document or FBEB10__document()))
+
+
+def FBEB10__values(record):
+    return {c.component_name: (c.charge_value, c.charge_unit, c.sub_component) for c in record.components}
+
+
+def test_fbeb10_all_classes_parse_with_existing_preserved():
+    records = FBEB10__records()
+    assert set(records) == FBEB10_EXISTING | set(FBEB10_NAMES.values())
+    for record in records.values():
+        for component in record.components:
+            assert component.source_url and component.source_detail and component.effective_date
+
+
+def test_fbeb10_existing_records_identical_with_and_without_new_documents():
+    document = FBEB10__document()
+    pages, urls = FBEB10__inputs(document)
+    base_pages = {key: page["text"] for key, page in document["pages"].items()}
+    base_urls = {key: document["pages"][key]["url"] for key in ("rate4", "rate5")}
+    before = FBEB10__parse(base_pages, base_urls)
+    after = FBEB10__parse(pages, urls)
+    assert set(before) == FBEB10_EXISTING
+    for name, record in before.items():
+        assert after[name] == record
+
+
+def test_fbeb10_rate7_source_values_units_and_dates():
+    record = FBEB10__records()[FBEB10_NAMES["rate7"]]
+    assert record.tariff_code == "Rate 7" and record.customer_class == "industrial"
+    assert record.description == "General Interruptible Service" and record.effective_date == "2026-07-01"
+    assert record.source_url == FBEB10__document()["rate7"]["url"]
+    assert "written contract only" in record.eligibility and "alternative energy source" in record.eligibility
+    assert "Unauthorized Overrun Gas" in record.notes and "Minimum monthly charge" in record.notes
+    assert FBEB10__values(record) == {
+        "Basic Charge": (880.00, "$/month", None),
+        "Rider 2 (Clean Growth Innovation Fund Account)": (0.40, "$/month", None),
+        "Delivery Charge": (2.199, "$/GJ", None),
+        "Storage and Transport Charge": (0.784, "$/GJ", None),
+        "Cost of Gas": (1.660, "$/GJ", None),
+        "Rider 6 (Midstream Cost Reconciliation Account)": (0.126, "$/GJ", None),
+        "Rider 8 (Storage and Transport RNG)": (0.909, "$/GJ", None),
+        "BC Carbon Tax": (0.0, "$/GJ", None),
+    }
+    carbon = next(c for c in record.components if c.component_type == "carbon")
+    assert carbon.effective_date == "2025-04-01"
+    assert all(c.effective_date == "2026-07-01" for c in record.components if c is not carbon)
+    assert "Order G-131-26" in record.source_page
+
+
+def test_fbeb10_rate23_transport_values_and_rider5_page_date():
+    record = FBEB10__records()[FBEB10_NAMES["rate23"]]
+    assert record.customer_class == "commercial" and record.usage_min == 2000 and record.usage_unit == "GJ/year"
+    assert record.effective_date == "2026-01-01"
+    assert "licensed marketer" in record.eligibility and "institutional" in record.eligibility
+    assert FBEB10__values(record) == {
+        "Basic Charge": (132.08, "$/month", None),
+        "Rider 2 (Clean Growth Innovation Fund Account)": (0.40, "$/month", None),
+        "Administrative Charge": (39.00, "$/month", None),
+        "Delivery Charge": (5.165, "$/GJ", None),
+        "Rider 5 (Revenue Stabilization Adjustment Charge)": (0.212, "$/GJ", None),
+        "BC Carbon Tax": (0.0, "$/GJ", None),
+    }
+    assert not any(c.component_type == "commodity" for c in record.components)
+    assert "commodity price is private" in record.notes
+
+
+def test_fbeb10_rate25_transport_demand_and_volume():
+    record = FBEB10__records()[FBEB10_NAMES["rate25"]]
+    assert record.customer_class == "commercial" and record.usage_min == 5000 and record.rate_structure == "demand"
+    assert record.effective_date == "2026-01-01"
+    values = FBEB10__values(record)
+    assert values["Basic Charge"] == (469.00, "$/month", None)
+    assert values["Demand Charge"] == (37.7352, "$/GJ/month of daily demand", None)
+    assert values["Delivery Charge"] == (1.352, "$/GJ", None)
+    assert values["Administrative Charge"] == (39.00, "$/month", None)
+    assert len(values) == 6
+    demand = next(c for c in record.components if c.component_type == "demand")
+    assert demand.demand_unit == "GJ/day" and "1.10" in demand.notes
+
+
+def test_fbeb10_rate27_interruptible_transport():
+    record = FBEB10__records()[FBEB10_NAMES["rate27"]]
+    assert record.customer_class == "industrial" and record.usage_min is None
+    assert FBEB10__values(record) == {
+        "Basic Charge": (880.00, "$/month", None),
+        "Rider 2 (Clean Growth Innovation Fund Account)": (0.40, "$/month", None),
+        "Administrative Charge": (39.00, "$/month", None),
+        "Delivery Charge": (2.199, "$/GJ", None),
+        "BC Carbon Tax": (0.0, "$/GJ", None),
+    }
+
+
+def test_fbeb10_rate22_conditional_firm_and_interruptible_parts():
+    record = FBEB10__records()[FBEB10_NAMES["rate22"]]
+    assert record.customer_class == "industrial" and "12,000 Gigajoules per Month" in record.eligibility
+    assert "hospitals" in record.eligibility
+    values = FBEB10__values(record)
+    assert values["Basic Charge"] == (3664.00, "$/month", None)
+    assert values["Administration Charge"] == (39.00, "$/month", None)
+    assert values["Delivery Charge — Firm DTQ"] == (35.038, "$/GJ/month of Firm DTQ", "conditional")
+    assert values["Delivery Charge — Firm MTQ"] == (0.203, "$/GJ", "conditional")
+    assert values["Delivery Charge — Interruptible MTQ"] == (1.355, "$/GJ", "conditional")
+    assert values["Demand Surcharge"] == (17.00, "$/GJ of Demand Surcharge Quantity", "conditional")
+    dates = {c.component_name: c.effective_date for c in record.components}
+    assert dates["Administration Charge"] == "2018-11-01" and dates["Basic Charge"] == "2026-01-01"
+    assert record.effective_date == "2026-01-01"
+
+
+@pytest.mark.parametrize(("key", "old", "new"), [
+    ("rate7", "$ 2.199", "2.199"),
+    ("rate7", "Subtotal of per Month Delivery Margin Related Charges $ 880.40",
+     "Subtotal of per Month Delivery Margin Related Charges $ 881.40"),
+    ("rate7", "Effective Date: July 1, 2026", "Effective Date: July 1, 2027"),
+    ("rate7", "Rider 6 Midstream Cost Reconciliation Account", "Rider 6"),
+    ("business_rate7", "Rate 7 is authorized by written contract only", "Rate 7 is open to all"),
+    ("rate22", "Firm DTQ $ 35.038", "Firm DTQ 35.038"),
+    ("rate22", "subject to a minimum of 12,000 Gigajoules per Month", "subject to no minimum"),
+    ("rate22", "10. Administration Charge per Month $ 39.00", "10. Administration Charge per Month"),
+    ("rate23", "9. Rider 5 per Gigajoule $ 0.212", "9. Rider 5 per Gigajoule"),
+    ("rate23", "Subtotal of the Basic Charge and Rate Rider 2 per Month Related Charges $ 132.48",
+     "Subtotal of the Basic Charge and Rate Rider 2 per Month Related Charges $ 133.48"),
+    ("rate25", "Daily Demand is equal to 1.10", "Daily Demand is"),
+    ("rate25", "Effective Date: January 1, 2026", "Effective Date: January 1, 2027"),
+    ("rate27", "3. Delivery Charge per Gigajoule $ 2.199", "3. Delivery Charge per Gigajoule"),
+    ("tariffs_transport", "Rate 27 Interruptible transportation", "Rate 27 Something else"),
+])
+def test_fbeb10_each_new_class_fails_closed_independently(key, old, new):
+    document = FBEB10__document()
+    target = document[key]
+    assert old in target["text"]
+    target["text"] = target["text"].replace(old, new)
+    missing = FBEB10_NAMES["rate7" if key == "business_rate7" else
+                    "rate27" if key == "tariffs_transport" else key]
+    records = FBEB10__records(document)
+    assert missing not in records
+    assert set(records) == (FBEB10_EXISTING | set(FBEB10_NAMES.values())) - {missing}
+
+
+def test_fbeb10_missing_document_rejects_only_that_class():
+    document = FBEB10__document()
+    pages, urls = FBEB10__inputs(document)
+    del pages["rate25"]
+    urls.pop("rate7")
+    records = FBEB10__parse(pages, urls)
+    assert set(records) == (FBEB10_EXISTING | set(FBEB10_NAMES.values())) - {FBEB10_NAMES["rate25"], FBEB10_NAMES["rate7"]}
+
+
+def test_fbeb10_missing_tariff_index_rejects_transport_only():
+    pages, urls = FBEB10__inputs(FBEB10__document())
+    del pages["tariffs"]
+    records = FBEB10__parse(pages, urls)
+    assert set(records) == FBEB10_EXISTING | {FBEB10_NAMES["rate7"]}
+
+
+def test_fbeb10_price_follows_source():
+    document = FBEB10__document()
+    document["rate7"]["text"] = document["rate7"]["text"].replace("$ 2.199", "$ 2.500", 1)
+    document["rate25"]["text"] = document["rate25"]["text"].replace("$ 37.7352", "$ 40.0000", 1)
+    records = FBEB10__records(document)
+    assert FBEB10__values(records[FBEB10_NAMES["rate7"]])["Delivery Charge"][0] == 2.5
+    assert FBEB10__values(records[FBEB10_NAMES["rate25"]])["Demand Charge"][0] == 40.0
+
+
+def test_fbeb10_carbon_evidence_still_required():
+    pages, urls = FBEB10__inputs(FBEB10__document())
+    pages["carbon"] = "Carbon tax applies."
+    assert FBEB10__parse(pages, urls) == {}
+
+
+def test_fbeb10_discovery_finds_rate7_and_transport_links_only():
+    business = ('<a href="https://x/gas-utility/rateschedule_7.pdf?sfvrsn=1">Rate 7</a>'
+                '<a href="https://x/gas-utility/rateschedule_6.pdf">Rate 6</a>')
+    index = ''.join(f'<a href="https://y/gas-utility/rateschedule_{n}.pdf">R</a>'
+                    for n in ("22", "22a", "23", "25", "26", "27", "7"))
+    found = FBEB10_FortisBCEnergyScraper._discover_documents(business, index)
+    assert found == {"rate7": "https://x/gas-utility/rateschedule_7.pdf?sfvrsn=1",
+                     "rate22": "https://y/gas-utility/rateschedule_22.pdf",
+                     "rate23": "https://y/gas-utility/rateschedule_23.pdf",
+                     "rate25": "https://y/gas-utility/rateschedule_25.pdf",
+                     "rate27": "https://y/gas-utility/rateschedule_27.pdf"}
+
+
+# ======================================================================
+# SaskEnergy small industrial (batch 10)
+# ======================================================================
+from scrapers.utilities.saskenergy import PAGE_URLS as SEB10_PAGE_URLS, SaskEnergyScraper as SEB10_SaskEnergyScraper
+import json
+from datetime import date
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+
+SEB10_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "saskenergy.json"
+SEB10_TODAY = date(2026, 10, 7)
+
+
+def SEB10__pages():
+    document = json.loads(SEB10_FIXTURE.read_text(encoding="utf-8"))
+    return {key: page["text"] for key, page in document["pages"].items()}
+
+
+def SEB10__parse(pages):
+    return {record.tariff_code: record for record in SEB10_SaskEnergyScraper().parse_pages(pages, SEB10_TODAY)}
+
+
+def test_seb10_small_industrial_source_values():
+    records = SEB10__parse(SEB10__pages())
+    assert set(records) == {"Res", "SC", "LC", "SI", "Res-DS", "SC-DS", "LC-DS"}
+    si = records["SI"]
+    assert (si.customer_class, si.sub_class, si.tariff_name) == ("industrial", "small", "Small Industrial")
+    assert (si.usage_min, si.usage_max, si.usage_unit) == (660001, 970000, "m³/year")
+    assert si.rate_structure == "tiered"
+    assert si.effective_date == "2025-04-01"
+    assert "2022-09-08" in si.eligibility and "Closed class" in si.notes and "TransGas" in si.notes
+    fixed = [c for c in si.components if c.component_type == "fixed"]
+    assert [(c.charge_value, c.charge_unit) for c in fixed] == [(226.5, "$/month")]
+    delivery = sorted((c for c in si.components if c.component_type == "delivery"), key=lambda c: c.tier_number)
+    assert [(c.tier_number, c.charge_value, c.charge_unit, c.tier_threshold, c.tier_unit) for c in delivery] == [
+        (1, 0.0507, "$/m³", 40000, "m³/month"), (2, 0.0446, "$/m³", 40000, "m³/month")]
+    commodity = next(c for c in si.components if c.component_type == "commodity")
+    assert (commodity.charge_value, commodity.charge_unit) == (0.1264, "$/m³")
+    assert "$3.20/GJ" in commodity.notes
+    carbon = next(c for c in si.components if c.component_type == "carbon")
+    assert (carbon.charge_value, carbon.effective_date) == (0.0, "2025-04-01")
+    assert "residential and commercial" in carbon.notes
+    assert all(c.effective_date == "2023-10-01" for c in si.components if c.component_type != "carbon")
+    assert all(c.source_url == SEB10_PAGE_URLS["business"] and c.source_detail for c in si.components if c.component_type != "carbon")
+
+
+def test_seb10_small_industrial_has_no_delivery_only_variant():
+    pages = SEB10__pages()
+    records = SEB10__parse(pages)
+    assert "SI-DS" not in records
+    assert "Delivery Service" not in pages["business"].split("Small Industrial The following")[1]
+
+
+@pytest.mark.parametrize(("old", "new"), [
+    ("Remaining volumes : $0.0446 per m 3", "Remaining volumes : $0.0446 per GJ"),
+    ("First 40,000 m 3 /month: $0.0507", "First 40,000 m 3 /month: $0.0000"),
+    ("$226.50", "$-226.50"),
+    ("As of September 8, 2022, this class is no longer accepting new customers.", ""),
+    ("Small Industrial customers are not eligible to purchase gas from a Gas Retailer.", ""),
+    ("660,001 to 970,000 m 3", "over 660,000 m 3"),
+])
+def test_seb10_small_industrial_drift_rejects_only_that_class(old, new):
+    pages = SEB10__pages()
+    assert old in pages["business"]
+    pages["business"] = pages["business"].replace(old, new)
+    records = SEB10__parse(pages)
+    assert "SI" not in records
+    assert {"Res", "SC", "LC", "Res-DS", "SC-DS", "LC-DS"} <= set(records)
+
+
+def test_seb10_missing_small_industrial_section_preserves_existing_classes():
+    pages = SEB10__pages()
+    pages["business"] = pages["business"].split(" Small Industrial The following")[0]
+    assert set(SEB10__parse(pages)) == {"Res", "SC", "LC", "Res-DS", "SC-DS", "LC-DS"}
+
+
+def test_seb10_missing_business_page_keeps_residential_only():
+    pages = SEB10__pages()
+    pages.pop("business")
+    assert set(SEB10__parse(pages)) == {"Res", "Res-DS"}
+
+
+def test_seb10_missing_carbon_rejects_small_industrial():
+    pages = SEB10__pages()
+    pages["carbon"] = ""
+    assert SEB10__parse(pages) == {}
+
+
+def test_seb10_existing_classes_unchanged():
+    records = SEB10__parse(SEB10__pages())
+    for code, fixed, delivery in (("Res", 26.5, 0.1113), ("SC", 47.5, 0.0887), ("LC", 171.5, 0.0772)):
+        comps = {c.component_type: c for c in records[code].components}
+        assert (comps["fixed"].charge_value, comps["delivery"].charge_value, comps["commodity"].charge_value) == (fixed, delivery, 0.1264)
+        assert records[code].rate_structure == "flat"
+        assert "residential and commercial classes" not in comps["carbon"].notes
+    assert (records["LC"].usage_min, records["LC"].usage_max) == (100001, 660000)
+
+
+def test_seb10_scrape_marks_small_industrial_live():
+    pages = SEB10__pages()
+    scraper = SEB10_SaskEnergyScraper()
+    responses = {SEB10_PAGE_URLS[key]: value for key, value in pages.items()}
+    with patch.object(scraper, "fetch_page", side_effect=lambda url: responses[url]),\
+            patch.object(SEB10_SaskEnergyScraper, "_page_text", staticmethod(lambda html: html)):
+        records = {record.tariff_code: record for record in scraper.scrape()}
+    assert "SI" in records and "live_parsed" in records["SI"].notes and "seed_fallback" not in records["SI"].notes
+
+
+# ======================================================================
+# Centra Gas class audit (batch 10)
+# ======================================================================
+from scrapers.utilities.centra_gas import CentraGasScraper as CGB10_CentraGasScraper
+import json
+import logging
+from datetime import date
+from pathlib import Path
+
+
+CGB10_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "centra_gas.json"
+CGB10_TODAY = date(2026, 10, 7)
+
+
+def CGB10__pages():
+    document = json.loads(CGB10_FIXTURE.read_text(encoding="utf-8"))
+    return {key: page["text"] for key, page in document["pages"].items()}
+
+
+def CGB10__parse(pages):
+    scraper = CGB10_CentraGasScraper()
+    records = scraper.parse_pages(pages, CGB10_TODAY)
+    return scraper, {record.tariff_code: record for record in records}
+
+
+def test_cgb10_official_class_list_is_fully_modelled_or_excluded():
+    scraper, records = CGB10__parse(CGB10__pages())
+    assert scraper.unmodelled_classes == []
+    assert len(records) == 12
+    assert not any("Special Contract" in r.tariff_name or "Power Station" in r.tariff_name for r in records.values())
+
+
+def test_cgb10_exclusions_require_schedule_evidence(caplog):
+    pages = CGB10__pages()
+    pages["classes"] = pages["classes"].replace("electrical generating stations", "large customers")
+    with caplog.at_level(logging.WARNING):
+        scraper, records = CGB10__parse(pages)
+    assert scraper.unmodelled_classes == ["Power Station Class"]
+    assert "Power Station Class is not modelled" in caplog.text
+    assert len(records) == 12
+
+
+def test_cgb10_new_schedule_class_is_flagged_not_priced():
+    pages = CGB10__pages()
+    pages["classes"] = pages["classes"].replace(
+        "Mainline Class, Special", "Mainline Class, Mainline Interruptible Class, Special")
+    scraper, records = CGB10__parse(pages)
+    assert scraper.unmodelled_classes == ["Mainline Interruptible Class"]
+    assert len(records) == 12
+
+
+def test_cgb10_missing_class_list_is_reported_without_dropping_classes():
+    pages = CGB10__pages()
+    pages.pop("classes")
+    scraper, records = CGB10__parse(pages)
+    assert scraper.unmodelled_classes == ["approved schedule class list"]
+    assert len(records) == 12
+
+
+def test_cgb10_new_commercial_option_is_flagged_not_priced():
+    pages = CGB10__pages()
+    pages["commercial"] = pages["commercial"].replace(
+        "Small general service Small general service Small general service Charge Cost",
+        "Mainline interruptible service – More than 680,000 m3 of natural gas used annually. "
+        "Small general service Small general service Small general service Charge Cost", 1)
+    scraper, records = CGB10__parse(pages)
+    assert scraper.unmodelled_classes == ["Mainline interruptible service"]
+    assert len(records) == 12
+
+
+def test_cgb10_existing_classes_preserved_with_reconciled_parts():
+    _, records = CGB10__parse(CGB10__pages())
+    assert set(records) == {
+        "SGS", "SGS-MKT", "COM-SGS", "COM-SGS-MKT", "COM-LGS", "COM-LGS-MKT",
+        "COM-HVF-S", "COM-HVF-T", "COM-MFS-S", "COM-MFS-T", "COM-IS-S", "COM-IS-T"}
+    interruptible = {c.component_name: c for c in records["COM-IS-S"].components}
+    assert interruptible["Transportation to Centra"].charge_value == 0.0031
+    assert interruptible["Distribution Charge"].charge_value == 0.0282
+    assert "Delivery" not in interruptible
+    assert interruptible["Alternate Supply Service"].charge_value == 0.0129
+    assert all(r.effective_date == "2026-08-01" for r in records.values())
+
+
+def test_cgb10_commercial_page_failure_rejects_only_commercial():
+    pages = CGB10__pages()
+    pages.pop("commercial")
+    _, records = CGB10__parse(pages)
+    assert set(records) == {"SGS", "SGS-MKT"}
+
+
+# ======================================================================
+# Maritime Electric 310-340 audit (batch 10)
+# ======================================================================
+
+import json
+from pathlib import Path
+
+import scrapers.utilities.maritime_electric as me
+from scrapers.utils.parsing import DocumentPage
+
+MEB10_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+MEB10_DOC = json.loads((MEB10_FIXTURES / "maritime_electric.json").read_text(encoding="utf-8"))
+MEB10_URL = MEB10_DOC["url"]
+MEB10_PAGE1 = next(p["text"] for p in MEB10_DOC["pages"] if p["page_number"] == 1)
+MEB10_HTML = "\n".join(MEB10_DOC["rates_page"]["html_lines"])
+MEB10_OTHERS = {"110", "130", "131", "133", "232", "233"}
+MEB10_TARGET = {"310", "320", "330", "340"}
+
+
+def MEB10_parse(html=MEB10_HTML, text=MEB10_PAGE1):
+    scraper = me.MaritimeElectricScraper()
+    records = scraper._apply_schedules(scraper._parse_pages([DocumentPage(1, text)], MEB10_URL), html)
+    return {r.tariff_code: r for r in records}
+
+
+def MEB10_comps(record):
+    return {c.component_name: c for c in record.components}
+
+
+def test_meb10_all_classes_with_schedule_html():
+    assert set(MEB10_parse()) == MEB10_OTHERS | MEB10_TARGET
+
+
+def test_meb10_small_industrial_320_complete():
+    r = MEB10_parse()["320"]
+    c = MEB10_comps(r)
+    assert set(c) == {
+        "Demand Charge - per kW",
+        "Energy Charge per kWh for first 100 kWh per kW billing demand",
+        "Energy Charge per kWh for balance of kWh",
+    }
+    demand = c["Demand Charge - per kW"]
+    assert (demand.charge_value, demand.charge_unit, demand.demand_unit) == (7.46, "$/kW", "kW")
+    assert "greatest of" in demand.notes and "90% of the monthly maximum kVA demand" in demand.notes and "5 kW" in demand.notes
+    t1 = c["Energy Charge per kWh for first 100 kWh per kW billing demand"]
+    assert (t1.charge_value, t1.tier_number, t1.tier_threshold, t1.tier_unit) == (0.2142, 1, 100.0, "kWh per kW billing demand")
+    t2 = c["Energy Charge per kWh for balance of kWh"]
+    assert (t2.charge_value, t2.tier_number, t2.tier_threshold) == (0.109, 2, None)
+    assert r.customer_class == "industrial" and r.sub_class == "small industrial"
+    assert r.demand_min_kw == 5.0 and r.demand_max_kw is None
+    assert "750 kW and less than 3000 kW" in r.eligibility and "69 kV" in r.eligibility
+    assert not any(x.component_type == "fixed" for x in r.components)
+
+
+def test_meb10_large_industrial_310_complete_with_conditionals():
+    r = MEB10_parse()["310"]
+    c = MEB10_comps(r)
+    assert set(c) == {
+        "Demand Charge per kW", "Energy Charge per kWh",
+        "Conditional Losses Adjustment - 69 kV to Primary Distribution Voltage",
+        "Conditional Losses Adjustment - Primary to Utilization Voltage",
+        "Conditional Transformation Charge (equivalent kVA rental)",
+    }
+    demand = c["Demand Charge per kW"]
+    assert (demand.charge_value, demand.charge_unit, demand.demand_unit, demand.sub_component) == (14.5, "$/kW", "kW", None)
+    for phrase in ("curtailable", "excluding April-November", "90% of maximum kVA demand", "no curtailable credit"):
+        assert phrase in demand.notes
+    assert c["Energy Charge per kWh"].charge_value == 0.092
+    transformation = c["Conditional Transformation Charge (equivalent kVA rental)"]
+    assert (transformation.charge_value, transformation.charge_unit, transformation.demand_unit) == (1.25, "$/kVA", "kVA")
+    for name in ("Conditional Losses Adjustment - 69 kV to Primary Distribution Voltage",
+                 "Conditional Losses Adjustment - Primary to Utilization Voltage"):
+        assert (c[name].charge_value, c[name].charge_unit) == (1.5, "% added to monthly demand and energy")
+    for x in (transformation, c["Conditional Losses Adjustment - Primary to Utilization Voltage"]):
+        assert x.sub_component == "conditional" and x.notes.startswith("Conditional:")
+        assert x.source_url == me.SOURCE_URL and "Large Industrial Rate Schedule" in x.source_detail
+    assert "in addition" in c["Conditional Losses Adjustment - Primary to Utilization Voltage"].notes
+    assert r.demand_min_kw == 750.0 and r.sub_class == "large industrial"
+    assert "12 months' written notice" in r.eligibility and "69 kV" in r.eligibility
+    assert "1 5/6% per month of installed cost" in r.notes
+
+
+def test_meb10_wholesale_330_340_reference_only():
+    recs = MEB10_parse()
+    for code in ("330", "340"):
+        r = recs[code]
+        assert r.customer_class == "other" and r.sub_class == "wholesale (reference only)"
+        assert "City of Summerside" in r.eligibility and "excluded from building scope" in r.notes
+        assert "currently no customers" in r.notes
+    assert "10 years" in recs["340"].eligibility and "1 year" in recs["330"].eligibility
+    first = next(c for c in recs["330"].components if c.component_type == "energy" and c.tier_number == 1)
+    assert first.charge_value == 0.1194 and first.tier_threshold is None and "1 April" in first.notes
+    assert {c.charge_value for c in recs["340"].components} == {15.51, 0.1206}
+
+
+def test_meb10_every_target_component_has_provenance():
+    for code in MEB10_TARGET:
+        for c in MEB10_parse()[code].components:
+            assert c.effective_date == "2026-08-01" and c.source_url and c.source_detail
+            if c.source_url == MEB10_URL:
+                assert c.source_detail.startswith(f"PDF page 1, Rate {code}") and "cross-checked" in c.source_detail
+
+
+def test_meb10_other_classes_unchanged_by_schedule_step():
+    with_html, without = MEB10_parse(), MEB10_parse(html="")
+    assert set(without) == MEB10_OTHERS
+    for code in MEB10_OTHERS:
+        assert [(c.component_name, c.charge_value) for c in with_html[code].components] ==\
+               [(c.component_name, c.charge_value) for c in without[code].components]
+
+
+def test_meb10_rates_page_date_mismatch_rejects_targets_only():
+    recs = MEB10_parse(MEB10_HTML.replace("are effective August 1, 2026", "are effective May 1, 2026"))
+    assert set(recs) == MEB10_OTHERS
+
+
+def test_meb10_value_disagreement_rejects_only_that_class():
+    assert set(MEB10_parse(MEB10_HTML.replace("$7.46 per kW", "$7.50 per kW"))) == MEB10_OTHERS | MEB10_TARGET - {"320"}
+    assert set(MEB10_parse(text=MEB10_PAGE1.replace("Energy Charge per kWh $ 0.0920", "Energy Charge per kWh $ 0.0930"))) == MEB10_OTHERS | MEB10_TARGET - {"310"}
+    assert set(MEB10_parse(MEB10_HTML.replace("9.94\u00a2", "9.95\u00a2"))) == MEB10_OTHERS | MEB10_TARGET - {"330"}
+
+
+def test_meb10_new_published_charge_rejects_only_that_class():
+    extra = MEB10_HTML.replace("<p>10.90\u00a2 per kWh for balance of kWh per month</p>",
+                         "<p>10.90\u00a2 per kWh for balance of kWh per month</p><p>Service Charge: $30.00 per month</p>")
+    assert set(MEB10_parse(extra)) == MEB10_OTHERS | MEB10_TARGET - {"320"}
+
+
+def test_meb10_missing_billing_demand_or_condition_rejects_only_that_class():
+    assert set(MEB10_parse(MEB10_HTML.replace("<li>5 kW.</li>", ""))) == MEB10_OTHERS | MEB10_TARGET - {"320"}
+    assert set(MEB10_parse(MEB10_HTML.replace("100% of the total contracted amount for curtailable customers", "the contracted amount"))) == MEB10_OTHERS | MEB10_TARGET - {"310"}
+    assert set(MEB10_parse(MEB10_HTML.replace("increased by 1 1/2% to compensate for transformation losses. This", "increased by 2% to compensate for transformation losses. This"))) == MEB10_OTHERS | MEB10_TARGET - {"310"}
+    assert set(MEB10_parse(MEB10_HTML.replace("$1.25 per kVA", "$1.40 per kVA"))) == MEB10_OTHERS | MEB10_TARGET - {"310"}
+
+
+def test_meb10_missing_or_duplicated_section_rejects_only_dependants():
+    no_guide = MEB10_HTML.replace("<summary>Small Industrial Rate Application Guidelines</summary>", "<summary>Other</summary>")
+    assert set(MEB10_parse(no_guide)) == MEB10_OTHERS | MEB10_TARGET - {"320"}
+    dup = MEB10_HTML + "<details><summary>Large Industrial Rate Schedule</summary><p>x</p></details>"
+    assert set(MEB10_parse(dup)) == MEB10_OTHERS | MEB10_TARGET - {"310"}
+    no_wholesale = MEB10_HTML.replace("<summary>Wholesale Rate Schedule</summary>", "<summary>Other</summary>")
+    assert set(MEB10_parse(no_wholesale)) == MEB10_OTHERS | {"310", "320"}
+
+
+def test_meb10_wholesale_blocks_fail_independently():
+    assert set(MEB10_parse(MEB10_HTML.replace("not less than 10 years", "not less than 5 years"))) == MEB10_OTHERS | MEB10_TARGET - {"340"}
+    assert set(MEB10_parse(MEB10_HTML.replace("Set each year on 1 April", "Set by agreement"))) == MEB10_OTHERS | MEB10_TARGET - {"330"}
+
+
+def test_meb10_scrape_live_path_uses_schedule_html(monkeypatch):
+    scraper = me.MaritimeElectricScraper()
+    landing = f'<html><a href="{MEB10_URL}">Schedule of Adjusted Rates Section N-28</a>{MEB10_HTML}</html>'
+    monkeypatch.setattr(scraper, "fetch_page", lambda url, **k: landing)
+    monkeypatch.setattr(scraper, "fetch_bytes", lambda url, **k: b"%PDF")
+    monkeypatch.setattr(me, "_extract_pages", lambda b: [DocumentPage(1, MEB10_PAGE1)])
+    live = scraper.scrape()
+    assert {r.tariff_code for r in live} == MEB10_OTHERS | MEB10_TARGET
+    assert all("Provenance: live_parsed" in r.notes for r in live)
+
+    bare = f'<html><a href="{MEB10_URL}">Schedule of Adjusted Rates Section N-28</a></html>'
+    monkeypatch.setattr(scraper, "fetch_page", lambda url, **k: bare)
+    assert {r.tariff_code for r in scraper.scrape()} == MEB10_OTHERS
+
+
+# ======================================================================
+# NL Hydro industrial non-firm and wheeling audit (batch 10)
+# ======================================================================
+from scrapers.utilities.nl_hydro import NLHydroScraper as NLB10_NLHydroScraper
+import copy
+import json
+from datetime import date
+from pathlib import Path
+
+from scrapers.utils.parsing import DocumentPage
+
+NLB10_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+NLB10_TODAY = date(2026, 10, 7)
+
+
+def NLB10__document():
+    return json.loads((NLB10_FIXTURES / "nl_hydro.json").read_text(encoding="utf-8"))
+
+
+def NLB10__parse(document):
+    scraper = NLB10_NLHydroScraper()
+    pages = [DocumentPage(**page) for page in
+             document["pages"] + document["wp1_pages"] + document["b10_industrial_pages"]]
+    records = scraper.parse_schedule_pages(pages, document["source_url"], today=NLB10_TODAY)
+    return scraper, {record.tariff_code: record for record in records}
+
+
+def NLB10__mutate(document, page_number, old, new):
+    page = next(page for page in document["b10_industrial_pages"] if page["page_number"] == page_number)
+    assert old in page["text"]
+    page["text"] = page["text"].replace(old, new)
+    return document
+
+
+def test_nlb10_fixture_pages_are_official_non_firm_and_wheeling_excerpts():
+    document = NLB10__document()
+    assert document["source_url"].endswith("Schedule-of-Rates-Rules-and-Regulations_Jul_2026.pdf")
+    pages = {page["page_number"]: page["text"] for page in document["b10_industrial_pages"]}
+    assert sorted(pages) == [11, 12, 13]
+    assert pages[11].rstrip().endswith("IND-3") and pages[12].rstrip().endswith("IND-4")
+    assert pages[13].rstrip().endswith("IND-5")
+
+
+def test_nlb10_non_firm_is_source_blocked_formula_gap_without_records():
+    scraper, records = NLB10__parse(NLB10__document())
+    reason = scraper.unmodelled_published["IND-NONFIRM"]
+    assert reason.startswith("source-blocked")
+    for term in ("Rate 2.4L", "NYISO Zone A", "ISO-NE Mass Hub", "583/475/556 kWh/bbl", "C = 3.34%"):
+        assert term in reason
+    assert not any("non-firm" in record.tariff_name.lower() for record in records.values())
+    assert not any(code.startswith("IND-") and code != "IND-FIRM" for code in records)
+
+
+def test_nlb10_wheeling_is_excluded_not_priced():
+    scraper, records = NLB10__parse(NLB10__document())
+    reason = scraper.excluded_published["IND-WHEELING"]
+    assert "0.831 cents/kWh" in reason and "not a building energy supply tariff" in reason
+    assert "IND-WHEELING" not in scraper.unmodelled_published
+    assert not any("wheeling" in record.tariff_name.lower() for record in records.values())
+
+
+def test_nlb10_existing_classes_are_preserved():
+    document = NLB10__document()
+    _, with_new = NLB10__parse(document)
+    scraper = NLB10_NLHydroScraper()
+    pages = [DocumentPage(**page) for page in document["pages"] + document["wp1_pages"]]
+    baseline = {record.tariff_code: record for record in
+                scraper.parse_schedule_pages(pages, document["source_url"], today=NLB10_TODAY)}
+    assert len(with_new) == len(baseline) == 21
+    assert set(with_new) == set(baseline)
+    assert [(c.charge_value, c.charge_unit) for c in with_new["IND-FIRM"].components] ==\
+        [(c.charge_value, c.charge_unit) for c in baseline["IND-FIRM"].components]
+    assert "IND-NONFIRM" not in scraper.unmodelled_published
+    assert scraper.excluded_published == {}
+
+
+def test_nlb10_printed_non_firm_price_or_missing_formula_flags_review():
+    for page_number, old, new in (
+        (11, "Non-Thermal Generation Source (¢ per kWh)", "Non-Thermal Generation Source @ 9.999¢ per kWh"),
+        (12, "conversion factor of 583 kWh/bbl", "conversion factor of unknown"),
+        (11, "NYISO Zone A", "another market"),
+    ):
+        scraper, records = NLB10__parse(NLB10__mutate(NLB10__document(), page_number, old, new))
+        assert "changed" in scraper.unmodelled_published["IND-NONFIRM"]
+        assert len(records) == 21
+
+
+def test_nlb10_missing_non_firm_continuation_is_isolated():
+    document = NLB10__document()
+    document["b10_industrial_pages"] = [p for p in document["b10_industrial_pages"] if p["page_number"] != 12]
+    scraper, records = NLB10__parse(document)
+    assert "incomplete" in scraper.unmodelled_published["IND-NONFIRM"]
+    assert "IND-WHEELING" in scraper.excluded_published
+    assert len(records) == 21 and "IND-FIRM" in records
+
+
+def test_nlb10_wheeling_scope_change_flags_review_not_exclusion():
+    document = NLB10__mutate(NLB10__document(), 13, "whose Industrial Service Agreement so provides", "any customer")
+    scraper, records = NLB10__parse(document)
+    assert "IND-WHEELING" not in scraper.excluded_published
+    assert "changed" in scraper.unmodelled_published["IND-WHEELING"]
+    assert len(records) == 21
+
+
+def test_nlb10_future_dated_industrial_pages_are_not_audited_as_current():
+    document = copy.deepcopy(NLB10__document())
+    for page in document["b10_industrial_pages"]:
+        page["text"] = page["text"].replace("Effective July 1, 2026", "Effective July 1, 2027")
+    scraper, records = NLB10__parse(document)
+    assert "incomplete" in scraper.unmodelled_published["IND-NONFIRM"]
+    assert "incomplete" in scraper.unmodelled_published["IND-WHEELING"]
+    assert scraper.excluded_published == {}
+    assert len(records) == 21
+
+
+# ======================================================================
+# BC Hydro transmission pilots and generation credits (batch 10)
+# ======================================================================
+from scrapers.utilities.bc_hydro import BCHydroScraper as BCHB10_BCHydroScraper, TARIFF_URL as BCHB10_TARIFF_URL
+import json
+from dataclasses import replace
+from pathlib import Path
+from unittest.mock import patch
+
+from scrapers.utils.parsing import DocumentPage
+from scrapers.utils.validation import validate_batch
+from pipeline.export_json import derive_provenance
+
+BCHB10_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+
+
+def BCHB10__pages():
+    document = json.loads((BCHB10_FIXTURES / "bc_hydro_b10.json").read_text(encoding="utf-8"))
+    return [DocumentPage(**page) for page in document["pages"]]
+
+
+def BCHB10__mutate(pages, numbers, old, new):
+    return [replace(page, text=page.text.replace(old, new)) if page.page_number in numbers else page for page in pages]
+
+
+def BCHB10__by_code(records):
+    return {record.tariff_code: record for record in records}
+
+
+def BCHB10__values(record):
+    return [(part.component_name, part.charge_value, part.charge_unit, part.sub_component) for part in record.components]
+
+
+def test_bchb10_bch_b10_pilots_parse_all_four_with_source_values():
+    records = BCHB10__by_code(BCHB10_BCHydroScraper()._parse_transmission_pilots(BCHB10__pages()))
+    assert set(records) == {"2801", "2802", "2821", "2822"}
+    riders = [("Rate Rider -- Deferral Account Rate Rider", -0.015, "fraction", None),
+              ("Rate Rider -- Trade Income Rate Rider", 0.0, "fraction", None)]
+    tou = [("Winter On-Peak Energy Charge", 0.17713, "$/kWh", None), ("Winter Off-Peak Energy Charge", 0.04096, "$/kWh", None),
+           ("Spring Energy Charge", 0.04096, "$/kWh", None), ("Remaining Period Energy Charge", 0.04914, "$/kWh", None)]
+    assert BCHB10__values(records["2801"]) == [("Billing Demand Charge", 11.79, "$/kVA/billing period", None)] + tou + riders
+    assert BCHB10__values(records["2802"]) == [
+        ("Winter On-Peak Billing Demand Charge", 10.37, "$/kVA/billing period", None),
+        ("Winter Non-Peak Billing Demand Charge", 2.14, "$/kVA/billing period", None),
+        ("Non-Winter Billing Demand Charge", 11.59, "$/kVA/billing period", None),
+    ] + tou + riders
+    assert BCHB10__values(records["2821"]) == [
+        ("Billing Demand Charge", 10.164, "$/kVA/billing period", None),
+        ("Critical Peak Pricing Energy Charge", 0.55354, "$/kWh", "conditional"),
+        ("All Other Energy Charge", 0.04914, "$/kWh", None),
+    ] + riders
+    assert BCHB10__values(records["2822"]) == [
+        ("Billing Demand Charge", 10.5, "$/kVA/billing period", None),
+        ("Critical Peak Pricing Energy Charge", 0.55354, "$/kWh", "conditional"),
+        ("Winter On-Peak Energy Charge", 0.13285, "$/kWh", None), ("Winter Off-Peak Energy Charge", 0.04448, "$/kWh", None),
+        ("Spring Energy Charge", 0.04096, "$/kWh", None), ("Remaining Period Energy Charge", 0.04914, "$/kWh", None),
+    ] + riders
+
+
+def test_bchb10_bch_b10_pilots_are_conditional_dated_and_sourced():
+    for record in BCHB10_BCHydroScraper()._parse_transmission_pilots(BCHB10__pages()):
+        assert (record.customer_class, record.effective_date, record.end_date) == ("industrial", "2026-04-01", "2030-03-31")
+        assert "conditional" in record.sub_class and "60 kV" in record.eligibility and "enrollment" in record.eligibility
+        assert "not an adjustment" in record.notes and "bill guarantee" in record.notes
+        assert all(part.source_url == BCHB10_TARIFF_URL and part.source_detail and part.effective_date for part in record.components)
+    records = BCHB10__by_code(BCHB10_BCHydroScraper()._parse_transmission_pilots(BCHB10__pages()))
+    assert records["2801"].source_page == "Electric Tariff RS 2801; PDF pages 187-193"
+    assert records["2822"].source_page == "Electric Tariff RS 2822; PDF pages 209-216"
+    assert "minimum" in records["2821"].notes.lower() and "minimum" not in records["2801"].notes.lower()
+    seasons = {part.component_name: part.season for part in records["2802"].components}
+    assert seasons["Non-Winter Billing Demand Charge"] == "non-winter" and seasons["Winter Non-Peak Billing Demand Charge"] == "winter"
+
+
+def test_bchb10_bch_b10_missing_continuation_rejects_only_that_pilot():
+    pages = [page for page in BCHB10__pages() if page.page_number != 198]
+    assert set(BCHB10__by_code(BCHB10_BCHydroScraper()._parse_transmission_pilots(pages))) == {"2801", "2821", "2822"}
+
+
+def test_bchb10_bch_b10_changed_unit_rejects_only_that_pilot():
+    pages = BCHB10__mutate(BCHB10__pages(), {203}, "per kVA of Billing Demand per Billing Period", "per kW of Billing Demand per Billing Period")
+    assert set(BCHB10__by_code(BCHB10_BCHydroScraper()._parse_transmission_pilots(pages))) == {"2801", "2802", "2822"}
+
+
+def test_bchb10_bch_b10_changed_energy_period_rejects_pilot():
+    pages = BCHB10__mutate(BCHB10__pages(), {210}, "3. Winter Off-Peak Period", "3. Shoulder Period")
+    assert "2822" not in BCHB10__by_code(BCHB10_BCHydroScraper()._parse_transmission_pilots(pages))
+
+
+def test_bchb10_bch_b10_missing_cpp_event_rule_rejects_cpp_pilots():
+    pages = BCHB10__mutate(BCHB10__pages(), {206, 214}, "up to 15 Critical Peak", "up to 30 Critical Peak")
+    assert set(BCHB10__by_code(BCHB10_BCHydroScraper()._parse_transmission_pilots(pages))) == {"2801", "2802"}
+
+
+def test_bchb10_bch_b10_inconsistent_minimum_rejects_2821():
+    pages = BCHB10__mutate(BCHB10__pages(), {203}, "Monthly Minimum Charge: $10.164", "Monthly Minimum Charge: $9.00")
+    assert "2821" not in BCHB10__by_code(BCHB10_BCHydroScraper()._parse_transmission_pilots(pages))
+
+
+def test_bchb10_bch_b10_future_date_or_missing_rider_fails_closed():
+    future = BCHB10__mutate(BCHB10__pages(), set(range(187, 194)), "April 1, 2026", "April 1, 2027")
+    assert "2801" not in BCHB10__by_code(BCHB10_BCHydroScraper()._parse_transmission_pilots(future))
+    no_rider = [page for page in BCHB10__pages() if page.page_number != 232]
+    assert BCHB10_BCHydroScraper()._parse_transmission_pilots(no_rider) == []
+
+
+def test_bchb10_bch_b10_self_generation_credit_is_conditional_per_net_generation():
+    records = BCHB10_BCHydroScraper()._parse_self_generation_tariff(BCHB10__pages())
+    assert len(records) == 1
+    record = records[0]
+    assert (record.tariff_code, record.effective_date, record.customer_class) == ("2289", "2026-07-01", "other")
+    assert BCHB10__values(record) == [("Conditional Net Generation Credit", -0.1, "$/kWh net generation", "conditional")]
+    assert record.source_page == "Electric Tariff RS 2289; PDF pages 234-237"
+    assert "not a replacement" in record.notes.lower() and "100 kW" in record.eligibility
+    assert all(part.source_url == BCHB10_TARIFF_URL and part.effective_date for part in record.components)
+
+
+def test_bchb10_bch_b10_self_generation_fails_closed():
+    scraper = BCHB10_BCHydroScraper()
+    assert scraper._parse_self_generation_tariff([page for page in BCHB10__pages() if page.page_number != 236]) == []
+    assert scraper._parse_self_generation_tariff(BCHB10__mutate(BCHB10__pages(), {234}, "Energy Price of 10\u023c per kWh", "Energy Price of market value")) == []
+    assert scraper._parse_self_generation_tariff(BCHB10__mutate(BCHB10__pages(), set(range(234, 238)), "July 1, 2026", "July 1, 2027")) == []
+
+
+def test_bchb10_bch_b10_community_generation_credit_is_conditional_per_net_generation():
+    records = BCHB10_BCHydroScraper()._parse_community_generation_tariff(BCHB10__pages())
+    assert len(records) == 1
+    record = records[0]
+    assert (record.tariff_code, record.effective_date, record.customer_class) == ("2290", "2026-07-01", "other")
+    assert BCHB10__values(record) == [("Conditional Community Generation Credit", -0.1, "$/kWh net generation", "conditional")]
+    assert record.source_page == "Electric Tariff RS 2290; PDF pages 238-248"
+    assert "not a replacement" in record.notes.lower() and "fee" in record.notes and "2 MW" in record.eligibility
+    assert all(part.source_url == BCHB10_TARIFF_URL and part.effective_date for part in record.components)
+
+
+def test_bchb10_bch_b10_community_generation_fails_closed():
+    scraper = BCHB10_BCHydroScraper()
+    assert scraper._parse_community_generation_tariff([page for page in BCHB10__pages() if page.page_number != 246]) == []
+    assert scraper._parse_community_generation_tariff(BCHB10__mutate(BCHB10__pages(), {238}, "Community Energy Price of 10\u023c", "Community Energy Price of market")) == []
+    assert scraper._parse_community_generation_tariff(BCHB10__mutate(BCHB10__pages(), {241}, "A 2 MW injection limit", "A 5 MW injection limit")) == []
+    assert scraper._parse_community_generation_tariff(BCHB10__mutate(BCHB10__pages(), set(range(238, 249)), "July 1, 2026", "July 1, 2027")) == []
+    assert len(scraper._parse_self_generation_tariff([page for page in BCHB10__pages() if page.page_number != 246])) == 1
+
+
+def test_bchb10_bch_b10_full_scrape_preserves_existing_classes_and_adds_new_records():
+    scraper = BCHB10_BCHydroScraper()
+    business = json.loads((BCHB10_FIXTURES / "bc_hydro_business.json").read_text(encoding="utf-8"))
+    residential = json.loads((BCHB10_FIXTURES / "bc_hydro_residential.json").read_text(encoding="utf-8"))
+    pages = {page["page_number"]: DocumentPage(**page) for page in residential["pages"]}
+    pages.update({page["page_number"]: DocumentPage(**page) for page in business["pages"]})
+    pages.update({page.page_number: page for page in BCHB10__pages()})
+    document = [DocumentPage(1, "BC Hydro Electric Tariff, Title Page\nEffective: April 1, 2025")] + [pages[n] for n in sorted(pages)]
+    with patch.object(scraper, "fetch_page", return_value=""),\
+         patch.object(scraper, "fetch_bytes", return_value=b"pdf"),\
+         patch("scrapers.utilities.bc_hydro.extract_pdf_pages", return_value=document):
+        records = scraper.scrape()
+    valid, invalid = validate_batch(records)
+    assert not invalid and len(valid) == 17
+    codes = {record.tariff_code for record in valid}
+    assert codes >= {"1101", "1151", "1300", "1500", "1600", "1830", "1289", "2801", "2802", "2821", "2822", "2289", "2290"}
+    assert "1892" not in codes
+    assert all(derive_provenance(record.confidence, record.notes) == "live" for record in valid)
+
+
+def test_bchb10_bch_b10_existing_fixture_without_new_pages_is_unchanged():
+    business = json.loads((BCHB10_FIXTURES / "bc_hydro_business.json").read_text(encoding="utf-8"))
+    pages = [DocumentPage(**page) for page in business["pages"]]
+    scraper = BCHB10_BCHydroScraper()
+    assert scraper._parse_transmission_pilots(pages) == []
+    assert scraper._parse_self_generation_tariff(pages) == []
+    assert scraper._parse_community_generation_tariff(pages) == []
+    assert len(scraper._parse_transmission_tariff(pages)) == 1
+
+
+# ======================================================================
+# Hydro-Quebec DR Commitment (batch 10)
+# ======================================================================
+from scrapers.utilities.hydro_quebec import HydroQuebecScraper as HQB10_HydroQuebecScraper
+import json
+from pathlib import Path
+
+from scrapers.utils.parsing import DocumentPage
+
+HQB10_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "hydro_quebec_domestic.json"
+
+
+def HQB10__fixture():
+    return json.loads(HQB10_FIXTURE.read_text(encoding="utf-8"))
+
+
+def HQB10__commitment(removed=(), old=None, new=None):
+    pages = HQB10__fixture()["dr_commitment_pages"]
+    if old is not None:
+        page = next(page for page in pages if old in page["text"])
+        page["text"] = page["text"].replace(old, new)
+    selected = [DocumentPage(**page) for page in pages if page["page_number"] not in removed]
+    return HQB10_HydroQuebecScraper()._parse_dr_commitment(selected, "2026-04-01")
+
+
+def test_hqb10_dr_commitment_source_metadata():
+    source = HQB10__fixture()["dr_commitment_source"]
+    assert source["url"] == "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf"
+    assert source["physical_pdf_pages"].startswith("83-93")
+    assert [page["page_number"] for page in HQB10__fixture()["dr_commitment_pages"]] == list(range(83, 94))
+
+
+def test_hqb10_dr_commitment_conditional_credits():
+    records = HQB10__commitment()
+    assert len(records) == 1
+    record = records[0]
+    assert record.tariff_code == "DR_COMMITMENT_BUSINESS" and record.customer_class == "commercial"
+    assert record.effective_date == "2026-04-01" and record.source_url.endswith("electricity-rates.pdf")
+    assert "Rate G, M, L or LG" in record.eligibility and "load factor above 60%" in record.eligibility
+    assert "no simultaneous Leeway Option" in record.eligibility
+    assert "not replacement prices" in record.notes and "No bill total" in record.notes
+    fixed = [c for c in record.components if c.component_name.startswith("Conditional Fixed Credit")]
+    variable = [c for c in record.components if c.component_name.startswith("Conditional Variable Credit")]
+    assert len(fixed) == len(variable) == 20
+    assert fixed[0].component_name.endswith("(Sub-option I)") and fixed[-1].component_name.endswith("(Sub-option XX)")
+    assert [c.charge_value for c in fixed][:5] == [-51.905, -53.981, -51.905, -53.981, -67.477]
+    assert fixed[-1].charge_value == -75.781 and fixed[17].charge_value == -75.781
+    assert {c.charge_value for c in variable} == {-0.05191, -0.36334}
+    assert all(c.charge_unit == "$/kW of effective interruptible power/winter" and c.demand_unit == "kW" for c in fixed)
+    assert all(c.charge_unit == "$/kWh of effective hourly interruptible power" for c in variable)
+    assert all(c.source_detail == "Article 6.21; PDF page(s) 88-89" for c in fixed + variable)
+    by_name = {c.component_name: c for c in record.components}
+    assert by_name["Conditional Multi-Year Commitment Credit (2 consecutive winters)"].charge_value == 0.05
+    assert by_name["Conditional Multi-Year Commitment Credit (3 consecutive winters)"].charge_value == 0.1
+    assert by_name["Conditional Shorter-Notice Credit"].charge_value == -0.72667
+    assert by_name["Conditional Shorter-Notice Credit"].source_detail == "Article 6.22 d); PDF page(s) 90"
+    first = by_name["Conditional Overrun Deduction (first non-complied event)"]
+    later = by_name["Conditional Overrun Deduction (subsequent non-complied events)"]
+    assert (first.charge_value, later.charge_value) == (1.568, 4.474)
+    assert "$6.281/kW" in first.notes and "$17.897/kW" in later.notes and "150%" in first.notes
+    assert len(record.components) == 45
+    assert all(c.sub_component == "conditional" and c.season_months == "12,1,2,3" and c.effective_date == "2026-04-01"
+               and c.source_url == record.source_url for c in record.components)
+
+
+def test_hqb10_dr_commitment_missing_page_fails_closed():
+    for page in range(83, 94):
+        assert not HQB10__commitment(removed=(page,)), page
+
+
+def test_hqb10_dr_commitment_mutated_price_or_rule_fails_closed():
+    assert not HQB10__commitment(old="Sub\u2011option X I V $73.705", new="Sub\u2011option X I V price not published")
+    assert not HQB10__commitment(old="72.667\u00a2", new="price to be announced")
+    assert not HQB10__commitment(old="a deduction of $4.474", new="a deduction")
+    assert not HQB10__commitment(old="load factor that is higher than 60%", new="load factor to be determined")
+    assert not HQB10__commitment(old="cannot exceed 150% of the total fixed credits", new="is uncapped")
+    assert not HQB10__commitment(old="(hours): 100 100", new="(hours): to be set")
+
+
+def test_hqb10_dr_commitment_does_not_affect_leeway_or_large_power():
+    fixture = HQB10__fixture()
+    scraper = HQB10_HydroQuebecScraper()
+    leeway = scraper._parse_dr_leeway([DocumentPage(**page) for page in fixture["dr_leeway_pages"]], "2026-04-01")
+    assert [record.tariff_code for record in leeway] == ["DR_LEEWAY_BUSINESS"]
+    assert not scraper._parse_dr_commitment([DocumentPage(**page) for page in fixture["dr_leeway_pages"]], "2026-04-01")
+    assert not scraper._parse_dr_leeway([DocumentPage(**page) for page in fixture["dr_commitment_pages"]], "2026-04-01")
+
+
+# ======================================================================
+# Manitoba Hydro LUBD (batch 10)
+# ======================================================================
+from scrapers.utilities.manitoba_hydro import COMMERCIAL_URL as MBB10_COMMERCIAL_URL, RESIDENTIAL_URL as MBB10_RESIDENTIAL_URL, SCHEDULE_URL as MBB10_SCHEDULE_URL, ManitobaHydroScraper as MBB10_ManitobaHydroScraper
+import html
+import json
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from pipeline.export_json import derive_provenance
+from scrapers.base import BaseScraper
+from scrapers.utils.parsing import DocumentPage
+
+MBB10_FIXTURE = json.loads((Path(__file__).resolve().parent / "fixtures" / "manitoba_hydro.json").read_text(encoding="utf-8"))
+MBB10_SCHEDULE = MBB10_FIXTURE["rate_schedule"]
+MBB10_LUBD_NAMES = {
+    "LUBD General Service Small (Single Phase)", "LUBD General Service Small (Three Phase)",
+    "LUBD General Service Medium", "LUBD General Service Large (>750 V to 30 kV)",
+    "LUBD General Service Large (>30 kV to 100 kV)", "LUBD General Service Large (>100 kV)",
+}
+
+
+def MBB10__pages(edit=None):
+    pages = [DocumentPage(p["page_number"], p["text"]) for p in MBB10_SCHEDULE["pages"]]
+    if edit:
+        number, old, new = edit
+        pages = [DocumentPage(p.page_number, p.text.replace(old, new) if p.page_number == number else p.text)
+                 for p in pages]
+        assert any(old in p["text"] for p in MBB10_SCHEDULE["pages"] if p["page_number"] == number), old
+    return pages
+
+
+def MBB10__parse(edit=None):
+    return {r.tariff_name: r for r in MBB10_ManitobaHydroScraper()._parse_lubd(MBB10__pages(edit))}
+
+
+def MBB10__comp(record, ctype):
+    return [c for c in record.components if c.component_type == ctype]
+
+
+def MBB10__html(page):
+    return "<html><body>" + "".join(f"<p>{html.escape(ln)}</p>" for ln in MBB10_FIXTURE["pages"][page]["lines"]) + "</body></html>"
+
+
+def test_mbb10_fixture_provenance():
+    assert MBB10_SCHEDULE["url"] == MBB10_SCHEDULE_URL
+    assert [p["page_number"] for p in MBB10_SCHEDULE["pages"]] == [1, 14, 15, 16]
+    assert "APPROVED IN ORDER 1/26" in MBB10_SCHEDULE["pages"][0]["text"]
+
+
+def test_mbb10_lubd_source_values():
+    lubd = MBB10__parse()
+    assert set(lubd) == MBB10_LUBD_NAMES
+    small = lubd["LUBD General Service Small (Single Phase)"]
+    assert small.tariff_code == "2026-50" and small.customer_class == "commercial"
+    fixed, = MBB10__comp(small, "fixed")
+    energy, = MBB10__comp(small, "energy")
+    demand, = MBB10__comp(small, "demand")
+    assert (fixed.charge_value, fixed.charge_unit) == (21.57, "$/month")
+    assert (energy.charge_value, energy.charge_unit) == (pytest.approx(0.11831), "$/kWh")
+    assert (demand.charge_value, demand.charge_unit, demand.demand_unit) == (3.06, "$/kVA", "kVA")
+    assert "first 50 kVA" in demand.notes
+    assert demand.demand_threshold_kw is None
+    assert MBB10__comp(lubd["LUBD General Service Small (Three Phase)"], "fixed")[0].charge_value == 35.04
+    medium = lubd["LUBD General Service Medium"]
+    assert MBB10__comp(medium, "fixed")[0].charge_value == 35.81
+    assert MBB10__comp(medium, "demand")[0].charge_value == 3.06
+    assert "25% of contract demand" in medium.notes
+    expected = {"53": (0.10466, 2.60), "54": (0.09083, 2.17), "55": (0.08418, 1.93)}
+    for r in lubd.values():
+        suffix = r.tariff_code.split("-")[1]
+        if suffix in expected:
+            assert r.customer_class == "industrial"
+            assert not MBB10__comp(r, "fixed")
+            assert MBB10__comp(r, "energy")[0].charge_value == pytest.approx(expected[suffix][0])
+            assert MBB10__comp(r, "demand")[0].charge_value == pytest.approx(expected[suffix][1])
+
+
+def test_mbb10_lubd_conditional_dates_and_sources():
+    for r in MBB10__parse().values():
+        assert r.notes.startswith("Conditional optional rate") and "replacing (not added to)" in r.notes
+        assert "prior 12 months" in r.eligibility
+        assert r.effective_date == "2026-01-01" and r.source_url == MBB10_SCHEDULE_URL
+        for c in r.components:
+            assert c.effective_date == "2026-01-01"
+            assert c.source_url == MBB10_SCHEDULE_URL
+            assert "Order 1/26" in c.source_detail and f"Tariff No. {r.tariff_code}" in c.source_detail
+            assert "PDF page" in c.source_detail and "printed page" in c.source_detail
+
+
+def test_mbb10_changed_unit_rejects_only_that_class():
+    lubd = MBB10__parse((16, "@ $ 2.17 / kVA", "@ $ 2.17 / kW"))
+    assert set(lubd) == MBB10_LUBD_NAMES - {"LUBD General Service Large (>30 kV to 100 kV)"}
+
+
+def test_mbb10_missing_minimum_bill_rejects_only_medium():
+    lubd = MBB10__parse((15, "Minimum Bill:\nDemand Charge PLUS Basic Charge", "Minimum Bill:"))
+    assert set(lubd) == MBB10_LUBD_NAMES - {"LUBD General Service Medium"}
+
+
+def test_mbb10_missing_eligibility_rejects_page_classes():
+    lubd = MBB10__parse((14, "eligible for service on the General Service Small rate", "eligible for service"))
+    assert set(lubd) == MBB10_LUBD_NAMES - {"LUBD General Service Small (Single Phase)", "LUBD General Service Small (Three Phase)"}
+
+
+def test_mbb10_tariff_year_mismatch_rejected():
+    lubd = MBB10__parse((16, "TARIFF NO. 2026-55", "TARIFF NO. 2025-55"))
+    assert "LUBD General Service Large (>100 kV)" not in lubd
+    assert len(lubd) == 5
+
+
+def test_mbb10_missing_or_future_effective_date_rejects_all():
+    assert MBB10__parse((1, "EFFECTIVE JANUARY 1, 2026", "EFFECTIVE")) == {}
+    assert MBB10__parse((1, "APPROVED IN ORDER 1/26", "APPROVED")) == {}
+    assert MBB10__parse((1, "JANUARY 1, 2026", "JANUARY 1, 2099")) == {}
+
+
+def test_mbb10_scrape_adds_lubd_and_preserves_html_classes():
+    pages = {MBB10_RESIDENTIAL_URL: MBB10__html("residential"), MBB10_COMMERCIAL_URL: MBB10__html("commercial")}
+    with patch.object(BaseScraper, "fetch_page", lambda self, url, delay=1.0: pages[url]),\
+            patch.object(BaseScraper, "fetch_bytes", lambda self, url, delay=1.0: b"%PDF"),\
+            patch("scrapers.utilities.manitoba_hydro.extract_pdf_pages", lambda data: MBB10__pages()):
+        records = MBB10_ManitobaHydroScraper().scrape()
+    assert len(records) == 18
+    assert MBB10_LUBD_NAMES <= {r.tariff_name for r in records}
+    assert all(derive_provenance(r.confidence, r.notes) == "live" for r in records)
+
+
+def test_mbb10_schedule_failure_keeps_twelve_html_classes():
+    pages = {MBB10_RESIDENTIAL_URL: MBB10__html("residential"), MBB10_COMMERCIAL_URL: MBB10__html("commercial")}
+
+    def fail(self, url, delay=1.0):
+        raise ConnectionError("schedule unavailable")
+
+    with patch.object(BaseScraper, "fetch_page", lambda self, url, delay=1.0: pages[url]),\
+            patch.object(BaseScraper, "fetch_bytes", fail):
+        records = MBB10_ManitobaHydroScraper().scrape()
+    assert len(records) == 12
+    assert not MBB10_LUBD_NAMES & {r.tariff_name for r in records}
+    assert all(derive_provenance(r.confidence, r.notes) == "live" for r in records)
+
+
+def test_mbb10_html_failure_keeps_lubd_and_labels_seeds():
+    def fail(self, url, delay=1.0):
+        raise ConnectionError("pages unavailable")
+
+    with patch.object(BaseScraper, "fetch_page", fail),\
+            patch.object(BaseScraper, "fetch_bytes", lambda self, url, delay=1.0: b"%PDF"),\
+            patch("scrapers.utilities.manitoba_hydro.extract_pdf_pages", lambda data: MBB10__pages()):
+        records = MBB10_ManitobaHydroScraper().scrape()
+    live = {r.tariff_name for r in records if derive_provenance(r.confidence, r.notes) == "live"}
+    seed = {r.tariff_name for r in records if derive_provenance(r.confidence, r.notes) == "seed"}
+    assert live == MBB10_LUBD_NAMES
+    assert "Residential Service" in seed and "General Service Medium" in seed
+
+
+def test_mbb10_no_service_charge_or_net_billing_record():
+    names = {r.tariff_name.lower() for r in MBB10__parse().values()}
+    assert not any("fee" in n or "service charge" in n or "net billing" in n for n in names)
+    assert "date_gap" in MBB10_FIXTURE["catalogue_review"]["service_charges"]
+    assert "date_gap" in MBB10_FIXTURE["catalogue_review"]["net_billing"]
+
+
+# ======================================================================
+# NTPC live schedule (batch 10)
+# ======================================================================
+from scrapers.utilities.ntpc import DIESEL_RESIDENTIAL_NAME as NTPCB10_DIESEL_RESIDENTIAL_NAME, NTPCScraper as NTPCB10_NTPCScraper, build_records as NTPCB10_build_records, parse_residential_page as NTPCB10_parse_residential_page, parse_rider_page as NTPCB10_parse_rider_page, parse_schedule as NTPCB10_parse_schedule, parse_schedule_index as NTPCB10_parse_schedule_index, parse_tpsp as NTPCB10_parse_tpsp
+import json
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from scrapers.utilities import ntpc
+from scrapers.utils.parsing import DocumentPage
+
+NTPCB10_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "ntpc.json"
+NTPCB10_TODAY = "2026-10-07"
+NTPCB10_TPSP_PREFIX = "GNWT TPSP Subsidised First-Block Energy Price"
+NTPCB10_PDF_URL = "https://www.ntpc.com/sites/default/files/2026-06/NTPC%20Rate%20Schedule%20-%20June%201%202026.pdf"
+
+
+def NTPCB10__fx():
+    return json.loads(NTPCB10_FIXTURE.read_text(encoding="utf-8"))
+
+
+def NTPCB10__pages(fx, edit=None):
+    pages = [DocumentPage(p["page"], p["text"]) for p in fx["schedule"]["pages"]]
+    return [DocumentPage(p.page_number, edit(p.page_number, p.text)) for p in pages] if edit else pages
+
+
+def NTPCB10__records(fx=None, edit=None, residential=None):
+    fx = fx or NTPCB10__fx()
+    schedule = NTPCB10_parse_schedule(NTPCB10__pages(fx, edit), NTPCB10_PDF_URL, NTPCB10_TODAY)
+    page = NTPCB10_parse_residential_page(residential or fx["residential"]["html"], NTPCB10_TODAY)
+    return {r.tariff_name: r for r in NTPCB10_build_records(schedule, page, NTPCB10_parse_tpsp(fx["tpsp"]["html"]),
+                                                     NTPCB10_parse_rider_page(fx["riders"]["html"]))}
+
+
+def NTPCB10__comp(record, name):
+    (component,) = [c for c in record.components if c.component_name == name]
+    return component
+
+
+def test_ntpcb10_fixture_sources():
+    fx = NTPCB10__fx()
+    assert fx["retrieved"] == "2026-10-07"
+    assert fx["residential"]["url"] == ntpc.RESIDENTIAL_URL and fx["schedule_index"]["url"] == ntpc.SCHEDULE_INDEX_URL
+    assert fx["tpsp"]["url"] == ntpc.TPSP_URL and fx["riders"]["url"] == ntpc.RIDER_URL
+    assert fx["schedule"]["url"] == NTPCB10_PDF_URL
+    assert [p["page"] for p in fx["schedule"]["pages"]] == list(range(3, 14))
+
+
+def test_ntpcb10_schedule_index_current_link():
+    assert NTPCB10_parse_schedule_index(NTPCB10__fx()["schedule_index"]["html"], NTPCB10_TODAY) == (NTPCB10_PDF_URL, "2026-06-01")
+    with pytest.raises(ntpc._Reject):
+        NTPCB10_parse_schedule_index(NTPCB10__fx()["schedule_index"]["html"], "2026-05-31")
+
+
+def test_ntpcb10_record_inventory():
+    records = NTPCB10__records()
+    assert len(records) == 62
+    non_government = {
+        "Residential Service — Snare Zone", NTPCB10_DIESEL_RESIDENTIAL_NAME, "Residential Service — Norman Wells Zone",
+        "Residential Service — Taltson Zone (Hay River)", "Residential Service — Taltson Zone (Fort Smith/Fort Resolution)",
+        "General Service — Snare Zone", "General Service — Thermal Zone", "General Service — Norman Wells Zone",
+        "General Service — Taltson Zone (Hay River)", "General Service — Taltson Zone (Fort Smith/Fort Resolution)",
+    }
+    assert non_government <= set(records)
+    assert sum("Government —" in name for name in records) == 52
+    for record in records.values():
+        assert record.province == "NT" and record.source_url == NTPCB10_PDF_URL
+        assert all(c.source_url and c.source_detail and c.effective_date for c in record.components)
+        assert not any(word in record.tariff_name.lower() for word in ("light", "wholesale", "stand", "interruptible"))
+        assert not any("stand" in c.component_name.lower() for c in record.components)
+
+
+def test_ntpcb10_thermal_residential_values_and_subsidies():
+    record = NTPCB10__records()[NTPCB10_DIESEL_RESIDENTIAL_NAME]
+    assert record.customer_class == "residential" and record.effective_date == "2026-09-01"
+    assert (NTPCB10__comp(record, "Monthly Service Charge").charge_value, NTPCB10__comp(record, "Monthly Service Charge").charge_unit) == (18.0, "$/month")
+    assert NTPCB10__comp(record, "Energy Charge").charge_value == 0.8896
+    assert NTPCB10__comp(record, "Energy Charge").effective_date == "2026-06-01"
+    assert NTPCB10__comp(record, "NWT Stabilization Fund Rate Rider").charge_value == 0.0101
+    assert NTPCB10__comp(record, "GRA Shortfall Rider").charge_value == 0.0772
+    assert NTPCB10__comp(record, "Sunk Cost Deferral Account Rider").charge_value == 0.0042
+    col = NTPCB10__comp(record, "GNWT Cost of Living Subsidy")
+    assert (col.component_type, col.charge_value, col.effective_date) == ("rebate", -0.1343, "2026-09-01")
+    assert "March 2028" in col.notes and "residential and commercial" in col.notes
+    winter = NTPCB10__comp(record, f"{NTPCB10_TPSP_PREFIX} (September 1 to March 31)")
+    summer = NTPCB10__comp(record, f"{NTPCB10_TPSP_PREFIX} (April 1 to August 31)")
+    assert (winter.charge_value, winter.tier_threshold, winter.season_months) == (0.365, 1000, "9,10,11,12,1,2,3")
+    assert (summer.charge_value, summer.tier_threshold, summer.season_months) == (0.365, 600, "4,5,6,7,8")
+    assert winter.component_type == "energy" and "Conditional alternative" in winter.notes
+    assert "Minimum Monthly Bill: $18.00" in record.notes
+    assert not any("total" in c.component_name.lower() for c in record.components)
+
+
+def test_ntpcb10_snare_tpsp_saving_mismatch_is_not_stored():
+    record = NTPCB10__records()["Residential Service — Snare Zone"]
+    assert not [c for c in record.components if c.component_type == "rebate"]
+    assert not [c for c in record.components if c.component_name.startswith(NTPCB10_TPSP_PREFIX)]
+    assert "do not reconcile" in record.notes
+    assert NTPCB10__comp(record, "GRA Shortfall Rider").charge_value == -0.0033
+
+
+def test_ntpcb10_taltson_community_rider_rules():
+    records = NTPCB10__records()
+    hay = records["Residential Service — Taltson Zone (Hay River)"]
+    smith = records["Residential Service — Taltson Zone (Fort Smith/Fort Resolution)"]
+    names = lambda r: {c.component_name for c in r.components}
+    assert "Misc. Deferral Transfers Rider" in names(hay) and "NWT Stabilization Fund Rate Rider" not in names(hay)
+    assert "Misc. Deferral Transfers Rider" not in names(smith) and "NWT Stabilization Fund Rate Rider" in names(smith)
+    assert NTPCB10__comp(hay, "GNWT Cost of Living Subsidy").charge_value == -0.1353
+    assert NTPCB10__comp(smith, "GNWT Cost of Living Subsidy").charge_value == -0.1318
+    assert NTPCB10__comp(hay, "Energy Charge").charge_value == 0.3242
+    gov = records["General Service Government — Hay River (Taltson Zone)"]
+    assert NTPCB10__comp(gov, "Energy Charge").charge_value == 0.3369 and "Misc. Deferral Transfers Rider" in names(gov)
+
+
+def test_ntpcb10_general_service_and_government():
+    records = NTPCB10__records()
+    gs = records["General Service — Thermal Zone"]
+    demand = NTPCB10__comp(gs, "Demand Charge")
+    assert (demand.charge_value, demand.charge_unit, demand.demand_unit) == (8.0, "$/kW", "kW")
+    assert "12 month period" in demand.notes and gs.rate_structure == "demand"
+    assert NTPCB10__comp(gs, "Energy Charge").charge_value == 0.7631 and "Minimum Monthly Bill: $40.00" in gs.notes
+    assert not [c for c in gs.components if c.component_type in ("rebate", "fixed")]
+    gov = records["Residential Service Government — Colville Lake (Thermal Zone)"]
+    assert NTPCB10__comp(gov, "Energy Charge").charge_value == 4.1956
+    assert not [c for c in gov.components if c.component_type == "rebate"]
+
+
+def test_ntpcb10_mutated_value_flows_through_and_page_mismatch_drops_subsidies():
+    records = NTPCB10__records(edit=lambda n, t: t.replace("Energy Charge: 88.96", "Energy Charge: 90.00") if n == 6 else t)
+    record = records[NTPCB10_DIESEL_RESIDENTIAL_NAME]
+    assert NTPCB10__comp(record, "Energy Charge").charge_value == 0.9
+    assert not [c for c in record.components if c.component_type == "rebate"]
+    assert not [c for c in record.components if c.component_name.startswith(NTPCB10_TPSP_PREFIX)]
+    assert "does not match" in record.notes
+
+
+def test_ntpcb10_unrecognised_charge_rejects_only_that_block():
+    records = NTPCB10__records(edit=lambda n, t: t.replace("Minimum Monthly Bill: $18.00\nNWT", "Mystery Fee: $3.00\nMinimum Monthly Bill: $18.00\nNWT") if n == 6 else t)
+    assert NTPCB10_DIESEL_RESIDENTIAL_NAME not in records
+    assert "General Service — Thermal Zone" in records and len(records) == 61
+
+
+def test_ntpcb10_missing_rider_rejects_block():
+    records = NTPCB10__records(edit=lambda n, t: t.replace("GRA Shortfall Rider: 7.72 ¢/kWh", "") if n == 8 else t)
+    assert "General Service — Thermal Zone" not in records
+
+
+def test_ntpcb10_missing_taltson_applicability_notes_reject_taltson():
+    edit = lambda n, t: t.replace("does not apply to Hay River", "is under review")
+    records = NTPCB10__records(edit=edit)
+    assert not any("Taltson" in name for name in records) and len(records) == 62 - 10
+
+
+def test_ntpcb10_conflicting_or_future_dates_fail_closed():
+    with pytest.raises(ntpc._Reject):
+        NTPCB10_parse_schedule(NTPCB10__pages(NTPCB10__fx(), lambda n, t: t.replace("June 1, 2026", "July 1, 2026") if n == 5 else t), NTPCB10_PDF_URL, NTPCB10_TODAY)
+    with pytest.raises(ntpc._Reject):
+        NTPCB10_parse_schedule(NTPCB10__pages(NTPCB10__fx()), NTPCB10_PDF_URL, "2026-05-31")
+    with pytest.raises(ntpc._Reject):
+        NTPCB10_parse_residential_page(NTPCB10__fx()["residential"]["html"], "2026-08-31")
+
+
+def test_ntpcb10_scraper_live_path_is_labelled_live():
+    fx = NTPCB10__fx()
+    html = {ntpc.SCHEDULE_INDEX_URL: fx["schedule_index"]["html"], ntpc.RESIDENTIAL_URL: fx["residential"]["html"],
+            ntpc.TPSP_URL: fx["tpsp"]["html"], ntpc.RIDER_URL: fx["riders"]["html"]}
+    with patch.object(NTPCB10_NTPCScraper, "fetch_page", lambda self, url, delay=1.0: html[url]),\
+            patch.object(NTPCB10_NTPCScraper, "fetch_bytes", lambda self, url, delay=1.0: b"%PDF"),\
+            patch.object(NTPCB10_NTPCScraper, "now_iso", lambda self: NTPCB10_TODAY + "T00:00:00+00:00"),\
+            patch.object(ntpc, "extract_pdf_pages", lambda data: NTPCB10__pages(fx)):
+        records = NTPCB10_NTPCScraper().scrape()
+    assert len(records) == 62
+    assert all(r.notes.startswith("Provenance: live_parsed") and r.confidence == "high" for r in records)
+    assert not any("Yellowknife" in r.tariff_name for r in records)
+
+
+def test_ntpcb10_rider_page_failure_keeps_base_records_without_col():
+    fx = NTPCB10__fx()
+    html = {ntpc.SCHEDULE_INDEX_URL: fx["schedule_index"]["html"], ntpc.RESIDENTIAL_URL: fx["residential"]["html"],
+            ntpc.TPSP_URL: fx["tpsp"]["html"]}
+
+    def fetch(self, url, delay=1.0):
+        if url not in html:
+            raise ConnectionError("blocked")
+        return html[url]
+
+    with patch.object(NTPCB10_NTPCScraper, "fetch_page", fetch),\
+            patch.object(NTPCB10_NTPCScraper, "fetch_bytes", lambda self, url, delay=1.0: b"%PDF"),\
+            patch.object(NTPCB10_NTPCScraper, "now_iso", lambda self: NTPCB10_TODAY + "T00:00:00+00:00"),\
+            patch.object(ntpc, "extract_pdf_pages", lambda data: NTPCB10__pages(fx)):
+        records = {r.tariff_name: r for r in NTPCB10_NTPCScraper().scrape()}
+    names = {c.component_name for c in records[NTPCB10_DIESEL_RESIDENTIAL_NAME].components}
+    assert "GNWT Cost of Living Subsidy" not in names
+    assert f"{NTPCB10_TPSP_PREFIX} (September 1 to March 31)" in names
+
+
+def test_ntpcb10_thermal_failure_adds_labelled_diesel_seed_only():
+    fx = NTPCB10__fx()
+    html = {ntpc.SCHEDULE_INDEX_URL: fx["schedule_index"]["html"], ntpc.RESIDENTIAL_URL: fx["residential"]["html"],
+            ntpc.TPSP_URL: fx["tpsp"]["html"], ntpc.RIDER_URL: fx["riders"]["html"]}
+    pages = NTPCB10__pages(fx, lambda n, t: t.replace("Energy Charge: 88.96 ¢/kWh", "") if n == 6 else t)
+    with patch.object(NTPCB10_NTPCScraper, "fetch_page", lambda self, url, delay=1.0: html[url]),\
+            patch.object(NTPCB10_NTPCScraper, "fetch_bytes", lambda self, url, delay=1.0: b"%PDF"),\
+            patch.object(NTPCB10_NTPCScraper, "now_iso", lambda self: NTPCB10_TODAY + "T00:00:00+00:00"),\
+            patch.object(ntpc, "extract_pdf_pages", lambda data: pages):
+        records = NTPCB10_NTPCScraper().scrape()
+    seeds = [r for r in records if r.confidence == "unverified"]
+    assert [r.tariff_name for r in seeds] == [NTPCB10_DIESEL_RESIDENTIAL_NAME]
+    assert "Provenance: seed_fallback" in seeds[0].notes
+    assert all(c.confidence == "unverified" for c in seeds[0].components)
+    assert len(records) == 62
+
+
+def test_ntpcb10_total_failure_falls_back_to_labelled_seeds():
+    with patch.object(NTPCB10_NTPCScraper, "fetch_page", side_effect=ConnectionError("offline")):
+        records = NTPCB10_NTPCScraper().scrape()
+    assert len(records) == 3
+    assert all(r.confidence == "unverified" and "Provenance: seed_fallback" in r.notes for r in records)
+
+
+# ======================================================================
+# Qulliq Energy live rates (batch 10)
+# ======================================================================
+from scrapers.utilities.qulliq import PAGE_URLS as QECB10_PAGE_URLS, QulliqScraper as QECB10_QulliqScraper
+import json
+from datetime import date
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+
+QECB10_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "qulliq.json"
+QECB10_TODAY = date(2026, 10, 7)
+
+
+def QECB10__pages():
+    document = json.loads(QECB10_FIXTURE.read_text(encoding="utf-8"))
+    return {key: page["text"] for key, page in document["pages"].items()}
+
+
+def QECB10__parse(pages, today=QECB10_TODAY):
+    return {r.tariff_code: r for r in QECB10_QulliqScraper().parse_pages(pages, today)}
+
+
+def QECB10__comps(record, kind):
+    return [c for c in record.components if c.component_type == kind]
+
+
+def test_qecb10_fixture_has_sources():
+    document = json.loads(QECB10_FIXTURE.read_text(encoding="utf-8"))
+    for key, page in document["pages"].items():
+        assert page["url"] == QECB10_PAGE_URLS[key] and page["retrieved"] == "2026-10-07"
+
+
+def test_qecb10_all_building_classes_parsed():
+    records = QECB10__parse(QECB10__pages())
+    assert set(records) == {"NG-RES", "G-RES", "MT-RES", "NG-COM", "G-COM", "MT-COM"}
+    assert records["NG-RES"].tariff_name == "Residential Service"
+    assert records["NG-COM"].tariff_name == "Commercial Service"
+    for r in records.values():
+        assert r.effective_date == "2025-04-01" and r.province == "NU"
+        assert "interim" in r.notes and "October 1, 2023" in r.notes
+        assert all(c.source_url and c.source_detail and c.effective_date == "2025-04-01" for c in r.components)
+        assert not any("treet" in r.tariff_name or "tandby" in r.tariff_name for r in records.values())
+
+
+def test_qecb10_energy_and_fixed_values():
+    records = QECB10__parse(QECB10__pages())
+    expected = {"NG-RES": 0.7494, "G-RES": 1.13, "MT-RES": 0.7494, "NG-COM": 0.6208, "G-COM": 1.0533, "MT-COM": 0.6208}
+    for code, value in expected.items():
+        (energy,) = QECB10__comps(records[code], "energy")
+        assert (energy.charge_value, energy.charge_unit) == (value, "$/kWh")
+    for code in ("NG-RES", "G-RES", "MT-RES"):
+        (fixed,) = QECB10__comps(records[code], "fixed")
+        assert (fixed.charge_value, fixed.charge_unit) == (36.0, "$/month")
+    (demand,) = QECB10__comps(records["NG-COM"], "demand")
+    assert (demand.charge_value, demand.charge_unit) == (16.0, "$/kW/month")
+    assert records["NG-COM"].rate_structure == "demand"
+    for code in ("G-COM", "MT-COM"):
+        assert not QECB10__comps(records[code], "demand") and not QECB10__comps(records[code], "fixed")
+        assert "no " in records[code].notes and "value is shown" in records[code].notes
+
+
+def test_qecb10_nesp_is_conditional_allowance_without_price():
+    records = QECB10__parse(QECB10__pages())
+    rebates = QECB10__comps(records["NG-RES"], "rebate")
+    assert [(c.season, c.tier_threshold, c.charge_value, c.sub_component) for c in rebates] == [
+        ("summer", 700, None, "conditional"), ("winter", 1000, None, "conditional")]
+    assert all("one residence" in c.notes for c in rebates)
+    for code in ("G-RES", "MT-RES", "NG-COM", "G-COM", "MT-COM"):
+        assert not QECB10__comps(records[code], "rebate")
+
+
+def test_qecb10_fsr_rider_is_note_without_value():
+    records = QECB10__parse(QECB10__pages())
+    for r in records.values():
+        assert "latest posted FSR application (March 2026) is a request" in r.notes
+        assert not [c for c in r.components if c.component_type == "rider"]
+
+
+def test_qecb10_public_housing_is_note_not_rate():
+    g = QECB10__parse(QECB10__pages())["G-RES"]
+    assert "6 cents/kWh" in g.notes
+    assert all(c.charge_value != 0.06 for c in g.components)
+
+
+@pytest.mark.parametrize(("key", "old", "new", "rejected"), [
+    ("rates", "74.94 cents/kWh Non-Government", "79.00 cents/kWh Non-Government", {"NG-RES"}),
+    ("rates", "113.00 cents/kWh", "120.00 cents/kWh", {"G-RES"}),
+    ("rates", "Commercial - 62.08 cents/kWh", "Commercial - 65.00 cents/kWh", {"MT-COM"}),
+    ("interim", "$1.0221 to $1.1300 per kWh", "$1.0221 to $1.2000 per kWh", {"G-RES"}),
+    ("rates", "700 kWh for each 30-day period", "700 kW for each 30-day period", {"NG-RES"}),
+    ("rates", "tenant is billed directly for 6 cents/kWh", "tenant is billed directly", {"G-RES"}),
+])
+def test_qecb10_value_drift_rejects_only_that_class(key, old, new, rejected):
+    pages = QECB10__pages()
+    assert old in pages[key]
+    pages[key] = pages[key].replace(old, new, 1)
+    records = QECB10__parse(pages)
+    assert set(records) == {"NG-RES", "G-RES", "MT-RES", "NG-COM", "G-COM", "MT-COM"} - rejected
+
+
+@pytest.mark.parametrize(("key", "old", "new"), [
+    ("interim", "From $18 to $36 per month", "From $18 to per month"),
+    ("interim", "From $8 to $16 per kW", "From $8 to $16 per kWh"),
+    ("interim", "interim rates will remain in place until final rates are approved", "rates are final"),
+    ("rates", "effective as of October 1, 2023", "effective as of April 1, 2026"),
+    ("gra", "effective April 1, 2025", "effective April 1, 2027"),
+    ("interim", "effective April 1, 2025. QEC", "effective April 1, 2027. QEC"),
+])
+def test_qecb10_stale_or_structural_drift_fails_closed(key, old, new):
+    pages = QECB10__pages()
+    assert old in pages[key]
+    pages[key] = pages[key].replace(old, new, 1)
+    assert QECB10__parse(pages) == {}
+
+
+@pytest.mark.parametrize("missing", ["rates", "interim", "gra"])
+def test_qecb10_missing_required_page_fails_closed(missing):
+    pages = QECB10__pages()
+    pages.pop(missing)
+    assert QECB10__parse(pages) == {}
+
+
+def test_qecb10_future_interim_date_rejected():
+    assert QECB10__parse(QECB10__pages(), today=date(2025, 3, 31)) == {}
+
+
+def test_qecb10_scrape_marks_live():
+    pages = QECB10__pages()
+    scraper = QECB10_QulliqScraper()
+    responses = {QECB10_PAGE_URLS[k]: v for k, v in pages.items()}
+    with patch.object(scraper, "fetch_page", side_effect=lambda url: responses[url]),\
+            patch.object(QECB10_QulliqScraper, "_page_text", staticmethod(lambda html: html)):
+        records = scraper.scrape()
+    assert len(records) == 6
+    assert all("live_parsed" in r.notes and "seed_fallback" not in r.notes for r in records)
+
+
+def test_qecb10_partial_failure_keeps_live_and_labels_seed():
+    pages = QECB10__pages()
+    pages["rates"] = pages["rates"].replace("113.00 cents/kWh", "120.00 cents/kWh")
+    scraper = QECB10_QulliqScraper()
+    responses = {QECB10_PAGE_URLS[k]: v for k, v in pages.items()}
+    with patch.object(scraper, "fetch_page", side_effect=lambda url: responses[url]),\
+            patch.object(QECB10_QulliqScraper, "_page_text", staticmethod(lambda html: html)):
+        records = {r.tariff_code: r for r in scraper.scrape()}
+    assert "seed_fallback" in records["G-RES"].notes and records["G-RES"].confidence == "unverified"
+    assert all(c.confidence == "unverified" for c in records["G-RES"].components)
+    assert "live_parsed" in records["NG-RES"].notes and "seed_fallback" not in records["NG-RES"].notes
+
+
+def test_qecb10_network_failure_all_seed_unverified():
+    scraper = QECB10_QulliqScraper()
+    with patch.object(scraper, "fetch_page", side_effect=OSError("down")):
+        records = scraper.scrape()
+    assert len(records) == 6
+    assert all(r.confidence == "unverified" and "seed_fallback" in r.notes for r in records)
+    assert all(c.charge_value is None or c.charge_value > 0 for r in records for c in r.components)
+
+
+# ======================================================================
+# Yukon Energy and ATCO Electric Yukon joint schedules (batch 10)
+# ======================================================================
+from scrapers.utilities.yukon_electrical import YukonElectricalScraper as YKB10_YukonElectricalScraper
+from scrapers.utilities.yukon_energy import JOINT_SCHEDULE_URL as YKB10_JOINT_SCHEDULE_URL, YukonEnergyScraper as YKB10_YukonEnergyScraper, parse_joint_schedules as YKB10_parse_joint_schedules
+import copy
+import json
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from scrapers.utils.parsing import DocumentPage
+
+YKB10_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+YKB10_TODAY = "2026-10-07T00:00:00+00:00"
+YKB10_RESIDENTIAL = {"1160", "1260", "1360", "1460", "1180", "1280", "1380", "1480"}
+YKB10_GENERAL = {"2160", "2260", "2360", "2460", "2170", "2270", "2370", "2470", "2180", "2280", "2380", "2480"}
+
+
+def YKB10__b10():
+    return json.loads((YKB10_FIXTURES / "yukon_b10.json").read_text(encoding="utf-8"))
+
+
+def YKB10__documents(book=True, gs_page=True):
+    documents = json.loads((YKB10_FIXTURES / "yukon_energy_building_rates.json").read_text(encoding="utf-8"))["documents"]
+    b10 = YKB10__b10()
+    if gs_page:
+        documents["cross_reference"]["pages"] += b10["cross_reference_other_pages"]["pages"]
+    if book:
+        documents["joint_schedule"] = b10["joint_schedule"]
+    return documents
+
+
+def YKB10__patched(scraper, documents):
+    by_url = {document["source_url"]: document for document in documents.values()}
+    html = "<body>" + "".join(f'<a href="{url}">Current rate schedule</a>' for url in by_url) + "</body>"
+
+    def pages(data):
+        return [DocumentPage(**page) for page in by_url[data.decode("utf-8")]["pages"]]
+
+    return (patch.object(scraper, "fetch_page", return_value=html),
+            patch.object(scraper, "fetch_rendered_page", return_value=None),
+            patch.object(scraper, "fetch_bytes", side_effect=lambda url: url.encode("utf-8")),
+            patch.object(scraper, "now_iso", return_value=YKB10_TODAY),
+            patch("scrapers.utilities.yukon_energy.extract_pdf_pages", side_effect=pages))
+
+
+def YKB10__scrape(documents, scraper=None):
+    scraper = scraper or YKB10_YukonEnergyScraper()
+    a, b, c, d, e = YKB10__patched(scraper, documents)
+    with a, b, c, d, e:
+        return scraper.scrape()
+
+
+def YKB10__live(records):
+    return {r.tariff_code: r for r in records if "live_parsed" in (r.notes or "")}
+
+
+def YKB10__base(record):
+    return [c.charge_value for c in record.components if c.component_type in {"fixed", "demand", "energy"}]
+
+
+def YKB10__mutate_book(documents, page_number, old, new, count=1):
+    page = next(p for p in documents["joint_schedule"]["pages"] if p["page_number"] == page_number)
+    assert old in page["text"]
+    page["text"] = page["text"].replace(old, new, count)
+
+
+def test_ykb10_fixture_sources_and_pages():
+    b10 = YKB10__b10()
+    assert b10["retrieved_on"] == "2026-10-07"
+    assert b10["joint_schedule"]["source_url"] == YKB10_JOINT_SCHEDULE_URL
+    assert [p["page_number"] for p in b10["cross_reference_other_pages"]["pages"]] == [2, 3]
+    numbers = [p["page_number"] for p in b10["joint_schedule"]["pages"]]
+    assert numbers[0] == 1 and 50 in numbers and set(range(5, 37)) <= set(numbers)
+
+
+def test_ykb10_joint_book_parses_every_building_schedule():
+    pages = [DocumentPage(**p) for p in YKB10__b10()["joint_schedule"]["pages"]]
+    terms = YKB10_parse_joint_schedules(pages, "2026-10-07")
+    assert set(terms) == YKB10_RESIDENTIAL | YKB10_GENERAL
+    assert terms["1160"]["customer"] == terms["1160"]["minimum"] == 14.65
+    assert terms["1480"]["blocks"] == [16.47, 17.47, 41.45]
+    assert terms["2160"]["demand"] == 7.39 and terms["2160"]["minimum"] == 36.95
+    assert terms["2170"]["minimum"] == 36.95
+    assert terms["2180"]["demand"] == 12.31 and terms["2180"]["blocks"] == [13.81, 15.0, 20.0, 12.86]
+    assert terms["2180"]["minimum"] == 61.55
+    assert all(t["effective"] == "2011-07-01" for t in terms.values())
+    assert "Whitehorse" in terms["1160"]["available"] and terms["1460"]["available"] == "In Old Crow."
+    assert YKB10_parse_joint_schedules(pages, "2011-06-30") == {}
+
+
+def test_ykb10_without_joint_book_only_1160_is_live():
+    records = YKB10__scrape(YKB10__documents(book=False))
+    assert set(YKB10__live(records)) == {"1160"}
+    assert len(YKB10__live(records)["1160"].components) == 9
+    seeds = {r.tariff_name for r in records if "seed_fallback" in (r.notes or "")}
+    assert seeds == {"General Service", "Residential Service — Diesel Communities"}
+
+
+def test_ykb10_all_residential_and_general_service_live_with_book():
+    records = YKB10__scrape(YKB10__documents())
+    live = YKB10__live(records)
+    assert set(live) == YKB10_RESIDENTIAL | YKB10_GENERAL
+    assert not [r for r in records if "seed_fallback" in (r.notes or "")]
+    for code in ("1160", "1260", "1360"):
+        assert YKB10__base(live[code]) == [14.65, 0.1214, 0.1282, 0.1399]
+    assert YKB10__base(live["1460"]) == [14.65, 0.1214, 0.1282, 0.3077]
+    for code in ("1180", "1280", "1380"):
+        assert YKB10__base(live[code]) == [18.47, 0.1647, 0.1747, 0.1885]
+    assert YKB10__base(live["1480"]) == [18.47, 0.1647, 0.1747, 0.4145]
+    for code in ("2160", "2360", "2170", "2370"):
+        assert YKB10__base(live[code]) == [7.39, 0.1, 0.1288, 0.1568, 0.1286]
+    assert YKB10__base(live["2260"]) == [7.39, 0.1, 0.1288, 0.1568, 0.1522]
+    assert YKB10__base(live["2470"]) == [7.39, 0.1, 0.1288, 0.1568, 0.3172]
+    assert YKB10__base(live["2180"]) == [12.31, 0.1381, 0.15, 0.2, 0.1286]
+    assert YKB10__base(live["2480"]) == [12.31, 0.1381, 0.15, 0.2, 0.3172]
+
+
+def test_ykb10_residential_conditions_and_riders():
+    live = YKB10__live(YKB10__scrape(YKB10__documents()))
+    for code in YKB10_RESIDENTIAL:
+        record = live[code]
+        government = code[2] == "8"
+        assert bool([c for c in record.components if c.component_type == "rebate"]) is not government
+        riders = {c.component_name: c.charge_value for c in record.components if c.component_type == "rider"}
+        assert riders == {
+            "Rider R - Base Rate Adjustment": 14.38, "Rider J - Base Rate Adjustment": 100.23,
+            "Rider J1 - Temporary True-Up": 15.91, "Rider F - Fuel Adjustment": 0.01,
+        }
+        minimum = "18.47" if government else "14.65"
+        assert f"Minimum monthly bill: the customer charge of ${minimum}" in record.notes
+        assert "Rider A:" in record.notes and "dwelling units" in record.notes
+        assert record.effective_date == "2026-10-01"
+        assert all(c.source_url and c.source_detail and c.effective_date for c in record.components)
+    assert "Watson Lake" in live["1360"].eligibility and "non-government use" in live["1180"].eligibility
+
+
+def test_ykb10_general_service_conditions_and_riders():
+    live = YKB10__live(YKB10__scrape(YKB10__documents()))
+    for code in YKB10_GENERAL:
+        record = live[code]
+        assert record.customer_class == "commercial" and record.rate_structure == "demand"
+        demand = next(c for c in record.components if c.component_type == "demand")
+        assert demand.charge_unit == "$/kW" and "5 kW" in demand.notes and "April-September" in demand.notes
+        assert demand.effective_date == "2011-07-01" and demand.source_url == YKB10_JOINT_SCHEDULE_URL
+        energy = [c for c in record.components if c.component_type == "energy"]
+        assert [c.tier_threshold for c in energy] == [2000, 15000, 20000, 20000]
+        assert "cross-reference page 2" in energy[3].source_detail
+        assert not [c for c in record.components if c.component_type in {"rebate", "fixed"}]
+        riders = [c for c in record.components if c.component_type == "rider"]
+        assert len(riders) == 4 and all("fixed" not in (c.notes or "") for c in riders)
+        minimum = "61.55" if code.endswith("80") else "36.95"
+        assert f"not less than ${minimum}" in record.notes
+        assert record.effective_date == "2026-10-01"
+
+
+def test_ykb10_general_service_needs_cross_reference_block_four():
+    records = YKB10__scrape(YKB10__documents(gs_page=False))
+    assert set(YKB10__live(records)) == YKB10_RESIDENTIAL
+    assert any(r.tariff_name == "General Service" and "seed_fallback" in r.notes for r in records)
+
+
+def test_ykb10_general_service_block_four_mismatch_drops_that_code():
+    documents = YKB10__documents()
+    YKB10__mutate_book(documents, 15, "For energy in excess of 20,000 kW.h 15.22", "For energy in excess of 20,000 kW.h 15.32")
+    assert set(YKB10__live(YKB10__scrape(documents))) == (YKB10_RESIDENTIAL | YKB10_GENERAL) - {"2260"}
+
+
+@pytest.mark.parametrize(("page", "old", "new"), [
+    (14, "power factor of 90 percent", "power factor of 85 percent"),
+    (13, "not less than $36.95.", "not less than the customer charge."),
+    (13, "(d) 5 kilowatts", "(d) 10 kilowatts"),
+    (13, "$7.39 / kW", "$7.39 / kV.A"),
+])
+def test_ykb10_incomplete_general_service_terms_fail_closed(page, old, new):
+    documents = YKB10__documents()
+    YKB10__mutate_book(documents, page, old, new)
+    assert set(YKB10__live(YKB10__scrape(documents))) == (YKB10_RESIDENTIAL | YKB10_GENERAL) - {"2160"}
+
+
+def test_ykb10_residential_book_mismatch_drops_only_that_code():
+    documents = YKB10__documents()
+    YKB10__mutate_book(documents, 9, "16.47", "16.57")
+    assert set(YKB10__live(YKB10__scrape(documents))) == (YKB10_RESIDENTIAL | YKB10_GENERAL) - {"1180"}
+
+
+def test_ykb10_1160_book_without_minimum_keeps_legacy_1160_only():
+    documents = YKB10__documents()
+    YKB10__mutate_book(documents, 5, "Customer Charge $14.65", "Customer Charge $15.65")
+    live = YKB10__live(YKB10__scrape(documents))
+    assert set(live) == (YKB10_RESIDENTIAL | YKB10_GENERAL)
+    assert "Minimum monthly bill" not in live["1160"].notes and YKB10__base(live["1160"])[0] == 14.65
+
+
+def test_ykb10_missing_minimum_bill_drops_residential_code():
+    documents = YKB10__documents()
+    YKB10__mutate_book(documents, 6, "The minimum monthly charge is", "The monthly charge is")
+    assert set(YKB10__live(YKB10__scrape(documents))) == (YKB10_RESIDENTIAL | YKB10_GENERAL) - {"1260"}
+
+
+def test_ykb10_1160_book_mismatch_rejects_all_live_output():
+    documents = YKB10__documents()
+    YKB10__mutate_book(documents, 5, "1,000 kW.h 12.14", "1,000 kW.h 12.24")
+    records = YKB10__scrape(documents)
+    assert not YKB10__live(records) and all(r.confidence == "unverified" for r in records)
+
+
+def test_ykb10_unrecognised_book_falls_back_to_1160_only():
+    documents = YKB10__documents()
+    for page in documents["joint_schedule"]["pages"]:
+        page["text"] = page["text"].replace("YECL/YEC Joint", "Draft")
+    assert set(YKB10__live(YKB10__scrape(documents))) == {"1160"}
+
+
+def test_ykb10_future_dated_schedule_is_not_live():
+    documents = YKB10__documents()
+    YKB10__mutate_book(documents, 29, "Effective: 2011 07 01", "Effective: 2027 01 01")
+    assert set(YKB10__live(YKB10__scrape(documents))) == (YKB10_RESIDENTIAL | YKB10_GENERAL) - {"2180"}
+
+
+def test_ykb10_bad_cross_reference_government_column_drops_only_that_section():
+    documents = YKB10__documents()
+    page = documents["cross_reference"]["pages"][0]
+    page["text"] = page["text"].replace("16.47 2.37 16.51 35.35", "16.47 2.37 16.51 3.35", 1)
+    assert set(YKB10__live(YKB10__scrape(documents))) == (YKB10_RESIDENTIAL | YKB10_GENERAL) - {"1180", "1280", "1380"}
+
+
+def test_ykb10_shared_riders_are_independent_copies():
+    live = YKB10__live(YKB10__scrape(YKB10__documents()))
+    fuel = [next(c for c in r.components if "Rider F" in c.component_name) for r in live.values()]
+    assert len({id(c) for c in fuel}) == len(fuel) == 20
+
+
+def test_ykb10_cross_reference_gs_page_only_publishes_block_four():
+    text = YKB10__b10()["cross_reference_other_pages"]["pages"][0]["text"]
+    assert all(code in text for code in YKB10_GENERAL)
+    assert text.count("Energy Block 4") == 6
+    assert "Customer" not in text and "Block 1" not in text and "Demand" not in text
+
+
+def test_ykb10_unmodelled_atco_riders_are_currently_zero():
+    riders = YKB10__b10()["atco_unmodelled_riders"]
+    texts = {name: doc["pages"][0]["text"] for name, doc in riders.items()}
+    assert "adjusted by the following rate: 0.0%" in texts["aey-yec-rider-r1-schedule.pdf"]
+    assert "All Energy consumed at $0.0 per kWh" in texts["aey-yec-rider-s-rate-schedule.pdf"]
+    assert "A rider of 0 \u00a2 per kWh" in texts["yec-rider-e.pdf"]
+    assert "RATE: -$0.0 per kWh" in texts["aey-yec-winter-electrical-affordability-rebate.pdf"]
+
+
+def test_ykb10_atco_yukon_reuses_joint_schedules():
+    scraper = YKB10_YukonElectricalScraper()
+    records = YKB10__scrape(YKB10__documents(), scraper)
+    live = YKB10__live(records)
+    assert set(live) == YKB10_RESIDENTIAL | YKB10_GENERAL
+    assert all(r.utility_name == "Yukon Electrical Company" for r in records)
+    assert all("ATCO Electric Yukon service areas" in r.notes for r in live.values())
+    assert YKB10__base(live["2160"]) == [7.39, 0.1, 0.1288, 0.1568, 0.1286]
+    assert not [r for r in records if "seed_fallback" in (r.notes or "")]
+
+
+def test_ykb10_atco_yukon_without_book_keeps_general_service_seed():
+    records = YKB10__scrape(YKB10__documents(book=False), YKB10_YukonElectricalScraper())
+    assert set(YKB10__live(records)) == {"1160"}
+    gs = [r for r in records if r.tariff_name == "General Service"]
+    assert len(gs) == 1 and gs[0].confidence == "unverified" and "seed_fallback" in gs[0].notes
+    assert not any(r.tariff_name == "Residential Service" for r in records)
+
+
+def test_ykb10_atco_yukon_js_shell_keeps_labelled_seeds():
+    scraper = YKB10_YukonElectricalScraper()
+    shell = "<html><body><noscript>You need to enable JavaScript to run this app.</noscript></body></html>"
+    with patch.object(scraper, "fetch_page", return_value=shell),\
+         patch.object(scraper, "fetch_rendered_page", return_value=shell):
+        records = scraper.scrape()
+    assert {r.tariff_name for r in records} == {"Residential Service", "General Service"}
+    assert all(r.confidence == "unverified" and "seed_fallback" in r.notes for r in records)
+    assert all(c.confidence == "unverified" for r in records for c in r.components)
