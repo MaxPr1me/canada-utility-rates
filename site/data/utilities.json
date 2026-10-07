@@ -340,6 +340,16 @@
     "notes": null
   },
   {
+    "id": 2455,
+    "name": "Enova Power Corp.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
     "id": 149,
     "name": "Entegrus Powerlines Inc.",
     "province": "ON",
@@ -402,6 +412,16 @@
   {
     "id": 197,
     "name": "Fort Frances Power Corp.",
+    "province": "ON",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 2471,
+    "name": "GrandBridge Energy Inc.",
     "province": "ON",
     "utility_type": "electricity",
     "website": null,

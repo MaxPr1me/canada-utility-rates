@@ -18,10 +18,12 @@ It works in three stages:
 
 GitHub Actions schedules a monthly scrape. Deployment and durable history across
 cloud runs have new workflows awaiting first CI run verification; see [README.md](README.md).
-The latest export has 353 latest live tariffs and 480 estimates; stored history contains
-358 live versions and 2,142 snapshots. Registry coverage is not the same as live coverage.
+The latest export has 672 latest live tariffs and 480 estimates; stored history contains
+677 live versions and 2,486 snapshots. Registry coverage is not the same as live coverage.
 The active campaign covers 16 provincial utilities (243 latest live records) and, from
 October 7, the four territorial utilities (109 latest live records). All 20 have live output.
+Ontario batch 1 (October 7) added 319 live records at 24 Ontario distributors, starting with
+Hydro One and the larger utilities.
 That includes conditional products and reference-only services, not that many
 fully audited building classes. SaskPower's scoped building schedules are audited;
 remaining utility gaps are listed in the [coverage matrix](docs/phase5_completion_matrix.md).
@@ -84,7 +86,8 @@ an exact percentage. Preserve history and do not stage unrelated work.
 | `scrapers/base.py` | The "template" that all scrapers follow. You don't change this unless you're adding a new feature that applies to ALL scrapers. |
 | `scrapers/utilities/bc_hydro.py` | Scrapes BC Hydro electricity rates. |
 | `scrapers/utilities/hydro_quebec.py` | Scrapes Hydro-Quebec electricity rates. |
-| `scrapers/utilities/ontario_ldc.py` | **Data-driven scraper for all 53 Ontario LDCs.** One class handles every Ontario local distribution company — the registry passes in which LDC to produce data for. Eventually, each LDC should be scraped from its own website. |
+| `scrapers/utilities/ontario_ldc.py` | **Data-driven scraper for every Ontario LDC.** One class handles every Ontario local distribution company. Configured distributors (`OEB_TARIFF_DOCUMENTS`) are read from their OEB-approved tariff PDF; the others still return estimates. |
+| `scrapers/utils/oeb_tariff.py` | Reads OEB "Tariff of Rates and Charges" PDFs: classes, rate zones, riders and their end dates, conditional charges, and fail-closed rejections. |
 | `scrapers/utilities/toronto_hydro.py` | Toronto Hydro (legacy scraper, separate from the LDC scraper). |
 | `scrapers/utilities/enbridge_gas.py` | Scrapes Enbridge Gas natural gas rates. |
 | `scrapers/utilities/atco_electric.py` | ATCO Electric distribution charges (Alberta). |
@@ -106,7 +109,7 @@ an exact percentage. Preserve history and do not stage unrelated work.
 
 | File | What it does |
 |---|---|
-| `data/sources/registry.json` | **The master list (system of record).** 84 registered utilities use 32 scraper modules; a 33rd, legacy Toronto module is unregistered. Some scrapers also contain source URL constants that must stay synchronized. |
+| `data/sources/registry.json` | **The master list (system of record).** 86 registered utilities use 32 scraper modules; a 33rd, legacy Toronto module is unregistered. Eight absorbed Ontario distributors have `status: "merged"` and a `merged_into` successor; monthly runs skip them but keep their history. Some scrapers also contain source URL constants that must stay synchronized. |
 | `data/inventory/utilities.json` | The full inventory of ALL Canadian utilities — even ones we don't scrape yet. This is the reference list. |
 | `data/db/rates.db` | The SQLite database where scraped rates are stored. Created automatically when you first run the scraper. |
 | `data/excel/old_urls.xlsm` | **Audit reference only.** An Excel file with historical URLs and rate data. NO scraper reads this file. It is git-ignored. |
@@ -448,7 +451,7 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 1,052 tests across 8 test modules, including `test_phase5_hardening` for
+There are 1,165 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
 The BC Hydro, FortisBC Electric, Hydro-Quebec, NL Hydro, Manitoba Hydro, NB Power,
 Newfoundland Power, Maritime Electric, NSPower, SaskPower, SaskEnergy, Centra Gas,
@@ -501,6 +504,7 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - If fetching fails or a schedule changes shape, `mark_fallback()` labels every tariff and component `unverified` and adds `Provenance: seed_fallback` to notes. Never raise this confidence by hand.
 - “Structural drift” in logs names components that could not be verified. Open the registry URL, find the current approved schedule, update the utility-specific interpretation and fixture, then run its targeted dry run.
 - Ontario updates start with the OEB common-rate page, then each distributor's approved tariff. Alberta wires, default retail, AESO, gas, and northern sources must remain separate and preserve their published classes, communities, tiers, and units.
+- Ontario batch 1 (October 7): 24 distributors are read from their OEB-approved Tariff of Rates and Charges PDF; the OEB bill-data XML is only a cross-check, never a value source. Homes and small business (GS<50) get the live provincial RPP energy price plus the distributor's delivery charges; larger demand classes show delivery charges only, because their energy price is market-based (deferred). Each rate zone gets its own records. A class that cannot be read cleanly is rejected, not guessed. Merged distributors keep their history; their successor now publishes the rates.
 - Test comparison locally with `python -m http.server --directory site 8000`: add two cards, open **Compare**, remove/replace either, and check the mobile horizontal table. It never calculates a bill total.
 - Every successful stored scrape appends `historical_snapshots`. Canonical hashes ignore component ordering but change for values, units, tiers, dates, or structure; old effective-date versions are never deleted.
 - The October 1 SaskPower batches parse 41 live tariffs, including completed reference-only classes. Building scope includes standard, bulk-metered and diesel residential service and R23/R24 renewable access. Standard E01/E03 keeps its identity only when both published columns agree; bulk fixed charges are per unit, not per account. Maintain this coverage; the four provincial gas utilities that were seed-only now have live parsers (October 5), so the next work is the recorded catalogue gaps. See [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).

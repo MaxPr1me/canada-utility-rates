@@ -1,6 +1,6 @@
 # Live Parser Gap Report
 
-**Updated:** 2026-10-07 (batch 11 close-out refresh stored and exported)
+**Updated:** 2026-10-07 (Ontario batch 1 stored and exported, after the batch 11 close-out refresh)
 **Scope:** Building-energy parser coverage, including single-family homes and building-related industrial general facility service defined by size, voltage or interruptibility. Process-specific farm, oil-field, irrigation, NGV fuelling, EV charging, lighting, wholesale/reseller and standby-only service is excluded; completed non-building schedules remain reference.
 
 **Evidence:** The October 7 batch 11 export (a full refresh of all 20 campaign utilities) has 358
@@ -9,6 +9,11 @@ utilities. Of those, 243 latest live records belong to the 16 provincial campaig
 109 to the four territorial utilities. DB validation: 0 errors,
 2 existing AESO warnings; 2,142 snapshots (352 appended, prior snapshots unchanged).
 History remains preserved. Fixtures, export timestamps and process-success counts alone do not prove live coverage.
+
+**Ontario batch 1 (October 7):** 319 latest live records at 24 Ontario distributors were added from
+OEB-approved tariff sheets (scrape run 25). Totals after it: 1,157 versions / 10,822 components /
+677 stored live / 480 seed; 672 latest live across 45 utilities; 2,486 snapshots (344 appended,
+prior unchanged); DB validation 0 errors, 2 existing AESO warnings; 1,165 tests.
 
 **Provenance:** complete fresh extraction uses `mark_live_parsed()`; contextual
 verification of known values uses `verify_official_records()`. Seed fallbacks remain
@@ -175,33 +180,42 @@ in-scope gas and building-catalogue gaps. Ontario and Alberta work stays deferre
 - **NTPC:** the PUB-approved June 1, 2026 schedule (rediscovered from node/796; index and PDF dates must match) gives residential and general service by zone, with Taltson split (Hay River has no stabilization rider and a misc. deferral rider) and government rates per community. The GNWT Cost of Living Subsidy is a dated conditional credit, and the TPSP printed 'Your cost' first-block price is a conditional alternative energy price (never a derived difference), both only for non-government residential and only when the residential page reconciles with the schedule. Snare's stated TPSP saving does not reconcile and is omitted (re-checked October 7: $41.22 stated vs $31.80 from published prices). Batch 11 adds Taltson retail Interruptible Energy For Heating (6.30 cents/kWh, schedule p20) as a conditional commercial record for general service/industrial customers in Fort Smith and Fort Resolution, gated on Terms and Conditions Schedule D eligibility quotes; no riders are stated for it and the wholesale variant is excluded. Standby, Naka wholesale, Con Mine and streetlighting are excluded. Yellowknife retail is Naka Power, so old Yellowknife seeds are no longer produced.
 - **Qulliq Energy:** six territory-wide classes from the April 1, 2025 interim rates; the customer-rates page's October 1, 2023 label is stale and values must match the interim notice class by class. Any later rate-application date or a missing 'until final rates are approved' statement fails closed. Re-checked October 7: URRC Report 2025-02 recommends approving the proposed 2025/26 rates (equal to interim) but no ministerial final instruction is published; the March 2026 fuel-rider refund was only an application. NESP seasonal kWh allowances are conditional and unpriced; government/municipal commercial base charges and the fuel rider have no published value.
 
+### Ontario Distributors (batch 1)
+
+- **Source:** each distributor's OEB-approved Tariff of Rates and Charges PDF (`OEB_TARIFF_DOCUMENTS` in `scrapers/utilities/ontario_ldc.py`, parsed by `scrapers/utils/oeb_tariff.py`; Hydro One's from hydroone.com). Case number and effective date must match. The OEB BillData XML is a name/zone cross-check only; it is not a value source. RPP TOU/Tiered/ULO prices come from the live OEB RPP page.
+- **Coverage:** 24 distributors, 319 latest live records. Residential and GS<50 records combine live RPP energy with tariff delivery charges; GS 50-4,999 kW and Large Use are delivery-only. One record set per rate zone (e.g. Alectra's five zones, Hydro One's Peterborough/Orillia service areas, Enova/GrandBridge successor zones). Hydro One ST covers only the >500 kW load path, with alternatives conditional.
+- **Rules:** proposed/draft tariff copies inside the PDF are ignored; duplicate identical copies are deduplicated; riders keep their end dates; Class B, non-WMP, EV-charging transmission and SSS administrative charges are conditional; a rider in the wrong unit for the class (e.g. Oakville's $/kW LRAM rider on an energy-billed class) rejects the class; garbled overlapping text rejects the class. Dedicated transformer station, co-generation, street lighting, USL, embedded distributor, microFIT and standby are excluded.
+- **Rejected (fail-closed):** Kingston and Midland-zone GS 50-4,999 kW; Oakville GS<50 stays a labelled seed. Rejected demand classes produce no record.
+- **Remaining:** 23 unconfigured distributors (batch 2); demand-class commodity/GA wait for the market-rate work. Eight absorbed registry entries are `merged` and kept as history.
+
 ## Aggregate Statistics
 
 | Metric | Value |
 |--------|-------|
-| Registered utilities | 84 |
-| Stored/exported tariff versions | 838, including history and older retained estimates |
-| Rate components | 5,417 |
-| Latest live tariffs / utilities with live output | 353 / 21 (243 across the 16 provincial targets; 109 across the four territorial utilities) |
-| Stored live versions | 358; includes older versions retained in history |
+| Registered utilities | 86 (8 Ontario entries `merged`) |
+| Stored/exported tariff versions | 1,157, including history and older retained estimates |
+| Rate components | 10,822 |
+| Latest live tariffs / utilities with live output | 672 / 45 (243 across the 16 provincial targets; 109 across the four territorial utilities; 319 across 24 Ontario distributors) |
+| Stored live versions | 677; includes older versions retained in history |
 | Seed tariffs | 480 |
-| Historical snapshots | 2,142; the batch 11 refresh appended 352, prior snapshots unchanged |
+| Historical snapshots | 2,486; Ontario batch 1 appended 344, prior snapshots unchanged |
 | DB validation | 0 errors, 2 existing AESO warnings |
 | Newly added SaskPower live tariffs | 40 since the original residential-only parser |
 | Observation provenance | October 1 CI baseline plus later stored regional batches through October 7; utility source-check dates are listed in the matrix |
-| Deterministic suite | 1,052 passing across 8 test modules |
+| Deterministic suite | 1,165 passing across 8 test modules |
 
 ## Recommended Next Steps
 
 1. Batch 11 closed the campaign's priced, dated gaps (FortisBC Energy U/RNG variants, SaskEnergy fees, Centra Mainline Interruptible transcription, NTPC Taltson heating). Monitor Qulliq's final GRA instruction, NTPC Snare TPSP, Centra Appendix A editions and the monthly Yukon joint-book file name. Maintain SaskPower's audited building schedules and retained references.
 2. Re-check source-blocked items periodically (see the matrix reconciliation table). Do not invent source-blocked prices. Market-indexed FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing and NL Hydro monthly non-firm prices wait for the Alberta/Ontario market-rate work. See the [matrix](phase5_completion_matrix.md).
-3. Finish with a twenty-utility restricted source refresh, class-level coverage reconciliation, full tests and preserved-history/export checks. Ontario and Alberta stay excluded from this campaign and retained in the data.
+3. Ontario batch 2: configure the 23 remaining distributors from their OEB-approved tariff sheets, then retry the rejected Kingston/Midland/Oakville classes. Alberta stays excluded and retained in the data.
 4. Browser-enabled source health, test/scrape failure issues, release-asset database history and a successful Monthly Scrape deployment trigger are implemented, pending first CI run verification. Outcome/provenance reporting remains on the separate operational track; do not claim the automation works until exercised.
 
 ## Phase 5-wide Status
 
 Use [phase5_completion_matrix.md](phase5_completion_matrix.md) as the maintained
 per-utility ledger and [README.md](../README.md) for the ordered roadmap. Ontario's
-53 registry identities still need a current distributor/merger audit. Official URL
+registry identities were reconciled in batch 1 (two successors added, eight entries merged); 23
+distributors remain unconfigured. Official URL
 discovery, effective dates, building-class interpretation and source-derived fixtures remain
 material work; a fail-safe seed verifier is not a completed dynamic parser.

@@ -783,8 +783,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/927401/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0055); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -840,8 +846,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936449/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0052); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -852,12 +864,36 @@
       "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
     },
     {
+      "name": "GrandBridge Energy Inc.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925329/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0037, Brantford Power/Energy+ zones); delivery value source",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": false
+        }
+      ],
+      "notes": "Ontario LDC — successor to Brantford Power Inc. and Energy+ Inc. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
       "name": "Brantford Power Inc.",
       "province": "ON",
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "merged",
+      "merged_into": "GrandBridge Energy Inc.",
       "sources": [
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
@@ -874,8 +910,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925320/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0051); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -931,7 +973,8 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "merged",
+      "merged_into": "Hydro One Networks Inc.",
       "sources": [
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
@@ -948,8 +991,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/932087/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0046); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -965,8 +1014,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/937681/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved revised Tariff of Rates and Charges (EB-2025-0044); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -982,8 +1037,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925336/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0043); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -999,8 +1060,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936464/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0041, ERTH Main/Goderich zones); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1016,7 +1083,8 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "merged",
+      "merged_into": "North Bay Hydro Distribution Ltd.",
       "sources": [
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
@@ -1033,8 +1101,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925198/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0040); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1084,8 +1158,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936646/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0036); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1118,7 +1198,8 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "merged",
+      "merged_into": "Alectra Utilities",
       "sources": [
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
@@ -1135,8 +1216,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/938337/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0034); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1203,8 +1290,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.hydroone.com/abouthydroone/RegulatoryInformation/rateschedules/Documents/Distribution%20Rates/dec_rate_order_HydroOne_20251223.PDF",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0030); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1226,8 +1319,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/943758/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2024-0115); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1266,8 +1365,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925245/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0026); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1278,12 +1383,36 @@
       "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
     },
     {
+      "name": "Enova Power Corp.",
+      "province": "ON",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.ontario_ldc",
+      "scraper_class": "OntarioLDCScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925278/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0045, Kitchener-Wilmot Hydro/Waterloo North zones); delivery value source",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "source_type": "html",
+          "description": "OEB electricity rate information for Ontario LDCs",
+          "is_primary": false
+        }
+      ],
+      "notes": "Ontario LDC — successor to Kitchener-Wilmot Hydro Inc. and Waterloo North Hydro Inc. Regulated by the Ontario Energy Board (OEB)."
+    },
+    {
       "name": "Kitchener-Wilmot Hydro Inc.",
       "province": "ON",
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "merged",
+      "merged_into": "Enova Power Corp.",
       "sources": [
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
@@ -1340,8 +1469,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936432/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0023); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1363,7 +1498,8 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "merged",
+      "merged_into": "Newmarket-Tay Power Distribution Ltd.",
       "sources": [
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
@@ -1380,8 +1516,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925125/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0022); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1397,8 +1539,20 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/935092/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved revised Tariff of Rates and Charges, Newmarket-Tay zone (EB-2025-0021); delivery value source",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/924987/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges, Midland zone (EB-2025-0021); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1414,8 +1568,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925214/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0020); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1431,8 +1591,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/939335/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0018, North Bay/Espanola zones); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1465,8 +1631,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925312/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0016); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1499,8 +1671,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/947598/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0014); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1584,7 +1762,8 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "merged",
+      "merged_into": "Entegrus Powerlines Inc.",
       "sources": [
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
@@ -1601,8 +1780,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936213/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0008); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1635,8 +1820,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925317/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0006); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1675,7 +1866,8 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "merged",
+      "merged_into": "Enova Power Corp.",
       "sources": [
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",

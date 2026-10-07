@@ -4,7 +4,7 @@
 Canada-wide utility rate scraping and browsing for building energy-cost analysis.
 
 ## Active Scope (2026-10-06)
-- The active campaign covers 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL plus, from October 7, the four territorial utilities (YT/NT/NU; non-market regulated service). ON/AB are excluded from this run but retained in the database/site. Ten batches are implemented, stored and exported; all 20 have live output but catalogue gaps remain.
+- The active campaign covers 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL plus, from October 7, the four territorial utilities (YT/NT/NU; non-market regulated service). ON/AB are excluded from this run but retained in the database/site; Ontario LDC work started October 7 as its own block (batch 1 stored). Ten batches are implemented, stored and exported; all 20 have live output but catalogue gaps remain.
 - Decisions (October 7): BC Hydro RS1828, Hydro-Quebec Rate F/FP and FortisBC Energy 11RNG excluded; market-indexed FortisBC RS38, BC Hydro RS1892, NSPower one-part real-time pricing and NL Hydro monthly non-firm prices (5.1L, Island non-thermal) are deferred to the Alberta/Ontario market-rate work.
 - Prioritize building tariffs: single-family and multi-unit residential, commercial,
   institutional and industrial service only where relevant to building energy loads.
@@ -24,7 +24,7 @@ Canada-wide utility rate scraping and browsing for building energy-cost analysis
 - **Do not assume scope.** If a requirement is unclear or has multiple reasonable interpretations, stop and ask the user which path to take before proceeding.
 
 ## Architecture
-- **Scrapers** (Python) live in `scrapers/utilities/`: 33 implementations plus `__init__.py`. The registry references 32 modules for 84 utility entries; legacy `toronto_hydro.py` is unregistered and Ontario shares one data-driven scraper.
+- **Scrapers** (Python) live in `scrapers/utilities/`: 33 implementations plus `__init__.py`. The registry references 32 modules for 86 utility entries (8 Ontario entries `merged`); legacy `toronto_hydro.py` is unregistered and Ontario shares one data-driven scraper.
   Each inherits from `scrapers/base.py:BaseScraper` and returns `list[TariffRecord]`.
 - **Pipeline** scripts in `pipeline/` handle orchestration: `run_scrape.py`, `export_json.py`, `diff_report.py`, `validate.py`.
   - `run_scrape.py` uses upsert logic (`ON CONFLICT ... DO UPDATE SET`) with NULL-safe `IS` comparisons for idempotent re-runs.
@@ -65,7 +65,7 @@ python -m playwright install chromium     # headless browser for JS-rendered pag
 python -m pipeline.run_scrape --init-db   # first time
 python -m pipeline.run_scrape             # scrape all
 python -m pipeline.export_json            # export for site
-pytest                                    # run tests (1,052 tests across 8 modules)
+pytest                                    # run tests (1,165 tests across 8 modules)
 ```
 
 ## Adding a utility
@@ -80,7 +80,12 @@ pytest                                    # run tests (1,052 tests across 8 modu
 - Province codes are 2-letter uppercase (BC, ON, QC, etc.).
 - Keep registry URLs and actual scraper URL constants synchronized; most modules do not consume registry sources dynamically.
 
-## Current snapshot and queue (2026-10-07; batch 11 close-out)
+## Current snapshot and queue (2026-10-07; Ontario batch 1)
+- Ontario batch 1 stored/exported (scrape run 25): 24 distributors, 319 latest live + 25 labelled seed. Totals: 1,157 versions / 10,822 components / 677 stored live / 480 seed; 672 latest live across 45 utilities; 2,486 snapshots (344 appended, prior unchanged); 0 validation errors, 2 AESO warnings; 1,165 tests.
+- Ontario architecture: `OEB_TARIFF_DOCUMENTS` (registry name -> [{url, case_number, zones, default_zone}]) in `ontario_ldc.py`; `scrapers/utils/oeb_tariff.py` parses tariff sheets (use `extract_tariff_pages`, not `normalize_document_text`, which drops repeated lines). BillData XML = name/zone cross-check only. Residential/GS<50 = live RPP energy + tariff delivery, legacy codes (TOU-R, GS-TOU-S...) in the default zone and "[zone]" names elsewhere; demand classes delivery-only. Open GS floor <=1,000 kW -> commercial, else large_use. Merged registry entries have `status: "merged"` + `merged_into` and are skipped by `get_active_utilities`; successors Enova Power Corp./GrandBridge Energy Inc. have no seed. A rejected demand class emits no record.
+- Ontario next (batch 2): 23 unconfigured distributors (see matrix), then Kingston/Midland GS 50-4,999 and Oakville GS<50 retries.
+
+## Batch 11 snapshot (2026-10-07; historical)
 - Batch 11 (full 20-utility refresh) stored/exported: 838 tariff versions / 5,417 components / 358 stored live / 480 seed; 353 latest live across 21 utilities: 243 at the 16 provincial targets and 109 at the four territorial utilities. History: 2,142 snapshots, 352 appended with prior snapshots unchanged. DB validation: 0 errors, 2 existing AESO warnings; 1,052 tests. Batch 11 added FortisBC Energy 1U/2U/3U and RNG variants (27), SaskEnergy service fees (8), Centra Mainline Interruptible transcription (13), NTPC Taltson heating (63). The matrix reconciliation table shows no priced, dated in-scope gap left; remaining items are source-blocked, excluded, monitored or deferred to market-rate work.
 - Batch 10 (historical): 824 tariff versions / 5,286 components / 344 stored live / 480 seed; 339 latest live across 21 utilities: 230 at the 16 provincial targets and 108 at the four territorial utilities. History: 1,790 snapshots. Latest counts: BC Hydro 17, FortisBC Electric 11, Hydro-Quebec 26, Manitoba Hydro 18, SaskPower 41, NB Power 10, NSPower 18, Maritime Electric 10, Newfoundland Power 11, NL Hydro 21, SaskEnergy 7, Centra 12, FortisBC Energy 16, Energir 5, Eastward 3, Liberty NB 4, NTPC 62, Qulliq 6, Yukon Energy 20, ATCO Electric Yukon 20; FortisAlberta 1.
 - Batch 10 added NSPower industrial 21/22/23 and Interruptible Rider 25; FortisBC Energy Rate 7 and delivery-only transportation 22/23/25/27; SaskEnergy closed Small Industrial; BC Hydro transmission pilots 2801/2802/2821/2822 and generation credits 2289/2290; Hydro-Quebec DR Commitment; Manitoba LUBD 2026-50..55; Maritime 310/320 audited (330/340 are Summerside wholesale reference); Centra class audit and NL Hydro non-firm (source-blocked)/wheeling (excluded) audits; and the four territorial parsers.
@@ -102,7 +107,7 @@ Update these files when the task changes architecture, adds major features, chan
 - `scrapers.utils.parsing` provides `DocumentPage`, page-aware fail-closed PDF extraction/section selection, CSV/XLSX readers, content hashing, effective-date/unit/currency normalization, and contextual verification.
 - Snapshot serialization is canonical JSON with sorted component dictionaries. Ordering alone is ignored; all semantic fields remain hashed. `diff_runs` compares append-only per-run snapshots.
 - The no-build comparison state is an in-memory two-item array in `site/js/app.js`; it aligns exact type/name/unit keys and never totals them.
-- Deterministic tests block unmocked network access. Run `pytest -q` (1,052 tests across 8 modules); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.
+- Deterministic tests block unmocked network access. Run `pytest -q` (1,165 tests across 8 modules); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.
 
 ## Active Regional Implementation
 - The 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL and, from October 7, the four territorial utilities are in this run. ON/AB remain untouched and retained in exports. Independent parser/fixture work may be parallel; shared tests/registry/docs/DB/export/git integration is serial. The active matrix queue supersedes its retained historical checkpoint instructions.

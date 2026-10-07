@@ -1,10 +1,12 @@
 # Phase 5 Completion Matrix
 
-**Updated:** 2026-10-07. Scope: all 84 registered utilities, not every utility
-in the broader Canadian inventory. The batch 11 export has 838 stored tariff versions / 5,417
-components / **358 stored live versions / 480 seed**. Latest-per-name coverage is
-**353 live tariffs across 21 utilities**; older versions remain in history. All 20 campaign utilities
-have live output; Ontario and the five Ontario/Alberta gas utilities have none.
+**Updated:** 2026-10-07 (Ontario batch 1). Scope: all 86 registered utilities (8 Ontario entries
+now `merged`), not every utility in the broader Canadian inventory. The export has 1,157 stored
+tariff versions / 10,822 components / **677 stored live versions / 480 seed**. Latest-per-name
+coverage is **672 live tariffs across 45 utilities** (319 at 24 Ontario distributors); older
+versions remain in history. History: 2,486 snapshots (Ontario batch 1 appended 344, prior
+snapshots unchanged). All 20 campaign utilities have live output; Alberta (except FortisAlberta
+Rate 11), 23 unconfigured Ontario distributors and the five Ontario/Alberta gas utilities have none.
 Counts include retained non-building reference records, not only building tariffs.
 
 ## Active Regional Campaign (2026-10-07)
@@ -124,23 +126,62 @@ snapshots remain intact after the expanded coverage.
 
 ## Ontario Registry Inventory
 
-There are 53 registry entries using one `OntarioLDCScraper`. Current company/merger
-identities and rate zones still need reconciliation before these can be described as
-53 active independent distributors. Every distributor below has **0 live tariffs in
-the integrated October 1 export**. The OEB common-price row is a shared source, not a utility.
+### Ontario batch 1 (October 7, 2026): Hydro One and the larger distributors
 
-Current code verifies seeded structures against configured HTML pages plus OEB common
-rates. It does not dynamically parse approved distributor PDFs. The strategy column
-below is the **target**, not delivered extraction capability; the fixture column denotes
-shared synthetic verifier tests, not saved source-derived tariff fixtures. Common energy
-prices cannot prove distributor-specific delivery/transmission/rider charges. Existing
-modelled street-lighting rows are reference data, not a requirement for building coverage.
+There are now 55 registry entries using one `OntarioLDCScraper`: 53 originals plus the
+successors **Enova Power Corp.** (Kitchener-Wilmot Hydro + Waterloo North zones) and
+**GrandBridge Energy Inc.** (Brantford Power + Energy+ zones). Eight absorbed entries carry
+`status: "merged"` and a `merged_into` successor: Kitchener-Wilmot and Waterloo North
+(Enova), Brantford (GrandBridge), Guelph (Alectra), St. Thomas (Entegrus), Midland
+(Newmarket-Tay), Espanola (North Bay) and Chapleau (Hydro One). Merged entries are left out of
+full monthly runs; their stored history and seeds are retained.
 
-All 53 distributor entries share `OntarioLDCScraper`; their live-parser status is
-blocked, and each seed is exported only as unverified fallback. The OEB common-price
-source is shared, not per-LDC; it cannot verify distributor-specific charges.
+**Value source:** each distributor's OEB-approved Tariff of Rates and Charges PDF
+(`OEB_TARIFF_DOCUMENTS` in `ontario_ldc.py`, parsed by `scrapers/utils/oeb_tariff.py`). Case
+numbers and effective dates must match. The OEB BillData XML is used only for name/zone
+mapping and cross-checks, never as a value source (stale zones, merged seasonal charges,
+aggregate riders). RPP commodity prices come from the live OEB RPP page (effective
+November 1, 2025). Residential and GS<50 records keep TOU/Tiered/ULO names, with live RPP
+energy plus tariff delivery charges. Demand classes (GS 50-4,999 kW and Large Use) are
+delivery-only; commodity/GA wait for the market-rate work.
 
-Distributors: Alectra Utilities, Algoma Power Inc., Atikokan Hydro Inc., Bluewater
+**Scope:** Residential, GS<50, GS 50-4,999 kW and Large Use. Street lighting, unmetered
+scattered load, embedded distributor, microFIT and standby are excluded. Street lighting
+stays a labelled seed. One record set is produced per rate zone; the default zone keeps the legacy
+tariff codes and the other zones add "[zone]" to the name. Default zones: Hydro One R1/GSe,
+Alectra PowerStream, Elexicon Veridian, ERTH Main, Newmarket-Tay main, North Bay main.
+Hydro One ST is included only for the >500 kW load path, with its alternatives conditional.
+Open GS classes with a floor at or below 1,000 kW map to commercial, otherwise to large use.
+
+| Distributor | Live / seed | Notes |
+|---|---|---|
+| Hydro One Networks | 50 / 1 | UR/R1/R2 and seasonal; AUR/AR; UGe/GSe; UGd/GSd/AUGd/AGSd; ST (>500 kW path); Peterborough and Orillia service areas |
+| Alectra Utilities | 44 / 1 | All rate zones (default PowerStream) |
+| Elexicon Energy | 19 / 1 | Whitby and Veridian zones |
+| Erie Thames (ERTH) | 18 / 1 | Main and Goderich zones |
+| Enova Power / GrandBridge Energy | 16 / 0 each | Successor zones; no seed |
+| North Bay Hydro | 15 / 1 | North Bay and Espanola zones |
+| Newmarket-Tay | 13 / 1 | Revised Newmarket-Tay sheet plus Midland zone; Midland GS 50-4,999 rejected (garbled text) |
+| Toronto Hydro | 12 / 1 | |
+| Hydro Ottawa | 9 / 1 | Implemented June 1, 2026 |
+| Milton, Bluewater, Oshawa | 9 / 1 each | |
+| Halton Hills, Synergy North, Enwin, London, Entegrus | 8 / 1 each | Enwin Dedicated Transformer Station excluded; London co-generation class excluded |
+| Niagara Peninsula, Essex, Greater Sudbury | 7 / 1 each | |
+| Kingston Hydro | 7 / 1 | GS 50-4,999 rejected (text out of order) |
+| Burlington Hydro | 7 / 1 | Proposed/draft tariff copy in the PDF is ignored |
+| Oakville Hydro | 5 / 4 | GS<50 TOU/Tiered/ULO stay seed (LRAM rider in $/kW) |
+
+Total: **319 live records across 24 distributors** (stored October 7, 2026, scrape run 25;
+plus 25 labelled seed records). Rejected
+demand classes produce no record; their old seed estimates are not re-emitted alongside
+live demand records. Every failure is per class (fail-closed).
+
+**Still unconfigured (seed only, batch 2):** Algoma, Atikokan, Canadian Niagara,
+Centre Wellington, Festival, Fort Frances, Grimsby, Hearst, Hydro 2000, Hydro Hawkesbury,
+InnPower, Lakefront, Lakeland, Northern Ontario Wires, Orangeville, Ottawa River, PUC
+Distribution, Rideau St. Lawrence, Sioux Lookout, Tillsonburg, Wasaga, Welland and Westario.
+
+Original registry distributors: Alectra Utilities, Algoma Power Inc., Atikokan Hydro Inc., Bluewater
 Power Distribution, Brantford Power Inc., Burlington Hydro Inc., Canadian Niagara
 Power Inc., Centre Wellington Hydro Ltd., Chapleau Public Utilities Corp., Elexicon
 Energy Inc., Entegrus Powerlines Inc., Enwin Utilities Ltd., Erie Thames Powerlines
@@ -159,11 +200,8 @@ St. Thomas Energy Inc., Synergy North Corporation, Tillsonburg Hydro Inc., Toron
 Hydro-Electric System Ltd., Wasaga Distribution Inc., Waterloo North Hydro Inc.,
 Welland Hydro-Electric System Corp., Westario Power Inc.
 
-Extra utility-site URLs in the archived table: Alectra, Burlington, Hydro One,
-Hydro Ottawa, Kitchener-Wilmot, London and Toronto.
-Pilot materially different documents, such as Toronto, Ottawa and multi-zone Hydro One,
-before rollout. Legacy `toronto_hydro.py` is unregistered; do not duplicate Toronto's
-current registry entry. No interim mixed-live tariff label should bypass missing delivery data.
+Legacy `toronto_hydro.py` is unregistered; do not duplicate Toronto's current registry
+entry. No interim mixed-live tariff label should bypass missing delivery data.
 
 ## Alberta Electricity
 
@@ -259,6 +297,10 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
 | Qulliq Energy | 6 | Streetlights; standby | Government/municipal commercial base charges; fuel rider | Final 2025/26 GRA instruction (URRC recommended approval) |
 
 ## Next Batches and Acceptance
+
+0. **Ontario batch 2 (next):** configure the 23 remaining distributors (list in the Ontario
+   section) from their OEB-approved tariff sheets. Then retry Kingston/Midland GS 50-4,999 and
+   Oakville GS<50 ($/kW LRAM rider). Ontario demand-class commodity/GA stays with the market-rate work.
 
 1. The campaign's priced, dated gaps are closed (batch 11). Monitor: Qulliq final GRA instruction, NTPC Snare TPSP reconciliation, Centra Appendix A edition changes, monthly Yukon joint-book file name.
 2. Re-check source-blocked items periodically (reconciliation table). Market-indexed FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing and NL Hydro monthly non-firm prices wait for the Alberta/Ontario market-rate work.
