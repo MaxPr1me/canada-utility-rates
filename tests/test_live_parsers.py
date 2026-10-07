@@ -6950,3 +6950,781 @@ def test_ykb10_atco_yukon_js_shell_keeps_labelled_seeds():
     assert {r.tariff_name for r in records} == {"Residential Service", "General Service"}
     assert all(r.confidence == "unverified" and "seed_fallback" in r.notes for r in records)
     assert all(c.confidence == "unverified" for r in records for c in r.components)
+
+
+# ======================================================================
+# Centra Mainline Interruptible transcription (batch 11)
+# ======================================================================
+from scrapers.utilities.centra_gas import CentraGasScraper as CGB11_CentraGasScraper
+import copy
+import json
+import logging
+from datetime import date
+from pathlib import Path
+
+from scrapers.utilities import centra_gas
+
+CGB11_FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "centra_gas.json"
+CGB11_TODAY = date(2026, 10, 7)
+CGB11_EXISTING = {"SGS", "SGS-MKT", "COM-SGS", "COM-SGS-MKT", "COM-LGS", "COM-LGS-MKT",
+            "COM-HVF-S", "COM-HVF-T", "COM-MFS-S", "COM-MFS-T", "COM-IS-S", "COM-IS-T"}
+
+
+def CGB11__document():
+    return json.loads(CGB11_FIXTURE_PATH.read_text(encoding="utf-8"))
+
+
+def CGB11__appendix(transcription, hashes=None):
+    parts = ["PDF page 19 " + transcription["evidence"]["19"], "PDF page 50 " + transcription["evidence"]["50"]]
+    for number, page in transcription["pages"].items():
+        digest = (hashes or {}).get(number, page["image_sha256"])
+        parts.append("PDF page " + number + " image-sha256 " + digest + " " + page["header_text"])
+    return " ".join(parts)
+
+
+def CGB11__pages(with_appendix=True, hashes=None):
+    document = CGB11__document()
+    pages = {key: page["text"] for key, page in document["pages"].items()}
+    if with_appendix:
+        pages["appendix_a"] = CGB11__appendix(document["appendix_a_transcription"], hashes)
+    return pages
+
+
+def CGB11__parse(pages):
+    scraper = CGB11_CentraGasScraper()
+    records = scraper.parse_pages(pages, CGB11_TODAY)
+    return scraper, {record.tariff_code: record for record in records}
+
+
+def CGB11__components(record):
+    return {component.component_name: component for component in record.components}
+
+
+def test_cgb11_module_transcription_mirrors_fixture():
+    fixture = CGB11__document()["appendix_a_transcription"]
+    module = centra_gas.APPENDIX_A
+    assert fixture["board_order"] == module["board_order"] and fixture["effective"] == module["effective"]
+    assert fixture["transcribed"] == module["transcribed"] == "2026-10-07"
+    assert {int(number) for number in fixture["pages"]} == set(module["pages"])
+    for number, page in fixture["pages"].items():
+        mirror = module["pages"][int(number)]
+        assert page["image_sha256"] == mirror["image_sha256"]
+        assert page["label"] == mirror["label"] and page["title"] == mirror["title"]
+        assert page["rows"] == mirror["rows"]
+
+
+def test_cgb11_hash_match_builds_mainline_interruptible():
+    scraper, records = CGB11__parse(CGB11__pages())
+    assert set(records) == CGB11_EXISTING | {"COM-MLI-S"}
+    assert scraper.unmodelled_classes == []
+    record = records["COM-MLI-S"]
+    assert record.tariff_name == "Commercial — Mainline Interruptible Sales (Firm Delivery)"
+    assert record.customer_class == "commercial" and record.sub_class == "mainline interruptible"
+    assert record.rate_structure == "demand" and record.usage_min == 680000 and record.usage_unit == "m³/year"
+    assert record.effective_date == "2026-08-01"
+    assert record.source_url == centra_gas.PAGE_URLS["schedule"]
+    assert "PDF page 82" in record.source_page
+
+
+def test_cgb11_values_units_and_medium_confidence():
+    _, records = CGB11__parse(CGB11__pages())
+    record = records["COM-MLI-S"]
+    parts = CGB11__components(record)
+    expected = {
+        "Basic Monthly Charge": (1306.98, "$/month"),
+        "Gas Commodity": (0.066, "$/m³"),
+        "Transportation to Centra": (0.0, "$/m³"),
+        "Distribution Charge": (0.0184, "$/m³"),
+        "Demand Transportation Charge": (0.1816, "$/m³/month"),
+        "Demand Distribution Charge": (0.2271, "$/m³/month"),
+        "Alternate Supply Service": (0.003, "$/m³"),
+        "Federal Carbon Charge": (0.0, "$/m³"),
+    }
+    assert {name: (part.charge_value, part.charge_unit) for name, part in parts.items()} == expected
+    assert record.confidence == "medium"
+    assert all(part.confidence == "medium" for part in record.components)
+    assert "Delivery" not in parts and not any("0.4087" in str(part.charge_value) for part in record.components)
+    for name, part in parts.items():
+        if name == "Federal Carbon Charge":
+            assert part.effective_date == "2025-04-01" and "revenue-agency" in part.source_url
+            continue
+        assert part.source_url == centra_gas.PAGE_URLS["schedule"]
+        assert "Appendix A page 4 of 4 (PDF page 82)" in part.source_detail
+        assert "Transcribed from scanned official Appendix A page 4 of 4" in part.notes
+        assert "fails closed if the page changes" in part.notes
+    assert "PDF page 34" in parts["Demand Distribution Charge"].source_detail
+    assert "Conditional" in parts["Alternate Supply Service"].notes
+    assert "Transcribed from scanned official Appendix A" in record.notes
+    assert "base-only" in record.notes
+
+
+def test_cgb11_conditions_are_recorded_not_priced():
+    _, records = CGB11__parse(CGB11__pages())
+    eligibility = records["COM-MLI-S"].eligibility
+    for phrase in ("above medium pressure", "Interruptible Sales Service in conjunction with Firm Delivery",
+                   "stand-by fuel", "Monthly billing demand", "pass-through commodity/transport"):
+        assert phrase in eligibility
+
+
+def test_cgb11_live_marking_keeps_medium_confidence():
+    scraper, records = CGB11__parse(CGB11__pages())
+    marked = scraper.mark_live_parsed([records["COM-MLI-S"]])[0]
+    assert marked.notes.startswith("Provenance: live_parsed.")
+    assert marked.confidence == "medium"
+    assert all(part.confidence == "medium" and part.notes.startswith("Provenance: live_parsed.")
+               for part in marked.components)
+
+
+def test_cgb11_hash_mismatch_omits_only_mainline_interruptible(caplog):
+    with caplog.at_level(logging.WARNING):
+        scraper, records = CGB11__parse(CGB11__pages(hashes={"82": "0" * 64}))
+    assert set(records) == CGB11_EXISTING
+    assert scraper.unmodelled_classes == ["Mainline Interruptible (with firm delivery)"]
+    assert "image changed since the reviewed transcription" in caplog.text
+
+
+def test_cgb11_base_only_page_hash_mismatch_also_fails_closed():
+    _, records = CGB11__parse(CGB11__pages(hashes={"80": "f" * 64}))
+    assert set(records) == CGB11_EXISTING
+
+
+def test_cgb11_missing_page_omits_only_mainline_interruptible():
+    pages = CGB11__pages()
+    pages["appendix_a"] = pages["appendix_a"].split(" PDF page 82 ")[0]
+    scraper, records = CGB11__parse(pages)
+    assert set(records) == CGB11_EXISTING
+    assert scraper.unmodelled_classes == ["Mainline Interruptible (with firm delivery)"]
+
+
+def test_cgb11_empty_appendix_is_a_gap():
+    pages = CGB11__pages()
+    pages["appendix_a"] = ""
+    scraper, records = CGB11__parse(pages)
+    assert set(records) == CGB11_EXISTING
+    assert scraper.unmodelled_classes == ["Mainline Interruptible (with firm delivery)"]
+
+
+def test_cgb11_changed_edition_header_fails_closed():
+    pages = CGB11__pages()
+    pages["appendix_a"] = pages["appendix_a"].replace("Approved by Board Order: 111/26", "Approved by Board Order: 140/26")
+    _, records = CGB11__parse(pages)
+    assert set(records) == CGB11_EXISTING
+
+
+def test_cgb11_missing_election_evidence_fails_closed():
+    pages = CGB11__pages()
+    pages["appendix_a"] = pages["appendix_a"].replace("Interruptible Sales Service (in conjunction", "Sales Service (in conjunction")
+    _, records = CGB11__parse(pages)
+    assert set(records) == CGB11_EXISTING
+
+
+def test_cgb11_text_cross_check_mismatch_fails_closed():
+    pages = CGB11__pages()
+    pages["commercial"] = pages["commercial"].replace("$1,409.45", "$1,410.45")
+    _, records = CGB11__parse(pages)
+    assert "COM-MLI-S" not in records
+    assert {"COM-IS-S", "COM-IS-T"} <= set(records)
+
+
+def test_cgb11_transcription_arithmetic_inconsistency_fails_closed(monkeypatch):
+    broken = copy.deepcopy(centra_gas.APPENDIX_A)
+    broken["pages"][82]["rows"]["Mainline Interruptible (with firm delivery)"]["demand_delivery"] = 0.4088
+    monkeypatch.setattr(centra_gas, "APPENDIX_A", broken)
+    _, records = CGB11__parse(CGB11__pages())
+    assert set(records) == CGB11_EXISTING
+
+
+def test_cgb11_without_appendix_input_behaviour_is_unchanged():
+    scraper, records = CGB11__parse(CGB11__pages(with_appendix=False))
+    assert set(records) == CGB11_EXISTING
+    assert scraper.unmodelled_classes == []
+
+
+def test_cgb11_existing_twelve_classes_unchanged():
+    _, before = CGB11__parse(CGB11__pages(with_appendix=False))
+    _, after = CGB11__parse(CGB11__pages())
+    assert {code: after[code] for code in CGB11_EXISTING} == before
+
+
+def test_cgb11_class_audit_treats_mainline_interruptible_as_modelled_only_when_built():
+    pages = CGB11__pages()
+    pages["classes"] = pages["classes"].replace(
+        "Mainline Class, Special", "Mainline Class, Mainline Interruptible Class, Special")
+    scraper, _ = CGB11__parse(pages)
+    assert scraper.unmodelled_classes == []
+    pages["appendix_a"] = ""
+    scraper, _ = CGB11__parse(pages)
+    assert scraper.unmodelled_classes == ["Mainline Interruptible Class", "Mainline Interruptible (with firm delivery)"]
+
+
+# ======================================================================
+# FortisBC Energy RNG and Customer Choice variants (batch 11)
+# ======================================================================
+from scrapers.utilities.fortisbc_energy import FortisBCEnergyScraper as FBEB11_FortisBCEnergyScraper
+"""FortisBC Energy optional variants: Customer Choice 1U/2U/3U and RNG 1RNG/2RNG/3RNG/5RNG/7RNG (batch 11)."""
+import json
+from datetime import date
+from pathlib import Path
+
+import pytest
+
+
+FBEB11_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "fortisbc_energy.json"
+FBEB11_TODAY = date(2026, 10, 7)
+FBEB11_VARIANT_KEYS = ("rate1u", "rate2u", "rate3u", "rate1b", "rate2b", "rate3b", "rate5b", "rate7b")
+FBEB11_NAMES = {
+    "rate1u": "Residential — Rate 1U (Customer Choice)",
+    "rate2u": "Commercial — Rate 2U (Customer Choice)",
+    "rate3u": "Commercial — Rate 3U (Customer Choice)",
+    "rate1b": "Residential — Rate 1RNG (Renewable Natural Gas)",
+    "rate2b": "Commercial — Rate 2RNG (Renewable Natural Gas)",
+    "rate3b": "Commercial — Rate 3RNG (Renewable Natural Gas)",
+    "rate5b": "Commercial — Rate 5RNG (Renewable Natural Gas)",
+    "rate7b": "Industrial — Rate 7RNG (Renewable Natural Gas)",
+}
+FBEB11_BATCH10_KEYS = ("rate7", "rate22", "rate23", "rate25", "rate27")
+FBEB11_FN_NAMES = {
+    "rate1b": "Residential — Rate 1RNG (Renewable Natural Gas, Fort Nelson)",
+    "rate2b": "Commercial — Rate 2RNG (Renewable Natural Gas, Fort Nelson)",
+    "rate3b": "Commercial — Rate 3RNG (Renewable Natural Gas, Fort Nelson)",
+}
+FBEB11_EXISTING = {
+    "Residential — Rate 1", "Residential — Rate 1 (Fort Nelson)", "Commercial — Rate 2",
+    "Commercial — Rate 2 (Fort Nelson)", "Commercial — Rate 3", "Commercial — Rate 3 (Fort Nelson)",
+    "Commercial — Rate 4", "Commercial — Rate 5", "Industrial — Rate 7", "Industrial — Rate 22 (Transportation)",
+    "Commercial — Rate 23 (Transportation)", "Commercial — Rate 25 (Transportation)",
+    "Industrial — Rate 27 (Transportation)",
+}
+
+
+def FBEB11_load_document():
+    return json.loads(FBEB11_FIXTURE.read_text(encoding="utf-8"))
+
+
+def FBEB11_base_inputs(document):
+    pages = {key: page["text"] for key, page in document["pages"].items()}
+    pages["business_rate45"] += " " + document["business_rate7"]["text"]
+    pages["tariffs"] = document["tariffs_transport"]["text"]
+    urls = {key: document["pages"][key]["url"] for key in ("rate4", "rate5")}
+    for key in FBEB11_BATCH10_KEYS:
+        pages[key] = document[key]["text"]
+        urls[key] = document[key]["url"]
+    return pages, urls
+
+
+def FBEB11_full_inputs(document):
+    pages, urls = FBEB11_base_inputs(document)
+    for key in FBEB11_VARIANT_KEYS:
+        pages[key] = document[key]["text"]
+        urls[key] = document[key]["url"]
+    return pages, urls
+
+
+def FBEB11_parse(pages, urls):
+    return {r.tariff_name: r for r in FBEB11_FortisBCEnergyScraper().parse_pages(pages, FBEB11_TODAY, document_urls=urls)}
+
+
+def FBEB11_records(document=None):
+    return FBEB11_parse(*FBEB11_full_inputs(document or FBEB11_load_document()))
+
+
+def FBEB11_values(record):
+    return {c.component_name: (c.charge_value, c.charge_unit, c.sub_component) for c in record.components}
+
+
+def FBEB11_all_names():
+    return FBEB11_EXISTING | set(FBEB11_NAMES.values()) | set(FBEB11_FN_NAMES.values())
+
+
+def FBEB11_names_for(*keys):
+    return {FBEB11_NAMES[key] for key in keys} | {FBEB11_FN_NAMES[key] for key in keys if key in FBEB11_FN_NAMES}
+
+
+def test_fbeb11_all_variants_parse_with_existing_preserved():
+    found = FBEB11_records()
+    assert set(found) == FBEB11_all_names()
+    document = FBEB11_load_document()
+    for key, name in FBEB11_NAMES.items():
+        record = found[name]
+        assert record.source_url == document[key]["url"]
+        assert record.effective_date == "2026-07-01"
+        assert record.sub_class == "Mainland and Vancouver Island Service Area"
+        for component in record.components:
+            assert component.source_url and component.source_detail and component.effective_date
+        assert any(c.component_type == "carbon" and c.charge_value == 0.0 for c in record.components)
+
+
+def test_fbeb11_existing_records_identical_with_and_without_variants():
+    document = FBEB11_load_document()
+    before = FBEB11_parse(*FBEB11_base_inputs(document))
+    after = FBEB11_parse(*FBEB11_full_inputs(document))
+    assert set(before) == FBEB11_EXISTING
+    for name, record in before.items():
+        assert after[name] == record
+
+
+def test_fbeb11_customer_choice_1u_is_delivery_only():
+    record = FBEB11_records()[FBEB11_NAMES["rate1u"]]
+    assert (record.tariff_code, record.customer_class) == ("Rate 1U", "residential")
+    assert FBEB11_values(record) == {
+        "Basic Charge": (0.4085, "$/day", None),
+        "Rider 2 (Clean Growth Innovation Fund Account)": (0.0131, "$/day", None),
+        "Delivery Charge": (8.257, "$/GJ", None),
+        "Rider 5 (Revenue Stabilization Adjustment Charge)": (0.212, "$/GJ", None),
+        "Storage and Transport Charge": (1.347, "$/GJ", None),
+        "Rider 6 (Midstream Cost Reconciliation Account)": (0.216, "$/GJ", None),
+        "Rider 8 (Storage and Transport RNG)": (0.909, "$/GJ", None),
+        "BC Carbon Tax": (0.0, "$/GJ", None),
+    }
+    assert not [c for c in record.components if c.component_type == "commodity"]
+    assert "marketer" in record.notes and "not included" in record.notes
+    assert "single-family residences" in record.eligibility
+    assert "Order G-131-26" in record.source_page
+
+
+def test_fbeb11_customer_choice_2u_3u_volumes_and_terms():
+    found = FBEB11_records()
+    two, three = found[FBEB11_NAMES["rate2u"]], found[FBEB11_NAMES["rate3u"]]
+    assert (two.usage_min, two.usage_max, two.usage_unit) == (None, 2000.0, "GJ/year")
+    assert (three.usage_min, three.usage_max, three.usage_unit) == (2000.0, None, "GJ/year")
+    assert "minimum of one Year" in two.eligibility and "minimum period of one Year" in three.eligibility
+    assert FBEB11_values(two)["Basic Charge"] == (1.4178, "$/day", None)
+    assert FBEB11_values(two)["Storage and Transport Charge"] == (1.365, "$/GJ", None)
+    assert FBEB11_values(three)["Basic Charge"] == (4.3395, "$/day", None)
+    assert FBEB11_values(three)["Delivery Charge"] == (5.165, "$/GJ", None)
+    assert FBEB11_values(three)["Rider 6 (Midstream Cost Reconciliation Account)"] == (0.188, "$/GJ", None)
+
+
+def test_fbeb11_rng_1b_replaces_cost_of_gas_for_selected_share():
+    record = FBEB11_records()[FBEB11_NAMES["rate1b"]]
+    assert record.tariff_code == "Rate 1RNG"
+    v = FBEB11_values(record)
+    assert v["Basic Charge"] == (0.4085, "$/day", None)
+    assert v["Delivery Charge"] == (8.257, "$/GJ", None)
+    assert v["Storage and Transport Charge"] == (1.347, "$/GJ", None)
+    assert v["Cost of Gas"] == (1.660, "$/GJ", "conditional")
+    assert v["Cost of Renewable Natural Gas (RNG Charge)"] == (8.660, "$/GJ", "conditional")
+    rng = next(c for c in record.components if c.component_name.startswith("Cost of Renewable"))
+    assert "instead of the Cost of Gas" in rng.notes and "5% to 100%" in rng.notes
+    assert "Rate Schedule 1U are ineligible" in record.eligibility
+
+
+def test_fbeb11_rng_2b_3b_use_mainland_column_only():
+    found = FBEB11_records()
+    two, three = FBEB11_values(found[FBEB11_NAMES["rate2b"]]), FBEB11_values(found[FBEB11_NAMES["rate3b"]])
+    assert two["Storage and Transport Charge"] == (1.365, "$/GJ", None)
+    assert three["Storage and Transport Charge"] == (1.171, "$/GJ", None)
+    assert three["Rider 6 (Midstream Cost Reconciliation Account)"] == (0.188, "$/GJ", None)
+    assert found[FBEB11_NAMES["rate3b"]].usage_min == 2000.0 and found[FBEB11_NAMES["rate2b"]].usage_max == 2000.0
+
+
+def test_fbeb11_rng_5b_monthly_demand_and_7b_interruptible():
+    found = FBEB11_records()
+    five, seven = found[FBEB11_NAMES["rate5b"]], found[FBEB11_NAMES["rate7b"]]
+    assert FBEB11_values(five) == {
+        "Basic Charge": (469.00, "$/month", None),
+        "Rider 2 (Clean Growth Innovation Fund Account)": (0.40, "$/month", None),
+        "Demand Charge": (37.735, "$/GJ/month of daily demand", None),
+        "Delivery Charge": (1.352, "$/GJ", None),
+        "Storage and Transport Charge": (0.784, "$/GJ", None),
+        "Rider 6 (Midstream Cost Reconciliation Account)": (0.126, "$/GJ", None),
+        "Rider 8 (Storage and Transport RNG)": (0.909, "$/GJ", None),
+        "Cost of Gas": (1.660, "$/GJ", "conditional"),
+        "Cost of Renewable Natural Gas (RNG Charge)": (8.660, "$/GJ", "conditional"),
+        "BC Carbon Tax": (0.0, "$/GJ", None),
+    }
+    assert five.rate_structure == "demand" and "General Firm Service Agreement" in five.notes
+    assert FBEB11_values(seven)["Basic Charge"] == (880.00, "$/month", None)
+    assert FBEB11_values(seven)["Delivery Charge"] == (2.199, "$/GJ", None)
+    assert seven.customer_class == "industrial" and "Unauthorized Overrun Gas" in seven.notes
+
+
+@pytest.mark.parametrize("key, old, new", [
+    ("rate1u", "1. Basic Charge per Day $ 0.4085", "1. Basic Charge per Day $ 0.5085"),
+    ("rate2u", "Rate Schedule 36 Service Agreement", "Rate Schedule 99 Service Agreement"),
+    ("rate3u", "Effective Date: July 1, 2026", "Effective Date: July 1, 2027"),
+    ("rate1b", "ranges between 5% of RNG and 100% of RNG", "ranges between some RNG"),
+    ("rate2b", "Cost of Renewable Natural Gas (RNG Charge) per Gigajoule2,3 $ 8.660",
+     "Cost of Renewable Natural Gas (RNG Charge) per Gigajoule2,3 TBD"),
+    ("rate3b", "of greater than 2,000 Gigajoules", "of less than 2,000 Gigajoules"),
+    ("rate5b", "Daily Demand is equal to 1.10", "Daily Demand is"),
+    ("rate7b", "RATE SCHEDULE 7RNG", "RATE SCHEDULE 7X"),
+])
+def test_fbeb11_each_variant_fails_closed_independently(key, old, new):
+    document = FBEB11_load_document()
+    assert old in document[key]["text"]
+    document[key]["text"] = document[key]["text"].replace(old, new)
+    found = FBEB11_records(document)
+    assert set(found) == FBEB11_all_names() - FBEB11_names_for(key)
+
+
+def test_fbeb11_missing_documents_reject_only_those_variants():
+    document = FBEB11_load_document()
+    pages, urls = FBEB11_full_inputs(document)
+    del pages["rate2b"]
+    urls.pop("rate3u")
+    found = FBEB11_parse(pages, urls)
+    assert set(found) == FBEB11_all_names() - FBEB11_names_for("rate2b", "rate3u")
+
+
+def test_fbeb11_price_follows_source():
+    document = FBEB11_load_document()
+    document["rate5b"]["text"] = document["rate5b"]["text"].replace("per Gigajoule3,4 $ 8.660", "per Gigajoule3,4 $ 9.100")
+    assert FBEB11_values(FBEB11_records(document)[FBEB11_NAMES["rate5b"]])["Cost of Renewable Natural Gas (RNG Charge)"][0] == 9.1
+
+
+def test_fbeb11_carbon_evidence_still_required():
+    pages, urls = FBEB11_full_inputs(FBEB11_load_document())
+    pages["carbon"] = "Carbon tax applies."
+    assert FBEB11_parse(pages, urls) == {}
+
+
+def test_fbeb11_discovery_finds_variant_links_but_not_vehicle_rng():
+    index = "".join(f'<a href="https://y/gas-utility/rateschedule_{n}.pdf?sfvrsn=1">R</a>'
+                    for n in ("1", "1u", "1b", "2b", "3vrng", "5b", "5vrng", "7b", "11b", "22"))
+    found = FBEB11_FortisBCEnergyScraper._discover_documents("", index)
+    assert found == {"rate22": "https://y/gas-utility/rateschedule_22.pdf?sfvrsn=1",
+                     "rate1u": "https://y/gas-utility/rateschedule_1u.pdf?sfvrsn=1",
+                     "rate1b": "https://y/gas-utility/rateschedule_1b.pdf?sfvrsn=1",
+                     "rate2b": "https://y/gas-utility/rateschedule_2b.pdf?sfvrsn=1",
+                     "rate5b": "https://y/gas-utility/rateschedule_5b.pdf?sfvrsn=1",
+                     "rate7b": "https://y/gas-utility/rateschedule_7b.pdf?sfvrsn=1"}
+
+
+def test_fbeb11_fort_nelson_1rng_uses_fort_nelson_column_with_rider_4_credit():
+    document = FBEB11_load_document()
+    record = FBEB11_records(document)[FBEB11_FN_NAMES["rate1b"]]
+    assert (record.tariff_code, record.customer_class, record.sub_class) == ("Rate 1RNG", "residential", "Fort Nelson")
+    assert record.source_url == document["rate1b"]["url"]
+    assert record.effective_date == "2026-07-01"
+    assert "Fort Nelson Service Area" in record.source_page and "Order G-131-26" in record.source_page
+    assert FBEB11_values(record) == {
+        "Basic Charge": (0.4085, "$/day", None),
+        "Rider 2 (Clean Growth Innovation Fund Account)": (0.0131, "$/day", None),
+        "Delivery Charge": (8.257, "$/GJ", None),
+        "Rider 4 (Fort Nelson Residential Customer Common Rate Phase-in Rider)": (-0.355, "$/GJ", None),
+        "Rider 5 (Revenue Stabilization Adjustment Charge)": (0.212, "$/GJ", None),
+        "Storage and Transport Charge": (0.067, "$/GJ", None),
+        "Rider 6 (Midstream Cost Reconciliation Account)": (0.011, "$/GJ", None),
+        "Rider 8 (Storage and Transport RNG)": (0.909, "$/GJ", None),
+        "Cost of Gas": (1.660, "$/GJ", "conditional"),
+        "Cost of Renewable Natural Gas (RNG Charge)": (8.660, "$/GJ", "conditional"),
+        "BC Carbon Tax": (0.0, "$/GJ", None),
+    }
+    assert "Fort Nelson Service Area" in record.eligibility and "single-family residences" in record.eligibility
+    assert "no blended price" in record.notes and "Fort Nelson" in record.notes
+    for component in record.components:
+        assert component.source_url and component.source_detail and component.effective_date
+
+
+def test_fbeb11_fort_nelson_2rng_3rng_values_and_volumes():
+    found = FBEB11_records()
+    two, three = found[FBEB11_FN_NAMES["rate2b"]], found[FBEB11_FN_NAMES["rate3b"]]
+    assert FBEB11_values(two)["Basic Charge"] == (1.4178, "$/day", None)
+    assert FBEB11_values(two)["Storage and Transport Charge"] == (0.068, "$/GJ", None)
+    assert FBEB11_values(two)["Rider 6 (Midstream Cost Reconciliation Account)"] == (0.011, "$/GJ", None)
+    assert FBEB11_values(three)["Basic Charge"] == (4.3395, "$/day", None)
+    assert FBEB11_values(three)["Storage and Transport Charge"] == (0.058, "$/GJ", None)
+    assert FBEB11_values(three)["Rider 6 (Midstream Cost Reconciliation Account)"] == (0.009, "$/GJ", None)
+    for record in (two, three):
+        assert not any(c.component_name.startswith("Rider 4") for c in record.components)
+        assert FBEB11_values(record)["Cost of Renewable Natural Gas (RNG Charge)"] == (8.660, "$/GJ", "conditional")
+        assert record.sub_class == "Fort Nelson" and record.customer_class == "commercial"
+    assert (two.usage_min, two.usage_max) == (None, 2000.0) and (three.usage_min, three.usage_max) == (2000.0, None)
+
+
+def test_fbeb11_mainland_rng_values_unaffected_by_fort_nelson_column():
+    found = FBEB11_records()
+    for key in FBEB11_FN_NAMES:
+        mainland = found[FBEB11_NAMES[key]]
+        assert mainland.sub_class == "Mainland and Vancouver Island Service Area"
+        assert not any(c.component_name.startswith("Rider 4") for c in mainland.components)
+    assert FBEB11_values(found[FBEB11_NAMES["rate1b"]])["Storage and Transport Charge"] == (1.347, "$/GJ", None)
+
+
+@pytest.mark.parametrize("key, old, new", [
+    ("rate2b", "Related Charges $ 2.493 $ 0.988 A", "Related Charges $ 2.493 $ 0.999 A"),
+    ("rate1b", "4. Rider 4 per Gigajoule N/A $ (0.355)", "4. Rider 4 per Gigajoule N/A $ (0.455)"),
+    ("rate1b", "Rider 4 Fort Nelson Residential Customer Common Rate Phase-in Rider",
+     "Rider 4 Residential Customer Rider"),
+    ("rate3b", "Mainland and Vancouver Island Fort Nelson Service Area Service Area",
+     "Mainland and Vancouver Island Service Area"),
+    ("rate3b", "with the exception of the Municipality of Revelstoke, provided",
+     "with the exception of the Municipality of Revelstoke and the Fort Nelson Service Area, provided"),
+])
+def test_fbeb11_fort_nelson_record_fails_closed_without_touching_mainland(key, old, new):
+    document = FBEB11_load_document()
+    assert old in document[key]["text"]
+    document[key]["text"] = document[key]["text"].replace(old, new)
+    assert set(FBEB11_records(document)) == FBEB11_all_names() - {FBEB11_FN_NAMES[key]}
+
+
+def test_fbeb11_customer_choice_schedules_publish_no_fort_nelson_column():
+    document = FBEB11_load_document()
+    found = FBEB11_records(document)
+    for key in ("rate1u", "rate2u", "rate3u"):
+        assert "with the exception of the Municipality of Revelstoke and the Fort Nelson Service Area" in document[key]["text"]
+        assert "Table of Charges Mainland and Vancouver Island Service Area Delivery" in document[key]["text"]
+        assert found[FBEB11_NAMES[key]].sub_class == "Mainland and Vancouver Island Service Area"
+    assert not [name for name in found if "Customer Choice" in name and "Fort Nelson" in name]
+
+
+# ======================================================================
+# NTPC Taltson interruptible heating (batch 11)
+# ======================================================================
+
+"""NTPC Taltson retail interruptible heating record (batch 11, pending integration)."""
+import json
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from scrapers.utilities import ntpc
+from scrapers.utils.parsing import DocumentPage
+
+NTPCB11_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "ntpc.json"
+NTPCB11_TODAY = "2026-10-07"
+
+
+def NTPCB11__fx():
+    return json.loads(NTPCB11_FIXTURE.read_text(encoding="utf-8"))
+
+
+def NTPCB11__pages(block, edit=None):
+    pages = [DocumentPage(p["page"], p["text"]) for p in block["pages"]]
+    return [DocumentPage(p.page_number, edit(p.page_number, p.text)) for p in pages] if edit else pages
+
+
+def NTPCB11__record(fx=None, rate_edit=None, terms_edit=None):
+    fx = fx or NTPCB11__fx()
+    rate = ntpc.parse_interruptible_retail(NTPCB11__pages(fx["interruptible_schedule"], rate_edit),
+                                           fx["interruptible_schedule"]["url"], NTPCB11_TODAY)
+    terms = ntpc.parse_terms_schedule_d(NTPCB11__pages(fx["terms"], terms_edit), fx["terms"]["url"], NTPCB11_TODAY)
+    return ntpc.build_interruptible_record(rate, terms)
+
+
+def NTPCB11__scrape(terms_pages=None, schedule_extra=True, terms_error=False):
+    fx = NTPCB11__fx()
+    html = {ntpc.SCHEDULE_INDEX_URL: fx["schedule_index"]["html"], ntpc.RESIDENTIAL_URL: fx["residential"]["html"],
+            ntpc.TPSP_URL: fx["tpsp"]["html"], ntpc.RIDER_URL: fx["riders"]["html"]}
+    schedule = NTPCB11__pages(fx["schedule"]) + (NTPCB11__pages(fx["interruptible_schedule"]) if schedule_extra else [])
+    terms = terms_pages if terms_pages is not None else NTPCB11__pages(fx["terms"])
+
+    def fetch_bytes(self, url, delay=1.0):
+        if url == ntpc.TERMS_URL and terms_error:
+            raise ConnectionError("blocked")
+        return url.encode()
+
+    def extract(data):
+        return terms if data.decode() == ntpc.TERMS_URL else schedule
+
+    with patch.object(ntpc.NTPCScraper, "fetch_page", lambda self, url, delay=1.0: html[url]),\
+            patch.object(ntpc.NTPCScraper, "fetch_bytes", fetch_bytes),\
+            patch.object(ntpc.NTPCScraper, "now_iso", lambda self: NTPCB11_TODAY + "T00:00:00+00:00"),\
+            patch.object(ntpc, "extract_pdf_pages", extract):
+        return ntpc.NTPCScraper().scrape()
+
+
+def test_ntpcb11_fixture_sources():
+    fx = NTPCB11__fx()
+    assert fx["terms"]["url"] == ntpc.TERMS_URL and fx["terms"]["retrieved"] == "2026-10-07"
+    assert [p["page"] for p in fx["terms"]["pages"]] == [1, 8, 59, 60, 61]
+    assert [p["page"] for p in fx["interruptible_schedule"]["pages"]] == [20]
+    assert fx["interruptible_schedule"]["url"] == fx["schedule"]["url"]
+
+
+def test_ntpcb11_record_values_and_conditions():
+    record = NTPCB11__record()
+    assert record.tariff_name == ntpc.INTERRUPTIBLE_NAME
+    assert (record.customer_class, record.sub_class, record.province) == ("commercial", "interruptible heating", "NT")
+    assert record.effective_date == "2026-06-01" and record.source_page == "PDF page 20"
+    (component,) = record.components
+    assert (component.component_type, component.charge_value, component.charge_unit) == ("energy", 0.063, "$/kWh")
+    assert component.effective_date == "2026-06-01" and component.confidence == "high"
+    assert "PDF page 20" in component.source_detail and "PDF pages 59-60" in component.source_detail
+    assert component.notes.startswith("Conditional")
+    for phrase in ("Fort Smith and Fort Resolution", "new interruptible loads", "fully interruptible",
+                   "primarily to provide heat", "unlimited duration", "12 months notice",
+                   "not be able to switch back"):
+        assert phrase in record.eligibility
+    assert "Riders not stated" in record.notes and "approved by the NWT Public Utilities Board" in record.notes
+    assert not any(c.component_type in ("rider", "fixed", "demand") for c in record.components)
+    assert not any("total" in c.component_name.lower() for c in record.components)
+
+
+def test_ntpcb11_wholesale_not_included():
+    record = NTPCB11__record()
+    assert record.components[0].charge_value != 0.0423
+    assert "Wholesale" not in record.tariff_name
+    edit = lambda n, t: t.replace("Heating - Retail", "Heating - Other")
+    with pytest.raises(ntpc._Reject):
+        NTPCB11__record(rate_edit=edit)
+
+
+def test_ntpcb11_changed_rate_value_flows_through_and_extra_line_rejects():
+    record = NTPCB11__record(rate_edit=lambda n, t: t.replace("6.30 ¢/kWh", "6.50 ¢/kWh"))
+    assert record.components[0].charge_value == 0.065
+    with pytest.raises(ntpc._Reject):
+        NTPCB11__record(rate_edit=lambda n, t: t.replace("Demand Charge: N/A\nEnergy Charge: Interruptible Energy 6.30",
+                                                 "Demand Charge: N/A\nGRA Shortfall Rider: 10.40 ¢/kWh\n"
+                                                 "Energy Charge: Interruptible Energy 6.30"))
+
+
+def test_ntpcb11_terms_changed_quote_or_date_rejects():
+    with pytest.raises(ntpc._Reject):
+        NTPCB11__record(terms_edit=lambda n, t: t.replace("unlimited duration", "limited duration"))
+    with pytest.raises(ntpc._Reject):
+        NTPCB11__record(terms_edit=lambda n, t: t.replace("12 months notice", "6 months notice"))
+    with pytest.raises(ntpc._Reject):
+        NTPCB11__record(terms_edit=lambda n, t: t.replace("February 1, 2026", "February 1, 2027") if n == 1 else t)
+    with pytest.raises(ntpc._Reject):
+        NTPCB11__record(terms_edit=lambda n, t: "" if n == 59 else t)
+
+
+def test_ntpcb11_scraper_adds_record_and_keeps_existing_62():
+    records = NTPCB11__scrape()
+    assert len(records) == 63
+    by_name = {r.tariff_name: r for r in records}
+    assert ntpc.INTERRUPTIBLE_NAME in by_name
+    assert all(r.notes.startswith("Provenance: live_parsed") and r.confidence == "high" for r in records)
+    baseline = NTPCB11__scrape(schedule_extra=False)
+    assert len(baseline) == 62 and ntpc.INTERRUPTIBLE_NAME not in {r.tariff_name for r in baseline}
+    assert [r for r in records if r.tariff_name != ntpc.INTERRUPTIBLE_NAME] == baseline
+
+
+def test_ntpcb11_missing_or_changed_terms_omit_only_this_record():
+    fx = NTPCB11__fx()
+    for records in (NTPCB11__scrape(terms_error=True), NTPCB11__scrape(terms_pages=[]),
+                    NTPCB11__scrape(terms_pages=NTPCB11__pages(fx["terms"], lambda n, t: t.replace("primarily", "partly")))):
+        assert len(records) == 62
+        assert ntpc.INTERRUPTIBLE_NAME not in {r.tariff_name for r in records}
+        assert all(r.confidence == "high" for r in records)
+
+
+# ======================================================================
+# SaskEnergy service fees (batch 11)
+# ======================================================================
+from scrapers.utilities.saskenergy import FEE_URLS as SEB11_FEE_URLS, PAGE_URLS as SEB11_PAGE_URLS, SaskEnergyScraper as SEB11_SaskEnergyScraper
+import json
+from datetime import date
+from pathlib import Path
+from unittest.mock import patch
+
+
+SEB11_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "saskenergy.json"
+SEB11_TODAY = date(2026, 10, 7)
+SEB11_GAS_CODES = {"Res", "SC", "LC", "SI", "Res-DS", "SC-DS", "LC-DS"}
+
+
+def SEB11__document():
+    return json.loads(SEB11_FIXTURE.read_text(encoding="utf-8"))
+
+
+def SEB11__fee_pages():
+    return {key: page["text"] for key, page in SEB11__document()["fee_pages"].items()}
+
+
+def SEB11__gas_pages():
+    return {key: page["text"] for key, page in SEB11__document()["pages"].items()}
+
+
+def SEB11__components(record):
+    return {c.component_name: c for c in record.components}
+
+
+def test_seb11_se_fees_values_units_and_date():
+    record = SEB11_SaskEnergyScraper().parse_fees(SEB11__fee_pages(), SEB11_TODAY)
+    assert record.tariff_code == "T&C-C" and record.utility_type == "gas"
+    assert (record.customer_class, record.sub_class) == ("other", "service fees")
+    assert record.effective_date == "2018-03-01"
+    comps = SEB11__components(record)
+    expected = {
+        "Tenancy Change Fee - Business Hours": (30.0, "$/tenancy change"),
+        "Tenancy Change Fee - After Hours": (30.0, "$/tenancy change"),
+        "Service Activation Fee - Business Hours": (115.0, "$/activation"),
+        "Service Activation Fee - After Hours": (140.0, "$/activation"),
+        "Disconnection Fee - Business Hours": (80.0, "$/disconnection"),
+        "Disconnection Fee - After Hours": (95.0, "$/disconnection"),
+        "Missed Appointment Fee - Business Hours": (115.0, "$/missed appointment"),
+        "Missed Appointment Fee - After Hours": (125.0, "$/missed appointment"),
+        "Meter Dispute Fee - Business Hours": (50.0, "$/meter dispute"),
+        "Equipment Service Fee - Business Hours": (100.0, "$/service call"),
+        "Equipment Service Fee - After Hours": (120.0, "$/service call"),
+        "Multi-Suite Verification Fee - Business Hours": (100.0, "$/verification"),
+        "Multi-Suite Verification Fee - After Hours": (120.0, "$/verification"),
+        "Thermocouple Fee - Business Hours": (125.0, "$/service call"),
+        "Thermocouple Fee - After Hours": (150.0, "$/service call"),
+        "Late Payment Charge": (0.02, "fraction/month"),
+        "Return Payment Fee": (40.0, "$/returned payment"),
+        "Dispute Resolution Fee": (50.0, "$/application"),
+    }
+    assert {name: (c.charge_value, c.charge_unit) for name, c in comps.items()} == expected
+    assert "Meter Dispute Fee - After Hours" not in comps
+    assert all(c.charge_unit != "$/month" for c in record.components)
+    assert all(c.effective_date == "2018-03-01" for c in record.components)
+    assert all(c.source_url == SEB11_FEE_URLS["appendix_c"] and "Appendix C" in c.source_detail for c in record.components)
+    after = [c for c in record.components if c.sub_component == "after hours"]
+    assert len(after) == 7 and all("Conditional alternative" in c.notes for c in after)
+    assert "26.82%" in comps["Late Payment Charge"].notes
+
+
+def test_seb11_se_fees_require_current_appendix_date():
+    pages = SEB11__fee_pages()
+    pages["appendix_c"] = pages["appendix_c"].replace("EFFECTIVE March 1, 2018", "")
+    assert SEB11_SaskEnergyScraper().parse_fees(pages, SEB11_TODAY) is None
+    pages = SEB11__fee_pages()
+    pages["appendix_c"] = pages["appendix_c"].replace("March 1, 2018", "March 1, 2030")
+    assert SEB11_SaskEnergyScraper().parse_fees(pages, SEB11_TODAY) is None
+    pages = SEB11__fee_pages()
+    pages.pop("appendix_c")
+    assert SEB11_SaskEnergyScraper().parse_fees(pages, SEB11_TODAY) is None
+    pages = SEB11__fee_pages()
+    pages.pop("fees")
+    assert SEB11_SaskEnergyScraper().parse_fees(pages, SEB11_TODAY) is None
+
+
+def test_seb11_se_fees_appendix_mismatch_drops_only_that_fee():
+    pages = SEB11__fee_pages()
+    assert "Disconnection Fee All Rate Classifications All Rate Classifications $80 $95" in pages["appendix_c"]
+    pages["appendix_c"] = pages["appendix_c"].replace("$80 $95", "$85 $95")
+    comps = SEB11__components(SEB11_SaskEnergyScraper().parse_fees(pages, SEB11_TODAY))
+    assert not any(name.startswith("Disconnection Fee") for name in comps)
+    assert comps["Service Activation Fee - After Hours"].charge_value == 140.0
+    pages = SEB11__fee_pages()
+    pages["appendix_c_cont"] = pages["appendix_c_cont"].replace("$40.00", "$45.00")
+    comps = SEB11__components(SEB11_SaskEnergyScraper().parse_fees(pages, SEB11_TODAY))
+    assert "Return Payment Fee" not in comps and "Dispute Resolution Fee" in comps
+
+
+def test_seb11_se_fees_class_specific_values_fail_closed():
+    pages = SEB11__fee_pages()
+    pages["fees"] = pages["fees"].replace("$115 $115 $140 $140", "$115 $120 $140 $140")
+    comps = SEB11__components(SEB11_SaskEnergyScraper().parse_fees(pages, SEB11_TODAY))
+    assert not any(name.startswith("Service Activation Fee") for name in comps)
+    assert "Missed Appointment Fee - Business Hours" in comps
+
+
+def test_seb11_se_gas_parse_pages_unchanged():
+    records = SEB11_SaskEnergyScraper().parse_pages(SEB11__gas_pages(), SEB11_TODAY)
+    assert {record.tariff_code for record in records} == SEB11_GAS_CODES
+
+
+def test_seb11_se_scrape_appends_live_fee_record():
+    responses = {SEB11_PAGE_URLS[key]: value for key, value in SEB11__gas_pages().items()}
+    responses.update({SEB11_FEE_URLS[key]: value for key, value in SEB11__fee_pages().items()})
+    scraper = SEB11_SaskEnergyScraper()
+    with patch.object(scraper, "fetch_page", side_effect=lambda url: responses[url]),\
+            patch.object(SEB11_SaskEnergyScraper, "_page_text", staticmethod(lambda html: html)):
+        records = {record.tariff_code: record for record in scraper.scrape()}
+    assert set(records) == SEB11_GAS_CODES | {"T&C-C"}
+    assert "live_parsed" in records["T&C-C"].notes and "seed_fallback" not in records["T&C-C"].notes
+
+
+def test_seb11_se_fee_fetch_failure_keeps_gas_records():
+    responses = {SEB11_PAGE_URLS[key]: value for key, value in SEB11__gas_pages().items()}
+    scraper = SEB11_SaskEnergyScraper()
+    with patch.object(scraper, "fetch_page", side_effect=lambda url: responses[url]),\
+            patch.object(SEB11_SaskEnergyScraper, "_page_text", staticmethod(lambda html: html)):
+        records = {record.tariff_code for record in scraper.scrape()}
+    assert records == SEB11_GAS_CODES

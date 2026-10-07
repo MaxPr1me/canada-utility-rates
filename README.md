@@ -23,32 +23,32 @@ Inventory counts below include reference-only records, not just building tariffs
 ## Current Status (2026-10-07)
 
 The framework and website are implemented; **nationwide live-rate coverage is not complete**.
-The export was regenerated on **2026-10-07** after batch 10. History was preserved.
+The export was regenerated on **2026-10-07** after batch 11 (a full 20-utility refresh). History was preserved.
 A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
 
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 84: 75 electricity and 9 gas, across all 13 provinces/territories |
-| Stored tariff versions / components | 824 / 5,286, including history and older estimates |
-| Live-sourced tariffs | **339 latest tariffs across 21 utilities**; 344 stored live versions |
-| Active regional campaign | **230 latest live records across all 16 provincial target utilities**; 108 across the four territorial utilities |
+| Stored tariff versions / components | 838 / 5,417, including history and older estimates |
+| Live-sourced tariffs | **353 latest tariffs across 21 utilities**; 358 stored live versions |
+| Active regional campaign | **243 latest live records across all 16 provincial target utilities**; 109 across the four territorial utilities |
 | Remaining seed-only campaign utilities | **0**; SaskPower's scoped building schedules are audited, while other targets have recorded gaps |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Historical snapshots | **1,790**; batch 10 appended 220 without changing prior snapshots |
+| Historical snapshots | **2,142**; the batch 11 refresh appended 352 without changing prior snapshots |
 | DB validation | **0 errors, 2 existing AESO warnings** |
-| Deterministic tests | **994 passing** across 8 modules |
+| Deterministic tests | **1,052 passing** across 8 modules |
 
 Live output currently includes BC Hydro (17), FortisBC Electric (11), Manitoba Hydro (18), NB Power (10),
 Nova Scotia Power (18), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
-NL Hydro (21), SaskPower (41), SaskEnergy (7), Centra Gas Manitoba (12), FortisBC Energy (16),
-Energir (5), Heritage/Eastward (3), Liberty NB (4), NTPC (62), Qulliq Energy (6), Yukon Energy (20),
+NL Hydro (21), SaskPower (41), SaskEnergy (8), Centra Gas Manitoba (13), FortisBC Energy (27),
+Energir (5), Heritage/Eastward (3), Liberty NB (4), NTPC (63), Qulliq Energy (6), Yukon Energy (20),
 ATCO Electric Yukon (20) and FortisAlberta (1).
 These counts use the latest version per tariff, not complete utility catalogues.
 They include conditional products, adjustment-only records and retained non-building
 references, not a count of complete building classes. Yukon Energy and ATCO Electric Yukon
-publish the same 20 joint YUB schedules; NTPC's 62 include 52 per-community government
+publish the same 20 joint YUB schedules; NTPC's 63 include 52 per-community government
 records. FortisAlberta is retained without a new regional-run scrape. Ontario and the
 five Ontario/Alberta gas utilities still have no live records.
 
@@ -226,7 +226,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 994 deterministic tests across 8 test modules
+├── tests/                    ← 1,052 deterministic tests across 8 test modules
 │   ├── fixtures/             ← Source-derived fixtures; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation

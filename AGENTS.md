@@ -18,10 +18,10 @@ It works in three stages:
 
 GitHub Actions schedules a monthly scrape. Deployment and durable history across
 cloud runs have new workflows awaiting first CI run verification; see [README.md](README.md).
-The latest export has 339 latest live tariffs and 480 estimates; stored history contains
-344 live versions and 1,790 snapshots. Registry coverage is not the same as live coverage.
-The active campaign covers 16 provincial utilities (230 latest live records) and, from
-October 7, the four territorial utilities (108 latest live records). All 20 have live output.
+The latest export has 353 latest live tariffs and 480 estimates; stored history contains
+358 live versions and 2,142 snapshots. Registry coverage is not the same as live coverage.
+The active campaign covers 16 provincial utilities (243 latest live records) and, from
+October 7, the four territorial utilities (109 latest live records). All 20 have live output.
 That includes conditional products and reference-only services, not that many
 fully audited building classes. SaskPower's scoped building schedules are audited;
 remaining utility gaps are listed in the [coverage matrix](docs/phase5_completion_matrix.md).
@@ -448,7 +448,7 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 994 tests across 8 test modules, including `test_phase5_hardening` for
+There are 1,052 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
 The BC Hydro, FortisBC Electric, Hydro-Quebec, NL Hydro, Manitoba Hydro, NB Power,
 Newfoundland Power, Maritime Electric, NSPower, SaskPower, SaskEnergy, Centra Gas,
@@ -511,7 +511,8 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - The current campaign covers the 16 registered provincial utilities outside Ontario and Alberta plus, from October 7, the four territorial utilities. Parallel workers own separate utility files; database/export/registry/test integration and publication are serial. Preserve excluded regions and all earlier snapshots.
 - Batch 10 is stored and exported: 994 passing tests, 1,790 snapshots (220 new, prior snapshots unchanged), 824 versions / 5,286 components / 344 stored live / 480 seed; 339 latest live across 21 utilities. DB validation: 0 errors and 2 existing AESO warnings.
 - Batch 10 added NSPower industrial rates, FortisBC Energy Rate 7 and transportation rates, SaskEnergy Small Industrial, BC Hydro transmission pilots and generation credits, Hydro-Quebec DR Commitment, Manitoba LUBD and live territorial rates (NTPC, Qulliq, Yukon Energy, ATCO Electric Yukon). Territorial government subsidies are kept separate and conditional; never fold them into base prices. Qulliq's rates are interim until a final decision is published.
-- Decisions (October 7): BC Hydro RS1828 and Hydro-Quebec F/FP are excluded. Market-indexed prices (FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing) wait for the Alberta/Ontario market-rate work.
+- Decisions (October 7): BC Hydro RS1828 and Hydro-Quebec F/FP are excluded. Market-indexed prices (FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing, NL Hydro monthly non-firm prices) wait for the Alberta/Ontario market-rate work. FortisBC 11RNG is excluded.
+- Batch 11 (October 7) closes out the campaign's priced gaps: FortisBC Energy Customer Choice and RNG variants, SaskEnergy service fees, NTPC Taltson interruptible heating (conditional) and Centra Mainline Interruptible. The Centra prices exist only on scanned pages, so they were typed in once by hand, checked visually, and are shown at medium confidence; the scraper drops them automatically if those scanned pages ever change. Do not use this approach for other scanned documents without asking. The matrix now has a class-by-class reconciliation table for all 20 utilities.
 - Batch 9 (historical) stored and exported: 801 passing tests, 1,570 snapshots (106 new, prior snapshots unchanged), 694 versions / 4,453 components / 214 stored live / 480 seed; 209 latest live across 18 utilities, 207 at all 16 campaign utilities. Source-check dates, live-record counts and catalogue completion are different facts. Follow the current [coverage matrix](docs/phase5_completion_matrix.md) and [parser gap report](docs/live_parser_gap_report.md).
 - Batch 9 added NL Hydro Island/Labrador Industrial Firm and conditional net metering; Energir D5 and optional replacement RNG supply; Newfoundland Power Curtailable Option 1 and domestic net metering; NB Power Large Industrial; BC Hydro RS1830 and closed RS1289; FortisBC Electric RS31/33; Hydro-Quebec L/LG/H and business Demand Response Leeway. Manitoba Hydro isolates residential/commercial page failures without adding records. Source-blocked and conditional prices are not universal charges.
 - FortisBC Energy Rates 1-3 have per-day basic charges; Rates 4/5 and Revelstoke propane are also parsed. Energir and Eastward follow the current document link and fail closed on edition/month mismatch. Energir's load balancing and renewable-gas charges are conditional; Eastward's municipal riders have a limited charge base; Liberty's MGS/LGS customer charges are alternatives.

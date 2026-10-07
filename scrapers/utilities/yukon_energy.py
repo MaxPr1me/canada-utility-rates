@@ -333,7 +333,8 @@ class YukonEnergyScraper(BaseScraper):
                     return None
                 component = RateComponent("rebate", "Affordability Rate Relief", float(amount.group(1)), "%",
                                           tier_threshold=threshold_kwh, tier_unit="kWh", end_date=end,
-                                          notes="Non-government residential only. Applies to eligible energy charges (base, J, J1, R and R1 where applicable) for the first published kWh block; excludes fixed charges and Rider F. Subject to territorial funding.")
+                                          notes=("Non-government residential only. Applies to eligible energy charges (base, J, J1, R and R1 where applicable) "
+                                                 f"for the first {threshold_kwh:,.0f} kWh per month; excludes fixed charges and Rider F. Subject to territorial funding."))
             component.effective_date = effective
             component.source_url = source_url
             component.source_detail = "PDF page 1; " + title

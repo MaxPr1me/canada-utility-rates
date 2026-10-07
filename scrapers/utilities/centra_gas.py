@@ -17,6 +17,7 @@ as $/m3 (a plain /100 conversion; no heat-content conversion is performed).
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 from dataclasses import dataclass
@@ -95,6 +96,57 @@ EXCLUDED_SCHEDULE_CLASSES = {
         "process-specific gas for electricity generation under an individual contract"),
 }
 
+MLI_NAME = "Commercial — Mainline Interruptible Sales (Firm Delivery)"
+MLI_CODE = "COM-MLI-S"
+MLI_ROW = "Mainline Interruptible (with firm delivery)"
+# Names a class audit would report for this class if it were absent.
+MLI_AUDIT_LABELS = frozenset({"Mainline Interruptible Class", "Mainline interruptible service"})
+
+# Reviewed visual transcription (2026-10-07) of image-only Appendix A pages, in dollars as printed.
+# Mirrored in tests/fixtures/centra_gas.json "appendix_a_transcription"; used only while each page's
+# image SHA-256 (raw DCTDecode bytes of its single image XObject) is unchanged.
+APPENDIX_A = {
+    "transcribed": "2026-10-07",
+    "board_order": "111/26",
+    "effective": "August 1, 2026",
+    "pages": {
+        80: {
+            "label": "Page 2 of 4",
+            "title": "Interruptible Sales and Delivery Services Rate Schedules (Base Rates Only - No Riders)",
+            "image_sha256": "b91ddd31339ba4fac2f89dd899cf0f12c986de3b287da11bd9903ae8c1f9c4c2",
+            "rows": {
+                "Interruptible Service": {
+                    "basic_sales": 1409.45, "basic_t": 1409.45,
+                    "demand_transport": 0.0777, "demand_distribution": 0.2297, "demand_delivery": 0.3074, "demand_t": 0.2297,
+                    "commodity": 0.0826, "transport": 0.0061, "distribution": 0.0129, "delivery": 0.0190, "delivery_t": 0.0129,
+                    "alternate_delivery": 0.0129},
+                MLI_ROW: {
+                    "basic_sales": 1306.98, "basic_t": 1306.98,
+                    "demand_transport": 0.1195, "demand_distribution": 0.2272, "demand_delivery": 0.3467, "demand_t": 0.2272,
+                    "commodity": 0.0826, "transport": 0.0030, "distribution": 0.0030, "delivery": 0.0060, "delivery_t": 0.0030,
+                    "alternate_delivery": 0.0030},
+            },
+        },
+        82: {
+            "label": "Page 4 of 4",
+            "title": "Interruptible Sales and Delivery Services Rate Schedules (Base Rates Plus Riders)",
+            "image_sha256": "6d2491c49115e819a18203b9a6322da78c8eced23d7e9b9a0d4643d229a8d009",
+            "rows": {
+                "Interruptible Service": {
+                    "basic_sales": 1409.45, "basic_t": 1409.45,
+                    "demand_transport": 0.1398, "demand_distribution": 0.2299, "demand_delivery": 0.3697, "demand_t": 0.2299,
+                    "commodity": 0.0660, "transport": 0.0031, "distribution": 0.0282, "delivery": 0.0313, "delivery_t": 0.0086,
+                    "alternate_delivery": 0.0129},
+                MLI_ROW: {
+                    "basic_sales": 1306.98, "basic_t": 1306.98,
+                    "demand_transport": 0.1816, "demand_distribution": 0.2271, "demand_delivery": 0.4087, "demand_t": 0.2271,
+                    "commodity": 0.0660, "transport": 0.0000, "distribution": 0.0184, "delivery": 0.0184, "delivery_t": 0.0021,
+                    "alternate_delivery": 0.0030},
+            },
+        },
+    },
+}
+
 MONTHS = {name: number for number, name in enumerate(
     ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], start=1)}
 
@@ -129,7 +181,7 @@ class CentraGasScraper(BaseScraper):
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
         """Fetch each official page independently and parse complete classes."""
-        pages: dict[str, str] = {}
+        pages: dict[str, str] = {"appendix_a": ""}
         for key, url in PAGE_URLS.items():
             try:
                 if key == "schedule":
@@ -143,6 +195,10 @@ class CentraGasScraper(BaseScraper):
                             "PDF page " + str(number) + " " + re.sub(
                                 r"(?m)^\d{1,2} ", "", document.pages[number - 1].extract_text() or "")
                             for number in (14, 17, 18, 19, 20, 34, 44, 51))
+                        try:
+                            pages["appendix_a"] = self._appendix_text(document)
+                        except Exception as exc:
+                            self.logger.warning("Centra Gas Appendix A pages unavailable: %s", exc)
                     continue
                 html = self.fetch_page(url)
                 if "Request Rejected" in html[:600]:
@@ -154,6 +210,19 @@ class CentraGasScraper(BaseScraper):
         if not records:
             return None
         return self.mark_live_parsed(records)
+
+    @staticmethod
+    def _appendix_text(document) -> str:
+        """Evidence text for pages 19/50 plus each scanned Appendix A page's image hash and text header."""
+        parts = ["PDF page " + str(number) + " " + re.sub(
+            r"(?m)^\d{1,2} ", "", document.pages[number - 1].extract_text() or "") for number in (19, 50)]
+        for number in APPENDIX_A["pages"]:
+            page = document.pages[number - 1]
+            images = page.images
+            digest = (hashlib.sha256(images[0]["stream"].get_rawdata()).hexdigest()
+                      if len(images) == 1 else "missing")
+            parts.append("PDF page " + str(number) + " image-sha256 " + digest + " " + (page.extract_text() or ""))
+        return " ".join(parts)
 
     @staticmethod
     def _page_text(html: str) -> str:
@@ -339,6 +408,7 @@ class CentraGasScraper(BaseScraper):
         # Commercial
         commercial = pages.get("commercial", "")
         headings = [spec.table_heading for spec in COMMERCIAL_CLASSES]
+        parsed: dict[str, dict[str, float]] = {}
         for spec in COMMERCIAL_CLASSES:
             try:
                 headline = headline_for("commercial")
@@ -361,15 +431,128 @@ class CentraGasScraper(BaseScraper):
                               effective=headline[0], url=PAGE_URLS["commercial"], has_demand=spec.has_demand,
                               alternate=spec.has_alternate_supply, schedule_detail=schedule_detail)
                 build(name=spec.tariff_name, code=spec.tariff_code, sales=spec.sales_service, **common)
+                parsed[spec.tariff_code] = values
                 if spec.marketer_variant and marketer_ok:
                     build(name=spec.tariff_name + MARKETER_SUFFIX, code=spec.tariff_code + "-MKT", sales=False,
                           marketer=True, **common)
             except ValueError as exc:
                 self.logger.warning("Centra Gas %s not parsed live: %s", spec.tariff_name, exc)
-        self.unmodelled_classes = self._class_audit(schedule + " " + pages.get("classes", ""), commercial)
+
+        # Mainline Interruptible: prices only in scanned Appendix A; reviewed transcription, hash-gated.
+        mli_built = False
+        if "appendix_a" in pages:
+            try:
+                headline = headline_for("commercial")
+                commodity = sales_commodity(headline, APPENDIX_A["pages"][82]["rows"][MLI_ROW]["commodity"] * 100)
+                records.append(self._mainline_interruptible(
+                    pages["appendix_a"], schedule, headline[0], commodity, parsed, carbon, fixed_terms))
+                mli_built = True
+            except ValueError as exc:
+                self.logger.warning("Centra Gas %s not built (gap): %s", MLI_NAME, exc)
+        self.unmodelled_classes = self._class_audit(
+            schedule + " " + pages.get("classes", ""), commercial, MLI_AUDIT_LABELS if mli_built else frozenset())
+        if "appendix_a" in pages and not mli_built:
+            self.unmodelled_classes.append(MLI_ROW)
         return records
 
-    def _class_audit(self, schedule: str, commercial: str) -> list[str]:
+    def _mainline_interruptible(
+        self, appendix: str, schedule: str, effective: date, commodity: float,
+        parsed: dict[str, dict[str, float]], carbon: tuple[date, str], fixed_terms: bool,
+    ) -> TariffRecord:
+        """Build the Mainline Interruptible Sales record from the hash-verified transcription; raises ValueError."""
+        found = {int(number): body for number, body in re.findall(r"PDF page (\d+) (.*?)(?=PDF page \d+ |$)", appendix)}
+        for number, page in APPENDIX_A["pages"].items():
+            body = found.get(number, "")
+            digest = re.match(r"image-sha256 ([0-9a-f]{64}) ", body)
+            if not digest:
+                raise ValueError("Appendix A PDF page %d scanned image missing" % number)
+            if digest.group(1) != page["image_sha256"]:
+                raise ValueError("Appendix A PDF page %d image changed since the reviewed transcription" % number)
+            for label in (page["label"], "Approved by Board Order: " + APPENDIX_A["board_order"],
+                          "Effective from: " + APPENDIX_A["effective"]):
+                if label not in body:
+                    raise ValueError("Appendix A PDF page %d header lacks '%s'" % (number, label))
+            for row in page["rows"].values():
+                for first, second, total in (("demand_transport", "demand_distribution", "demand_delivery"),
+                                             ("transport", "distribution", "delivery")):
+                    if abs(row[first] + row[second] - row[total]) > 5e-5:
+                        raise ValueError("Appendix A PDF page %d delivery column is not transport + distribution" % number)
+                if row["basic_sales"] != row["basic_t"]:
+                    raise ValueError("Appendix A PDF page %d basic charges disagree" % number)
+        if self._long_date(APPENDIX_A["effective"]) != effective:
+            raise ValueError("Appendix A edition differs from the commercial rates in force")
+        if not re.search(r"Mainline Customers may elect Firm Sales Service, Interruptible Sales Service \(in conjunction "
+                         r"with Firm Delivery Service\), or Firm Transportation Service", found.get(19, "")):
+            raise ValueError("Mainline interruptible sales election missing from PDF page 19")
+        if not re.search(r"Mainline Customers electing Interruptible Sales \(in conjunction with Firm Delivery Service\)"
+                         r".*?minimum term of one year.*?stand-by fuel source", found.get(50, "")):
+            raise ValueError("Section VI interruptible sales terms missing from PDF page 50")
+        if not re.search(r"PDF page 51 .*?pass-through cost of acquiring additional gas commodity and transportation to "
+                         r"Manitoba.*?Alternate Supply Service Delivery Rate", schedule):
+            raise ValueError("alternate supply pass-through context missing")
+
+        # Same scanned page, text-published counterparts: Interruptible rows and Mainline firm T-service.
+        riders = APPENDIX_A["pages"][82]["rows"]
+        checks = {
+            "COM-IS-S": (riders["Interruptible Service"], {
+                "basic": "basic_sales", "transport": "transport", "distribution": "distribution",
+                "demand_transport": "demand_transport", "demand_distribution": "demand_distribution",
+                "alternate": "alternate_delivery"}),
+            "COM-IS-T": (riders["Interruptible Service"], {
+                "basic": "basic_t", "delivery": "delivery_t", "demand": "demand_t", "alternate": "alternate_delivery"}),
+            "COM-MFS-T": (riders[MLI_ROW], {"basic": "basic_t", "delivery": "delivery_t", "demand": "demand_t"}),
+        }
+        for code, (row, mapping) in checks.items():
+            if code not in parsed:
+                raise ValueError(code + " text table unavailable to cross-check the transcription")
+            for text_key, row_key in mapping.items():
+                expected = row[row_key] if text_key == "basic" else row[row_key] * 100
+                if abs(parsed[code][text_key] - expected) > 1e-6:
+                    raise ValueError("transcribed %s differs from the published %s %s" % (row_key, code, text_key))
+
+        row = riders[MLI_ROW]
+        values = {"basic": row["basic_sales"], "commodity": commodity}
+        values.update({key: round(row[source] * 100, 4) for key, source in (
+            ("transport", "transport"), ("distribution", "distribution"), ("delivery", "delivery"),
+            ("demand_transport", "demand_transport"), ("demand_distribution", "demand_distribution"),
+            ("demand", "demand_delivery"), ("alternate", "alternate_delivery"))})
+        condition, usage_min, _, schedule_detail = self._schedule_conditions(schedule, "COM-MFS-S")
+        eligibility = (
+            condition + " Mainline customer electing Interruptible Sales Service in conjunction with Firm Delivery "
+            "Service (PUB schedule page 18). Section VI interruptible sales terms (page 49): one-year contract, "
+            "customer-provided stand-by fuel used when Centra gives notice of curtailment. Alternate supply during "
+            "curtailment has a pass-through commodity/transport price plus the published alternate delivery rate; "
+            "it is not the default commodity price.")
+        record = self._build(
+            name=MLI_NAME, code=MLI_CODE, customer_class="commercial", sub_class="mainline interruptible",
+            eligibility=eligibility, usage_min=usage_min, usage_max=None, values=values, sales=True,
+            effective=effective, url=PAGE_URLS["schedule"], has_demand=True, alternate=True, carbon=carbon,
+            fixed_terms=fixed_terms, schedule_detail=schedule_detail)
+        page_detail = ("Appendix A page 4 of 4 (PDF page 82), base rates plus riders, Board Order 111/26, "
+                       "effective August 1, 2026")
+        provenance = ("Transcribed from scanned official Appendix A page 4 of 4 (PDF page 82; image-only); fails closed "
+                      "if the page changes. Reviewed visual transcription of " + APPENDIX_A["transcribed"] +
+                      ", gated on the page image's SHA-256.")
+        record.confidence = "medium"
+        record.source_page = page_detail
+        record.notes = (provenance + " Prices include riders, as on the commercial page for other classes; "
+                        "the base-only figures on Appendix A page 2 of 4 (PDF page 80) are not added again. "
+                        "Cross-checked on the same scanned page against the text-published Interruptible and "
+                        "Mainline Firm T-Service rates. Mainline T-Service is firm transportation (Mainline Firm "
+                        "Service T-Service record); this row's T-Service column equals it and is not a separate "
+                        "tariff. " + (record.notes or ""))
+        for component in record.components:
+            component.confidence = "medium"
+            if component.component_type == "carbon":
+                continue
+            suffix = component.source_detail.split("; demand definition: ", 1)
+            component.source_detail = page_detail + ("; demand definition: " + suffix[1] if len(suffix) == 2 else "")
+            if component.component_type == "commodity":
+                component.source_detail += "; equals the quarterly rate table and commercial headline commodity"
+            component.notes = provenance + " " + (component.notes or "")
+        return record
+
+    def _class_audit(self, schedule: str, commercial: str, extra_modelled: frozenset = frozenset()) -> list[str]:
         """Published classes/options this parser does not model; logged as gaps, never priced."""
         gaps: list[str] = []
         listed = re.search(r"Customers are classified as either (.+?)\.", schedule)
@@ -378,7 +561,7 @@ class CentraGasScraper(BaseScraper):
             gaps.append("approved schedule class list")
         else:
             for name in re.split(r", | or ", listed.group(1)):
-                if name in MODELLED_SCHEDULE_CLASSES:
+                if name in MODELLED_SCHEDULE_CLASSES or name in extra_modelled:
                     continue
                 evidence, reason = EXCLUDED_SCHEDULE_CLASSES.get(name, (None, ""))
                 if evidence and re.search(evidence, schedule):
@@ -389,7 +572,7 @@ class CentraGasScraper(BaseScraper):
         start = commercial.find("Commercial rate options ")
         end = commercial.find("Small general service Small general service Small general service", start)
         if start >= 0 and end > start:
-            known = {spec.option_label for spec in COMMERCIAL_CLASSES}
+            known = {spec.option_label for spec in COMMERCIAL_CLASSES} | extra_modelled
             for label in re.findall(r"(?:^|\. )([A-Z][a-z]+(?: [a-z]+)*) \S{1,2} (?:Less|More) than",
                                     commercial[start + len("Commercial rate options "):end]):
                 if label not in known:

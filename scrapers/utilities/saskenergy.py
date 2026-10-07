@@ -9,6 +9,9 @@ Official sources (HTML pages; the old /accounts-services/rates URL is dead):
   https://www.saskenergy.com/manage-account/rates/business-rates
   https://www.saskenergy.com/manage-account/rates-fees-and-charges/federal-carbon-tax
   https://www.saskenergy.com/manage-account/rates/gas-retailers
+  https://www.saskenergy.com/manage-account/rates-fees-and-charges/service-fees
+  https://online.flippingbook.com/view/493513/45/ and /46/ (Terms and Conditions of
+  Service Schedule, Appendix C - Tariff of Fees, linked from the service fees page)
 
 Saskatchewan gas rates are regulated by the Saskatchewan Rate Review
 Panel.  SaskEnergy uses m3 as the primary billing unit.
@@ -32,6 +35,22 @@ PAGE_URLS = {
     "carbon": BASE_URL + "/manage-account/rates-fees-and-charges/federal-carbon-tax",
     "retailers": BASE_URL + "/manage-account/rates/gas-retailers",
 }
+FEE_URLS = {
+    "fees": BASE_URL + "/manage-account/rates-fees-and-charges/service-fees",
+    "appendix_c": "https://online.flippingbook.com/view/493513/45/",
+    "appendix_c_cont": "https://online.flippingbook.com/view/493513/46/",
+}
+# (name, page row label, Appendix C label, unit, after-hours fee published)
+FEE_ROWS = [
+    ("Tenancy Change Fee", "Tenancy Change", "Tenancy Change Fee", "$/tenancy change", True),
+    ("Service Activation Fee", "Service Activation", "Service Activation Fee", "$/activation", True),
+    ("Disconnection Fee", "Disconnection", "Disconnection Fee", "$/disconnection", True),
+    ("Missed Appointment Fee", "Missed Appointment", "Missed Appointment Fee", "$/missed appointment", True),
+    ("Meter Dispute Fee", "Meter Dispute", "Meter Dispute Fee", "$/meter dispute", False),
+    ("Equipment Service Fee", "Equipment", "Equipment Service Fee", "$/service call", True),
+    ("Multi-Suite Verification Fee", "Multi-Suite Verification", "Multi-Suite Verification Fee", "$/verification", True),
+    ("Thermocouple Fee", "Thermocouple", "Thermocouple Fee", "$/service call", True),
+]
 
 # Seed data (2024, unverified fallback only — not current truth).
 SEED_RESIDENTIAL = {
@@ -69,6 +88,15 @@ class SaskEnergyScraper(BaseScraper):
             except Exception as exc:
                 self.logger.warning("SaskEnergy %s page unavailable: %s", key, exc)
         records = self.parse_pages(pages)
+        fee_pages: dict[str, str] = {}
+        for key, url in FEE_URLS.items():
+            try:
+                fee_pages[key] = self._page_text(self.fetch_page(url))
+            except Exception as exc:
+                self.logger.warning("SaskEnergy %s page unavailable: %s", key, exc)
+        fees = self.parse_fees(fee_pages)
+        if fees:
+            records.append(fees)
         if not records:
             return None
         return self.mark_live_parsed(records)
@@ -242,6 +270,105 @@ class SaskEnergyScraper(BaseScraper):
             except ValueError as exc:
                 self.logger.warning("SaskEnergy %s not parsed live: %s", name, exc)
         return records
+
+    def parse_fees(self, pages: dict[str, str], today: Optional[date] = None) -> Optional[TariffRecord]:
+        """Build the one-time service fee record from the service fees page and dated Appendix C.
+
+        Values come from the service fees table; each fee is kept only when Appendix C
+        (which carries the effective date) prints the same values for the same fee.
+        """
+        today = today or datetime.now(timezone.utc).date()
+        page = self._norm(pages.get("fees", ""))
+        appendix = self._norm(pages.get("appendix_c", "") + " " + pages.get("appendix_c_cont", ""))
+        dated = re.search(r"APPENDIX C\W{0,3}\S{0,3}\W{0,3}TARIFF OF FEES EFFECTIVE ([A-Z][a-z]+ \d{1,2}, \d{4})", appendix)
+        effective = self._date(dated.group(1)) if dated else None
+        if (not effective or effective > today or "Terms and Conditions of Service Schedule" not in page
+                or "Fee During Business Hours Fee After Hours" not in page
+                or "Terms and Conditions of Service Schedule" not in appendix):
+            self.logger.warning("SaskEnergy service fees not parsed live: dated Appendix C or fee table missing")
+            return None
+        eff_s = effective.isoformat()
+        url = FEE_URLS["appendix_c"]
+        detail = (f"Terms and Conditions of Service Schedule, Appendix C - Tariff of Fees effective "
+                  f"{effective.strftime('%B')} {effective.day}, {effective.year}; values match the service fees page")
+
+        def confirmed(label: str, sequence: str) -> bool:
+            return any(sequence in appendix[m.end():m.end() + 160] for m in re.finditer(re.escape(label), appendix))
+
+        comps: list[RateComponent] = []
+        classes = r"(?:All Rate Classifications|Residential & Commercial Small Commercial Large & Industrial)"
+        for name, row, label, unit, after_hours in FEE_ROWS:
+            after = r"\$(\d[\d,]*(?:\.\d\d)?)" if after_hours else "N/A"
+            match = re.search(rf"(?<![\w-]){re.escape(row)} {classes} \$(\d[\d,]*(?:\.\d\d)?)"
+                              rf"(?: \$(\d[\d,]*(?:\.\d\d)?))? {after}(?: {after})?(?= |$)", page)
+            if not match:
+                self.logger.warning("SaskEnergy %s not parsed live: row missing", name)
+                continue
+            values = [self._num(v) for v in match.groups() if v is not None]
+            # Two-group rows list both business-hours cells before both after-hours cells.
+            if match.group(2) is not None:
+                business = values[:2]
+                after_values = values[2:]
+            else:
+                business = values[:1]
+                after_values = values[1:]
+            if len(set(business)) != 1 or len(set(after_values)) > 1 or min(values) <= 0:
+                self.logger.warning("SaskEnergy %s not parsed live: class-specific or non-positive fee", name)
+                continue
+            fee = business[0]
+            late = after_values[0] if after_values else None
+            sequence = f"${fee:g} ${late:g}" if late is not None else f"${fee:g} N/A"
+            if not confirmed(label, sequence):
+                self.logger.warning("SaskEnergy %s not parsed live: Appendix C does not confirm %s", name, sequence)
+                continue
+            comps.append(RateComponent(
+                "other", f"{name} - Business Hours", fee, unit, sub_component="business hours",
+                effective_date=eff_s, source_url=url, source_detail=detail,
+                notes="One-time fee per occurrence when the service is performed during business hours."))
+            if late is not None:
+                comps.append(RateComponent(
+                    "other", f"{name} - After Hours", late, unit, sub_component="after hours",
+                    effective_date=eff_s, source_url=url, source_detail=detail,
+                    notes="Conditional alternative: replaces the business-hours fee only when the service is "
+                          "performed after business hours."))
+
+        late_payment = re.search(r"Late Payment All Rate Classifications (\d+(?:\.\d+)?)% interest rate per month, "
+                                 r"or (\d+(?:\.\d+)?)% per year", page)
+        if late_payment and re.search(
+                rf"payable to SaskEnergy on all SaskEnergy accounts is {float(late_payment.group(1)):.1f}% per Month, "
+                rf"compounded monthly, or {re.escape(late_payment.group(2))}% per annum", appendix):
+            comps.append(RateComponent(
+                "other", "Late Payment Charge", round(float(late_payment.group(1)) / 100, 6), "fraction/month",
+                effective_date=eff_s, source_url=url, source_detail=detail,
+                notes=f"Interest on overdue balances only: {late_payment.group(1)}% per month compounded monthly "
+                      f"({late_payment.group(2)}% per year)."))
+        else:
+            self.logger.warning("SaskEnergy Late Payment Charge not parsed live")
+        for name, row, unit, wording in (
+            ("Return Payment Fee", "Return Payment", "$/returned payment", "for each returned payment"),
+            ("Dispute Resolution Fee", "Dispute Resolution", "$/application", "for each application"),
+        ):
+            match = re.search(rf"{row} All Rate Classifications \$(\d+(?:\.\d\d)?) {wording}", page)
+            value = self._num(match.group(1)) if match else 0
+            if value <= 0 or f"The {name} is ${value:.2f} {wording}" not in appendix:
+                self.logger.warning("SaskEnergy %s not parsed live", name)
+                continue
+            comps.append(RateComponent(
+                "other", name, value, unit, effective_date=eff_s, source_url=url, source_detail=detail,
+                notes=f"One-time fee {wording}."))
+        if not comps:
+            return None
+        return TariffRecord(
+            utility_name="SaskEnergy", province="SK", utility_type="gas",
+            tariff_name="Service Fees (Terms and Conditions Appendix C)", tariff_code="T&C-C",
+            customer_class="other", sub_class="service fees", rate_structure="flat", pricing_method="regulated",
+            effective_date=eff_s, source_url=url, source_page="Appendix C - Tariff of Fees", confidence="high",
+            notes=("One-time service and account fees that apply across rate classes under the Terms and Conditions of "
+                   "Service Schedule; not recurring gas charges and never part of a monthly bill estimate. After-hours "
+                   "fees are alternatives to the business-hours fee. Safety services (no charge), emergency/facility "
+                   "damage and custom services (variable charge basis) and deposits are not priced."),
+            components=comps,
+        )
 
     def _build(
         self, name: str, code: str, cclass: str, sub: Optional[str],

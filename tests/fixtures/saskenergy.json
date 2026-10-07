@@ -48,7 +48,10 @@
         "delivery_first_40000_m3_month": 0.0507,
         "delivery_remaining": 0.0446,
         "commodity": 0.1264,
-        "annual_m3": [660001, 970000],
+        "annual_m3": [
+          660001,
+          970000
+        ],
         "closed_to_new_customers": "2022-09-08",
         "delivery_only": false
       }
@@ -57,5 +60,23 @@
       "Small Industrial Delivery Service (page states Small Industrial customers are not eligible to purchase gas from a Gas Retailer)",
       "Firm delivery above 660,000 m3/year for new customers (TransGas service, not a SaskEnergy rate page)"
     ]
-  }
+  },
+  "fee_pages": {
+    "fees": {
+      "url": "https://www.saskenergy.com/manage-account/rates-fees-and-charges/service-fees",
+      "section": "Service Fees page: intro and fee tables (main content)",
+      "text": "The fees listed below may appear on your bill depending on your circumstances or the status of your account. These fees reflect the current amounts outlined in SaskEnergy's Terms and Conditions of Service Schedule . This is not a complete list of all possible fees and may change at any time. Billing & Payment Service Customer Rate Classification(s) Fee During Business Hours Late Payment All Rate Classifications 2% interest rate per month, or 26.82% per year Return Payment All Rate Classifications $40 for each returned payment Dispute Resolution All Rate Classifications $50 for each application Administrative Service Customer Rate Classification(s) Fee During Business Hours Fee After Hours Tenancy Change All Rate Classifications $30 $30 Service Activation Residential & Commercial Small Commercial Large & Industrial $115 $115 $140 $140 Disconnection All Rate Classifications $80 $95 Missed Appointment All Rate Classifications $115 $125 Meter Dispute Residential & Commercial Small Commercial Large & Industrial $50 $50 N/A N/A Safety Service Customer Rate Classification(s) Fee During Business Hours Fee After Hours Gas Leaks/Odour Response All Rate Classifications No Charge No Charge Gas Line Locate All Rate Classifications No Charge N/A Emergency/Facility Damage All Rate Classifications Variable Charge Basis Variable Charge Basis Other Services Service Customer Rate Classification(s) Fee During Business Hours Fee After Hours Equipment All Rate Classifications $100 $120 Multi-Suite Verification All Rate Classifications $100 $120 Thermocouple All Rate Classifications $125 $150"
+    },
+    "appendix_c": {
+      "url": "https://online.flippingbook.com/view/493513/45/",
+      "section": "Terms and Conditions of Service Schedule flipbook page 45 (printed Appendix C page 42): Tariff of Fees effective March 1, 2018",
+      "text": "Terms & Conditions of Service Schedule - Page 45 1 44 Table of contents 46 72 Terms & Conditions of Service Schedule APPENDIX C â TARIFF OF FEES EFFECTIVE March 1, 2018 Applicable Customer Rate Classification(s) Service Fee During Business Hours Service Fee After Business Hours Service Safety Service Gas Leaks/Odors Fee All Rate Classifications All Rate Classifications All Rate Classifications All Rate Classifications All Rate Classifications All Rate Classifications No Charge No Charge Line Locate Fee No Charge N/A Emergency/Facility Damage Fee Non-Safety Service Equipment Service Fee Multi-Suite Verification Fee Thermocouple Fee Variable Charge Basis Variable Charge Basis $100 $120 $100 $120 $125 $150 Administrative Service Fees Tenancy Change Fee All Rate Classifications $30 $30 Residential & Commercial Small Commercial Large & Industrial Service Activation Fee $115 $140 $115 $140 Disconnection Fee All Rate Classifications All Rate Classifications $80 $95 Missed Appointment Fee $115 $125 Residential & Commercial Small Commercial Large & Industrial Meter Dispute Fee $50 N/A $50 N/A Other Service Fees, excluding Custom Services Fees Variable Charge Basis or as otherwise quoted prior to the supply of Service. Variable Charge Basis or as otherwise quoted prior to the supply of Service. All Rate Classifications SaskEnergy Terms and Conditions of Service Schedule â Appendix C Page 42"
+    },
+    "appendix_c_cont": {
+      "url": "https://online.flippingbook.com/view/493513/46/",
+      "section": "Terms and Conditions of Service Schedule flipbook page 46 (printed Appendix C page 43): late payment, return payment, dispute resolution",
+      "text": "Terms & Conditions of Service Schedule - Page 46 1 45 Table of contents 47 72 Terms & Conditions of Service Schedule Late Payment Charge The interest rate payable to SaskEnergy on all SaskEnergy accounts is 2.0% per Month, compounded monthly, or 26.82% per annum. Return Payment Fee The Return Payment Fee is $40.00 for each returned payment. Dispute Resolution Fee The Dispute Resolution Fee is $50.00 for each application. SaskEnergy Terms and Conditions of Service Schedule â Appendix C Page 43"
+    }
+  },
+  "fee_pages_note": "Retrieved 2026-10-07 via SaskEnergyScraper.fetch_page/_page_text/_norm (flipbook pages are served without a charset, so the en dash after APPENDIX C is decoded as mojibake). Kept outside 'pages' so the gas-tariff parse_pages tests are unaffected."
 }

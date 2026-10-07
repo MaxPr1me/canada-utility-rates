@@ -38,6 +38,53 @@
       "text": "PDF page 17 Centra Gas Manitoba Inc. November 1, 2025 Schedule of Sales and Transportation of Rates Page 16 of 77 B) Service Offerings by Service Classification: Customers are classified as either Small General Class, Large General Class, High Volume Firm Class, Interruptible Class, Mainline Class, Special Contract Class or Power Station Class. Approved by Manitoba Public Utilities Board Order 138/25 PDF page 20 Centra Gas Manitoba Inc. November 1, 2025 Schedule of Sales and Transportation of Rates Page 19 of 77 6) Special Contract Class The Company provides Special Contract service through a written agreement between the Company and a Customer which governs the gas service to the Customer. Special Contract Service may include Sales Service and/or a Transportation Service. This service will be governed by the terms of the individual contract. 15 7) Power Station Class The Company provides service to electrical generating stations which use natural gas in the production of electricity through a written agreement between the Company and the Customer which governs the gas service to the Customer. Power Station Service may include Sales Service and/or Transportation Service. This service will be governed by the terms of the individual contract. Approved by Manitoba Public Utilities Board Order 138/25"
     }
   },
+  "appendix_a_transcription": {
+    "source_url": "https://www.hydro.mb.ca/docs/billing/schedule-of-sales-and-transportation-services-and-rates-v0826.pdf",
+    "pdf_sha256_at_transcription": "fb75d023201c286ef4fd338455722d4c801feb65951e86af6c087311147b6fd9",
+    "transcribed": "2026-10-07",
+    "review_note": "Reviewed visually: pages rendered at 200 dpi and each Interruptible/Mainline Interruptible row re-read on a 2x zoomed crop. Appendix A pages 79-82 have no text layer for the rate tables (one JPEG image each); only the page header/footer is text. Values are dollars exactly as printed.",
+    "hash_method": "SHA-256 of the raw (still DCTDecode-encoded) stream bytes of the page's single image XObject (pdfplumber page.images[0]['stream'].get_rawdata()). The parser requires exactly one image per page.",
+    "board_order": "111/26",
+    "effective": "August 1, 2026",
+    "reference_page_hashes": {
+      "79": "55411c10786ccbbf30c37e75ff9b37f99c3122283b051f861b604d167ca4088a",
+      "81": "a9cfb7f38e6293bce9321d1969c4e01308c808d5fe467912611c91b720e09afc"
+    },
+    "pages": {
+      "80": {
+        "label": "Page 2 of 4",
+        "title": "Interruptible Sales and Delivery Services Rate Schedules (Base Rates Only - No Riders)",
+        "image_sha256": "b91ddd31339ba4fac2f89dd899cf0f12c986de3b287da11bd9903ae8c1f9c4c2",
+        "header_text": "CENTRA GAS MANITOBA INC. ATTACHMENT 1 Appendix A - Schedule of Sales and Transportation Services and Rates August 1, 2026 Approved Rates Effective August 1, 2026 Page 2 of 4 Approved by Board Order: 111/26 Supersedes Board Order: 60/26 Effective from: August 1, 2026 Supersedes: May 1, 2026 Rates Date Implemented: August 1, 2026",
+        "columns": {"basic_sales": "Basic Monthly Charge ($/month), Sales Service, Distribution to Customer (2)", "basic_t": "Basic Monthly Charge ($/month), T-Service Distribution to Customer (Delivery)", "demand_transport": "Monthly Demand Charge ($/m3/month), Transportation to Centra (1)", "demand_distribution": "Monthly Demand Charge ($/m3/month), Distribution to Customer (2)", "demand_delivery": "Monthly Demand Charge ($/m3/month), Delivery (1+2)", "demand_t": "Monthly Demand Charge ($/m3/month), T-Service", "commodity": "Commodity Volumetric Charge ($/m3), Gas Commodity", "transport": "Commodity Volumetric Charge ($/m3), Transportation to Centra (1)", "distribution": "Commodity Volumetric Charge ($/m3), Distribution to Customer (2)", "delivery": "Commodity Volumetric Charge ($/m3), Delivery (1+2)", "delivery_t": "Commodity Volumetric Charge ($/m3), T-Service", "alternate_delivery": "Alternate Supply Service Delivery ($/m3); gas supply is 'Negotiated Cost of Gas'"},
+        "rows": {
+          "Interruptible Service": {"basic_sales": 1409.45, "basic_t": 1409.45, "demand_transport": 0.0777, "demand_distribution": 0.2297, "demand_delivery": 0.3074, "demand_t": 0.2297, "commodity": 0.0826, "transport": 0.0061, "distribution": 0.0129, "delivery": 0.0190, "delivery_t": 0.0129, "alternate_delivery": 0.0129},
+          "Mainline Interruptible (with firm delivery)": {"basic_sales": 1306.98, "basic_t": 1306.98, "demand_transport": 0.1195, "demand_distribution": 0.2272, "demand_delivery": 0.3467, "demand_t": 0.2272, "commodity": 0.0826, "transport": 0.0030, "distribution": 0.0030, "delivery": 0.0060, "delivery_t": 0.0030, "alternate_delivery": 0.0030}
+        }
+      },
+      "82": {
+        "label": "Page 4 of 4",
+        "title": "Interruptible Sales and Delivery Services Rate Schedules (Base Rates Plus Riders)",
+        "image_sha256": "6d2491c49115e819a18203b9a6322da78c8eced23d7e9b9a0d4643d229a8d009",
+        "header_text": "CENTRA GAS MANITOBA INC. ATTACHMENT 1 Appendix A - Schedule of Sales and Transportation Services and Rates August 1, 2026 Approved Rates Effective August 1, 2026 Page 4 of 4 Approved by Board Order: 111/26 Supersedes Board Order: 60/26 Effective from: August 1, 2026 Supersedes: May 1, 2026 Rates Date Implemented: August 1, 2026",
+        "rows": {
+          "Interruptible Service": {"basic_sales": 1409.45, "basic_t": 1409.45, "demand_transport": 0.1398, "demand_distribution": 0.2299, "demand_delivery": 0.3697, "demand_t": 0.2299, "commodity": 0.0660, "transport": 0.0031, "distribution": 0.0282, "delivery": 0.0313, "delivery_t": 0.0086, "alternate_delivery": 0.0129},
+          "Mainline Interruptible (with firm delivery)": {"basic_sales": 1306.98, "basic_t": 1306.98, "demand_transport": 0.1816, "demand_distribution": 0.2271, "demand_delivery": 0.4087, "demand_t": 0.2271, "commodity": 0.0660, "transport": 0.0000, "distribution": 0.0184, "delivery": 0.0184, "delivery_t": 0.0021, "alternate_delivery": 0.0030}
+        }
+      }
+    },
+    "evidence": {
+      "19": "Centra Gas Manitoba Inc. November 1, 2025 Schedule of Sales and Transportation of Rates Page 18 of 77 5) Mainline Class (“MLC”) Mainline Customers receive gas through one meter where the Customer is served directly from the Company’s transmission system or through dedicated distribution facilities at pressures in excess of medium pressure and whose annual gas requirements equal or exceed 680,000 3 m and who contract for such service for a minimum of one year. Mainline Customers may elect Firm Sales Service, Interruptible Sales Service (in conjunction with Firm Delivery Service), or Firm Transportation Service. The charges include a Basic Monthly Charge, a Monthly Demand Charge, a Gas Commodity charge, and a Delivery charge as described in Sections IX and X of this Schedule of Sales and Transportation Services and Rates. This service may be subject to Special Terms and Conditions as specified in sections V and VI. Approved by Manitoba Public Utilities Board Order 138/25",
+      "50": "Centra Gas Manitoba Inc. November 1, 2025 Schedule of Sales and Transportation of Rates Page 49 of 77 VI. Special Terms And Conditions: Interruptible Sales Service And Interruptible Delivery Service The provisions of this Section VI pertains to Interruptible Sales Customers (taking corresponding Interruptible Delivery Service) and Mainline Customers electing Interruptible Sales (in conjunction with Firm Delivery Service) provided by the Company. 7 A) A contract setting out Customer specific information shall be established between the Company and the Customer having a minimum term of one year. The agreement shall remain in effect for successive periods of one year, unless written notice of termination is given by either party to the other at least 90 days prior to the expiration of the agreement or any renewal thereof. 14 B) In recognition of the curtailable nature of Interruptible Service the Customer agrees, at their sole expense, to: 17 1) Install, maintain and have ready to operate at all times a stand-by fuel source of sufficient size and capacity to satisfactorily replace the natural gas energy supply furnished by the Company; and to, 21 2) Ensure that sufficient supplies of stand-by fuel are available at all times, and that the Customer has sufficient personnel resources available to operate the stand-by fuel system at any time upon notice from the Company; and to, 26 3) Utilize the stand-by fuel source in the event that the Company gives notice to the Customer of a curtailment of service. Approved by Manitoba Public Utilities Board Order 138/25"
+    },
+    "anomalies": [
+      "PDF page 79 (Page 1 of 4) MLC base-only demand Transportation to Centra $0.2524 equals the HVF base-only demand Distribution to Customer $0.2524 on the line above; recorded as printed, not corrected. Not used by the Mainline Interruptible record.",
+      "PDF page 81 (Page 3 of 4) HVF availability reads 'For gas delivered to natural gas distribution cooperatives', contradicting PDF page 79 ('annual volumes greater than 680,000 m3') and the text schedule page 17; recorded only as a note.",
+      "PDF pages 80/82 footnote 2 says the T-Service delivery rate equals the distribution rate, but on the rider-inclusive page 82 the T-Service volumetric values ($0.0086 Interruptible, $0.0021 Mainline) differ from Sales distribution ($0.0282, $0.0184); the text commercial page publishes the same T-Service values, so T-Service riders differ from Sales riders.",
+      "Alternate Supply Service delivery ($0.0129 Interruptible, $0.0030 Mainline Interruptible) is identical on the base-only and rider-inclusive pages and equals each row's base-only volumetric distribution charge.",
+      "The Mainline Interruptible T-Service column on PDF page 82 ($1,306.98; $0.2271/m3/month; $0.0021/m3) equals Mainline Firm T-Service; PDF page 19 offers Mainline customers only Firm Transportation Service, so no separate interruptible T-Service record is built."
+    ]
+  },
   "expected": {
     "today": "2026-10-02",
     "tariff_effective_date": "2026-08-01",

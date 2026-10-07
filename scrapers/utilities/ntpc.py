@@ -33,6 +33,8 @@ Official sources (live parser):
     Living Subsidy and rider cross-check):
     https://www.ntpc.com/customer-service/residential-service/residential-electrical-rates
   - TPSP and rider-explanation pages for subsidy eligibility.
+  - PUB-approved Terms and Conditions of Service (Schedule "D") for the
+    conditional Taltson retail interruptible heating rate on schedule page 20.
 
 NTPC does not retail power in Yellowknife (Naka Power does), so the legacy
 "Yellowknife Zone" seeds have no live NTPC equivalent and are only emitted when
@@ -61,7 +63,10 @@ RESIDENTIAL_URL = "https://www.ntpc.com/customer-service/residential-service/res
 SCHEDULE_INDEX_URL = "https://www.ntpc.com/node/796"
 TPSP_URL = "https://www.ntpc.com/customer-service/territorial-power-support-program-tpsp"
 RIDER_URL = "https://www.ntpc.com/node/976"
+TERMS_URL = ("https://www.ntpc.com/sites/default/files/2026-05/"
+             "Terms%20and%20Conditions%20of%20Service%20-%20Approved%20-%20February%201%2C%202026.pdf")
 DIESEL_RESIDENTIAL_NAME = "Residential Service — Diesel Zone"
+INTERRUPTIBLE_NAME = "Interruptible Energy For Heating – Retail (Taltson: Fort Smith/Fort Resolution)"
 
 # canonical key -> (rate-schedule label prefix, residential-page label prefix, display name, rider-page heading)
 RIDERS = {
@@ -86,6 +91,39 @@ NO_STABILIZATION_RE = re.compile(r"NWT Stabilization rider does not apply to Hay
 MISC_ONLY_RE = re.compile(r"Miscellaneous Deferral Account Transfers only applies to Hay River")
 HAY_RIVER = "Hay River"
 SEASON_MONTHS = {"September 1 to March 31": "9,10,11,12,1,2,3", "April 1 to August 31": "4,5,6,7,8"}
+INTERRUPTIBLE_HEAD_RE = re.compile(r"Interruptible Energy For Heating\s*[-–—]\s*(Retail|Wholesale)")
+TERMS_EFFECTIVE_RE = re.compile(r"TERMS & CONDITIONS OF SERVICE Effective Date:\s*([A-Z][a-z]+\s+\d{1,2},\s*\d{4})")
+TERMS_APPROVED = "have been approved by the Public Utilities Board of the Northwest Territories"
+SCHEDULE_D_RE = re.compile(r"SCHEDULE \"D\" INTERRUPTIBLE ENERGY FOR HEATING:\s*TALTSON RETAIL")
+SCHEDULE_E_RE = re.compile(r"SCHEDULE \"E\" INTERRUPTIBLE ENERGY FOR HEATING")
+# Schedule "D" sentences that define eligibility; any wording change omits the record.
+SCHEDULE_D_QUOTES = {
+    "available": "Interruptible energy is available to general service and industrial customers in Fort Smith and "
+                 "Fort Resolution from time to time for heating.",
+    "surplus": "The availability of interruptible energy is determined by the Northwest Territories Power "
+               "Corporation (NTPC) based on the availability of surplus hydro capacity.",
+    "new_loads": "The rate is only available to new interruptible loads in areas where there is sufficient surplus "
+                 "distribution system capacity at the time of connection.",
+    "separate": "The interruptible energy is provided on a separate service that is fully interruptible at the "
+                "request of NTPC.",
+    "incremental": "The customer must satisfy NTPC that the interruptible electricity use is in excess of the "
+                   "customer's firm electricity consumption and represents incremental usage displacing an "
+                   "alternative fuel source by an appliance installed primarily to provide heat.",
+    "backup": "A viable alternative fuel source is available to the customer, capable of providing the same quantity "
+              "of heating in the event of electricity interruptions of unlimited duration.",
+    "notice": "Customers will not be permitted to have interruptible electricity loads shifted to firm electric "
+              "service without providing NTPC 12 months notice, unless waived at NTPC's discretion.",
+    "no_return": "Once any interruptible electricity load is switched to firm service, it will not be able to switch "
+                 "back to interruptible electricity service in the future.",
+    "rate": "The interruptible energy charge shall be the published rate filed and approved by the NWT Public "
+            "Utilities Board from time to time.",
+    "applied": "The interruptible energy charge for any rate period shall be applied to all interruptible energy "
+               "kW.h consumed in each month during that rate period.",
+    "interruptions": "There shall be no limits on the frequency or duration of interruptions in the supply of "
+                     "electricity for heating purposes which NTPC may cause.",
+    "install": "The customer will be responsible for any cost of installing the separate service, including all "
+               "necessary equipment and upgrades, metering devices and any required remote interruption equipment.",
+}
 
 
 class _Reject(ValueError):
@@ -135,6 +173,27 @@ class _ResidentialPage:
     url: str
     effective: str
     groups: dict[str, _PageGroup]
+
+
+@dataclass
+class _Interruptible:
+    url: str
+    effective: str
+    page: int
+    cents: float
+
+
+@dataclass
+class _ScheduleD:
+    url: str
+    effective: str
+    pages: list[int]
+    quotes: dict[str, str]
+
+
+def _flat(text: str) -> str:
+    text = text.translate(str.maketrans({"“": '"', "”": '"', "’": "'", "‘": "'"}))
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def _norm(name: str) -> str:
@@ -587,6 +646,108 @@ def _record(schedule: _Schedule, block: _Block, communities: list[str], energy: 
         notes=" ".join(notes), components=components,
     )
 
+
+def parse_interruptible_retail(pages: list[DocumentPage], url: str, today: str) -> _Interruptible:
+    """Parse the Taltson "Interruptible Energy For Heating - Retail" block; the wholesale block is ignored."""
+    found: list[_Interruptible] = []
+    for page in pages:
+        heads = list(INTERRUPTIBLE_HEAD_RE.finditer(page.text))
+        for index, head in enumerate(heads):
+            if head.group(1) != "Retail":
+                continue
+            if not re.search(r"^Zone:\s*Taltson System\s*$", page.text, re.M):
+                raise _Reject("retail interruptible heating block is not under Zone: Taltson System")
+            dates = {_iso(value) for value in EFFECTIVE_RE.findall(page.text)}
+            if len(dates) != 1:
+                raise _Reject(f"interruptible heating page dates {sorted(dates)}")
+            end = heads[index + 1].start() if index + 1 < len(heads) else len(page.text)
+            lines = [line.strip() for line in page.text[head.end():end].splitlines() if line.strip()]
+            lines = [line for line in lines if not re.fullmatch(r"Page \d+", line)]
+            energy = [m for line in lines if (m := re.fullmatch(r"Energy Charge:\s*Interruptible Energy\s+" + CENTS,
+                                                                 line))]
+            expected = {"Monthly Service Charge: N/A", "Demand Charge: N/A"}
+            others = [line for line in lines if line not in expected and not re.fullmatch(
+                r"Energy Charge:\s*Interruptible Energy\s+" + CENTS, line)]
+            if len(energy) != 1 or not expected <= set(lines) or others:
+                raise _Reject(f"unexpected retail interruptible heating block {lines!r}")
+            found.append(_Interruptible(url, dates.pop(), page.page_number, float(energy[0].group(1))))
+    if len(found) != 1:
+        raise _Reject(f"expected one retail interruptible heating block, found {len(found)}")
+    if found[0].effective > today:
+        raise _Reject(f"interruptible heating rate effective {found[0].effective} is in the future")
+    return found[0]
+
+
+def parse_terms_schedule_d(pages: list[DocumentPage], url: str, today: str) -> _ScheduleD:
+    """Return the dated, PUB-approved Schedule "D" eligibility wording; every required sentence must be present."""
+    text = _flat("\n".join(page.text for page in pages))
+    dates = {_iso(value) for value in TERMS_EFFECTIVE_RE.findall(text)}
+    if len(dates) != 1:
+        raise _Reject(f"terms and conditions effective dates {sorted(dates)}")
+    effective = dates.pop()
+    if effective > today:
+        raise _Reject(f"terms and conditions effective {effective} is in the future")
+    if TERMS_APPROVED not in text:
+        raise _Reject("terms and conditions lack the PUB approval statement")
+    starts = [page.page_number for page in pages if SCHEDULE_D_RE.search(_flat(page.text))]
+    if len(starts) != 1:
+        raise _Reject(f"expected one Schedule D heading, found {len(starts)}")
+    section: list[DocumentPage] = []
+    for page in pages:
+        if page.page_number < starts[0]:
+            continue
+        flat = _flat(page.text)
+        if section and SCHEDULE_E_RE.search(flat):
+            break
+        section.append(page)
+    body = _flat("\n".join(page.text for page in section))
+    body = body[SCHEDULE_D_RE.search(body).end():]
+    if match := SCHEDULE_E_RE.search(body):
+        body = body[:match.start()]
+    missing = [key for key, quote in SCHEDULE_D_QUOTES.items() if quote not in body]
+    if missing:
+        raise _Reject(f"Schedule D wording changed or missing: {missing}")
+    return _ScheduleD(url, effective, [page.page_number for page in section], dict(SCHEDULE_D_QUOTES))
+
+
+def build_interruptible_record(rate: _Interruptible, terms: _ScheduleD) -> TariffRecord:
+    """Build the conditional retail interruptible heating record; riders are not stated for this rate."""
+    pages = f"{terms.pages[0]}-{terms.pages[-1]}" if len(terms.pages) > 1 else str(terms.pages[0])
+    terms_detail = (f"Terms and Conditions of Service (PUB-approved, effective {terms.effective}), "
+                    f"Schedule \"D\" Interruptible Energy for Heating: Taltson Retail, PDF pages {pages}")
+    q = terms.quotes
+    eligibility = ("General service and industrial customers in Fort Smith and Fort Resolution (Taltson System), "
+                   "for new, separately serviced, fully interruptible heating load only, subject to Schedule \"D\": "
+                   + " ".join(q[key] for key in ("available", "new_loads", "separate", "incremental", "backup",
+                                                  "notice", "no_return")))
+    component = RateComponent(
+        component_type="energy", component_name="Interruptible Energy Charge",
+        charge_value=_dollars_per_kwh(rate.cents), charge_unit="$/kWh",
+        effective_date=rate.effective, source_url=rate.url,
+        source_detail=(f"PDF page {rate.page}, Zone: Taltson System, Interruptible Energy For Heating - Retail; "
+                       f"conditions: {terms_detail} ({terms.url})"),
+        confidence="high",
+        notes=("Conditional: applies only to eligible interruptible heating energy on a separate service, not to "
+               "firm consumption. " + q["applied"] + " " + q["surplus"] + " " + q["interruptions"]
+               + " The schedule page lists no service or demand charge and states no riders for this rate."),
+    )
+    notes = [
+        f"PUB-approved NTPC rate schedule effective {rate.effective}, Taltson System, Interruptible Energy For "
+        "Heating - Retail. Wholesale interruptible heating (Schedule \"E\", for NUL-NWT) is excluded.",
+        f"Eligibility and service terms: {terms_detail}. {q['rate']}",
+        "Riders not stated: the schedule page for this rate lists only the interruptible energy charge, so no "
+        "Taltson rider components are stored.",
+        q["install"],
+        "Availability is at NTPC's discretion; this is not a general firm commercial rate.",
+    ]
+    return TariffRecord(
+        utility_name=UTILITY_NAME, province="NT", utility_type="electricity", tariff_name=INTERRUPTIBLE_NAME,
+        customer_class="commercial", sub_class="interruptible heating", eligibility=eligibility,
+        rate_structure="flat", pricing_method="regulated", effective_date=rate.effective,
+        source_url=rate.url, source_page=f"PDF page {rate.page}", confidence="high",
+        notes=" ".join(notes), components=[component],
+    )
+
 # ── Seed / fallback rate data ─────────────────────────────────────
 # Approximate published rates as of early 2025.
 # NTPC has many rate zones; we capture Yellowknife (hydro) and a
@@ -658,7 +819,24 @@ class NTPCScraper(BaseScraper):
         page = self._optional("residential page", lambda: parse_residential_page(self.fetch_page(RESIDENTIAL_URL), today))
         tpsp = self._optional("TPSP page", lambda: parse_tpsp(self.fetch_page(TPSP_URL)))
         rider_notes = self._optional("rider page", lambda: parse_rider_page(self.fetch_page(RIDER_URL))) or {}
-        return build_records(schedule, page, tpsp, rider_notes) or None
+        records = build_records(schedule, page, tpsp, rider_notes)
+        interruptible = self._interruptible(pages, pdf_url, schedule.effective, today)
+        if records and interruptible:
+            records.append(interruptible)
+        return records or None
+
+    def _interruptible(self, pages: list[DocumentPage], pdf_url: str, effective: str,
+                       today: str) -> Optional[TariffRecord]:
+        """Return the conditional retail interruptible heating record, or None if either source fails closed."""
+        try:
+            rate = parse_interruptible_retail(pages, pdf_url, today)
+            if rate.effective != effective:
+                raise _Reject(f"interruptible heating date {rate.effective} differs from schedule {effective}")
+            terms = parse_terms_schedule_d(extract_pdf_pages(self.fetch_bytes(TERMS_URL)), TERMS_URL, today)
+            return build_interruptible_record(rate, terms)
+        except Exception as exc:
+            self.logger.warning("NTPC interruptible heating record omitted: %s", exc)
+            return None
 
     def _optional(self, label: str, action):
         try:

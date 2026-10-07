@@ -1,9 +1,9 @@
 # Phase 5 Completion Matrix
 
 **Updated:** 2026-10-07. Scope: all 84 registered utilities, not every utility
-in the broader Canadian inventory. The batch 10 export has 824 stored tariff versions / 5,286
-components / **344 stored live versions / 480 seed**. Latest-per-name coverage is
-**339 live tariffs across 21 utilities**; older versions remain in history. All 20 campaign utilities
+in the broader Canadian inventory. The batch 11 export has 838 stored tariff versions / 5,417
+components / **358 stored live versions / 480 seed**. Latest-per-name coverage is
+**353 live tariffs across 21 utilities**; older versions remain in history. All 20 campaign utilities
 have live output; Ontario and the five Ontario/Alberta gas utilities have none.
 Counts include retained non-building reference records, not only building tariffs.
 
@@ -15,27 +15,28 @@ utilities (Yukon Energy, ATCO Electric Yukon, NTPC, Qulliq), whose service is no
 regulated. Ontario and Alberta are excluded from this run, not removed from the database
 or website. No additional inventory utilities are being registered.
 
-**Current checkpoint:** Batch 10 implemented, stored and exported (October 7).
-There are **230 latest live records at the 16 provincial targets**, **108 at the four
-territorial utilities** and **994 passing tests across 8 modules**. DB validation reported
-0 errors and 2 existing AESO warnings. No target utility is seed-only, and none is
-catalogue-complete except SaskPower's audited building scope and Maritime Electric's audited
-building/industrial classes. Local history contains 1,790 snapshots; batch 10 appended 220
-without changing prior snapshots. Excluded-region records remain retained.
+**Current checkpoint:** Batch 11 close-out refresh implemented, stored and exported (October 7).
+There are **243 latest live records at the 16 provincial targets**, **109 at the four
+territorial utilities** and **1,052 passing tests across 8 modules**. DB validation reported
+0 errors and 2 existing AESO warnings. No target utility is seed-only. The reconciliation table
+below classifies every recorded class; no priced, dated in-scope gap remains. Local history
+contains 2,142 snapshots; the batch 11 refresh appended 352 without changing prior snapshots.
+Excluded-region records remain retained.
 
 A successful scrape or one live residential class does not establish complete
 building coverage; counts include optional adjustments and reference records.
 
 | Priority | Utility queue | Next work |
 |---|---|---|
-| Blocked / needs text | Centra Gas Mainline Interruptible | Priced only in scanned Appendix A (PDF pp80/82); needs reviewed transcription or a text source |
-| Needs decision | NTPC Taltson interruptible heating | Heating-only interruptible retail offer (6.30 cents/kWh) without published eligibility text |
-| Monitor | Qulliq final GRA decision; NTPC Snare TPSP saving mismatch | Interim rates stay medium confidence; Snare TPSP omitted until source reconciles |
-| Catalogue gaps | FortisBC Energy; Yukon Energy/ATCO; Hydro-Quebec | RNG (B) and Customer Choice (U) variants; riders R1/S/E and winter rebate; Load Retention/Additional Electricity/Industrial Revitalization are not general published prices |
-| Deferred to market-rate work | FortisBC Electric RS38; BC Hydro RS1892; NSPower one-part real-time pricing | Market-indexed energy prices handled with the Alberta/Ontario market work |
+| Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11); re-transcribe when Appendix A changes |
+| Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch | Interim rates stay medium confidence (URRC recommended approval); Snare TPSP omitted until source reconciles |
+| Source-blocked | See the reconciliation table below | Published without printed, dated prices; re-check periodically |
+| Deferred to market-rate work | FortisBC Electric RS38; BC Hydro RS1892; NSPower one-part real-time pricing; NL Hydro monthly non-firm (5.1L, Island non-thermal) | Market-indexed energy prices handled with the Alberta/Ontario market work |
 
-**Decisions (October 7):** BC Hydro RS1828 (biomass-program contract) and Hydro-Quebec
-Rate F/FP (unmetered) are excluded. Territories are reopened for non-market regulated service.
+**Decisions (October 7):** BC Hydro RS1828 (biomass-program contract), Hydro-Quebec
+Rate F/FP (unmetered) and FortisBC Energy 11RNG are excluded. Territories are reopened for
+non-market regulated service. Centra Mainline Interruptible may use a reviewed, hash-gated
+transcription; NTPC Taltson retail interruptible heating is implemented as conditional.
 
 Utility parser and fixture work may proceed in parallel. Shared tests, registry,
 database writes, exports, documentation and publication are integrated serially.
@@ -196,11 +197,11 @@ utility is yet certified complete for its published building catalogue.
 |---|---|---|---|
 | Enbridge Gas | ON / excluded | 0 | Seed verification; legacy rate zones and full component extraction remain deferred |
 | Énergir | QC / live, partial catalogue | 5 / Oct 6 | D1/D3/D4 plus interruptible D5 (Oct 1 CST p62 distribution bands $/m3, pp63-65 interruption/minimum volume; Category A/B load-balancing alternatives p49 conditional and non-additive). Optional RNG supply $0.85239/m3 (p38) replaces ordinary supply on D1/D3/D4/D5; missing RNG does not suppress base records. Inventory adjustments customer-specific and unpriced. Load-factor formula p49 published but not computed; fixed-price supply supplier-specific and D5 make-up gas pass-through unpriced |
-| FortisBC Energy | BC / live, partial catalogue | 16 / Oct 7 | Rates 1/2/3 for Mainland/Vancouver Island and Fort Nelson (July 1, 2026; $/day basic, $/GJ components) with the BC carbon-tax elimination notice required; Rate 5 General Firm Service (basic $469.00 per month as the tariff prints it) and seasonal Rate 4 (Apr 1-Nov 1) for Mainland/Vancouver Island from the approved schedules. Residential Rate 1 and Commercial Rates 2/3 Revelstoke propane (business classes require the approved tariff index's Revelstoke availability plus residential propane evidence; each class fails independently). Batch 10: Rate 7 General Interruptible ($880/month as printed; curtailment-limited delivery; Sumas-indexed overrun as a condition) and delivery-only transportation 22/23/25/27 (marketer commodity excluded; Rate 22 firm/interruptible charges conditional). Rates 6/6P/26 NGV and 22A/22B excluded. Fort Nelson 4/5/7/22-27 have no published price table; RNG (B) and Customer Choice (U) variants remain gaps |
+| FortisBC Energy | BC / live, partial catalogue | 27 / Oct 7 | Rates 1/2/3 for Mainland/Vancouver Island and Fort Nelson (July 1, 2026; $/day basic, $/GJ components) with the BC carbon-tax elimination notice required; Rate 5 General Firm Service (basic $469.00 per month as the tariff prints it) and seasonal Rate 4 (Apr 1-Nov 1) for Mainland/Vancouver Island from the approved schedules. Residential Rate 1 and Commercial Rates 2/3 Revelstoke propane (business classes require the approved tariff index's Revelstoke availability plus residential propane evidence; each class fails independently). Batch 10: Rate 7 General Interruptible ($880/month as printed; curtailment-limited delivery; Sumas-indexed overrun as a condition) and delivery-only transportation 22/23/25/27 (marketer commodity excluded; Rate 22 firm/interruptible charges conditional). Rates 6/6P/26 NGV and 22A/22B excluded. Fort Nelson 4/5/7/22-27 have no published price table. Batch 11: Customer Choice 1U/2U/3U (delivery-only; not offered in Fort Nelson) and RNG 1RNG/2RNG/3RNG (Mainland/VI and Fort Nelson) plus 5RNG/7RNG, with Cost of Gas and RNG Charge as conditional alternatives on the chosen share; RNG Blend Service percentage unpublished; 11RNG and vehicle RNG excluded |
 | ATCO Gas | AB / excluded | 0 | Seed verification; current approved delivery classes/riders remain deferred |
 | EPCOR Natural Gas | AB registry entry / excluded | 0 | Seed verification; product, jurisdiction and identity still need confirmation |
-| Centra Gas Manitoba | MB / live, partial catalogue | 12 / Oct 5 | Residential/commercial Sales/T-service/marketer variants; approved PUB schedule (Nov 1, 2025, Order 138/25) required for volume boundaries, contracts, Mainline pressure, winter demand, T-service nomination and interruptible alternate-supply conditions. Batch 10 class audit runs every scrape: Special Contract and Power Station excluded with schedule evidence (p20); Mainline Interruptible with firm delivery blocked (scanned Appendix A pp80/82); fixed-term commodity prices unpriced |
-| SaskEnergy | SK / live, partial catalogue | 7 / Oct 7 | Residential/small/large-commercial full/delivery-only variants; batch 10 closed Small Industrial (660,001-970,000 m3/yr, full service only, monthly delivery blocks; carbon from the general April 1, 2025 Part I row). New firm delivery above 660,000 m3 is TransGas; fees lack published start date and municipal-payment scope remains under audit |
+| Centra Gas Manitoba | MB / live, partial catalogue | 13 / Oct 7 | Residential/commercial Sales/T-service/marketer variants; approved PUB schedule (Nov 1, 2025, Order 138/25) required for volume boundaries, contracts, Mainline pressure, winter demand, T-service nomination and interruptible alternate-supply conditions. Batch 10 class audit runs every scrape: Special Contract and Power Station excluded with schedule evidence (p20); Mainline Interruptible with firm delivery built in batch 11 from a reviewed, hash-gated transcription of scanned Appendix A p82 (medium confidence; Sales only); fixed-term commodity prices unpriced |
+| SaskEnergy | SK / live, partial catalogue | 8 / Oct 7 | Residential/small/large-commercial full/delivery-only variants; batch 10 closed Small Industrial (660,001-970,000 m3/yr, full service only, monthly delivery blocks; carbon from the general April 1, 2025 Part I row). New firm delivery above 660,000 m3 is TransGas; batch 11 adds service fees T&C-C from Appendix C (effective March 1, 2018); municipal-payment scope remains under audit |
 | Heritage Gas / Eastward Energy | NS / live, partial catalogue | 3 / Oct 5 | Residential and tiered General Service from the October 2026 monthly rate table linked by 'View Rates', cross-checked with page summaries; dated zero federal charge note required; municipal riders A/B as percentages; Rate Class 3 ($1,995.54/month, $0.167/GJ, $30.85 per GJ Billing Demand/month, unit and rule from the approved tariff PDF). Rate Class 4 is negotiated per site and unpublished (exclusion, not a parser gap) |
 | Liberty Utilities NB / Natural Gas NB | NB / live, partial catalogue | 4 / Oct 5 | SGS, MGS, LGS (January 1, 2025 distribution; alternative customer charges; LGS seasonal blocks) and Off-Peak Service ($50.00/month, April-November eligibility, December-March overrun note) with the current Liberty Utility Gas month and CRA New Brunswick evidence. CGS/ICGS are process-load exclusions; marketer prices not included |
 
@@ -218,17 +219,49 @@ Observed counts below use the latest tariff versions from the batch 10 store.
 |---|---|---|---|
 | Yukon Energy | 20 / Oct 7 | 1160 base + separate R/J/J1, F and dated relief; batch 10 adds 1180-1480 residential and 2160-2480 general service from ATCO's text joint YECL/YEC book (Board Order 2011-06), each reconciled with the R/J cross-reference; minimum bills, billing demand and power factor as conditions | Riders R1/S/E (currently zero), winter rebate (unpriced) and Rider B not modelled; book URL changes monthly |
 | Yukon Electrical Company (ATCO Electric Yukon) | 20 / Oct 7 | Same joint parser and evidence as Yukon Energy for ATCO service areas; old rates.html 404 replaced | Same 20 schedules as Yukon Energy, not additional classes; renderer stalls on ATCO's JS page so the book URL is static |
-| Northwest Territories Power Corporation | 62 / Oct 7 | PUB June 1, 2026 schedule via node/796: residential/GS by zone (Taltson split) and government per community; riders separate; GNWT Cost of Living Subsidy conditional credit and TPSP printed first-block price as conditional alternative, only when the residential page reconciles | Snare TPSP saving does not reconcile (omitted); no published GS/government subsidy amounts; Taltson interruptible heating needs decision; Yellowknife is Naka Power |
+| Northwest Territories Power Corporation | 63 / Oct 7 | PUB June 1, 2026 schedule via node/796: residential/GS by zone (Taltson split) and government per community; riders separate; GNWT Cost of Living Subsidy conditional credit and TPSP printed first-block price as conditional alternative, only when the residential page reconciles; batch 11 conditional Taltson retail interruptible heating (6.30 cents/kWh, Fort Smith/Fort Resolution GS/industrial, T&C Schedule D) | Snare TPSP saving does not reconcile (omitted); no published GS/government subsidy amounts; Yellowknife is Naka Power |
 | Qulliq Energy Corporation | 6 / Oct 7 | April 1, 2025 interim rates for non-government, government and municipal residential/commercial; NESP seasonal allowances conditional and unpriced; medium confidence | Final GRA decision; government/municipal commercial base charges and fuel rider unpublished |
 
 Yukon Energy's own detailed schedule PDFs remain image-only and are never read into live
 values. If the joint book is missing, renamed or disagrees with the cross-reference, only
 1160 remains live (or the affected rate is dropped).
 
+## Class-Level Reconciliation (2026-10-07, batch 11)
+
+Every published class or option recorded for the 20 campaign utilities is classified
+below. "Live" counts are latest live records after the batch 11 refresh (they include
+conditional adjustments and retained references). Items not listed under the other
+columns are live. Excluded = outside building scope or not a general published price;
+blocked = published without a printed, dated price; deferred = market-indexed (Alberta/Ontario
+market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
+
+| Utility | Live | Excluded | Source-blocked / unpublished | Deferred / monitor |
+|---|---|---|---|---|
+| BC Hydro | 17 | RS1828 biomass contract; RS1823 cancelled; irrigation, lighting, EV, IPP, wholesale/reseller, standby | RS1289 indexed cash settlement | RS1892 (Mid-C) |
+| FortisBC Electric | 11 | RS37 standby; RS96 EV; RS91 financing | RS95 (references BC Hydro RS3808 Tranche 1, not printed) | RS38 (Mid-C) |
+| Hydro-Quebec | 26 | F/FP unmetered; GD backup; BR EV; LD/LP auxiliary/standby; Load Retention, Additional Electricity, Economic Development (closed), Industrial Revitalization; MA not in edition | - | - |
+| Manitoba Hydro | 18 | Lighting | Curtailable and surplus programs; net-billing credit (no start date); service charges (not in approved schedule; $150 reconnection undated) | - |
+| SaskPower | 41 | Lighting, reseller (farm/oil-field retained as reference) | - | - |
+| NB Power | 10 | Lighting/charging retained as reference; one-time fees (labelled $/month) | Net metering ($ value), interruptible/surplus (unpublished hourly incremental cost) | - |
+| Nova Scotia Power | 18 | ELIADC, Load Retention, municipal wholesale, shore power, standby, generation replacement/load following | Pilot participant restoration status | One-part real-time pricing |
+| Maritime Electric | 10 | 330/340 Summerside wholesale (reference); lighting, unmetered, short-term | - | - |
+| Newfoundland Power | 11 | Lighting | Curtailable Option 2 (customer load-factor formula); GS/seasonal net-metering credits (class rate, no value) | - |
+| NL Hydro | 21 | CP commissioning; UT wholesale; Island Industrial Wheeling; lighting | Island thermal non-firm (fuel formula) | 5.1L and Island non-thermal non-firm (monthly market-indexed price, backed out by decision) |
+| SaskEnergy | 8 | SI delivery-only (not offered); TransGas firm delivery | Municipal payments | - |
+| Centra Gas | 13 | Special Contract; Power Station; MLI T-Service (identical to Mainline Firm T-Service) | Fixed-term/private commodity | MLI transcription (re-transcribe on new Appendix A) |
+| FortisBC Energy | 27 | Rates 6/6P/26, 3VRNG/5VRNG (vehicles); 22A/22B; 11RNG; 11/14A/30/36/46/48; 1U-3U in Fort Nelson (not offered) | Fort Nelson 4/5/7/22-27 tables; RNG Blend Service percentage; marketer prices | - |
+| Energir | 5 | - | Fixed-price supply (supplier-specific); load-factor formula (uncomputed); inventory adjustments; D5 make-up gas | - |
+| Heritage/Eastward | 3 | Rate Class 4 (negotiated) | - | - |
+| Liberty NB | 4 | CGS/ICGS process loads | Marketer prices | - |
+| Yukon Energy | 20 | Lighting; Rates 32/39/42/43 | Riders R1/S/E (published at zero); winter rebate (replaced by Affordability Rate Relief) | Book file name changes monthly |
+| ATCO Electric Yukon | 20 | Same as Yukon Energy (same 20 joint schedules) | Same | Same |
+| NTPC | 63 | Standby; Naka wholesale; Con Mine; streetlighting; Taltson wholesale heating | Snare TPSP (does not reconcile); GS/government subsidy amounts | - |
+| Qulliq Energy | 6 | Streetlights; standby | Government/municipal commercial base charges; fuel rider | Final 2025/26 GRA instruction (URRC recommended approval) |
+
 ## Next Batches and Acceptance
 
-1. Resolve blocked/decision items: Centra Mainline Interruptible (reviewed text for scanned Appendix A), NTPC Taltson interruptible heating scope, Qulliq final GRA decision and NTPC Snare TPSP reconciliation.
-2. Remaining catalogue gaps: FortisBC Energy RNG/Customer Choice variants, Yukon riders R1/S/E and winter rebate, plus earlier source-blocked items. Market-indexed FortisBC RS38, BC Hydro RS1892 and NSPower real-time pricing wait for the Alberta/Ontario market-rate work.
+1. The campaign's priced, dated gaps are closed (batch 11). Monitor: Qulliq final GRA instruction, NTPC Snare TPSP reconciliation, Centra Appendix A edition changes, monthly Yukon joint-book file name.
+2. Re-check source-blocked items periodically (reconciliation table). Market-indexed FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing and NL Hydro monthly non-firm prices wait for the Alberta/Ontario market-rate work.
 3. Audit remaining building catalogues and fixtures, maintain SaskPower's audited building schedules, then run a twenty-utility refresh and class-level reconciliation. ON/AB remain excluded from this campaign.
 4. Separate operational track: Chromium installation in source health, test/scrape failure issues, successful Monthly Scrape `workflow_run` deployment from `main`, and release-asset `data-history` database restore/upload after validation/export are implemented, pending first CI run verification (Deploy Site for `1b05a2f` succeeded; Source Health still needs a manual dispatch). Pages source must be GitHub Actions; `workflow_run` fires from the default branch. Meaningful provenance counts remain open.
 5. Deferred product track: market-model UI/metadata correction, real observation ingestion,

@@ -58,6 +58,33 @@ TRANSPORT_SPECS = {
            "FortisBC Energy System and through one meter station to one Shipper"),
 }
 
+# Optional variants from the tariff index (Mainland and Vancouver Island columns only).
+# code: (tariff name, PDF schedule label, base rate, customer class, description)
+VARIANT_SPECS = {
+    "1u": ("Residential — Rate 1U (Customer Choice)", "1U", "1", "residential",
+           "Residential Commodity Unbundling Service"),
+    "2u": ("Commercial — Rate 2U (Customer Choice)", "2U", "2", "commercial",
+           "Small Commercial Commodity Unbundling Service"),
+    "3u": ("Commercial — Rate 3U (Customer Choice)", "3U", "3", "commercial",
+           "Large Commercial Commodity Unbundling Service"),
+    "1b": ("Residential — Rate 1RNG (Renewable Natural Gas)", "1RNG", "1", "residential",
+           "Residential Renewable Natural Gas Service"),
+    "2b": ("Commercial — Rate 2RNG (Renewable Natural Gas)", "2RNG", "2", "commercial",
+           "Small Commercial Renewable Natural Gas Service"),
+    "3b": ("Commercial — Rate 3RNG (Renewable Natural Gas)", "3RNG", "3", "commercial",
+           "Large Commercial Renewable Natural Gas Service"),
+    "5b": ("Commercial — Rate 5RNG (Renewable Natural Gas)", "5RNG", "5", "commercial",
+           "General Firm Renewable Natural Gas Service"),
+    "7b": ("Industrial — Rate 7RNG (Renewable Natural Gas)", "7RNG", "7", "industrial",
+           "General Interruptible Renewable Natural Gas Service"),
+}
+# RNG schedules that also print a Fort Nelson Service Area column (Rates 1U/2U/3U exclude Fort Nelson).
+FORT_NELSON_VARIANTS = {
+    "1b": "Residential — Rate 1RNG (Renewable Natural Gas, Fort Nelson)",
+    "2b": "Commercial — Rate 2RNG (Renewable Natural Gas, Fort Nelson)",
+    "3b": "Commercial — Rate 3RNG (Renewable Natural Gas, Fort Nelson)",
+}
+
 MAINLAND = r"Mainland and Vancouver Island \(including North and South Interior, Whistler(?: and Revelstoke)?\)"
 FORT_NELSON = r"Fort Nelson"
 OTHER_AREAS = r"Fort Nelson|Mainland and Vancouver Island \(|Revelstoke \("
@@ -166,7 +193,8 @@ class FortisBCEnergyScraper(BaseScraper):
         from urllib.parse import urljoin
         from scrapers.utils.parsing import parse_html
         found: dict[str, str] = {}
-        for source, page_key, codes in ((html, "business", "4|5|7"), (index_html, "tariffs", TRANSPORT_CODES)):
+        for source, page_key, codes in ((html, "business", "4|5|7"), (index_html, "tariffs", TRANSPORT_CODES),
+                                        (index_html, "tariffs", "|".join(VARIANT_SPECS))):
             for anchor in parse_html(source).find_all("a", href=True) if source else []:
                 match = re.search(rf"/rateschedule_({codes})\.pdf(?:\?|$)", anchor["href"])
                 if match:
@@ -194,6 +222,10 @@ class FortisBCEnergyScraper(BaseScraper):
         if key == "rate4":
             for i, page in enumerate(pages):
                 if "Off-Peak Period - means" in page.text or "4.3 Extension of Off-Peak Period FortisBC" in self._norm(page.text):
+                    chosen[i] = page.text
+        if key[4:] in VARIANT_SPECS:
+            for i, page in enumerate(pages):
+                if re.search(r"(?:Applicable|2\.1 Description of Applicability)\s+This Rate Schedule", page.text):
                     chosen[i] = page.text
         return "\n".join(chosen[i] for i in sorted(chosen))
 
@@ -312,6 +344,22 @@ class FortisBCEnergyScraper(BaseScraper):
                     records.append(parser(pages[key], context, document_urls[key], carbon, today))
             except ValueError as exc:
                 self.logger.warning("FortisBC Energy Rate %s not parsed live: %s", key[4:], exc)
+        for code in VARIANT_SPECS:
+            key = f"rate{code}"
+            if key not in pages or not (document_urls or {}).get(key):
+                continue
+            try:
+                records.append(self._variant(code, pages[key], document_urls[key], carbon, today))
+            except ValueError as exc:
+                self.logger.warning("FortisBC Energy %s not parsed live: %s", VARIANT_SPECS[code][0], exc)
+        for code, name in FORT_NELSON_VARIANTS.items():
+            key = f"rate{code}"
+            if key not in pages or not (document_urls or {}).get(key):
+                continue
+            try:
+                records.append(self._variant(code, pages[key], document_urls[key], carbon, today, fort_nelson=True))
+            except ValueError as exc:
+                self.logger.warning("FortisBC Energy %s not parsed live: %s", name, exc)
         return records
 
     # ── Rates 4 and 5 (tariff PDFs) ──────────────────────────
@@ -711,6 +759,219 @@ class FortisBCEnergyScraper(BaseScraper):
                    "and are conditions, not included rate components. " + minimum + " A Municipal Operating Fee applies "
                    "where FortisBC must remit one and is not included. No Fort Nelson table is published in this "
                    "schedule. Regulated by the BCUC."),
+            components=comps,
+        )
+
+    def _variant(self, code: str, text: str, url: str, carbon: tuple[date, str], today: date,
+                 fort_nelson: bool = False) -> TariffRecord:
+        """Optional Customer Choice (U) or RNG variant of Rates 1/2/3/5/7 from its own approved rate schedule.
+
+        fort_nelson selects the Fort Nelson Service Area column of the 1RNG/2RNG/3RNG Table of Charges.
+        """
+        name, schedule, base, customer_class, description = VARIANT_SPECS[code]
+        if fort_nelson:
+            if code not in FORT_NELSON_VARIANTS:
+                raise ValueError(f"Rate Schedule {schedule} publishes no Fort Nelson column")
+            name = FORT_NELSON_VARIANTS[code]
+        rng = schedule.endswith("RNG")
+        text = self._norm(text)
+        money = r"\$ (?P<{}>[\d,]+\.\d+)"
+        other = r"(?: (?:\$ \(?[\d,]+\.\s?\d+\)?|N/A))?"  # Fort Nelson column (not parsed)
+        flag = r"(?: A)?"
+
+        def cell(key: str) -> str:
+            if fort_nelson:
+                return r"\$ [\d,]+\.\d+ \$ (?P<" + key + r">[\d,]+\.\s?\d+)"
+            return money.format(key) + other
+
+        gas = (r" \d+\. Cost of Gas \(Commodity Cost Recovery Charge\) per Gigajoule ?{} " + cell("gas")
+               + r" \d+\. Cost of Renewable Natural Gas \(RNG Charge\) per Gigajoule ?{} " + cell("rng") + flag)
+        if base in ("1", "2", "3"):
+            pattern = (
+                (r"Table of Charges Mainland and Vancouver Island Fort Nelson Service Area Service Area " if fort_nelson
+                 else r"Table of Charges Mainland and Vancouver Island (?:Fort Nelson )?Service Area (?:Service Area )?")
+                + r"Delivery Margin Related Charges 1\. Basic Charge per Day " + cell("basic")
+                + r" 2\. Rider 2 per Day " + cell("r2")
+                + r" Subtotal of per Day Delivery Margin Related Charges " + cell("sub1")
+                + r" 3\. Delivery Charge per Gigajoule " + cell("delivery")
+                + (r"(?: 4\. Rider 4 per Gigajoule N/A \$ \((?P<r4>[\d.]+)\))?" if fort_nelson
+                   else r"(?: 4\. Rider 4 per Gigajoule N/A \$ \([\d.]+\))?")
+                + r" \d+\. Rider 5 per Gigajoule " + cell("r5")
+                + r" Subtotal of per Gigajoule Delivery Margin Related Charges " + cell("sub2")
+                + r" Commodity Related Charges \d+\. Storage and Transport Charge per Gigajoule " + cell("st")
+                + r" \d+\. Rider 6 per Gigajoule " + cell("r6")
+                + r" \d+\. Rider 8 per Gigajoule " + cell("r8") + flag
+                + r" Subtotal of per Gigajoule Storage and Transport Related Charges " + cell("sub3") + flag
+                + (gas.format("1", "2,3") if rng else
+                   r" \d+\. Cost of Gas \(Commodity Cost Recovery As communicated to FortisBC Energy by the Charge\) "
+                   r"per Gigajoule ?1 Marketer appointed by (?:the )?Customer\."))
+        elif base == "5":
+            pattern = (
+                r"Table of Charges Mainland and Vancouver Island Service Area Delivery Margin Related Charges "
+                r"1\. Basic Charge per Month " + money.format("basic") + r" 2\. Rider 2 per Month " + money.format("r2")
+                + r" Subtotal of per Month Delivery Margin Related Charges " + money.format("sub1")
+                + r" 3\. Demand Charge per Month per Gigajoule of Daily Demand ?1 " + money.format("demand")
+                + r" 4\. Delivery Charge per Gigajoule " + money.format("delivery")
+                + r" Commodity Related Charges 5\. Storage and Transport Charge per Gigajoule " + money.format("st")
+                + r" 6\. Rider 6 per Gigajoule " + money.format("r6") + r" 7\. Rider 8 per Gigajoule " + money.format("r8")
+                + flag + r" Subtotal of per Gigajoule Storage and Transport Related Charges " + money.format("sub3") + flag
+                + gas.format("2", "3,4"))
+        else:
+            pattern = (
+                r"Table of Charges Mainland and Vancouver Island Service Area Delivery Margin Related Charges? "
+                r"1\. Basic Charge per Month " + money.format("basic") + r" 2\. Rider 2 per Month " + money.format("r2")
+                + r" Subtotal of per Month Delivery Margin Related Charges " + money.format("sub1")
+                + r" 3\. Delivery Charge per Gigajoule \(not in excess of curtailment notice\) " + money.format("delivery")
+                + r" Commodity Related Charges 4\. Storage and Transport Charge per Gigajoule ?1 " + money.format("st")
+                + r" 5\. Rider 6 per Gigajoule " + money.format("r6") + r" 6\. Rider 8 per Gigajoule " + money.format("r8")
+                + flag + r" 7\. Subtotal of per Gigajoule Storage and Transport Related Charges " + money.format("sub3")
+                + flag + gas.format("1,2", "3,4")
+                + r" 10\. Charge for Unauthorized Overrun Gas \(a\) Per Gigajoule on first 5 percent of specified "
+                r"quantity Sumas Daily Price ?5 \(b\) Per Gigajoule on all Gas over 5 percent of The greater of "
+                r"specified quantity \$20\.00/GJ or 1\.5 x the Sumas Daily Price ?5")
+        if f"RATE SCHEDULE {schedule} " not in text + " ":
+            raise ValueError(f"Rate Schedule {schedule} heading missing")
+        match, effective, order = self._tariff_table(text, pattern, today)
+        v = {key: float(re.sub(r"[,\s]", "", value)) for key, value in match.groupdict().items() if value is not None}
+        if "r4" in v:
+            v["r4"] = -v["r4"]  # printed in parentheses: a credit
+        if abs(v["basic"] + v["r2"] - v["sub1"]) > 1e-6 or abs(v["st"] + v["r6"] + v["r8"] - v["sub3"]) > 1e-6:
+            raise ValueError("charges do not reconcile to the published subtotals")
+        if "sub2" in v and abs(v["delivery"] + v.get("r4", 0.0) + v["r5"] - v["sub2"]) > 1e-6:
+            raise ValueError("delivery charges do not reconcile to the published subtotal")
+        if min(v[key] for key in ("basic", "delivery", "st", "gas", "rng", "demand") if key in v) <= 0:
+            raise ValueError("non-positive charge")
+        required = ["Rider 2 Clean Growth Innovation Fund Account", "Rider 6 Midstream Cost Reconciliation Account",
+                    "Rider 8 Storage and Transport Renewable Natural Gas (S&T RNG) Rider",
+                    "A Municipal Operating Fee charge is payable"]
+        minimum = "The minimum charge per Month will be the aggregate of the Basic Charge and the Municipal Operating Fee charge"
+        if base in ("1", "2", "3"):
+            required += ["Rider 5 Revenue Stabilization Adjustment Charge", minimum]
+            applicable = re.search(r"Applicable This Rate Schedule is applicable to (.+?)\. Customers ", text)
+        else:
+            required += ["General Firm Service Agreement", "Daily Demand is equal to 1.10 multiplied by the greater of",
+                         "The minimum charge per Month will be the aggregate of the Basic Charge, Demand Charges and the "
+                         "Municipal Operating Fee charge"] if base == "5" else [
+                "General Interruptible Service Agreement", minimum,
+                "are subject to change in accordance with changes to the Rate Schedule 5 Cost of Gas"]
+            applicable = re.search(r"2\.1 Description of Applicability (This Rate Schedule is available .+?)\. For greater "
+                                   r"certainty", text)
+        if rng:
+            required += ["with the exception of the Municipality of Revelstoke",
+                         "minus the greater of the percentage of the RNG Blend Service or the percentage of a Customer",
+                         "ranges between 5% of RNG and 100% of RNG, increasing by increments of 5%",
+                         "to be no less than zero, multiplied by the Cost of RNG (RNG Charge) per Gigajoule"]
+        else:
+            required += ["with the exception of the Municipality of Revelstoke and the Fort Nelson Service Area",
+                         "Customers must appoint a licensed Marketer to enrol in this service",
+                         "Rate Schedule 36 Service Agreement",
+                         "minus the percentage of the RNG Blend Service measured in Gigajoules"]
+        if fort_nelson:
+            required += ["with the exception of the Municipality of Revelstoke, provided adequate capacity"]
+            required += [f"{rider} – Applicable to Mainland and Vancouver Island and Fort Nelson Service Area Customers"
+                         for rider in ("Rider 2 Clean Growth Innovation Fund Account",
+                                       "Rider 5 Revenue Stabilization Adjustment Charge",
+                                       "Rider 6 Midstream Cost Reconciliation Account",
+                                       "Rider 8 Storage and Transport Renewable Natural Gas (S&T RNG) Rider")]
+            if "r4" in v:
+                required += ["Rider 4 Fort Nelson Residential Customer Common Rate Phase-in Rider – Applicable to Fort "
+                             "Nelson Service Area Residential Customers"]
+        self._require(text, *required)
+        if not applicable:
+            raise ValueError("applicability text missing")
+        usage_min = usage_max = None
+        if base in ("2", "3"):
+            volume = re.search(r"normalized annual consumption at one Premises of (less|greater) than ([\d,]+) Gigajoules",
+                               applicable.group(1))
+            if not volume or volume.group(1) != ("less" if base == "2" else "greater"):
+                raise ValueError("annual-volume applicability missing")
+            limit = float(volume.group(2).replace(",", ""))
+            usage_min, usage_max = (None, limit) if base == "2" else (limit, None)
+        if base in ("1", "2", "3"):
+            eligibility = f"Rate Schedule {schedule} is applicable to {applicable.group(1)}."
+        else:
+            eligibility = f"Rate Schedule {schedule}: {applicable.group(1)}."
+        extra = re.search(r"(Customers must participate for a minimum (?:period )?of one Year\.|Customers who are currently "
+                          r"enrolled in Commodity Unbundling Service under Rate Schedule \d+U are ineligible to enrol "
+                          r"until their existing contract term with their Marketer expires\.)", text)
+        if extra:
+            eligibility += " " + extra.group(1)
+        if fort_nelson:
+            eligibility += " This record is for Premises in the Fort Nelson Service Area."
+        carbon_date, carbon_note = carbon
+        eff = effective.isoformat()
+        area = "Fort Nelson Service Area" if fort_nelson else "Mainland and Vancouver Island Service Area"
+        detail = (f"Rate Schedule {schedule} Table of Charges, {area} "
+                  f"(Order {order}, effective {effective.strftime('%B')} {effective.day}, {effective.year})")
+        period = "$/day" if base in ("1", "2", "3") else "$/month"
+
+        def comp(kind: str, label: str, value: float, unit: str, **kw) -> RateComponent:
+            return RateComponent(kind, label, value, unit, effective_date=eff, source_url=url, source_detail=detail, **kw)
+
+        comps = [comp("fixed", "Basic Charge", v["basic"], period, notes=f"Printed per {period[2:]} in the Table of Charges."),
+                 comp("rider", "Rider 2 (Clean Growth Innovation Fund Account)", v["r2"], period)]
+        if "demand" in v:
+            comps.append(comp("demand", "Demand Charge", v["demand"], "$/GJ/month of daily demand", demand_unit="GJ/day",
+                              notes="Daily Demand is 1.10 x the greater of the highest winter (Nov 1-Mar 31) monthly average "
+                                    "daily consumption or half the highest summer (Apr 1-Oct 31) monthly average, from the "
+                                    "preceding Contract Year. Not a calculated bill."))
+        comps.append(comp("delivery", "Delivery Charge", v["delivery"], "$/GJ",
+                          notes="Applies to gas not in excess of a curtailment notice." if base == "7" else None))
+        if "r4" in v:
+            comps.append(comp("rider", "Rider 4 (Fort Nelson Residential Customer Common Rate Phase-in Rider)", v["r4"],
+                              "$/GJ", notes="Printed as a credit in parentheses in the Fort Nelson column; applicable to "
+                                           "Fort Nelson Service Area residential customers."))
+        if "r5" in v:
+            comps.append(comp("rider", "Rider 5 (Revenue Stabilization Adjustment Charge)", v["r5"], "$/GJ"))
+        comps += [comp("transmission", "Storage and Transport Charge", v["st"], "$/GJ"),
+                  comp("rider", "Rider 6 (Midstream Cost Reconciliation Account)", v["r6"], "$/GJ"),
+                  comp("rider", "Rider 8 (Storage and Transport RNG)", v["r8"], "$/GJ")]
+        if rng:
+            comps += [
+                comp("commodity", "Cost of Gas", v["gas"], "$/GJ", sub_component="conditional",
+                     market_reference="FortisBC gas commodity portfolio",
+                     notes="Commodity Cost Recovery Charge. Applies to consumption minus the greater of the RNG Blend "
+                           "Service percentage or the customer's selected RNG percentage (tariff example: 30% RNG "
+                           "selected, Cost of Gas on 70% of consumption)."),
+                comp("commodity", "Cost of Renewable Natural Gas (RNG Charge)", v["rng"], "$/GJ",
+                     sub_component="conditional", market_reference="FortisBC RNG price (General Terms and Conditions "
+                                                                   "Section 28.4)",
+                     notes="Applies only to the customer's selected RNG percentage (5% to 100% in 5% increments, set by "
+                           "FortisBC) minus the RNG Blend Service percentage, not less than zero. That share is billed at "
+                           "this charge instead of the Cost of Gas; it is not a premium on all consumption."),
+            ]
+        comps.append(RateComponent("carbon", "BC Carbon Tax", 0.0, "$/GJ", effective_date=carbon_date.isoformat(),
+                                   source_url=PAGE_URLS["carbon"], source_detail="Motor fuel tax and carbon tax",
+                                   notes=carbon_note))
+        if rng:
+            option = (f"Optional RNG variant of Rate {base}: the customer selects an RNG share of its gas, billed at the "
+                      "RNG Charge, with the rest at the Cost of Gas. The RNG Blend Service percentage is not printed in "
+                      "this schedule and no blended price is calculated.")
+        else:
+            option = (f"Optional Customer Choice (commodity unbundling) variant of Rate {base}: delivery-only service; the "
+                      "Cost of Gas is as communicated to FortisBC by the customer's licensed marketer, whose private "
+                      "commodity price is not included.")
+        minimum_note = ("Minimum monthly charge is the Basic Charge, Demand Charges and any Municipal Operating Fee"
+                        if base == "5" else "Minimum monthly charge is the Basic Charge and any Municipal Operating Fee")
+        extra_notes = {"5": " Service under a written General Firm Service Agreement.",
+                       "7": (" Bundled interruptible transportation with firm gas supply under a written General "
+                             "Interruptible Service Agreement; gas above a curtailment notice is Unauthorized Overrun Gas "
+                             "(Sumas Daily Price on the first 5 percent, then the greater of $20.00/GJ or 1.5 x the Sumas "
+                             "Daily Price), a penalty condition, not a rate component.")}.get(base, "")
+        return TariffRecord(
+            utility_name="FortisBC Energy", province="BC", utility_type="gas", tariff_name=name,
+            tariff_code=f"Rate {schedule}", customer_class=customer_class,
+            sub_class="Fort Nelson" if fort_nelson else "Mainland and Vancouver Island Service Area",
+            description=description, eligibility=eligibility,
+            usage_min=usage_min, usage_max=usage_max, usage_unit="GJ/year" if (usage_min or usage_max) else None,
+            rate_structure="demand" if base == "5" else "flat", pricing_method="regulated",
+            effective_date=max(effective, carbon_date).isoformat(), source_url=url, source_page=detail,
+            confidence="high",
+            notes=(option + extra_notes + " " + minimum_note + " (a condition, not an extra charge). A Municipal "
+                   "Operating Fee applies where FortisBC must remit one and is not included. "
+                   + ("Service area: Fort Nelson (the Fort Nelson Service Area column of the Table of Charges). "
+                      if fort_nelson else "Service area: Mainland and Vancouver Island. ")
+                   + "Regulated by the BCUC."),
             components=comps,
         )
 

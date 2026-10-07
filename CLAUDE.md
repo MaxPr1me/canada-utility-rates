@@ -5,7 +5,7 @@ Canada-wide utility rate scraping and browsing for building energy-cost analysis
 
 ## Active Scope (2026-10-06)
 - The active campaign covers 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL plus, from October 7, the four territorial utilities (YT/NT/NU; non-market regulated service). ON/AB are excluded from this run but retained in the database/site. Ten batches are implemented, stored and exported; all 20 have live output but catalogue gaps remain.
-- Decisions (October 7): BC Hydro RS1828 and Hydro-Quebec Rate F/FP excluded; market-indexed FortisBC RS38, BC Hydro RS1892 and NSPower one-part real-time pricing are deferred to the Alberta/Ontario market-rate work.
+- Decisions (October 7): BC Hydro RS1828, Hydro-Quebec Rate F/FP and FortisBC Energy 11RNG excluded; market-indexed FortisBC RS38, BC Hydro RS1892, NSPower one-part real-time pricing and NL Hydro monthly non-firm prices (5.1L, Island non-thermal) are deferred to the Alberta/Ontario market-rate work.
 - Prioritize building tariffs: single-family and multi-unit residential, commercial,
   institutional and industrial service only where relevant to building energy loads.
   NECB 2025 informs the use case; it does not replace utility eligibility rules or
@@ -42,6 +42,7 @@ Canada-wide utility rate scraping and browsing for building energy-cost analysis
 - **Multi-class coverage is not catalogue completeness.** All 20 targets have live output; optional products and missing classes still require audits. Batch 10 counts are in the matrix.
 - **Territories:** NTPC parses the PUB June 1, 2026 schedule (zones; per-community government) with GNWT Cost of Living Subsidy as a conditional credit and the TPSP printed first-block price as a conditional alternative energy price (never a derived difference). Qulliq uses the April 1, 2025 interim rates (medium confidence; stale page date label). Yukon Energy and ATCO Electric Yukon share the text joint YECL/YEC rate book cross-checked against the R/J cross-reference; same 20 schedules, not 40 classes.
 - **Logging:** `setup_logging()` is idempotent and keeps pdfminer/pdfplumber at WARNING; per-token pdfminer DEBUG once grew `logs/scrape.log` to ~10 GB and stalled the suite.
+- **Reviewed transcription (Centra MLI only, user-approved):** values from scanned image-only pages live in a module constant, are marked live at medium confidence, and are built only while the page-image SHA-256 hashes, edition headers and text cross-checks match. Never extend this to other image-only sources without explicit approval.
 - **BC Hydro:** RS 1901/1904 exclude 2101 TOD adjustments; prorated tiers and conditional transformer discounts retain their source context. Business power-factor bands are conditional and fail independently.
 - **NSPower:** FAM/DSM/storm are separate from base energy; closed pilots are conditional, never proof of participant restoration. November prices are date-gated and unsupported 2027 dates fail closed.
 - **Hydro-Quebec DP/DM/DN:** multiplier-based units, additive dwelling/room terms and alternative voltage credits must not become invented fixed allowances or bill totals. Missing/future editions and missing continuations fail closed by class.
@@ -64,7 +65,7 @@ python -m playwright install chromium     # headless browser for JS-rendered pag
 python -m pipeline.run_scrape --init-db   # first time
 python -m pipeline.run_scrape             # scrape all
 python -m pipeline.export_json            # export for site
-pytest                                    # run tests (994 tests across 8 modules)
+pytest                                    # run tests (1,052 tests across 8 modules)
 ```
 
 ## Adding a utility
@@ -79,8 +80,9 @@ pytest                                    # run tests (994 tests across 8 module
 - Province codes are 2-letter uppercase (BC, ON, QC, etc.).
 - Keep registry URLs and actual scraper URL constants synchronized; most modules do not consume registry sources dynamically.
 
-## Current snapshot and queue (2026-10-07; batch 10)
-- Batch 10 stored/exported: 824 tariff versions / 5,286 components / 344 stored live / 480 seed; 339 latest live across 21 utilities: 230 at the 16 provincial targets and 108 at the four territorial utilities. History: 1,790 snapshots, 220 appended with prior snapshots unchanged. DB validation: 0 errors, 2 existing AESO warnings; 994 tests passing across 8 modules. Latest counts: BC Hydro 17, FortisBC Electric 11, Hydro-Quebec 26, Manitoba Hydro 18, SaskPower 41, NB Power 10, NSPower 18, Maritime Electric 10, Newfoundland Power 11, NL Hydro 21, SaskEnergy 7, Centra 12, FortisBC Energy 16, Energir 5, Eastward 3, Liberty NB 4, NTPC 62, Qulliq 6, Yukon Energy 20, ATCO Electric Yukon 20; FortisAlberta 1.
+## Current snapshot and queue (2026-10-07; batch 11 close-out)
+- Batch 11 (full 20-utility refresh) stored/exported: 838 tariff versions / 5,417 components / 358 stored live / 480 seed; 353 latest live across 21 utilities: 243 at the 16 provincial targets and 109 at the four territorial utilities. History: 2,142 snapshots, 352 appended with prior snapshots unchanged. DB validation: 0 errors, 2 existing AESO warnings; 1,052 tests. Batch 11 added FortisBC Energy 1U/2U/3U and RNG variants (27), SaskEnergy service fees (8), Centra Mainline Interruptible transcription (13), NTPC Taltson heating (63). The matrix reconciliation table shows no priced, dated in-scope gap left; remaining items are source-blocked, excluded, monitored or deferred to market-rate work.
+- Batch 10 (historical): 824 tariff versions / 5,286 components / 344 stored live / 480 seed; 339 latest live across 21 utilities: 230 at the 16 provincial targets and 108 at the four territorial utilities. History: 1,790 snapshots. Latest counts: BC Hydro 17, FortisBC Electric 11, Hydro-Quebec 26, Manitoba Hydro 18, SaskPower 41, NB Power 10, NSPower 18, Maritime Electric 10, Newfoundland Power 11, NL Hydro 21, SaskEnergy 7, Centra 12, FortisBC Energy 16, Energir 5, Eastward 3, Liberty NB 4, NTPC 62, Qulliq 6, Yukon Energy 20, ATCO Electric Yukon 20; FortisAlberta 1.
 - Batch 10 added NSPower industrial 21/22/23 and Interruptible Rider 25; FortisBC Energy Rate 7 and delivery-only transportation 22/23/25/27; SaskEnergy closed Small Industrial; BC Hydro transmission pilots 2801/2802/2821/2822 and generation credits 2289/2290; Hydro-Quebec DR Commitment; Manitoba LUBD 2026-50..55; Maritime 310/320 audited (330/340 are Summerside wholesale reference); Centra class audit and NL Hydro non-firm (source-blocked)/wheeling (excluded) audits; and the four territorial parsers.
 - Open: Centra Mainline Interruptible (scanned Appendix A; needs reviewed text), NTPC Taltson interruptible heating (needs decision), NTPC Snare TPSP mismatch, Qulliq final GRA decision, Yukon riders R1/S/E and winter rebate, FortisBC Energy RNG/Customer Choice variants, HQ Load Retention/Additional Electricity/Industrial Revitalization (not general published prices), plus the earlier source-blocked items. See the [matrix](docs/phase5_completion_matrix.md).
 - Operations: source-health Chromium, successful Monthly Scrape `workflow_run` deployment from `main`, release-asset `data-history` database restore/upload after validation/export, and test/scrape failure issues are implemented, pending first CI run verification (Deploy Site for `1b05a2f` succeeded on push; Source Health not yet dispatched). Pages source must be GitHub Actions; `workflow_run` fires from the default branch.
@@ -100,7 +102,7 @@ Update these files when the task changes architecture, adds major features, chan
 - `scrapers.utils.parsing` provides `DocumentPage`, page-aware fail-closed PDF extraction/section selection, CSV/XLSX readers, content hashing, effective-date/unit/currency normalization, and contextual verification.
 - Snapshot serialization is canonical JSON with sorted component dictionaries. Ordering alone is ignored; all semantic fields remain hashed. `diff_runs` compares append-only per-run snapshots.
 - The no-build comparison state is an in-memory two-item array in `site/js/app.js`; it aligns exact type/name/unit keys and never totals them.
-- Deterministic tests block unmocked network access. Run `pytest -q` (994 tests across 8 modules); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.
+- Deterministic tests block unmocked network access. Run `pytest -q` (1,052 tests across 8 modules); inspect targeted live dry runs separately. A generic verifier fixture or a successful fallback-only run does not establish a working live parser.
 
 ## Active Regional Implementation
 - The 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL and, from October 7, the four territorial utilities are in this run. ON/AB remain untouched and retained in exports. Independent parser/fixture work may be parallel; shared tests/registry/docs/DB/export/git integration is serial. The active matrix queue supersedes its retained historical checkpoint instructions.
