@@ -18,12 +18,12 @@ It works in three stages:
 
 GitHub Actions schedules a monthly scrape. Deployment and durable history across
 cloud runs have new workflows awaiting first CI run verification; see [README.md](README.md).
-The latest export has 672 latest live tariffs and 480 estimates; stored history contains
-677 live versions and 2,486 snapshots. Registry coverage is not the same as live coverage.
+The latest export has 836 latest live tariffs and 480 estimates; stored history contains
+841 live versions and 3,013 snapshots. Registry coverage is not the same as live coverage.
 The active campaign covers 16 provincial utilities (243 latest live records) and, from
 October 7, the four territorial utilities (109 latest live records). All 20 have live output.
-Ontario batch 1 (October 7) added 319 live records at 24 Ontario distributors, starting with
-Hydro One and the larger utilities.
+Ontario batches 1-2 (October 7-8) give 483 live records at 46 Ontario distributors; only
+PUC Distribution is not set up (its tariff prints no connection rate).
 That includes conditional products and reference-only services, not that many
 fully audited building classes. SaskPower's scoped building schedules are audited;
 remaining utility gaps are listed in the [coverage matrix](docs/phase5_completion_matrix.md).
@@ -451,7 +451,7 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 1,165 tests across 8 test modules, including `test_phase5_hardening` for
+There are 1,213 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
 The BC Hydro, FortisBC Electric, Hydro-Quebec, NL Hydro, Manitoba Hydro, NB Power,
 Newfoundland Power, Maritime Electric, NSPower, SaskPower, SaskEnergy, Centra Gas,
@@ -506,6 +506,7 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - “Structural drift” in logs names components that could not be verified. Open the registry URL, find the current approved schedule, update the utility-specific interpretation and fixture, then run its targeted dry run.
 - Ontario updates start with the OEB common-rate page, then each distributor's approved tariff. Alberta wires, default retail, AESO, gas, and northern sources must remain separate and preserve their published classes, communities, tiers, and units.
 - Ontario batch 1 (October 7): 24 distributors are read from their OEB-approved Tariff of Rates and Charges PDF; the OEB bill-data XML is only a cross-check, never a value source. Homes and small business (GS<50) get the live provincial RPP energy price plus the distributor's delivery charges; larger demand classes show delivery charges only, because their energy price is market-based (deferred). Each rate zone gets its own records. A class that cannot be read cleanly is rejected, not guessed, and no new estimate is made for it (older estimates stay in history, labelled). Merged distributors keep their history; their successor now publishes the rates.
+- Ontario batch 2 (October 8): 22 more distributors, so 46 in total. Some PDFs print values slightly above their labels; the fix is a per-document text-reading setting (`"extract": {"y_tolerance": N}`), not a guessed value. Algoma's R1 is split into year-round dwellings (fully fixed) and O. Reg. 445/07 customers; its R2 (50 kW and over, billed per kW) is delivery-only. A configured distributor that rejects a class, or publishes no such class, no longer re-sends old estimates for it; estimates are still used if the tariff cannot be downloaded at all. Distributors' delivery costs are close to each other (typical monthly delivery varies about 15-20%; Hydro One is the main outlier).
 - Test comparison locally with `python -m http.server --directory site 8000`: add two cards, open **Compare**, remove/replace either, and check the mobile horizontal table. It never calculates a bill total.
 - Every successful stored scrape appends `historical_snapshots`. Canonical hashes ignore component ordering but change for values, units, tiers, dates, or structure; old effective-date versions are never deleted.
 - The October 1 SaskPower batches parse 41 live tariffs, including completed reference-only classes. Building scope includes standard, bulk-metered and diesel residential service and R23/R24 renewable access. Standard E01/E03 keeps its identity only when both published columns agree; bulk fixed charges are per unit, not per account. Maintain this coverage; the four provincial gas utilities that were seed-only now have live parsers (October 5), so the next work is the recorded catalogue gaps. See [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).

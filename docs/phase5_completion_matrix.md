@@ -1,12 +1,12 @@
 # Phase 5 Completion Matrix
 
-**Updated:** 2026-10-07 (Ontario batch 1). Scope: all 86 registered utilities (8 Ontario entries
-now `merged`), not every utility in the broader Canadian inventory. The export has 1,157 stored
-tariff versions / 10,822 components / **677 stored live versions / 480 seed**. Latest-per-name
-coverage is **672 live tariffs across 45 utilities** (319 at 24 Ontario distributors); older
-versions remain in history. History: 2,486 snapshots (Ontario batch 1 appended 344, prior
+**Updated:** 2026-10-08 (Ontario batch 2). Scope: all 86 registered utilities (8 Ontario entries
+now `merged`), not every utility in the broader Canadian inventory. The export has 1,321 stored
+tariff versions / 13,343 components / **841 stored live versions / 480 seed**. Latest-per-name
+coverage is **836 live tariffs across 67 utilities** (483 at 46 Ontario distributors); older
+versions remain in history. History: 3,013 snapshots (Ontario batch 2 appended 527, prior
 snapshots unchanged). All 20 campaign utilities have live output; Alberta (except FortisAlberta
-Rate 11), 23 unconfigured Ontario distributors and the five Ontario/Alberta gas utilities have none.
+Rate 11), PUC Distribution and the five Ontario/Alberta gas utilities have none.
 Counts include retained non-building reference records, not only building tariffs.
 
 ## Active Regional Campaign (2026-10-07)
@@ -161,20 +161,48 @@ Open GS classes with a floor at or below 1,000 kW map to commercial, otherwise t
 | Erie Thames (ERTH) | 18 / 1 | Main and Goderich zones |
 | Enova Power / GrandBridge Energy | 16 / 0 each | Successor zones; no seed |
 | North Bay Hydro | 15 / 1 | North Bay and Espanola zones |
-| Newmarket-Tay | 13 / 1 | Revised Newmarket-Tay sheet plus Midland zone; Midland GS 50-4,999 rejected (garbled text) |
+| Newmarket-Tay | 14 / 1 | Revised Newmarket-Tay sheet plus Midland zone (Midland GS 50-4,999 re-read at y_tolerance 1, batch 2) |
 | Toronto Hydro | 12 / 1 | |
 | Hydro Ottawa | 9 / 1 | Implemented June 1, 2026 |
 | Milton, Bluewater, Oshawa | 9 / 1 each | |
 | Halton Hills, Synergy North, Enwin, London, Entegrus | 8 / 1 each | Enwin Dedicated Transformer Station excluded; London co-generation class excluded |
 | Niagara Peninsula, Essex, Greater Sudbury | 7 / 1 each | |
-| Kingston Hydro | 7 / 1 | GS 50-4,999 rejected (text out of order) |
+| Kingston Hydro | 8 / 1 | GS 50-4,999 live from batch 2 (re-read at y_tolerance 6) |
 | Burlington Hydro | 7 / 1 | Proposed/draft tariff copy in the PDF is ignored |
-| Oakville Hydro | 5 / 4 | GS<50 TOU/Tiered/ULO stay seed (LRAM rider in $/kW) |
+| Oakville Hydro | 5 / 1 | GS<50 rejected (LRAM rider in $/kW); no estimate re-emitted since batch 2 |
 
-Total: **319 live records across 24 distributors** (stored October 7, 2026, scrape run 25;
-plus 25 labelled seed records). Rejected classes get no new estimate (decision October 7:
-follow live sources); older estimates stored earlier remain in history, labelled as estimates
-and hidden by default. Every failure is per class (fail-closed).
+Total after batch 1: 319 live records across 24 distributors (scrape run 25). The table shows
+counts after the batch 2 re-store (scrape run 26).
+
+### Ontario batch 2 (October 8, 2026): remaining distributors
+
+| Distributor | Live / seed | Notes |
+|---|---|---|
+| Algoma Power | 10 / 1 | R1 split into (i) year-round dwellings (fully fixed, legacy codes) and (ii) O. Reg. 445/07; Seasonal; R2 (>=50 kW, per kW) delivery-only; no GS class, so no GS estimates |
+| Tillsonburg Hydro | 9 / 1 | GS 50-499, 500-1,499 and >=1,500 kW |
+| Festival Hydro | 8 / 1 | Includes Large Use |
+| Lakefront Utilities | 8 / 1 | GS 50-2,999 and 3,000-4,999 kW |
+| Hearst Power | 8 / 1 | GS 50-1,499 kW and Intermediate User (1,500-4,999 kW) |
+| Grimsby Power | 7 / 1 | Re-read at y_tolerance 4 |
+| Northern Ontario Wires | 7 / 1 | Case number only on the Schedule A cover |
+| Atikokan Hydro | 7 / 1 | Single Transformation Connection rate is the standard rate |
+| Lakeland Power | 7 / 1 | Final rate order effective September 1, 2026 |
+| Canadian Niagara, Welland, Centre Wellington, Westario, Orangeville, Wasaga, InnPower, Hydro 2000, Hydro Hawkesbury, Ottawa River, Rideau St. Lawrence, Fort Frances, Sioux Lookout | 7 / 1 each | |
+
+Total: **483 live records across 46 distributors** (scrape run 26, October 8, 2026). A configured
+distributor with a rejected class, or whose tariff has no such class, emits no estimate for it; a
+failed download or whole-sheet rejection still emits labelled estimates. Street lighting stays a
+labelled estimate. **PUC Distribution** stays unconfigured (its tariff prints only a network
+transmission rate, no connection rate; user decision October 8).
+
+A scratch representative model (median of each distributor's default-zone record) shows typical
+monthly delivery varies about 15-20% (CV ~0.18) for Residential, GS<50 and GS 50-4,999 kW, with
+Hydro One the main high outlier. It is not published; any site artifact would be labelled
+modeled and hidden by default.
+
+Rejected classes get no new estimate (decision October 7: follow live sources); older estimates
+stored earlier remain in history, labelled as estimates and hidden by default. Every failure is
+per class (fail-closed).
 
 **Confirmed decisions (October 7):** the open-GS rule above. Hydro One Seasonal: the R2 page
 prints a Seasonal service charge ($92.43) beside the year-round charge ($151.14); Seasonal
@@ -182,10 +210,7 @@ records use it with R2's shared lines and no RRRP credit, while year-round R2 re
 RRRP credit (-$60.50) as conditional. Seasonal properties in UR/R1 areas use the UR/R1 records.
 The R2 Distribution Rate Protection cap is not modelled.
 
-**Still unconfigured (seed only, batch 2):** Algoma, Atikokan, Canadian Niagara,
-Centre Wellington, Festival, Fort Frances, Grimsby, Hearst, Hydro 2000, Hydro Hawkesbury,
-InnPower, Lakefront, Lakeland, Northern Ontario Wires, Orangeville, Ottawa River, PUC
-Distribution, Rideau St. Lawrence, Sioux Lookout, Tillsonburg, Wasaga, Welland and Westario.
+**Remaining Ontario:** PUC Distribution (unconfigured, see above).
 
 Original registry distributors: Alectra Utilities, Algoma Power Inc., Atikokan Hydro Inc., Bluewater
 Power Distribution, Brantford Power Inc., Burlington Hydro Inc., Canadian Niagara
@@ -304,13 +329,11 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
 
 ## Next Batches and Acceptance
 
-0. **Ontario batch 2 (next):** configure the 23 remaining distributors (list in the Ontario
-   section) from their OEB-approved tariff sheets. Wave A: three parallel research workers
-   (south, central/east, north) find each approved 2026 tariff and test-parse it. Wave B:
-   parallel code with one owner each for `oeb_tariff.py` and `ontario_ldc.py`; integration is
-   serial. Also retry Kingston/Midland GS 50-4,999, and stop re-emitting estimates for rejected
-   Residential/GS<50 classes such as Oakville (decision October 7; older copies stay labelled
-   history). Ontario demand-class commodity/GA stays with the market-rate work.
+0. **Ontario (batches 1-2 done):** 46 distributors live. Open: PUC Distribution (needs a
+   no-connection-rate decision); demand-class commodity/GA with the market-rate work. Next
+   blocks: Alberta wires (ENMAX, ATCO Electric, EPCOR) and ON/AB gas (ATCO Gas, Enbridge, EPCOR
+   Natural Gas, which is actually Ontario's Aylmer/Southern Bruce utility); source research done
+   October 8, open scope questions recorded in the local task tracker.
 
 1. The campaign's priced, dated gaps are closed (batch 11). Monitor: Qulliq final GRA instruction, NTPC Snare TPSP reconciliation, Centra Appendix A edition changes, monthly Yukon joint-book file name.
 2. Re-check source-blocked items periodically (reconciliation table). Market-indexed FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing and NL Hydro monthly non-firm prices wait for the Alberta/Ontario market-rate work.

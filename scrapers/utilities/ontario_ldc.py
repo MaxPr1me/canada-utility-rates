@@ -889,7 +889,7 @@ OEB_MERGED_REGISTRY_NAMES: dict[str, str] = {
 OEB_DEFAULT_ZONES: dict[str, dict[str, str]] = {
     "Hydro One Networks Inc.": {"residential": "R1", "gs": "GSe"},
     "Alectra Utilities Corporation": {"residential": "PowerStream", "gs": "PowerStream"},
-    "Algoma Power Inc.": {"residential": "R1"},
+    "Algoma Power Inc.": {"residential": "R1 (i)"},
     "Elexicon Energy Inc.": {"residential": "Veridian", "gs": "Veridian"},
     "Entegrus Powerlines Inc.": {"residential": "Entegrus-Main", "gs": "Entegrus-Main"},
     "ERTH Power Corporation": {"residential": "Main", "gs": "Main"},
@@ -907,6 +907,7 @@ OEB_DEFAULT_ZONES: dict[str, dict[str, str]] = {
 #   default_zone  zone/class label keeping the legacy names and codes: a string
 #                 for all groups or {"residential": ..., "gs": ..., "demand": ...};
 #                 "" = the distributor's plain standard class
+#   extract       optional text-extraction options, e.g. {"y_tolerance": 6}
 # ═══════════════════════════════════════════════════════════════
 
 _OEB_RDS_DOC = "https://www.rds.oeb.ca/CMWebDrawer/Record/{}/File/document"
@@ -977,6 +978,8 @@ OEB_TARIFF_DOCUMENTS: dict[str, list[dict]] = {
     "Kingston Hydro Corporation": [{
         "url": _OEB_RDS_DOC.format(925245),
         "case_number": "EB-2025-0026", "zones": None, "default_zone": "",
+        # Wider line grouping keeps the GS 50-4,999 kW labels with their rates.
+        "extract": {"y_tolerance": 6},
     }],
     "Greater Sudbury Hydro Inc.": [{
         "url": _OEB_RDS_DOC.format(936646),
@@ -999,6 +1002,100 @@ OEB_TARIFF_DOCUMENTS: dict[str, list[dict]] = {
         "url": _OEB_RDS_DOC.format(947598),
         "case_number": "EB-2025-0014", "zones": None, "default_zone": "",
     }],
+    "Canadian Niagara Power Inc.": [{
+        "url": _OEB_RDS_DOC.format(927499),
+        "case_number": "EB-2025-0050", "zones": None, "default_zone": "",
+    }],
+    "Grimsby Power Inc.": [{
+        "url": _OEB_RDS_DOC.format(925220),
+        "case_number": "EB-2025-0035", "zones": None, "default_zone": "",
+        # GS 50-4,999 kW rates print a few points above their labels.
+        "extract": {"y_tolerance": 4},
+    }],
+    "Welland Hydro-Electric System Corp.": [{
+        "url": _OEB_RDS_DOC.format(936222),
+        "case_number": "EB-2025-0004", "zones": None, "default_zone": "",
+    }],
+    # Revised rate order.
+    "Centre Wellington Hydro Ltd.": [{
+        "url": _OEB_RDS_DOC.format(926741),
+        "case_number": "EB-2025-0049", "zones": None, "default_zone": "",
+    }],
+    "Festival Hydro Inc.": [{
+        "url": _OEB_RDS_DOC.format(925779),
+        "case_number": "EB-2025-0039", "zones": None, "default_zone": "",
+    }],
+    "Westario Power Inc.": [{
+        "url": _OEB_RDS_DOC.format(924811),
+        "case_number": "EB-2025-0002", "zones": None, "default_zone": "",
+    }],
+    "Tillsonburg Hydro Inc.": [{
+        "url": _OEB_RDS_DOC.format(939423),
+        "case_number": "EB-2025-0007", "zones": None, "default_zone": "",
+    }],
+    "Orangeville Hydro Limited": [{
+        "url": _OEB_RDS_DOC.format(939232),
+        "case_number": "EB-2025-0015", "zones": None, "default_zone": "",
+    }],
+    "Wasaga Distribution Inc.": [{
+        "url": _OEB_RDS_DOC.format(936415),
+        "case_number": "EB-2025-0005", "zones": None, "default_zone": "",
+    }],
+    "Innpower Corporation": [{
+        "url": _OEB_RDS_DOC.format(926802),
+        "case_number": "EB-2025-0027", "zones": None, "default_zone": "",
+    }],
+    "Lakefront Utilities Inc.": [{
+        "url": _OEB_RDS_DOC.format(925193),
+        "case_number": "EB-2025-0025", "zones": None, "default_zone": "",
+    }],
+    # Final rate order, effective 2026-09-01.
+    "Lakeland Power Distribution Ltd.": [{
+        "url": _OEB_RDS_DOC.format(954612),
+        "case_number": "EB-2025-0024", "zones": None, "default_zone": "",
+    }],
+    "Hydro 2000 Inc.": [{
+        "url": _OEB_RDS_DOC.format(936563),
+        "case_number": "EB-2025-0032", "zones": None, "default_zone": "",
+    }],
+    # Final rate order.
+    "Hydro Hawkesbury Inc.": [{
+        "url": _OEB_RDS_DOC.format(937884),
+        "case_number": "EB-2025-0031", "zones": None, "default_zone": "",
+    }],
+    "Ottawa River Power Corporation": [{
+        "url": _OEB_RDS_DOC.format(936459),
+        "case_number": "EB-2025-0013", "zones": None, "default_zone": "",
+    }],
+    "Rideau St. Lawrence Distribution Inc.": [{
+        "url": _OEB_RDS_DOC.format(937200),
+        "case_number": "EB-2025-0010", "zones": None, "default_zone": "",
+    }],
+    "Hearst Power Distribution Co. Ltd.": [{
+        "url": _OEB_RDS_DOC.format(939278),
+        "case_number": "EB-2025-0033", "zones": None, "default_zone": "",
+    }],
+    "Atikokan Hydro Inc.": [{
+        "url": _OEB_RDS_DOC.format(936437),
+        "case_number": "EB-2025-0053", "zones": None, "default_zone": "",
+    }],
+    "Fort Frances Power Corp.": [{
+        "url": _OEB_RDS_DOC.format(936512),
+        "case_number": "EB-2025-0038", "zones": None, "default_zone": "",
+    }],
+    "Sioux Lookout Hydro Inc.": [{
+        "url": _OEB_RDS_DOC.format(936469),
+        "case_number": "EB-2025-0009", "zones": None, "default_zone": "",
+    }],
+    "Northern Ontario Wires Inc.": [{
+        "url": _OEB_RDS_DOC.format(936426),
+        "case_number": "EB-2025-0017", "zones": None, "default_zone": "",
+    }],
+    # R1 criteria (i) (year-round dwelling) keeps the legacy residential codes; no GS classes.
+    "Algoma Power Inc.": [{
+        "url": _OEB_RDS_DOC.format(926153),
+        "case_number": "EB-2025-0054", "zones": None, "default_zone": {"residential": "R1 (i)"},
+    }],
     # Revised Newmarket-Tay zone sheet supersedes that zone in the original order.
     "Newmarket-Tay Power Distribution Ltd.": [
         {
@@ -1008,6 +1105,8 @@ OEB_TARIFF_DOCUMENTS: dict[str, list[dict]] = {
         {
             "url": _OEB_RDS_DOC.format(924987),
             "case_number": "EB-2025-0021", "zones": ["Midland"], "default_zone": "Newmarket-Tay",
+            # Tighter line grouping keeps Midland's wrapped rider conditions on their own lines.
+            "extract": {"y_tolerance": 1},
         },
     ],
     # Successors with no seed data: live records only.
@@ -1052,6 +1151,10 @@ _SEASONAL_RE = re.compile(r"\bseasonal\b", re.I)
 _NOT_SEASONAL_RE = re.compile(r"not for Seasonal", re.I)
 _ENERGY_UNITS = ("$/month", "$/30 days", "$/kWh")
 _FIXED_UNITS = ("$/month", "$/30 days")
+_CRITERIA_WORD_RE = re.compile(r"\bcriteri(?:a|on)\b", re.I)
+_CRITERIA_TAG_RE = re.compile(r"\s*-\s*Applicable only to customers that meet criteria \((?P<c>[ivx]+)\) above\b", re.I)
+_CRITERION_MARK_RE = re.compile(r"(?<![\w(])(?P<c>i{1,3}|iv)\)\s*")
+_ROMAN = ("i", "ii", "iii", "iv")
 
 
 def clean_zone(zone: Optional[str]) -> str:
@@ -1116,6 +1219,55 @@ def _split_seasonal(charges: list, qualifier: str) -> list[tuple[str, list, bool
         and not _NOT_SEASONAL_RE.search(c.condition or "")
     ]
     return [(qualifier, base, False), ("Seasonal", other, True)]
+
+
+def _criteria_text(eligibility: str) -> dict[str, str]:
+    """Numbered eligibility criteria "i) ... ii) ..." in sequence; the last ends at its sentence."""
+    flat = " ".join(eligibility.split())
+    marks = []
+    for m in _CRITERION_MARK_RE.finditer(flat):
+        if len(marks) < len(_ROMAN) and m.group("c") == _ROMAN[len(marks)]:
+            marks.append(m)
+    found = {}
+    for i, m in enumerate(marks):
+        text = flat[m.end():marks[i + 1].start()] if i + 1 < len(marks) else re.split(
+            r"\.(?=\s+[A-Z]|$)", flat[m.end():], maxsplit=1)[0]
+        found[m.group("c")] = re.sub(r"(?:[\s,]+and)?[\s,.]*$", "", text).strip()
+    return found
+
+
+def _split_criteria(charges: list, qualifier: str, eligibility: str):
+    """Split a class whose lines are tagged "Applicable only to customers that meet criteria (i) above".
+
+    Returns None (no criteria tags), a rejection reason, or [(label, charges, eligibility)] per
+    criterion: tagged lines go to their criterion (tag stripped), untagged lines are shared.
+    """
+    worded = [c for c in charges if _CRITERIA_WORD_RE.search(c.label)]
+    if not worded:
+        return None
+    tags: dict[int, str] = {}
+    for c in worded:
+        m = _CRITERIA_TAG_RE.search(c.label)
+        if not m or _CRITERIA_WORD_RE.search(c.label[:m.start()] + c.label[m.end():]):
+            return f"unrecognised criteria wording in '{c.label[:80]}'"
+        tags[id(c)] = m.group("c").lower()
+    criteria = _criteria_text(eligibility)
+    used = set(tags.values())
+    if not criteria or used != set(criteria):
+        return f"criteria tags {sorted(used)} do not match the eligibility criteria {sorted(criteria)}"
+    if any(c.kind == "service" and id(c) not in tags for c in charges):
+        return "untagged Service Charge alongside criteria-specific Service Charges"
+    base = re.sub(r"^Residential\s*", "", qualifier) or "Residential"
+    out = []
+    for numeral, text in criteria.items():
+        mine = [replace(c, label=_CRITERIA_TAG_RE.sub("", c.label).strip()) if id(c) in tags else c
+                for c in charges if tags.get(id(c), numeral) == numeral]
+        if sum(c.kind == "service" for c in mine) != 1:
+            return f"criteria ({numeral}) does not have exactly one Service Charge"
+        reg = re.search(r"Ontario Regulation (\d+/\d+)", text)
+        label = f"{base} ({numeral})" + (f" O. Reg. {reg.group(1)}" if reg else "")
+        out.append((label, mine, f"Criteria ({numeral}) only: {text}. Classification text: {eligibility}"))
+    return out
 
 
 def validate_energy_charges(charges: list, group: str, unparsed: list[str]) -> Optional[str]:
@@ -1533,7 +1685,7 @@ class OntarioLDCScraper(BaseScraper):
         external = self._external_demand_records()
         built_demand = live.get("demand") or []
         demand = external if external is not None else built_demand
-        if external is not None or built_demand:
+        if external is not None or built_demand or self._class_rejected("demand"):
             other = [r for r in other if r.tariff_code not in self.DEMAND_CODES]
 
         ordered: list[TariffRecord] = []
@@ -1542,7 +1694,10 @@ class OntarioLDCScraper(BaseScraper):
             live_records = live.get(group) or []
             ordered.extend(live_records)
             has_default = any(r.tariff_code in res_codes | gs_codes for r in live_records)
-            if not has_default:
+            if not has_default and self._class_rejected(group):
+                self.logger.info("%s %s class rejected in its approved tariff; no estimate emitted",
+                                 self._ldc_name, group)
+            elif not has_default:
                 ordered.extend(groups[group])
                 fallback.extend(groups[group])
         if not live:
@@ -1561,6 +1716,13 @@ class OntarioLDCScraper(BaseScraper):
         if demand:
             ordered.extend(demand)
         return ordered
+
+    def _class_rejected(self, group: str) -> bool:
+        """A configured tariff rejected a class of this group (not a whole sheet)."""
+        keys = self.tariff_rejections
+        if self._ldc_name not in OEB_TARIFF_DOCUMENTS or any(k.startswith("sheet:") for k in keys):
+            return False
+        return any(k.startswith(f"{group}:") for k in keys)
 
     def _fetch_oeb(self, url: str) -> bytes:
         if url not in _OEB_FETCH_CACHE:
@@ -1589,6 +1751,7 @@ class OntarioLDCScraper(BaseScraper):
         sheets = [pair for doc in documents for pair in self._load_sheets(doc, today)]
         if not sheets:
             return None
+        self._record_absent_classes(sheets)
         try:
             rpp: Optional[dict] = parse_rpp_page(
                 self._fetch_oeb(OEB_SOURCE_URL).decode("utf-8", errors="replace"))
@@ -1613,16 +1776,27 @@ class OntarioLDCScraper(BaseScraper):
                 self.mark_live_parsed(records)
         return {k: v for k, v in out.items() if v} or None
 
-    def _fetch_tariff_pages(self, url: str) -> list:
+    def _record_absent_classes(self, sheets: list) -> None:
+        """An accepted approved tariff that publishes no class of a group counts as that group's rejection."""
+        categories = {oeb_tariff.classify_classification(c) for _, sheet in sheets for c in sheet.classifications}
+        for group, wanted, label in (
+            ("gs", {"gs_energy"}, "General Service < 50 kW"),
+            ("demand", {"gs_demand", "large_use", "sub_transmission"}, "General Service demand-billed"),
+        ):
+            if not categories & wanted:
+                self.tariff_rejections[f"{group}:absent"] = (
+                    f"approved tariff publishes no {label} classification; no estimate emitted")
+
+    def _fetch_tariff_pages(self, url: str, **options) -> list:
         from scrapers.utils.parsing import extract_pdf_pages
         extract = getattr(oeb_tariff, "extract_tariff_pages", extract_pdf_pages)
-        return extract(self._fetch_oeb(url))
+        return extract(self._fetch_oeb(url), **options)
 
     def _load_sheets(self, doc: dict, today: date) -> list[tuple[dict, "oeb_tariff.TariffSheet"]]:
         """Fetch and parse one tariff document; return the accepted (doc, zone sheet) pairs."""
         url = doc["url"]
         try:
-            pages = self._fetch_tariff_pages(url)
+            pages = self._fetch_tariff_pages(url, **doc.get("extract", {}))
         except Exception as exc:
             self.logger.warning("OEB tariff fetch failed for %s (%s): %s", self._ldc_name, url, exc)
             return []
@@ -1682,19 +1856,27 @@ class OntarioLDCScraper(BaseScraper):
             if not cls.charges:
                 self.logger.debug("%s %s has no charge lines (overview heading)", zone, cls.name)
                 continue
-            for qual, charges, seasonal_split in _split_seasonal(list(cls.charges), qualifier):
-                label = " / ".join(part for part in (zone, qual) if part)
-                key = f"{group}:{label or 'standard'}"
-                reason = validate_energy_charges(charges, group, cls.unparsed)
-                if reason:
-                    self.tariff_rejections[key] = reason
-                    self.logger.warning("Rejected OEB tariff %s for %s: %s", key, self._ldc_name, reason)
-                    continue
-                entries.append(self._energy_entry(
-                    doc, sheet, cls, group, label, charges, seasonal_split, as_of))
+            split = _split_criteria(list(cls.charges), qualifier, cls.eligibility)
+            if isinstance(split, str):
+                key = f"{group}:{' / '.join(p for p in (zone, qualifier) if p) or 'standard'}"
+                self.tariff_rejections[key] = split
+                self.logger.warning("Rejected OEB tariff %s for %s: %s", key, self._ldc_name, split)
+                continue
+            for crit_qual, crit_charges, eligibility in split or [(qualifier, list(cls.charges), None)]:
+                for qual, charges, seasonal_split in _split_seasonal(crit_charges, crit_qual):
+                    label = " / ".join(part for part in (zone, qual) if part)
+                    key = f"{group}:{label or 'standard'}"
+                    reason = validate_energy_charges(charges, group, cls.unparsed)
+                    if reason:
+                        self.tariff_rejections[key] = reason
+                        self.logger.warning("Rejected OEB tariff %s for %s: %s", key, self._ldc_name, reason)
+                        continue
+                    entries.append(self._energy_entry(
+                        doc, sheet, cls, group, label, charges, seasonal_split, as_of, eligibility))
         return entries
 
-    def _energy_entry(self, doc, sheet, cls, group, label, charges, seasonal_split, as_of) -> dict:
+    def _energy_entry(self, doc, sheet, cls, group, label, charges, seasonal_split, as_of,
+                      eligibility: Optional[str] = None) -> dict:
         when = self._delivery_date(sheet)
         omitted: dict[str, list[str]] = {"non_rpp": [], "subarea": [], "expired": []}
         applied = []
@@ -1721,7 +1903,7 @@ class OntarioLDCScraper(BaseScraper):
             "class_name": cls.name,
             "class_notes": list(cls.notes),
             "losses": _energy_loss_factors(sheet, cls),
-            "eligibility": cls.eligibility,
+            "eligibility": cls.eligibility if eligibility is None else eligibility,
             "pages": list(cls.pages),
             "charges": applied,
             "components": components,

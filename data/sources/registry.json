@@ -812,8 +812,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/926153/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0054); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -829,8 +835,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936437/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0053); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -939,8 +951,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/927499/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0050); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -956,8 +974,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/926741/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0049, revised rate order); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1124,8 +1148,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925779/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0039); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1141,8 +1171,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936512/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0038); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1181,8 +1217,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925220/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0035); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1239,8 +1281,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/939278/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0033, final rate order); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1256,8 +1304,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936563/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0032); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1273,8 +1327,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/937884/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0031, final rate order); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1348,8 +1408,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/926802/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0027); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1435,8 +1501,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925193/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0025); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1452,8 +1524,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/954612/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0024, final rate order effective 2026-09-01); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1614,8 +1692,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936426/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0017); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1654,8 +1738,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/939232/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0015, final rate order); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1694,8 +1784,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936459/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0013); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1728,8 +1824,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/937200/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0010); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1745,8 +1847,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936469/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0009); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1803,8 +1911,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/939423/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0007); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1849,8 +1963,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936415/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0005); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1884,8 +2004,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936222/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0004); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1901,8 +2027,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/924811/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0002); delivery value source",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",

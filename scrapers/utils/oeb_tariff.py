@@ -64,10 +64,16 @@ CHARGE_KINDS = (
     "transmission_connection", "regulatory", "low_voltage", "facility", "other",
 )
 
-DEFAULT_DEMAND_CLASSES = ("GENERAL SERVICE 50 TO 4,999 KW", "LARGE USE", "SUB TRANSMISSION - ST")
+# Selector token for residential classes billed on a demand basis (Algoma R2).
+RESIDENTIAL_DEMAND_CLASS = "RESIDENTIAL DEMAND BILLED"
+
+DEFAULT_DEMAND_CLASSES = (
+    "GENERAL SERVICE 50 TO 4,999 KW", "LARGE USE", "SUB TRANSMISSION - ST", RESIDENTIAL_DEMAND_CLASS,
+)
 
 CLASS_CATEGORIES = (
-    "residential", "gs_energy", "gs_demand", "large_use", "sub_transmission", "excluded", "other",
+    "residential", "residential_demand", "gs_energy", "gs_demand", "large_use", "sub_transmission",
+    "excluded", "other",
 )
 
 ST_LOAD_NOTE = (
@@ -130,6 +136,11 @@ _LABEL_START_RE = re.compile(
     r"Smart Metering Entity Charge|Low Voltage Service|Meter Charge|Local Transformation Charge|"
     r"Facility Charge)\b"
 )
+# Midland overprint: "<applicability tail of the previous rider> <next label> <unit> <value>" on one line.
+_APPLICABLE_TAIL_RE = re.compile(
+    r"^(?P<phrase>Applicable only for (?:Class B Customers|Non-RPP Customers|Non-Wholesale Market Participants))"
+    rf"\s+(?={_LABEL_START_RE.pattern})"
+)
 _SUBHEADING_RE = re.compile(r"^Retail Transmission Service Rates\b")
 _SEE_NOTE_RE = re.compile(r"\s*\(see Notes?\s[^)]*\)", re.I)
 _FOOTNOTE_MARK_RE = re.compile(r"(?<=\w)\*+(?=\s+-\s)")
@@ -149,6 +160,13 @@ _DRP_RE = re.compile(
     re.I,
 )
 _RRRP_CREDIT_RE = re.compile(r"RRRP credit, currently at\s*\$\s?(?P<v>\d+\.\d{2})")
+# Decision text: the RRRP adjustment is applied to the base rates of named classes (Algoma R1/R2).
+_RRRP_BASE_RATES_RE = re.compile(
+    r"RRRP adjustment factor of [\d.]+%,?\s+which was applied to\s+[^.]{0,80}?base rates for\s+"
+    r"(?P<classes>[A-Z]\d(?:\s*(?:,|and)\s*[A-Z]\d)*)\s+customer classes"
+)
+_RES_DEMAND_BASIS_RE = re.compile(r"billed on a demand basis", re.I)
+_RES_DEMAND_FLOOR_RE = re.compile(r"greater than\b[^.\d]{0,90}?(\d[\d,]*)\s*(?:kW|kilowatts)\b", re.I)
 _FOOTNOTE_SPLIT_RE = re.compile(r"(?:^|\s)(\d{1,2})\.\s+(?=[A-Z])")
 _FOOTNOTE_PAREN_SPLIT_RE = re.compile(r"(?:^|\s)(\d{1,2})\)\s+(?=[A-Z])")
 _CHAPLEAU_RE = re.compile(r"(?<!Not )applicable to former Chapleau", re.I)
@@ -170,12 +188,17 @@ _UNTIL_COS_RE = re.compile(r"until the\s+effective date of the next\s+cost of se
 _GS_RANGE_RE = re.compile(r"^GENERAL SERVICE ([\d,]+) TO ([\d,]+) KW$", re.I)
 # Open-ended GS classes: "GREATER THAN 50 KW", "1,000 KW AND GREATER", "1,000 KW OR GREATER".
 _GS_OPEN_RE = re.compile(
-    r"^GENERAL SERVICE (?:(?:GREATER THAN|OVER|ABOVE|MORE THAN) (?P<a>[\d,]+) KW|"
+    r"^GENERAL SERVICE (?:(?:(?:EQUAL TO OR )?GREATER THAN|GREATER THAN OR EQUAL TO|OVER|ABOVE|MORE THAN) "
+    r"(?P<a>[\d,]+) KW|"
     r"(?P<b>[\d,]+) KW (?:AND|OR) (?:GREATER|OVER|ABOVE|MORE))$", re.I)
 _GS_BELOW_RE = re.compile(r"^GENERAL SERVICE (?:LESS THAN|UNDER|BELOW) ([\d,]+) KW$", re.I)
 # Unbounded GS classes with a lower bound above this are built as large-use (industrial) classes.
 _OPEN_GS_COMMERCIAL_MAX_FLOOR_KW = 1000
 _DEDICATED_STATION_RE = re.compile(r"DEDICATED TRANSFORMER STATION", re.I)
+_IN_SCOPE_NAME_RE = re.compile(r"GENERAL SERVICE|LARGE USE|INTERMEDIATE|RESIDENTIAL", re.I)
+# Schedule A cover sheet before the approved tariff: "TARIFF OF RATES AND CHARGES EB-2025-0017" / "March 19, 2026".
+_COVER_CASE_RE = re.compile(rf"^TARIFF OF RATES AND CHARGES\s+(?P<case>EB-\d{{4}}-\d{{4}})\s*$")
+_COVER_DATE_RE = re.compile(rf"^(?P<d>{_DATE})$")
 _EXCLUDED_CLASS_RE = re.compile(
     r"LIGHTING|SENTINEL|UNMETERED|EMBEDDED|MICRO\s*FIT|\bFIT\b|STANDBY|GENERATION|DGEN|"
     r"ENERGY RESOURCE|ENERGY FROM WASTE|STORAGE|ELECTRIC VEHICLE|\bEVC?\b|HCI|RESOP|"
@@ -464,6 +487,30 @@ def _separate_connection_pair(cls: Classification) -> None:
         cls.charges = [replace(c, conditional=False, condition=None) if c in pair else c for c in cls.charges]
 
 
+def _single_connection_standard(cls: Classification) -> None:
+    """Note 7 alternatives come in Line + Transformation pairs; a lone Transformation line is the standard rate (Atikokan).
+
+    A lone Line line stays conditional (half of a pair whose other part is missing; fails closed).
+    """
+    lines = [c for c in cls.charges if c.kind == "transmission_connection" and c.condition == _NOTE7_CONDITION]
+    if len(lines) == 1 and _connection_part(lines[0].label) == "Transformation":
+        cls.charges = [replace(c, conditional=False, condition=None) if c in lines else c for c in cls.charges]
+
+
+def _deinterleave_heading(text: str) -> str:
+    """Undo "CLASSIFICATION" overprinted on "This classification applies ..." (Tillsonburg p22)."""
+    target, kept, i = "CLASSIFICATION", [], 0
+    for position, char in enumerate(text[:90]):
+        if i < len(target) and char == target[i]:
+            i += 1
+            continue
+        kept.append(char)
+        if i == len(target):
+            repaired = "".join(kept) + text[position + 1:]
+            return repaired if re.match(r"This classification (?:applies|refers) to\b", repaired) else text
+    return text
+
+
 def _promote_interval_transmission(cls: Classification) -> None:
     """An interval-metered transmission rate is the class rate when no plain rate is published.
 
@@ -708,6 +755,23 @@ def _dedupe_classifications(sheet: TariffSheet) -> None:
         setattr(sheet, attr, first)
 
 
+def _cover_case_number(sheet: TariffSheet, pages: Sequence[DocumentPage], first_page: int) -> Optional[str]:
+    """Case number from the Schedule A cover immediately before the tariff, only if dated as issued."""
+    cover = next((p for p in pages if p.page_number == first_page - 1), None)
+    if cover is None or sheet.issued_date is None or _split_page(cover):
+        return None
+    lines = [line.strip() for line in cover.text.splitlines() if line.strip()]
+    if not lines or lines[0] != "SCHEDULE A" or len(" ".join(lines)) > 600:
+        return None
+    cases = [m.group("case") for line in lines if (m := _COVER_CASE_RE.match(line))]
+    dates = [_iso(m.group("d")) for line in lines if (m := _COVER_DATE_RE.match(line))]
+    if len(cases) != 1 or dates != [sheet.issued_date]:
+        return None
+    sheet.notes.append(f"OEB case number {cases[0]} taken from the Schedule A cover (PDF page {cover.page_number}), "
+                       f"dated {sheet.issued_date} like the tariff; tariff page headers print no case number.")
+    return cases[0]
+
+
 def parse_tariff_pages(
     pages: Sequence[DocumentPage],
     source_url: str,
@@ -748,6 +812,8 @@ def parse_tariff_pages(
     sheet.case_number = single("case", "case numbers")
     issued = sorted({i["issued"] for _, i in infos if i["issued"]})
     sheet.issued_date = issued[-1] if issued else None
+    if sheet.case_number is None:
+        sheet.case_number = _cover_case_number(sheet, pages, infos[0][0])
     if not sheet.effective_date:
         sheet.errors.append("Effective date not found")
     elif sheet.effective_date > sheet.today:
@@ -755,6 +821,10 @@ def parse_tariff_pages(
     if sheet.implementation_date and sheet.implementation_date > sheet.today:
         sheet.errors.append(f"Implementation date {sheet.implementation_date} is in the future")
 
+    rrrp_codes: dict[str, int] = {}
+    for page in pages:
+        if rm := _RRRP_BASE_RATES_RE.search(page.text):
+            rrrp_codes.update({code: page.page_number for code in re.findall(r"[A-Z]\d", rm.group("classes"))})
     drp_note = None
     for page in pages:
         if dm := _DRP_RE.search(page.text):
@@ -793,12 +863,15 @@ def parse_tariff_pages(
             current.eligibility = " ".join(description).strip()
         if not current.eligibility and current.code and class_group_desc:
             current.eligibility = class_group_desc
+        if not current.eligibility.startswith("This classification"):
+            current.eligibility = _deinterleave_heading(current.eligibility)
         if pending:
             current.unparsed.extend(pending)
         current.demand_min_kw, current.demand_max_kw, current.demand_text = _demand_bounds(
             current.eligibility, None if current.code else current.name)
         if current.code is None:
             _separate_connection_pair(current)
+        _single_connection_standard(current)
         _promote_interval_transmission(current)
         _add_footnote_credits(current)
         for charge in current.charges:
@@ -871,6 +944,13 @@ def parse_tariff_pages(
                 text = split[1] + text[m.end("label"):]
                 m = _CHARGE_RE.match(text)
             tail = None
+        if (m and after is not None and current is not None and not target_allowance and not pending
+                and (am := _APPLICABLE_TAIL_RE.match(m.group("label") or ""))):
+            previous = current.charges[after["index"]]
+            if previous.kind == "rider" and "applicable" not in previous.label.casefold():
+                extend_tail(am.group("phrase"), after)
+                text = text[am.end():].lstrip()
+                m = _CHARGE_RE.match(text)
         if not m:
             if (after is not None and current is not None and not target_allowance and not pending
                     and not footnote and not _LABEL_START_RE.match(text) and not _SUBHEADING_RE.match(text)
@@ -1023,6 +1103,13 @@ def parse_tariff_pages(
                 billing_note[-1] = f"{billing_note[-1]} {line}".strip()
     close_class()
     flush_allowance()
+    for cls in sheet.classifications:
+        code = _norm_name(cls.name).rsplit(" ", 1)[-1]
+        if code in rrrp_codes and "RESIDENTIAL" in _norm_name(cls.name):
+            cls.notes.append(
+                f"Rural or Remote Electricity Rate Protection (RRRP): the OEB decision (PDF page {rrrp_codes[code]}) "
+                f"applies the RRRP adjustment to the {code} base rates, so the approved rates already include the "
+                "rate protection; no separate RRRP credit is listed or computed.")
     sheet.footnotes = _split_footnotes(" ".join(notes_text))
     for text in dict.fromkeys(t for t in billing_note if t):
         sheet.notes.append(f"Gross Load Billing Note: {text}")
@@ -1061,8 +1148,11 @@ def normalize_tariff_text(text: str) -> str:
     return "\n".join(output)
 
 
-def extract_tariff_pages(pdf_bytes: bytes, minimum_characters: int = 20) -> list[DocumentPage]:
-    """Extract tariff PDF pages like ``extract_pdf_pages`` but keep repeated lines; fails closed."""
+def extract_tariff_pages(pdf_bytes: bytes, minimum_characters: int = 20, y_tolerance: float = 3) -> list[DocumentPage]:
+    """Extract tariff PDF pages like ``extract_pdf_pages`` but keep repeated lines; fails closed.
+
+    ``y_tolerance`` is a per-document override for layouts whose values print offset from their labels.
+    """
     try:
         import pdfplumber
     except ImportError:
@@ -1072,7 +1162,7 @@ def extract_tariff_pages(pdf_bytes: bytes, minimum_characters: int = 20) -> list
     try:
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
             for number, page in enumerate(pdf.pages, 1):
-                text = normalize_tariff_text(page.extract_text(x_tolerance=2, y_tolerance=3) or "")
+                text = normalize_tariff_text(page.extract_text(x_tolerance=2, y_tolerance=y_tolerance) or "")
                 if len(re.sub(r"\W", "", text)) >= minimum_characters:
                     pages.append(DocumentPage(number, text))
     except Exception as exc:
@@ -1081,10 +1171,25 @@ def extract_tariff_pages(pdf_bytes: bytes, minimum_characters: int = 20) -> list
     return pages
 
 
+def residential_demand_floor(cls: Classification) -> Optional[float]:
+    """kW floor of a residential class billed on a demand basis; ``None`` unless every check holds."""
+    name = _norm_name(cls.name)
+    if "RESIDENTIAL" not in name or "SEASONAL" in name:
+        return None
+    dist = [c for c in cls.charges if c.kind == "distribution"]
+    if not dist or any(c.unit != "$/kW" for c in dist) or not _RES_DEMAND_BASIS_RE.search(cls.eligibility):
+        return None
+    m = _RES_DEMAND_FLOOR_RE.search(re.sub(r"\s+", " ", cls.eligibility))
+    floor = _num(m.group(1)) if m else None
+    return floor if floor is not None and floor >= 50 else None
+
+
 def classify_classification(cls: Classification) -> str:
     """Categorise a classification for record builders; one of ``CLASS_CATEGORIES``.
 
     "residential": RESIDENTIAL / SEASONAL classes and Hydro One UR, R1, R2, AUR, AR.
+    "residential_demand": a RESIDENTIAL-named class with $/kW distribution rates whose eligibility says it is
+    billed on a demand basis at or above a stated kW floor (Algoma R2); built as a delivery-only demand record.
     "gs_energy": GS less than 50 kW and Hydro One UGe, GSe, AUGe, AGSe (energy-billed).
     "gs_demand": GS ranges within 50-4,999 kW and Hydro One UGd, GSd, AUGd, AGSd; open-ended GS classes
     ("GREATER THAN 50 KW", "1,000 KW AND GREATER") whose eligibility caps them below 5,000 kW or whose
@@ -1100,7 +1205,7 @@ def classify_classification(cls: Classification) -> str:
     if _EXCLUDED_CLASS_RE.search(cls.name):
         return "excluded"
     if code in _RESIDENTIAL_CODES or "RESIDENTIAL" in name or "SEASONAL" in name:
-        return "residential"
+        return "residential_demand" if residential_demand_floor(cls) is not None else "residential"
     if code in _GS_ENERGY_CODES or re.match(r"GENERAL SERVICE (?:LESS THAN|UNDER|BELOW) 50 KW\b", name):
         return "gs_energy"
     if code in _GS_DEMAND_CODES:
@@ -1119,6 +1224,9 @@ def classify_classification(cls: Classification) -> str:
         return "other"
     if name.startswith("LARGE USE"):
         return "large_use"
+    if name.startswith("INTERMEDIATE"):
+        lo, hi = cls.demand_min_kw, cls.demand_max_kw
+        return "gs_demand" if lo is not None and hi is not None and 50 <= lo < hi <= 5000 else "other"
     if code == "ST":
         return "sub_transmission"
     return "other"
@@ -1168,6 +1276,8 @@ def _selected(cls: Classification, classes: Iterable[str]) -> bool:
         return True
     if "GENERAL SERVICE 50 TO 4,999 KW" in wanted and category == "gs_demand":
         return True
+    if category == "residential_demand":
+        return RESIDENTIAL_DEMAND_CLASS in wanted
     return "LARGE USE" in wanted and category == "large_use"
 
 
@@ -1352,10 +1462,14 @@ def _cls_title(cls: Classification) -> str:
     return _class_title(cls.name)
 
 
-def _tariff_code(name: str, code: Optional[str] = None) -> str:
+def _tariff_code(name: str, code: Optional[str] = None,
+                 bounds: tuple[Optional[float], Optional[float]] = (None, None)) -> str:
     if code:
         return code
     norm = _norm_name(name)
+    if norm.startswith("INTERMEDIATE") and None not in bounds:
+        lo, hi = bounds
+        return f"GS {lo:,.0f}-{hi - 1 if hi % 10 == 0 else hi:,.0f} kW"
     if m := _GS_RANGE_RE.match(norm):
         return f"GS {m.group(1)}-{m.group(2)} kW"
     if m := _GS_OPEN_RE.match(norm):
@@ -1396,6 +1510,12 @@ def build_demand_records(
     for cls in sheet.classifications:
         if reason := exclusion_reason(cls):
             sheet.exclusions[cls.name] = reason
+        if (cls.charges and classify_classification(cls) == "other" and _IN_SCOPE_NAME_RE.search(cls.name)
+                and cls.name not in sheet.rejections):
+            sheet.rejections[cls.name] = ("unrecognised in-scope classification (name/demand range not mapped to a "
+                                          "supported class); not built")
+            logger.warning("OEB tariff %s %s not recognised; rejected", sheet.distributor, cls.name)
+            continue
         if not _selected(cls, classes):
             continue
         reason = _validate(cls)
@@ -1408,15 +1528,22 @@ def build_demand_records(
         demand_min, demand_max = cls.demand_min_kw, cls.demand_max_kw
         if sub_transmission:
             demand_min, demand_max, _ = _demand_bounds(eligibility)
+        category = classify_classification(cls)
+        residential_demand = category == "residential_demand"
+        if residential_demand:
+            demand_min, demand_max = residential_demand_floor(cls), None
         expired = [c for c in cls.charges if c.end_date and c.end_date < as_of]
         live = [c for c in cls.charges if c not in expired]
         components = [_component(c, sheet, cls.name) for c in live]
         components += [_component(a, sheet, cls.name) for a in sheet.allowances
                        if _allowance_applies(a, cls)]
-        large_use = classify_classification(cls) in ("large_use", "sub_transmission")
+        large_use = category in ("large_use", "sub_transmission")
         notes = [COMMODITY_NOTE]
         if sub_transmission:
             notes.append(ST_LOAD_NOTE)
+        if residential_demand:
+            notes.append(f"Residential service billed on a demand basis ({demand_min:,.0f} kW and above), "
+                         "published as a residential classification; RPP commodity prices are not applied.")
         if sheet.case_number:
             notes.append(f"OEB case {sheet.case_number}.")
         if sheet.implementation_date and sheet.implementation_date != sheet.effective_date:
@@ -1444,13 +1571,18 @@ def build_demand_records(
             notes.append("Expired riders omitted: " + "; ".join(c.label for c in expired) + ".")
         notes.append("Standby, embedded-distributor, generation, unmetered and lighting classes excluded.")
         zone = f"{sheet.rate_zone} - " if sheet.rate_zone else ""
+        if residential_demand:
+            short = re.sub(r"^RESIDENTIAL\s*-?\s*", "", _norm_name(cls.name)) or "RES"
+            code = f"{short} {demand_min:,.0f}+ kW"
+        else:
+            code = _tariff_code(cls.name, cls.code, (demand_min, demand_max))
         records.append(TariffRecord(
             utility_name=utility_name,
             province=province,
             utility_type="electricity",
             tariff_name=f"{zone}{_cls_title(cls)} (delivery only)",
-            tariff_code=_tariff_code(cls.name, cls.code),
-            customer_class="industrial" if large_use else "commercial",
+            tariff_code=code,
+            customer_class="residential" if residential_demand else "industrial" if large_use else "commercial",
             sub_class=sheet.rate_zone,
             description=f"OEB-approved {_cls_title(cls)} Service Classification delivery and regulatory "
                         f"charges ({sheet.distributor}).",

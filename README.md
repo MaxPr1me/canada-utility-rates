@@ -30,24 +30,24 @@ unverified fallback records remain estimates regardless of the export date.
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 86: 77 electricity and 9 gas, across all 13 provinces/territories (8 absorbed Ontario entries marked `merged`) |
-| Stored tariff versions / components | 1,157 / 10,822, including history and older estimates |
-| Live-sourced tariffs | **672 latest tariffs across 45 utilities**; 677 stored live versions |
+| Stored tariff versions / components | 1,321 / 13,343, including history and older estimates |
+| Live-sourced tariffs | **836 latest tariffs across 67 utilities**; 841 stored live versions |
 | Active regional campaign | **243 latest live records across all 16 provincial target utilities**; 109 across the four territorial utilities |
-| Ontario batch 1 | **319 latest live records across 24 distributors** (Hydro One, Toronto, Alectra, Ottawa and the larger LDCs) from OEB-approved tariff sheets |
+| Ontario (batches 1-2) | **483 latest live records across 46 distributors** from OEB-approved tariff sheets; only PUC Distribution stays unconfigured |
 | Remaining seed-only campaign utilities | **0**; SaskPower's scoped building schedules are audited, while other targets have recorded gaps |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Historical snapshots | **2,486**; Ontario batch 1 appended 344 without changing prior snapshots |
+| Historical snapshots | **3,013**; Ontario batch 2 appended 527 without changing prior snapshots |
 | DB validation | **0 errors, 2 existing AESO warnings** |
-| Deterministic tests | **1,165 passing** across 8 modules |
+| Deterministic tests | **1,213 passing** across 8 modules |
 
 Live output currently includes BC Hydro (17), FortisBC Electric (11), Manitoba Hydro (18), NB Power (10),
 Nova Scotia Power (18), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
 NL Hydro (21), SaskPower (41), SaskEnergy (8), Centra Gas Manitoba (13), FortisBC Energy (27),
 Energir (5), Heritage/Eastward (3), Liberty NB (4), NTPC (63), Qulliq Energy (6), Yukon Energy (20),
-ATCO Electric Yukon (20), FortisAlberta (1) and 24 Ontario distributors (319; Hydro One 50,
-Alectra 44, Elexicon 19, ERTH 18, Enova 16, GrandBridge 16, North Bay 15, Newmarket-Tay 13,
-Toronto 12 and others; see the matrix).
+ATCO Electric Yukon (20), FortisAlberta (1) and 46 Ontario distributors (483; Hydro One 50,
+Alectra 44, Elexicon 19, ERTH 18, Enova 16, GrandBridge 16, North Bay 15, Newmarket-Tay 14,
+Toronto 12, Algoma 10 and others; see the matrix).
 These counts use the latest version per tariff, not complete utility catalogues.
 They include conditional products, adjustment-only records and retained non-building
 references, not a count of complete building classes. Yukon Energy and ATCO Electric Yukon
@@ -231,7 +231,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 1,165 deterministic tests across 8 test modules
+├── tests/                    ← 1,213 deterministic tests across 8 test modules
 │   ├── fixtures/             ← Source-derived fixtures; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
@@ -422,7 +422,7 @@ features, **not evidence that all registered utilities or published classes are 
 | 5D: Provincial/territorial depth | Building-class audits at already-live utilities; later territorial coverage | NL Hydro 21 records implemented; territories reopened October 7 (NTPC, Qulliq, Yukon Energy and ATCO Electric Yukon live) |
 | 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | All six in-scope gas utilities have live output; building-service gaps remain. ON/AB gas excluded from this run |
 | 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Planned |
-| 5G: Ontario | Batch 1 done October 7 (24 distributors live from OEB tariff sheets; merged identities reconciled). Next: batch 2 for the 23 remaining distributors, plus stopping re-emitted estimates for rejected Residential/GS<50 classes (Oakville) | In progress |
+| 5G: Ontario | Batches 1-2 done October 7-8: 46 distributors live from OEB tariff sheets; rejected classes no longer re-emit estimates. PUC Distribution unconfigured (no connection rate printed). Demand-class commodity/GA waits for market-rate work | Mostly done |
 | 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; first CI run verification and provenance reporting remain |
 
 **Definition of done for each utility:** account for the standard published classes

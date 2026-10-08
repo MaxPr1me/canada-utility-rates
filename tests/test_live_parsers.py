@@ -8829,7 +8829,10 @@ def test_onl_tariff_documents_config_integrity():
         assert docs, name
         defaults = set()
         for doc in docs:
-            assert set(doc) == {"url", "case_number", "zones", "default_zone"}, name
+            assert set(doc) - {"extract"} == {"url", "case_number", "zones", "default_zone"}, name
+            if "extract" in doc:
+                assert doc["extract"] and set(doc["extract"]) <= {"y_tolerance"}, name
+                assert all(isinstance(v, (int, float)) and v > 0 for v in doc["extract"].values()), name
             assert doc["url"].startswith("https://"), name
             assert owners.setdefault(doc["url"], name) == name, doc["url"]
             assert re.fullmatch(r"EB-\d{4}-\d{4}", doc["case_number"]), name
@@ -9110,8 +9113,10 @@ def test_onl_incomplete_class_fails_closed_alone(monkeypatch):
     scraper, records = ONL_run(monkeypatch, "Toronto Hydro-Electric System Ltd.",
                            mutate={"toronto": (line, line + "\n" + line.replace("0.01346", "0.01400"))})
     assert "residential:standard" in scraper.tariff_rejections
-    assert ONL_record(records, "TOU-R").confidence == "unverified"
+    codes = {r.tariff_code for r in records}
+    assert not codes & {"TOU-R", "TIER-R", "ULO-R"}
     assert "Provenance: live_parsed" in ONL_record(records, "GS-TOU-S").notes
+    assert "Provenance: seed_fallback" in ONL_record(records, "SL").notes
 
 
 def test_onl_expired_rider_omitted(monkeypatch):
@@ -9126,7 +9131,7 @@ def test_onl_expired_rider_omitted(monkeypatch):
 
 def test_onl_unconfigured_ldc_is_seed_only_without_xml(monkeypatch):
     calls = ONL_patch_sources(monkeypatch)
-    records = ONL_OntarioLDCScraper(registry_entry={"name": "Wasaga Distribution Inc."}).scrape()
+    records = ONL_OntarioLDCScraper(registry_entry={"name": "PUC Distribution Inc."}).scrape()
     ontario_ldc.clear_oeb_cache()
     assert records and not ONL_live(records)
     assert all(r.confidence == "unverified" for r in records)
@@ -9157,3 +9162,713 @@ def test_onl_demand_hook_replaces_seed_demand(monkeypatch):
     codes = {r.tariff_code for r in records}
     assert "GS-D1-EXT" in codes and not codes & {"GS-D1", "GS-D2", "GS-D3"}
     assert "SL" in codes
+
+
+# ======================================================================
+# OEB tariff parser variants (Ontario batch 2)
+# ======================================================================
+import json
+from pathlib import Path
+
+import pytest
+
+from scrapers.utils import oeb_tariff
+from scrapers.utils.oeb_tariff import (
+    build_demand_records,
+    classify_classification,
+    extract_tariff_pages,
+    parse_tariff_pages,
+    parse_tariff_zones,
+)
+from scrapers.utils.parsing import DocumentPage
+
+OEBT2_B2_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "oeb_tariff_variants_b2.json"
+OEBT2_B2_TODAY = "2026-10-08"
+
+
+def OEBT2_b2_case(key):
+    data = json.loads(OEBT2_B2_FIXTURE.read_text(encoding="utf-8"))[key]
+    return data, [DocumentPage(int(n), data["text"][str(n)]) for n in data["pages"]]
+
+
+def OEBT2_b2_mutate(pages, old, new):
+    assert sum(p.text.count(old) for p in pages) == 1, old
+    return [DocumentPage(p.page_number, p.text.replace(old, new)) for p in pages]
+
+
+def OEBT2_b2_sheet(key, pages=None):
+    data, fixture_pages = OEBT2_b2_case(key)
+    return parse_tariff_pages(pages or fixture_pages, data["source_url"], OEBT2_B2_TODAY)
+
+
+def OEBT2_b2_class(sheet, name):
+    found = [c for c in sheet.classifications if c.name == name]
+    assert len(found) == 1, (name, [c.name for c in sheet.classifications])
+    return found[0]
+
+
+def OEBT2_b2_charge(cls, label_start, kind=None):
+    found = [c for c in cls.charges if c.label.startswith(label_start) and (kind is None or c.kind == kind)]
+    assert len(found) == 1, (label_start, [c.label for c in cls.charges])
+    return found[0]
+
+
+def OEBT2_b2_record(records, code):
+    found = [r for r in records if r.tariff_code == code]
+    assert len(found) == 1, (code, [r.tariff_code for r in records])
+    return found[0]
+
+
+OEBT2_GS50 = "GENERAL SERVICE 50 TO 4,999 KW"
+OEBT2_CBR_RIDER = "Rate Rider for Disposition of Capacity Based Recovery Account (2026)"
+
+
+def test_oebt2_b2_fixture_metadata():
+    data = json.loads(OEBT2_B2_FIXTURE.read_text(encoding="utf-8"))
+    assert set(data) == {"kingston_y6", "kingston_y3", "midland_y1", "atikokan", "northern_ontario_wires",
+                         "tillsonburg", "hearst"}
+    for case in data.values():
+        assert case["source_url"].startswith("https://www.rds.oeb.ca/CMWebDrawer/Record/")
+        assert case["case_number"].startswith("EB-2025-")
+        assert case["y_tolerance"] in (1, 3, 6)
+        assert [int(n) for n in case["text"]] == case["pages"]
+
+
+# ─── Item 1: per-document y_tolerance ─────────────────────────────
+
+class _FakePage:
+    def __init__(self, calls):
+        self.calls = calls
+
+    def extract_text(self, **kwargs):
+        self.calls.append(kwargs)
+        return "Kingston Hydro Corporation TARIFF OF RATES AND CHARGES"
+
+
+class _FakePdf:
+    def __init__(self, calls):
+        self.pages = [_FakePage(calls)]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+def test_oebt2_b2_extract_tariff_pages_default_and_override_y_tolerance(monkeypatch):
+    import pdfplumber
+
+    calls = []
+    monkeypatch.setattr(pdfplumber, "open", lambda stream: _FakePdf(calls))
+    assert len(extract_tariff_pages(b"%PDF")) == 1
+    assert len(extract_tariff_pages(b"%PDF", y_tolerance=6)) == 1
+    assert calls == [{"x_tolerance": 2, "y_tolerance": 3}, {"x_tolerance": 2, "y_tolerance": 6}]
+
+
+def test_oebt2_b2_kingston_y6_gs_50_4999_validates_with_correct_pairing():
+    sheet = OEBT2_b2_sheet("kingston_y6")
+    cls = OEBT2_b2_class(sheet, OEBT2_GS50)
+    assert oeb_tariff._validate(cls) is None and cls.unparsed == []
+    cbr = OEBT2_b2_charge(cls, OEBT2_CBR_RIDER)
+    assert (cbr.value, cbr.unit, cbr.conditional) == (0.1647, "$/kW", True)
+    assert "Class B" in cbr.condition
+    network = [c for c in cls.find("transmission_network") if not c.conditional]
+    assert [(c.label, c.value) for c in network] == [("Retail Transmission Rate - Network Service Rate", 4.5677)]
+    ev = OEBT2_b2_charge(cls, "Retail Transmission Rate - Network Service Rate - EV CHARGING")
+    assert (ev.value, ev.conditional) == (0.7765, True)
+    wms = OEBT2_b2_charge(cls, "Wholesale Market Service Rate")
+    assert (wms.value, wms.unit) == (0.0041, "$/kWh")
+    records = build_demand_records(sheet, "Kingston Hydro Corporation", today=OEBT2_B2_TODAY)
+    assert OEBT2_b2_record(records, "GS 50-4,999 kW").demand_max_kw == 5000
+
+
+def test_oebt2_b2_kingston_y3_text_stays_rejected():
+    sheet = OEBT2_b2_sheet("kingston_y3")
+    reason = oeb_tariff._validate(OEBT2_b2_class(sheet, OEBT2_GS50))
+    assert reason and "Applicable only for Class B Customers" in reason
+    build_demand_records(sheet, "Kingston Hydro Corporation", today=OEBT2_B2_TODAY)
+    assert OEBT2_GS50 in sheet.rejections
+
+
+# ─── Item 2: applicability tail overprinted on the next rider ─────
+
+OEBT2_MIDLAND_TAIL = "Applicable only for Class B Customers Rate Rider for Prospective LRAMVA"
+OEBT2_MIDLAND_CBR_LINE = ("Rate Rider for Disposition of Capacity Based Recovery Account (2026) - effective until "
+                    "December 31, 2026 $/kW 0.1629")
+
+
+def test_oebt2_b2_midland_tail_attaches_to_preceding_rider():
+    sheet = OEBT2_b2_sheet("midland_y1")
+    # Newmarket-Tay prints its case number only on each zone's first tariff page (not in this excerpt).
+    assert sheet.rate_zone == "Midland Rate Zone" and sheet.errors == []
+    cls = OEBT2_b2_class(sheet, OEBT2_GS50)
+    assert oeb_tariff._validate(cls) is None
+    cbr = OEBT2_b2_charge(cls, OEBT2_CBR_RIDER)
+    assert (cbr.value, cbr.conditional, cbr.end_date) == (0.1629, True, "2026-12-31")
+    assert cbr.label.endswith("Applicable only for Class B Customers") and "Class B" in cbr.condition
+    lramva = OEBT2_b2_charge(cls, "Rate Rider for Prospective LRAMVA")
+    assert (lramva.value, lramva.unit, lramva.conditional, lramva.end_date) == (0.1935, "$/kW", False, "2026-12-31")
+    assert not any(c.label.startswith("Applicable") for c in cls.charges)
+    records = build_demand_records(sheet, "Newmarket-Tay Power Distribution Ltd.", today=OEBT2_B2_TODAY)
+    assert OEBT2_b2_record(records, "GS 50-4,999 kW")
+
+
+def test_oebt2_b2_midland_tail_after_non_rider_stays_rejected():
+    _, pages = OEBT2_b2_case("midland_y1")
+    pages = OEBT2_b2_mutate(pages, OEBT2_MIDLAND_CBR_LINE, "Meter Charge $/kW 0.1629")
+    reason = oeb_tariff._validate(OEBT2_b2_class(OEBT2_b2_sheet("midland_y1", pages), OEBT2_GS50))
+    assert reason and "unrecognised delivery charge 'Applicable only for Class B" in reason
+
+
+def test_oebt2_b2_midland_unknown_applicability_phrase_stays_rejected():
+    _, pages = OEBT2_b2_case("midland_y1")
+    pages = OEBT2_b2_mutate(pages, OEBT2_MIDLAND_TAIL, OEBT2_MIDLAND_TAIL.replace("Class B Customers", "Seasonal Customers"))
+    reason = oeb_tariff._validate(OEBT2_b2_class(OEBT2_b2_sheet("midland_y1", pages), OEBT2_GS50))
+    assert reason and "unrecognised delivery charge 'Applicable only for Seasonal" in reason
+
+
+def test_oebt2_b2_midland_tail_not_attached_to_rider_with_applicable_clause():
+    _, pages = OEBT2_b2_case("midland_y1")
+    pages = OEBT2_b2_mutate(pages, OEBT2_MIDLAND_CBR_LINE, OEBT2_MIDLAND_CBR_LINE.replace(
+        " $/kW", " Applicable only for Non-RPP Customers $/kW"))
+    reason = oeb_tariff._validate(OEBT2_b2_class(OEBT2_b2_sheet("midland_y1", pages), OEBT2_GS50))
+    assert reason and "unrecognised delivery charge 'Applicable only for Class B" in reason
+
+
+# ─── Item 3: a lone Transformation Connection line is the standard rate ───
+
+def test_oebt2_b2_atikokan_single_transformation_connection_is_standard():
+    sheet = OEBT2_b2_sheet("atikokan")
+    assert sheet.case_number == "EB-2025-0053"
+    for name, value in (("RESIDENTIAL", 0.0069), ("GENERAL SERVICE LESS THAN 50 KW", 0.0057)):
+        conn = OEBT2_b2_charge(OEBT2_b2_class(sheet, name), "Retail Transmission Rate - Transformation Connection")
+        assert (conn.value, conn.unit, conn.conditional, conn.condition) == (value, "$/kWh", False, None)
+    records = build_demand_records(sheet, "Atikokan Hydro Inc.", today=OEBT2_B2_TODAY)
+    assert OEBT2_b2_record(records, "GS 50-4,999 kW")
+
+
+def test_oebt2_b2_line_and_transformation_pair_keeps_note7_condition_for_coded_classes():
+    cls = oeb_tariff.Classification(name="SUB TRANSMISSION - ST", code="ST")
+    for part in ("Line", "Transformation"):
+        label = f"Retail Transmission Rate - {part} Connection Service Rate"
+        cls.charges.append(oeb_tariff.TariffCharge(
+            label=label, value=1.0, unit="$/kW", kind="transmission_connection", section="delivery",
+            page_number=1, conditional=True, condition=oeb_tariff._condition(label, "delivery")))
+    oeb_tariff._single_connection_standard(cls)
+    assert [c.condition for c in cls.charges] == [oeb_tariff._NOTE7_CONDITION] * 2
+    pair = list(cls.charges)
+    cls.charges = pair[:1]
+    oeb_tariff._single_connection_standard(cls)
+    assert (cls.charges[0].conditional, cls.charges[0].condition) == (True, oeb_tariff._NOTE7_CONDITION)
+    cls.charges = pair[1:]
+    oeb_tariff._single_connection_standard(cls)
+    assert (cls.charges[0].conditional, cls.charges[0].condition) == (False, None)
+
+
+def test_oebt2_b2_hydro_one_note7_pairs_unchanged():
+    data = json.loads((OEBT2_B2_FIXTURE.parent / "oeb_tariff_hydro_one.json").read_text(encoding="utf-8"))
+    pages = [DocumentPage(p["page_number"], p["text"]) for p in data["raw_pages"]]
+    sheets = parse_tariff_zones(pages, data["url"], OEBT2_B2_TODAY)
+    note7 = [c for s in sheets.values() for cls in s.classifications for c in cls.charges
+             if c.condition == oeb_tariff._NOTE7_CONDITION]
+    assert note7 and all(c.conditional for c in note7)
+    assert {oeb_tariff._connection_part(c.label) for c in note7} == {"Line", "Transformation"}
+
+
+# ─── Item 4: case number from the Schedule A cover ────────────────
+
+OEBT2_NOW_COVER_DATE = "TARIFF OF RATES AND CHARGES EB-2025-0017\nMarch 19, 2026"
+
+
+def test_oebt2_b2_northern_ontario_wires_case_from_cover():
+    sheet = OEBT2_b2_sheet("northern_ontario_wires")
+    assert sheet.errors == [] and sheet.issued_date == "2026-03-19"
+    assert sheet.case_number == "EB-2025-0017"
+    assert any("Schedule A cover (PDF page 18)" in n for n in sheet.notes)
+
+
+def test_oebt2_b2_northern_ontario_wires_cover_date_mismatch_fails_closed():
+    _, pages = OEBT2_b2_case("northern_ontario_wires")
+    pages = OEBT2_b2_mutate(pages, OEBT2_NOW_COVER_DATE, OEBT2_NOW_COVER_DATE.replace("March 19", "March 20"))
+    assert OEBT2_b2_sheet("northern_ontario_wires", pages).case_number is None
+
+
+def test_oebt2_b2_northern_ontario_wires_cover_must_immediately_precede():
+    _, pages = OEBT2_b2_case("northern_ontario_wires")
+    moved = [DocumentPage(17 if p.page_number == 18 else p.page_number, p.text) for p in pages]
+    assert OEBT2_b2_sheet("northern_ontario_wires", moved).case_number is None
+    assert OEBT2_b2_sheet("northern_ontario_wires", pages[1:]).case_number is None
+
+
+def test_oebt2_b2_northern_ontario_wires_cover_with_two_cases_fails_closed():
+    _, pages = OEBT2_b2_case("northern_ontario_wires")
+    pages = OEBT2_b2_mutate(pages, OEBT2_NOW_COVER_DATE, "TARIFF OF RATES AND CHARGES EB-2025-0099\n" + OEBT2_NOW_COVER_DATE)
+    assert OEBT2_b2_sheet("northern_ontario_wires", pages).case_number is None
+
+
+def test_oebt2_b2_header_case_number_still_wins():
+    sheet = OEBT2_b2_sheet("hearst")
+    assert sheet.case_number == "EB-2025-0033" and not any("Schedule A cover" in n for n in sheet.notes)
+
+
+# ─── Item 5: GS >= 1,500 kW / Intermediate User; no silent drops ──
+
+OEBT2_TILL_GS = "GENERAL SERVICE EQUAL TO OR GREATER THAN 1,500 KW"
+
+
+def test_oebt2_b2_tillsonburg_equal_or_greater_class_built():
+    sheet = OEBT2_b2_sheet("tillsonburg")
+    cls = OEBT2_b2_class(sheet, OEBT2_TILL_GS)
+    assert classify_classification(cls) == "gs_demand"
+    assert (cls.demand_min_kw, cls.demand_max_kw) == (1500, 4999)
+    assert cls.eligibility.startswith("This classification applies to a non residential account")
+    records = build_demand_records(sheet, "Tillsonburg Hydro Inc.", today=OEBT2_B2_TODAY)
+    rec = OEBT2_b2_record(records, "GS 1,500+ kW")
+    assert rec.customer_class == "commercial" and sheet.rejections == {}
+    values = {(c.component_name, c.charge_unit): c.charge_value for c in rec.components}
+    assert values[("Service Charge", "$/month")] == 2380.87
+    assert values[("Distribution Volumetric Rate", "$/kW")] == 2.6682
+
+
+@pytest.mark.parametrize("name, low", [
+    ("GENERAL SERVICE EQUAL TO OR GREATER THAN 1,500 KW", "1,500"),
+    ("GENERAL SERVICE GREATER THAN OR EQUAL TO 1,000 KW", "1,000"),
+    ("GENERAL SERVICE GREATER THAN 50 KW", "50"),
+])
+def test_oebt2_b2_gs_open_variants(name, low):
+    m = oeb_tariff._GS_OPEN_RE.match(name)
+    assert m and (m.group("a") or m.group("b")) == low
+
+
+def test_oebt2_b2_hearst_intermediate_user_built_as_gs_demand():
+    sheet = OEBT2_b2_sheet("hearst")
+    cls = OEBT2_b2_class(sheet, "INTERMEDIATE USER")
+    assert classify_classification(cls) == "gs_demand"
+    assert (cls.demand_min_kw, cls.demand_max_kw) == (1500, 5000)
+    records = build_demand_records(sheet, "Hearst Power Distribution Co. Ltd.", today=OEBT2_B2_TODAY)
+    rec = OEBT2_b2_record(records, "GS 1,500-4,999 kW")
+    assert rec.customer_class == "commercial" and (rec.demand_min_kw, rec.demand_max_kw) == (1500, 5000)
+    assert rec.tariff_name == "Intermediate User (delivery only)"
+    values = {(c.component_name, c.charge_unit): c.charge_value for c in rec.components}
+    assert values[("Service Charge", "$/month")] == 285.48
+    assert values[("Retail Transmission Rate - Network Service Rate", "$/kW")] == 4.1666
+
+
+def test_oebt2_b2_intermediate_user_outside_range_surfaces_rejection():
+    _, pages = OEBT2_b2_case("hearst")
+    pages = OEBT2_b2_mutate(pages, "1,500 kW but less than 5,000 kW", "1,500 kW but less than 15,000 kW")
+    sheet = OEBT2_b2_sheet("hearst", pages)
+    assert classify_classification(OEBT2_b2_class(sheet, "INTERMEDIATE USER")) == "other"
+    records = build_demand_records(sheet, "Hearst Power Distribution Co. Ltd.", today=OEBT2_B2_TODAY)
+    assert not [r for r in records if r.demand_min_kw == 1500]
+    assert "unrecognised in-scope classification" in sheet.rejections["INTERMEDIATE USER"]
+
+
+def test_oebt2_b2_unrecognised_gs_name_surfaces_rejection():
+    _, pages = OEBT2_b2_case("tillsonburg")
+    pages = OEBT2_b2_mutate(pages, OEBT2_TILL_GS + " SERVICE", "GENERAL SERVICE INTERVAL METERED SERVICE")
+    sheet = OEBT2_b2_sheet("tillsonburg", pages)
+    build_demand_records(sheet, "Tillsonburg Hydro Inc.", today=OEBT2_B2_TODAY)
+    assert "unrecognised in-scope classification" in sheet.rejections["GENERAL SERVICE INTERVAL METERED"]
+
+
+def test_oebt2_b2_excluded_and_out_of_scope_names_not_reported_as_rejections():
+    sheet = OEBT2_b2_sheet("hearst")
+    sheet.classifications.append(oeb_tariff.Classification(name="FARM SERVICE", charges=[
+        oeb_tariff.TariffCharge("Service Charge", 1.0, "$/month", "service", "delivery", 1)]))
+    sheet.classifications.append(oeb_tariff.Classification(name="GENERAL SERVICE OVERVIEW"))
+    build_demand_records(sheet, "Hearst Power Distribution Co. Ltd.", today=OEBT2_B2_TODAY)
+    assert sheet.rejections == {}
+
+
+def test_oebt2_b2_deinterleave_only_repairs_overprinted_heading():
+    garbled = "TChiLs AclaSssSificIFatiIoCn aApTpliIeOs tNo a non residential account"
+    assert oeb_tariff._deinterleave_heading(garbled) == "This classification applies to a non residential account"
+    assert oeb_tariff._deinterleave_heading("CLASSIFICATION of an account") == "CLASSIFICATION of an account"
+    assert oeb_tariff._deinterleave_heading("Customers whose demand exceeds 50 kW") == (
+        "Customers whose demand exceeds 50 kW")
+
+
+# ======================================================================
+# Ontario LDC batch 2 configuration and seed suppression
+# ======================================================================
+from datetime import date
+
+from scrapers.utilities import ontario_ldc
+
+ONL2_ONL_B2_RES = {"TOU-R", "TIER-R", "ULO-R"}
+ONL2_ONL_B2_GS = {"GS-TOU-S", "GS-TIER-S", "GS-ULO-S"}
+ONL2_ONL_B2_DEMAND = {"GS-D1", "GS-D2", "GS-D3"}
+
+
+def test_onl2_onl_b2_extract_options_configured():
+    docs = ontario_ldc.OEB_TARIFF_DOCUMENTS
+    assert docs["Kingston Hydro Corporation"][0]["extract"] == {"y_tolerance": 6}
+    midland = [d for d in docs["Newmarket-Tay Power Distribution Ltd."] if d["zones"] == ["Midland"]]
+    assert midland[0]["extract"] == {"y_tolerance": 1}
+    assert "extract" not in docs["Toronto Hydro-Electric System Ltd."][0]
+
+
+def test_onl2_onl_b2_extract_options_passed_only_when_present(monkeypatch):
+    ONL_patch_sources(monkeypatch)
+    seen = []
+    pages_for = ONL_OntarioLDCScraper._fetch_tariff_pages
+
+    def recording(self, url, **kw):
+        seen.append(kw)
+        return pages_for(self, url)
+
+    monkeypatch.setattr(ONL_OntarioLDCScraper, "_fetch_tariff_pages", recording)
+    doc = dict(ontario_ldc.OEB_TARIFF_DOCUMENTS["Toronto Hydro-Electric System Ltd."][0])
+    scraper = ONL_OntarioLDCScraper(registry_entry={"name": "Toronto Hydro-Electric System Ltd."})
+    assert scraper._load_sheets(doc, date(2026, 10, 7))
+    doc["extract"] = {"y_tolerance": 6}
+    assert scraper._load_sheets(doc, date(2026, 10, 7))
+    ontario_ldc.clear_oeb_cache()
+    assert seen == [{}, {"y_tolerance": 6}]
+
+
+def test_onl2_onl_b2_fetch_tariff_pages_forwards_keyword(monkeypatch):
+    calls = []
+
+    def fake_extract(data, **kw):
+        calls.append((data, kw))
+        return ["page"]
+
+    monkeypatch.setattr(ontario_ldc.oeb_tariff, "extract_tariff_pages", fake_extract)
+    monkeypatch.setattr(ONL_OntarioLDCScraper, "_fetch_oeb", lambda self, url: b"pdf")
+    scraper = ONL_OntarioLDCScraper(registry_entry={"name": "Kingston Hydro Corporation"})
+    assert scraper._fetch_tariff_pages("u") == ["page"]
+    assert scraper._fetch_tariff_pages("u", y_tolerance=6) == ["page"]
+    assert calls == [(b"pdf", {}), (b"pdf", {"y_tolerance": 6})]
+
+
+def test_onl2_onl_b2_new_ldcs_configured():
+    docs = ontario_ldc.OEB_TARIFF_DOCUMENTS
+    expected = {
+        "Canadian Niagara Power Inc.": (927499, "EB-2025-0050"),
+        "Grimsby Power Inc.": (925220, "EB-2025-0035"),
+        "Welland Hydro-Electric System Corp.": (936222, "EB-2025-0004"),
+        "Centre Wellington Hydro Ltd.": (926741, "EB-2025-0049"),
+        "Festival Hydro Inc.": (925779, "EB-2025-0039"),
+        "Westario Power Inc.": (924811, "EB-2025-0002"),
+        "Tillsonburg Hydro Inc.": (939423, "EB-2025-0007"),
+        "Orangeville Hydro Limited": (939232, "EB-2025-0015"),
+        "Wasaga Distribution Inc.": (936415, "EB-2025-0005"),
+        "Innpower Corporation": (926802, "EB-2025-0027"),
+        "Lakefront Utilities Inc.": (925193, "EB-2025-0025"),
+        "Lakeland Power Distribution Ltd.": (954612, "EB-2025-0024"),
+        "Hydro 2000 Inc.": (936563, "EB-2025-0032"),
+        "Hydro Hawkesbury Inc.": (937884, "EB-2025-0031"),
+        "Ottawa River Power Corporation": (936459, "EB-2025-0013"),
+        "Rideau St. Lawrence Distribution Inc.": (937200, "EB-2025-0010"),
+        "Hearst Power Distribution Co. Ltd.": (939278, "EB-2025-0033"),
+        "Atikokan Hydro Inc.": (936437, "EB-2025-0053"),
+        "Fort Frances Power Corp.": (936512, "EB-2025-0038"),
+        "Sioux Lookout Hydro Inc.": (936469, "EB-2025-0009"),
+        "Northern Ontario Wires Inc.": (936426, "EB-2025-0017"),
+    }
+    for name, (record, case) in expected.items():
+        entry = {
+            "url": ontario_ldc._OEB_RDS_DOC.format(record),
+            "case_number": case, "zones": None, "default_zone": "",
+        }
+        if name == "Grimsby Power Inc.":
+            entry["extract"] = {"y_tolerance": 4}
+        assert docs[name] == [entry], name
+    assert "PUC Distribution Inc." not in docs
+    assert docs["Algoma Power Inc."][0]["default_zone"] == {"residential": "R1 (i)"}
+
+
+def test_onl2_onl_b2_rejected_gs_group_emits_no_gs_seed(monkeypatch):
+    line = "Retail Transmission Rate - Network Service Rate $/kWh 0.01310"
+    scraper, records = ONL_run(monkeypatch, "Toronto Hydro-Electric System Ltd.",
+                               mutate={"toronto": (line, line + "\n" + line.replace("0.01310", "0.01400"))})
+    assert any(k.startswith("gs:") for k in scraper.tariff_rejections)
+    codes = {r.tariff_code for r in records}
+    assert not codes & ONL2_ONL_B2_GS
+    assert "Provenance: live_parsed" in ONL_record(records, "TOU-R").notes
+    assert "Provenance: seed_fallback" in ONL_record(records, "SL").notes
+
+
+def test_onl2_onl_b2_rejected_demand_class_emits_no_demand_seed(monkeypatch):
+    def no_demand(self, doc, sheet, today):
+        self.tariff_rejections["demand:standard:GENERAL SERVICE 50 TO 4,999 KW"] = "unrecognised charge"
+        return []
+
+    monkeypatch.setattr(ONL_OntarioLDCScraper, "_tariff_demand_records", no_demand)
+    scraper, records = ONL_run(monkeypatch, "Hydro Ottawa Ltd.")
+    codes = {r.tariff_code for r in records}
+    assert not codes & ONL2_ONL_B2_DEMAND
+    assert "Provenance: live_parsed" in ONL_record(records, "TOU-R").notes
+    assert {r.tariff_code for r in ONL_seed(records)} == {"SL"}
+
+
+def test_onl2_onl_b2_demand_seed_kept_without_demand_rejection(monkeypatch):
+    monkeypatch.setattr(ONL_OntarioLDCScraper, "_tariff_demand_records", lambda self, doc, sheet, today: [])
+    _, records = ONL_run(monkeypatch, "Hydro Ottawa Ltd.")
+    assert ONL2_ONL_B2_DEMAND <= {r.tariff_code for r in ONL_seed(records)}
+
+
+def test_onl2_onl_b2_configured_fetch_failure_keeps_labelled_seed(monkeypatch):
+    _, records = ONL_run(monkeypatch, "Hydro Ottawa Ltd.", tariffs=False)
+    seed_codes = {r.tariff_code for r in ONL_seed(records)}
+    assert ONL2_ONL_B2_RES | ONL2_ONL_B2_GS | ONL2_ONL_B2_DEMAND | {"SL"} <= seed_codes
+    assert not ONL_live(records)
+    assert all(r.confidence == "unverified" for r in records)
+
+
+def test_onl2_onl_b2_sheet_rejection_keeps_labelled_seed(monkeypatch):
+    scraper, records = ONL_run(monkeypatch, "Toronto Hydro-Electric System Ltd.", today=date(2027, 6, 1))
+    assert any(k.startswith("sheet:") for k in scraper.tariff_rejections)
+    seed_codes = {r.tariff_code for r in ONL_seed(records)}
+    assert ONL2_ONL_B2_RES | ONL2_ONL_B2_GS | ONL2_ONL_B2_DEMAND <= seed_codes
+    assert not ONL_live(records)
+
+
+def test_onl2_onl_b2_unconfigured_ldc_keeps_seed_despite_rejection(monkeypatch):
+    calls = ONL_patch_sources(monkeypatch)
+    scraper = ONL_OntarioLDCScraper(registry_entry={"name": "PUC Distribution Inc."})
+    scraper.tariff_rejections["residential:standard"] = "not applicable"
+    records = scraper.scrape()
+    ontario_ldc.clear_oeb_cache()
+    assert ONL2_ONL_B2_RES <= {r.tariff_code for r in ONL_seed(records)}
+    assert calls == []
+
+
+# ======================================================================
+# Algoma Power R1 criteria split and R2 demand-billed residential (Ontario batch 2)
+# ======================================================================
+import json
+from datetime import date
+from pathlib import Path
+
+from scrapers.utilities import ontario_ldc
+from scrapers.utils import oeb_tariff
+from scrapers.utils.parsing import DocumentPage
+
+ALG2_ALG_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "oeb_tariff_algoma.json"
+ALG2_ALG_NAME = "Algoma Power Inc."
+ALG2_ALG_RES = {"TOU-R", "TIER-R", "ULO-R"}
+ALG2_ALG_GS = {"GS-TOU-S", "GS-TIER-S", "GS-ULO-S"}
+ALG2_ALG_R1_II = "R1-II-O-REG-445-07"
+ALG2_ALG_TAG_II = "Distribution Volumetric Rate - Applicable only to customers that meet criteria (ii) above"
+ALG2_ALG_DEMAND_BASIS = "and which is billed on a demand basis"
+
+
+def ALG2_alg_pages(mutate=None):
+    data = json.loads(ALG2_ALG_FIXTURE.read_text(encoding="utf-8"))
+    pages = [DocumentPage(n, data["text"][str(n)]) for n in data["pages"]]
+    if mutate:
+        old, new = mutate
+        assert sum(p.text.count(old) for p in pages) == 1, old
+        pages = [DocumentPage(p.page_number, p.text.replace(old, new)) for p in pages]
+    return data, pages
+
+
+def ALG2_alg_run(monkeypatch, mutate=None, tariffs=True, today=None):
+    if today is None:
+        ONL_patch_sources(monkeypatch)
+    else:
+        ONL_patch_sources(monkeypatch, today=today)
+    data, pages = ALG2_alg_pages(mutate)
+
+    def fake_pages(self, url, **kw):
+        if not tariffs or url != data["source_url"]:
+            raise RuntimeError("tariff unavailable " + url)
+        return pages
+
+    monkeypatch.setattr(ONL_OntarioLDCScraper, "_fetch_tariff_pages", fake_pages)
+    scraper = ONL_OntarioLDCScraper(registry_entry={"name": ALG2_ALG_NAME})
+    try:
+        return scraper, scraper.scrape()
+    finally:
+        ontario_ldc.clear_oeb_cache()
+
+
+def ALG2_alg_sheet(mutate=None):
+    data, pages = ALG2_alg_pages(mutate)
+    return ALG2_parse_sheet(pages, data["source_url"])
+
+
+def ALG2_parse_sheet(pages, url):
+    return oeb_tariff.parse_tariff_pages(pages, url, "2026-10-07")
+
+
+def ALG2_alg_comp(record, name):
+    found = [c for c in record.components if c.component_name == name]
+    assert len(found) == 1, (name, [c.component_name for c in record.components])
+    return found[0]
+
+
+def ALG2_alg_values(record):
+    return {(c.component_name, c.charge_value, c.charge_unit) for c in record.components
+            if c.component_type != "energy"}
+
+
+ALG2_SHARED = {
+    ("Smart Metering Entity Charge - effective until December 31, 2027", 0.42, "$/month"),
+    ("Retail Transmission Rate - Network Service Rate", 0.0121, "$/kWh"),
+    ("Retail Transmission Rate - Line and Transformation Connection Service Rate", 0.0088, "$/kWh"),
+    ("Wholesale Market Service Rate (WMS) - not including CBR", 0.0041, "$/kWh"),
+    ("Capacity Based Recovery (CBR) - Applicable for Class B Customers", 0.0006, "$/kWh"),
+    ("Rural or Remote Electricity Rate Protection Charge (RRRP)", 0.0006, "$/kWh"),
+    ("Standard Supply Service - Administrative Charge (if applicable)", 0.25, "$/month"),
+}
+
+
+def test_alg2_alg_fixture_metadata():
+    data = json.loads(ALG2_ALG_FIXTURE.read_text(encoding="utf-8"))
+    assert data["source_url"] == ontario_ldc._OEB_RDS_DOC.format(926153)
+    assert data["case_number"] == "EB-2025-0054"
+    assert data["pages"] == [2, 7, 19, 20, 21, 22, 25, 26]
+    assert [int(n) for n in data["text"]] == data["pages"]
+
+
+def test_alg2_alg_configured():
+    assert ontario_ldc.OEB_TARIFF_DOCUMENTS[ALG2_ALG_NAME] == [{
+        "url": ontario_ldc._OEB_RDS_DOC.format(926153),
+        "case_number": "EB-2025-0054", "zones": None, "default_zone": {"residential": "R1 (i)"},
+    }]
+
+
+def test_alg2_alg_sheet_classes_and_categories():
+    sheet = ALG2_alg_sheet()
+    assert sheet.errors == []
+    assert (sheet.effective_date, sheet.implementation_date, sheet.case_number, sheet.issued_date) == (
+        "2026-01-01", "2026-01-01", "EB-2025-0054", "2025-12-18")
+    cats = {c.name: oeb_tariff.classify_classification(c) for c in sheet.classifications}
+    assert cats["RESIDENTIAL R1"] == "residential"
+    assert cats["RESIDENTIAL R2"] == "residential_demand"
+    assert cats["SEASONAL CUSTOMERS"] == "residential"
+    assert not {"gs_energy", "gs_demand", "large_use"} & set(cats.values())
+    r2 = sheet.classification("RESIDENTIAL R2")
+    assert oeb_tariff.residential_demand_floor(r2) == 50
+    assert any("RRRP adjustment to the R1 base rates" in n for n in sheet.classification("RESIDENTIAL R1").notes)
+    assert not any("RRRP" in n for n in sheet.classification("SEASONAL CUSTOMERS").notes)
+
+
+def test_alg2_alg_r1_criteria_i_default_fully_fixed(monkeypatch):
+    scraper, records = ALG2_alg_run(monkeypatch)
+    for code in ALG2_ALG_RES:
+        record = ONL_record(records, code)
+        assert "Provenance: live_parsed" in record.notes
+        assert record.customer_class == "residential"
+        assert not [c for c in record.components if c.component_type == "distribution"]
+        assert ALG2_alg_values(record) == ALG2_SHARED | {("Service Charge", 69.91, "$/month")}
+        assert record.eligibility.startswith("Criteria (i) only: a dwelling occupied as a residence")
+        assert "RRRP adjustment to the R1 base rates" in record.notes
+        assert not any("criteria" in c.component_name for c in record.components)
+    tou = ONL_record(records, "TOU-R")
+    assert tou.tariff_name == "Residential -- Time-of-Use (TOU)"
+    assert {c.component_name for c in tou.components if c.component_type == "energy"} == {
+        "Off-Peak Energy", "Mid-Peak Energy", "On-Peak Energy"}
+    assert not [k for k in scraper.tariff_rejections if k.startswith("residential:")]
+
+
+def test_alg2_alg_r1_criteria_ii_service_and_volumetric(monkeypatch):
+    _, records = ALG2_alg_run(monkeypatch)
+    for base in ("TOU-R", "TIER-R", "ULO-R"):
+        record = ONL_record(records, base + "-" + ALG2_ALG_R1_II)
+        assert record.tariff_name.endswith("[R1 (ii) O. Reg. 445/07]")
+        assert record.customer_class == "residential"
+        assert ALG2_alg_values(record) == ALG2_SHARED | {("Service Charge", 31.35, "$/month"),
+                                               ("Distribution Volumetric Rate", 0.0441, "$/kWh")}
+        assert "Ontario Regulation 445/07" in record.eligibility.split(". Classification text:")[0]
+        assert [c for c in record.components if c.component_type == "energy"]
+    ulo = ONL_record(records, "ULO-R-" + ALG2_ALG_R1_II)
+    assert ALG2_alg_comp(ulo, "Ultra-Low Overnight Energy").charge_value == 0.039
+
+
+def test_alg2_alg_r2_delivery_only_demand_record(monkeypatch):
+    _, records = ALG2_alg_run(monkeypatch)
+    r2 = ONL_record(records, "R2 50+ kW")
+    assert "Provenance: live_parsed" in r2.notes
+    assert r2.tariff_name == "Residential R2 (delivery only)"
+    assert (r2.customer_class, r2.rate_structure, r2.demand_min_kw, r2.demand_max_kw) == (
+        "residential", "demand", 50, None)
+    assert not [c for c in r2.components if c.component_type == "energy"]
+    assert ALG2_alg_comp(r2, "Service Charge").charge_value == 806.69
+    dist = ALG2_alg_comp(r2, "Distribution Volumetric Rate")
+    assert (dist.charge_value, dist.charge_unit) == (4.1798, "$/kW")
+    net = ALG2_alg_comp(r2, "Retail Transmission Rate - Network Service Rate")
+    assert (net.charge_value, net.charge_unit) == (4.6211, "$/kW")
+    assert "Conditional" not in net.notes
+    conn = ALG2_alg_comp(r2, "Retail Transmission Rate - Line and Transformation Connection Service Rate")
+    assert conn.charge_value == 3.3435 and "Conditional" not in conn.notes
+    for name, value in (("Retail Transmission Rate - Network Service Rate - EV CHARGING", 0.7856),
+                        ("Retail Transmission Rate - Line and Transformation Connection Service Rate - EV CHARGING",
+                         0.5684)):
+        ev = ALG2_alg_comp(r2, name)
+        assert ev.charge_value == value and "Conditional: Optional Electric Vehicle" in ev.notes
+    assert ALG2_alg_comp(r2, "Standard Supply Service - Administrative Charge (if applicable)").charge_value == 0.25
+    assert ALG2_alg_comp(r2, "Rural or Remote Electricity Rate Protection Charge (RRRP)").charge_value == 0.0006
+    allowance = ALG2_alg_comp(r2, "Transformer Allowance for Ownership - per kW of billing demand/month")
+    assert allowance.charge_value == -0.6 and "Conditional" in allowance.notes
+    assert "RRRP adjustment to the R2 base rates" in r2.notes
+    assert "electricity commodity is not included" in r2.notes
+    assert not [c for c in r2.components if "Smart Metering" in c.component_name]
+
+
+def test_alg2_alg_seasonal_unchanged(monkeypatch):
+    _, records = ALG2_alg_run(monkeypatch)
+    seasonal = ONL_record(records, "TOU-R-SEASONAL")
+    assert seasonal.tariff_name == "Residential -- Time-of-Use (TOU) [Seasonal]"
+    assert ALG2_alg_comp(seasonal, "Service Charge").charge_value == 105.13
+    assert ALG2_alg_comp(seasonal, "Distribution Volumetric Rate").charge_value == 0.025
+    rider = [c for c in seasonal.components if c.component_type == "rider"]
+    assert [c.charge_value for c in rider] == [-1.05]
+    assert "RRRP adjustment" not in seasonal.notes
+    assert {"TIER-R-SEASONAL", "ULO-R-SEASONAL"} <= {r.tariff_code for r in records}
+
+
+def test_alg2_alg_no_gs_seeds_sl_seed_kept(monkeypatch):
+    scraper, records = ALG2_alg_run(monkeypatch)
+    codes = {r.tariff_code for r in records}
+    assert not codes & (ALG2_ALG_GS | {"GS-D1", "GS-D2", "GS-D3"})
+    assert {r.tariff_code for r in ONL_seed(records)} == {"SL"}
+    assert "gs:absent" in scraper.tariff_rejections
+    assert "demand:absent" in scraper.tariff_rejections
+    assert len(ONL_live(records)) == 10
+
+
+def test_alg2_alg_criteria_tag_mismatch_rejects_r1(monkeypatch):
+    mutate = (ALG2_ALG_TAG_II, ALG2_ALG_TAG_II.replace("(ii)", "(iii)"))
+    scraper, records = ALG2_alg_run(monkeypatch, mutate=mutate)
+    assert "criteria tags" in scraper.tariff_rejections["residential:Residential R1"]
+    codes = {r.tariff_code for r in records}
+    assert not codes & ALG2_ALG_RES
+    assert not [c for c in codes if ALG2_ALG_R1_II in c]
+    assert "TOU-R-SEASONAL" in codes and "R2 50+ kW" in codes
+
+
+def test_alg2_alg_untagged_second_service_charge_rejects_r1(monkeypatch):
+    old = "Service Charge - Applicable only to customers that meet criteria (ii) above $ 31.35"
+    scraper, records = ALG2_alg_run(monkeypatch, mutate=(old, "Service Charge $ 31.35"))
+    assert "untagged Service Charge" in scraper.tariff_rejections["residential:Residential R1"]
+    assert not {r.tariff_code for r in records} & ALG2_ALG_RES
+
+
+def test_alg2_alg_residential_kw_without_demand_basis_still_rejects(monkeypatch):
+    mutate = (ALG2_ALG_DEMAND_BASIS, "and which is billed on an energy basis")
+    sheet = ALG2_alg_sheet(mutate)
+    assert oeb_tariff.classify_classification(sheet.classification("RESIDENTIAL R2")) == "residential"
+    scraper, records = ALG2_alg_run(monkeypatch, mutate=mutate)
+    assert "$/kW" in scraper.tariff_rejections["residential:Residential R2"]
+    assert "R2 50+ kW" not in {r.tariff_code for r in records}
+    assert "TOU-R" in {r.tariff_code for r in ONL_live(records)}
+
+
+def test_alg2_alg_fetch_failure_emits_labelled_seeds(monkeypatch):
+    _, records = ALG2_alg_run(monkeypatch, tariffs=False)
+    assert not ONL_live(records)
+    assert ALG2_ALG_RES | ALG2_ALG_GS | {"GS-D1", "SL"} <= {r.tariff_code for r in ONL_seed(records)}
+    assert all(r.confidence == "unverified" for r in records)
+
+
+def test_alg2_alg_sheet_rejection_emits_labelled_seeds(monkeypatch):
+    scraper, records = ALG2_alg_run(monkeypatch, today=date(2027, 6, 1))
+    assert any(k.startswith("sheet:") for k in scraper.tariff_rejections)
+    assert not ONL_live(records)
+    assert ALG2_ALG_RES | ALG2_ALG_GS | {"GS-D1"} <= {r.tariff_code for r in ONL_seed(records)}
