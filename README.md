@@ -20,10 +20,11 @@ but further expansion of those classes is deferred. Shared general-service tarif
 still be relevant to buildings even when the utility also offers them to other users.
 Inventory counts below include reference-only records, not just building tariffs.
 
-## Current Status (2026-10-07)
+## Current Status (2026-10-08)
 
 The framework and website are implemented; **nationwide live-rate coverage is not complete**.
-The export was regenerated on **2026-10-07** after batch 11 (a full 20-utility refresh). History was preserved.
+The export was regenerated on **2026-10-08** after Ontario batch 2 (scrape run 26, all 46
+configured Ontario distributors re-stored). History was preserved.
 A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
 
@@ -53,8 +54,17 @@ They include conditional products, adjustment-only records and retained non-buil
 references, not a count of complete building classes. Yukon Energy and ATCO Electric Yukon
 publish the same 20 joint YUB schedules; NTPC's 63 include 52 per-community government
 records. FortisAlberta is retained without a new regional-run scrape. Ontario demand classes
-are delivery-only (commodity/GA deferred to market-rate work); 23 smaller Ontario distributors
-and the five Ontario/Alberta gas utilities still have no live records.
+are delivery-only (commodity/GA deferred to market-rate work); PUC Distribution, Alberta (except
+FortisAlberta Rate 11) and the five Ontario/Alberta gas utilities still have no live records.
+
+**Where we stand (October 8):** the 20-utility regional campaign is closed out (batch 11) and
+Ontario electricity distribution is essentially complete (46 of 47 active distributors live).
+Next blocks, in planning order: Alberta wires (ENMAX, ATCO Electric, EPCOR) and Ontario/Alberta
+gas (ATCO Gas, Enbridge, EPCOR Natural Gas), whose sources were researched October 8 and await
+scope decisions; market-rate work (Ontario demand-class commodity/GA, Alberta, deferred
+market-indexed products); then Phase 7 Representative Models (planned, see the Roadmap), which
+the Across-Canada comparison will use. First CI runs of the updated workflows are still
+unverified.
 
 See the [coverage matrix](docs/phase5_completion_matrix.md) for the implementation queue
 and [parser gap report](docs/live_parser_gap_report.md) for class-level details.
@@ -63,8 +73,8 @@ do **not** prove live coverage.
 
 The active campaign covers 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL plus,
 from October 7, the four territorial utilities (non-market regulated service).
-Alberta remains excluded from this run. Ontario electricity distribution started October 7
-(batch 1: Hydro One and the larger distributors). From October 6,
+Alberta remains excluded from this run. Ontario electricity distribution ran as its own block
+on October 7-8 (batches 1-2: 46 distributors). From October 6,
 building-related industrial general facility classes are in scope, including those
 defined by size, voltage or interruptibility. Process-specific farm, oil-field,
 irrigation, NGV fuelling, EV charging, lighting, wholesale/reseller and standby-only

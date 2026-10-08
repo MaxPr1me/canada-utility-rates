@@ -9,27 +9,31 @@ snapshots unchanged). All 20 campaign utilities have live output; Alberta (excep
 Rate 11), PUC Distribution and the five Ontario/Alberta gas utilities have none.
 Counts include retained non-building reference records, not only building tariffs.
 
-## Active Regional Campaign (2026-10-07)
+## Active Regional Campaign (2026-10-08)
 
 Ten implementation batches cover the 16 registered utilities in BC, QC, MB, SK,
 NB, NS, PE and NL (ten electricity and six gas) and, from October 7, the four territorial
 utilities (Yukon Energy, ATCO Electric Yukon, NTPC, Qulliq), whose service is non-market
-regulated. Ontario and Alberta are excluded from this run, not removed from the database
-or website. No additional inventory utilities are being registered.
+regulated. Ontario electricity distribution ran as a separate block (batches 1-2, October 7-8;
+see the Ontario section). Alberta and Ontario/Alberta gas are not started, only researched;
+they remain in the database and website. No additional inventory utilities are being registered.
 
-**Current checkpoint:** Batch 11 close-out refresh implemented, stored and exported (October 7).
-There are **243 latest live records at the 16 provincial targets**, **109 at the four
-territorial utilities** and **1,052 passing tests across 8 modules**. DB validation reported
-0 errors and 2 existing AESO warnings. No target utility is seed-only. The reconciliation table
-below classifies every recorded class; no priced, dated in-scope gap remains. Local history
-contains 2,142 snapshots; the batch 11 refresh appended 352 without changing prior snapshots.
-Excluded-region records remain retained.
+**Current checkpoint (October 8):** Ontario batch 2 stored and exported (scrape run 26):
+**483 latest live records at 46 Ontario distributors**, **243 at the 16 provincial targets**,
+**109 at the four territorial utilities**; **1,213 passing tests across 8 modules**. DB
+validation reported 0 errors and 2 existing AESO warnings. No campaign utility is seed-only;
+the reconciliation table below classifies every recorded class, and no priced, dated in-scope
+gap remains in the 20-utility campaign. Local history contains 3,013 snapshots; prior snapshots
+unchanged. Excluded-region records remain retained.
 
 A successful scrape or one live residential class does not establish complete
 building coverage; counts include optional adjustments and reference records.
 
 | Priority | Utility queue | Next work |
 |---|---|---|
+| Next block | Alberta wires (ENMAX Power, ATCO Electric, EPCOR Distribution); ON/AB gas (ATCO Gas, Enbridge Gas, EPCOR Natural Gas) | Sources researched October 8; needs scope decisions (transmission charges, EPCOR interim rates, EPCOR gas re-homing to Ontario, default gas supply) |
+| Ontario open | PUC Distribution | Unconfigured (no connection rate printed); needs a decision |
+| Planned | Phase 7 Representative Models; Phase 6 Across-Canada comparison | 7A crosswalk, usage levels and provincial tax table first |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11); re-transcribe when Appendix A changes |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch | Interim rates stay medium confidence (URRC recommended approval); Snare TPSP omitted until source reconciles |
 | Source-blocked | See the reconciliation table below | Published without printed, dated prices; re-check periodically |
