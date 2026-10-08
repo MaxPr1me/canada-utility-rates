@@ -33,11 +33,11 @@ building coverage; counts include optional adjustments and reference records.
 |---|---|---|
 | Next block | Alberta wires (ENMAX Power, ATCO Electric, EPCOR Distribution); ON/AB gas (ATCO Gas, Enbridge Gas, EPCOR Natural Gas) | Sources researched October 8; needs scope decisions (transmission charges, EPCOR interim rates, EPCOR gas re-homing to Ontario, default gas supply) |
 | Ontario open | PUC Distribution | Unconfigured (no connection rate printed); needs a decision |
-| Planned | Phase 7 Representative Models; Phase 6 Across-Canada comparison | 7A crosswalk, usage levels and provincial tax table first |
+| Planned (in order) | Phase 6 Market Integration; Phase 7 Representative Models; Phase 8 model refresh automation; Phase 9 product follow-up incl. Across-Canada comparison | See Next Batches items 5-8 |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11); re-transcribe when Appendix A changes |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch | Interim rates stay medium confidence (URRC recommended approval); Snare TPSP omitted until source reconciles |
 | Source-blocked | See the reconciliation table below | Published without printed, dated prices; re-check periodically |
-| Deferred to market-rate work | FortisBC Electric RS38; BC Hydro RS1892; NSPower one-part real-time pricing; NL Hydro monthly non-firm (5.1L, Island non-thermal) | Market-indexed energy prices handled with the Alberta/Ontario market work |
+| Deferred to Phase 6 (Market Integration) | FortisBC Electric RS38; BC Hydro RS1892; NSPower one-part real-time pricing; NL Hydro monthly non-firm (5.1L, Island non-thermal) | Market-indexed energy prices (sub-phase 6D) |
 
 **Decisions (October 7):** BC Hydro RS1828 (biomass-program contract), Hydro-Quebec
 Rate F/FP (unmetered) and FortisBC Energy 11RNG are excluded. Territories are reopened for
@@ -334,35 +334,34 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
 ## Next Batches and Acceptance
 
 0. **Ontario (batches 1-2 done):** 46 distributors live. Open: PUC Distribution (needs a
-   no-connection-rate decision); demand-class commodity/GA with the market-rate work. Next
+   no-connection-rate decision); demand-class commodity/GA in Phase 6 (Market Integration). Next
    blocks: Alberta wires (ENMAX, ATCO Electric, EPCOR) and ON/AB gas (ATCO Gas, Enbridge, EPCOR
    Natural Gas, which is actually Ontario's Aylmer/Southern Bruce utility); source research done
    October 8, open scope questions recorded in the local task tracker.
 
 1. The campaign's priced, dated gaps are closed (batch 11). Monitor: Qulliq final GRA instruction, NTPC Snare TPSP reconciliation, Centra Appendix A edition changes, monthly Yukon joint-book file name.
-2. Re-check source-blocked items periodically (reconciliation table). Market-indexed FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing and NL Hydro monthly non-firm prices wait for the Alberta/Ontario market-rate work.
+2. Re-check source-blocked items periodically (reconciliation table). Market-indexed FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing and NL Hydro monthly non-firm prices wait for Phase 6 (Market Integration).
 3. Audit remaining building catalogues and fixtures, maintain SaskPower's audited building schedules, then run a twenty-utility refresh and class-level reconciliation. ON/AB remain excluded from this campaign.
 4. Separate operational track: Chromium installation in source health, test/scrape failure issues, successful Monthly Scrape `workflow_run` deployment from `main`, and release-asset `data-history` database restore/upload after validation/export are implemented, pending first CI run verification (Deploy Site for `1b05a2f` succeeded; Source Health still needs a manual dispatch). Pages source must be GitHub Actions; `workflow_run` fires from the default branch. Meaningful provenance counts remain open.
-5. Deferred product track: market-model UI/metadata correction, real observation ingestion,
-   historical charts and AI export. Calculator/API requirements are separate.
-6. Conditional Alberta extension: if its market-pricing variation or complexity warrants
-    a dedicated view, add Alberta as a region in the existing Market Pricing dashboard.
-    Use Alberta-specific values, sources, dates and methodology; reuse the interface,
-    not Ontario's HOEP-plus-GA assumptions. Keep wholesale, retail and wires distinct,
-    with any modeled estimates clearly identified. This remains deferred work.
-7. Phase 6 also includes the separate Across-Canada comparison view described in
-    [README](../README.md#phase-6-provenance-and-product-follow-up): common residential
-    structures, monthly charges and commercial demand-class ladders, with provincial values
-    taken from the Phase 7 representative models. It is a roadmap item, not an implemented feature.
-8. **Phase 7: Representative Models** (planned October 8; design and sub-phases 7A-7G in
-    [README](../README.md#phase-7-representative-models-planned)). One modeled tariff per
-    province/territory, sector and offered rate structure: median across utilities,
-    single-source where only one utility exists, full all-in energy once the market model
-    supports it, its own site view and generated method statements. Decided before 7A: prices
-    without and with tax; a model per common usage level (no single reference usage); major
-    outliers named with their deviation, no "excluding" variants; provinces only, territories
-    planned later. Start with 7A (category crosswalk); the Ontario scratch prototype is
-    `logs/_on2_r_model.py`.
+5. **Phase 6: Market Integration** ([README](../README.md#phase-6-market-integration-planned)):
+    Ontario market observations (6A, replacing fixed model inputs and correcting the market-model
+    disclosure), Ontario demand-class energy (6B), Alberta market and the conditional Alberta
+    Market Pricing region (6C), the deferred market-indexed products in item 2 (6D) and gas
+    commodity cadence (6E). Every market price needs an official source, period and freshness date.
+6. **Phase 7: Representative Models** ([README](../README.md#phase-7-representative-models-planned);
+    sub-phases 7A-7F). One modeled tariff per province, sector and offered rate structure: median
+    across utilities, single-source where only one utility exists, all-in energy from Phase 6, its
+    own site view and generated method statements. Decided: prices without and with tax; a model per
+    common usage level; major outliers named with their deviation, no "excluding" variants;
+    provinces only, territories planned later. Start with 7A (category crosswalk); the Ontario
+    scratch prototype is `logs/_on2_r_model.py`.
+7. **Phase 8: Representative Model Refresh Automation** ([README](../README.md#phase-8-representative-model-refresh-automation-planned)):
+    GitHub Actions rebuild models after the Monthly Scrape and publish only on considerable change
+    (proposed: 2% or more at any usage level, or membership/structure/tax/method change), with a
+    changelog and stale-input issues. Depends on 7B/7C and item 4's CI verification.
+8. **Phase 9: Product Follow-up** ([README](../README.md#phase-9-product-follow-up-planned)):
+    historical charts and AI exports, calculator/API scoping, and the Across-Canada comparison
+    view built on the Phase 7 models. Roadmap items, not implemented features.
 
 Each batch requires source-derived positive/negative tests, a source-inspected dry run,
 validated storage/export, preserved history and a ledger update. Record observation dates
