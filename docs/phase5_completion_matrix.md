@@ -354,8 +354,10 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
     [README](../README.md#phase-7-representative-models-planned)). One modeled tariff per
     province/territory, sector and offered rate structure: median across utilities,
     single-source where only one utility exists, full all-in energy once the market model
-    supports it, its own site view and generated method statements. Start with 7A (category
-    crosswalk) after the open decisions are settled; the Ontario scratch prototype is
+    supports it, its own site view and generated method statements. Decided before 7A: prices
+    without and with tax; a model per common usage level (no single reference usage); major
+    outliers named with their deviation, no "excluding" variants; provinces only, territories
+    planned later. Start with 7A (category crosswalk); the Ontario scratch prototype is
     `logs/_on2_r_model.py`.
 
 Each batch requires source-derived positive/negative tests, a source-inspected dry run,

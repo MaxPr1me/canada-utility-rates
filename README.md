@@ -459,7 +459,7 @@ the roadmap is not a promise to complete all Canadian parsers in one session.
 
 ### Phase 7: Representative Models (planned)
 
-A new **Representative Models** section gives, for each province and territory, one modeled
+A new **Representative Models** section gives, for each province (territories later), one modeled
 tariff per sector (residential, commercial) and per rate structure actually offered there
 (for example Ontario TOU, Tiered, ULO and GS demand; Quebec Rate D; BC tiered/flat/TOD).
 These are comparison indicators built from live records. They are **not tariffs anyone is
@@ -477,7 +477,7 @@ about 18% across 46 distributors (Hydro One the main outlier).
 
 #### Representative Models: Design
 
-- **Model key:** province/territory, fuel (electricity, gas), sector (residential; commercial
+- **Model key:** province, fuel (electricity, gas), sector (residential; commercial
   small, medium, large), structure (flat, tiered, TOU, ULO, seasonal, demand, interruptible...)
   and, where relevant, size band. A model exists only where at least one live record of that
   structure exists; otherwise the state is *Not offered* or *Not yet live*, never zero.
@@ -494,8 +494,9 @@ about 18% across 46 distributors (Hydro One the main outlier).
   a published heat content.
 - **Combining rule:** each bucket is the median across contributing utilities, shown with n,
   min, p25, p75 and max. Because bucket medians do not add up to a coherent bill, each model also
-  reports the median reference-usage cost (computed per utility, then the median) and the
-  closest real utility (whose reference cost is nearest the median), linked to its live tariff.
+  reports, at every common usage level, the median cost (computed per utility, then the median),
+  without and with tax, and the closest real utility (whose cost is nearest the median), linked
+  to its live tariff. Major outliers are named with their deviation from the median.
 - **TOU and time periods:** if one schedule applies province-wide (Ontario RPP), use it as
   published. Otherwise compute each utility's price for every hour of a reference week per
   season, take the median per hour, then group equal-priced hours into representative periods.
@@ -535,18 +536,24 @@ about 18% across 46 distributors (Hydro One the main outlier).
 | Phase | Work and completion gate | Depends on |
 |---|---|---|
 | 7A: Taxonomy and crosswalk | Model keys and size bands; reviewed crosswalk for every live utility; exclusion reasons; tests for unmapped/ambiguous records | Current live data |
-| 7B: Engine (delivery + regulated energy) | Bucket normalization, median/spread, reference-usage cost, closest utility, TOU hour surfaces, tier curves, demand bands, method text and provenance; synthetic and fixture tests; Ontario first (promote the scratch prototype) | 7A |
-| 7C: Electricity, all provinces | Residential and commercial models for every province/territory with live data; single-source labelling; coverage report | 7B |
+| 7B: Engine (delivery + regulated energy) | Bucket normalization, median/spread, cost at each common usage level without and with tax, closest utility, outlier notes, TOU hour surfaces, tier curves, demand bands, method text and provenance; synthetic and fixture tests; Ontario first (promote the scratch prototype) | 7A |
+| 7C: Electricity, all provinces | Residential and commercial models for every province with live data; single-source labelling; coverage report (territories planned separately) | 7B |
 | 7D: Gas | Residential and commercial gas models (commodity, delivery, carbon kept as buckets) | 7B; ON/AB gas parsers |
 | 7E: All-in market energy | Market-priced energy from the market model with period basis; *pending* state until available | Phase 6 item 2; 5F Alberta |
 | 7F: Site view | Representative Models tab, charts, method/coverage disclosure, accessible table, desktop/mobile checks | 7C |
 | 7G: Across-Canada integration | Phase 6 national comparison built on the models: electricity first, gas after 7D, all-in after 7E | 7F; Phase 6 item 6 |
 
-**Open decisions before 7A:** whether taxes appear in the all-in price (as a separate line);
-reference usage per sector (the Ontario prototype used 750 kWh residential, 2,000 kWh GS<50,
-100 kW and 40,000 kWh GS 50-4,999); whether provinces with an outlier such as Hydro One also get
-an "excluding" variant; how territorial community-level rates (NTPC, Qulliq) and subsidies are
-treated.
+**Decisions before 7A (user, October 8):**
+- **Taxes:** every all-in model is shown both without tax and with tax (applicable GST/HST/PST,
+  each tax line disclosed with its rate and source).
+- **Usage levels:** no single reference usage. Each model is evaluated at a set of common usage
+  levels per sector (for example low/typical/high monthly kWh for residential, and several
+  kW/kWh combinations per commercial size band), with the level definitions and their basis
+  published; the median and closest utility are reported per level.
+- **Outliers:** no "excluding" variants. When a utility is a major outlier, the model says so
+  and by how much (for example "Hydro One: +55% versus the median at typical usage").
+- **Scope:** provinces only for now. Territorial models (community-level rates, NTPC zones,
+  Qulliq, subsidies) get their own plan later.
 
 ---
 
