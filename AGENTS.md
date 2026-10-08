@@ -429,6 +429,7 @@ When choosing which URL to use for a utility, prefer:
 | **Multiplier** | A tariff-defined factor based on eligible dwellings or rooms. Some bulk-metered buildings multiply daily charges and energy allowances by this factor; it is not automatically one. |
 | **Demand charge** | A charge based on the peak power (kW) a customer draws, common for commercial and industrial accounts. |
 | **Rider** | A temporary adjustment to rates — can be a surcharge or a credit. |
+| **Representative model** | A planned (Phase 7) "typical" tariff for a province, built from the median of its utilities' live tariffs, with a note explaining exactly how it was made. It is a comparison aid, never a rate anyone is billed. |
 | **LDC** | Local Distribution Company — the utility that delivers electricity to your home (common in Ontario). |
 | **OEB** | Ontario Energy Board — the regulator that sets many Ontario utility rates. |
 | **IESO** | Independent Electricity System Operator — operates Ontario's wholesale electricity market. |

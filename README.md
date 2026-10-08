@@ -446,16 +446,107 @@ the roadmap is not a promise to complete all Canadian parsers in one session.
 3. Add historical rate charts and AI-ready exports after coverage is dependable.
 4. Scope a bill calculator and optional API separately; current comparison never calculates a total.
 5. **Conditional Alberta market region:** if the Alberta source audit reveals comparable market-pricing variation or complexity, add Alberta as a selectable region in the existing Market Pricing dashboard. Reuse the interface, but use Alberta-specific values, official sources, effective periods and methodology, not Ontario's values or HOEP-plus-GA assumptions. Keep wholesale, retail and wires charges distinct and label any modeled estimates explicitly. This is a later-phase option, not a change to the current parser priorities.
-6. **Across-Canada comparison view:** expand the Compare tab with a separate national view alongside the existing two-tariff comparison. Compare common customer classes and rate structures across provinces, using transparent provincial blends where multiple utilities offer comparable service. This is planned Phase 6 work, not part of the current parser campaign.
+6. **Across-Canada comparison view:** expand the Compare tab with a separate national view alongside the existing two-tariff comparison. Compare common customer classes and rate structures across provinces, using the Phase 7 representative models as the provincial values. This is planned work after Phase 7F, not part of the current parser campaign.
 
 #### Across-Canada Comparison: Design Direction
 
 - **National comparison matrix:** provinces/territories as rows, common customer-class/rate-structure categories as columns or selectable views. Keep every region visible, including where a category is **Not offered**, **Not yet verified**, or **Not comparable**; these are different states, never zero prices. Build the category crosswalk from published eligibility, not just similar utility plan names.
 - **Residential profiles:** start with flat, tiered and time-of-use plans, with separate views for other nationally recurring structures. Show energy prices, monthly fixed charges, tier allowances, TOU hours/seasons and mandatory adjustments. Show monthly-equivalent fixed charges only with a disclosed day/billing-period basis and the original units. Do not manufacture a flat rate by averaging a tiered or TOU plan; distinguish ordinary household service from bulk-metered, off-grid, pilot and other conditional products.
 - **Commercial class ladders:** compare small, medium and large general service using each utility's actual eligibility bands. Show the peak-demand range, fixed monthly charge, energy structure, when demand billing begins, any free demand allowance, and the applicable charge per kW or kVA. A shared demand-axis chart could reveal where one province's small-commercial class becomes another's medium class. Preserve voltage, season, minimum-bill and demand-ratchet conditions; do not invent universal class boundaries or convert kVA to kW without evidence.
-- **Transparent provincial blends:** blend only like-for-like categories, components and eligible customer groups. Prefer official class-specific customer weights where available; otherwise identify an equal-utility average explicitly as unweighted. Display the participating utilities, weights, coverage and min-max range, with expansion to individual tariffs and sources. Preserve incompatible tier boundaries and TOU windows as separate profiles instead of hiding them in one average. A blend is a comparison indicator, not an official tariff or a price every resident pays.
+- **Transparent provincial blends:** provincial values come from the [Phase 7 representative models](#phase-7-representative-models-planned) (median across utilities, single-source where only one utility exists, generated method statement); this view adds no blending logic of its own. Display the participating utilities, coverage and min-max range, with expansion to individual tariffs and sources. Incompatible tier boundaries and TOU windows stay visible in the model's method statement. A model is a comparison indicator, not an official tariff or a price every resident pays.
 - **Visual exploration:** combine the sortable matrix with provincial dot/range plots, miniature tier-step charts, 24-hour TOU strips and commercial demand-threshold ladders. Selecting a province should reveal its contributing utilities and charge breakdown; selecting a category should line up that structure across Canada. Offer fuel, customer/building type, rate structure and effective-period controls, with an accessible table alternative to charts.
 - **Fair comparisons:** keep energy, delivery, fixed charges, demand and riders distinct. Flag energy-only versus bundled service, differing units and incomplete component coverage before ranking or blending. Show source dates and methodology; keep estimated inputs separate and explicitly labelled. Any usage-weighted effective price or example monthly bill requires a disclosed load profile and the separately scoped calculator work above, not an implicit total in this comparison view.
+
+### Phase 7: Representative Models (planned)
+
+A new **Representative Models** section gives, for each province and territory, one modeled
+tariff per sector (residential, commercial) and per rate structure actually offered there
+(for example Ontario TOU, Tiered, ULO and GS demand; Quebec Rate D; BC tiered/flat/TOD).
+These are comparison indicators built from live records. They are **not tariffs anyone is
+billed**, are labelled `provenance: "modeled"`, are never counted as live coverage and are
+never shown as a utility's rate. The Phase 6 Across-Canada comparison reads these models for
+its provincial values instead of computing its own blends.
+
+**Decisions (user, October 8):** median across utilities (each utility counts once); a
+province/structure with one utility uses that utility's tariff, labelled single-source; the
+target is a full all-in price including energy/commodity (market-priced energy comes from the
+market model and is labelled modeled); a dedicated site view next to Rate Browser, Market
+Pricing and Compare; planned now, implemented later. A first Ontario delivery-only prototype
+exists as scratch analysis (`logs/_on2_r_model.py`, October 8): typical monthly delivery varies
+about 18% across 46 distributors (Hydro One the main outlier).
+
+#### Representative Models: Design
+
+- **Model key:** province/territory, fuel (electricity, gas), sector (residential; commercial
+  small, medium, large), structure (flat, tiered, TOU, ULO, seasonal, demand, interruptible...)
+  and, where relevant, size band. A model exists only where at least one live record of that
+  structure exists; otherwise the state is *Not offered* or *Not yet live*, never zero.
+- **Category crosswalk:** a reviewed configuration file maps each utility's tariff (registry
+  name and tariff code) to a model key from published eligibility, not from similar plan names.
+  Default rate zones and standard service only; closed, pilot, optional, bulk-metered, off-grid
+  and process-specific products are excluded unless a model is defined for them, and every
+  exclusion is listed with its reason. A multi-zone utility counts once (median of its zones).
+- **Component buckets:** fixed per month, energy/commodity (by period or tier), distribution
+  volumetric, demand per kW or kVA, transmission, regulatory, mandatory riders, carbon and other
+  mandatory charges. Conditional, optional and expired components are excluded and counted.
+  Unit conversions are disclosed ($/day x 30.4375 = $/month; cents to dollars); kVA is never
+  treated as kW without a disclosed power-factor assumption; m3 is never converted to GJ without
+  a published heat content.
+- **Combining rule:** each bucket is the median across contributing utilities, shown with n,
+  min, p25, p75 and max. Because bucket medians do not add up to a coherent bill, each model also
+  reports the median reference-usage cost (computed per utility, then the median) and the
+  closest real utility (whose reference cost is nearest the median), linked to its live tariff.
+- **TOU and time periods:** if one schedule applies province-wide (Ontario RPP), use it as
+  published. Otherwise compute each utility's price for every hour of a reference week per
+  season, take the median per hour, then group equal-priced hours into representative periods.
+  The model states which utilities had which schedules.
+- **Tiers:** identical thresholds are used directly. Otherwise build each utility's marginal
+  price over a usage grid, take the median per point and simplify it into representative tiers;
+  original thresholds stay visible.
+- **Commercial size bands:** under 50 kW, 50-499 kW, 500-4,999 kW and 5,000 kW and over (volume
+  bands for gas). Each utility contributes the class whose published eligibility covers the
+  band's reference load, and the model names that class.
+- **All-in energy:** regulated energy (Ontario RPP, provincial rates, regulated gas supply) is
+  used as published. Market-priced energy (Ontario non-RPP demand classes: HOEP plus Class B GA;
+  Alberta pool/RoLR; monthly or quarterly gas commodity) comes from the market model, is labelled
+  modeled with its period basis, and waits for Phase 6 item 2 (real observation ingestion) and
+  the Alberta block (5F). Until then the model shows delivery plus a *market energy pending*
+  state, never a guessed number.
+- **Transparency text:** every model carries a generated method statement, for example
+  "Median of 44 Ontario LDC TOU delivery charges (default rate zones, Hydro One included) plus
+  the province-wide OEB RPP TOU prices and hours effective November 1, 2025; excludes Algoma (no
+  standard TOU-R) and Oakville (GS<50 rejected)", or "Single source: Nova Scotia Power Domestic
+  Service is the only utility; no averaging". It also lists contributing utilities, record ids,
+  effective dates, source URLs, coverage (n of N utilities), exclusions with reasons, outliers,
+  generated date and the input export.
+- **Outputs:** a builder run by `pipeline/export_json.py` writes
+  `site/data/representative_models.json`, rebuilt on every export and kept in git history. No
+  schema change is planned.
+- **Site view:** a **Representative Models** tab with province, fuel, sector and structure
+  selectors; a component table with spread, a 24-hour/season strip for TOU, a tier-step chart, a
+  demand-band ladder, the method statement and an expandable list of contributing tariffs. A
+  permanent banner says the model is not a billed tariff.
+- **Across-Canada use:** the national matrix, dot/range plots, TOU strips and demand ladders
+  read the same JSON; a province drill-down shows the model's contributing tariffs. The
+  comparison states *Not offered / Not yet verified / Not comparable* map to the model states.
+
+#### Representative Models: Phases
+
+| Phase | Work and completion gate | Depends on |
+|---|---|---|
+| 7A: Taxonomy and crosswalk | Model keys and size bands; reviewed crosswalk for every live utility; exclusion reasons; tests for unmapped/ambiguous records | Current live data |
+| 7B: Engine (delivery + regulated energy) | Bucket normalization, median/spread, reference-usage cost, closest utility, TOU hour surfaces, tier curves, demand bands, method text and provenance; synthetic and fixture tests; Ontario first (promote the scratch prototype) | 7A |
+| 7C: Electricity, all provinces | Residential and commercial models for every province/territory with live data; single-source labelling; coverage report | 7B |
+| 7D: Gas | Residential and commercial gas models (commodity, delivery, carbon kept as buckets) | 7B; ON/AB gas parsers |
+| 7E: All-in market energy | Market-priced energy from the market model with period basis; *pending* state until available | Phase 6 item 2; 5F Alberta |
+| 7F: Site view | Representative Models tab, charts, method/coverage disclosure, accessible table, desktop/mobile checks | 7C |
+| 7G: Across-Canada integration | Phase 6 national comparison built on the models: electricity first, gas after 7D, all-in after 7E | 7F; Phase 6 item 6 |
+
+**Open decisions before 7A:** whether taxes appear in the all-in price (as a separate line);
+reference usage per sector (the Ontario prototype used 750 kWh residential, 2,000 kWh GS<50,
+100 kW and 40,000 kWh GS 50-4,999); whether provinces with an outlier such as Hydro One also get
+an "excluding" variant; how territorial community-level rates (NTPC, Qulliq) and subsidies are
+treated.
 
 ---
 

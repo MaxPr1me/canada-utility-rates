@@ -348,8 +348,15 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
     with any modeled estimates clearly identified. This remains deferred work.
 7. Phase 6 also includes the separate Across-Canada comparison view described in
     [README](../README.md#phase-6-provenance-and-product-follow-up): common residential
-    structures, monthly charges, commercial demand-class ladders and transparent
-    provincial utility blends. It is a roadmap item, not an implemented feature.
+    structures, monthly charges and commercial demand-class ladders, with provincial values
+    taken from the Phase 7 representative models. It is a roadmap item, not an implemented feature.
+8. **Phase 7: Representative Models** (planned October 8; design and sub-phases 7A-7G in
+    [README](../README.md#phase-7-representative-models-planned)). One modeled tariff per
+    province/territory, sector and offered rate structure: median across utilities,
+    single-source where only one utility exists, full all-in energy once the market model
+    supports it, its own site view and generated method statements. Start with 7A (category
+    crosswalk) after the open decisions are settled; the Ontario scratch prototype is
+    `logs/_on2_r_model.py`.
 
 Each batch requires source-derived positive/negative tests, a source-inspected dry run,
 validated storage/export, preserved history and a ledger update. Record observation dates
