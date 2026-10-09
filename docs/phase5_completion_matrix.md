@@ -1,6 +1,6 @@
 # Phase 5 Completion Matrix
 
-**Updated:** 2026-10-09 (batch 12). Scope: all 87 registered utilities (8 Ontario entries
+**Updated:** 2026-10-09 (batch 12, then the Phase 7A/7B Ontario representative models). Scope: all 87 registered utilities (8 Ontario entries
 `merged`, 1 mis-registered Alberta gas entry `retired`), not every utility in the broader Canadian
 inventory. The export has 1,396 stored tariff versions / 14,179 components / **916 stored live
 versions / 480 seed**. Latest-per-name coverage is **910 live tariffs across 77 utilities** (490 at
@@ -24,22 +24,24 @@ mis-registered Alberta entry). No other inventory utilities are being registered
 **Current checkpoint (October 9):** batch 12 stored and exported (scrape runs 27 and 28):
 **910 latest live records across 77 utilities**: **243 at the 16 provincial targets**, **109 at
 the four territorial utilities**, **490 at 47 Ontario distributors**, **28 at seven Alberta
-electricity utilities** and **40 at three Ontario/Alberta gas utilities**; **1,574 passing tests
-across 8 modules**. DB validation reported 0 errors and 2 existing AESO warnings
+electricity utilities** and **40 at three Ontario/Alberta gas utilities**; **1,638 passing tests
+across 8 modules** (including the Phase 7A/7B tests). DB validation reported 0 errors and 2 existing AESO warnings
 (`pipeline.validate` now reconfigures its output so Windows consoles no longer crash on
 non-ASCII names). No campaign utility is seed-only; the reconciliation table below classifies
 every recorded class of the 20 campaign utilities, and no priced, dated in-scope gap remains
 there. Local history contains 3,616 snapshots; prior snapshots and non-target tariffs unchanged.
-Open batch 12 decisions are in the queue below.
+Phase 7A/7B are done for Ontario: every export also writes Ontario electricity representative
+models to `site/data/representative_models.json` (modeled comparison indicators, not live
+coverage, not shown on the site yet). Remaining open items are in the queue below.
 
 A successful scrape or one live residential class does not establish complete
 building coverage; counts include optional adjustments and reference records.
 
 | Priority | Utility queue | Next work |
 |---|---|---|
-| Decisions needed (batch 12) | DERS RoLR admin charge; ENMAX D700 and ATCO T31 partial records; EPCOR Edmonton local access fee ($0.01388/kWh) as a conditional rider; FortisAlberta Rate 65; Apex Utilities (Alberta gas distributor, not registered); Enbridge Rate 135; ATCO Gas ATA commodity and DERS gas admin charge; EPCOR Aylmer Rates 2/4/5 inclusion | Ask the user; current handling is recorded in the Alberta Electricity and Natural Gas sections |
-| In progress (not yet published) | Phase 6A observed IESO market model; site market wording and charge formatter; Phase 7A crosswalk, 7B engine and tax table | 6A is blocked: the IESO keeps only about 90 days of hourly day-ahead zonal price files, so a trailing 12-month hourly window cannot be built until about August 2027 unless data is accumulated; options await a user decision. 7A/7B and the tax table are built and await user review |
-| Planned (in order) | Phase 6 remainder (6C Alberta market, 6D deferred market-indexed products, 6E gas commodity cadence); Phase 7 Representative Models; Phase 8 model refresh automation; Phase 9 product follow-up incl. Across-Canada comparison | See Next Batches items 5-8 |
+| Open items (batch 12; optional follow-ups, not requested now) | DERS RoLR admin charge (schedule research); ENMAX D700 partial record (source-blocked); EPCOR Edmonton local access fee ($0.01388/kWh) as a conditional rider; Apex Utilities (Alberta gas distributor, not registered); Enbridge Rate 135; ATCO Gas ATA commodity and DERS gas admin charge; EPCOR Aylmer Rates 2/4/5 inclusion | Current handling is recorded in the Alberta Electricity and Natural Gas sections. Decided October 9: FortisAlberta Rate 65 and ATCO T31 stay live partial records (transmission is an AESO pass-through, noted) |
+| In progress (not yet published) | Phase 6A observed IESO market model; site market wording and charge formatter | User decision (October 9): the Market Pricing hourly view will use observed legacy HOEP hourly history for 2020-2024 plus actual monthly Class B Global Adjustment rates, clearly labelled as the market before May 2025 (the IESO keeps only about 90 days of hourly day-ahead zonal price files, so a trailing 12-month Ontario Price window is not possible until about August 2027); being implemented |
+| Planned | Next: Phase 7C (all provinces, including Alberta all-in models that combine wires and Rate of Last Resort records), then 7D gas, 7E all-in market energy (needs 6A and 6C) and 7F site view; Phase 6 remainder (6C Alberta market, 6D deferred market-indexed products, 6E gas commodity cadence); Phase 8 model refresh automation (change threshold still proposed: 2%); Phase 9 product follow-up incl. Across-Canada comparison | See Next Batches items 5-8 |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11); re-transcribe when Appendix A changes |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Alberta RoLR term end (December 31, 2026); EPCOR Distribution final 2026 rates | Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; RoLR records fail closed after the term until the next term is published |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |
@@ -57,7 +59,12 @@ scope only where priced; D22/D24/D34 are out. EPCOR gas is a new Ontario entry a
 entry is retired. ATCO Gas commodity is Direct Energy Regulated Services' monthly Default Rate
 Tariff; priced firm/interruptible gas classes are in, storage/transport-only service is out and
 negotiated ranges are conditions. PUC Distribution is configured with a no-connection-rate note.
-Market-indexed parts are value-less components.
+Market-indexed parts are value-less components. Later on October 9: FortisAlberta Rate 65 and
+ATCO T31 stay live partial records (transmission is an AESO pass-through, noted); the Phase 6A
+hourly view uses observed legacy HOEP hourly history for 2020-2024 plus actual monthly Class B
+Global Adjustment rates, labelled as the market before May 2025; representative models count each
+utility once as the median of its standard zones and use the approved usage levels,
+reference-customer list and tax defaults.
 
 Utility parser and fixture work may proceed in parallel. Shared tests, registry,
 database writes, exports, documentation and publication are integrated serially.
@@ -252,7 +259,7 @@ caveat are conditional notes. Algoma R2 has no market component (residential dwe
 remain RPP-eligible).
 
 **Remaining Ontario:** no active distributor is unconfigured. Observed market energy values
-wait for Phase 6A (blocked; see the queue).
+wait for Phase 6A (in progress; see the queue).
 
 Original registry distributors: Alectra Utilities, Algoma Power Inc., Atikokan Hydro Inc., Bluewater
 Power Distribution, Brantford Power Inc., Burlington Hydro Inc., Canadian Niagara
@@ -288,9 +295,9 @@ expired rider is excluded by its date. kVA limits stay in eligibility text.
 | Utility | Live tariffs / source-check date | Implemented path | Required work |
 |---|---|---|---|
 | ENMAX Power | 5 / Oct 9 | D100 Residential, D200 Small Commercial, D300 Medium Commercial, D310 Large Commercial Secondary and D410 Large Commercial Primary from the current Distribution Tariff Rate Schedule (rates in effect October 1, 2026; DAS and SAS rates AUC Decision 30299-D01-2025, effective January 1, 2026). Balancing Pool Allocation, quarterly TAC Adjustment (Q4 2026) and TAC Deferral Account riders dated; D300 transformation credits conditional; Calgary Local Access Fee a note | D700 transmission-connected source-blocked (only a service charge printed; transmission is an ISO cost flow-through); partial-record decision open. D500 streetlights and D600 distributed generation excluded. New schedule edition each quarter |
-| ATCO Electric | 5 / Oct 9 | D11 Standard Residential, D13 Time of Use Residential (by request; on-peak 4-9 p.m.), D21 Standard Small General Service (up to 500 kW), D31 Large General Service - Distribution Connected, T31 Large General Service - Transmission Connected from the 2026 price schedules (AUC Decision 30300-D01-2025). Rows must reconcile to each printed TOTAL PRICE; Riders B, G and S (Q4 2026) dated and cross-checked against the copies bound into the price schedules; Rider J expired (note); Rider A municipal and price options F/H/P are notes | T31 transmission is an AESO tariff flow-through, noted without a component (partial-record decision open). Excluded: D22, D23, D24/D34, D25/D26, D32, D33/T33, D41/D44, D51/D52/D56, D61/D63 |
+| ATCO Electric | 5 / Oct 9 | D11 Standard Residential, D13 Time of Use Residential (by request; on-peak 4-9 p.m.), D21 Standard Small General Service (up to 500 kW), D31 Large General Service - Distribution Connected, T31 Large General Service - Transmission Connected from the 2026 price schedules (AUC Decision 30300-D01-2025). Rows must reconcile to each printed TOTAL PRICE; Riders B, G and S (Q4 2026) dated and cross-checked against the copies bound into the price schedules; Rider J expired (note); Rider A municipal and price options F/H/P are notes | T31 transmission is an AESO tariff flow-through, noted without a component; T31 stays a live partial record (user decision, October 9). Excluded: D22, D23, D24/D34, D25/D26, D32, D33/T33, D41/D44, D51/D52/D56, D61/D63 |
 | EPCOR Distribution | 5 / Oct 9 | DAS-R, DAS-SC (<50 kVA), DAS-MC (50 to <150 kVA), DAS-TOU (150 to <5,000 kVA secondary), DAS-TOUP (primary, 150 kVA and over) from the 2026 DAS and SAS tariffs stamped "2026 INTERIM RATE": medium confidence with an interim note (user decision). Values must match the tariffs' lookup tables; Riders G, J and K (October 2026) dated; SAS operating reserve (8.09% of the AESO pool price; 7.99% for TOUP) is a value-less market component | Final rates after the interim approval. Edmonton local access fee ($0.01388/kWh) is a note; conditional-rider decision open. Excluded: CS/CST (closed, customer-specific), DC (AESO flow-through), DGEN, lighting |
-| FortisAlberta | 5 / Oct 9 | Rates 11 Residential (existing identity kept), 41 Small General Service, 61 General Service, 63 Large General Service and 65 Transmission Connected from the newest in-effect Rates, Options and Riders PDF (October 1, 2026; link date must match the printed effective date). Transmission and distribution separate; kW/kVA demand pairs alternatives; Base Transmission Adjustment, Quarterly Transmission Adjustment and Balancing Pool Allocation riders dated; Options A/I conditional; municipal riders notes; Rate 65 transmission is the AESO tariff passed through (value-less) | Rate 65 decision open. Excluded: farm 21/22/23, irrigation 26, lighting 31/33/38, oil and gas 44/45, EV 62, opportunity 66, distributed generation (Option M), Rider E, REA charges. Old D10/D20/D30 seeds are no longer emitted when live |
+| FortisAlberta | 5 / Oct 9 | Rates 11 Residential (existing identity kept), 41 Small General Service, 61 General Service, 63 Large General Service and 65 Transmission Connected from the newest in-effect Rates, Options and Riders PDF (October 1, 2026; link date must match the printed effective date). Transmission and distribution separate; kW/kVA demand pairs alternatives; Base Transmission Adjustment, Quarterly Transmission Adjustment and Balancing Pool Allocation riders dated; Options A/I conditional; municipal riders notes; Rate 65 transmission is the AESO tariff passed through (value-less) | Rate 65 stays a live partial record (user decision, October 9). Excluded: farm 21/22/23, irrigation 26, lighting 31/33/38, oil and gas 44/45, EV 62, opportunity 66, distributed generation (Option M), Rider E, REA charges. Old D10/D20/D30 seeds are no longer emitted when live |
 | Direct Energy Regulated Services | 2 / Oct 9 | Rate of Last Resort for the ATCO Electric area: residential and small business at 12.02 cents/kWh, fixed January 1, 2025 to December 31, 2026; UCA default-rates table required | Daily administration charge not emitted (website value undated; last dated schedule differs); decision open. Next term after December 31, 2026 |
 | ENMAX Energy Corporation | 2 / Oct 9 | Rate of Last Resort for the ENMAX Power area: D100/D200 at 12.06 cents/kWh plus daily administration charges from the Interim 2026 rate schedule (medium confidence); UCA table required | Municipally set RoLR areas (Red Deer, Cardston, Ponoka) and D300/D310/D410 not covered. Next term after December 31, 2026 |
 | EPCOR Energy Alberta | 4 / Oct 9 | Rate of Last Resort for the EPCOR Distribution and FortisAlberta areas: residential and small business (250,000 kWh/year limit) per area at 12.01 cents/kWh plus each area's administration charge from price schedules effective July 1, 2026; UCA table required | REA price schedule not covered. Next term after December 31, 2026 |
@@ -380,8 +387,8 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
 
 0. **Batch 12 (done October 9):** Alberta wires and Rate of Last Resort, ON/AB gas (Enbridge, ATCO
    Gas, EPCOR Natural Gas (Ontario)), PUC Distribution (all 47 active Ontario distributors live)
-   and Phase 6B value-less market energy. Open decisions are in the queue table; observed market
-   energy waits for Phase 6A.
+   and Phase 6B value-less market energy. Remaining open items are in the queue table; observed
+   market energy waits for Phase 6A.
 
 1. The campaign's priced, dated gaps are closed (batch 11). Monitor: Qulliq final GRA instruction, NTPC Snare TPSP reconciliation, Centra Appendix A edition changes, monthly Yukon joint-book file name.
 2. Re-check source-blocked items periodically (reconciliation table). Market-indexed FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing and NL Hydro monthly non-firm prices wait for Phase 6 (Market Integration).
@@ -390,20 +397,29 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
 5. **Phase 6: Market Integration** ([README](../README.md#phase-6-market-integration-in-progress)):
     6B (Ontario demand-class energy) is implemented as value-less components (batch 12). Ontario
     market observations (6A, replacing fixed model inputs and correcting the market-model
-    disclosure) are in progress but blocked: the IESO keeps only about 90 days of hourly day-ahead
-    zonal price files, so a trailing 12-month hourly window cannot be built until about August 2027
-    unless data is accumulated; options await a user decision. Still planned: Alberta market and
+    disclosure) are in progress, not published: the IESO keeps only about 90 days of hourly
+    day-ahead zonal price files, so a trailing 12-month Ontario Price window cannot be built until
+    about August 2027; user decision (October 9): the Market Pricing hourly view uses observed
+    legacy HOEP hourly history for 2020-2024 plus actual monthly Class B Global Adjustment rates,
+    clearly labelled as the market before May 2025. Still planned: Alberta market and
     the conditional Alberta Market Pricing region (6C), the deferred market-indexed products in
     item 2 (6D) and gas commodity cadence (6E; current QRAM and default-supply prices are already
     dated commodity components). Every market price needs an official source, period and
     freshness date.
-6. **Phase 7: Representative Models** ([README](../README.md#phase-7-representative-models-planned);
+6. **Phase 7: Representative Models** ([README](../README.md#phase-7-representative-models-in-progress);
     sub-phases 7A-7F). One modeled tariff per province, sector and offered rate structure: median
     across utilities, single-source where only one utility exists, all-in energy from Phase 6, its
     own site view and generated method statements. Decided: prices without and with tax; a model per
     common usage level; major outliers named with their deviation, no "excluding" variants;
-    provinces only, territories planned later. The 7A crosswalk, 7B engine and tax table are built
-    but not yet published; they await user review.
+    provinces only, territories planned later; each utility counts once as the median of its
+    standard zones. **7A and 7B are done for Ontario (October 9):** `data/models/crosswalk.json`
+    (224 ordered rules; 548 of 910 latest live records mapped, 362 excluded with reasons, 0
+    unmapped), `usage_levels.json` (user-approved levels and a reviewed reference-customer list),
+    `taxes.json` and the engine `pipeline/representative_models.py`, which every export runs to
+    write `site/data/representative_models.json` (labelled modeled, never live coverage, not shown
+    on the site yet). Ontario demand-class models are *market energy pending*. **Next: 7C** (all
+    provinces, including Alberta all-in models that combine wires and Rate of Last Resort
+    records), then 7D gas, 7E all-in market energy (needs 6A and 6C) and 7F the site view.
 7. **Phase 8: Representative Model Refresh Automation** ([README](../README.md#phase-8-representative-model-refresh-automation-planned)):
     GitHub Actions rebuild models after the Monthly Scrape and publish only on considerable change
     (proposed: 2% or more at any usage level, or membership/structure/tax/method change), with a

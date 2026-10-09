@@ -11,12 +11,15 @@ Output:
     site/data/utilities.json    — list of all utilities
     site/data/rates.json        — all tariffs with components
     site/data/summary.json      — high-level stats and metadata
+    site/data/representative_models.json — Phase 7 representative models (Ontario; not read by the site yet)
 """
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
+import os
 import sqlite3
 import sys
 from datetime import datetime, timezone
@@ -32,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = PROJECT_ROOT / "data" / "db" / "rates.db"
 SITE_DATA_DIR = PROJECT_ROOT / "site" / "data"
+MODEL_PROVINCES = ("ON",)
 
 
 def derive_provenance(confidence: str | None, notes: str | None) -> str:
@@ -139,7 +143,36 @@ def export_all() -> None:
     logger.info("Exported missing classes report (%d entries)", len(classes_report))
 
     conn.close()
+    export_representative_models(tariffs, SITE_DATA_DIR / "representative_models.json")
     print(f"JSON export complete -> {SITE_DATA_DIR}")
+
+
+def export_representative_models(tariffs: list[dict], out_path: Path) -> dict | None:
+    """Build the representative models from the exported tariffs and write them as compact JSON.
+
+    Never raises: on any failure the error is logged, ``None`` is returned and an existing file is left untouched.
+    """
+    out_path = Path(out_path)
+    tmp_path = out_path.with_name(out_path.name + ".tmp")
+    try:
+        # Imported here so a broken models module cannot break the main export.
+        from pipeline import representative_models as models
+
+        result = models.build_models(
+            tariffs, models.load_crosswalk(), models.load_usage_levels(), models.load_taxes(),
+            provinces=MODEL_PROVINCES, zone_policy="median_of_zones", input_label="site/data/rates.json",
+        )
+        text = json.dumps(result, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path.write_text(text + "\n", encoding="utf-8")
+        os.replace(tmp_path, out_path)
+    except Exception:
+        logger.exception("Representative models export failed; %s left unchanged", out_path)
+        with contextlib.suppress(OSError):
+            tmp_path.unlink(missing_ok=True)
+        return None
+    logger.info("Exported %d representative models to %s", len(result["models"]), out_path)
+    return result
 
 
 def write_json(path: Path, data: object) -> None:

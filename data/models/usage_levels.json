@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "phase": "7A",
+  "updated": "2026-10-09",
+  "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list.",
+  "days_per_month": 30.4375,
+  "hours_per_month": 730.5,
+  "power_factor_for_kva": 0.9,
+  "electricity": {
+    "residential": [
+      {"id": "low", "kwh": 500},
+      {"id": "typical", "kwh": 1000},
+      {"id": "high", "kwh": 2000}
+    ],
+    "commercial_small": [
+      {"id": "s1", "kwh": 2000, "kw": 10},
+      {"id": "s2", "kwh": 8000, "kw": 25}
+    ],
+    "commercial_medium": [
+      {"id": "m1", "kwh": 40000, "kw": 100}
+    ],
+    "commercial_large": [
+      {"id": "l1", "kwh": 500000, "kw": 1000}
+    ],
+    "commercial_xlarge": []
+  },
+  "gas": {
+    "note": "Phase 7D: gas usage levels and annual-volume bands will be defined from published class thresholds; no gas levels yet."
+  },
+  "tou_shares": {
+    "basis": "Share of monthly kWh in each time-of-use period, keyed by the component tou_period labels. Only officially published shares are used; null means no official share exists and none is assumed.",
+    "ON_RPP_TOU": {
+      "applies_to": {"province": "ON", "fuel": "electricity", "structure": "tou", "sectors": ["residential", "commercial_small"]},
+      "shares": {"off-peak": 0.64, "mid-peak": 0.18, "on-peak": 0.18},
+      "period": "November 1, 2025 to October 31, 2026",
+      "source": {
+        "title": "Ontario Energy Board, Regulated Price Plan Price Report, November 1, 2025 to October 31, 2026 (issued October 17, 2025)",
+        "url": "https://www.oeb.ca/sites/default/files/rpp-price-report-20251017.pdf",
+        "location": "Table ES-2 (printed page 5, PDF page 6); Table 4 (printed page 26, PDF page 27); section 3.1 (printed page 23, PDF page 24)",
+        "quote": "The assumed TOU load profile for the current price setting period is 64% RPEM OFF, 18% RPEM MID and 18% RPEM ON."
+      },
+      "note": "OEB load profile for all RPP TOU consumers (actual consumption over the previous four years); no separate small-business profile is published. One annual share set: the summer/winter swap of on-peak and mid-peak hours does not change the shares."
+    },
+    "ON_RPP_ULO": {
+      "applies_to": {"province": "ON", "fuel": "electricity", "structure": "ulo", "sectors": ["residential", "commercial_small"]},
+      "shares": {"ultra-low-overnight": 0.40, "off-peak": 0.20, "mid-peak": 0.27, "on-peak": 0.13},
+      "period": "November 1, 2025 to October 31, 2026",
+      "source": {
+        "title": "Ontario Energy Board, Regulated Price Plan Price Report, November 1, 2025 to October 31, 2026 (issued October 17, 2025)",
+        "url": "https://www.oeb.ca/sites/default/files/rpp-price-report-20251017.pdf",
+        "location": "Table ES-2 (printed page 5, PDF page 6); Table 4 (printed page 26, PDF page 27); section 3.2 (printed pages 24-25, PDF pages 25-26)",
+        "quote": "The assumed ULO load profile for the current price setting period is 40% ULO NIGHT, 20% ULO OFF, 27% ULO MID and 13% ULO ON."
+      },
+      "note": "'off-peak' is the ULO Weekend Off-Peak period (weekends and holidays 7 a.m.-11 p.m.). Based on ULO consumers' actual consumption over the previous two years; one annual share set."
+    },
+    "BC_HYDRO_RS2101_TOD": {
+      "applies_to": {"province": "BC", "fuel": "electricity", "structure": ["tou", "tiered_tou"], "sectors": ["residential"]},
+      "shares": null,
+      "note": "No official consumption shares are published for the RS 2101 overnight/on-peak/other periods; left null (not assumed)."
+    },
+    "FORTISBC_ELECTRIC_TOU": {
+      "applies_to": {"province": "BC", "fuel": "electricity", "structure": "tou", "sectors": ["commercial_small", "commercial_medium", "commercial_large", "commercial_xlarge"]},
+      "shares": null,
+      "note": "No official consumption shares are published for Rates 22A/32 on-peak/off-peak periods; left null."
+    },
+    "HQ_FLEX_PEAK_EVENTS": {
+      "applies_to": {"province": "QC", "fuel": "electricity", "structure": "critical_peak", "sectors": ["residential", "commercial_small"]},
+      "shares": null,
+      "note": "Event-based pricing (Flex D/G): no official share of consumption during peak events is published; an event-hours assumption would be needed and is not set."
+    }
+  },
+  "seasons": {
+    "ON_RPP": {
+      "winter": {
+        "label": "November 1 to April 30",
+        "months": [11, 12, 1, 2, 3, 4],
+        "residential_tier_threshold_kwh": 1000,
+        "non_residential_tier_threshold_kwh": 750
+      },
+      "summer": {
+        "label": "May 1 to October 31",
+        "months": [5, 6, 7, 8, 9, 10],
+        "residential_tier_threshold_kwh": 600,
+        "non_residential_tier_threshold_kwh": 750
+      },
+      "method": "Compute each usage level's monthly cost once per season with that season's tier threshold (and TOU hours), then month-weight: cost = (6 x winter + 6 x summer) / 12.",
+      "tiered_profile_reference": {"tier_1": 0.64, "tier_2": 0.36, "note": "OEB assumed tiered load profile (Table 4); informational only - usage-level costs apply the published thresholds directly."},
+      "source": {
+        "title": "Ontario Energy Board, Regulated Price Plan Price Report, November 1, 2025 to October 31, 2026",
+        "url": "https://www.oeb.ca/sites/default/files/rpp-price-report-20251017.pdf",
+        "location": "Executive summary, 'Regulated Price Plan - Tiered Pricing' (printed page 4, PDF page 5); TOU periods printed pages 3-4 and 23",
+        "cross_check": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates (current prices table, November 1, 2025: residential first 1,000 kWh/month winter, first 600 kWh/month summer; non-residential first 750 kWh/month)"
+      }
+    }
+  },
+  "reference_customer_basis": "Conditional components are left out of modeled costs unless an entry below says that the reference (typical) customer of the sector pays them (user decision, October 9, 2026). An entry applies to components of its province and fuel, for the listed sectors (residential or a commercial size band), whose notes (after the 'Provenance: ...' prefix) fully match notes_regex and whose component name fully matches name_regex (Python re.fullmatch; every given pattern must match). Only components otherwise excluded as 'conditional' qualify: alternatives, optional components, expired or not-yet-effective components and value-less market components stay excluded. Included components are itemized with reason 'reference_customer:<id>'. Ontario reference customers: residential and GS < 50 kW customers are on the Regulated Price Plan (RPP) and buy from their distributor (standard supply); customers at the 50 kW and over levels buy spot-priced energy through their distributor (non-RPP standard supply); all are Class B (not Industrial Conservation Initiative participants) and none is a wholesale market participant. Still excluded: the Hydro One RRRP credit (principal-residence condition), EV charging rates, former Chapleau PUC rider sets, transformer-ownership allowances, primary-metering and transformer-loss allowances, and meter-type, interval-meter and demand-size alternatives.",
+  "reference_customer": [
+    {
+      "id": "on-class-b-cbr",
+      "province": "ON",
+      "fuel": "electricity",
+      "sectors": ["residential", "commercial_small", "commercial_medium", "commercial_large", "commercial_xlarge"],
+      "match": {
+        "notes_regex": "^Conditional: Applies only to Class B customers(?:; (?:In effect until the effective date of the next cost-of-service rate order|Approved on an interim basis|Published per 30 days))*$",
+        "name_regex": "^(?i:.*\\b(?:CBR|Capacity Based Recovery)\\b.*)$"
+      },
+      "reason": "Capacity Based Recovery (CBR) charge and CBR account riders printed as applicable to Class B customers. Every reference customer is Class B: RPP residential and GS < 50 kW customers, and 50 kW and over customers that do not take part in the Industrial Conservation Initiative (Class A).",
+      "source": {
+        "title": "IESO, Global Adjustment: customers in the Industrial Conservation Initiative are Class A, all other customers are Class B; RPP prices include the Global Adjustment",
+        "url": "https://www.ieso.ca/power-data/price-overview/global-adjustment",
+        "note": "Applicability from each distributor's OEB-approved Tariff of Rates and Charges (record source_url), e.g. 'Capacity Based Recovery (CBR) - Applicable for Class B Customers'. Prototype: logs/_on2_r_model.py condition_kind 'typical_class_b'."
+      }
+    },
+    {
+      "id": "on-non-rpp-class-b-ga",
+      "province": "ON",
+      "fuel": "electricity",
+      "sectors": ["commercial_medium", "commercial_large", "commercial_xlarge"],
+      "match": {
+        "notes_regex": "^Conditional: Applies only to non-RPP Class B customers \\(not wholesale market participants or customers that changed between Class A and Class B during the accumulation period\\)(?:; (?:In effect until the effective date of the next cost-of-service rate order|Approved on an interim basis|Published per 30 days))*$",
+        "name_regex": "^(?i:Rate Rider\\b.*)$"
+      },
+      "reason": "Global Adjustment (and other non-RPP Class B) variance-account riders. The reference customer of the demand classes is non-RPP Class B (spot energy plus Class B Global Adjustment through its distributor, the basis of the value-less Market Energy component). RPP residential and GS < 50 kW customers do not pay them: the Global Adjustment is included in RPP prices.",
+      "source": {
+        "title": "IESO, Global Adjustment: Class B customers pay GA on monthly consumption; for RPP customers GA is factored into the OEB price",
+        "url": "https://www.ieso.ca/power-data/price-overview/global-adjustment",
+        "note": "Applicability from each OEB-approved tariff, e.g. 'Rate Rider for Disposition of Global Adjustment Account ... Applicable only for Non-RPP Customers'. Prototype: condition_kind 'typical_ga' (GS 50+ only)."
+      }
+    },
+    {
+      "id": "on-non-wmp-riders",
+      "province": "ON",
+      "fuel": "electricity",
+      "sectors": ["residential", "commercial_small", "commercial_medium", "commercial_large", "commercial_xlarge"],
+      "match": {
+        "notes_regex": "^Conditional: Applies only to customers that are not wholesale market participants(?:; (?:In effect until the effective date of the next cost-of-service rate order|Approved on an interim basis|Published per 30 days))*$",
+        "name_regex": "^(?i:Rate Rider\\b.*)$"
+      },
+      "reason": "Deferral/variance-account riders (e.g. Account 1588) printed as applicable to non-wholesale market participants. Reference customers buy their electricity through their distributor, not directly in the IESO-administered market.",
+      "source": {
+        "title": "Each distributor's OEB-approved Tariff of Rates and Charges (record source_url)",
+        "url": null,
+        "note": "Tariff text e.g. 'Rate Rider for Disposition of Deferral/Variance Accounts ... Applicable only for Non-Wholesale Market Participants' or 'Account 1588 (non-WMP)'. Prototype: condition_kind 'typical_non_wmp'."
+      }
+    },
+    {
+      "id": "on-sss-admin",
+      "province": "ON",
+      "fuel": "electricity",
+      "sectors": ["residential", "commercial_small", "commercial_medium", "commercial_large", "commercial_xlarge"],
+      "match": {
+        "notes_regex": "^Conditional: Applies only where the service is taken \\(e\\.g\\. standard supply service customers\\)(?:; (?:In effect until the effective date of the next cost-of-service rate order|Approved on an interim basis|Published per 30 days))*$",
+        "name_regex": "^(?i:Standard Supply Service\\s*[-\\u2013]\\s*Administrative Charge(?:\\s*\\(if applicable\\))?)$"
+      },
+      "reason": "Standard Supply Service administrative charge, payable by customers who buy electricity from their distributor rather than from a retailer. Every reference customer is on standard supply (RPP prices, or spot price for the 50 kW and over levels).",
+      "source": {
+        "title": "OEB, Electricity rates: RPP prices for customers who buy electricity from their utility",
+        "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+        "note": "Applicability from each OEB-approved tariff: 'Standard Supply Service - Administrative Charge (if applicable)'. Prototype: condition_kind 'sss_admin'."
+      }
+    }
+  ],
+  "basis": "Monthly usage levels approved by the user on October 9, 2026: residential 500/1,000/2,000 kWh; commercial under 50 kW at 2,000 kWh with 10 kW and 8,000 kWh with 25 kW; 50-499 kW at 40,000 kWh with 100 kW; 500-4,999 kW at 500,000 kWh with 1,000 kW; no level yet for 5,000 kW and over. Daily charges convert to monthly at 30.4375 days (365.25 / 12); hours per month 730.5. kVA demand is derived from kW at the disclosed 0.9 power factor (kVA = kW / 0.9) and never treated as kW. Implied load factors (kWh / (kW x 730.5)): s1 27.4%, s2 43.8%, m1 54.8%, l1 68.4%. Levels are comparison points for modeled costs, not a load profile of any customer."
+}

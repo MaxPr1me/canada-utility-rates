@@ -43,7 +43,7 @@ unverified fallback records remain estimates regardless of the export date.
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
 | Historical snapshots | **3,616**; batch 12 runs 27 and 28 appended 563 and 40 without changing prior snapshots |
 | DB validation | **0 errors, 2 existing AESO warnings** |
-| Deterministic tests | **1,574 passing** across 8 modules |
+| Deterministic tests | **1,638 passing** across 8 modules |
 
 Live output currently includes BC Hydro (17), FortisBC Electric (11), Manitoba Hydro (18), NB Power (10),
 Nova Scotia Power (18), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
@@ -69,14 +69,19 @@ active Ontario distributors are live, and batch 12 added Alberta electricity (fo
 utilities and the three Rate of Last Resort providers), Ontario/Alberta gas (Enbridge Gas, ATCO
 Gas and a new EPCOR Natural Gas (Ontario) entry that replaces a retired, mis-registered Alberta
 entry), PUC Distribution and value-less market energy components for Ontario demand classes
-(Phase 6B). Open batch 12 decisions are listed in the matrix queue. In progress and not yet
-published: the observed IESO market model (Phase 6A, blocked because the IESO keeps only about
-90 days of hourly day-ahead price files; options await a user decision), market wording and
-charge formatting on the site, and the Phase 7A
-crosswalk, 7B engine and tax table (built, awaiting user review). A per-run live/seed summary in
-`run_scrape` is now published. Then the remaining future
-phases (see the Roadmap): 6C-6E market work, 7 Representative Models, 8 automatic model refresh
-and 9 product follow-up including the Across-Canada comparison. First CI runs of the updated
+(Phase 6B). Remaining open items (optional follow-ups) are listed in the matrix queue. A per-run
+live/seed summary in `run_scrape` is published. Phase 7A (crosswalk, usage levels and tax table)
+and 7B (the model engine) are done for Ontario: every export now writes Ontario electricity
+[representative models](#phase-7-representative-models-in-progress) to
+`site/data/representative_models.json`. The file is published but the site does not show it yet
+(Phase 7F); the models are labelled modeled, are never billed tariffs and never count as live
+coverage. In progress and not yet published: the observed IESO market model (Phase 6A; user
+decision October 9: observed legacy HOEP hourly prices for 2020-2024 plus actual monthly Class B
+Global Adjustment rates, clearly labelled as the market before May 2025) with market wording and
+charge formatting on the site. Next: 7C (all provinces, including Alberta wires plus Rate of Last
+Resort combinations), 7D gas, 7E all-in market energy (needs 6A and 6C) and 7F the site view,
+alongside the remaining 6C-6E market work; then 8 automatic model refresh and 9 product
+follow-up including the Across-Canada comparison (see the Roadmap). First CI runs of the updated
 workflows are still unverified.
 
 See the [coverage matrix](docs/phase5_completion_matrix.md) for the implementation queue
@@ -232,7 +237,8 @@ canada-utility-costs/
 │
 ├── pipeline/                 ← Scripts that run the whole process
 │   ├── run_scrape.py         ← Main entry: run scrapers → validate → store
-│   ├── export_json.py        ← Export database → JSON for the website
+│   ├── export_json.py        ← Export database → JSON for the website (also runs the model builder)
+│   ├── representative_models.py ← Phase 7 representative models: crosswalk coverage and cost engine
 │   ├── diff_report.py        ← Compare two scrape runs to see changes
 │   └── validate.py           ← Data quality checks
 │
@@ -244,6 +250,10 @@ canada-utility-costs/
 │   ├── db/                   ← SQLite database (created by the scraper)
 │   ├── exports/              ← CSV/Excel exports (optional)
 │   ├── excel/                ← Audit reference files (not system of record, git-ignored)
+│   ├── models/               ← Phase 7 representative model inputs
+│   │   ├── crosswalk.json    ← Ordered rules: live record → model key or exclusion reason
+│   │   ├── usage_levels.json ← Usage levels, TOU/ULO shares, reference-customer charges
+│   │   └── taxes.json        ← Sales taxes and automatic point-of-sale rebates
 │   ├── sources/registry.json ← Master list of where to find rate data
 │   └── inventory/            ← Full utility inventory
 │
@@ -251,18 +261,19 @@ canada-utility-costs/
 │   ├── index.html            ← Main page: Rate Browser + Market Pricing tabs
 │   ├── css/style.css         ← Styles inc. multi-select filters, heatmap, confidence
 │   ├── js/app.js             ← SPA logic: filters, cards, modal, market viz
-│   └── data/                 ← Five pipeline exports plus separately maintained market/audit data
+│   └── data/                 ← Six pipeline exports plus separately maintained market/audit data
 │       ├── rates.json        ← All tariff/component data
 │       ├── utilities.json    ← Utility metadata
 │       ├── summary.json      ← Provincial summaries
 │       ├── missing.json      ← Known data gaps
 │       ├── missing_classes_report.json  ← Customer class coverage audit
+│       ├── representative_models.json   ← Phase 7 models (Ontario electricity; not shown on the site yet)
 │       ├── market_pricing_ontario.json  ← Ontario IESO hourly price bins
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 1,574 deterministic tests across 8 test modules
-│   ├── fixtures/             ← Source-derived fixtures; other tests also use inline text
+├── tests/                    ← 1,638 deterministic tests across 8 test modules
+│   ├── fixtures/             ← Source-derived fixtures and frozen export samples; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
 │
@@ -285,6 +296,7 @@ canada-utility-costs/
 | Export JSON for the website | `python -m pipeline.export_json` |
 | Validate data quality | `python -m pipeline.validate` |
 | Compare two scrape runs | `python -m pipeline.diff_report` |
+| Check the representative-model crosswalk | `python -m pipeline.representative_models --coverage` |
 | Run tests | `pytest` |
 | Serve the website locally | `python -m http.server --directory site 8000` |
 | See verbose output | `python -m pipeline.run_scrape --verbose` |
@@ -377,10 +389,12 @@ The published model still uses the old HOEP framing.
 
 **Known provenance issue:** the JSON metadata and dashboard still describe historical
 averages. Treat these numbers as modeled estimates, not measured or current prices.
-An observed-data rework (Phase 6A) is in progress but not published: the IESO keeps only about
-90 days of hourly day-ahead zonal price files, so a trailing 12-month hourly window cannot be
-built until about August 2027 unless data is accumulated, and the options await a user
-decision. Ontario demand-class tariffs do not copy model values: since batch 12 their non-RPP
+An observed-data rework (Phase 6A) is in progress but not published. The IESO keeps only about
+90 days of hourly day-ahead zonal price files, so a trailing 12-month Ontario Price window cannot
+be built until about August 2027. User decision (October 9): the hourly view will use observed
+legacy HOEP hourly prices for 2020-2024 plus actual monthly Class B Global Adjustment rates,
+clearly labelled as the market before May 2025. Ontario demand-class tariffs do not copy model
+values: since batch 12 their non-RPP
 records carry a market energy component with no stored number (Phase 6B), and Class A Global
 Adjustment (by peak demand factor) is a conditional note.
 
@@ -501,13 +515,13 @@ reference and source URL; the site shows it as "Variable".
 
 | Phase | Work and completion gate | Depends on | Status |
 |---|---|---|---|
-| 6A: Ontario market observations | Replace the fixed generator inputs of the Ontario market model with reproducible official IESO observations (the Ontario Electricity Market Price, which replaced the HOEP on May 1, 2025, and Global Adjustment Class B) and freshness checks; correct the market-model metadata and UI disclosure | - | In progress, not published. Blocked: the IESO keeps only about 90 days of hourly day-ahead zonal price files, so a trailing 12-month hourly window cannot be built until about August 2027 unless data is accumulated; options await a user decision |
+| 6A: Ontario market observations | Replace the fixed generator inputs of the Ontario market model with reproducible official IESO observations (hourly energy prices and actual Class B Global Adjustment) and freshness checks; correct the market-model metadata and UI disclosure | - | In progress, not published. The IESO keeps only about 90 days of hourly day-ahead zonal price files, so a trailing 12-month Ontario Electricity Market Price window cannot be built until about August 2027. User decision (October 9): the hourly view uses observed legacy HOEP hourly prices for 2020-2024 plus actual monthly Class B Global Adjustment rates, clearly labelled as the market before May 2025 (the HOEP was retired April 30, 2025); being implemented |
 | 6B: Ontario demand-class energy | Attach modeled market energy (wholesale price plus Class B GA) to GS 50-4,999 kW and Large Use delivery-only records as labelled components; Class A noted as conditional | 6A for observed averages | **Implemented October 9 (batch 12) as value-less components:** non-RPP demand classes (including Hydro One UGd/GSd/AUGd/AGSd and ST) carry "Market Energy (Ontario Electricity Market Price + Class B Global Adjustment)" with a market reference and the IESO source URL; Class A and RPP eligibility are conditional notes; Algoma R2 (residential dwellings stay RPP-eligible) has none |
 | 6C: Alberta market | AESO pool price observations; default retail (RoLR) energy from 5F; optional Alberta region in the Market Pricing dashboard if its variation warrants it (Alberta-specific values, sources, periods and methodology, never Ontario's market-price-plus-GA assumptions; wholesale, retail and wires kept distinct) | 5F | Planned. RoLR fixed prices are live from 5F; EPCOR Distribution's operating reserve charge (a percentage of the pool price) is stored value-less |
 | 6D: Deferred market-indexed products | FortisBC Electric RS38 (Mid-C), BC Hydro RS1892, NSPower one-part real-time pricing, NL Hydro monthly non-firm (5.1L, Island non-thermal) | 6A methods | Planned |
 | 6E: Gas commodity cadence | Quarterly QRAM (Ontario) and monthly default supply (Alberta GCFR) as dated commodity components with their refresh cadence | ON/AB gas parsers | Partly started: the batch 12 parsers store the current Enbridge and EPCOR QRAM gas supply prices and Direct Energy Regulated Services' monthly default rate as dated commodity components; cadence and freshness checks remain |
 
-### Phase 7: Representative Models (planned)
+### Phase 7: Representative Models (in progress)
 
 A new **Representative Models** section gives, for each province (territories later), one modeled
 tariff per sector (residential, commercial) and per rate structure actually offered there
@@ -521,9 +535,50 @@ its provincial values instead of computing its own blends.
 province/structure with one utility uses that utility's tariff, labelled single-source; the
 target is a full all-in price including energy/commodity (market-priced energy comes from the
 market model and is labelled modeled); a dedicated site view next to Rate Browser, Market
-Pricing and Compare; planned now, implemented later. A first Ontario delivery-only prototype
-exists as scratch analysis (`logs/_on2_r_model.py`, October 8): typical monthly delivery varies
-about 18% across 46 distributors (Hydro One the main outlier).
+Pricing and Compare; planned now, implemented later. The October 8 scratch prototype
+(`logs/_on2_r_model.py`: typical monthly delivery varied about 18% across 46 distributors,
+Hydro One the main outlier) is superseded by the 7B engine.
+
+**Status (October 9):** 7A is done and 7B is done for Ontario electricity. Every export now
+writes `site/data/representative_models.json` (compact JSON, about 0.5 MB); the site does not
+read it yet (7F). Ontario medians, $/month:
+
+| Ontario model (usage level) | Utilities | Without tax | With tax | Notes |
+|---|---|---|---|---|
+| Residential TOU (1,000 kWh) | 47 | 192.11 | 171.94 | Closest to the median: Rideau St. Lawrence; outliers Algoma +16.8%, Sioux Lookout +13.5%, Hydro 2000 +11.8% |
+| Commercial under 50 kW, TOU (2,000 kWh at 10 kW) | 45 | 383.69 | 343.40 | - |
+| Commercial 50-499 kW (40,000 kWh at 100 kW) | 46 | 1,864.72 | 2,107.14 | Delivery only; market energy pending |
+| Commercial 500-4,999 kW (500,000 kWh at 1,000 kW) | 46 | 17,958.81 | 20,293.45 | Delivery only; market energy pending |
+
+The residential and under-50 kW costs are lower with tax than without because the Ontario
+Electricity Rebate (23.5% of the pre-tax amount) exceeds the 13% HST, which is charged on the
+pre-rebate amount. Demand-class models are in the *market energy pending* state because Ontario
+market energy is a value-less component; all-in market energy is 7E.
+
+**Inputs (`data/models/`, 7A):**
+- `crosswalk.json`: 224 ordered rules (first match wins) map every latest live record to a model
+  key (province, fuel, sector, structure, size band) or to an exclusion with its reason. October 9
+  coverage: 548 of 910 records mapped, 362 excluded, 0 unmapped; 15 intentional rule overrides
+  are reported. Alberta electricity records are excluded until 7C (its all-in models need wires
+  plus Rate of Last Resort combinations), Ontario and Alberta gas records until 7D and territorial
+  records until their own plan. Other provinces' electricity and gas records are already mapped;
+  7B builds Ontario models only.
+- `usage_levels.json` (user-approved monthly levels): residential 500, 1,000 and 2,000 kWh;
+  commercial under 50 kW 2,000 kWh at 10 kW and 8,000 kWh at 25 kW; 50-499 kW 40,000 kWh at
+  100 kW; 500-4,999 kW 500,000 kWh at 1,000 kW; no 5,000 kW and over level yet. 30.4375 days per
+  month; kVA at a disclosed 0.9 power factor; Ontario TOU shares 64/18/18 (off-peak/mid-peak/
+  on-peak) and ULO shares 40/20/27/13 (ultra-low overnight/off-peak/mid-peak/on-peak) from the
+  OEB RPP Price Report for November 1, 2025 - October 31, 2026; tier seasons as published. A
+  reviewed *reference customer* list adds four Ontario conditional charges that every typical
+  customer pays: Class B Capacity Based Recovery riders, non-RPP Class B Global Adjustment riders
+  (demand sectors only), riders for customers that are not wholesale market participants and the
+  Standard Supply Service administration charge.
+- `taxes.json`: 13 provinces and territories x electricity/gas x residential/commercial: GST,
+  HST, PST, QST or RST plus automatic point-of-sale rebates (for example the Ontario Electricity
+  Rebate 23.5%, Nova Scotia's Your Energy Rebate 9% and New Brunswick's 10% residential
+  electricity rebate). Accepted defaults: Manitoba residential assumes a gas-heated home;
+  municipal taxes and surcharges are excluded; commercial tax is shown as billed, without input
+  tax credits; income-tested programs are excluded.
 
 #### Representative Models: Design
 
@@ -531,22 +586,25 @@ about 18% across 46 distributors (Hydro One the main outlier).
   small, medium, large), structure (flat, tiered, TOU, ULO, seasonal, demand, interruptible...)
   and, where relevant, size band. A model exists only where at least one live record of that
   structure exists; otherwise the state is *Not offered* or *Not yet live*, never zero.
-- **Category crosswalk:** a reviewed configuration file maps each utility's tariff (registry
-  name and tariff code) to a model key from published eligibility, not from similar plan names.
-  Default rate zones and standard service only; closed, pilot, optional, bulk-metered, off-grid
-  and process-specific products are excluded unless a model is defined for them, and every
-  exclusion is listed with its reason. A multi-zone utility counts once (median of its zones).
+- **Category crosswalk:** a reviewed configuration file (`data/models/crosswalk.json`) maps each
+  utility's tariff (registry name and tariff code) to a model key from published eligibility, not
+  from similar plan names. Standard rate zones and standard service only; closed, pilot, optional,
+  bulk-metered, off-grid and process-specific products are excluded unless a model is defined for
+  them, and every exclusion is listed with its reason. A multi-zone utility counts once: the
+  median of its standard zones (user decision).
 - **Component buckets:** fixed per month, energy/commodity (by period or tier), distribution
   volumetric, demand per kW or kVA, transmission, regulatory, mandatory riders, carbon and other
-  mandatory charges. Conditional, optional and expired components are excluded and counted.
+  mandatory charges. Conditional, alternative, optional and expired components and value-less
+  market components are excluded and counted, except the reviewed reference-customer charges.
   Unit conversions are disclosed ($/day x 30.4375 = $/month; cents to dollars); kVA is never
-  treated as kW without a disclosed power-factor assumption; m3 is never converted to GJ without
-  a published heat content.
+  treated as kW without a disclosed power-factor assumption (0.9); m3 is never converted to GJ
+  without a published heat content.
 - **Combining rule:** each bucket is the median across contributing utilities, shown with n,
   min, p25, p75 and max. Because bucket medians do not add up to a coherent bill, each model also
   reports, at every common usage level, the median cost (computed per utility, then the median),
   without and with tax, and the closest real utility (whose cost is nearest the median), linked
-  to its live tariff. Major outliers are named with their deviation from the median.
+  to its live tariff. Major outliers (more than 30% from the median or outside 1.5 x the
+  interquartile range) are named with their deviation from the median.
 - **TOU and time periods:** if one schedule applies province-wide (Ontario RPP), use it as
   published. Otherwise compute each utility's price for every hour of a reference week per
   season, take the median per hour, then group equal-priced hours into representative periods.
@@ -571,9 +629,10 @@ about 18% across 46 distributors (Hydro One the main outlier).
   Service is the only utility; no averaging". It also lists contributing utilities, record ids,
   effective dates, source URLs, coverage (n of N utilities), exclusions with reasons, outliers,
   generated date and the input export.
-- **Outputs:** a builder run by `pipeline/export_json.py` writes
-  `site/data/representative_models.json`, rebuilt on every export and kept in git history. No
-  schema change is planned.
+- **Outputs:** the builder (`pipeline/representative_models.py`, method version 7B-2) runs
+  inside `pipeline/export_json.py` and writes `site/data/representative_models.json` (compact
+  JSON) on every export; the file is kept in git history. A model-build failure is logged and
+  leaves the previous file in place; it never fails the export. No schema change.
 - **Site view:** a **Representative Models** tab with province, fuel, sector and structure
   selectors; a component table with spread, a 24-hour/season strip for TOU, a tier-step chart, a
   demand-band ladder, the method statement and an expandable list of contributing tariffs. A
@@ -584,14 +643,14 @@ about 18% across 46 distributors (Hydro One the main outlier).
 
 #### Representative Models: Phases
 
-| Phase | Work and completion gate | Depends on |
-|---|---|---|
-| 7A: Taxonomy and crosswalk | Model keys and size bands; reviewed crosswalk for every live utility; exclusion reasons; tests for unmapped/ambiguous records | Current live data |
-| 7B: Engine (delivery + regulated energy) | Bucket normalization, median/spread, cost at each common usage level without and with tax, closest utility, outlier notes, TOU hour surfaces, tier curves, demand bands, method text and provenance; synthetic and fixture tests; Ontario first (promote the scratch prototype) | 7A |
-| 7C: Electricity, all provinces | Residential and commercial models for every province with live data; single-source labelling; coverage report (territories planned separately) | 7B |
-| 7D: Gas | Residential and commercial gas models (commodity, delivery, carbon kept as buckets) | 7B; ON/AB gas parsers |
-| 7E: All-in market energy | Market-priced energy from Phase 6 with period basis; *pending* state where Phase 6 data is missing | Phase 6 |
-| 7F: Site view | Representative Models tab, charts, method/coverage disclosure, accessible table, desktop/mobile checks | 7C |
+| Phase | Work and completion gate | Depends on | Status |
+|---|---|---|---|
+| 7A: Taxonomy and crosswalk | Model keys and size bands; reviewed crosswalk for every live utility; exclusion reasons; tests for unmapped/ambiguous records | Current live data | **Done October 9:** crosswalk, usage levels and tax table in `data/models/` (see Inputs above); 0 unmapped records |
+| 7B: Engine (delivery + regulated energy) | Bucket normalization, median/spread, cost at each common usage level without and with tax, closest utility, outlier notes, TOU hour surfaces, tier curves, demand bands, method text and provenance; synthetic and fixture tests; Ontario first (promote the scratch prototype) | 7A | **Done for Ontario October 9:** `pipeline/representative_models.py` (method version 7B-2), run by every export; Ontario's province-wide RPP periods and tiers are used as published; demand-class models are *market energy pending* |
+| 7C: Electricity, all provinces | Residential and commercial models for every province with live data, including Alberta all-in models that combine wires and Rate of Last Resort records; single-source labelling; coverage report (territories planned separately) | 7B | Planned (next) |
+| 7D: Gas | Residential and commercial gas models (commodity, delivery, carbon kept as buckets) | 7B; ON/AB gas parsers | Planned |
+| 7E: All-in market energy | Market-priced energy from Phase 6 with period basis; *pending* state where Phase 6 data is missing | Phase 6 (6A, 6C) | Planned |
+| 7F: Site view | Representative Models tab, charts, method/coverage disclosure, accessible table, desktop/mobile checks | 7C | Planned; the site does not read the models file yet |
 
 **Decisions before 7A (user, October 8):**
 - **Taxes:** every all-in model is shown both without tax and with tax (applicable GST/HST/PST,
@@ -646,7 +705,7 @@ underneath changes considerably, without noise commits for trivial drift.
 - **National comparison matrix:** provinces as rows (territories once they have models), common customer-class/rate-structure categories as columns or selectable views. Keep every region visible, including where a category is **Not offered**, **Not yet verified**, or **Not comparable**; these are different states, never zero prices. The category crosswalk is the Phase 7 crosswalk.
 - **Residential profiles:** start with flat, tiered and time-of-use plans, with separate views for other nationally recurring structures. Show energy prices, monthly fixed charges, tier allowances, TOU hours/seasons and mandatory adjustments. Show monthly-equivalent fixed charges only with a disclosed day/billing-period basis and the original units. Do not manufacture a flat rate by averaging a tiered or TOU plan; distinguish ordinary household service from bulk-metered, off-grid, pilot and other conditional products.
 - **Commercial class ladders:** compare small, medium and large general service using each utility's actual eligibility bands. Show the peak-demand range, fixed monthly charge, energy structure, when demand billing begins, any free demand allowance, and the applicable charge per kW or kVA. A shared demand-axis chart could reveal where one province's small-commercial class becomes another's medium class. Preserve voltage, season, minimum-bill and demand-ratchet conditions; do not invent universal class boundaries or convert kVA to kW without evidence.
-- **Transparent provincial values:** provincial values come from the [Phase 7 representative models](#phase-7-representative-models-planned) (median across utilities, single-source where only one utility exists, generated method statement); this view adds no blending logic of its own. Display the participating utilities, coverage and min-max range, with expansion to individual tariffs and sources. Incompatible tier boundaries and TOU windows stay visible in the model's method statement. A model is a comparison indicator, not an official tariff or a price every resident pays.
+- **Transparent provincial values:** provincial values come from the [Phase 7 representative models](#phase-7-representative-models-in-progress) (median across utilities, single-source where only one utility exists, generated method statement); this view adds no blending logic of its own. Display the participating utilities, coverage and min-max range, with expansion to individual tariffs and sources. Incompatible tier boundaries and TOU windows stay visible in the model's method statement. A model is a comparison indicator, not an official tariff or a price every resident pays.
 - **Visual exploration:** combine the sortable matrix with provincial dot/range plots, miniature tier-step charts, 24-hour TOU strips and commercial demand-threshold ladders. Selecting a province should reveal its contributing utilities and charge breakdown; selecting a category should line up that structure across Canada. Offer fuel, customer/building type, rate structure and effective-period controls, with an accessible table alternative to charts.
 - **Fair comparisons:** keep energy, delivery, fixed charges, demand and riders distinct. Flag energy-only versus bundled service, differing units and incomplete component coverage before ranking. Show source dates and methodology; keep estimated inputs separate and explicitly labelled. Any usage-weighted effective price or example monthly bill requires a disclosed load profile and the separately scoped calculator work above, not an implicit total in this comparison view.
 

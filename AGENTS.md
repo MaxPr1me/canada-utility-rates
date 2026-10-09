@@ -27,6 +27,8 @@ October 9 even though its tariff prints no connection rate. Batch 12 also added 
 electricity (28 records: four wires companies and three Rate of Last Resort providers) and
 Ontario/Alberta gas (40 records: Enbridge Gas, ATCO Gas and EPCOR Natural Gas (Ontario)).
 Only AESO, a market reference, has no live output.
+Since October 9 the export also writes Ontario electricity "representative models" (typical
+monthly costs; see the glossary), which the website does not show yet.
 These counts include conditional products and reference-only services, not that many
 fully audited building classes. SaskPower's scoped building schedules are audited;
 remaining utility gaps are listed in the [coverage matrix](docs/phase5_completion_matrix.md).
@@ -126,6 +128,20 @@ an exact percentage. Preserve history and do not stage unrelated work.
 | `site/data/missing_classes_report.json` | Audit report showing which utilities are missing customer classes. |
 | `site/data/source_review_report.json` | Source URL audit — compares Excel reference URLs against registry. |
 
+### Where the representative models live
+
+A *representative model* is a "typical" monthly cost for a province, worked out from the middle
+value (the median) of its utilities' live rates. Only Ontario electricity has models so far, and
+the website does not show them yet.
+
+| File | What it does |
+|---|---|
+| `data/models/crosswalk.json` | The sorting list. Its 224 rules are read from top to bottom, and the first rule that fits decides where each live tariff goes: into a model group (province, fuel, customer type, rate structure and size) or out, with a written reason. Today 548 of the 910 live tariffs are used and 362 are left out on purpose; none is left unsorted. Alberta electricity waits for Phase 7C (its models must combine a wires company with a Rate of Last Resort provider), Ontario and Alberta gas wait for Phase 7D, and the territories come later. The other provinces are already sorted, but only Ontario's models are calculated so far. |
+| `data/models/usage_levels.json` | The example customers, approved by the project owner: homes using 500, 1,000 or 2,000 kWh a month; small businesses (under 50 kW) using 2,000 kWh at 10 kW or 8,000 kWh at 25 kW; medium businesses (50-499 kW) using 40,000 kWh at 100 kW; large businesses (500-4,999 kW) using 500,000 kWh at 1,000 kW. It also holds the Ontario Energy Board's split of use between time-of-use periods and a short, reviewed list of "conditional" Ontario charges that a typical customer does pay. |
+| `data/models/taxes.json` | Sales taxes (GST, HST, PST, QST, RST) and automatic bill rebates, such as the Ontario Electricity Rebate, for every province and territory: electricity and gas, homes and businesses. Municipal taxes and income-tested programs are left out. |
+| `pipeline/representative_models.py` | The calculator. For every utility it works out the monthly cost at each example level, then reports the median, the spread, the real utility closest to the median and any utility far from it (an "outlier"), without and with tax, plus a written explanation of how each number was made. |
+| `site/data/representative_models.json` | The results. The export step rewrites this file every time; if the calculation fails, the export still finishes and the previous file is kept. The website does not read it yet (Phase 7F). These are comparison aids, never rates anyone is billed. |
+
 ### Where the website lives
 
 | File | What it does |
@@ -188,7 +204,8 @@ and lists any utility that returned only estimates ("Seed-only utilities").
 ```
 python -m pipeline.export_json
 ```
-This creates the JSON files that the website reads.
+This creates the JSON files that the website reads. It also rewrites the Ontario representative
+models file, which the website does not read yet.
 
 **6. Open the website:**
 Run `python -m http.server --directory site 8000`, then open http://localhost:8000.
@@ -394,10 +411,11 @@ The dashboard's historical-data wording (which still says HOEP) is a known issue
 scheduled for correction.
 
 **How to update it:** Re-running the current generator only rebuilds the same model.
-A rework that reads real IESO prices (Phase 6A) is in progress but not published: the IESO
-only keeps about 90 days of hourly day-ahead price files, so a full 12-month window cannot be
-built until about August 2027 unless the project saves the files itself. The options are
-waiting for a decision.
+A rework that reads real IESO prices (Phase 6A) is in progress but not published. The IESO
+only keeps about 90 days of hourly day-ahead price files, so a full 12-month window of the new
+Ontario Price cannot be built until about August 2027. The project owner decided on October 9
+to use real hourly HOEP prices from 2020-2024 plus the actual monthly Class B Global Adjustment
+rates instead, clearly labelled as the market before May 2025. This is still being built.
 
 ---
 
@@ -449,7 +467,9 @@ When choosing which URL to use for a utility, prefer:
 | **Multiplier** | A tariff-defined factor based on eligible dwellings or rooms. Some bulk-metered buildings multiply daily charges and energy allowances by this factor; it is not automatically one. |
 | **Demand charge** | A charge based on the peak power (kW) a customer draws, common for commercial and industrial accounts. |
 | **Rider** | A temporary adjustment to rates — can be a surcharge or a credit. |
-| **Representative model** | A planned (Phase 7) "typical" tariff for a province, built from the median of its utilities' live tariffs, with a note explaining exactly how it was made. It is a comparison aid, never a rate anyone is billed. |
+| **Representative model** | A "typical" monthly cost for a province (Phase 7), built from the median of its utilities' live tariffs at set example usage levels, shown without and with tax, with a note explaining exactly how it was made. Built for Ontario electricity since October 9 (`site/data/representative_models.json`) but not shown on the website yet; other provinces and gas come later. It is a comparison aid, never a rate anyone is billed, and it never counts as live coverage. |
+| **Median** | The middle value when numbers are sorted from lowest to highest. Unlike an average, one unusually high or low utility barely moves it. |
+| **Outlier** | In a representative model, a utility whose cost is far from the median (more than 30% away, or well outside the range of the middle half of the utilities). It is named with how far away it is; it is not left out. |
 | **LDC** | Local Distribution Company — the utility that delivers electricity to your home (common in Ontario). |
 | **OEB** | Ontario Energy Board — the regulator that sets many Ontario utility rates. |
 | **QRAM** | Quarterly Rate Adjustment Mechanism — the Ontario Energy Board process that resets Ontario natural gas supply prices every three months. |
@@ -478,7 +498,7 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 1,574 tests across 8 test modules, including `test_phase5_hardening` for
+There are 1,638 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
 The BC Hydro, FortisBC Electric, Hydro-Quebec, NL Hydro, Manitoba Hydro, NB Power,
 Newfoundland Power, Maritime Electric, NSPower, SaskPower, SaskEnergy, Centra Gas,
@@ -490,7 +510,9 @@ HTML/PDF-text excerpts, source URLs and page/section details for repeatable pars
 tests. Batch 10 expands source-derived coverage for eleven utilities including the
 territories, and batch 12 adds the Alberta, Ontario/Alberta gas and PUC Distribution fixtures;
 a fixture covers only the saved classes and conditions and does not prove
-the entire utility catalogue is complete.
+the entire utility catalogue is complete. The representative model tests use frozen copies of
+exported records (`rm_records_sample.json`, `rm_engine_sample.json` and `rm_records_b12.json`),
+so the tests that run before each monthly scrape never depend on that month's data.
 
 If the test run seems to freeze, check the size of `logs/scrape.log`. PDF libraries
 can write huge debug logs; `setup_logging()` now keeps them quiet and caps the file at
@@ -538,7 +560,7 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - Ontario batch 1 (October 7): 24 distributors are read from their OEB-approved Tariff of Rates and Charges PDF; the OEB bill-data XML is only a cross-check, never a value source. Homes and small business (GS<50) get the live provincial RPP energy price plus the distributor's delivery charges; larger demand classes show delivery charges only, because their energy price is market-based (deferred). Each rate zone gets its own records. A class that cannot be read cleanly is rejected, not guessed, and no new estimate is made for it (older estimates stay in history, labelled). Merged distributors keep their history; their successor now publishes the rates.
 - Ontario batch 2 (October 8): 22 more distributors, so 46 in total. Some PDFs print values slightly above their labels; the fix is a per-document text-reading setting (`"extract": {"y_tolerance": N}`), not a guessed value. Algoma's R1 is split into year-round dwellings (fully fixed) and O. Reg. 445/07 customers; its R2 (50 kW and over, billed per kW) is delivery-only. A configured distributor that rejects a class, or publishes no such class, no longer re-sends old estimates for it; estimates are still used if the tariff cannot be downloaded at all. Distributors' delivery costs are close to each other (typical monthly delivery varies about 15-20%; Hydro One is the main outlier).
 - Batch 12 (October 9), Alberta and gas: the four Alberta wires companies (ENMAX Power, ATCO Electric, EPCOR Distribution, FortisAlberta) list distribution and transmission as separate lines and keep each current rider as its own dated line; a rider that has expired is left out by its date. ATCO's lines must add up to the total printed in its schedule. EPCOR's 2026 rates are interim, so they are medium confidence with a note. The three Rate of Last Resort providers are live, each checked against the Utilities Consumer Advocate table. Enbridge Gas, ATCO Gas and a new EPCOR Natural Gas (Ontario) entry are live; the old Alberta EPCOR gas entry was a registration mistake and is retired, with its history kept. A price that follows a market is stored without a number ("Variable"), never a made-up value.
-- Batch 12, Ontario: PUC Distribution is now set up, with a note on each record that its approved tariff prints no transmission connection rate, so all 47 active Ontario distributors are live (490 records). Large demand classes now carry a "Market Energy" line with no number; Algoma's R2 does not, because accounts for homes stay eligible for the Regulated Price Plan. Totals after batch 12: 910 latest live tariffs, 916 stored live versions, 3,616 snapshots (prior snapshots unchanged), 1,574 passing tests; validation shows 0 errors and the 2 old AESO warnings. Still in progress and not published: the real IESO price model, website wording and charge-display fixes, a live/estimate count after each scrape, and the first representative-model pieces (waiting for review).
+- Batch 12, Ontario: PUC Distribution is now set up, with a note on each record that its approved tariff prints no transmission connection rate, so all 47 active Ontario distributors are live (490 records). Large demand classes now carry a "Market Energy" line with no number; Algoma's R2 does not, because accounts for homes stay eligible for the Regulated Price Plan. Totals after batch 12: 910 latest live tariffs, 916 stored live versions, 3,616 snapshots (prior snapshots unchanged); validation shows 0 errors and the 2 old AESO warnings; 1,638 passing tests once the representative models were added. Since published: the live/estimate count after each scrape, and the Ontario representative models (Phase 7A/7B; rebuilt at every export, not shown on the website yet). Still in progress and not published: the real IESO price model (Phase 6A) and website wording and charge-display fixes.
 - Test comparison locally with `python -m http.server --directory site 8000`: add two cards, open **Compare**, remove/replace either, and check the mobile horizontal table. It never calculates a bill total.
 - Every successful stored scrape appends `historical_snapshots`. Canonical hashes ignore component ordering but change for values, units, tiers, dates, or structure; old effective-date versions are never deleted.
 - The October 1 SaskPower batches parse 41 live tariffs, including completed reference-only classes. Building scope includes standard, bulk-metered and diesel residential service and R23/R24 renewable access. Standard E01/E03 keeps its identity only when both published columns agree; bulk fixed charges are per unit, not per account. Maintain this coverage; the four provincial gas utilities that were seed-only now have live parsers (October 5), so the next work is the recorded catalogue gaps. See [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).

@@ -14089,3 +14089,1016 @@ def test_ops_main_all_live_run_keeps_the_existing_box_and_survives_an_unwritable
     ]
     assert "Could not append the run summary to GITHUB_STEP_SUMMARY" in caplog.text
     assert list(tmp_path.iterdir()) == []
+
+
+# ======================================================================
+# Representative models 7A crosswalk and usage levels (batch 12)
+# ======================================================================
+from pipeline.representative_models import DEMAND_BOUNDS as RM7A_DEMAND_BOUNDS, bands_for_demand as RM7A_bands_for_demand, coverage_report as RM7A_coverage_report, latest_live_records as RM7A_latest_live_records, load_crosswalk as RM7A_load_crosswalk, load_rates as RM7A_load_rates, load_usage_levels as RM7A_load_usage_levels, main as RM7A_main, match_record as RM7A_match_record, model_keys as RM7A_model_keys, rule_matches as RM7A_rule_matches
+import copy
+import json
+import re
+from pathlib import Path
+
+
+RM7A_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "rm_records_sample.json"
+RM7A_B12_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "rm_records_b12.json"
+RM7A_MODELS = Path(__file__).resolve().parents[1] / "data" / "models"
+RM7A_CROSSWALK = RM7A_MODELS / "crosswalk.json"
+RM7A_USAGE_LEVELS = RM7A_MODELS / "usage_levels.json"
+RM7A_FIXTURE_FIELDS = {"utility_name", "province", "utility_type", "name", "tariff_code", "customer_class", "sub_class",
+                  "demand_min_kw", "demand_max_kw", "rate_structure", "effective_date", "provenance", "eligibility"}
+RM7A_RULE_KEYS = {"id", "utility", "province", "fuel", "match", "zone", "model", "exclude", "note"}
+RM7A_MATCH_KEYS = {"tariff_code", "tariff_code_regex", "name_regex", "customer_class", "rate_structure"}
+RM7A_GAS_BAND_RE = re.compile(r"annual_volume:\d+-\d*:(GJ|m3)")
+SMALL, MEDIUM, LARGE, XLARGE = "commercial_small", "commercial_medium", "commercial_large", "commercial_xlarge"
+RM7A_AB_ELECTRICITY = {"ENMAX Power", "ATCO Electric", "EPCOR Distribution", "FortisAlberta",
+                  "Direct Energy Regulated Services", "ENMAX Energy Corporation", "EPCOR Energy Alberta"}
+RM7A_ON_AB_GAS = {"Enbridge Gas", "EPCOR Natural Gas (Ontario)", "ATCO Gas"}
+
+
+def RM7A__records():
+    return RM7A_load_rates(RM7A_FIXTURE)
+
+
+def RM7A__b12_records():
+    return RM7A_load_rates(RM7A_B12_FIXTURE)
+
+
+def RM7A__on(code, cls="residential", lo=None, hi=None, utility="PUC Distribution Inc.", name="Synthetic"):
+    return {"utility_name": utility, "province": "ON", "utility_type": "electricity", "name": name,
+            "tariff_code": code, "customer_class": cls, "demand_min_kw": lo, "demand_max_kw": hi,
+            "provenance": "live", "effective_date": "2026-01-01"}
+
+
+def RM7A__rule(rid, utility="*", code=None, regex=None, model=None, exclude=None, zone=None):
+    match = {"tariff_code": code} if code is not None else {"tariff_code_regex": regex}
+    return {"id": rid, "utility": utility, "province": "ON", "fuel": "electricity", "match": match, "zone": zone,
+            "model": model, "exclude": exclude, "note": ""}
+
+
+def test_rm7a_fixture_is_a_frozen_reduced_snapshot_of_latest_live_records():
+    data = json.loads(RM7A_FIXTURE.read_text(encoding="utf-8"))
+    records = data["records"]
+    assert data["count"] == len(records) == 836
+    assert all(set(r) == RM7A_FIXTURE_FIELDS for r in records)
+    assert all(r["provenance"] == "live" for r in records)
+    assert all(r["eligibility"] is None or len(r["eligibility"]) <= 200 for r in records)
+    assert len(RM7A_latest_live_records(records)) == len(records)
+
+
+def test_rm7a_every_sample_record_is_mapped_or_excluded():
+    report = RM7A_coverage_report(RM7A__records(), RM7A_load_crosswalk(RM7A_CROSSWALK))
+    assert report["unmapped"] == []
+    totals = report["totals"]
+    assert totals["mapped"] + totals["excluded"] == totals["records"] == 836
+    assert all(u["unmapped"] == 0 for u in report["by_utility"].values())
+
+
+def test_rm7a_report_surfaces_every_conflicting_multi_rule_match_and_first_rule_wins():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    rules = crosswalk["rules"]
+    expected = {}
+    for record in RM7A__records():
+        hits = [r for r in rules if RM7A_rule_matches(r, record)]
+        outcomes = {json.dumps([r["model"], r["exclude"], r["zone"] or ("default" if r["model"] else None)],
+                               sort_keys=True) for r in hits}
+        if len(outcomes) > 1:
+            expected[(record["utility_name"], record["tariff_code"], record["name"])] = hits[0]["id"]
+    report = RM7A_coverage_report(RM7A__records(), crosswalk)
+    surfaced = {(c["utility_name"], c["tariff_code"], c["name"]): c["winning_rule"] for c in report["conflicts"]}
+    assert surfaced == expected
+    specific = {r["id"] for r in rules if r["utility"] != "*"}
+    assert set(surfaced.values()) <= specific | {"on-res-seasonal"}
+
+
+def test_rm7a_all_46_ontario_default_rpp_records_map_to_residential_structures():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    records = [r for r in RM7A__records() if r["province"] == "ON"]
+    assert len({r["utility_name"] for r in records}) == 46
+    for code, structure in (("TOU-R", "tou"), ("TIER-R", "tiered"), ("ULO-R", "ulo")):
+        hits = [r for r in records if r["tariff_code"] == code]
+        assert len({r["utility_name"] for r in hits}) == len(hits) == 46
+        for record in hits:
+            outcome = RM7A_match_record(record, crosswalk)
+            assert outcome["model"] == {"province": "ON", "fuel": "electricity", "sector": "residential",
+                                        "structure": structure, "size_band": None}, record["utility_name"]
+            assert outcome["zone"] == "default"
+
+
+def test_rm7a_territorial_records_are_excluded_for_later_models():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    territorial = [r for r in RM7A__records() if r["province"] in ("YT", "NT", "NU")]
+    assert len(territorial) == 109
+    for record in territorial:
+        outcome = RM7A_match_record(record, crosswalk)
+        assert outcome["model"] is None and outcome["exclude"] == "territory_planned_later"
+
+
+def test_rm7a_first_matching_rule_wins():
+    specific = RM7A__rule("specific", utility="Algoma Power Inc.", code="TOU-R", exclude="pilot")
+    generic = RM7A__rule("generic", code="TOU-R", model={"sector": "residential", "structure": "tou", "size_band": None})
+    crosswalk = {"rules": [specific, generic]}
+    assert RM7A_match_record(RM7A__on("TOU-R", utility="Algoma Power Inc."), crosswalk)["rule_id"] == "specific"
+    assert RM7A_match_record(RM7A__on("TOU-R"), crosswalk)["rule_id"] == "generic"
+    assert RM7A_match_record(RM7A__on("TOU-R", utility="Algoma Power Inc."), {"rules": [generic, specific]})["rule_id"] == "generic"
+
+
+def test_rm7a_regexes_match_the_whole_string_only():
+    loose = RM7A__rule("loose", regex="TOU-R", model={"sector": "residential", "structure": "tou", "size_band": None})
+    crosswalk = {"rules": [loose]}
+    assert RM7A_match_record(RM7A__on("TOU-R"), crosswalk)["rule_id"] == "loose"
+    for code in ("XTOU-R", "TOU-R-BRAMPTON", "TOU-RX", None):
+        assert RM7A_match_record(RM7A__on(code), crosswalk)["rule_id"] is None
+    real = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    for code in ("XTOU-R", "TOU-R-", "tou-r", "GS 50-4,999 kWh", "LU "):
+        assert RM7A_match_record(RM7A__on(code, cls="residential" if "R" in (code or "") else "commercial"), real)["rule_id"] is None
+    for rule in real["rules"]:
+        for key in ("tariff_code_regex", "name_regex"):
+            if key in rule["match"]:
+                assert rule["match"][key].startswith("^") and rule["match"][key].endswith("$"), rule["id"]
+
+
+def test_rm7a_ontario_zone_tagging_and_new_distributors_need_no_new_rules():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    cases = [
+        (RM7A__on("TOU-R"), "default", ("residential", "tou", None)),
+        (RM7A__on("ULO-R-SAULT-STE-MARIE"), "other", ("residential", "ulo", None)),
+        (RM7A__on("GS-TIER-S", cls="commercial", hi=50), "default", ("commercial", "tiered", [SMALL])),
+        (RM7A__on("GS-TOU-S-ZONE", cls="commercial", hi=50), "other", ("commercial", "tou", [SMALL])),
+        (RM7A__on("GS 50-4,999 kW", cls="commercial", lo=50, hi=5000), "default", ("commercial", "demand", [MEDIUM, LARGE])),
+        (RM7A__on("GS 50-4,999 kW-ZONE", cls="commercial", lo=50, hi=5000), "other", ("commercial", "demand", [MEDIUM, LARGE])),
+        (RM7A__on("LU", cls="industrial", lo=5000), "default", ("commercial", "demand", [XLARGE])),
+        (RM7A__on("LU-ZONE", cls="industrial", lo=5000), "other", ("commercial", "demand", [XLARGE])),
+        (RM7A__on("GSd", cls="commercial", lo=50, utility="Hydro One Networks Inc."), "default",
+         ("commercial", "demand", [MEDIUM, LARGE, XLARGE])),
+        (RM7A__on("UGd", cls="commercial", lo=50, utility="Hydro One Networks Inc."), "other",
+         ("commercial", "demand", [MEDIUM, LARGE, XLARGE])),
+        (RM7A__on("TOU-R-R2", utility="Hydro One Networks Inc."), "other", ("residential", "tou", None)),
+    ]
+    for record, zone, (sector, structure, bands) in cases:
+        outcome = RM7A_match_record(record, crosswalk)
+        assert outcome["zone"] == zone, record["tariff_code"]
+        model = outcome["model"]
+        assert (model["sector"], model["structure"], model["size_band"]) == (sector, structure, bands)
+    assert RM7A_match_record(RM7A__on("TOU-R-SEASONAL"), crosswalk)["exclude"] == "seasonal_property"
+    assert RM7A_match_record(RM7A__on("TIER-R-VERIDIAN-SEASONAL"), crosswalk)["exclude"] == "seasonal_property"
+
+
+def test_rm7a_reviewed_ontario_judgement_mappings():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    by_code = {(r["utility_name"], r["tariff_code"]): RM7A_match_record(r, crosswalk) for r in RM7A__records()}
+    assert by_code[("Hydro One Networks Inc.", "TOU-R")]["rule_id"] == "on-hydroone-tou-r-r1-default"
+    assert by_code[("Hydro One Networks Inc.", "ST")]["exclude"] == "supply_voltage_alternative"
+    assert by_code[("Algoma Power Inc.", "R2 50+ kW")]["exclude"] == "residential_large_demand"
+    assert by_code[("Algoma Power Inc.", "TOU-R-R1-II-O-REG-445-07")]["exclude"] == "duplicate_variant"
+    assert by_code[("Toronto Hydro-Electric System Ltd.", "TOU-R-COMPETITIVE-SECTOR-MULTI-UNIT-RESIDENTIAL")][
+        "exclude"] == "duplicate_variant"
+    assert by_code[("Bluewater Power Distribution", "GS 50-999 kW")]["model"]["size_band"] == [MEDIUM]
+    assert by_code[("Bluewater Power Distribution", "GS 1,000-4,999 kW")]["model"]["size_band"] == [LARGE]
+    assert by_code[("Enwin Utilities Ltd.", "LARGE-USE-REGULAR")]["model"]["size_band"] == [XLARGE]
+
+
+def test_rm7a_demand_bounds_resolve_to_size_bands():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    cases = [((None, 50), [SMALL]), ((50, 5000), [MEDIUM, LARGE]), ((50, 1000), [MEDIUM]), ((50, 500), [MEDIUM]),
+             ((1000, 5000), [LARGE]), ((500, 1500), [LARGE]), ((3000, 5000), [LARGE]), ((1500, 4999), [LARGE]),
+             ((5000, None), [XLARGE]), ((3000, None), [XLARGE]), ((50, None), [MEDIUM, LARGE, XLARGE]),
+             ((1000, None), [LARGE, XLARGE])]
+    for (lo, hi), bands in cases:
+        assert RM7A_bands_for_demand(lo, hi, crosswalk) == bands, (lo, hi)
+    record = RM7A__on("GS 50-999 kW", cls="commercial", lo=50, hi=1000)
+    rule = RM7A__rule("r", regex=r"^GS .+$", model={"sector": "commercial", "structure": "demand", "size_band": RM7A_DEMAND_BOUNDS})
+    assert RM7A_match_record(record, {**crosswalk, "rules": [rule]})["model"]["size_band"] == [MEDIUM]
+
+
+def test_rm7a_usage_levels_hold_the_approved_values():
+    levels = RM7A_load_usage_levels(RM7A_USAGE_LEVELS)
+    assert levels["version"] == 1
+    assert levels["days_per_month"] == 30.4375
+    assert levels["power_factor_for_kva"] == 0.9
+    assert levels["electricity"] == {
+        "residential": [{"id": "low", "kwh": 500}, {"id": "typical", "kwh": 1000}, {"id": "high", "kwh": 2000}],
+        "commercial_small": [{"id": "s1", "kwh": 2000, "kw": 10}, {"id": "s2", "kwh": 8000, "kw": 25}],
+        "commercial_medium": [{"id": "m1", "kwh": 40000, "kw": 100}],
+        "commercial_large": [{"id": "l1", "kwh": 500000, "kw": 1000}],
+        "commercial_xlarge": [],
+    }
+    assert "Phase 7D" in levels["gas"]["note"]
+    shares = levels["tou_shares"]
+    assert shares["ON_RPP_TOU"]["shares"] == {"off-peak": 0.64, "mid-peak": 0.18, "on-peak": 0.18}
+    assert shares["ON_RPP_ULO"]["shares"] == {"ultra-low-overnight": 0.40, "off-peak": 0.20, "mid-peak": 0.27,
+                                              "on-peak": 0.13}
+    for key, entry in shares.items():
+        if isinstance(entry, dict) and entry["shares"] is not None:
+            assert abs(sum(entry["shares"].values()) - 1.0) < 1e-9, key
+            assert entry["source"]["url"].startswith("https://www.oeb.ca/")
+    season = levels["seasons"]["ON_RPP"]
+    assert (season["winter"]["residential_tier_threshold_kwh"], season["summer"]["residential_tier_threshold_kwh"]) == (
+        1000, 600)
+    assert season["winter"]["non_residential_tier_threshold_kwh"] == season["summer"][
+        "non_residential_tier_threshold_kwh"] == 750
+    assert sorted(season["winter"]["months"] + season["summer"]["months"]) == list(range(1, 13))
+    assert levels["basis"]
+
+
+def test_rm7a_size_band_reference_loads_match_usage_levels():
+    bands = RM7A_load_crosswalk(RM7A_CROSSWALK)["vocabulary"]["size_bands"]
+    electricity = RM7A_load_usage_levels(RM7A_USAGE_LEVELS)["electricity"]
+    assert list(bands) == [SMALL, MEDIUM, LARGE, XLARGE]
+    for band in (SMALL, MEDIUM, LARGE):
+        assert sorted(bands[band]["reference_kw"]) == sorted(level["kw"] for level in electricity[band])
+        assert all(bands[band]["min_kw"] <= kw < bands[band]["max_kw"] for kw in bands[band]["reference_kw"])
+    assert electricity[XLARGE] == [] and bands[XLARGE]["max_kw"] is None
+
+
+def test_rm7a_crosswalk_rules_follow_the_schema():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    vocab = crosswalk["vocabulary"]
+    rules = crosswalk["rules"]
+    ids = [r["id"] for r in rules]
+    assert len(ids) == len(set(ids))
+    for rule in rules:
+        assert set(rule) == RM7A_RULE_KEYS, rule["id"]
+        assert (rule["model"] is None) != (rule["exclude"] is None), rule["id"]
+        assert set(rule["match"]) <= RM7A_MATCH_KEYS and rule["fuel"] in ("electricity", "gas", None)
+        assert rule["zone"] in ("default", "other", None) and rule["note"] is not None
+        for key in ("tariff_code_regex", "name_regex"):
+            if key in rule["match"]:
+                re.compile(rule["match"][key])
+        if rule["exclude"]:
+            assert rule["exclude"] in vocab["exclusions"], rule["id"]
+            continue
+        model = rule["model"]
+        assert model["sector"] in vocab["sectors"] and model["structure"] in vocab["structures"], rule["id"]
+        band = model["size_band"]
+        if model["sector"] == "residential":
+            assert band is None, rule["id"]
+        elif band != RM7A_DEMAND_BOUNDS and band is not None:
+            assert all(b in vocab["size_bands"] or RM7A_GAS_BAND_RE.fullmatch(b) for b in band), rule["id"]
+    for province in {r["province"] for r in rules}:
+        order = [i for i, r in enumerate(rules) if r["province"] == province]
+        specific = [i for i in order if rules[i]["utility"] != "*"]
+        generic = [i for i in order if rules[i]["utility"] == "*"]
+        assert not specific or not generic or max(specific) < min(generic), province
+
+
+def test_rm7a_latest_live_records_follow_the_site_dedupe():
+    base = {"utility_name": "U", "name": "N", "customer_class": "residential"}
+    old_live = {**base, "effective_date": "2025-01-01", "provenance": "live", "tag": "old"}
+    new_live = {**base, "effective_date": "2026-01-01", "provenance": "live", "tag": "new"}
+    new_seed = {**base, "effective_date": "2027-01-01", "provenance": "seed"}
+    other_class = {**base, "customer_class": "commercial", "effective_date": "2020-01-01", "provenance": "live"}
+    assert [r["tag"] for r in RM7A_latest_live_records([old_live, new_live])] == ["new"]
+    assert RM7A_latest_live_records([old_live, new_live, new_seed]) == []
+    assert len(RM7A_latest_live_records([new_live, other_class])) == 2
+    tie = {**new_live, "tag": "tie"}
+    assert [r["tag"] for r in RM7A_latest_live_records([new_live, tie])] == ["new"]
+
+
+def test_rm7a_match_record_never_raises():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    unmapped = {"rule_id": None, "model": None, "exclude": None, "zone": None}
+    assert RM7A_match_record({}, crosswalk) == unmapped
+    assert RM7A_match_record({"tariff_code": None, "name": None, "province": None}, crosswalk) == unmapped
+    assert RM7A_match_record(None, crosswalk) == unmapped
+    assert RM7A_match_record(RM7A__on("TOU-R"), {}) == unmapped
+    bad = {"rules": [RM7A__rule("bad-regex", regex="(", exclude="pilot"),
+                     {"id": "bad-key", "utility": "*", "match": {"tarif_code": "TOU-R"}, "exclude": "pilot"},
+                     {"id": "bad-match", "utility": "*", "match": ["TOU-R"], "exclude": "pilot"}]}
+    assert RM7A_match_record(RM7A__on("TOU-R"), bad) == unmapped
+
+
+def test_rm7a_model_keys_expand_size_band_lists():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    rate_m = next(r for r in RM7A__records() if r["utility_name"] == "Hydro-Québec" and r["tariff_code"] == "M")
+    assert RM7A_model_keys(RM7A_match_record(rate_m, crosswalk)) == [
+        ("QC", "electricity", "commercial", "demand", MEDIUM), ("QC", "electricity", "commercial", "demand", LARGE)]
+    assert RM7A_model_keys(RM7A_match_record(RM7A__on("TOU-R"), crosswalk)) == [("ON", "electricity", "residential", "tou", None)]
+    assert RM7A_model_keys(RM7A_match_record(RM7A__on("TOU-R-SEASONAL"), crosswalk)) == []
+
+
+def test_rm7a_new_utilities_are_unmapped_until_a_rule_is_appended():
+    crosswalk = copy.deepcopy(RM7A_load_crosswalk(RM7A_CROSSWALK))
+    record = {"utility_name": "Apex Utilities", "province": "AB", "utility_type": "gas", "name": "Rate 1",
+              "tariff_code": "1", "customer_class": "residential", "provenance": "live", "effective_date": "2026-10-01"}
+    assert RM7A_coverage_report([record], crosswalk)["unmapped"] == [
+        {"utility_name": "Apex Utilities", "province": "AB", "tariff_code": "1", "name": "Rate 1",
+         "customer_class": "residential"}]
+    first_territory = next(i for i, r in enumerate(crosswalk["rules"]) if r["id"].startswith("territory-"))
+    crosswalk["rules"].insert(first_territory, {
+        "id": "ab-apex-utilities", "utility": "Apex Utilities", "province": "AB", "fuel": "gas", "match": {},
+        "zone": None, "model": None, "exclude": "gas_models_phase_7d", "note": ""})
+    assert RM7A_match_record(record, crosswalk)["rule_id"] == "ab-apex-utilities"
+
+
+def test_rm7a_batch12_fixture_is_a_frozen_reduced_snapshot():
+    data = json.loads(RM7A_B12_FIXTURE.read_text(encoding="utf-8"))
+    records = data["records"]
+    assert data["count"] == len(records) == 75 and set(data["fields"]) == RM7A_FIXTURE_FIELDS
+    assert all(set(r) == RM7A_FIXTURE_FIELDS and r["provenance"] == "live" for r in records)
+    assert len(RM7A_latest_live_records(records)) == len(records)
+    utilities = {r["utility_name"] for r in records}
+    assert utilities == RM7A_AB_ELECTRICITY | RM7A_ON_AB_GAS | {"PUC Distribution Inc."}
+
+
+def test_rm7a_batch12_alberta_and_gas_records_are_excluded_with_reasons():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    seen = set()
+    for record in RM7A__b12_records():
+        outcome = RM7A_match_record(record, crosswalk)
+        name = record["utility_name"]
+        if name in RM7A_AB_ELECTRICITY:
+            assert record["province"] == "AB" and record["utility_type"] == "electricity"
+            assert (outcome["model"], outcome["exclude"]) == (None, "province_not_modelled_yet_7c"), record["name"]
+        elif name in RM7A_ON_AB_GAS:
+            assert record["utility_type"] == "gas"
+            assert (outcome["model"], outcome["exclude"]) == (None, "gas_models_phase_7d"), record["name"]
+        else:
+            continue
+        assert outcome["rule_id"].startswith(("ab-", "on-")) and outcome["zone"] is None
+        seen.add(name)
+    assert seen == RM7A_AB_ELECTRICITY | RM7A_ON_AB_GAS
+    vocabulary = crosswalk["vocabulary"]["exclusions"]
+    assert "Phase 7C" in vocabulary["province_not_modelled_yet_7c"]
+    assert "Phase 7D" in vocabulary["gas_models_phase_7d"]
+
+
+def test_rm7a_puc_distribution_maps_through_the_generic_ontario_rules():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    puc = {r["tariff_code"]: RM7A_match_record(r, crosswalk) for r in RM7A__b12_records()
+           if r["utility_name"] == "PUC Distribution Inc."}
+    expected = {"TOU-R": ("residential", "tou", None), "TIER-R": ("residential", "tiered", None),
+                "ULO-R": ("residential", "ulo", None), "GS-TOU-S": ("commercial", "tou", [SMALL]),
+                "GS-TIER-S": ("commercial", "tiered", [SMALL]), "GS-ULO-S": ("commercial", "ulo", [SMALL]),
+                "GS 50-4,999 kW": ("commercial", "demand", [MEDIUM, LARGE])}
+    assert set(puc) == set(expected)
+    for code, (sector, structure, bands) in expected.items():
+        outcome = puc[code]
+        model = outcome["model"]
+        assert (model["sector"], model["structure"], model["size_band"]) == (sector, structure, bands), code
+        assert outcome["zone"] == "default" and outcome["rule_id"].startswith("on-") and "puc" not in outcome["rule_id"]
+
+
+def test_rm7a_frozen_samples_together_leave_nothing_unmapped():
+    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
+    report = RM7A_coverage_report(RM7A__records() + RM7A__b12_records(), crosswalk)
+    assert report["unmapped"] == [] and report["unused_rules"] == []
+    assert report["totals"]["records"] == 910 and report["totals"]["utilities"] == 77
+    assert report["by_province"]["AB"] == {"excluded": 38}
+    assert report["exclusions"]["province_not_modelled_yet_7c"] == 28
+    assert report["exclusions"]["gas_models_phase_7d"] == 40
+    assert all(key.split("|")[0] != "AB" for key in report["model_keys"])
+
+
+def test_rm7a_cli_prints_coverage_for_the_fixture(capsys):
+    assert RM7A_main(["--coverage", "--rates", str(RM7A_FIXTURE), "--crosswalk", str(RM7A_CROSSWALK)]) == 0
+    out = capsys.readouterr().out
+    assert "unmapped 0" in out and "ON|electricity|residential|tou|-" in out
+
+
+# ======================================================================
+# Representative models 7B engine, reference customer and export hook (batch 12)
+# ======================================================================
+from pipeline.representative_models import _note_body as RM7B__note_body, apply_tax_lines as RM7B_apply_tax_lines, build_models as RM7B_build_models, closest_to_median as RM7B_closest_to_median, component_exclusion as RM7B_component_exclusion, find_outliers as RM7B_find_outliers, load_crosswalk as RM7B_load_crosswalk, load_taxes as RM7B_load_taxes, load_usage_levels as RM7B_load_usage_levels, main as RM7B_main, months_from_text as RM7B_months_from_text, record_covers_level as RM7B_record_covers_level, record_monthly_cost as RM7B_record_monthly_cost, reference_customer_entries as RM7B_reference_customer_entries, reference_customer_match as RM7B_reference_customer_match, summary_stats as RM7B_summary_stats, tax_lines as RM7B_tax_lines
+import copy
+import json
+import logging
+import re
+from pathlib import Path
+
+import pytest
+
+
+RM7B_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "rm_engine_sample.json"
+RM7B_ROOT = Path(__file__).resolve().parents[1]
+RM7B_AS_OF = "2026-10-09"
+RM7B_DPM = 365.25 / 12
+RM7B_RES_TOU = "ON|electricity|residential|tou|-"
+RM7B_RES_TIER = "ON|electricity|residential|tiered|-"
+RM7B_RES_ULO = "ON|electricity|residential|ulo|-"
+RM7B_SMALL_TOU = "ON|electricity|commercial|tou|commercial_small"
+RM7B_MEDIUM = "ON|electricity|commercial|demand|commercial_medium"
+RM7B_LARGE = "ON|electricity|commercial|demand|commercial_large"
+RM7B_XLARGE = "ON|electricity|commercial|demand|commercial_xlarge"
+RM7B_STATES = {"modeled", "single_source", "market_energy_pending", "not_computable"}
+RM7B_MARKET_NOTE = ("Provenance: live_parsed. The hourly Ontario Electricity Market Price replaced the HOEP on May 1, 2025. "
+               "Conditional: Class A customers instead pay Global Adjustment by their peak demand factor.")
+RM7B_SECTORS = ("residential", "commercial_small", "commercial_medium", "commercial_large", "commercial_xlarge")
+RM7B_DEMAND_SECTORS = ("commercial_medium", "commercial_large", "commercial_xlarge")
+CBR, GA, NON_WMP, SSS = "on-class-b-cbr", "on-non-rpp-class-b-ga", "on-non-wmp-riders", "on-sss-admin"
+
+
+def RM7B__fx():
+    return json.loads(RM7B_FIXTURE.read_text(encoding="utf-8"))
+
+
+def RM7B__ul():
+    return RM7B__fx()["usage_levels"]
+
+
+def RM7B__strict_ul():
+    return {k: v for k, v in RM7B__ul().items() if k != "reference_customer"}
+
+
+def RM7B__c(ctype, value, unit, name=None, **extra):
+    comp = {"component_type": ctype, "component_name": name or f"{ctype} {unit}", "charge_value": value,
+            "charge_unit": unit, "notes": "Provenance: live_parsed. "}
+    comp.update(extra)
+    return comp
+
+
+def RM7B__tou(off=0.098, mid=0.157, on=0.203):
+    return [RM7B__c("energy", off, "$/kWh", "Off-Peak Energy", tou_period="off-peak"),
+            RM7B__c("energy", mid, "$/kWh", "Mid-Peak Energy", tou_period="mid-peak"),
+            RM7B__c("energy", on, "$/kWh", "On-Peak Energy", tou_period="on-peak")]
+
+
+def RM7B__rec(components, utility="Synthetic Hydro", code="TOU-R", cls="residential", structure="tou", lo=None, hi=None,
+         rid=1, province="ON"):
+    return {"id": rid, "utility_name": utility, "province": province, "utility_type": "electricity",
+            "name": f"{utility} {code}", "tariff_code": code, "customer_class": cls, "rate_structure": structure,
+            "demand_min_kw": lo, "demand_max_kw": hi, "effective_date": "2026-01-01", "provenance": "live",
+            "source_url": "https://example.org/tariff.pdf", "components": components}
+
+
+def RM7B__cost(record, kwh, kw=None, sector="residential", structure="tou"):
+    return RM7B_record_monthly_cost(record, kwh, kw, sector=sector, structure=structure, usage_levels=RM7B__ul(), as_of=RM7B_AS_OF)
+
+
+def RM7B__build(records, zone_policy="median_of_zones", fixture=None):
+    fx = fixture or RM7B__fx()
+    return RM7B_build_models(records, fx["crosswalk"], fx["usage_levels"], fx["taxes"], as_of=RM7B_AS_OF, zone_policy=zone_policy)
+
+
+def RM7B__model(result, model_id):
+    return next(m for m in result["models"] if m["id"] == model_id)
+
+
+def RM7B__level(model, level_id):
+    return next(lv for lv in model["levels"] if lv["id"] == level_id)
+
+
+def RM7B__seasonal_tiers(threshold_winter=1000.0, threshold_summer=600.0):
+    comps = []
+    for season, text, threshold in (("winter", "November 1 - April 30", threshold_winter),
+                                    ("summer", "May 1 - October 31", threshold_summer)):
+        for tier, price in ((1, 0.12), (2, 0.142)):
+            comps.append(RM7B__c("energy", price, "$/kWh", f"Tier {tier} Energy ({season})", tier_number=tier,
+                            tier_threshold=threshold, tier_unit="kWh/month", season=season, season_months=text))
+    return comps
+
+
+def test_rm7b_fixed_charges_convert_daily_30_day_and_yearly_units_to_months():
+    rec = RM7B__rec([RM7B__c("fixed", 10.0, "$/month"), RM7B__c("fixed", 1.0, "$/day"), RM7B__c("fixed", 30.0, "$/30 days"),
+                RM7B__c("rider", 120.0, "$/year")], structure="flat")
+    res = RM7B__cost(rec, 0, structure="flat")
+    assert res["status"] == "ok" and res["energy_status"] == "absent"
+    assert res["cost"] == pytest.approx(10 + RM7B_DPM + 30 * RM7B_DPM / 30 + 10)
+
+
+def test_rm7b_demand_units_kw_kva_per_day_and_per_30_days():
+    comps = [RM7B__c("demand", 2.0, "$/kW"), RM7B__c("demand", 0.9, "$/kVA"), RM7B__c("demand", 0.1, "$/kW/day"),
+             RM7B__c("transmission", 3.0, "$/kW", notes="Provenance: live_parsed. Published per 30 days"),
+             RM7B__c("rider", 1.0, "$/kVA/month")]
+    rec = RM7B__rec(comps, code="GS 50-999 kW", cls="commercial", structure="demand", lo=50, hi=1000)
+    res = RM7B__cost(rec, 40000, 100, sector="commercial_medium", structure="demand")
+    assert res["status"] == "ok"
+    assert res["cost"] == pytest.approx(200 + 0.9 * 100 / 0.9 + 0.1 * RM7B_DPM * 100 + 3 * 100 * RM7B_DPM / 30 + 100 / 0.9)
+    conversions = {text for item in res["items"] for text in item.get("conversions") or []}
+    assert "kVA = kW / 0.9" in conversions and "demand charge published per 30 days x 30.4375/30" in conversions
+
+
+def test_rm7b_energy_per_mwh_and_per_kwh_scale_with_usage():
+    rec = RM7B__rec([RM7B__c("energy", 50.0, "$/MWh"), RM7B__c("distribution", 0.01, "$/kWh")], structure="flat")
+    assert RM7B__cost(rec, 2000, structure="flat")["cost"] == pytest.approx(100 + 20)
+
+
+def test_rm7b_seasonal_tiers_use_each_seasons_threshold_and_month_weighting():
+    rec = RM7B__rec(RM7B__seasonal_tiers(), code="TIER-R", structure="tiered")
+    assert RM7B__cost(rec, 500, structure="tiered")["cost"] == pytest.approx(60.0)
+    assert RM7B__cost(rec, 1000, structure="tiered")["cost"] == pytest.approx((6 * 120 + 6 * (72 + 56.8)) / 12)
+    assert RM7B__cost(rec, 2000, structure="tiered")["cost"] == pytest.approx((6 * 262 + 6 * 270.8) / 12)
+
+
+def test_rm7b_all_year_tier_threshold():
+    comps = [RM7B__c("energy", 0.12, "$/kWh", "Tier 1", tier_number=1, tier_threshold=750.0, tier_unit="kWh/month"),
+             RM7B__c("energy", 0.142, "$/kWh", "Tier 2", tier_number=2, tier_threshold=750.0, tier_unit="kWh/month")]
+    rec = RM7B__rec(comps, code="GS-TIER-S", cls="commercial", structure="tiered", hi=50)
+    assert RM7B__cost(rec, 2000, 10, sector="commercial_small", structure="tiered")["cost"] == pytest.approx(267.5)
+
+
+def test_rm7b_ambiguous_tiers_and_partial_seasons_are_not_computable():
+    bad_unit = RM7B__rec([RM7B__c("energy", 0.1, "$/kWh", "T1", tier_number=1, tier_threshold=100.0, tier_unit="kWh per kW"),
+                     RM7B__c("energy", 0.2, "$/kWh", "T2", tier_number=2)], code="TIER-R", structure="tiered")
+    assert "not supported" in " ".join(RM7B__cost(bad_unit, 1000, structure="tiered")["reasons"])
+    winter_only = RM7B__rec(RM7B__seasonal_tiers()[:2], code="TIER-R", structure="tiered")
+    assert "each month exactly once" in " ".join(RM7B__cost(winter_only, 1000, structure="tiered")["reasons"])
+
+
+def test_rm7b_tou_and_ulo_energy_use_the_official_shares():
+    assert RM7B__cost(RM7B__rec(RM7B__tou()), 1000)["cost"] == pytest.approx(1000 * (0.64 * 0.098 + 0.18 * 0.157 + 0.18 * 0.203))
+    ulo = RM7B__tou(mid=0.157, on=0.391) + [RM7B__c("energy", 0.039, "$/kWh", "ULO", tou_period="ultra-low-overnight")]
+    expected = 1000 * (0.4 * 0.039 + 0.2 * 0.098 + 0.27 * 0.157 + 0.13 * 0.391)
+    assert RM7B__cost(RM7B__rec(ulo, code="ULO-R"), 1000, structure="ulo")["cost"] == pytest.approx(expected)
+
+
+def test_rm7b_tou_without_an_official_share_set_or_with_missing_periods_is_not_computable():
+    bc = RM7B__cost(RM7B__rec(RM7B__tou(), province="BC"), 1000)
+    assert bc["status"] == "not_computable" and "no official kWh share" in " ".join(bc["reasons"])
+    partial = RM7B__cost(RM7B__rec(RM7B__tou()[:2]), 1000)
+    assert "do not match the official share set" in " ".join(partial["reasons"])
+
+
+def test_rm7b_conditional_alternative_optional_expired_future_and_percentage_components_are_excluded():
+    comps = [
+        RM7B__c("fixed", 10.0, "$/month", "Service Charge"),
+        RM7B__c("regulatory", 0.0004, "$/kWh", "CBR", notes="Provenance: live_parsed. Conditional: Applies only to Class B customers"),
+        RM7B__c("rebate", -60.5, "$/month", "RRRP credit", sub_component="conditional_credit",
+           notes="Provenance: live_parsed. Conditional credit: qualifying year-round customers"),
+        RM7B__c("transmission", 0.01, "$/kWh", "Network Service Rate"),
+        RM7B__c("transmission", 0.002, "$/kWh", "Network Service Rate - EV CHARGING",
+           notes="Provenance: live_parsed. Conditional: Optional Electric Vehicle Charging (EVC) Rate alternative"),
+        RM7B__c("fixed", 5.0, "$/month", "Three Phase", notes="Provenance: live_parsed. Alternative: applies only to 'Three Phase' service."),
+        RM7B__c("rider", 1.0, "$/month", "Optional rider", sub_component="optional"),
+        RM7B__c("rider", 2.0, "$/month", "Expired rider", end_date="2026-06-30"),
+        RM7B__c("rider", 3.0, "$/month", "Future rider", effective_date="2027-01-01"),
+        RM7B__c("other", -1.0, "%", "Percentage adjustment"),
+    ]
+    res = RM7B__cost(RM7B__rec(comps, structure="flat"), 1000, structure="flat")
+    assert res["status"] == "ok"
+    # The Class B CBR charge is conditional but paid by the reference customer (reviewed list), so it is included.
+    assert res["cost"] == pytest.approx(10 + 0.01 * 1000 + 0.0004 * 1000)
+    reasons = {item["component"]: item.get("reason") for item in res["items"]}
+    assert reasons == {"Service Charge": None, "CBR": "reference_customer:on-class-b-cbr", "RRRP credit": "conditional",
+                       "Network Service Rate": None, "Network Service Rate - EV CHARGING": "alternative",
+                       "Three Phase": "alternative", "Optional rider": "optional", "Expired rider": "expired",
+                       "Future rider": "not_yet_effective", "Percentage adjustment": "percentage_base_not_computable"}
+    strict = RM7B_record_monthly_cost(RM7B__rec(comps, structure="flat"), 1000, sector="residential", structure="flat",
+                                 usage_levels=RM7B__strict_ul(), as_of=RM7B_AS_OF)
+    assert strict["cost"] == pytest.approx(10 + 0.01 * 1000)
+    assert {item["component"]: item.get("reason") for item in strict["items"]}["CBR"] == "conditional"
+
+
+def test_rm7b_market_note_with_a_later_conditional_sentence_is_not_conditional():
+    comp = RM7B__c("energy", None, "$/kWh", "Market Energy", market_reference="IESO OEMP + GA", notes=RM7B_MARKET_NOTE)
+    assert RM7B_component_exclusion(comp, RM7B_AS_OF) == "market_pending"
+
+
+def test_rm7b_charge_published_only_as_alternatives_makes_the_record_not_computable():
+    alt = "Provenance: live_parsed. Conditional: Alternative distribution rate by meter type: applies only to {}"
+    comps = [RM7B__c("fixed", 100.0, "$/month"),
+             RM7B__c("demand", 5.9, "$/kW", "Thermal", sub_component="distribution_volumetric", notes=alt.format("thermal")),
+             RM7B__c("demand", 6.1, "$/kW", "Interval", sub_component="distribution_volumetric", notes=alt.format("interval"))]
+    rec = RM7B__rec(comps, code="GS 50-4,999 kW", cls="commercial", structure="demand", lo=50, hi=5000)
+    res = RM7B__cost(rec, 40000, 100, sector="commercial_medium", structure="demand")
+    assert res["status"] == "not_computable" and res["cost"] is None
+    assert "only as conditional alternatives: Thermal; Interval" in " ".join(res["reasons"])
+
+
+def test_rm7b_valueless_market_energy_prices_delivery_only_and_marks_the_model_pending():
+    def demand(utility, rid, fixed):
+        comps = [RM7B__c("fixed", fixed, "$/month"), RM7B__c("demand", 5.0, "$/kW", sub_component="distribution_volumetric"),
+                 RM7B__c("energy", None, "$/kWh", "Market Energy", market_reference="IESO OEMP + GA", notes=RM7B_MARKET_NOTE)]
+        return RM7B__rec(comps, utility=utility, code="GS 50-4,999 kW", cls="commercial", structure="demand", lo=50,
+                    hi=5000, rid=rid)
+
+    res = RM7B__cost(demand("A Hydro", 1, 100.0), 40000, 100, sector="commercial_medium", structure="demand")
+    assert res["status"] == "ok" and res["energy_status"] == "market_pending"
+    assert res["cost"] == pytest.approx(600.0) and res["market_pending"] == ["Market Energy"]
+    model = RM7B__model(RM7B__build([demand("A Hydro", 1, 100.0), demand("B Hydro", 2, 300.0)]), RM7B_MEDIUM)
+    assert model["state"] == "market_energy_pending"
+    assert model["cost_basis"] == "delivery_only_market_energy_pending"
+    assert RM7B__level(model, "m1")["without_tax"]["median"] == 700.0
+    assert "market-priced energy is pending" in model["method"]
+
+
+def test_rm7b_valueless_non_market_components_and_unsupported_units_are_not_computable():
+    no_value = RM7B__cost(RM7B__rec([RM7B__c("fixed", 10.0, "$/month"), RM7B__c("rider", None, "$/month", "Unpriced")], structure="flat"),
+                     1000, structure="flat")
+    assert no_value["status"] == "not_computable" and "no published value: Unpriced" in " ".join(no_value["reasons"])
+    odd = RM7B__cost(RM7B__rec([RM7B__c("fixed", 10.0, "$/two months", "Bimonthly")], structure="flat"), 1000, structure="flat")
+    assert "unit not supported by the engine: Bimonthly" in " ".join(odd["reasons"])
+
+
+def test_rm7b_demand_charges_need_a_level_with_kw():
+    res = RM7B__cost(RM7B__rec([RM7B__c("demand", 5.0, "$/kW")], structure="flat"), 1000, None, structure="flat")
+    assert res["status"] == "not_computable" and "no kW" in " ".join(res["reasons"])
+
+
+def test_rm7b_months_from_season_texts():
+    assert RM7B_months_from_text("12,1,2,3") == [12, 1, 2, 3]
+    assert RM7B_months_from_text("Sep-Apr") == [9, 10, 11, 12, 1, 2, 3, 4]
+    assert RM7B_months_from_text("November 1 - April 30") == [11, 12, 1, 2, 3, 4]
+    assert RM7B_months_from_text("April 1 to November 1") == [4, 5, 6, 7, 8, 9, 10]
+    assert RM7B_months_from_text("Four billing periods from the one commencing nearest November 1") is None
+    assert RM7B_months_from_text(None) is None
+
+
+def test_rm7b_record_covers_level_uses_half_open_demand_bounds_and_usage_bounds():
+    gs = RM7B__rec([], code="GS 50-999 kW", cls="commercial", structure="demand", lo=50, hi=1000)
+    assert RM7B_record_covers_level(gs, 40000, 100) and not RM7B_record_covers_level(gs, 500000, 1000)
+    assert RM7B_record_covers_level(RM7B__rec([]), 1000, None)
+    annual = dict(RM7B__rec([], structure="flat"), usage_max=32000, usage_unit="kWh/12 months")
+    assert RM7B_record_covers_level(annual, 2000, None) and not RM7B_record_covers_level(annual, 3000, None)
+
+
+def test_rm7b_ontario_rebate_applies_when_either_threshold_is_met():
+    taxes = RM7B__fx()["taxes"]
+
+    def names(kwh, kw, sector="commercial_small"):
+        return [line["name"] for line in RM7B_tax_lines(taxes, "ON", "electricity", sector, kwh, kw, RM7B_AS_OF)[0]]
+
+    oer = "Ontario Electricity Rebate (OER)"
+    assert names(8000, 25) == ["HST", oer]
+    assert names(20000, 100, "commercial_medium") == ["HST", oer]
+    assert names(30000, 40, "commercial_medium") == ["HST", oer]
+    assert names(1000, None, "residential") == ["HST", oer]
+    applied, skipped = RM7B_tax_lines(taxes, "ON", "electricity", "commercial_medium", 40000, 100, RM7B_AS_OF)
+    assert [line["name"] for line in applied] == ["HST"]
+    assert skipped[0]["name"] == oer and "either test suffices" in skipped[0]["reason"]
+
+
+def test_rm7b_hst_is_charged_on_the_pre_rebate_amount_and_lines_never_compound():
+    applied, _ = RM7B_tax_lines(RM7B__fx()["taxes"], "ON", "electricity", "residential", 1000, None, RM7B_AS_OF)
+    total, amounts = RM7B_apply_tax_lines(100.0, 60.0, applied)
+    assert amounts == pytest.approx([13.0, 23.5]) and total == pytest.approx(89.5)
+    lines = [{"name": "HST", "kind": "sales_tax", "rate": 0.15, "base": "pre_tax_subtotal"},
+             {"name": "Energy rebate", "kind": "rebate", "rate": 0.10, "base": "energy_charge_subtotal"}]
+    total, amounts = RM7B_apply_tax_lines(100.0, 60.0, lines)
+    assert amounts == pytest.approx([15.0, 6.0]) and total == pytest.approx(109.0)
+
+
+def test_rm7b_tax_lines_respect_dates_sectors_and_unknown_bases():
+    line = {"name": "L", "kind": "sales_tax", "rate": 0.05, "base": "pre_tax_subtotal",
+            "eligibility": {"sectors": ["residential"]}, "effective_date": "2008-01-01", "end_date": None}
+    taxes = {"jurisdictions": {"XX": {"electricity": {"residential": [
+        line, dict(line, name="Future", effective_date="2027-01-01"), dict(line, name="Ended", end_date="2026-06-30"),
+        dict(line, name="Odd", base="gross_up")], "commercial": [line]}}}}
+    applied, skipped = RM7B_tax_lines(taxes, "XX", "electricity", "residential", 1000, None, RM7B_AS_OF)
+    assert [a["name"] for a in applied] == ["L"]
+    assert {s["name"]: s["reason"].split()[0] for s in skipped} == {"Future": "not", "Ended": "ended", "Odd": "unsupported"}
+    applied, skipped = RM7B_tax_lines(taxes, "XX", "electricity", "commercial_small", 1000, 10, RM7B_AS_OF)
+    assert applied == [] and "not eligible" in skipped[0]["reason"]
+
+
+def test_rm7b_summary_statistics_use_inclusive_quantiles():
+    assert RM7B_summary_stats([4, 1, 3, 2]) == {"median": 2.5, "n": 4, "min": 1.0, "p25": 1.75, "p75": 3.25, "max": 4.0}
+    assert RM7B_summary_stats([7]) == {"median": 7.0, "n": 1, "min": 7.0, "p25": 7.0, "p75": 7.0, "max": 7.0}
+    assert RM7B_summary_stats([])["n"] == 0 and RM7B_summary_stats([])["median"] is None
+
+
+def test_rm7b_outliers_by_percentage_or_iqr_with_signed_deviation():
+    found = RM7B_find_outliers({"A": 100.0, "B": 102.0, "C": 104.0, "D": 106.0, "E": 140.0})
+    assert [(o["utility"], o["deviation_pct"], o["rules"]) for o in found] == [
+        ("E", 34.6, ["more_than_30pct_from_median", "outside_1.5_iqr"])]
+    found = RM7B_find_outliers({"A": 100.0, "B": 101.0, "C": 102.0, "D": 103.0, "E": 120.0, "F": 60.0})
+    assert [(o["utility"], o["deviation_pct"], o["rules"]) for o in found] == [
+        ("F", -40.9, ["more_than_30pct_from_median", "outside_1.5_iqr"]), ("E", 18.2, ["outside_1.5_iqr"])]
+    assert RM7B_find_outliers({"A": 1.0, "B": 100.0}) == []
+
+
+def test_rm7b_closest_utility_ties_resolve_alphabetically():
+    assert RM7B_closest_to_median({"Beta": 90.0, "Alpha": 110.0}, 100.0) == "Alpha"
+    assert RM7B_closest_to_median({"Zed": 100.0, "Ann": 103.0, "Bob": 97.0}, 100.0) == "Zed"
+    assert RM7B_closest_to_median({}, None) is None
+
+
+def test_rm7b_zone_policies_on_a_synthetic_multi_zone_utility():
+    def res(utility, code, fixed, rid):
+        return RM7B__rec(RM7B__tou(0.1, 0.1, 0.1) + [RM7B__c("fixed", fixed, "$/month")], utility=utility, code=code, rid=rid)
+
+    records = [res("X Hydro", "TOU-R", 100.0, 1), res("X Hydro", "TOU-R-NORTH", 200.0, 2),
+               res("X Hydro", "TOU-R-SOUTH", 300.0, 3), res("Y Hydro", "TOU-R", 150.0, 4)]
+    zones = RM7B__level(RM7B__model(RM7B__build(records), RM7B_RES_TOU), "typical")
+    assert zones["without_tax"]["median"] == 275.0 and zones["closest_utility"]["utility"] == "X Hydro"
+    assert next(r for r in zones["utilities"] if r["utility"] == "X Hydro")["records"] == [1, 2, 3]
+    default = RM7B__model(RM7B__build(records, "default_only"), RM7B_RES_TOU)
+    assert RM7B__level(default, "typical")["without_tax"]["median"] == 225.0
+    skipped = [e["record_id"] for e in default["exclusions"] if e["scope"] == "record"]
+    assert skipped == [2, 3]
+    with pytest.raises(ValueError):
+        RM7B__build(records, "every_zone")
+
+
+def test_rm7b_single_source_state_and_method_text():
+    model = RM7B__model(RM7B__build([RM7B__rec(RM7B__tou() + [RM7B__c("fixed", 30.0, "$/month")], utility="Only Hydro")]), RM7B_RES_TOU)
+    assert model["state"] == "single_source" and model["provenance"] == "modeled"
+    assert model["method"].startswith("Modeled comparison indicator, not a tariff anyone is billed. Single source: "
+                                      "Only Hydro")
+    assert RM7B__level(model, "typical")["outliers"] == []
+
+
+def test_rm7b_fixture_is_a_frozen_ontario_sample_with_full_components():
+    fx = RM7B__fx()
+    records = fx["records"]
+    assert fx["count"] == len(records) == 36 and fx["as_of"] == RM7B_AS_OF
+    assert all(r["province"] == "ON" and r["provenance"] == "live" and r["components"] for r in records)
+    assert len({r["id"] for r in records}) == len(records)
+    assert {"crosswalk", "usage_levels", "taxes"} <= set(fx)
+
+
+def test_rm7b_fixture_burlington_tou_typical_matches_a_hand_calculation():
+    rec = next(r for r in RM7B__fx()["records"] if r["id"] == 2414)
+    fixed = 36.74 + 0.42 + 0.05 + 0.5
+    per_kwh = (0.0041 + 0.0015 + 0.0001 + 0.0124 + 0.0092) * 1000
+    reference = 0.25 + (0.0004 + 0.0003) * 1000  # SSS administration; Class B CBR charge and CBR rider
+    energy = 1000 * (0.64 * 0.098 + 0.18 * 0.157 + 0.18 * 0.203)
+    res = RM7B__cost(rec, 1000)
+    assert res["cost"] == pytest.approx(fixed + per_kwh + reference + energy) and round(res["cost"], 2) == 193.48
+    strict = RM7B_record_monthly_cost(rec, 1000, sector="residential", structure="tou", usage_levels=RM7B__strict_ul(), as_of=RM7B_AS_OF)
+    assert round(strict["cost"], 2) == 192.53
+    model = RM7B__model(RM7B__build(RM7B__fx()), RM7B_RES_TOU)
+    burlington = next(r for r in RM7B__level(model, "typical")["utilities"] if r["utility"] == "Burlington Hydro Inc.")
+    assert burlington["cost_with_tax"] == round((fixed + per_kwh + reference + energy) * (1 + 0.13 - 0.235), 2)
+
+
+def test_rm7b_fixture_exact_medians_median_of_zones():
+    # Reference-customer charges (CBR, SSS, non-WMP; GA riders at m1/l1) raise every median; the 7B-1 values
+    # were res TOU typical 196.84, GS<50 s2 1474.2, m1 1658.64 and l1 16368.3.
+    result = RM7B__build(RM7B__fx())
+    expected = {
+        (RM7B_RES_TOU, "low"): (7, 118.28, 105.86, "Newmarket-Tay Power Distribution Ltd."),
+        (RM7B_RES_TOU, "typical"): (7, 198.09, 177.29, "Newmarket-Tay Power Distribution Ltd."),
+        (RM7B_RES_TOU, "high"): (7, 357.71, 320.15, "Newmarket-Tay Power Distribution Ltd."),
+        (RM7B_RES_TIER, "typical"): (4, 196.95, 176.27, "Burlington Hydro Inc."),
+        (RM7B_RES_ULO, "typical"): (4, 200.97, 179.87, "Burlington Hydro Inc."),
+        (RM7B_SMALL_TOU, "s1"): (6, 396.94, 355.26, "Burlington Hydro Inc."),
+        (RM7B_SMALL_TOU, "s2"): (6, 1481.26, 1325.72, "Burlington Hydro Inc."),
+        (RM7B_MEDIUM, "m1"): (6, 1908.07, 2156.12, "Enova Power Corp."),
+        (RM7B_LARGE, "l1"): (6, 18897.15, 21353.78, "Burlington Hydro Inc."),
+    }
+    for (model_id, level_id), (n, median, taxed, closest) in expected.items():
+        level = RM7B__level(RM7B__model(result, model_id), level_id)
+        got = (level["without_tax"]["n"], level["without_tax"]["median"], level["with_tax"]["median"],
+               level["closest_utility"]["utility"])
+        assert got == (n, median, taxed, closest), (model_id, level_id)
+    hydro_one = next(r for r in RM7B__level(RM7B__model(result, RM7B_RES_TOU), "typical")["utilities"]
+                     if r["utility"] == "Hydro One Networks Inc.")
+    assert hydro_one["cost_without_tax"] == 222.55
+    assert [z["cost_without_tax"] for z in hydro_one["zone_costs"]] == [222.55, 306.55, 194.29]
+
+
+def test_rm7b_fixture_exact_medians_default_only():
+    result = RM7B__build(RM7B__fx(), "default_only")
+    typical = RM7B__level(RM7B__model(result, RM7B_RES_TOU), "typical")
+    assert (typical["without_tax"]["n"], typical["without_tax"]["median"], typical["with_tax"]["median"]) == (7, 197.25, 176.54)
+    medium = RM7B__level(RM7B__model(result, RM7B_MEDIUM), "m1")
+    assert (medium["without_tax"]["n"], medium["without_tax"]["median"], medium["with_tax"]["median"]) == (5, 1862.23, 2104.32)
+    large = RM7B__level(RM7B__model(result, RM7B_LARGE), "l1")
+    assert (large["without_tax"]["n"], large["without_tax"]["median"]) == (5, 17982.86)
+    assert "Newmarket-Tay Power Distribution Ltd." not in RM7B__model(result, RM7B_MEDIUM)["coverage"]["contributing_utilities"]
+
+
+def test_rm7b_fixture_states_energy_basis_and_outliers():
+    result = RM7B__build(RM7B__fx())
+    assert result["version"] == 1 and result["method_version"] == "7B-2" and result["as_of"] == RM7B_AS_OF
+    assert result["input"]["records_considered"] == 36 and result["input"]["rates_generated_at"] == "2026-10-08T15:23:54Z"
+    for model in result["models"]:
+        assert model["state"] in RM7B_STATES and model["provenance"] == "modeled"
+    assert RM7B__model(result, RM7B_RES_TOU)["cost_basis"] == "delivery_and_energy"
+    assert RM7B__model(result, RM7B_MEDIUM)["cost_basis"] == "delivery_only_no_energy_component"
+    xlarge = RM7B__model(result, RM7B_XLARGE)
+    assert xlarge["state"] == "single_source" and xlarge["levels"] == []
+    outliers = RM7B__level(RM7B__model(result, RM7B_MEDIUM), "m1")["outliers"]
+    assert [(o["utility"], o["deviation_pct"]) for o in outliers] == [
+        ("Hydro One Networks Inc.", 76.0), ("Ottawa River Power Corporation", -46.2)]
+
+
+def test_rm7b_fixture_alternative_only_record_is_listed_and_other_zone_is_used():
+    model = RM7B__model(RM7B__build(RM7B__fx()), RM7B_MEDIUM)
+    blocked = {e["record_id"]: e["reason"] for e in model["exclusions"] if e["scope"] == "record"}
+    assert set(blocked) == {2454, 2469}
+    assert "Thermal Demand Meter" in blocked[2454] and "Interval Metered (less than" in blocked[2469]
+    row = next(r for r in RM7B__level(model, "m1")["utilities"] if r["utility"] == "Newmarket-Tay Power Distribution Ltd.")
+    assert row["records"] == [2797]
+
+
+def test_rm7b_fixture_toronto_kva_and_30_day_conversions():
+    rec = next(r for r in RM7B__fx()["records"] if r["id"] == 2153)
+    res = RM7B__cost(rec, 40000, 100, sector="commercial_medium", structure="demand")
+    items = {i["component"]: i for i in res["items"]}
+    volumetric = items["Distribution Volumetric Rate"]
+    assert volumetric["amount"] == pytest.approx(10.517 * 100 / 0.9 * RM7B_DPM / 30)
+    cbr_rider = next(i for name, i in items.items() if name.startswith("Rate Rider for Disposition of Capacity Based"))
+    assert cbr_rider["reason"] == "reference_customer:on-class-b-cbr"
+    assert cbr_rider["amount"] == pytest.approx(0.1892 * 100 / 0.9 * RM7B_DPM / 30)
+    ga_rider = next(i for name, i in items.items() if name.startswith("Rate Rider for Disposition of Global Adjustment"))
+    assert ga_rider["reason"] == "reference_customer:on-non-rpp-class-b-ga" and ga_rider["amount"] == pytest.approx(203.2)
+    # 7B-1 (strict exclusion) was 2157.00; CBR, CBR rider, SSS, non-WMP and GA riders add 259.39.
+    assert round(res["cost"], 2) == 2416.39
+
+
+def test_rm7b_fixture_hydro_one_rrrp_credit_is_conditional_and_excluded():
+    rec = next(r for r in RM7B__fx()["records"] if r["id"] == 2226)
+    res = RM7B__cost(rec, 1000)
+    credit = next(i for i in res["items"] if i["component"].startswith("Rural or Remote Rate Protection (RRRP) credit"))
+    assert credit["status"] == "excluded" and credit["reason"] == "conditional"
+    # 7B-1 was 309.50; CBR +0.60, CBR rider -0.60, 1588 non-WMP rider -3.20 and SSS +0.25 now apply.
+    assert round(res["cost"], 2) == 306.55
+
+
+def test_rm7b_fixture_crosswalk_excluded_variants_are_never_used():
+    result = RM7B__build(RM7B__fx())
+    used = {rid for m in result["models"] for lv in m["levels"] for row in lv["utilities"] for rid in row["records"]}
+    listed = {r["record_id"] for m in result["models"] for u in m["utilities"] for r in u["records"]}
+    assert not ({2146, 3006} & (used | listed))
+
+
+def test_rm7b_fixture_market_pending_after_injecting_value_less_market_energy():
+    fx = RM7B__fx()
+    injected = copy.deepcopy(fx)
+    for rec in injected["records"]:
+        if rec["rate_structure"] == "demand":
+            rec["components"].append(RM7B__c("energy", None, "$/kWh", "Market Energy (OEMP + Class B GA)",
+                                        market_reference="IESO OEMP + GA (Class B)", notes=RM7B_MARKET_NOTE))
+    result = RM7B__build(injected, fixture=fx)
+    for model_id in (RM7B_MEDIUM, RM7B_LARGE, RM7B_XLARGE):
+        model = RM7B__model(result, model_id)
+        assert model["state"] == "market_energy_pending"
+        assert model["cost_basis"] == "delivery_only_market_energy_pending" and model["energy"]["market_pending"]
+    assert RM7B__level(RM7B__model(result, RM7B_MEDIUM), "m1")["without_tax"]["median"] == 1908.07
+    assert RM7B__model(result, RM7B_RES_TOU)["state"] == "modeled"
+
+
+def test_rm7b_output_shape_and_method_text_disclosures():
+    result = RM7B__build(RM7B__fx())
+    assert {"version", "method_version", "generated_at", "as_of", "input", "assumptions", "models",
+            "coverage_report"} <= set(result)
+    assert result["assumptions"]["days_per_month"] == 30.4375 and result["assumptions"]["power_factor_for_kva"] == 0.9
+    assert result["coverage_report"]["totals"]["records"] == 36
+    model = RM7B__model(result, RM7B_RES_TOU)
+    assert {"key", "label", "state", "provenance", "coverage", "buckets", "levels", "tou", "method",
+            "exclusions"} <= set(model)
+    level = RM7B__level(model, "typical")
+    assert {"id", "kwh", "kw", "without_tax", "with_tax", "closest_utility", "outliers"} <= set(level)
+    assert [line["name"] for line in level["with_tax"]["lines"]] == ["HST", "Ontario Electricity Rebate (OER)"]
+    assert model["tou"]["identical_in_all_records"] and model["tou"]["shares_id"] == "ON_RPP_TOU"
+    for text in ("Median of 7 Ontario distributors' residential time-of-use (TOU) tariffs",
+                 "zone policy 'median_of_zones'", "64% off-peak / 18% mid-peak / 18% on-peak",
+                 "HST 13% of the pre rebate subtotal", "Ontario Electricity Rebate (OER) 23.5%", "loss factors",
+                 "Conditional charges included because the reference customer pays them"):
+        assert text in model["method"]
+    assert [entry["id"] for entry in model["reference_customer"]] == [CBR, NON_WMP, SSS]
+    assert [entry["id"] for entry in result["assumptions"]["reference_customer"]] == [CBR, GA, NON_WMP, SSS]
+    assert "Not applied: Ontario Electricity Rebate (OER) at m1" in RM7B__model(result, RM7B_MEDIUM)["method"]
+    assert GA in [entry["id"] for entry in RM7B__model(result, RM7B_MEDIUM)["reference_customer"]]
+    energy = {b["period"]: b["median"] for b in model["buckets"] if b["bucket"] == "energy"}
+    assert energy == {"mid-peak": 0.157, "off-peak": 0.098, "on-peak": 0.203}
+
+
+def test_rm7b_cli_build_writes_the_models_json(tmp_path, capsys):
+    fx = RM7B__fx()
+    paths = {}
+    for name in ("crosswalk", "usage_levels", "taxes"):
+        paths[name] = tmp_path / (name + ".json")
+        paths[name].write_text(json.dumps(fx[name]), encoding="utf-8")
+    output = tmp_path / "models.json"
+    argv = ["--build", "--rates", str(RM7B_FIXTURE), "--crosswalk", str(paths["crosswalk"]), "--usage-levels",
+            str(paths["usage_levels"]), "--taxes", str(paths["taxes"]), "--output", str(output), "--as-of", RM7B_AS_OF,
+            "--zone-policy", "default_only"]
+    assert RM7B_main(argv) == 0
+    written = json.loads(output.read_text(encoding="utf-8"))
+    assert written["assumptions"]["zone_policy"] == "default_only" and len(written["models"]) == 7
+    assert RM7B_RES_TOU in capsys.readouterr().out
+
+
+def test_rm7b_current_model_files_build_on_the_fixture():
+    result = RM7B_build_models(RM7B__fx()["records"], RM7B_load_crosswalk(), RM7B_load_usage_levels(), RM7B_load_taxes(), as_of=RM7B_AS_OF)
+    assert result["models"] and all(m["state"] in RM7B_STATES for m in result["models"])
+    assert all(lv["without_tax"]["n"] >= 1 for m in result["models"] for lv in m["levels"])
+    assert RM7B_ROOT.joinpath("data", "models", "taxes.json").exists()
+
+
+def RM7B__live_entries(sector, province="ON", fuel="electricity"):
+    return RM7B_reference_customer_entries(RM7B_load_usage_levels(), province, fuel, sector)
+
+
+def RM7B__expected_reference(component, sector):
+    """Independent oracle: the reviewed condition families by note prefix (Chapleau sets start differently)."""
+    body = RM7B__note_body(component)
+    if body.startswith("Conditional: Applies only to Class B customers"):
+        return CBR
+    if body.startswith("Conditional: Applies only where the service is taken"):
+        return SSS
+    if body.startswith("Conditional: Applies only to customers that are not wholesale market participants"):
+        return NON_WMP
+    if body.startswith("Conditional: Applies only to non-RPP Class B customers"):
+        return GA if sector in RM7B_DEMAND_SECTORS else None
+    return None
+
+
+def test_rm7b_reference_customer_entries_are_well_formed_and_frozen_in_the_fixture():
+    levels = RM7B_load_usage_levels()
+    entries = levels["reference_customer"]
+    assert [e["id"] for e in entries] == [CBR, GA, NON_WMP, SSS] and levels["reference_customer_basis"]
+    for entry in entries:
+        assert {"id", "province", "fuel", "sectors", "match", "reason", "source"} <= set(entry), entry["id"]
+        assert entry["province"] == "ON" and entry["fuel"] == "electricity" and set(entry["sectors"]) <= set(RM7B_SECTORS)
+        assert entry["reason"] and entry["source"]["title"] and (entry["source"]["url"] or entry["source"]["note"])
+        assert set(entry["match"]) == {"notes_regex", "name_regex"}
+        for regex in entry["match"].values():
+            assert regex.startswith("^") and regex.endswith("$") and re.compile(regex)
+    assert {e["id"]: e["sectors"] for e in entries}[GA] == list(RM7B_DEMAND_SECTORS)
+    assert all(e["sectors"] == list(RM7B_SECTORS) for e in entries if e["id"] != GA)
+    assert RM7B__ul()["reference_customer"] == entries, "refresh the frozen fixture copy and its expected values"
+
+
+def test_rm7b_reference_patterns_match_the_intended_ontario_fixture_components():
+    hits = {sector: {CBR: 0, GA: 0, NON_WMP: 0, SSS: 0} for sector in RM7B_SECTORS}
+    conditional = 0
+    for record in RM7B__fx()["records"]:
+        for comp in record["components"]:
+            if RM7B_component_exclusion(comp, RM7B_AS_OF) != "conditional":
+                continue
+            conditional += 1
+            for sector in RM7B_SECTORS:
+                expected = RM7B__expected_reference(comp, sector)
+                assert RM7B_reference_customer_match(comp, RM7B__live_entries(sector)) == expected, (
+                    record["id"], comp["component_name"], sector)
+                if expected:
+                    hits[sector][expected] += 1
+    assert conditional == 146
+    assert hits["residential"] == {CBR: 65, GA: 0, NON_WMP: 13, SSS: 36}
+    assert hits["commercial_medium"] == {CBR: 65, GA: 8, NON_WMP: 13, SSS: 36}
+
+
+def test_rm7b_reference_patterns_reject_excluded_and_near_miss_conditions():
+    records = {r["id"]: r for r in RM7B__fx()["records"]}
+
+    def component(record_id, prefix):
+        return next(c for c in records[record_id]["components"] if c["component_name"].startswith(prefix))
+
+    excluded = [component(2226, "Rural or Remote Rate Protection (RRRP) credit"),
+                component(2421, "Transformer Allowance for Ownership"),
+                component(2421, "Primary Metering Allowance for Transformer Losses"),
+                component(2255, "Tranformer Loss Allowance"),
+                component(2255, "Customer-Supplied Transformation Allowance"),
+                component(2421, "Retail Transmission Rate - Network Service Rate - EV CHARGING")]
+    excluded += [c for c in records[2255]["components"] if "Applicable to former Chapleau" in c["component_name"]]
+    excluded += [c for r in records.values() for c in r["components"]
+                 if RM7B_component_exclusion(c, RM7B_AS_OF) in ("alternative", "market_pending")]
+    assert len([c for c in records[2255]["components"] if "Applicable to former Chapleau" in c["component_name"]]) == 3
+    base = component(2414, "Capacity Based Recovery (CBR)")
+    near_misses = [
+        dict(base, notes="Provenance: live_parsed. Conditional: Applies only to Class B customers with interval meters"),
+        dict(base, component_name="Rate Rider for Disposition of Global Adjustment Account Applicable only for Class B"),
+        dict(component(2414, "Standard Supply Service"), component_name="Smart Metering Entity Charge (if applicable)"),
+        dict(component(2153, "Rate Rider for Disposition of Global Adjustment"), component_name="Distribution Volumetric Rate"),
+        RM7B__c("energy", None, "$/kWh", "Market Energy", market_reference="IESO OEMP + GA", notes=RM7B_MARKET_NOTE),
+    ]
+    for comp in excluded + near_misses:
+        for sector in RM7B_SECTORS:
+            assert RM7B_reference_customer_match(comp, RM7B__live_entries(sector)) is None, (comp["component_name"], sector)
+    assert RM7B_reference_customer_match(base, RM7B__live_entries("residential")) == CBR
+    assert RM7B__live_entries("residential", province="QC") == [] and RM7B__live_entries("residential", fuel="gas") == []
+    assert RM7B_reference_customer_match(base, [{"id": "no-criteria", "match": {}}]) is None
+    assert RM7B_reference_customer_match(base, [{"id": "unknown-field", "match": {"tariff_regex": "^.*$"}}]) is None
+    assert RM7B_reference_customer_match(base, [{"id": "bad-regex", "match": {"name_regex": "("}}]) is None
+
+
+def test_rm7b_reference_charges_are_itemized_per_sector_and_strict_without_a_sector():
+    rec = next(r for r in RM7B__fx()["records"] if r["id"] == 2467)  # Enova GS 50-4,999 kW
+    medium = RM7B__cost(rec, 40000, 100, sector="commercial_medium", structure="demand")
+    reasons = {i["component"]: i.get("reason") for i in medium["items"]}
+    ga = next(name for name in reasons if name.startswith("Rate Rider for Disposition of Global Adjustment"))
+    assert reasons[ga] == "reference_customer:" + GA
+    assert reasons["Standard Supply Service - Administrative Charge (if applicable)"] == "reference_customer:" + SSS
+    assert sorted(r for r in reasons.values() if r and r.startswith("reference_customer:")) == [
+        "reference_customer:" + rid for rid in (CBR, CBR, GA, NON_WMP, SSS)]
+    small = RM7B__cost(rec, 40000, 100, sector="commercial_small", structure="demand")
+    assert {i["component"]: i.get("reason") for i in small["items"]}[ga] == "conditional"
+    strict = RM7B_record_monthly_cost(rec, 40000, 100, structure="demand", usage_levels=RM7B__ul(), as_of=RM7B_AS_OF)
+    assert not any((i.get("reason") or "").startswith("reference_customer:") for i in strict["items"])
+    assert medium["cost"] - strict["cost"] == pytest.approx(0.0051 * 40000 + 0.0115 * 100 + 0.1832 * 100
+                                                            + 0.0006 * 40000 + 0.25)
+
+
+def test_rm7b_export_hook_writes_compact_models_and_keeps_the_previous_file_on_failure(tmp_path, monkeypatch, caplog):
+    from pipeline import export_json, representative_models
+
+    tariffs = [RM7B__rec(RM7B__tou() + [RM7B__c("fixed", fixed, "$/month")], utility=utility, rid=rid)
+               for rid, (utility, fixed) in enumerate((("A Hydro", 30.0), ("B Hydro", 40.0), ("C Hydro", 50.0)), 1)]
+    tariffs.append(dict(RM7B__rec([RM7B__c("fixed", 1.0, "$/month")], utility="Seed Hydro", rid=9), provenance="seed"))
+    out = tmp_path / "site" / "representative_models.json"
+    result = export_json.export_representative_models(tariffs, out)
+    text = out.read_text(encoding="utf-8")
+    written = json.loads(text)
+    assert text == json.dumps(written, separators=(",", ":"), ensure_ascii=False) + "\n"
+    assert written["models"] == json.loads(json.dumps(result["models"]))
+    assert written["assumptions"]["zone_policy"] == "median_of_zones" and written["input"]["provinces"] == ["ON"]
+    assert written["input"]["source"] == "site/data/rates.json" and written["input"]["records_considered"] == 3
+    typical = RM7B__level(RM7B__model(written, RM7B_RES_TOU), "typical")
+    assert typical["without_tax"]["n"] == 3 and typical["closest_utility"]["utility"] == "B Hydro"
+    previous = out.read_bytes()
+
+    def broken(*args, **kwargs):
+        raise RuntimeError("model build failed")
+
+    monkeypatch.setattr(representative_models, "build_models", broken)
+    with caplog.at_level(logging.ERROR, logger="pipeline.export_json"):
+        assert export_json.export_representative_models(tariffs, out) is None
+    assert out.read_bytes() == previous and "Representative models export failed" in caplog.text
+    monkeypatch.setattr(representative_models, "build_models", lambda *args, **kwargs: {"models": [], "x": float("nan")})
+    assert export_json.export_representative_models(tariffs, out) is None
+    assert out.read_bytes() == previous and not list(out.parent.glob("*.tmp"))

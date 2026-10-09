@@ -1,0 +1,1678 @@
+{
+ "version": 1,
+ "as_of": "2026-10-09",
+ "notes": "Apply per modelled month: S = sum of the model's pre-tax rate components (before any tax or rebate). Use jurisdictions[province][fuel]['residential'] for sector 'residential', otherwise ['commercial']; keep a line only if the model sector is in eligibility.sectors, its thresholds pass (null = no limit; when max_demand_kw and max_annual_kwh are both set the line applies if EITHER is met, per O. Reg. 363/16 s.1.1(1)) and effective_date <= as-of date < end_date (when set). Line amount = rate x base: 'pre_tax_subtotal' = S; 'pre_rebate_subtotal' = S as well (same number; marks a tax charged on the bill before a rebate line is deducted); 'energy_charge_subtotal' = pre-tax sum of per-kWh consumption charges only (no fixed/service, demand or rental charges). Lines never compound: PST/RST/QST/ICE are computed on the price excluding GST/HST. With tax = S + sum(sales_tax amounts) - sum(rebate amounts); for eligible Ontario electricity accounts the 23.5% OER exceeds 13% HST, so 'with tax' is below 'without tax'. 'order' is the display/application order (GST/HST, provincial tax, rebates). Commercial results show tax as invoiced; GST/HST registrants can generally recover GST/HST through input tax credits (not modelled). Excluded: income-tested or application-based assistance (e.g. OESP, LEAP, Ontario and Northern Ontario energy tax credits, PEI Island Essentials Benefit, Alberta Energy Rebate, NS YERP claims by landlords, condominiums, mixed-use and commercial-rate accounts); municipal taxes and fees (City of Winnipeg gas and electricity tax, SaskPower/SaskEnergy municipal surcharges, Alberta franchise/access fees); carbon charges and territorial power subsidies (rate components elsewhere); First Nations and diplomatic exemptions; price-triggered per-GJ rebates (Alberta Natural Gas Rebate Program, $0 for October 2026); announced but not in force (NL Churchill River Electricity Rebate); expired (PEI Government Energy Rebate, ended 2026-06-30). Manitoba residential RST depends on heating use (defaults: electricity 7%, gas 1.4% - flagged for review). As of 2026-10-09; confidence per line.",
+ "sectors": [
+  "residential",
+  "commercial_small",
+  "commercial_medium",
+  "commercial_large",
+  "commercial_xlarge"
+ ],
+ "jurisdictions": {
+  "AB": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No provincial sales tax (CRA table: AB PST 0%). Municipal franchise/access fees are excluded.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No provincial sales tax (CRA table: AB PST 0%). Municipal franchise/access fees are excluded.",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No provincial sales tax (CRA table: AB PST 0%). Alberta Natural Gas Rebate Program pays an automatic on-bill rebate only when the 'Alberta price' exceeds $6.50/GJ (difference per GJ, consumers under 2,500 GJ/yr); October 2026 Alberta price $1.602/GJ, no rebate (https://www.alberta.ca/natural-gas-rebate-program). Not a percentage, so not a line. Municipal franchise fees excluded.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No provincial sales tax (CRA table: AB PST 0%). Alberta Natural Gas Rebate Program pays an automatic on-bill rebate only when the 'Alberta price' exceeds $6.50/GJ (difference per GJ, consumers under 2,500 GJ/yr); October 2026 Alberta price $1.602/GJ, no rebate (https://www.alberta.ca/natural-gas-rebate-program). Not a percentage, so not a line. Municipal franchise fees excluded.",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "BC": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No PST: Bulletin PST 203 (rev. Sept 2022) - 'Effective April 1, 2019, electricity is fully exempt from PST for all purchasers'; 'The ICE Fund tax does not apply to electricity.'",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No PST: Bulletin PST 203 (rev. Sept 2022) - 'Effective April 1, 2019, electricity is fully exempt from PST for all purchasers'; 'The ICE Fund tax does not apply to electricity.'",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No PST line: residential energy products (incl. natural gas) obtained solely for residential use in a residential dwelling are PST-exempt (Bulletin PST 203). The 0.4% ICE Fund tax still applies (separate line).",
+      "confidence": "high"
+     },
+     {
+      "name": "ICE Fund tax",
+      "kind": "sales_tax",
+      "rate": 0.004,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "All natural gas customers (except internal-combustion-engine use and resale); annual maximum $100,000 per person (April-March), not reached at modelled sizes."
+      },
+      "effective_date": "2013-04-01",
+      "end_date": null,
+      "source_url": "https://www2.gov.bc.ca/assets/gov/taxes/sales-taxes/publications/pst-203-energy-conservation-ice-fund-tax.pdf",
+      "source_note": "Bulletin PST 203 (issued Mar 2013, rev. Sept 2022; still cited by the gov.bc.ca PST FAQ updated 2026-09-02): 'A 0.4% tax applies on the purchase price of energy products', including natural gas; sellers 'must charge and collect the ICE Fund tax from all their customers (including residential, commercial and industrial customers)'; 'The PST exemption for residential energy products does not apply to the ICE Fund tax.' Not applied to electricity. Effective date = PST Act regime start (April 1, 2013); earlier history not researched.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). PST and the 0.4% ICE Fund tax apply to non-residential natural gas (separate lines).",
+      "confidence": "high"
+     },
+     {
+      "name": "PST",
+      "kind": "sales_tax",
+      "rate": 0.07,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "Non-residential use. Exemptions for qualifying farmers, internal combustion engines and resale are not modelled."
+      },
+      "effective_date": "2013-04-01",
+      "end_date": null,
+      "source_url": "https://www2.gov.bc.ca/assets/gov/taxes/sales-taxes/publications/pst-203-energy-conservation-ice-fund-tax.pdf",
+      "source_note": "Bulletin PST 203: 'PST applies to natural gas purchased in B.C. ... unless a specific exemption applies'; the residential-energy exemption covers only gas obtained solely for residential use in a residential dwelling (multi-use buildings: separately metered residential part only). Rate 7% (CRA table: BC PST 7%); PST Act regime since 2013-04-01 (BC left the HST then - CRA archived statistics notes).",
+      "confidence": "high"
+     },
+     {
+      "name": "ICE Fund tax",
+      "kind": "sales_tax",
+      "rate": 0.004,
+      "base": "pre_tax_subtotal",
+      "order": 3,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "All natural gas customers (except internal-combustion-engine use and resale); annual maximum $100,000 per person (April-March), not reached at modelled sizes."
+      },
+      "effective_date": "2013-04-01",
+      "end_date": null,
+      "source_url": "https://www2.gov.bc.ca/assets/gov/taxes/sales-taxes/publications/pst-203-energy-conservation-ice-fund-tax.pdf",
+      "source_note": "Bulletin PST 203 (issued Mar 2013, rev. Sept 2022; still cited by the gov.bc.ca PST FAQ updated 2026-09-02): 'A 0.4% tax applies on the purchase price of energy products', including natural gas; sellers 'must charge and collect the ICE Fund tax from all their customers (including residential, commercial and industrial customers)'; 'The PST exemption for residential energy products does not apply to the ICE Fund tax.' Not applied to electricity. Effective date = PST Act regime start (April 1, 2013); earlier history not researched.",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "MB": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). RST applies in addition (separate line). City of Winnipeg Gas and Electricity Tax (2.5% domestic / 5% non-domestic, non-heating use) is municipal and excluded.",
+      "confidence": "high"
+     },
+     {
+      "name": "RST",
+      "kind": "sales_tax",
+      "rate": 0.07,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "Residential non-heating use (archetype: gas-heated home). Electrically heated dwellings meeting the 80% tests pay 1.4% instead (not applied)."
+      },
+      "effective_date": "2019-07-01",
+      "end_date": null,
+      "source_url": "https://www.gov.mb.ca/finance/taxation/electricity.html",
+      "source_note": "RST Act C.C.S.M. c. R130 (consolidation current to 2026-10-07): general rate 7% when payable after 2019-06-30 (s.1(1)); gov.mb.ca: 'The 7% Retail Sales Tax (RST) applies to purchases of electricity, piped gas'. RST 'purchase price' excludes GST, the federal fuel charge and municipal taxes on electricity/piped gas (s.1(1)), so the base is the pre-tax subtotal. Source pages: https://www.gov.mb.ca/finance/taxation/electricity.html ; https://web2.gov.mb.ca/laws/statutes/ccsm/r130.php. Default assumes a home NOT heated by electricity: if at least 80% of the electricity heats the purchaser's dwelling and at least 80% of the dwelling can be fully heated by permanently installed electric heat, RST is 1.4% (s.2(1.2)); electricity used only to heat the dwelling is exempt (s.3(36)). The model has no heating-type input - user review.",
+      "confidence": "medium"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). RST applies in addition (separate line). City of Winnipeg Gas and Electricity Tax (2.5% domestic / 5% non-domestic, non-heating use) is municipal and excluded.",
+      "confidence": "high"
+     },
+     {
+      "name": "RST",
+      "kind": "sales_tax",
+      "rate": 0.07,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "1.4% reduced rate only for minister-approved qualifying manufacturers, mining and oil-well uses (s.2(1.4),(1.7)) and farm buildings - not modelled."
+      },
+      "effective_date": "2019-07-01",
+      "end_date": null,
+      "source_url": "https://www.gov.mb.ca/finance/taxation/electricity.html",
+      "source_note": "RST Act C.C.S.M. c. R130 (consolidation current to 2026-10-07): general rate 7% when payable after 2019-06-30 (s.1(1)); gov.mb.ca: 'The 7% Retail Sales Tax (RST) applies to purchases of electricity, piped gas'. RST 'purchase price' excludes GST, the federal fuel charge and municipal taxes on electricity/piped gas (s.1(1)), so the base is the pre-tax subtotal. Source pages: https://www.gov.mb.ca/finance/taxation/electricity.html ; https://web2.gov.mb.ca/laws/statutes/ccsm/r130.php. No exemption for heating non-residential buildings (s.3(36) covers dwellings and farm buildings only).",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). RST applies in addition (separate line). City of Winnipeg Gas and Electricity Tax (2.5% domestic / 5% non-domestic, non-heating use) is municipal and excluded.",
+      "confidence": "high"
+     },
+     {
+      "name": "RST (reduced rate, gas-heated dwelling)",
+      "kind": "sales_tax",
+      "rate": 0.014,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "Owner/occupant gas-heated dwelling meeting the 80% tests; 7% if not, 0% if heating only."
+      },
+      "effective_date": "2026-07-01",
+      "end_date": null,
+      "source_url": "https://web2.gov.mb.ca/laws/statutes/ccsm/r130.php",
+      "source_note": "RST Act s.2(1.3) applies s.2(1.2) to piped gas: 'computed at the rate of 1.4%' if at least 80% of the gas is used for heating a dwelling unit in which the purchaser resides and at least 80% of it has the permanently installed capability of being fully heated by piped gas; gas used only for heating the dwelling is exempt (s.3(36)); otherwise the 7% general rate applies. ASSUMPTION: the modelled residential gas customer heats its own dwelling with gas and meets the 80% test - not confirmed against Centra billing practice. Effective date = in-force date of the consolidation read (original enactment date not researched).",
+      "confidence": "low"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). RST applies in addition (separate line). City of Winnipeg Gas and Electricity Tax (2.5% domestic / 5% non-domestic, non-heating use) is municipal and excluded.",
+      "confidence": "high"
+     },
+     {
+      "name": "RST",
+      "kind": "sales_tax",
+      "rate": 0.07,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2019-07-01",
+      "end_date": null,
+      "source_url": "https://www.gov.mb.ca/finance/taxation/electricity.html",
+      "source_note": "RST Act C.C.S.M. c. R130 (consolidation current to 2026-10-07): general rate 7% when payable after 2019-06-30 (s.1(1)); gov.mb.ca: 'The 7% Retail Sales Tax (RST) applies to purchases of electricity, piped gas'. RST 'purchase price' excludes GST, the federal fuel charge and municipal taxes on electricity/piped gas (s.1(1)), so the base is the pre-tax subtotal. Source pages: https://www.gov.mb.ca/finance/taxation/electricity.html ; https://web2.gov.mb.ca/laws/statutes/ccsm/r130.php. Heating of non-residential buildings is not exempt (s.3(36)).",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "NB": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_rebate_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). NB HST 13% -> 15% on 2016-07-01 (CRA archived statistics notes). Charged on the full bill before the GNB 10% Rebate (inferred: the rebate is 'equivalent to the provincial portion of the HST' for customers 'who pay HST').",
+      "confidence": "high"
+     },
+     {
+      "name": "GNB 10% Rebate (NB electricity rebate)",
+      "kind": "rebate",
+      "rate": 0.1,
+      "base": "energy_charge_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "Residential (domestic dwelling) accounts that pay HST; kWh consumption charges only."
+      },
+      "effective_date": "2025-01-01",
+      "end_date": null,
+      "source_url": "https://www2.gnb.ca/content/gnb/en/corporate/promo/electricity-rebate.html",
+      "source_note": "GNB Electricity Rebate page and release 2024-12-11: 'rebate equivalent to the provincial portion of the Harmonized Sales Tax (HST) (10%) on electricity consumption for residential use' charged by NB Power, Edmundston Energy, Saint John Energy and Perth Andover; automatic point-of-sale line 'GNB 10% Rebate'; 'applies to the kilowatt hours of electricity consumption, not service charges or rental fees'; effective for electricity used on/after 2025-01-01. Risk: CBC (2026-05-14) reported the government may replace this universal rebate with income-tested support 'before next winter'; no official change found as of 2026-10-09.",
+      "confidence": "medium"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). NB HST 13% -> 15% on 2016-07-01 (CRA archived statistics notes). No rebate for non-residential accounts.",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). NB HST 13% -> 15% on 2016-07-01 (CRA archived statistics notes). The GNB rebate covers electricity only.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). NB HST 13% -> 15% on 2016-07-01 (CRA archived statistics notes). The GNB rebate covers electricity only.",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "NL": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). gov.nl.ca HST page (https://www.gov.nl.ca/fin/tax-programs-incentives/personal/hst/): provincial portion 8% -> 10% effective 2016-07-01, HST 15%. Approved NL Hydro / Newfoundland Power schedules: 'This rate does not include the Harmonized Sales Tax (HST) which applies to electricity bills'. Announced Churchill River Electricity Rebate (15% on first 2,000 kWh/month, residential; release 2026-09-11) is not in force until the Churchill Falls agreements are finalised.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). gov.nl.ca HST page (https://www.gov.nl.ca/fin/tax-programs-incentives/personal/hst/): provincial portion 8% -> 10% effective 2016-07-01, HST 15%. Approved NL Hydro / Newfoundland Power schedules: 'This rate does not include the Harmonized Sales Tax (HST) which applies to electricity bills'. Announced Churchill River Electricity Rebate (15% on first 2,000 kWh/month, residential; release 2026-09-11) is not in force until the Churchill Falls agreements are finalised.",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). gov.nl.ca HST page (https://www.gov.nl.ca/fin/tax-programs-incentives/personal/hst/): provincial portion 8% -> 10% effective 2016-07-01, HST 15%. Approved NL Hydro / Newfoundland Power schedules: 'This rate does not include the Harmonized Sales Tax (HST) which applies to electricity bills'. No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). gov.nl.ca HST page (https://www.gov.nl.ca/fin/tax-programs-incentives/personal/hst/): provincial portion 8% -> 10% effective 2016-07-01, HST 15%. Approved NL Hydro / Newfoundland Power schedules: 'This rate does not include the Harmonized Sales Tax (HST) which applies to electricity bills'. No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "NS": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.14,
+      "base": "pre_rebate_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2025-04-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 14% (GST 5% + provincial part). CRA table: 'As of April 1, 2025, the HST rate has decreased to 14% in Nova Scotia' (provincial part 10% -> 9%; NS Finance notice 2024-10-23). Charged in full; the YERP rebate is a separate line (eligibility requires HST paid).",
+      "confidence": "high"
+     },
+     {
+      "name": "NS Your Energy Rebate (YERP)",
+      "kind": "rebate",
+      "rate": 0.09,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "Electricity billed under a domestic (residential) service rate. Commercial-rate, landlord, condominium and mixed-use accounts must apply (application route excluded)."
+      },
+      "effective_date": "2025-04-01",
+      "end_date": null,
+      "source_url": "https://www.novascotia.ca/sites/default/files/documents/1-202/your-energy-rebate-program-en.pdf",
+      "source_note": "YERP consumer guide (V.06.03.25): 'a 9% rebate on the before tax price of residential use energy. This is a provincial rebate equal to the provincial portion of the Harmonized Sales Tax (HST)'; 'does not depend on your income level'. Bulletin 5081 R4 (updated 2025-03-06) applies 9% to April 2025 service at HST 14%, consistent with 2025-04-01 (previously 10%). Deducted from the bill automatically for electricity 'billed under a domestic service rate'.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.14,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2025-04-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 14% (GST 5% + provincial part). CRA table: 'As of April 1, 2025, the HST rate has decreased to 14% in Nova Scotia' (provincial part 10% -> 9%; NS Finance notice 2024-10-23). Commercial-rate accounts get no point-of-sale YERP (landlord/mixed-use claims are application-based and excluded).",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.14,
+      "base": "pre_rebate_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2025-04-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 14% (GST 5% + provincial part). CRA table: 'As of April 1, 2025, the HST rate has decreased to 14% in Nova Scotia' (provincial part 10% -> 9%; NS Finance notice 2024-10-23). Charged in full; the YERP rebate is a separate line.",
+      "confidence": "high"
+     },
+     {
+      "name": "NS Your Energy Rebate (YERP)",
+      "kind": "rebate",
+      "rate": 0.09,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "Residential gas delivered to a qualifying residential property."
+      },
+      "effective_date": "2025-04-01",
+      "end_date": null,
+      "source_url": "https://www.novascotia.ca/sites/default/files/documents/1-202/your-energy-rebate-program-en.pdf",
+      "source_note": "YERP consumer guide (V.06.03.25): 'a 9% rebate on the before tax price of residential use energy. This is a provincial rebate equal to the provincial portion of the Harmonized Sales Tax (HST)'; 'does not depend on your income level'. Bulletin 5081 R4 (updated 2025-03-06) applies 9% to April 2025 service at HST 14%, consistent with 2025-04-01 (previously 10%). Natural gas suppliers deduct it at point of sale when gas is delivered to a qualifying property (assessed 100% residential taxable, or residential with resource classes). Uncertain: the consumer application says the rebate excludes 'delivery ... costs'; not confirmed whether utility delivery charges on piped-gas bills are excluded.",
+      "confidence": "medium"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.14,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2025-04-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 14% (GST 5% + provincial part). CRA table: 'As of April 1, 2025, the HST rate has decreased to 14% in Nova Scotia' (provincial part 10% -> 9%; NS Finance notice 2024-10-23).",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "NT": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines.",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines. No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines. No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "NU": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines.",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines. No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines. No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "ON": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.13,
+      "base": "pre_rebate_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2010-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 13% (GST 5% + provincial part). ON joined the HST at 13% on 2010-07-01 (CRA archived statistics notes). Charged on the bill BEFORE the Ontario Electricity Rebate: CRA GST/HST Ruling 182079 (2017, predecessor rebate under the same Ontario Rebate for Electricity Consumers Act, 2016; published copy https://taxinterpretations.com/content/536141) - the rebate 'is not a reduction in consideration for the supply of electricity, nor is it a reduction to the HST payable' and is shown after HST is calculated. OEB bill-calculator data (BillData.xml, read 2026-10-09): HST key 0.13.",
+      "confidence": "high"
+     },
+     {
+      "name": "Ontario Electricity Rebate (OER)",
+      "kind": "rebate",
+      "rate": 0.235,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "Residential accounts qualify through s.1.1(1) (demand <= 50 kW or annual use <= 250,000 kWh). Bulk-metered MURB / retirement / mobile-home accounts above those thresholds need a notice (paras 4.1-6)."
+      },
+      "effective_date": "2025-11-01",
+      "end_date": null,
+      "source_url": "https://www.ontario.ca/laws/regulation/160363",
+      "source_note": "O. Reg. 363/16 s.2 (e-Laws currency 2026-10-06): rebate = 23.5% of the 'base invoice amount' (s.2.1: commodity + OEB rate-order charges; excludes HST, specific/retail service charges, penalties, prior balances). 23.5% effective 2025-11-01 (OEB release 2025-10-17; ontario.ca 'Manage energy costs for your home', updated 2026-09-28: 'currently provides a 23.5% rebate ... on the subtotal of their electricity bill', automatic separate bill line; OEB BillData.xml Rebate=0.235 '% of subtotal'). The rate moved with the 2025-11-01 RPP change - recheck after the OEB's next RPP announcement.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.13,
+      "base": "pre_rebate_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2010-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 13% (GST 5% + provincial part). ON joined the HST at 13% on 2010-07-01 (CRA archived statistics notes). Charged on the bill BEFORE the Ontario Electricity Rebate: CRA GST/HST Ruling 182079 (2017, predecessor rebate under the same Ontario Rebate for Electricity Consumers Act, 2016; published copy https://taxinterpretations.com/content/536141) - the rebate 'is not a reduction in consideration for the supply of electricity, nor is it a reduction to the HST payable' and is shown after HST is calculated. OEB bill-calculator data (BillData.xml, read 2026-10-09): HST key 0.13.",
+      "confidence": "high"
+     },
+     {
+      "name": "Ontario Electricity Rebate (OER)",
+      "kind": "rebate",
+      "rate": 0.235,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": 50,
+       "max_annual_kwh": 250000,
+       "other": "Eligible if EITHER demand <= 50 kW OR annual use <= 250,000 kWh (O. Reg. 363/16 s.1.1(1) paras 1-2; either test suffices). Also registered farms and long-term care homes. Accounts billed as GS >= 50 kW but under 250,000 kWh/yr may need to confirm eligibility with their distributor."
+      },
+      "effective_date": "2025-11-01",
+      "end_date": null,
+      "source_url": "https://www.ontario.ca/laws/regulation/160363",
+      "source_note": "O. Reg. 363/16 s.2 (e-Laws currency 2026-10-06): rebate = 23.5% of the 'base invoice amount' (s.2.1: commodity + OEB rate-order charges; excludes HST, specific/retail service charges, penalties, prior balances). 23.5% effective 2025-11-01 (OEB release 2025-10-17; ontario.ca 'Manage energy costs for your home', updated 2026-09-28: 'currently provides a 23.5% rebate ... on the subtotal of their electricity bill', automatic separate bill line; OEB BillData.xml Rebate=0.235 '% of subtotal'). The rate moved with the 2025-11-01 RPP change - recheck after the OEB's next RPP announcement.",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.13,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2010-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 13% (GST 5% + provincial part). ON joined the HST at 13% on 2010-07-01 (CRA archived statistics notes). The OER applies to electricity accounts only.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.13,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2010-07-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 13% (GST 5% + provincial part). ON joined the HST at 13% on 2010-07-01 (CRA archived statistics notes). The OER applies to electricity accounts only.",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "PE": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-10-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). PE HST 14% -> 15% on 2016-10-01 (CRA archived statistics notes). No point-of-sale rebate as of 2026-10-09: the 10% PEI Government Energy Rebate on the first block of residential electricity ended 2026-06-30 (Maritime Electric customer notice; replaced by the income-tested Island Essentials Benefit, excluded).",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-10-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). PE HST 14% -> 15% on 2016-10-01 (CRA archived statistics notes). No point-of-sale rebate as of 2026-10-09: the 10% PEI Government Energy Rebate on the first block of residential electricity ended 2026-06-30 (Maritime Electric customer notice; replaced by the income-tested Island Essentials Benefit, excluded).",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-10-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). PE HST 14% -> 15% on 2016-10-01 (CRA archived statistics notes). No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-10-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). PE HST 14% -> 15% on 2016-10-01 (CRA archived statistics notes). No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "QC": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). QST applies in addition (separate line).",
+      "confidence": "high"
+     },
+     {
+      "name": "QST",
+      "kind": "sales_tax",
+      "rate": 0.09975,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2013-01-01",
+      "end_date": null,
+      "source_url": "https://www.revenuquebec.ca/en/businesses/consumption-taxes/gsthst-and-qst/collecting-gst-and-qst/calculating-the-taxes/",
+      "source_note": "Revenu Quebec 'Calculating the taxes': two-step method = 5% GST on the sale price, then QST at 9.975% on the sale price (QST is not charged on GST); CRA table lists QC 9.975%. No QST relief for residential electricity or gas found. Effective date 2013-01-01 is from secondary sources (not confirmed on revenuquebec.ca).",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). QST applies in addition (separate line).",
+      "confidence": "high"
+     },
+     {
+      "name": "QST",
+      "kind": "sales_tax",
+      "rate": 0.09975,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2013-01-01",
+      "end_date": null,
+      "source_url": "https://www.revenuquebec.ca/en/businesses/consumption-taxes/gsthst-and-qst/collecting-gst-and-qst/calculating-the-taxes/",
+      "source_note": "Revenu Quebec 'Calculating the taxes': two-step method = 5% GST on the sale price, then QST at 9.975% on the sale price (QST is not charged on GST); CRA table lists QC 9.975%. No QST relief for residential electricity or gas found. Effective date 2013-01-01 is from secondary sources (not confirmed on revenuquebec.ca).",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). QST applies in addition (separate line).",
+      "confidence": "high"
+     },
+     {
+      "name": "QST",
+      "kind": "sales_tax",
+      "rate": 0.09975,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2013-01-01",
+      "end_date": null,
+      "source_url": "https://www.revenuquebec.ca/en/businesses/consumption-taxes/gsthst-and-qst/collecting-gst-and-qst/calculating-the-taxes/",
+      "source_note": "Revenu Quebec 'Calculating the taxes': two-step method = 5% GST on the sale price, then QST at 9.975% on the sale price (QST is not charged on GST); CRA table lists QC 9.975%. No QST relief for residential electricity or gas found. Effective date 2013-01-01 is from secondary sources (not confirmed on revenuquebec.ca).",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). QST applies in addition (separate line).",
+      "confidence": "high"
+     },
+     {
+      "name": "QST",
+      "kind": "sales_tax",
+      "rate": 0.09975,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2013-01-01",
+      "end_date": null,
+      "source_url": "https://www.revenuquebec.ca/en/businesses/consumption-taxes/gsthst-and-qst/collecting-gst-and-qst/calculating-the-taxes/",
+      "source_note": "Revenu Quebec 'Calculating the taxes': two-step method = 5% GST on the sale price, then QST at 9.975% on the sale price (QST is not charged on GST); CRA table lists QC 9.975%. No QST relief for residential electricity or gas found. Effective date 2013-01-01 is from secondary sources (not confirmed on revenuquebec.ca).",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "SK": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No PST line: PST Act s.8(1)(n)(i) exempts 'electricity purchased for use in a residential dwelling unit or a farm' (regulations exclude bulk-metered rental buildings and rental common areas from 'residential dwelling unit').",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). PST 6% applies (separate line).",
+      "confidence": "high"
+     },
+     {
+      "name": "PST",
+      "kind": "sales_tax",
+      "rate": 0.06,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "Electricity used to heat a building heated solely by electricity is exempt (s.8(1)(n)(ii)) - not modelled."
+      },
+      "effective_date": "2017-03-23",
+      "end_date": null,
+      "source_url": "https://publications.saskatchewan.ca/api/v1/products/779/formats/1196/download",
+      "source_note": "PST Act (consolidation incl. 2025 c 11): s.3(1)(j) tangible personal property 'includes natural or manufactured gas and electricity'; s.5(1) tax at 6% of value; consideration excludes GST (s.3(1)(b)). Source: https://publications.saskatchewan.ca/api/v1/products/779/formats/1196/download. The s.8(1)(n) exemption covers residential dwelling units/farms, heating a building heated solely by electricity, irrigation, non-profit rinks/pools and municipal street lighting - not general commercial use. Value includes the SaskPower municipal surcharge (s.3(1)(n); not modelled). 6% applies to sales on or after 2017-03-23 (SK Information Notice IN 2017-01).",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No PST line: PST Act s.8(1)(v)(i) exempts natural gas used 'for the purposes of heating in homes or buildings'.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No PST line (medium): natural gas used for heating in buildings is PST-exempt (PST Act s.8(1)(v)(i)); PST 6% would apply to non-heating uses (e.g. process gas), not modelled.",
+      "confidence": "high"
+     }
+    ]
+   }
+  },
+  "YT": {
+   "electricity": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines.",
+      "confidence": "high"
+     }
+    ]
+   },
+   "gas": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines. No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ],
+    "commercial": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines. No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ]
+   }
+  }
+ }
+}
