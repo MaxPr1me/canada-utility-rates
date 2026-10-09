@@ -12,7 +12,8 @@ ALLOWANCES, SPECIFIC/RETAIL SERVICE CHARGES and LOSS FACTORS sections.
 All functions are pure and network-free. ``parse_tariff_pages`` turns extracted
 PDF pages into a :class:`TariffSheet`; ``build_demand_records`` converts the
 GS >= 50 kW, Large Use and (Hydro One) Sub Transmission load classes into
-delivery-only ``TariffRecord`` objects, failing closed per classification.
+delivery ``TariffRecord`` objects with one value-less market energy component
+(non-RPP), failing closed per classification.
 ``classify_classification`` tells callers which classes are residential,
 GS < 50 kW energy-billed, demand-billed or excluded. Callers are responsible for
 provenance stamping (``BaseScraper.mark_live_parsed``).
@@ -84,13 +85,55 @@ ST_LOAD_NOTE = (
     "type; they are conditional alternatives and are never summed."
 )
 
+MARKET_ENERGY_NAME = "Market Energy (Ontario Electricity Market Price + Class B Global Adjustment)"
+MARKET_REFERENCE = "IESO Ontario Electricity Market Price (OEMP) + Global Adjustment (Class B)"
+MARKET_SOURCE_URL = "https://www.ieso.ca/Power-Data/Price-Overview/Ontario-Market-Prices"
+GLOBAL_ADJUSTMENT_URL = "https://www.ieso.ca/power-data/price-overview/global-adjustment"
+HOEP_RETIRED_URL = "https://ieso.ca/Sector-Participants/Market-Operations/Legacy-Market/Hourly-Ontario-Energy-Price"
+RPP_REGULATION_URL = "https://www.ontario.ca/laws/regulation/050095"
+
 COMMODITY_NOTE = (
-    "Delivery and regulatory charges only, from the OEB-approved Tariff of Rates and Charges. "
-    "The electricity commodity is not included: demand-billed (>= 50 kW) customers are non-RPP and "
-    "pay the market-based Hourly Ontario Energy Price (HOEP) plus the Global Adjustment, which are "
-    "deferred to the Ontario market-rate work. Each charge is a separate component; no bill total "
-    "is calculated."
+    "Delivery and regulatory charges from the OEB-approved Tariff of Rates and Charges, plus one market energy "
+    "component with no stored value: demand-billed (50 kW and above) general service customers are non-RPP by "
+    "default and pay the hourly Ontario Electricity Market Price (OEMP) plus the Global Adjustment. The OEMP "
+    "replaced the Hourly Ontario Energy Price (HOEP), which was retired on April 30, 2025 "
+    f"({HOEP_RETIRED_URL}). Each charge is a separate component; no bill total is calculated."
 )
+
+RPP_ELIGIBILITY_NOTE = (
+    "Conditional RPP eligibility: O. Reg. 95/05, s. 4 (2) "
+    f"({RPP_REGULATION_URL}; the OEB RPP Manual states that consumers eligible for the RPP are identified in "
+    "this regulation) prescribes the Regulated Price Plan class as low-volume consumers, \"A consumer who has a "
+    "demand of 50 kilowatts or less\", accounts that relate to a dwelling, a condominium property, a residential "
+    "complex or a residential co-operative, \"A consumer who annually uses at least 150,000 but not more than "
+    "250,000 kilowatt hours of electricity\" and registered farming businesses. A customer of this class that uses "
+    "250,000 kWh a year or less, or whose account is for one of those residential or farm properties, may be "
+    "eligible for RPP prices instead of the market price."
+)
+
+RESIDENTIAL_DEMAND_COMMODITY_NOTE = (
+    "Delivery and regulatory charges only, from the OEB-approved Tariff of Rates and Charges. The electricity "
+    "commodity is not included and no market energy component is attached: an account that relates to a "
+    "dwelling is in the Regulated Price Plan class whatever its demand (O. Reg. 95/05, s. 4 (2), para. 3: \"A "
+    "consumer who has an account with a distributor, if the account relates to, i. a dwelling\"; "
+    f"{RPP_REGULATION_URL}). Conditional: a residential-rate account that does not relate to a dwelling (for "
+    "example under O. Reg. 445/07) is RPP-eligible only under the regulation's other criteria (such as using "
+    "250,000 kWh a year or less); otherwise it pays the Ontario Electricity Market Price plus the Global "
+    "Adjustment. Each charge is a separate component; no bill total is calculated."
+)
+
+MARKET_ENERGY_NOTE = (
+    "The hourly Ontario Electricity Market Price (Day-Ahead Ontario Zonal Price plus the Load Forecast Deviation "
+    "Adjustment) replaced the HOEP on May 1, 2025. The monthly Class B Global Adjustment "
+    f"({GLOBAL_ADJUSTMENT_URL}) applies per kWh. Conditional: Class A (Industrial Conservation Initiative) "
+    "customers instead pay Global Adjustment by their peak demand factor. The price varies hourly (market price) "
+    "and monthly (Global Adjustment), so no value is stored; observed averages are shown in the Market Pricing "
+    "view."
+)
+
+# Per-document option: the approved tariff prints no Retail Transmission Connection rate.
+CONNECTION_RATE_NOT_PRINTED = "not_printed"
+_CORPORATE_SUFFIX_RE = re.compile(r",?\s+(?:Inc\.|Ltd\.|Limited|Corp\.|Corporation|Incorporated)$")
 
 _DATE = r"[A-Z][a-z]+\.?\s+\d{1,2}\s*,?\s*\d{4}"
 _TARIFF_LINE_RE = re.compile(r"^TARIFF OF RATES AND CHARGES\b(?P<rest>.*)$")
@@ -1281,6 +1324,34 @@ def _selected(cls: Classification, classes: Iterable[str]) -> bool:
     return "LARGE USE" in wanted and category == "large_use"
 
 
+def connection_printed(cls: Classification) -> bool:
+    """Whether the class prints any Retail Transmission Connection line (standard or alternative)."""
+    return any(c.kind == "transmission_connection" for c in cls.charges)
+
+
+def connection_not_printed_note(utility_name: str, case_number: Optional[str]) -> str:
+    name = _CORPORATE_SUFFIX_RE.sub("", utility_name.strip())
+    case = f" ({case_number})" if case_number else ""
+    return (f"{name}'s approved tariff{case} prints no Retail Transmission Connection Service Rate; only the "
+            "Network Service Rate is published, so no connection charge is shown.")
+
+
+def market_energy_component(effective_date: Optional[str]) -> RateComponent:
+    """Value-less market energy of a non-RPP demand class; observed averages live only in the market model."""
+    return RateComponent(
+        component_type="energy",
+        component_name=MARKET_ENERGY_NAME,
+        charge_value=None,
+        charge_unit="$/kWh",
+        market_reference=MARKET_REFERENCE,
+        market_source_url=MARKET_SOURCE_URL,
+        effective_date=effective_date,
+        source_url=MARKET_SOURCE_URL,
+        source_detail="IESO Ontario Market Prices and Global Adjustment pages",
+        notes=MARKET_ENERGY_NOTE,
+    )
+
+
 def _st_load_path(eligibility: str) -> Optional[str]:
     """The ST "Load which: ..." eligibility path, without the embedded-LDC supply path."""
     flat = re.sub(r"\s+", " ", eligibility.replace("\u25cb", " ").replace("\u2022", " "))
@@ -1311,7 +1382,7 @@ def _validate_st(cls: Classification) -> Optional[str]:
     return None
 
 
-def _validate(cls: Classification) -> Optional[str]:
+def _validate(cls: Classification, connection_optional: bool = False) -> Optional[str]:
     if cls.code == "ST":
         reason = _validate_st(cls)
         if reason:
@@ -1326,6 +1397,8 @@ def _validate(cls: Classification) -> Optional[str]:
          "Retail Transmission Rate - Line and Transformation Connection Service Rate"),
     )
     for kind, units, label in checks:
+        if kind == "transmission_connection" and connection_optional and not connection_printed(cls):
+            continue
         found = [c for c in delivery if c.kind == kind
                  and not (kind.startswith("transmission") and c.conditional)
                  and not _METER_ALT_RE.match(c.label)]
@@ -1483,14 +1556,21 @@ def build_demand_records(
     province: str = "ON",
     classes: Sequence[str] = DEFAULT_DEMAND_CLASSES,
     today: Union[date, str, None] = None,
+    connection_rate: Optional[str] = None,
 ) -> list[TariffRecord]:
-    """Build delivery-only demand-billed records, failing closed per classification.
+    """Build demand-billed delivery records, failing closed per classification.
 
     Selected classes are GS 50-4,999 kW (plus any published GS sub-ranges between
     50 and 4,999 kW, and Hydro One UGd/GSd/AUGd/AGSd), Large Use variants and the
     Hydro One Sub Transmission (ST) load path. ``classes`` may also name class codes
     (e.g. ``("UGd",)``). Excluded service classes are never built, even if requested.
     Reasons for rejected classes are stored in ``sheet.rejections``.
+
+    These non-RPP classes also get one value-less market energy component (OEMP +
+    Class B Global Adjustment). Residential demand-billed classes (Algoma R2) stay
+    delivery-only: dwelling accounts are RPP-eligible whatever their demand.
+    ``connection_rate=CONNECTION_RATE_NOT_PRINTED`` accepts classes that print no
+    Retail Transmission Connection line at all (documents configured as such only).
     """
     as_of = _today_iso(today) if today is not None else sheet.today
     if sheet.errors:
@@ -1518,7 +1598,7 @@ def build_demand_records(
             continue
         if not _selected(cls, classes):
             continue
-        reason = _validate(cls)
+        reason = _validate(cls, connection_optional=connection_rate == CONNECTION_RATE_NOT_PRINTED)
         if reason:
             sheet.rejections[cls.name] = reason
             logger.warning("OEB tariff %s %s rejected: %s", sheet.distributor, cls.name, reason)
@@ -1537,8 +1617,12 @@ def build_demand_records(
         components = [_component(c, sheet, cls.name) for c in live]
         components += [_component(a, sheet, cls.name) for a in sheet.allowances
                        if _allowance_applies(a, cls)]
+        if not residential_demand:
+            components.append(market_energy_component(sheet.effective_date))
         large_use = category in ("large_use", "sub_transmission")
-        notes = [COMMODITY_NOTE]
+        notes = [RESIDENTIAL_DEMAND_COMMODITY_NOTE if residential_demand else COMMODITY_NOTE]
+        if not residential_demand:
+            notes.append(RPP_ELIGIBILITY_NOTE)
         if sub_transmission:
             notes.append(ST_LOAD_NOTE)
         if residential_demand:
@@ -1546,6 +1630,8 @@ def build_demand_records(
                          "published as a residential classification; RPP commodity prices are not applied.")
         if sheet.case_number:
             notes.append(f"OEB case {sheet.case_number}.")
+        if connection_rate == CONNECTION_RATE_NOT_PRINTED and not connection_printed(cls):
+            notes.append(connection_not_printed_note(utility_name, sheet.case_number))
         if sheet.implementation_date and sheet.implementation_date != sheet.effective_date:
             notes.append(f"Rates effective {sheet.effective_date}, implemented {sheet.implementation_date}.")
         notes.append("Regulatory-component charges do not apply to embedded wholesale market participants.")
@@ -1590,7 +1676,8 @@ def build_demand_records(
             demand_min_kw=demand_min,
             demand_max_kw=demand_max,
             rate_structure="demand",
-            pricing_method="regulated",
+            pricing_method="regulated" if residential_demand else "market_based",
+            market_reference=None if residential_demand else MARKET_REFERENCE,
             effective_date=sheet.effective_date,
             source_url=sheet.source_url,
             source_page=f"PDF pages {cls.pages[0]}-{cls.pages[-1]}" if len(cls.pages) > 1

@@ -218,21 +218,6 @@
           "notes": "Largest gas distributor in Alberta. Part of Canadian Utilities (ATCO Group). Distribution regulated by AUC. Retail gas is competitive; ATCO provides default supply."
         },
         {
-          "name": "EPCOR Natural Gas (formerly AltaGas Utilities)",
-          "utility_type": "gas",
-          "ownership": "municipal",
-          "service_area": "Parts of Alberta including Airdrie, Cochrane, Leduc, and approximately 60 other communities",
-          "website": "https://www.epcor.com",
-          "rate_page": "https://www.epcor.com/products-services/natural-gas/rates/Pages/default.aspx",
-          "tariff_page": null,
-          "regulator_page": "https://www.auc.ab.ca",
-          "source_types": ["html", "pdf"],
-          "scraping_difficulty": "medium",
-          "scraping_status": "planned",
-          "customer_classes": ["residential", "commercial", "industrial"],
-          "notes": "EPCOR acquired AltaGas Utilities in 2020. Serves approximately 130,000 customers in smaller Alberta communities. Edmonton gas distribution is handled separately."
-        },
-        {
           "name": "Direct Energy Regulated Services",
           "utility_type": "both",
           "ownership": "private",
@@ -350,7 +335,7 @@
       "electricity_regulator": "Ontario Energy Board (OEB)",
       "gas_regulator": "Ontario Energy Board (OEB)",
       "regulatory_notes": "OEB regulates all electricity Local Distribution Companies (LDCs) and natural gas distributors. Electricity rates have multiple components: commodity (set via RPP or HOEP), delivery, regulatory charges, and Global Adjustment. Time-of-Use (TOU) pricing is standard for residential customers with smart meters. The OEB also sets the Ontario Electricity Rebate.",
-      "market_structure": "Hybrid market: generation is competitive (IESO-managed), but distribution is regulated monopoly through 60+ LDCs. Residential customers are mostly on Regulated Price Plan (RPP) with Time-of-Use or tiered rates. Large consumers can participate in wholesale market. Gas distribution is a regulated monopoly (Enbridge Gas).",
+      "market_structure": "Hybrid market: generation is competitive (IESO-managed), but distribution is regulated monopoly through 60+ LDCs. Residential customers are mostly on Regulated Price Plan (RPP) with Time-of-Use or tiered rates. Large consumers can participate in wholesale market. Gas distribution is a regulated monopoly (Enbridge Gas; EPCOR in the Aylmer and Southern Bruce areas).",
       "total_electricity_ldcs": "Approximately 60 local distribution companies (LDCs) exist in Ontario. The top 15-20 by customer count are listed individually below.",
       "utilities": [
         {
@@ -622,6 +607,21 @@
           "scraping_status": "planned",
           "customer_classes": ["residential", "commercial", "industrial"],
           "notes": "Dominant natural gas distributor in Ontario. Formed from 2019 merger of Enbridge Gas Distribution (southern Ontario) and Union Gas (northern and southwestern Ontario). Two legacy rate zones still in effect. Quarterly commodity rate adjustments. OEB-regulated."
+        },
+        {
+          "name": "EPCOR Natural Gas (Ontario)",
+          "utility_type": "gas",
+          "ownership": "municipal",
+          "service_area": "Two Ontario rate zones: Aylmer and surrounding area (EPCOR Natural Gas Limited Partnership) and Southern Bruce, Kincardine and area (EPCOR Southern Bruce Gas Inc.)",
+          "website": "https://www.epcor.com",
+          "rate_page": "https://www.epcor.com/ca/en/on/aylmer-area/account/rates/natural-gas-rates.html",
+          "tariff_page": null,
+          "regulator_page": "https://www.oeb.ca/utility-performance-and-monitoring/natural-gas-rates-and-charges",
+          "source_types": ["html", "pdf"],
+          "scraping_difficulty": "medium",
+          "scraping_status": "planned",
+          "customer_classes": ["residential", "commercial", "industrial"],
+          "notes": "EPCOR's regulated natural gas distribution is in Ontario: EPCOR Natural Gas Limited Partnership (Aylmer) and EPCOR Southern Bruce Gas Inc. (Kincardine area). Regulated by the Ontario Energy Board (OEB); gas supply prices change quarterly (QRAM). Southern Bruce rates page: https://www.epcor.com/ca/en/on/kincardine-area/account/rates/natural-gas-rates.html. EPCOR is owned by the City of Edmonton but does not distribute natural gas in Alberta. Earlier versions of this inventory listed this entry under Alberta as the former AltaGas Utilities; that Alberta gas distributor is a separate company (now Apex Utilities) and is not registered."
         },
         {
           "name": "Independent Electricity System Operator (IESO)",

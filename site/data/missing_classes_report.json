@@ -1,5 +1,19 @@
 [
   {
+    "utility": "ATCO Electric",
+    "province": "AB",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "industrial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "Large General Service - Distribution Connected (Price Schedule D31)",
+      "Large General Service - Transmission Connected (Price Schedule T31)"
+    ]
+  },
+  {
     "utility": "Alberta Electric System Operator",
     "province": "AB",
     "utility_type": "electricity",
@@ -9,6 +23,32 @@
     "missing_classes": [
       "residential",
       "commercial"
+    ]
+  },
+  {
+    "utility": "ENMAX Power",
+    "province": "AB",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "Medium Commercial Distribution (Rate D300)"
+    ]
+  },
+  {
+    "utility": "EPCOR Distribution",
+    "province": "AB",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "Commercial/Industrial 50 kVA to <150 kVA Distribution and Transmission (DAS-MC)",
+      "Commercial/Industrial 150 kVA to <5,000 kVA Secondary Distribution and Transmission (DAS-TOU)",
+      "Primary Commercial/Industrial >=150 kVA Distribution and Transmission (DAS-TOUP)"
     ]
   },
   {

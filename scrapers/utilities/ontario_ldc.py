@@ -82,7 +82,8 @@ OEB_REGULATORY_CHARGE = 0.0053    # $/kWh — regulatory charge (Jan 2026)
 # ═══════════════════════════════════════════════════════════════
 # OEB-regulated GS energy rates (same province-wide)
 # GS < 50 kW uses TOU/Tiered like residential (same energy prices)
-# GS >= 50 kW pays market-based energy (IESO HOEP + GA)
+# GS >= 50 kW pays market-based energy: the IESO Ontario Electricity Market
+# Price (OEMP; the HOEP was retired April 30, 2025) plus the Global Adjustment
 # ═══════════════════════════════════════════════════════════════
 
 # Street Lighting energy rate
@@ -908,6 +909,10 @@ OEB_DEFAULT_ZONES: dict[str, dict[str, str]] = {
 #                 for all groups or {"residential": ..., "gs": ..., "demand": ...};
 #                 "" = the distributor's plain standard class
 #   extract       optional text-extraction options, e.g. {"y_tolerance": 6}
+#   connection_rate optional "not_printed" (oeb_tariff.CONNECTION_RATE_NOT_PRINTED):
+#                 the approved tariff prints no Retail Transmission Connection rate, so
+#                 classes without any connection line are accepted (with a note);
+#                 every other document requires one
 # ═══════════════════════════════════════════════════════════════
 
 _OEB_RDS_DOC = "https://www.rds.oeb.ca/CMWebDrawer/Record/{}/File/document"
@@ -1091,6 +1096,12 @@ OEB_TARIFF_DOCUMENTS: dict[str, list[dict]] = {
         "url": _OEB_RDS_DOC.format(936426),
         "case_number": "EB-2025-0017", "zones": None, "default_zone": "",
     }],
+    # Prints only the Network Service Rate (no connection rate); configured per user decision 2026-10-09.
+    "PUC Distribution Inc.": [{
+        "url": _OEB_RDS_DOC.format(936444),
+        "case_number": "EB-2025-0012", "zones": None, "default_zone": "",
+        "connection_rate": oeb_tariff.CONNECTION_RATE_NOT_PRINTED,
+    }],
     # R1 criteria (i) (year-round dwelling) keeps the legacy residential codes; no GS classes.
     "Algoma Power Inc.": [{
         "url": _OEB_RDS_DOC.format(926153),
@@ -1145,6 +1156,7 @@ _CBR_RE = re.compile(r"^Capacity Based Recovery", re.I)
 _RRRP_RE = re.compile(r"Rural or Remote", re.I)
 _SSS_RE = re.compile(r"Standard Supply Service", re.I)
 _NON_RPP_RE = re.compile(r"Global Adjustment|Non[- ]*RPP", re.I)
+_RATE_RIDER_RE = re.compile(r"^Rate Rider\b", re.I)
 _EXCLUDING_GA_RE = re.compile(r"excl\w*\.?\s+(?:the\s+)?Global Adj", re.I)
 _SUBAREA_ONLY_RE = re.compile(r"(?<!not )applicable to former [^()]*? customers only", re.I)
 _SEASONAL_RE = re.compile(r"\bseasonal\b", re.I)
@@ -1270,8 +1282,13 @@ def _split_criteria(charges: list, qualifier: str, eligibility: str):
     return out
 
 
-def validate_energy_charges(charges: list, group: str, unparsed: list[str]) -> Optional[str]:
-    """Return why an energy-billed class must fail closed, or None if complete."""
+def validate_energy_charges(charges: list, group: str, unparsed: list[str],
+                            connection_optional: bool = False) -> Optional[str]:
+    """Return why an energy-billed class must fail closed, or None if complete.
+
+    ``connection_optional`` (documents configured with connection_rate "not_printed")
+    accepts a class that prints no Retail Transmission Connection line at all.
+    """
     services = [c for c in charges if c.kind == "service"]
     if len(services) != 1:
         return f"expected exactly one Service Charge line, found {len(services)}"
@@ -1283,6 +1300,8 @@ def validate_energy_charges(charges: list, group: str, unparsed: list[str]) -> O
     if dist and dist[0].unit != "$/kWh":
         return f"Distribution Volumetric Rate unit {dist[0].unit} is not $/kWh (demand-billed class?)"
     for kind, label in (("transmission_network", "Network"), ("transmission_connection", "Connection")):
+        if kind == "transmission_connection" and connection_optional and not any(c.kind == kind for c in charges):
+            continue
         std = [c for c in charges if c.kind == kind and not c.conditional]
         if len(std) != 1 or std[0].unit != "$/kWh":
             return f"expected one standard $/kWh Retail Transmission {label} rate, found {len(std)}"
@@ -1299,7 +1318,8 @@ def validate_energy_charges(charges: list, group: str, unparsed: list[str]) -> O
             return f"'{c.label}' value {c.value} $/kWh implausible"
         if c.kind == "other" and not _SME_RE.search(c.label) and not _is_conditional_credit(c):
             return f"unrecognised delivery charge '{c.label}'"
-        if c.kind == "regulatory" and not any(p.search(c.label) for p in (_WMS_RE, _CBR_RE, _RRRP_RE, _SSS_RE)):
+        if c.kind == "regulatory" and not any(p.search(c.label) for p in (_WMS_RE, _CBR_RE, _RRRP_RE, _SSS_RE)) \
+                and not _is_regulatory_rider(c):
             return f"unrecognised regulatory charge '{c.label}'"
     bad = [text for text in unparsed if re.search(r"\$|\d\.\d", text)]
     if bad:
@@ -1311,10 +1331,22 @@ def _is_conditional_credit(charge) -> bool:
     return charge.conditional and charge.value < 0 and "credit" in charge.label.casefold()
 
 
+def _is_regulatory_rider(charge) -> bool:
+    """A rate rider printed in the Regulatory Component (PUC's Embedded Generation Adjustment).
+
+    Non-RPP riders there stay unrecognised: the non-RPP omission only covers delivery riders.
+    """
+    return bool(_RATE_RIDER_RE.match(charge.label)) and not _NON_RPP_RE.search(charge.label)
+
+
 def _energy_loss_factors(sheet, cls) -> list:
     by_class = getattr(oeb_tariff, "class_loss_factors", None)
     losses = by_class(sheet, cls) if by_class else sheet.loss_factors
     return [lf for lf in losses if "> 5,000" not in lf.label]
+
+
+def _connection_optional(doc: dict) -> bool:
+    return doc.get("connection_rate") == oeb_tariff.CONNECTION_RATE_NOT_PRINTED
 
 
 def _zone_default(doc: dict, group: str, distributor: Optional[str]) -> str:
@@ -1622,7 +1654,8 @@ class OntarioLDCScraper(BaseScraper):
     Produces tariffs for:
       - Residential: TOU, Tiered, ULO (per rate zone/class when live)
       - GS < 50 kW: TOU, Tiered, ULO (per rate zone/class when live)
-      - GS >= 50 kW / Large Use: delivery-only demand classes (live) or seed
+      - GS >= 50 kW / Large Use: demand classes (live: delivery charges plus a
+        value-less market energy component) or seed
       - Street Lighting (seed estimate; excluded class)
     """
 
@@ -1866,7 +1899,8 @@ class OntarioLDCScraper(BaseScraper):
                 for qual, charges, seasonal_split in _split_seasonal(crit_charges, crit_qual):
                     label = " / ".join(part for part in (zone, qual) if part)
                     key = f"{group}:{label or 'standard'}"
-                    reason = validate_energy_charges(charges, group, cls.unparsed)
+                    reason = validate_energy_charges(charges, group, cls.unparsed,
+                                                     connection_optional=_connection_optional(doc))
                     if reason:
                         self.tariff_rejections[key] = reason
                         self.logger.warning("Rejected OEB tariff %s for %s: %s", key, self._ldc_name, reason)
@@ -1895,13 +1929,16 @@ class OntarioLDCScraper(BaseScraper):
                 if (allowance.unit == "$/kWh" and "allowance" in allowance.label.casefold()
                         and re.search(r"less than 50 kW|Energy Billed", allowance.label, re.I)):
                     components.append(self._tariff_component(allowance, sheet, cls.name, when))
+        class_notes = list(cls.notes)
+        if _connection_optional(doc) and not any(c.kind == "transmission_connection" for c in charges):
+            class_notes.append(oeb_tariff.connection_not_printed_note(self._ldc_name, sheet.case_number))
         return {
             "group": group,
             "label": label,
             "default": label == _zone_default(doc, group, self._oeb_distributor),
             "sheet": sheet,
             "class_name": cls.name,
-            "class_notes": list(cls.notes),
+            "class_notes": class_notes,
             "losses": _energy_loss_factors(sheet, cls),
             "eligibility": cls.eligibility if eligibility is None else eligibility,
             "pages": list(cls.pages),
@@ -2067,7 +2104,8 @@ class OntarioLDCScraper(BaseScraper):
     def _tariff_demand_records(self, doc: dict, sheet, today: date) -> list[TariffRecord]:
         """Delivery-only demand-class records from oeb_tariff, dated like the RPP records."""
         try:
-            records = oeb_tariff.build_demand_records(sheet, self._ldc_name, today=today)
+            records = oeb_tariff.build_demand_records(sheet, self._ldc_name, today=today,
+                                                      connection_rate=doc.get("connection_rate"))
         except Exception as exc:
             self.logger.warning("OEB demand classes failed for %s: %s", self._ldc_name, exc)
             return []
@@ -2530,7 +2568,8 @@ class OntarioLDCScraper(BaseScraper):
         # ================================================================
         # GS >= 50 kW — demand-based pricing (up to 3 tiers)
         #
-        # Energy is market-based (IESO HOEP + GA).
+        # Energy is market-based (IESO Ontario Electricity Market Price + GA;
+        # the HOEP was retired April 30, 2025).
         # Transmission is demand-based ($/kW) — NOT volumetric.
         # Each tier has its own fixed, distribution demand, and
         # transmission demand charges from the LDC data dict.
@@ -2569,11 +2608,13 @@ class OntarioLDCScraper(BaseScraper):
                 demand_min_kw=float(demand_min),
                 demand_max_kw=float(demand_max) if demand_max else None,
                 pricing_method="market_based",
-                market_reference="IESO HOEP + Global Adjustment",
+                market_reference=oeb_tariff.MARKET_REFERENCE,
                 notes=(
-                    f"{sub_class} energy cost is market-based (IESO HOEP + GA). "
+                    f"{sub_class} energy cost is market-based: the IESO Ontario Electricity Market Price "
+                    "(OEMP), which replaced the Hourly Ontario Energy Price (HOEP, retired April 30, 2025; "
+                    f"{oeb_tariff.HOEP_RETIRED_URL}), plus the Global Adjustment. "
                     "Class B pays GA as volumetric per-kWh charge; "
-                    "Class A (> 1 MW) pays GA via coincident peak demand (ICI). "
+                    "Class A (Industrial Conservation Initiative) pays GA by peak demand factor. "
                     f"Delivery charges are specific to {self._ldc_name}. "
                     "See market_pricing_ontario.json for hourly representative rates."
                 ),
@@ -2583,11 +2624,13 @@ class OntarioLDCScraper(BaseScraper):
                         component_name="Energy (Market-Based)",
                         charge_value=None,
                         charge_unit="$/kWh",
-                        market_reference="IESO HOEP + Global Adjustment",
-                        source_url=OEB_SOURCE_URL,
+                        market_reference=oeb_tariff.MARKET_REFERENCE,
+                        market_source_url=oeb_tariff.MARKET_SOURCE_URL,
+                        source_url=oeb_tariff.MARKET_SOURCE_URL,
                         confidence="medium",
                         notes=(
-                            "Market-based: HOEP + GA. Actual cost varies by hour/month. "
+                            "Market-based: Ontario Electricity Market Price + Global Adjustment (the HOEP was "
+                            "retired April 30, 2025). Actual cost varies by hour/month. "
                             "See market_pricing_ontario.json for representative rates."
                         ),
                     ),

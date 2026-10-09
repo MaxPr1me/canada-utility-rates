@@ -20,62 +20,74 @@ but further expansion of those classes is deferred. Shared general-service tarif
 still be relevant to buildings even when the utility also offers them to other users.
 Inventory counts below include reference-only records, not just building tariffs.
 
-## Current Status (2026-10-08)
+## Current Status (2026-10-09)
 
 The framework and website are implemented; **nationwide live-rate coverage is not complete**.
-The export was regenerated on **2026-10-08** after Ontario batch 2 (scrape run 26, all 46
-configured Ontario distributors re-stored). History was preserved.
+The export was regenerated on **2026-10-09** after batch 12 (scrape run 27: Alberta electricity
+plus all 47 Ontario distributors re-stored with PUC Distribution and Phase 6B; scrape run 28:
+Ontario/Alberta gas). History was preserved.
 A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
 
 | Measure | Exported state |
 |---|---|
-| Registered utilities | 86: 77 electricity and 9 gas, across all 13 provinces/territories (8 absorbed Ontario entries marked `merged`) |
-| Stored tariff versions / components | 1,321 / 13,343, including history and older estimates |
-| Live-sourced tariffs | **836 latest tariffs across 67 utilities**; 841 stored live versions |
+| Registered utilities | 87: 77 electricity and 10 gas, across all 13 provinces/territories (8 absorbed Ontario entries marked `merged`; the mis-registered Alberta "EPCOR Natural Gas" entry marked `retired`) |
+| Stored tariff versions / components | 1,396 / 14,179, including history and older estimates |
+| Live-sourced tariffs | **910 latest tariffs across 77 utilities**; 916 stored live versions |
 | Active regional campaign | **243 latest live records across all 16 provincial target utilities**; 109 across the four territorial utilities |
-| Ontario (batches 1-2) | **483 latest live records across 46 distributors** from OEB-approved tariff sheets; only PUC Distribution stays unconfigured |
-| Remaining seed-only campaign utilities | **0**; SaskPower's scoped building schedules are audited, while other targets have recorded gaps |
+| Ontario electricity | **490 latest live records across all 47 active distributors** from OEB-approved tariff sheets (PUC Distribution configured October 9) |
+| Alberta electricity (batch 12) | **28 latest live records**: ENMAX Power, ATCO Electric, EPCOR Distribution and FortisAlberta wires (5 each) plus 8 Rate of Last Resort records from three providers |
+| Ontario/Alberta gas (batch 12) | **40 latest live records**: Enbridge Gas 20, ATCO Gas 10, EPCOR Natural Gas (Ontario) 10 |
+| Active utilities without live output | **1**: AESO, a market reference; every other active utility has live output, with recorded gaps |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Historical snapshots | **3,013**; Ontario batch 2 appended 527 without changing prior snapshots |
+| Historical snapshots | **3,616**; batch 12 runs 27 and 28 appended 563 and 40 without changing prior snapshots |
 | DB validation | **0 errors, 2 existing AESO warnings** |
-| Deterministic tests | **1,213 passing** across 8 modules |
+| Deterministic tests | **1,564 passing** across 8 modules |
 
 Live output currently includes BC Hydro (17), FortisBC Electric (11), Manitoba Hydro (18), NB Power (10),
 Nova Scotia Power (18), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
 NL Hydro (21), SaskPower (41), SaskEnergy (8), Centra Gas Manitoba (13), FortisBC Energy (27),
 Energir (5), Heritage/Eastward (3), Liberty NB (4), NTPC (63), Qulliq Energy (6), Yukon Energy (20),
-ATCO Electric Yukon (20), FortisAlberta (1) and 46 Ontario distributors (483; Hydro One 50,
-Alectra 44, Elexicon 19, ERTH 18, Enova 16, GrandBridge 16, North Bay 15, Newmarket-Tay 14,
-Toronto 12, Algoma 10 and others; see the matrix).
+ATCO Electric Yukon (20); in Alberta ENMAX Power (5), ATCO Electric (5), EPCOR Distribution (5),
+FortisAlberta (5), Direct Energy Regulated Services (2), ENMAX Energy (2) and EPCOR Energy
+Alberta (4); Enbridge Gas (20), ATCO Gas (10) and EPCOR Natural Gas (Ontario) (10); and all 47
+active Ontario distributors (490; Hydro One 50, Alectra 44, Elexicon 19, ERTH 18, Enova 16,
+GrandBridge 16, North Bay 15, Newmarket-Tay 14, Toronto 12, Algoma 10, PUC Distribution 7 and
+others; see the matrix).
 These counts use the latest version per tariff, not complete utility catalogues.
 They include conditional products, adjustment-only records and retained non-building
 references, not a count of complete building classes. Yukon Energy and ATCO Electric Yukon
 publish the same 20 joint YUB schedules; NTPC's 63 include 52 per-community government
-records. FortisAlberta is retained without a new regional-run scrape. Ontario demand classes
-are delivery-only (commodity/GA deferred to market-rate work); PUC Distribution, Alberta (except
-FortisAlberta Rate 11) and the five Ontario/Alberta gas utilities still have no live records.
+records. Ontario non-RPP demand classes list their delivery charges plus a market energy component with
+no stored number (shown as "Variable"; observed averages wait for Phase 6A). Alberta wires records
+keep distribution and transmission separate; Rate of Last Resort energy is a separate retail
+record. AESO is the only active registered utility without live output.
 
-**Where we stand (October 8):** the 20-utility regional campaign is closed out (batch 11) and
-Ontario electricity distribution is essentially complete (46 of 47 active distributors live).
-Next blocks, in planning order: Alberta wires (ENMAX, ATCO Electric, EPCOR) and Ontario/Alberta
-gas (ATCO Gas, Enbridge, EPCOR Natural Gas), whose sources were researched October 8 and await
-scope decisions; then the renumbered future phases (see the Roadmap): 6 Market Integration
-(Ontario demand-class commodity/GA, Alberta, deferred market-indexed products, gas commodity),
-7 Representative Models, 8 automatic model refresh and 9 product follow-up including the
-Across-Canada comparison. First CI runs of the updated workflows are still
-unverified.
+**Where we stand (October 9):** the 20-utility regional campaign is closed out (batch 11), all 47
+active Ontario distributors are live, and batch 12 added Alberta electricity (four wires
+utilities and the three Rate of Last Resort providers), Ontario/Alberta gas (Enbridge Gas, ATCO
+Gas and a new EPCOR Natural Gas (Ontario) entry that replaces a retired, mis-registered Alberta
+entry), PUC Distribution and value-less market energy components for Ontario demand classes
+(Phase 6B). Open batch 12 decisions are listed in the matrix queue. In progress and not yet
+published: the observed IESO market model (Phase 6A, blocked because the IESO keeps only about
+90 days of hourly day-ahead price files; options await a user decision), market wording and
+charge formatting on the site, a per-run live/seed summary in `run_scrape`, and the Phase 7A
+crosswalk, 7B engine and tax table (built, awaiting user review). Then the remaining future
+phases (see the Roadmap): 6C-6E market work, 7 Representative Models, 8 automatic model refresh
+and 9 product follow-up including the Across-Canada comparison. First CI runs of the updated
+workflows are still unverified.
 
 See the [coverage matrix](docs/phase5_completion_matrix.md) for the implementation queue
 and [parser gap report](docs/live_parser_gap_report.md) for class-level details.
 A successful scrape can return only seeds; success counts and an empty missing-data log
 do **not** prove live coverage.
 
-The active campaign covers 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL plus,
+The regional campaign covers 16 registered utilities in BC/QC/MB/SK/NB/NS/PE/NL plus,
 from October 7, the four territorial utilities (non-market regulated service).
-Alberta remains excluded from this run. Ontario electricity distribution ran as its own block
-on October 7-8 (batches 1-2: 46 distributors). From October 6,
+Ontario electricity distribution ran as its own block (batches 1-2 on October 7-8; PUC
+Distribution added October 9), and batch 12 (October 9) covered Alberta electricity and
+Ontario/Alberta gas. From October 6,
 building-related industrial general facility classes are in scope, including those
 defined by size, voltage or interruptibility. Process-specific farm, oil-field,
 irrigation, NGV fuelling, EV charging, lighting, wholesale/reseller and standby-only
@@ -193,20 +205,25 @@ canada-utility-costs/
 │   │   ├── validation.py     ← Data quality checks
 │   │   ├── change_detection.py ← Compare live-parsed vs seed data, alert on drift
 │   │   ├── market_pricing.py ← Ontario IESO market pricing model
+│   │   ├── oeb_tariff.py     ← Ontario OEB Tariff of Rates and Charges PDF reader
+│   │   ├── alberta_rolr.py   ← Shared Alberta Rate of Last Resort helpers (UCA cross-check, term gate)
 │   │   └── logging_config.py ← Logging setup
-│   └── utilities/            ← 33 scraper modules + package initializer; 86 registered utilities
+│   └── utilities/            ← 34 scraper modules + package initializer; 87 registered utilities
 │       ├── bc_hydro.py       ← BC Hydro (electricity, BC)
 │       ├── hydro_quebec.py   ← Hydro-Québec (electricity, QC)
 │       ├── ontario_ldc.py    ← All Ontario LDCs (one class; OEB tariff sheets via utils/oeb_tariff.py)
 │       ├── toronto_hydro.py  ← Legacy, unregistered; current Toronto entry uses the LDC scraper
 │       ├── enbridge_gas.py   ← Enbridge Gas (gas, ON)
+│       ├── epcor_gas_ontario.py ← EPCOR Natural Gas (gas, ON: Aylmer and Southern Bruce)
+│       ├── epcor_gas.py      ← Retired Alberta "EPCOR Natural Gas" entry (history only)
+│       ├── atco_gas.py       ← ATCO Gas (gas, AB)
 │       ├── atco_electric.py  ← ATCO Electric (distribution, AB)
 │       ├── fortisalberta.py  ← FortisAlberta (distribution, AB)
 │       ├── epcor_distribution.py ← EPCOR Distribution (AB)
 │       ├── enmax_power.py    ← ENMAX Power (distribution, AB)
-│       ├── direct_energy_regulated.py ← Direct Energy RRO (AB)
-│       ├── enmax_energy.py   ← ENMAX Energy RRO (AB)
-│       ├── epcor_energy_alberta.py ← EPCOR Energy RRO (AB)
+│       ├── direct_energy_regulated.py ← Direct Energy Regulated Services Rate of Last Resort (AB)
+│       ├── enmax_energy.py   ← ENMAX Energy Rate of Last Resort (AB)
+│       ├── epcor_energy_alberta.py ← EPCOR Energy Alberta Rate of Last Resort (AB)
 │       ├── aeso.py           ← AESO market reference (AB)
 │       ├── nl_hydro.py       ← NL Hydro (electricity, NL)
 │       └── ...               ← Other provincial utilities
@@ -242,7 +259,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 1,213 deterministic tests across 8 test modules
+├── tests/                    ← 1,564 deterministic tests across 8 test modules
 │   ├── fixtures/             ← Source-derived fixtures; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
@@ -283,7 +300,7 @@ The database stores rate data at **full granularity**. Instead of one "cost per 
 - **Regulatory charges** — regulator fees
 - **Riders** — temporary adjustments, credits, or surcharges
 - **Carbon charges** — federal and provincial carbon levies
-- **Market-indexed components** — prices linked to wholesale markets
+- **Market-indexed components** — prices linked to wholesale markets, stored with a market reference but no number (shown as "Variable") until observed values exist
 
 Each charge has its own row with:
 - The rate value and unit
@@ -351,19 +368,33 @@ The dashboard displays a 576-bin illustrative HOEP + Global Adjustment model:
 inputs and hourly multipliers; it does **not** ingest five years of IESO observations.
 Re-running it does not refresh prices from IESO.
 
+**HOEP retired:** the IESO retired the Hourly Ontario Energy Price on April 30, 2025. Since
+May 1, 2025 the wholesale energy price is the Ontario Electricity Market Price (OEMP, "the
+Ontario Price"): the Day-Ahead Ontario Zonal Price plus the Load Forecast Deviation Adjustment.
+The published model still uses the old HOEP framing.
+
 **Known provenance issue:** the JSON metadata and dashboard still describe historical
 averages. Treat these numbers as modeled estimates, not measured or current prices.
-Correcting the display and replacing the model with reproducible official-data ingestion
-are explicit follow-up phases. Current market definitions, effective periods and
-Class A/Class B allocation rules must be verified before implementing that ingestion.
+An observed-data rework (Phase 6A) is in progress but not published: the IESO keeps only about
+90 days of hourly day-ahead zonal price files, so a trailing 12-month hourly window cannot be
+built until about August 2027 unless data is accumulated, and the options await a user
+decision. Ontario demand-class tariffs do not copy model values: since batch 12 their non-RPP
+records carry a market energy component with no stored number (Phase 6B), and Class A Global
+Adjustment (by peak demand factor) is a conditional note.
 
 ### Alberta Deregulated Market
 
-Alberta distribution (wires), default retail products and AESO wholesale observations
-are separate data sources. Several modules and seeds still use legacy RRO descriptions.
-Current Rate of Last Resort product names, terms and published rates require official
-verification before completing those parsers; do not assume default retail is a monthly
-pool-price pass-through.
+Alberta distribution (wires), default retail and AESO wholesale observations are separate
+data sources and stay separate records. Since batch 12 (October 9) the four wires utilities
+(ENMAX Power, ATCO Electric, EPCOR Distribution, FortisAlberta) are live, with distribution and
+transmission (System Access Service) charges as separate components and current riders as
+dated components. The **Rate of Last Resort** (RoLR), which replaced the Regulated Rate Option on
+January 1, 2025, is live for its three providers: a fixed energy price to December 31, 2026
+(Direct Energy Regulated Services 12.02, ENMAX Energy 12.06 and EPCOR Energy Alberta 12.01
+cents/kWh), cross-checked with the Utilities Consumer Advocate (UCA) default-rates table.
+These records fail closed after the term ends until the next term is published; old RRO
+seeds remain labelled history. Competitive retail contracts are not included. AESO pool-price
+observations remain a market reference for Phase 6C.
 
 ### Other Provinces
 
@@ -431,9 +462,9 @@ features, **not evidence that all registered utilities or published classes are 
 | 5B: SaskPower | Standard/bulk-metered/diesel residential, general-service/voltage/TOU and renewable-access schedules | Audited building scope implemented October 1; 41 live tariffs total including retained non-building reference records |
 | 5C: Residential products and building-service expansion | Review optional residential plans and retain building-service gaps | Nine batches delivered; remaining building catalogues still incomplete |
 | 5D: Provincial/territorial depth | Building-class audits at already-live utilities; later territorial coverage | NL Hydro 21 records implemented; territories reopened October 7 (NTPC, Qulliq, Yukon Energy and ATCO Electric Yukon live) |
-| 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | All six in-scope gas utilities have live output; building-service gaps remain. ON/AB gas excluded from this run |
-| 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Planned |
-| 5G: Ontario | Batches 1-2 done October 7-8: 46 distributors live from OEB tariff sheets; rejected classes no longer re-emit estimates. PUC Distribution unconfigured (no connection rate printed). Demand-class commodity/GA waits for Phase 6 (Market Integration) | Mostly done |
+| 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | All nine active gas utilities have live output: the six campaign utilities plus, from batch 12 (October 9), Enbridge Gas (20), ATCO Gas (10) and the new EPCOR Natural Gas (Ontario) entry (10), which replaces a retired, mis-registered Alberta entry; building-service gaps and open decisions remain |
+| 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Batch 12 (October 9): ENMAX Power, ATCO Electric, EPCOR Distribution (2026 interim rates, medium confidence) and FortisAlberta live (5 each; transmission and dated riders separate) plus Rate of Last Resort energy from all three providers (8); AESO stays a market reference (Phase 6C); transmission-connected and admin-charge decisions open |
+| 5G: Ontario | Batches 1-2 (October 7-8) plus PUC Distribution (October 9; its tariff prints no connection rate, noted on each record): all 47 active distributors live from OEB tariff sheets (490 records); rejected classes no longer re-emit estimates. Non-RPP demand classes carry a value-less market energy component (Phase 6B) | Done for active distributors; observed market energy waits for 6A |
 | 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; first CI run verification and provenance reporting remain |
 
 **Definition of done for each utility:** account for the standard published classes
@@ -455,22 +486,24 @@ the roadmap is not a promise to complete all Canadian parsers in one session.
 The original document phases ended at Phase 5. Future work now runs in this order:
 **6 Market Integration -> 7 Representative Models -> 8 Representative Model Refresh
 Automation -> 9 Product Follow-up** (including the Across-Canada comparison). Phase 5
-parser work (5F Alberta, ON/AB gas, PUC Distribution) continues alongside where a later
-phase depends on it.
+parser work for Alberta electricity, ON/AB gas and PUC Distribution was delivered in batch 12
+(October 9); remaining catalogue gaps and open decisions continue alongside the later phases.
 
-### Phase 6: Market Integration (planned)
+### Phase 6: Market Integration (in progress)
 
 Market-priced energy gets its own phase before any model or comparison uses it. Every
 market price needs an official source, a stated pricing period and a freshness date; modeled
-values are labelled modeled and are never presented as a tariff.
+values are labelled modeled and are never presented as a tariff. Until observed values exist, a
+market-indexed part of a tariff is stored as a component without a number, with its market
+reference and source URL; the site shows it as "Variable".
 
-| Phase | Work and completion gate | Depends on |
-|---|---|---|
-| 6A: Ontario market observations | Replace the fixed generator inputs of the Ontario market model with reproducible official IESO observations (Ontario energy price, Global Adjustment Class B) and freshness checks; correct the market-model metadata and UI disclosure | - |
-| 6B: Ontario demand-class energy | Attach modeled market energy (wholesale price plus Class B GA) to GS 50-4,999 kW and Large Use delivery-only records as labelled components; Class A noted as conditional | 6A |
-| 6C: Alberta market | AESO pool price observations; default retail (RoLR) energy from 5F; optional Alberta region in the Market Pricing dashboard if its variation warrants it (Alberta-specific values, sources, periods and methodology, never Ontario's HOEP-plus-GA assumptions; wholesale, retail and wires kept distinct) | 5F |
-| 6D: Deferred market-indexed products | FortisBC Electric RS38 (Mid-C), BC Hydro RS1892, NSPower one-part real-time pricing, NL Hydro monthly non-firm (5.1L, Island non-thermal) | 6A methods |
-| 6E: Gas commodity cadence | Quarterly QRAM (Ontario) and monthly default supply (Alberta GCFR) as dated commodity components with their refresh cadence | ON/AB gas parsers |
+| Phase | Work and completion gate | Depends on | Status |
+|---|---|---|---|
+| 6A: Ontario market observations | Replace the fixed generator inputs of the Ontario market model with reproducible official IESO observations (the Ontario Electricity Market Price, which replaced the HOEP on May 1, 2025, and Global Adjustment Class B) and freshness checks; correct the market-model metadata and UI disclosure | - | In progress, not published. Blocked: the IESO keeps only about 90 days of hourly day-ahead zonal price files, so a trailing 12-month hourly window cannot be built until about August 2027 unless data is accumulated; options await a user decision |
+| 6B: Ontario demand-class energy | Attach modeled market energy (wholesale price plus Class B GA) to GS 50-4,999 kW and Large Use delivery-only records as labelled components; Class A noted as conditional | 6A for observed averages | **Implemented October 9 (batch 12) as value-less components:** non-RPP demand classes (including Hydro One UGd/GSd/AUGd/AGSd and ST) carry "Market Energy (Ontario Electricity Market Price + Class B Global Adjustment)" with a market reference and the IESO source URL; Class A and RPP eligibility are conditional notes; Algoma R2 (residential dwellings stay RPP-eligible) has none |
+| 6C: Alberta market | AESO pool price observations; default retail (RoLR) energy from 5F; optional Alberta region in the Market Pricing dashboard if its variation warrants it (Alberta-specific values, sources, periods and methodology, never Ontario's market-price-plus-GA assumptions; wholesale, retail and wires kept distinct) | 5F | Planned. RoLR fixed prices are live from 5F; EPCOR Distribution's operating reserve charge (a percentage of the pool price) is stored value-less |
+| 6D: Deferred market-indexed products | FortisBC Electric RS38 (Mid-C), BC Hydro RS1892, NSPower one-part real-time pricing, NL Hydro monthly non-firm (5.1L, Island non-thermal) | 6A methods | Planned |
+| 6E: Gas commodity cadence | Quarterly QRAM (Ontario) and monthly default supply (Alberta GCFR) as dated commodity components with their refresh cadence | ON/AB gas parsers | Partly started: the batch 12 parsers store the current Enbridge and EPCOR QRAM gas supply prices and Direct Energy Regulated Services' monthly default rate as dated commodity components; cadence and freshness checks remain |
 
 ### Phase 7: Representative Models (planned)
 
@@ -522,9 +555,10 @@ about 18% across 46 distributors (Hydro One the main outlier).
 - **Commercial size bands:** under 50 kW, 50-499 kW, 500-4,999 kW and 5,000 kW and over (volume
   bands for gas). Each utility contributes the class whose published eligibility covers the
   band's reference load, and the model names that class.
-- **All-in energy:** regulated energy (Ontario RPP, provincial rates, regulated gas supply) is
-  used as published. Market-priced energy (Ontario non-RPP demand classes: HOEP plus Class B GA;
-  Alberta pool/RoLR; monthly or quarterly gas commodity) comes from the market model, is labelled
+- **All-in energy:** regulated energy (Ontario RPP, provincial rates, Alberta Rate of Last
+  Resort fixed prices, regulated gas supply) is used as published. Market-priced energy (Ontario
+  non-RPP demand classes: Ontario Electricity Market Price plus Class B GA; Alberta pool-price
+  charges; monthly or quarterly gas commodity) comes from the market model, is labelled
   modeled with its period basis, and comes from Phase 6 (Market Integration). Where Phase 6 has
   no market data yet, the model shows delivery plus a *market energy pending*
   state, never a guessed number.

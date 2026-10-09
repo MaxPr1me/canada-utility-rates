@@ -320,6 +320,16 @@
     "notes": null
   },
   {
+    "id": 3607,
+    "name": "EPCOR Natural Gas (Ontario)",
+    "province": "ON",
+    "utility_type": "gas",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
     "id": 141,
     "name": "Elexicon Energy Inc.",
     "province": "ON",

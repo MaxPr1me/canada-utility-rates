@@ -7879,7 +7879,8 @@ def test_oebt_toronto_records():
     assert (gs.customer_class, gs.rate_structure, gs.province, gs.effective_date) == (
         "commercial", "demand", "ON", "2026-01-01")
     assert (gs.demand_min_kw, gs.demand_max_kw) == (50, 1000)
-    assert "HOEP" in gs.notes and "Global Adjustment" in gs.notes and "not included" in gs.notes
+    assert "Ontario Electricity Market Price" in gs.notes and "HOEP" in gs.notes and "Global Adjustment" in gs.notes
+    assert gs.pricing_method == "market_based" and "250,000 kilowatt hours" in gs.notes
     fixed = OEBT_comp(gs, "Service Charge")
     assert (fixed.component_type, fixed.charge_value, fixed.charge_unit) == ("fixed", 64.30, "$/30 days")
     dist = OEBT_comp(gs, "Distribution Volumetric Rate")
@@ -7887,7 +7888,11 @@ def test_oebt_toronto_records():
     allowance = OEBT_comp(gs, "Transformer Allowance for Ownership")
     assert (allowance.component_type, allowance.charge_value) == ("rebate", -0.62)
     assert allowance.notes.startswith("Conditional")
+    market = [c for c in gs.components if c.market_reference]
+    assert [(c.component_type, c.charge_value, c.effective_date) for c in market] == [("energy", None, "2026-01-01")]
     for c in gs.components:
+        if c.market_reference:
+            continue
         assert c.source_url == gs.source_url and c.effective_date == "2026-01-01"
         assert c.source_detail.startswith("PDF page ") and "EB-2025-0006" in c.source_detail
         assert "total" not in c.component_name.casefold()
@@ -8238,7 +8243,8 @@ def test_oebt_hydro_one_main_demand_records():
     assert sum("former Chapleau" in (c.notes or "") for c in gsd.components) == 3
     for rec in records:
         assert rec.effective_date == "2026-01-01" and "EB-2025-0030" in rec.notes
-        assert all(c.source_detail.startswith("PDF page ") for c in rec.components)
+        assert all(c.source_detail.startswith("PDF page ") for c in rec.components if not c.market_reference)
+        assert [c.charge_value for c in rec.components if c.market_reference] == [None]
 
 
 def test_oebt_hydro_one_sub_transmission_load_path_only():
@@ -8829,7 +8835,9 @@ def test_onl_tariff_documents_config_integrity():
         assert docs, name
         defaults = set()
         for doc in docs:
-            assert set(doc) - {"extract"} == {"url", "case_number", "zones", "default_zone"}, name
+            assert set(doc) - {"extract", "connection_rate"} == {"url", "case_number", "zones", "default_zone"}, name
+            if "connection_rate" in doc:
+                assert doc["connection_rate"] == oeb_tariff.CONNECTION_RATE_NOT_PRINTED, name
             if "extract" in doc:
                 assert doc["extract"] and set(doc["extract"]) <= {"y_tolerance"}, name
                 assert all(isinstance(v, (int, float)) and v > 0 for v in doc["extract"].values()), name
@@ -9131,6 +9139,7 @@ def test_onl_expired_rider_omitted(monkeypatch):
 
 def test_onl_unconfigured_ldc_is_seed_only_without_xml(monkeypatch):
     calls = ONL_patch_sources(monkeypatch)
+    monkeypatch.delitem(ontario_ldc.OEB_TARIFF_DOCUMENTS, "PUC Distribution Inc.")
     records = ONL_OntarioLDCScraper(registry_entry={"name": "PUC Distribution Inc."}).scrape()
     ontario_ldc.clear_oeb_cache()
     assert records and not ONL_live(records)
@@ -9577,7 +9586,7 @@ def test_onl2_onl_b2_new_ldcs_configured():
         if name == "Grimsby Power Inc.":
             entry["extract"] = {"y_tolerance": 4}
         assert docs[name] == [entry], name
-    assert "PUC Distribution Inc." not in docs
+    assert docs["PUC Distribution Inc."][0]["connection_rate"] == "not_printed"
     assert docs["Algoma Power Inc."][0]["default_zone"] == {"residential": "R1 (i)"}
 
 
@@ -9629,6 +9638,7 @@ def test_onl2_onl_b2_sheet_rejection_keeps_labelled_seed(monkeypatch):
 
 def test_onl2_onl_b2_unconfigured_ldc_keeps_seed_despite_rejection(monkeypatch):
     calls = ONL_patch_sources(monkeypatch)
+    monkeypatch.delitem(ontario_ldc.OEB_TARIFF_DOCUMENTS, "PUC Distribution Inc.")
     scraper = ONL_OntarioLDCScraper(registry_entry={"name": "PUC Distribution Inc."})
     scraper.tariff_rejections["residential:standard"] = "not applicable"
     records = scraper.scrape()
@@ -9872,3 +9882,3990 @@ def test_alg2_alg_sheet_rejection_emits_labelled_seeds(monkeypatch):
     assert any(k.startswith("sheet:") for k in scraper.tariff_rejections)
     assert not ONL_live(records)
     assert ALG2_ALG_RES | ALG2_ALG_GS | {"GS-D1"} <= {r.tariff_code for r in ONL_seed(records)}
+
+
+# ======================================================================
+# ENMAX Power distribution tariff (batch 12)
+# ======================================================================
+from scrapers.utilities import enmax_power as ENX_enmax_power
+from scrapers.utilities.enmax_power import ENMAXPowerScraper as ENX_ENMAXPowerScraper, current_tariff_link as ENX_current_tariff_link, parse_schedule_pages as ENX_parse_schedule_pages, render_page_words as ENX_render_page_words
+from scrapers.utils.parsing import DocumentPage
+import json
+import logging
+from datetime import date
+from pathlib import Path
+
+import pytest
+import requests
+
+
+ENX_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "enmax_power.json"
+ENX_TODAY = date(2026, 10, 9)
+ENX_CODES = {"D100", "D200", "D300", "D310", "D410"}
+ENX_BPA = ("rider", "Balancing Pool Allocation Rider", 0.00129, "$/kWh", "2026-01-01", None)
+ENX_EXPECTED = {
+    "D100": [
+        ("fixed", "Service and Facilities Charge", 0.769463, "$/day", "2026-01-01", None),
+        ("distribution", "System Usage Charge", 0.015477, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Variable Charge", 0.038996, "$/kWh", "2026-01-01", None),
+        ENX_BPA,
+        ("rider", "Quarterly TAC Adjustment Rider", 0.000583, "$/kWh", "2026-10-01", "2026-12-31"),
+        ("rider", "TAC Deferral Account Rider Adjustment", 0.000483, "$/kWh", "2026-01-01", "2026-12-31"),
+    ],
+    "D200": [
+        ("fixed", "Service and Facilities Charge", 1.734942, "$/day", "2026-01-01", None),
+        ("distribution", "System Usage Charge", 0.013024, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Variable Charge", 0.031577, "$/kWh", "2026-01-01", None),
+        ENX_BPA,
+        ("rider", "Quarterly TAC Adjustment Rider", 0.000602, "$/kWh", "2026-10-01", "2026-12-31"),
+        ("rider", "TAC Deferral Account Rider Adjustment", 0.002877, "$/kWh", "2026-01-01", "2026-12-31"),
+    ],
+    "D300": [
+        ("fixed", "Service Charge", 9.644493, "$/day", "2026-01-01", None),
+        ("demand", "Facilities Charge", 0.065473, "$/kVA/day", "2026-01-01", None),
+        ("demand", "Non-Ratcheted Demand Charge", 0.063108, "$/kVA/day", "2026-01-01", None),
+        ("transmission", "Transmission Demand Charge", 0.271085, "$/kVA/day", "2026-01-01", None),
+        ("transmission", "Transmission Variable Charge", 0.009237, "$/kWh", "2026-01-01", None),
+        ("rebate", "Primary Voltage Transformation Credit - Service Charge", -1.848798, "$/day", "2026-01-01", None),
+        ("rebate", "Primary Voltage Transformation Credit - Facilities Charge", -0.012781, "$/kVA/day",
+         "2026-01-01", None),
+        ENX_BPA,
+        ("rider", "Quarterly TAC Adjustment Rider", 0.00063, "$/kWh", "2026-10-01", "2026-12-31"),
+        ("rider", "TAC Deferral Account Rider Adjustment", 0.001355, "$/kWh", "2026-01-01", "2026-12-31"),
+    ],
+    "D310": [
+        ("fixed", "Service Charge", 26.041806, "$/day", "2026-01-01", None),
+        ("demand", "Facilities Charge", 0.154031, "$/kVA/day", "2026-01-01", None),
+        ("demand", "Non-Ratcheted Demand Charge", 0.050674, "$/kVA/day", "2026-01-01", None),
+        ("transmission", "Transmission Demand Charge", 0.349342, "$/kVA/day", "2026-01-01", None),
+        ("transmission", "Transmission Variable Charge - On Peak", 0.012021, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Variable Charge - Off Peak", 0.009074, "$/kWh", "2026-01-01", None),
+        ENX_BPA,
+        ("rider", "Quarterly TAC Adjustment Rider", 0.000682, "$/kWh", "2026-10-01", "2026-12-31"),
+        ("rider", "TAC Deferral Account Rider Adjustment", 0.000165, "$/kWh", "2026-01-01", "2026-12-31"),
+    ],
+    "D410": [
+        ("fixed", "Service Charge", 30.042872, "$/day", "2026-01-01", None),
+        ("demand", "Facilities Charge", 0.02096, "$/kVA/day", "2026-01-01", None),
+        ("demand", "Non-Ratcheted Demand Charge", 0.060423, "$/kVA/day", "2026-01-01", None),
+        ("transmission", "Transmission Demand Charge", 0.308832, "$/kVA/day", "2026-01-01", None),
+        ("transmission", "Transmission Variable Charge - On Peak", 0.010132, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Variable Charge - Off Peak", 0.007561, "$/kWh", "2026-01-01", None),
+        ENX_BPA,
+        ("rider", "Quarterly TAC Adjustment Rider", 0.000669, "$/kWh", "2026-10-01", "2026-12-31"),
+        ("rider", "TAC Deferral Account Rider Adjustment", 0.000449, "$/kWh", "2026-01-01", "2026-12-31"),
+    ],
+}
+ENX_RECORDS = {
+    "D100": ("Residential Distribution (Rate D100)", "residential", "residential", "flat", "PDF pages 3-4, 18-20"),
+    "D200": ("Small Commercial Distribution (Rate D200)", "commercial", "small commercial (< 5,000 kWh/month)", "flat",
+             "PDF pages 5-6, 18-20"),
+    "D300": ("Medium Commercial Distribution (Rate D300)", "commercial", "medium commercial (>= 5,000 kWh/month)",
+             "demand", "PDF pages 7-8, 18-20"),
+    "D310": ("Large Commercial Secondary Distribution (Rate D310)", "commercial", "large commercial secondary voltage",
+             "mixed", "PDF pages 9-10, 18-20"),
+    "D410": ("Large Commercial Primary Distribution (Rate D410)", "commercial", "large commercial primary voltage",
+             "mixed", "PDF pages 11-12, 18-20"),
+}
+
+
+def ENX__fixture():
+    return json.loads(ENX_FIXTURE.read_text(encoding="utf-8"))
+
+
+def ENX__pages(edits=(), drop=()):
+    pages = []
+    for page in ENX__fixture()["pages"]:
+        number, text = page["page_number"], page["text"]
+        if number in drop:
+            continue
+        for target, old, new in edits:
+            if target == number:
+                assert old in text, (number, old)
+                text = text.replace(old, new, 1)
+        pages.append(DocumentPage(number, text))
+    return pages
+
+
+def ENX__parse(edits=(), drop=(), today=ENX_TODAY):
+    records = ENX_parse_schedule_pages(ENX__pages(edits, drop), ENX__fixture()["source_url"], today)
+    return {record.tariff_code: record for record in records}
+
+
+def ENX__comp(record, name):
+    (component,) = [c for c in record.components if c.component_name == name]
+    return component
+
+
+def test_enx_fixture_is_the_current_official_schedule():
+    fixture = ENX__fixture()
+    assert fixture["source_url"].startswith("https://assets.enmax.com/api/public/content/")
+    assert fixture["landing_url"] == "https://www.enmax.com/tariffs"
+    assert fixture["retrieved_on"] == "2026-10-09"
+    numbers = [page["page_number"] for page in fixture["pages"]]
+    assert {1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 19, 20} <= set(numbers)
+    assert "RATES IN EFFECT AS OF October 1, 2026" in fixture["pages"][0]["text"]
+
+
+def test_enx_parses_the_five_building_classes_exactly():
+    records = ENX__parse()
+    assert set(records) == ENX_CODES
+    for code, (name, customer_class, sub_class, structure, source_page) in ENX_RECORDS.items():
+        record = records[code]
+        assert (record.tariff_name, record.customer_class, record.sub_class, record.rate_structure,
+                record.source_page) == (name, customer_class, sub_class, structure, source_page)
+        assert (record.utility_name, record.province, record.utility_type) == ("ENMAX Power", "AB", "electricity")
+        assert record.pricing_method == "regulated" and record.confidence == "high"
+        assert record.effective_date == "2026-10-01" and record.end_date is None
+        assert record.source_url == ENX__fixture()["source_url"]
+        actual = [(c.component_type, c.component_name, c.charge_value, c.charge_unit, c.effective_date, c.end_date)
+                  for c in record.components]
+        assert actual == ENX_EXPECTED[code]
+
+
+def test_enx_every_component_is_sourced_and_dated():
+    source_url = ENX__fixture()["source_url"]
+    for record in ENX__parse().values():
+        for component in record.components:
+            assert component.source_url == source_url
+            assert component.source_detail.startswith("PDF page ")
+            assert component.effective_date and component.confidence == "high"
+            assert component.charge_value is not None and component.market_reference is None
+    d300 = ENX__parse()["D300"]
+    assert ENX__comp(d300, "Service Charge").source_detail == (
+        "PDF page 7; Rate Code D300, Distribution Charge for Distribution Access Service")
+    assert ENX__comp(d300, "Transmission Demand Charge").source_detail == (
+        "PDF page 7; Rate Code D300, Transmission Charge for System Access Service")
+    assert ENX__comp(d300, "Primary Voltage Transformation Credit - Service Charge").source_detail == (
+        "PDF page 8; Rate Code D300, Other item 5 (primary voltage transformation credit)")
+    assert ENX__comp(d300, "Quarterly TAC Adjustment Rider").source_detail == (
+        "PDF page 19; Quarterly TAC Adjustment Rider, Rate Code D300, Q4 2026 column")
+    assert ENX__comp(d300, "TAC Deferral Account Rider Adjustment").source_detail == (
+        "PDF page 20; 2026 TAC Deferral Account Rider Adjustment, Rate Code D300")
+    assert ENX__comp(d300, "Balancing Pool Allocation Rider").source_detail == (
+        "PDF page 18; 2026 Balancing Pool Allocation Rider")
+
+
+def test_enx_demand_units_conditions_and_tou_hours():
+    records = ENX__parse()
+    for code in ("D300", "D310", "D410"):
+        for name in ("Facilities Charge", "Non-Ratcheted Demand Charge", "Transmission Demand Charge"):
+            component = ENX__comp(records[code], name)
+            assert component.demand_unit == "kVA" and component.charge_unit == "$/kVA/day"
+        assert "Billing Demand" in ENX__comp(records[code], "Facilities Charge").notes
+        assert "90% of the highest kVA demand in the last 365 days" in ENX__comp(records[code], "Facilities Charge").notes
+        assert "Metered Demand" in ENX__comp(records[code], "Non-Ratcheted Demand Charge").notes
+        assert records[code].demand_min_kw is None and records[code].demand_max_kw is None
+    for name in ("Primary Voltage Transformation Credit - Service Charge",
+                 "Primary Voltage Transformation Credit - Facilities Charge"):
+        credit = ENX__comp(records["D300"], name)
+        assert credit.sub_component == "conditional" and credit.charge_value < 0
+        assert credit.notes.startswith("Conditional: only D300 sites that received primary voltage service before "
+                                       "January 1, 2009")
+    for code in ("D310", "D410"):
+        on = ENX__comp(records[code], "Transmission Variable Charge - On Peak")
+        off = ENX__comp(records[code], "Transmission Variable Charge - Off Peak")
+        assert (on.tou_period, off.tou_period) == ("on-peak", "off-peak")
+        assert on.tou_hours == ("8 a.m. to 9 p.m. Monday to Friday inclusive, excluding statutory holidays "
+                                "(ISO Rules definition)")
+    for code in ("D100", "D200", "D300"):
+        assert not [c for c in records[code].components if c.tou_period]
+    assert not [c for r in records.values() for c in r.components if c.sub_component and c.component_type != "rebate"]
+
+
+def test_enx_eligibility_usage_and_notes():
+    records = ENX__parse()
+    assert (records["D200"].usage_min, records["D200"].usage_max, records["D200"].usage_unit) == (
+        None, 5000.0, "kWh/month")
+    assert (records["D300"].usage_min, records["D300"].usage_max, records["D300"].usage_unit) == (
+        5000.0, None, "kWh/month")
+    assert "150 kVA was not registered twice" in records["D300"].eligibility
+    assert "greater than 150 kVA twice" in records["D310"].eligibility
+    assert "served at primary voltage" in records["D410"].eligibility
+    assert "domestic purposes" in records["D100"].eligibility
+    assert "basement suite" in records["D100"].notes
+    assert "bulk metering" in records["D300"].notes
+    assert "supply all transformers" in records["D410"].notes
+    for record in records.values():
+        assert "AUC Decision 30299-D01-2025 effective January 1, 2026" in record.notes
+        assert "in effect as of October 1, 2026" in record.notes
+        assert "Conditional: the City of Calgary Local Access Fee (LAF)" in record.notes
+        assert not [c for c in record.components if "Local Access" in c.component_name]
+        assert "31033-D01-2026" in ENX__comp(record, "Quarterly TAC Adjustment Rider").notes
+
+
+def test_enx_excluded_and_source_blocked_classes_are_not_emitted(caplog):
+    caplog.set_level(logging.INFO, logger="scrapers.utilities.enmax_power")
+    records = ENX__parse()
+    assert not {"D500", "D600", "D700"} & set(records)
+    assert "D700 (transmission connected) excluded" in caplog.text and "source-blocked" in caplog.text
+    assert "D500 excluded" in caplog.text and "D600 excluded" in caplog.text
+
+
+def test_enx_changed_values_propagate():
+    records = ENX__parse(edits=[
+        (3, "Service and Facilities Charge\tper day\t$0.769463", "Service and Facilities Charge\tper day\t$0.779463"),
+        (19, "($0.001826)\t$0.000583", "($0.001826)\t($0.000583)"),
+        (11, "Variable Charge Off Peak\tper kWh\t$0.007561", "Variable Charge Off Peak\tper kWh\t$0.007999"),
+    ])
+    assert set(records) == ENX_CODES
+    assert ENX__comp(records["D100"], "Service and Facilities Charge").charge_value == 0.779463
+    assert ENX__comp(records["D100"], "Quarterly TAC Adjustment Rider").charge_value == -0.000583
+    assert ENX__comp(records["D410"], "Transmission Variable Charge - Off Peak").charge_value == 0.007999
+
+
+@pytest.mark.parametrize(("drop", "rejected"), [
+    ((3,), {"D100"}),
+    ((4,), {"D100"}),
+    ((8,), {"D300"}),
+    ((10,), {"D310"}),
+    ((12,), {"D410"}),
+])
+def test_enx_missing_page_rejects_only_that_class(drop, rejected):
+    assert set(ENX__parse(drop=drop)) == ENX_CODES - rejected
+
+
+@pytest.mark.parametrize(("edits", "rejected"), [
+    ([(3, "System Usage Charge\tper kWh", "System Usage Charge\tper day")], {"D100"}),
+    ([(9, "Facilities Charge\tper day per kVA of", "Facilities Charge\tper day per kW of")], {"D310"}),
+    ([(8, "credit of $1.848798 per day applied", "credit of $1.848798 per month applied")], {"D300"}),
+    ([(3, "System Usage Charge\tper kWh\t$0.015477",
+       "System Usage Charge\tper kWh\t$0.015477\nCustomer Charge\tper day\t$1.000000")], {"D100"}),
+    ([(5, "SMALL COMMERCIAL\nRATE CODE D200", "MEDIUM COMMERCIAL\nRATE CODE D200")], {"D200"}),
+    ([(5, "less than 5,000 kWh per month", "less than 5,000 kWh per day")], {"D200"}),
+    ([(10, "\u201cOff Peak\u201d is all Energy consumption not consumed in On Peak hours", "")], {"D310"}),
+    ([(8, "(c) \u201cContract Demand\u201d is the kVA contracted for by the Customer", "")], {"D300"}),
+    ([(4, "Page 4 of 20", "Page 5 of 20")], {"D100"}),
+    ([(7, "$0.271085", "$0.271085 $0.100000")], {"D300"}),
+    ([(19, "Small Commercial\tD200\tper kWh\t$0.001280\t($0.001419)\t($0.001776)\t$0.000602\n", "")], {"D200"}),
+    ([(19, "($0.001776)\t$0.000602", "($0.001776)\t")], {"D200"}),
+    ([(19, "($0.001705)\t$0.000630", "($0.001705)\t0.000630")], {"D300"}),
+    ([(20, "Large Commercial - Primary\tD410\tper kWh\t$0.000449\n", "")], {"D410"}),
+    ([(20, "D300\tper kWh\t$0.001355", "D300\tper kVA\t$0.001355")], {"D300"}),
+    ([(7, "30299-D01-2025 effective January 1, 2026 and System", "30299-D01-2025 effective January 1, 2027 and System"),
+      (8, "30299-D01-2025 effective January 1, 2026 and System", "30299-D01-2025 effective January 1, 2027 and System")],
+     {"D300"}),
+    ([(11, "effective January 1, 2026 and System", "effective January 1, 2025 and System")], {"D410"}),
+])
+def test_enx_wrong_unit_row_or_date_rejects_only_that_class(edits, rejected):
+    assert set(ENX__parse(edits=edits)) == ENX_CODES - rejected
+
+
+@pytest.mark.parametrize("edits", [
+    [(19, "The rider is effective October 1, 2026.", "The rider is effective July 1, 2026.")],
+    [(19, "Q4 Oct 1, 2026", "Q4 Nov 1, 2026")],
+    [(19, "Quarterly TAC Adjustment Rider Charge / (Refund)", "Quarterly TAC Adjustment Rider")],
+    [(20, "Adjustment Charge / (Refund)", "Adjustment")],
+    [(18, "Balancing Pool Allocation\tper kWh", "Balancing Pool Allocation\tper kW")],
+    [(18, "The rider is effective\nJanuary 1, 2026.", "The rider is effective\nJanuary 1, 2027.")],
+    [(20, "effective January 1, 2026 to December", "effective January 1, 2027 to December")],
+    [(20, "Rider will apply to all energy delivered", "Rider may apply to some energy delivered")],
+])
+def test_enx_garbled_required_rider_rejects_every_class(edits):
+    assert ENX__parse(edits=edits) == {}
+
+
+@pytest.mark.parametrize("drop", [(18,), (19,), (20,)])
+def test_enx_missing_rider_page_rejects_every_class(drop):
+    assert ENX__parse(drop=drop) == {}
+
+
+def test_enx_missing_or_future_in_effect_date_rejects_the_document():
+    assert ENX__parse(edits=[(1, "RATES IN EFFECT AS OF October 1, 2026", "RATES IN EFFECT")]) == {}
+    assert ENX__parse(drop=(1,)) == {}
+    assert ENX__parse(today=date(2026, 9, 30)) == {}
+    assert set(ENX__parse(today=date(2026, 10, 1))) == ENX_CODES
+
+
+def test_enx_stale_schedule_after_the_quarter_fails_closed():
+    assert ENX__parse(today=date(2027, 1, 4)) == {}
+    assert set(ENX__parse(today=date(2026, 12, 31))) == ENX_CODES
+
+
+def test_enx_expired_deferral_rider_is_excluded_but_classes_stay_live():
+    records = ENX__parse(edits=[(20, "to December\n31,2026.", "to September\n30,2026.")])
+    assert set(records) == ENX_CODES
+    for record in records.values():
+        names = [c.component_name for c in record.components]
+        assert "TAC Deferral Account Rider Adjustment" not in names
+        assert "Quarterly TAC Adjustment Rider" in names and "Balancing Pool Allocation Rider" in names
+        assert "to September 30, 2026) has ended and is not included" in record.notes
+        assert record.source_page.endswith("18-19")
+
+
+def test_enx_bpa_ineligible_class_keeps_live_record_without_that_rider():
+    records = ENX__parse(edits=[(18, "2 D600 sites are ineligible", "2 D600 and D200 sites are ineligible")])
+    assert set(records) == ENX_CODES
+    assert "Balancing Pool Allocation Rider" not in [c.component_name for c in records["D200"].components]
+    assert "Balancing Pool Allocation Rider" in [c.component_name for c in records["D100"].components]
+
+
+def test_enx_quarter_column_is_chosen_by_position_with_later_quarters_blank():
+    edits = [
+        (1, "RATES IN EFFECT AS OF October 1, 2026", "RATES IN EFFECT AS OF July 1, 2026"),
+        (19, "The rider is effective October 1, 2026.", "The rider is effective July 1, 2026."),
+        (19, "31033-D01-2026\neffective October 1, 2026", "31033-D01-2026\neffective July 1, 2026"),
+    ]
+    for q3, q4 in (("($0.001826)", "$0.000583"), ("($0.001776)", "$0.000602"), ("($0.001705)", "$0.000630"),
+                   ("($0.001608)", "$0.000682"), ("($0.001634)", "$0.000669"), ("($0.002554)", "$0.000426")):
+        edits.append((19, q3 + "\t" + q4, q3 + "\t"))
+    records = ENX__parse(edits=edits, today=date(2026, 7, 15))
+    assert set(records) == ENX_CODES
+    expected = {"D100": -0.001826, "D200": -0.001776, "D300": -0.001705, "D310": -0.001608, "D410": -0.001634}
+    for code, value in expected.items():
+        rider = ENX__comp(records[code], "Quarterly TAC Adjustment Rider")
+        assert (rider.charge_value, rider.effective_date, rider.end_date) == (value, "2026-07-01", "2026-09-30")
+        assert rider.source_detail.endswith("Q3 2026 column")
+        assert records[code].effective_date == "2026-07-01"
+    assert ENX__parse(edits=edits, today=date(2026, 10, 2)) == {}
+
+
+def test_enx_unmodelled_current_rider_rejects_the_schedule_but_ended_riders_are_ignored():
+    source_url = ENX__fixture()["source_url"]
+    current = DocumentPage(21, "2026 NEW ADJUSTMENT RIDER\nRider will apply to all sites. The rider is effective "
+                               "October 1, 2026.\nENMAX Power Corporation Distribution Tariff Page 21 of 21")
+    assert ENX_parse_schedule_pages(ENX__pages() + [current], source_url, ENX_TODAY) == []
+    ended = DocumentPage(21, "DAS ADJUSTMENT RIDER\nThe adjustment is effective January 1, 2025 to March 31, 2025.\n"
+                             "ENMAX Power Corporation Distribution Tariff Page 21 of 21")
+    assert {r.tariff_code for r in ENX_parse_schedule_pages(ENX__pages() + [ended], source_url, ENX_TODAY)} == ENX_CODES
+
+
+def test_enx_current_link_discovery_prefers_the_current_label_and_enmax_hosts():
+    fixture = ENX__fixture()
+    assert ENX_current_tariff_link(fixture["landing_html"]) == fixture["source_url"]
+    archive_only = fixture["landing_html"].replace("View current distribution tariff", "View distribution tariff")
+    assert ENX_current_tariff_link(archive_only) is None
+    foreign = '<a href="https://example.com/x.pdf">View current distribution tariff</a>'
+    assert ENX_current_tariff_link(foreign) is None
+    two = ('<a href="https://assets.enmax.com/a">View current distribution tariff</a>'
+           '<a href="https://assets.enmax.com/b">Current distribution tariff</a>')
+    assert ENX_current_tariff_link(two) is None
+    relative = '<a href="/api/public/content/abc?v=1">View current distribution tariff</a>'
+    assert ENX_current_tariff_link(relative) == "https://www.enmax.com/api/public/content/abc?v=1"
+
+
+def ENX__word(text, x0, x1, top):
+    return {"text": text, "x0": x0, "x1": x1, "top": top}
+
+
+def test_enx_render_keeps_columns_for_top_aligned_and_centred_cells():
+    words = [
+        ENX__word("COMPONENT", 114.48, 166.81, 340.79), ENX__word("TYPE", 168.96, 188.83, 340.79),
+        ENX__word("UNIT", 254.64, 275.29, 340.79), ENX__word("PRICE", 388.92, 412.39, 340.79),
+        ENX__word("TRANSMISSION", 72.0, 149.87, 484.31), ENX__word("CHARGE", 152.16, 193.66, 484.31),
+        ENX__word("FOR", 195.72, 216.16, 484.31), ENX__word("SYSTEM", 218.64, 258.53, 484.31),
+        ENX__word("ACCESS", 260.64, 297.76, 484.31), ENX__word("SERVICE", 300.0, 340.06, 484.31),
+        ENX__word("per", 254.88, 271.43, 500.0), ENX__word("day", 273.36, 290.92, 500.0),
+        ENX__word("per", 292.8, 309.23, 500.0), ENX__word("kVA", 311.28, 330.47, 500.0), ENX__word("of", 332.4, 342.3, 500.0),
+        ENX__word("Demand", 114.48, 155.82, 507.0), ENX__word("Charge", 158.52, 192.22, 507.0),
+        ENX__word("$0.271085", 373.2, 420.44, 507.2),
+        ENX__word("Billing", 254.88, 284.41, 514.0), ENX__word("Demand", 287.16, 328.02, 514.0),
+        ENX__word("Variable", 114.48, 153.22, 535.22), ENX__word("Charge", 155.16, 188.38, 535.22),
+        ENX__word("per", 245.88, 262.43, 535.22), ENX__word("kWh", 265.32, 287.22, 535.22),
+        ENX__word("$0.012021", 373.32, 420.56, 535.22),
+        ENX__word("On", 114.48, 128.7, 549.38), ENX__word("Peak", 131.52, 154.98, 549.38),
+        ENX__word("Variable", 114.48, 154.06, 563.54), ENX__word("Charge", 156.12, 189.82, 563.54),
+        ENX__word("Off", 191.88, 206.94, 563.54), ENX__word("per", 245.88, 262.43, 564.5), ENX__word("kWh", 265.32, 287.22, 564.5),
+        ENX__word("$", 374.16, 380.0, 564.44), ENX__word("0.009074", 382.0, 420.8, 564.44),
+        ENX__word("Peak", 114.48, 137.22, 576.26),
+        ENX__word("Where", 72.0, 103.9, 601.87),
+    ]
+    assert ENX_render_page_words(words, [(590.0, ["Rate Code\tUnit", "D100\tper kWh"])]).splitlines() == [
+        "COMPONENT TYPE UNIT PRICE",
+        "TRANSMISSION CHARGE FOR SYSTEM ACCESS SERVICE",
+        "\tper day per kVA of\t",
+        "Demand Charge\t\t$0.271085",
+        "\tBilling Demand\t",
+        "Variable Charge\tper kWh\t$0.012021",
+        "On Peak\t\t",
+        "Variable Charge Off\tper kWh\t$ 0.009074",
+        "Peak\t\t",
+        "Rate Code\tUnit",
+        "D100\tper kWh",
+        "Where",
+    ]
+
+
+def ENX__scrape(monkeypatch, static, rendered=None, pages=None, today="2026-10-09"):
+    fixture = ENX__fixture()
+    scraper = ENX_ENMAXPowerScraper()
+    calls = {"rendered": 0, "bytes": []}
+
+    def fetch_page(url, delay=1.0):
+        assert url == fixture["landing_url"]
+        if isinstance(static, Exception):
+            raise static
+        return static
+
+    def fetch_rendered_page(url, wait_selector=None, timeout_ms=30000):
+        calls["rendered"] += 1
+        return rendered
+
+    def fetch_bytes(url, delay=1.0):
+        calls["bytes"].append(url)
+        return b"%PDF-1.7 fixture"
+
+    monkeypatch.setattr(scraper, "fetch_page", fetch_page)
+    monkeypatch.setattr(scraper, "fetch_rendered_page", fetch_rendered_page)
+    monkeypatch.setattr(scraper, "fetch_bytes", fetch_bytes)
+    monkeypatch.setattr(scraper, "now_iso", lambda: today + "T12:00:00+00:00")
+    monkeypatch.setattr(ENX_enmax_power, "extract_schedule_pages", lambda data: ENX__pages() if pages is None else pages)
+    return scraper.scrape(), calls
+
+
+def ENX__assert_live(records):
+    assert {record.tariff_code for record in records} <= ENX_CODES
+    for record in records:
+        assert record.notes.startswith("Provenance: live_parsed.") and "seed_fallback" not in record.notes
+        assert record.confidence == "high"
+        assert all(c.notes.startswith("Provenance: live_parsed.") for c in record.components)
+
+
+def test_enx_scrape_static_discovery_marks_every_class_live(monkeypatch):
+    records, calls = ENX__scrape(monkeypatch, ENX__fixture()["landing_html"])
+    assert {record.tariff_code for record in records} == ENX_CODES
+    ENX__assert_live(records)
+    assert calls == {"rendered": 0, "bytes": [ENX__fixture()["source_url"]]}
+
+
+def test_enx_scrape_uses_rendered_page_when_static_page_lacks_link_or_fails(monkeypatch):
+    records, calls = ENX__scrape(monkeypatch, "<html><body>loading</body></html>", rendered=ENX__fixture()["landing_html"])
+    assert {record.tariff_code for record in records} == ENX_CODES and calls["rendered"] == 1
+    ENX__assert_live(records)
+    records, calls = ENX__scrape(monkeypatch, requests.ConnectionError("down"), rendered=ENX__fixture()["landing_html"])
+    assert {record.tariff_code for record in records} == ENX_CODES and calls["rendered"] == 1
+
+
+def test_enx_scrape_partial_failure_drops_only_that_class_without_new_seed(monkeypatch):
+    pages = ENX__pages(edits=[(3, "System Usage Charge\tper kWh", "System Usage Charge\tper day")])
+    records, _ = ENX__scrape(monkeypatch, ENX__fixture()["landing_html"], pages=pages)
+    assert {record.tariff_code for record in records} == ENX_CODES - {"D100"}
+    ENX__assert_live(records)
+
+
+def ENX__assert_seed(records):
+    assert {record.tariff_code for record in records} == {"D110", "D210", "D310"}
+    for record in records:
+        assert record.confidence == "unverified" and "Provenance: seed_fallback" in record.notes
+        assert all(c.confidence == "unverified" and "seed_fallback" in c.notes for c in record.components)
+
+
+def test_enx_scrape_total_fetch_failure_returns_labelled_seeds(monkeypatch):
+    records, calls = ENX__scrape(monkeypatch, requests.ConnectionError("down"), rendered=None)
+    ENX__assert_seed(records)
+    assert calls == {"rendered": 1, "bytes": []}
+
+
+def test_enx_scrape_unusable_document_returns_labelled_seeds(monkeypatch):
+    records, _ = ENX__scrape(monkeypatch, ENX__fixture()["landing_html"], pages=[])
+    ENX__assert_seed(records)
+    records, _ = ENX__scrape(monkeypatch, ENX__fixture()["landing_html"], today="2027-01-04")
+    ENX__assert_seed(records)
+
+
+# ======================================================================
+# ATCO Electric price schedules (batch 12)
+# ======================================================================
+from scrapers.utilities import atco_electric as ATE_atco_electric
+from scrapers.utilities.atco_electric import ATCOElectricScraper as ATE_ATCOElectricScraper, FALLBACK_RIDER_URLS as ATE_FALLBACK_RIDER_URLS, FALLBACK_SCHEDULES_URL as ATE_FALLBACK_SCHEDULES_URL, RATES_MODEL_URLS as ATE_RATES_MODEL_URLS, discover_documents as ATE_discover_documents
+from scrapers.utils.parsing import DocumentPage
+import json
+from datetime import date
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+
+ATE_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "atco_electric.json"
+ATE_TODAY = date(2026, 10, 9)
+ATE_CODES = {"D11", "D13", "D21", "D31", "T31"}
+
+
+def ATE__document():
+    return json.loads(ATE_FIXTURE.read_text(encoding="utf-8"))
+
+
+def ATE__riders(document, drop=()):
+    return [(rider["source_url"], [DocumentPage(**page) for page in rider["pages"]], rider["link_date"])
+            for letter, rider in document["riders"].items() if letter not in drop]
+
+
+def ATE__parse(document, today=ATE_TODAY, edition="2026-01-01", drop_riders=(), drop_pages=()):
+    scraper = ATE_ATCOElectricScraper()
+    pages = [DocumentPage(**page) for page in document["pages"] if page["page_number"] not in drop_pages]
+    records = scraper.parse_schedule_pages(
+        pages, document["source_url"], ATE__riders(document, drop_riders), today=today, edition_date=edition)
+    return scraper, {record.tariff_code: record for record in records}
+
+
+def ATE__edit(document, where, old, new):
+    """Replace text on a price-schedules page (page number) or a separate rider PDF (rider letter)."""
+    pages = document["riders"][where]["pages"] if isinstance(where, str) else [
+        page for page in document["pages"] if page["page_number"] == where]
+    assert old in pages[0]["text"]
+    pages[0]["text"] = pages[0]["text"].replace(old, new)
+    return document
+
+
+def ATE__component(record, name):
+    (component,) = [c for c in record.components if c.component_name == name]
+    return component
+
+
+def ATE__values(record):
+    return [(c.component_type, c.component_name, c.charge_value, c.charge_unit, c.effective_date, c.end_date)
+            for c in record.components]
+
+
+def ATE__serve(document):
+    served = {document["source_url"]: [DocumentPage(**page) for page in document["pages"]]}
+    served.update({rider["source_url"]: [DocumentPage(**page) for page in rider["pages"]]
+                   for rider in document["riders"].values()})
+    return served, json.dumps(document["model_excerpt"])
+
+
+def ATE__fake_fetch_page(model):
+    def fetch(url, *args, **kwargs):
+        if url != ATE_RATES_MODEL_URLS[0]:
+            raise OSError(url)
+        return model
+    return fetch
+
+
+def ATE__scrape(document, fetch_page=None):
+    served, model = ATE__serve(document)
+    scraper = ATE_ATCOElectricScraper()
+    scraper.today = ATE_TODAY
+    fetched = []
+    with patch.object(scraper, "fetch_page", side_effect=fetch_page or ATE__fake_fetch_page(model)),\
+            patch.object(scraper, "fetch_bytes", side_effect=lambda url, *a, **k: fetched.append(url) or url.encode()),\
+            patch.object(ATE_atco_electric, "extract_pdf_pages", side_effect=lambda data: served[data.decode()]):
+        records = scraper.scrape()
+    return records, fetched, served
+
+
+def test_ate_fixture_is_live_official_excerpt():
+    document = ATE__document()
+    assert document["source_url"] == ATE_FALLBACK_SCHEDULES_URL
+    assert document["landing_url"] == "https://electric.atco.com/en-ca/understanding-rates/rates.html"
+    assert document["retrieved_on"] == "2026-10-09" and document["edition_link_date"] == "2026-01-01"
+    assert [page["page_number"] for page in document["pages"]] == [1, 2, 3, 4, 5, 6, 12, 13, 14, 15, 16, 53, 54, 55, 56]
+    assert {letter: rider["source_url"] for letter, rider in document["riders"].items()} == ATE_FALLBACK_RIDER_URLS
+    assert set(document["sha256"]) == {document["source_url"], *ATE_FALLBACK_RIDER_URLS.values()}
+    assert "Approved in Disposition 31037-D01-2026" in document["riders"]["S"]["pages"][0]["text"]
+
+
+def test_ate_discovery_reads_only_current_cards():
+    found = ATE_discover_documents(ATE__document()["model_excerpt"])
+    assert found["schedules"] == {ATE_FALLBACK_SCHEDULES_URL: "2026-01-01"}
+    riders = found["riders"]
+    assert set(riders) == {"A", "B", "G", "J", "Q", "S"}
+    assert {letter: riders[letter] for letter in "BGSJ"} == {
+        "B": {ATE_FALLBACK_RIDER_URLS["B"]: "2026-01-01"}, "G": {ATE_FALLBACK_RIDER_URLS["G"]: "2026-01-01"},
+        "S": {ATE_FALLBACK_RIDER_URLS["S"]: "2026-10-01"}, "J": {ATE_FALLBACK_RIDER_URLS["J"]: "2025-09-01"}}
+    assert all(not url.endswith("2026-07-01-rider-s.pdf") for links in riders.values() for url in links)
+
+
+def test_ate_discovery_without_current_cards_returns_nothing():
+    archived = ('<h4>Archived Rate Riders</h4><p><a href="/x/2026-07-01-rider-s.pdf">Rider S: SAS Deferral</a>'
+                " - Effective July 1, 2026</p>")
+    assert ATE_discover_documents({"card": {"description": archived}}) == {"schedules": {}, "riders": None}
+
+
+def test_ate_building_classes_parsed_live():
+    scraper, records = ATE__parse(ATE__document())
+    assert set(records) == ATE_CODES and scraper.rejected == {}
+    expected = {
+        "D11": ("Standard Residential Service (Price Schedule D11)", "residential", "flat", None),
+        "D13": ("Time of Use Residential Service (Price Schedule D13)", "residential", "tou", None),
+        "D21": ("Standard Small General Service (Price Schedule D21)", "commercial", "demand", 500.0),
+        "D31": ("Large General Service - Distribution Connected (Price Schedule D31)", "commercial", "demand", None),
+        "T31": ("Large General Service - Transmission Connected (Price Schedule T31)", "industrial", "demand", None),
+    }
+    for code, (name, customer_class, structure, demand_max) in expected.items():
+        record = records[code]
+        assert (record.tariff_name, record.customer_class, record.rate_structure, record.demand_max_kw) == (
+            name, customer_class, structure, demand_max)
+        assert (record.province, record.utility_type, record.pricing_method, record.confidence) == (
+            "AB", "electricity", "regulated", "high")
+        assert record.effective_date == "2026-10-01" and record.source_url == ATE_FALLBACK_SCHEDULES_URL
+        assert "Decision 30300-D01-2025 (dated December 12, 2025), effective 2026-01-01" in record.notes
+        assert "Rate of Last Resort" in record.notes and record.notes.endswith("No bill total is calculated.")
+    assert records["D11"].source_page == "PDF page 3; Price Schedule D11"
+    assert records["D31"].source_page == "PDF pages 12-13; Price Schedule D31"
+    assert records["T31"].source_page == "PDF pages 14-16; Price Schedule T31"
+
+
+def test_ate_d11_exact_components():
+    record = ATE__parse(ATE__document())[1]["D11"]
+    assert ATE__values(record) == [
+        ("fixed", "Distribution Customer Charge", 1.4125, "$/day", "2026-01-01", None),
+        ("fixed", "Service Customer Charge", 0.2698, "$/day", "2026-01-01", None),
+        ("transmission", "Transmission Energy Charge", 0.0479, "$/kWh", "2026-01-01", None),
+        ("distribution", "Distribution Energy Charge", 0.0903, "$/kWh", "2026-01-01", None),
+        ("rider", "Rider B - Balancing Pool Adjustment", 0.00133, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", "Rider G - Temporary Adjustment", -0.00212, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", "Rider S - SAS Deferral Adjustment", 0.00068, "$/kWh", "2026-10-01", None),
+    ]
+    assert ATE__component(record, "Distribution Customer Charge").source_detail == (
+        "PDF page 3; Price Schedule D11, Distribution row, Customer Charge column")
+    assert record.eligibility.endswith("Price Schedule D11 is not applicable for commercial or industrial use.")
+    assert "Idle Service (Option F)" in record.notes
+
+
+def test_ate_d13_time_of_use_periods():
+    record = ATE__parse(ATE__document())[1]["D13"]
+    energy = [(c.component_type, c.charge_value, c.tou_period, c.tou_hours) for c in record.components
+              if c.charge_unit == "$/kWh" and c.component_type != "rider"]
+    assert energy == [
+        ("transmission", 0.0853, "on-peak", "4 p.m. to 9 p.m."),
+        ("distribution", 0.161, "on-peak", "4 p.m. to 9 p.m."),
+        ("transmission", 0.0341, "off-peak", "Before 4 p.m. and after 9 p.m."),
+        ("distribution", 0.0644, "off-peak", "Before 4 p.m. and after 9 p.m."),
+    ]
+    assert [c.charge_value for c in record.components if c.charge_unit == "$/day"] == [1.4125, 0.2698]
+    assert "available by request only and at the discretion of the company" in record.eligibility
+    assert "Advanced Metering Infrastructure (AMI)" in record.eligibility
+    assert "no weekday, weekend or holiday distinction" in record.notes
+
+
+def test_ate_d21_demand_energy_blocks_and_billing_demand():
+    record = ATE__parse(ATE__document())[1]["D21"]
+    assert [(c.component_type, c.component_name, c.charge_value, c.charge_unit, c.tier_number, c.tier_threshold)
+            for c in record.components if c.component_type != "rider"] == [
+        ("fixed", "Distribution Customer Charge", 0.3806, "$/day", None, None),
+        ("fixed", "Service Customer Charge", 0.3262, "$/day", None, None),
+        ("transmission", "Transmission Demand Charge", 0.3158, "$/kW/day", None, None),
+        ("demand", "Distribution Demand Charge", 0.3062, "$/kW/day", None, None),
+        ("transmission", "Transmission Energy Charge (first 200 kWh per kW of billing demand)", 0.0058, "$/kWh", 1, 200.0),
+        ("distribution", "Distribution Energy Charge (first 200 kWh per kW of billing demand)", 0.0426, "$/kWh", 1, 200.0),
+        ("transmission", "Transmission Energy Charge (in excess of 200 kWh per kW of billing demand)", 0.0058, "$/kWh",
+         2, 200.0),
+    ]
+    assert {c.tier_unit for c in record.components if c.tier_number} == {"kWh per kW of billing demand"}
+    assert all(c.demand_unit == "kW" for c in record.components if c.charge_unit == "$/kW/day")
+    assert "between the highest metered demand in the twelve-month period" in record.notes
+    assert "(e) 5 kilowatts." in record.notes
+    assert record.eligibility.endswith("Not applicable for any service in excess of 500 kW.")
+
+
+def test_ate_d31_demand_blocks_and_conditional_power_factor():
+    record = ATE__parse(ATE__document())[1]["D31"]
+    assert [(c.component_type, c.component_name, c.charge_value, c.charge_unit, c.tier_number)
+            for c in record.components if c.component_type != "rider"] == [
+        ("fixed", "Distribution Customer Charge", 2.2294, "$/day", None),
+        ("fixed", "Service Customer Charge", 1.7967, "$/day", None),
+        ("transmission", "Transmission Demand Charge (first 500 kW of billing demand)", 0.3895, "$/kW/day", 1),
+        ("demand", "Distribution Demand Charge (first 500 kW of billing demand)", 0.3441, "$/kW/day", 1),
+        ("transmission", "Transmission Demand Charge (billing demand over 500 kW)", 0.4721, "$/kW/day", 2),
+        ("demand", "Distribution Demand Charge (billing demand over 500 kW)", 0.2411, "$/kW/day", 2),
+        ("demand", "Service Demand Charge (billing demand over 500 kW)", 0.0062, "$/kW/day", 2),
+        ("transmission", "Transmission Energy Charge", 0.0058, "$/kWh", None),
+        ("demand", "Charge for Deficient Power Factor", 0.3153, "$/kVA/day", None),
+    ]
+    power_factor = ATE__component(record, "Charge for Deficient Power Factor")
+    assert power_factor.sub_component == "conditional" and power_factor.demand_unit == "kVA"
+    assert power_factor.notes.startswith("Conditional: applies only when the customer's power factor is below 90%")
+    assert "111% of the highest metered kW demand" in power_factor.notes
+    assert power_factor.source_detail == "PDF page 13; Price Schedule D31, Charge for Deficient Power Factor"
+    assert {c.tier_threshold for c in record.components if c.tier_number} == {500.0}
+    assert record.demand_min_kw is None and record.demand_max_kw is None
+    assert "The billing demand for the Transmission charges" in record.notes and "(f) 50 kilowatts." in record.notes
+
+
+def test_ate_t31_includes_only_priced_distribution_and_service():
+    record = ATE__parse(ATE__document())[1]["T31"]
+    assert [(c.component_type, c.component_name, c.charge_value, c.charge_unit, c.tier_number, c.tier_threshold)
+            for c in record.components if c.component_type != "rider"] == [
+        ("demand", "Distribution Demand Charge (first 500 kW of billing demand)", 0.0083, "$/kW/day", 1, 500.0),
+        ("demand", "Service Demand Charge (first 500 kW of billing demand)", 0.0824, "$/kW/day", 1, 500.0),
+    ]
+    assert not [c for c in record.components if c.component_type == "transmission" or c.charge_value is None]
+    assert [(c.component_name, c.charge_value) for c in record.components if c.component_type == "rider"] == [
+        ("Rider B - Balancing Pool Adjustment", 0.00126), ("Rider G - Temporary Adjustment", 0.0),
+        ("Rider S - SAS Deferral Adjustment", 0.0)]
+    assert "current AESO DTS Rate Schedule charges less the under frequency load shedding credit" in record.notes
+    assert "printed 9.07 ¢/kW/day" in record.notes and "The billing demand for the Transmission charges" not in record.notes
+    assert "directly connected to a transmission substation" in record.eligibility
+
+
+def test_ate_riders_per_class_dates_and_sources():
+    document = ATE__document()
+    records = ATE__parse(document)[1]
+    expected = {"D11": (0.00133, -0.00212, 0.00068), "D13": (0.00133, -0.00212, 0.00068),
+                "D21": (0.00133, -0.00475, 0.00075), "D31": (0.00133, -0.00206, 0.00089), "T31": (0.00126, 0.0, 0.0)}
+    for code, values in expected.items():
+        riders = [c for c in records[code].components if c.component_type == "rider"]
+        assert tuple(c.charge_value for c in riders) == values
+        assert [c.source_url for c in riders] == [document["riders"][letter]["source_url"] for letter in "BGS"]
+        assert [(c.effective_date, c.end_date) for c in riders] == [("2026-01-01", "2026-12-31")] * 2 + [("2026-10-01", None)]
+        assert all(c.charge_unit == "$/kWh" and "same value in price-schedules PDF page" in c.source_detail for c in riders)
+        assert "Q4-2026" in riders[2].notes and "Disposition 31037-D01-2026" in riders[2].notes
+        assert "Rider J (PBR Re-Opener Refund) applied from 2025-09-01 to 2026-02-28 and has ended" in records[code].notes
+        assert "Conditional: Rider A (Municipal Assessment" in records[code].notes
+        assert not any(c.component_name.startswith(("Rider A", "Rider J")) for c in records[code].components)
+
+
+def test_ate_components_sourced_dated_and_in_native_units():
+    for record in ATE__parse(ATE__document())[1].values():
+        assert record.effective_date == max(c.effective_date for c in record.components)
+        for c in record.components:
+            assert c.source_url and c.source_detail and c.effective_date and c.charge_value is not None
+            assert c.charge_unit in {"$/day", "$/kWh", "$/kW/day", "$/kVA/day"}
+
+
+def test_ate_published_schedules_audited():
+    scraper, records = ATE__parse(ATE__document())
+    assert set(scraper.excluded_published) == {
+        "D22", "D23", "D24", "D25", "D26", "D32", "D33", "D34", "D41", "D44", "D51", "D52", "D56", "D61", "D63", "T33"}
+    assert scraper.unmodelled_published == {} and "D22" not in records
+
+
+def test_ate_value_change_propagates():
+    document = ATE__edit(ATE__document(), 3, "Distribution 141.25 ¢/day 9.03 ¢/kW.h", "Distribution 141.35 ¢/day 9.03 ¢/kW.h")
+    ATE__edit(document, 3, "TOTAL PRICE $1.6823 /day", "TOTAL PRICE $1.6833 /day")
+    records = ATE__parse(document)[1]
+    assert set(records) == ATE_CODES
+    assert ATE__component(records["D11"], "Distribution Customer Charge").charge_value == 1.4135
+
+
+@pytest.mark.parametrize(("page", "old", "new", "rejected"), [
+    (3, "TOTAL PRICE $1.6823 /day 13.82 ¢/kW.h", "TOTAL PRICE $1.6823 /day 13.83 ¢/kW.h", "D11"),
+    (3, "Transmission - 4.79 ¢/kW.h", "Transmission - 4.79 ¢/kW/day", "D11"),
+    (3, "PBR Re-Opener Refund (Rider J)", "PBR Re-Opener Refund (Rider K)", "D11"),
+    (4, "between the hours of 4 p.m.", "between the hours of 5 p.m.", "D13"),
+    (5, "Effective: 2026 01 01", "Effective: 2027 01 01", "D21"),
+    (5, "Not applicable for any service in excess of 500 kW.", "Not applicable for large services.", "D21"),
+    (12, "Effective: 2026 01 01", "Effective: 2026", "D31"),
+    (12, "Service 179.67 ¢/day - 0.62 ¢/kW/day -", "Service 179.67 ¢/day - 0.62 ¢/kW/day", "D31"),
+    (13, "deficient power factor of 31.53", "deficient power factor of 31.35", "D31"),
+    (14, "Service 8.24 ¢/kW/day - -", "Service 8.25 ¢/kW/day - -", "T31"),
+    (14, "Distribution 0.83 ¢/kW/day - -", "Distribution 0.83 ¢/kW/day 0.10 ¢/kW/day -", "T31"),
+    (14, "Charges per current", "Charges per", "T31"),
+])
+def test_ate_mutation_rejects_only_that_class(page, old, new, rejected):
+    scraper, records = ATE__parse(ATE__edit(ATE__document(), page, old, new))
+    assert set(records) == ATE_CODES - {rejected} and set(scraper.rejected) == {rejected}
+
+
+@pytest.mark.parametrize(("dropped", "rejected"), [(3, "D11"), (4, "D13"), (13, "D31"), (15, "T31")])
+def test_ate_missing_page_or_continuation_rejects_only_that_class(dropped, rejected):
+    scraper, records = ATE__parse(ATE__document(), drop_pages=(dropped,))
+    assert set(records) == ATE_CODES - {rejected} and set(scraper.rejected) == {rejected}
+
+
+def test_ate_edition_mismatch_and_future_schedules_reject_all():
+    scraper, records = ATE__parse(ATE__document(), edition="2025-01-01")
+    assert records == {} and set(scraper.rejected) == ATE_CODES
+    assert ATE__parse(ATE__document(), today=date(2025, 12, 31))[1] == {}
+
+
+def test_ate_rider_copies_must_agree_for_the_class():
+    scraper, records = ATE__parse(ATE__edit(ATE__document(), "S", "D21 Small General Service 0.075", "D21 Small General Service 0.076"))
+    assert set(records) == ATE_CODES - {"D21"} and "disagree" in scraper.rejected["D21"]
+
+
+def test_ate_rider_change_in_both_copies_propagates():
+    document = ATE__edit(ATE__document(), "S", "D11 Residential 0.068", "D11 Residential 0.070")
+    ATE__edit(document, 56, "D11 Residential 0.068", "D11 Residential 0.070")
+    records = ATE__parse(document)[1]
+    assert ATE__component(records["D11"], "Rider S - SAS Deferral Adjustment").charge_value == 0.0007
+    assert ATE__component(records["D13"], "Rider S - SAS Deferral Adjustment").charge_value == 0.00068
+
+
+def test_ate_missing_separate_rider_uses_bound_copy():
+    rider = ATE__component(ATE__parse(ATE__document(), drop_riders=("S",))[1]["D11"], "Rider S - SAS Deferral Adjustment")
+    assert (rider.charge_value, rider.source_url) == (0.00068, ATE_FALLBACK_SCHEDULES_URL)
+    assert rider.source_detail == "PDF page 56; Rider S table, row D11"
+
+
+def test_ate_rider_link_date_mismatch_ignores_that_copy():
+    document = ATE__document()
+    document["riders"]["S"]["link_date"] = "2026-07-01"
+    rider = ATE__component(ATE__parse(document)[1]["D11"], "Rider S - SAS Deferral Adjustment")
+    assert rider.source_url == ATE_FALLBACK_SCHEDULES_URL
+
+
+def test_ate_rider_missing_everywhere_rejects_classes():
+    scraper, records = ATE__parse(ATE__document(), drop_riders=("S",), drop_pages=(56,))
+    assert records == {} and all("Rider S" in reason for reason in scraper.rejected.values())
+
+
+def test_ate_rider_unit_change_in_both_copies_rejects_classes():
+    document = ATE__edit(ATE__document(), "B", "Price Schedule Charge (¢/kW.h)", "Price Schedule Charge (%)")
+    ATE__edit(document, 53, "Price Schedule Charge (¢/kW.h)", "Price Schedule Charge (%)")
+    scraper, records = ATE__parse(document)
+    assert records == {} and all("Rider B" in reason for reason in scraper.rejected.values())
+
+
+def test_ate_missing_rider_row_rejects_only_that_class():
+    document = ATE__edit(ATE__document(), "G", "D21 Small General Service -0.475\n", "")
+    ATE__edit(document, 54, "D21 Small General Service -0.475\n", "")
+    scraper, records = ATE__parse(document)
+    assert set(records) == ATE_CODES - {"D21"} and "no D21 row" in scraper.rejected["D21"]
+
+
+def test_ate_stale_quarterly_rider_fails_closed():
+    scraper, records = ATE__parse(ATE__document(), today=date(2027, 1, 4))
+    assert records == {}
+    assert all("Rider S Q4-2026 ended 2026-12-31" in reason for reason in scraper.rejected.values())
+
+
+def test_ate_newer_quarterly_rider_supersedes_and_ended_riders_become_notes():
+    document = ATE__document()
+    for old, new in (("effective October 1, 2026", "effective January 1, 2027"),
+                     ("Effective: 2026 10 01", "Effective: 2027 01 01"), ("Q4-2026", "Q1-2027")):
+        ATE__edit(document, "S", old, new)
+    document["riders"]["S"]["link_date"] = "2027-01-01"
+    record = ATE__parse(document, today=date(2027, 1, 4))[1]["D11"]
+    assert [(c.component_name, c.effective_date) for c in record.components if c.component_type == "rider"] == [
+        ("Rider S - SAS Deferral Adjustment", "2027-01-01")]
+    assert "Rider B (Balancing Pool Adjustment) applied from 2026-01-01 to 2026-12-31 and has ended" in record.notes
+    assert "Rider G (Temporary Adjustment) applied from 2026-01-01 to 2026-12-31 and has ended" in record.notes
+    assert record.effective_date == "2027-01-01"
+
+
+def test_ate_rider_j_included_only_while_in_effect():
+    document = ATE__edit(ATE__document(), "J", "to February 28, 2026", "to February 28, 2027")
+    ATE__edit(document, 55, "to February 28, 2026", "to February 28, 2027")
+    rider = ATE__component(ATE__parse(document)[1]["D21"], "Rider J - PBR Re-Opener Refund")
+    assert (rider.charge_value, rider.charge_unit, rider.effective_date, rider.end_date) == (
+        -13.5, "%", "2025-09-01", "2027-02-28")
+    assert rider.notes.startswith("Percentage of total base Distribution and Service Component charges")
+
+
+def test_ate_scrape_discovers_documents_and_marks_live():
+    records, fetched, served = ATE__scrape(ATE__document())
+    assert {record.tariff_code for record in records} == ATE_CODES
+    assert all("Provenance: live_parsed" in r.notes and "seed_fallback" not in r.notes for r in records)
+    assert all("Provenance: live_parsed" in c.notes for r in records for c in r.components)
+    assert sorted(fetched) == sorted(served)
+    assert not any(record.tariff_name.startswith(("Residential Distribution", "Small General Service Distribution"))
+                   for record in records)
+
+
+def test_ate_scrape_uses_last_known_links_when_discovery_fails():
+    records, fetched, _ = ATE__scrape(ATE__document(), fetch_page=OSError("rates page down"))
+    assert {record.tariff_code for record in records} == ATE_CODES
+    assert fetched[0] == ATE_FALLBACK_SCHEDULES_URL
+
+
+def test_ate_scrape_drops_failed_class_without_seed():
+    records, _, _ = ATE__scrape(ATE__edit(ATE__document(), 3, "13.82 ¢/kW.h", "13.83 ¢/kW.h"))
+    assert {record.tariff_code for record in records} == ATE_CODES - {"D11"}
+    assert not any("seed_fallback" in record.notes for record in records)
+
+
+def test_ate_total_fetch_failure_returns_labelled_seeds():
+    scraper = ATE_ATCOElectricScraper()
+    with patch.object(scraper, "fetch_page", side_effect=OSError("down")),\
+            patch.object(scraper, "fetch_bytes", side_effect=OSError("down")):
+        records = scraper.scrape()
+    assert [record.tariff_code for record in records] == ["D11", "D21", "D31"]
+    assert all(r.confidence == "unverified" and "Provenance: seed_fallback" in r.notes for r in records)
+    assert all(c.confidence == "unverified" for r in records for c in r.components)
+
+
+def test_ate_unreadable_schedules_pdf_returns_labelled_seeds():
+    scraper = ATE_ATCOElectricScraper()
+    scraper.today = ATE_TODAY
+    with patch.object(scraper, "fetch_page", side_effect=OSError("down")),\
+            patch.object(scraper, "fetch_bytes", return_value=b"not a pdf"),\
+            patch.object(ATE_atco_electric, "extract_pdf_pages", return_value=[]):
+        records = scraper.scrape()
+    assert len(records) == 3 and all("Provenance: seed_fallback" in record.notes for record in records)
+
+
+# ======================================================================
+# EPCOR Distribution DAS/SAS interim tariffs (batch 12)
+# ======================================================================
+from scrapers.utils.parsing import DocumentPage
+from scrapers.utilities.epcor_distribution import AESO_POOL_PRICE_URL as EPD_AESO_POOL_PRICE_URL, DISCOVERY_URL as EPD_DISCOVERY_URL, EPCORDistributionScraper as EPD_EPCORDistributionScraper, discover_editions as EPD_discover_editions, parse_tariff_pages as EPD_parse_tariff_pages
+import json
+from datetime import date, datetime
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+
+EPD_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "epcor_distribution.json"
+EPD_TODAY = date(2026, 10, 9)
+EPD_CODES = ["DAS-R", "DAS-SC", "DAS-MC", "DAS-TOU", "DAS-TOUP"]
+EPD_SEED_CODES = ["D100", "D200", "D300"]
+EPD_RIDER_G = "Rider G - Balancing Pool Rider"
+EPD_RIDER_J = "Rider J - SAS True-Up Rider"
+EPD_RIDER_K = "Rider K - Transmission Charge Deferral Account True-Up Rider"
+EPD_ON_PEAK_HOURS = "between 8:00 a.m. and 9:00 p.m. Monday to Friday, excluding statutory holidays"
+
+# (component_type, component_name, value, unit, effective_date, end_date)
+EPD_EXPECTED = {
+    "DAS-R": [
+        ("fixed", "Distribution Customer Charge", 0.72856, "$/day", "2026-01-01", None),
+        ("distribution", "Distribution Energy Charge", 0.01783, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Energy Charge", 0.0405, "$/kWh", "2026-01-01", None),
+        ("rider", EPD_RIDER_G, 0.0013, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", EPD_RIDER_J, -0.00016, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", EPD_RIDER_K, 0.00103, "$/kWh", "2026-10-01", None),
+    ],
+    "DAS-SC": [
+        ("fixed", "Distribution Customer Charge", 0.64111, "$/day", "2026-01-01", None),
+        ("distribution", "Distribution Energy Charge", 0.03351, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Energy Charge", 0.043, "$/kWh", "2026-01-01", None),
+        ("rider", EPD_RIDER_G, 0.0013, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", EPD_RIDER_J, -0.00001, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", EPD_RIDER_K, 0.00113, "$/kWh", "2026-10-01", None),
+    ],
+    "DAS-MC": [
+        ("fixed", "Distribution Customer Charge", 1.94742, "$/day", "2026-01-01", None),
+        ("demand", "Distribution Demand Charge", 0.27106, "$/kVA/day", "2026-01-01", None),
+        ("distribution", "Distribution Energy Charge", 0.0, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Capacity Charge", 0.11085, "$/kVA/day", "2026-01-01", None),
+        ("transmission", "Transmission Energy Charge", 0.00668, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Demand Charge", 0.21567, "$/kVA/day", "2026-01-01", None),
+        ("rider", EPD_RIDER_G, 0.0013, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", EPD_RIDER_J, 0.00064, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", EPD_RIDER_K, 0.00113, "$/kWh", "2026-10-01", None),
+    ],
+    "DAS-TOU": [
+        ("fixed", "Distribution Customer Charge", 43.4621, "$/day", "2026-01-01", None),
+        ("demand", "Distribution Demand Charge", 0.22878, "$/kW/day", "2026-01-01", None),
+        ("distribution", "Distribution On-Peak Energy Charge", 0.0, "$/kWh", "2026-01-01", None),
+        ("distribution", "Distribution Off-Peak Energy Charge", 0.0, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Energy Charge", 0.00253, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Capacity Charge", 0.12868, "$/kW/day", "2026-01-01", None),
+        ("transmission", "Transmission Other System Support (OSS) Charge", 0.00107, "$/kW/day", "2026-01-01", None),
+        ("transmission", "Transmission Operating Reserve Charge", None, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Demand Charge", 0.24154, "$/kW/day", "2026-01-01", None),
+        ("rider", EPD_RIDER_G, 0.00129, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", EPD_RIDER_J, -0.0012, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", EPD_RIDER_K, 0.00255, "$/kWh", "2026-10-01", None),
+    ],
+    "DAS-TOUP": [
+        ("fixed", "Distribution Customer Charge", 67.45678, "$/day", "2026-01-01", None),
+        ("demand", "Distribution Demand Charge", 0.13822, "$/kW/day", "2026-01-01", None),
+        ("distribution", "Distribution On-Peak Energy Charge", 0.0, "$/kWh", "2026-01-01", None),
+        ("distribution", "Distribution Off-Peak Energy Charge", 0.0, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Energy Charge", 0.0025, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Capacity Charge", 0.13497, "$/kW/day", "2026-01-01", None),
+        ("transmission", "Transmission Other System Support (OSS) Charge", 0.00112, "$/kW/day", "2026-01-01", None),
+        ("transmission", "Transmission Operating Reserve Charge", None, "$/kWh", "2026-01-01", None),
+        ("transmission", "Transmission Demand Charge", 0.28126, "$/kW/day", "2026-01-01", None),
+        ("rider", EPD_RIDER_G, 0.00128, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", EPD_RIDER_J, -0.00024, "$/kWh", "2026-01-01", "2026-12-31"),
+        ("rider", EPD_RIDER_K, 0.00259, "$/kWh", "2026-10-01", None),
+    ],
+}
+
+# code -> (tariff_name, customer_class, sub_class, rate_structure)
+EPD_EXPECTED_RECORDS = {
+    "DAS-R": ("Residential Distribution and Transmission (DAS-R)", "residential", "single household", "flat"),
+    "DAS-SC": ("Commercial/Industrial <50 kVA Distribution and Transmission (DAS-SC)", "commercial",
+               "small commercial/industrial (<50 kVA)", "flat"),
+    "DAS-MC": ("Commercial/Industrial 50 kVA to <150 kVA Distribution and Transmission (DAS-MC)", "commercial",
+               "medium commercial/industrial (50 to <150 kVA)", "demand"),
+    "DAS-TOU": ("Commercial/Industrial 150 kVA to <5,000 kVA Secondary Distribution and Transmission (DAS-TOU)",
+                "commercial", "large commercial/industrial, secondary voltage (150 to <5,000 kVA)", "demand"),
+    "DAS-TOUP": ("Primary Commercial/Industrial >=150 kVA Distribution and Transmission (DAS-TOUP)", "commercial",
+                 "commercial/industrial, primary voltage (>=150 kVA)", "demand"),
+}
+
+
+def EPD__fixture():
+    return json.loads(EPD_FIXTURE.read_text(encoding="utf-8"))
+
+
+def EPD__inputs(document=None):
+    document = document or EPD__fixture()
+    pages = {kind: [DocumentPage(page["page_number"], page["text"]) for page in doc["pages"]]
+             for kind, doc in document["documents"].items()}
+    labels = {kind: datetime.strptime(text, "%B %Y").date() for kind, text in document["labels"].items()}
+    return pages, dict(document["source_urls"]), labels
+
+
+def EPD__parse(pages=None, today=EPD_TODAY, labels=None, riders=None):
+    base_pages, urls, base_labels = EPD__inputs()
+    pages = pages or base_pages
+    rider_pages = riders if riders is not None else {"G": pages["G"], "J": pages["J"], "K": pages["K"], "DJ": None}
+    records = EPD_parse_tariff_pages(pages["DAS"], pages["SAS"], rider_pages, urls, today=today,
+                                 labels=base_labels if labels is None else labels)
+    return {record.tariff_code: record for record in records}
+
+
+def EPD__mutate(kind, page_number, old, new, pages=None):
+    pages = pages or EPD__inputs()[0]
+    (target,) = [page for page in pages[kind] if page.page_number == page_number]
+    assert old in target.text
+    pages[kind] = [DocumentPage(page.page_number, page.text.replace(old, new, 1)) if page is target else page
+                   for page in pages[kind]]
+    return pages
+
+
+def EPD__drop(kind, page_number):
+    pages = EPD__inputs()[0]
+    pages[kind] = [page for page in pages[kind] if page.page_number != page_number]
+    return pages
+
+
+def EPD__component(record, name):
+    (component,) = [c for c in record.components if c.component_name == name]
+    return component
+
+
+def test_epd_fixture_matches_discovery_page():
+    document = EPD__fixture()
+    assert document["landing_url"] == EPD_DISCOVERY_URL and document["retrieved_on"] == "2026-10-09"
+    editions = EPD_discover_editions(document["landing_html"])
+    assert set(editions) == {"DAS", "SAS", "G", "J", "K", "DJ"}
+    for kind, doc in document["documents"].items():
+        current = [edition for edition in editions[kind] if edition.label_date <= EPD_TODAY][0]
+        assert current.url == doc["source_url"] == document["source_urls"][kind]
+        assert current.label == doc["label"] == document["labels"][kind]
+    assert editions["DJ"][0].label == document["labels"]["DJ"] == "January 2020"
+
+
+def test_epd_discovery_selects_newest_edition_in_effect():
+    editions = EPD_discover_editions(EPD__fixture()["landing_html"])
+    assert [edition.label for edition in editions["K"]] == ["October 2026", "July 2026", "April 2026"]
+    assert [edition.label for edition in editions["K"] if edition.label_date <= date(2026, 9, 30)][0] == "July 2026"
+    assert editions["DAS"][0].url.endswith("/2026-01-distribution-access-service-tariff.pdf")
+    assert editions["SAS"][0].url.endswith("/2026-01-system-access-service-tariff.pdf")
+
+
+def test_epd_discovery_drops_mislabelled_document():
+    html = EPD__fixture()["landing_html"].replace("October 2026", "November 2026")
+    assert [edition.label for edition in EPD_discover_editions(html)["K"]] == ["July 2026", "April 2026"]
+
+
+def test_epd_exact_records_and_components():
+    records = EPD__parse()
+    assert list(records) == EPD_CODES
+    for code, expected in EPD_EXPECTED.items():
+        record = records[code]
+        assert [(c.component_type, c.component_name, c.charge_value, c.charge_unit, c.effective_date, c.end_date)
+                for c in record.components] == expected
+        name, customer_class, sub_class, structure = EPD_EXPECTED_RECORDS[code]
+        assert (record.tariff_name, record.customer_class, record.sub_class, record.rate_structure) == (
+            name, customer_class, sub_class, structure)
+        assert (record.utility_name, record.province, record.utility_type) == ("EPCOR Distribution", "AB", "electricity")
+        assert record.pricing_method == "regulated" and record.effective_date == "2026-10-01"
+        assert record.end_date is None and record.demand_min_kw is None and record.demand_max_kw is None
+        assert record.confidence == "medium" and all(c.confidence == "medium" for c in record.components)
+
+
+def test_epd_eligibility_from_schedules():
+    records = EPD__parse()
+    assert "single and separate household" in records["DAS-R"].eligibility
+    assert "less than 50 kVA" in records["DAS-SC"].eligibility
+    assert "at least 50 kVA and less than 150 kVA" in records["DAS-MC"].eligibility
+    assert "at least 150 kVA and less than 5,000 kVA" in records["DAS-TOU"].eligibility
+    assert "secondary voltage" in records["DAS-TOU"].eligibility
+    assert "primary voltage" in records["DAS-TOUP"].eligibility
+    assert "Electric Service Agreement" in records["DAS-TOUP"].eligibility
+
+
+def test_epd_component_sources_and_details():
+    records = EPD__parse()
+    urls = EPD__fixture()["source_urls"]
+    for record in records.values():
+        assert record.source_url == urls["DAS"]
+        for c in record.components:
+            assert c.source_url and c.source_detail and c.effective_date
+    residential = records["DAS-R"]
+    customer = EPD__component(residential, "Distribution Customer Charge")
+    assert customer.source_url == urls["DAS"]
+    assert customer.source_detail == ("DAS tariff PDF page 3 (Price Schedule DAS-R, cell DAS-R1) and page 25 "
+                                      "(Table 1)")
+    transmission = EPD__component(residential, "Transmission Energy Charge")
+    assert transmission.source_url == urls["SAS"]
+    assert transmission.source_detail == ("SAS tariff PDF page 3 (Price Schedule SAS-R, cell SAS-R1) and page 25 "
+                                          "(Table 3)")
+    rider = EPD__component(residential, EPD_RIDER_K)
+    assert rider.source_url == urls["K"]
+    assert rider.source_detail == "Rider K PDF page 1 (row SAS-R, Energy Charge)"
+    assert records["DAS-TOU"].source_page == "DAS tariff PDF pages 6, 7; SAS tariff PDF pages 6, 7"
+
+
+def test_epd_operating_reserve_is_value_less_market_component():
+    records = EPD__parse()
+    for code, percent in (("DAS-TOU", "8.09"), ("DAS-TOUP", "7.99")):
+        reserve = EPD__component(records[code], "Transmission Operating Reserve Charge")
+        assert reserve.charge_value is None and reserve.component_type == "transmission"
+        assert reserve.market_reference == "AESO pool price x " + percent + "% (operating reserve)"
+        assert reserve.market_source_url == EPD_AESO_POOL_PRICE_URL
+        assert "Market-indexed" in reserve.notes and "no value is shown" in reserve.notes
+        assert "Variable" in records[code].notes
+    for code in ("DAS-R", "DAS-SC", "DAS-MC"):
+        assert not [c for c in records[code].components if c.market_reference or c.charge_value is None]
+
+
+def test_epd_tou_periods_and_demand_units():
+    records = EPD__parse()
+    for code in ("DAS-TOU", "DAS-TOUP"):
+        on_peak = EPD__component(records[code], "Distribution On-Peak Energy Charge")
+        off_peak = EPD__component(records[code], "Distribution Off-Peak Energy Charge")
+        assert (on_peak.tou_period, on_peak.tou_hours) == ("on-peak", EPD_ON_PEAK_HOURS)
+        assert off_peak.tou_period == "off-peak" and "outside On-Peak" in off_peak.tou_hours
+        for name in ("Distribution Demand Charge", "Transmission Capacity Charge", "Transmission Demand Charge",
+                     "Transmission Other System Support (OSS) Charge"):
+            assert EPD__component(records[code], name).demand_unit == "kW"
+        assert "50 kilowatts" in EPD__component(records[code], "Distribution Demand Charge").notes
+    medium = records["DAS-MC"]
+    for name in ("Distribution Demand Charge", "Transmission Capacity Charge", "Transmission Demand Charge"):
+        assert EPD__component(medium, name).demand_unit == "kVA"
+    assert "85% of the highest metered demand" in EPD__component(medium, "Distribution Demand Charge").notes
+    assert "90% of the highest metered demand" in EPD__component(medium, "Transmission Capacity Charge").notes
+    assert "or 5 kVA" in EPD__component(medium, "Transmission Capacity Charge").notes
+    assert "Peak Metered Demand" in EPD__component(medium, "Transmission Demand Charge").notes
+
+
+def test_epd_interim_and_rider_notes():
+    records = EPD__parse()
+    for code, record in records.items():
+        assert "Interim:" in record.notes and "(2026 INTERIM RATE)" in record.notes and "AUC" in record.notes
+        assert "Local Access Fee (Rider LAF)" in record.notes and "not shown as a component" in record.notes
+        assert "Rider DG (Temporary Adjustment): N/A for " + code in record.notes
+        assert ("Rider DJ (DAS True-up Rider): no edition posted for the current tariff period "
+                "(latest posted edition: January 2020); not applied.") in record.notes
+        assert ("Rider E (Special Facilities Charge)" in record.notes) == (code in ("DAS-TOU", "DAS-TOUP"))
+        assert all("2026 interim rate" in c.notes for c in record.components if c.component_type != "rider")
+    assert "DAS-R: The minimum daily charge is the customer charge." in records["DAS-R"].notes
+    assert "A negative value is a credit." in EPD__component(records["DAS-R"], EPD_RIDER_J).notes
+    assert "Proceeding 30427" in EPD__component(records["DAS-R"], EPD_RIDER_G).notes
+    assert "(no end date printed)" in EPD__component(records["DAS-R"], EPD_RIDER_K).notes
+
+
+def test_epd_excluded_classes_are_not_emitted():
+    records = EPD__parse()
+    assert set(records) == set(EPD_CODES)
+    for record in records.values():
+        assert not any(word in record.tariff_name for word in ("Lighting", "Generator", "Direct", "Traffic"))
+
+
+def test_epd_value_changes_propagate():
+    pages = EPD__mutate("DAS", 3, "$0.72856 $0.01783", "$0.72856 $0.01790")
+    pages = EPD__mutate("DAS", 25, "DAS-R2 $0.01783", "DAS-R2 $0.01790", pages)
+    pages = EPD__mutate("SAS", 6, "$0.00107 8.09%", "$0.00107 8.19%", pages)
+    pages = EPD__mutate("SAS", 25, "SAS-TOU4 8.09%", "SAS-TOU4 8.19%", pages)
+    pages = EPD__mutate("K", 1, "SAS-R $0.00103", "SAS-R $0.00109", pages)
+    records = EPD__parse(pages)
+    assert list(records) == EPD_CODES
+    assert EPD__component(records["DAS-R"], "Distribution Energy Charge").charge_value == 0.0179
+    assert EPD__component(records["DAS-R"], EPD_RIDER_K).charge_value == 0.00109
+    reserve = EPD__component(records["DAS-TOU"], "Transmission Operating Reserve Charge")
+    assert reserve.market_reference == "AESO pool price x 8.19% (operating reserve)"
+
+
+@pytest.mark.parametrize(("kind", "page_number", "old", "new", "rejected"), [
+    ("DAS", 25, "DAS-R2 $0.01783", "DAS-R2 $0.01790", "DAS-R"),
+    ("SAS", 25, "SAS-MC3 $0.21567", "SAS-MC3 $0.21000", "DAS-MC"),
+    ("DAS", 25, "DAS-MC2 $0.27106 per kVA per Day", "DAS-MC2 $0.27106 per kW per Day", "DAS-MC"),
+    ("SAS", 25, "SAS-TOU2 $0.12868 /kW/day of Capacity Charge", "SAS-TOU2 $0.12868 /kVA/day of Capacity Charge",
+     "DAS-TOU"),
+    ("DAS", 4, "Price Schedule DAS-SC Effective: January 1, 2026", "Price Schedule DAS-SC", "DAS-SC"),
+    ("SAS", 5, "Price Schedule SAS-MC Effective: January 1, 2026", "Price Schedule SAS-MC Effective: January 1, 2027",
+     "DAS-MC"),
+    ("DAS", 4, "normal maximum demand of less than 50 kVA", "normal maximum demand of less than 75 kVA", "DAS-SC"),
+    ("DAS", 8, "On-Peak is all energy consumption", "Peak is all energy consumption", "DAS-TOUP"),
+    ("DAS", 6, "DAS-TOU4*", "DAS-TOU4* DAS-TOU5*", "DAS-TOU"),
+    ("SAS", 3, "Short Term Adjustment (Rider K)", "Short Term Adjustment (Rider K) Other Adjustment (Rider M)", "DAS-R"),
+    ("G", 1, "SAS-MC $0.00130 N/A N/A N/A", "", "DAS-MC"),
+    ("G", 1, "SAS-R $0.00130 N/A N/A N/A", "SAS-R $0.00130 $0.01000 N/A N/A", "DAS-R"),
+    ("J", 1, "SAS-SC $(0.00001) N/A N/A N/A", "SAS-SC - N/A N/A N/A", "DAS-SC"),
+])
+def test_epd_drift_rejects_only_that_class(kind, page_number, old, new, rejected):
+    records = EPD__parse(EPD__mutate(kind, page_number, old, new))
+    assert list(records) == [code for code in EPD_CODES if code != rejected]
+
+
+@pytest.mark.parametrize(("kind", "page_number", "rejected"), [
+    ("DAS", 4, "DAS-SC"),
+    ("SAS", 5, "DAS-MC"),
+    ("DAS", 7, "DAS-TOU"),
+    ("SAS", 9, "DAS-TOUP"),
+])
+def test_epd_missing_schedule_or_continuation_page_rejects_only_that_class(kind, page_number, rejected):
+    assert list(EPD__parse(EPD__drop(kind, page_number))) == [code for code in EPD_CODES if code != rejected]
+
+
+def test_epd_rider_e_terms_required_for_large_classes():
+    records = EPD__parse(EPD__mutate("DAS", 20, "negotiated between the customer and the Company", "set by the Company"))
+    assert list(records) == ["DAS-R", "DAS-SC", "DAS-MC"]
+
+
+def test_epd_tariff_level_failures_reject_everything():
+    labels = EPD__inputs()[2]
+    assert EPD__parse(today=date(2025, 12, 31)) == {}
+    assert EPD__parse(labels=dict(labels, DAS=date(2026, 2, 1))) == {}
+    assert EPD__parse(EPD__mutate("DAS", 1, "Effective January 1, 2026", "")) == {}
+    assert EPD__parse(EPD__drop("SAS", 25)) == {}
+
+
+def test_epd_rider_editions_and_periods():
+    pages, _, labels = EPD__inputs()
+    expired = EPD__parse(today=date(2027, 1, 5))
+    assert list(expired) == EPD_CODES
+    for record in expired.values():
+        names = [c.component_name for c in record.components]
+        assert EPD_RIDER_G not in names and EPD_RIDER_J not in names and EPD_RIDER_K in names
+        assert "Rider G (Balancing Pool Rider): edition ended December 31, 2026; not applied." in record.notes
+    assert EPD__parse(labels=dict(labels, K=date(2026, 7, 1))) == {}
+    future = EPD__mutate("K", 1, "True-Up Rider Effective: October 1, 2026", "True-Up Rider Effective: October 15, 2026")
+    assert EPD__parse(future) == {}
+    assert EPD__parse(riders={"G": pages["G"], "J": pages["J"], "K": [], "DJ": None}) == {}
+    assert EPD__parse(riders={"G": pages["G"], "J": pages["J"], "DJ": None}) == {}
+    without_k = EPD__parse(riders={"G": pages["G"], "J": pages["J"], "K": None, "DJ": None})
+    assert list(without_k) == EPD_CODES
+    for record in without_k.values():
+        assert EPD_RIDER_K not in [c.component_name for c in record.components]
+        assert record.effective_date == "2026-01-01" and "Rider K (" in record.notes
+
+
+def test_epd_rider_edition_older_than_tariff_or_self_contradictory():
+    labels = EPD__inputs()[2]
+    older = EPD__mutate("G", 1, "Balancing Pool Rider Effective: January 1, 2026",
+                    "Balancing Pool Rider Effective: December 1, 2025")
+    older = EPD__mutate("G", 1, "effective January 1, 2026 to December 31, 2026",
+                    "effective December 1, 2025 to December 31, 2026", older)
+    records = EPD__parse(older, labels=dict(labels, G=date(2025, 12, 1)))
+    assert list(records) == EPD_CODES
+    for record in records.values():
+        assert EPD_RIDER_G not in [c.component_name for c in record.components]
+        assert ("Rider G (Balancing Pool Rider): latest edition (December 1, 2025) predates the current tariff; "
+                "not applied.") in record.notes
+    contradictory = EPD__mutate("G", 1, "effective January 1, 2026 to December 31, 2026",
+                            "effective February 1, 2026 to December 31, 2026")
+    assert EPD__parse(contradictory) == {}
+
+
+def test_epd_rider_values_in_other_columns():
+    tou = EPD__parse(EPD__mutate("G", 1, "SAS-TOU $0.00129 N/A N/A N/A", "SAS-TOU $0.00129 $0.01000 N/A N/A"))["DAS-TOU"]
+    demand = EPD__component(tou, EPD_RIDER_G + " (Demand Charge per kW or kVA per Day)")
+    assert (demand.charge_value, demand.charge_unit, demand.demand_unit) == (0.01, "$/kW/day", "kW")
+    residential = EPD__parse(EPD__mutate("DAS", 21, "DAS-R N/A N/A N/A N/A N/A", "DAS-R N/A N/A $0.00100 N/A N/A"))["DAS-R"]
+    dg = EPD__component(residential, "Rider DG - Temporary Adjustment")
+    assert (dg.charge_value, dg.charge_unit, dg.effective_date) == (0.001, "$/kWh", "2026-01-01")
+    assert dg.source_detail == "DAS tariff PDF page 21, Rider DG table (row DAS-R, Per kWh of Total Energy)"
+    assert "Rider DG (Temporary Adjustment): N/A for DAS-R" not in residential.notes
+
+
+def test_epd_interim_marker_drives_confidence():
+    pages = EPD__mutate("DAS", 3, "RESIDENTIAL SERVICE (2026 INTERIM RATE)", "RESIDENTIAL SERVICE")
+    pages = EPD__mutate("SAS", 3, "RESIDENTIAL SERVICE (2026 INTERIM RATE)", "RESIDENTIAL SERVICE", pages)
+    records = EPD__parse(pages)
+    residential = records["DAS-R"]
+    assert residential.confidence == "high" and "Interim:" not in residential.notes
+    assert all(c.confidence == "high" for c in residential.components)
+    assert records["DAS-SC"].confidence == "medium"
+
+
+def test_epd_scrape_live_from_fixture():
+    document = EPD__fixture()
+    pages, urls, _ = EPD__inputs(document)
+    by_url = {urls[kind]: pages[kind] for kind in pages}
+    fetched = []
+    scraper = EPD_EPCORDistributionScraper(today=EPD_TODAY)
+    with patch.object(scraper, "fetch_page", return_value=document["landing_html"]),\
+            patch.object(scraper, "_fetch_pdf_pages", side_effect=lambda url: fetched.append(url) or by_url[url]):
+        records = scraper.scrape()
+    assert [record.tariff_code for record in records] == EPD_CODES
+    assert all("Provenance: live_parsed" in r.notes and "seed_fallback" not in r.notes for r in records)
+    assert all("Provenance: live_parsed" in c.notes for r in records for c in r.components)
+    assert sorted(fetched) == sorted(urls.values())
+
+
+def test_epd_scrape_total_fetch_failure_returns_labelled_seed():
+    scraper = EPD_EPCORDistributionScraper(today=EPD_TODAY)
+    with patch.object(scraper, "fetch_page", side_effect=OSError("down")),\
+            patch.object(scraper, "fetch_bytes", side_effect=OSError("down")):
+        records = scraper.scrape()
+    assert [record.tariff_code for record in records] == EPD_SEED_CODES
+    assert all(r.confidence == "unverified" and "Provenance: seed_fallback" in r.notes for r in records)
+    assert all(c.confidence == "unverified" for r in records for c in r.components)
+
+
+def test_epd_scrape_known_editions_only_while_valid():
+    pages, urls, _ = EPD__inputs()
+    by_url = {urls[kind]: pages[kind] for kind in pages}
+    for today, expected in ((EPD_TODAY, EPD_CODES), (date(2027, 1, 5), EPD_SEED_CODES)):
+        scraper = EPD_EPCORDistributionScraper(today=today)
+        with patch.object(scraper, "fetch_page", side_effect=OSError("down")),\
+                patch.object(scraper, "_fetch_pdf_pages", side_effect=lambda url: by_url[url]):
+            assert [record.tariff_code for record in scraper.scrape()] == expected
+
+
+def test_epd_scrape_unreadable_rider_edition_returns_labelled_seed():
+    document = EPD__fixture()
+    pages, urls, _ = EPD__inputs(document)
+    by_url = {urls[kind]: pages[kind] for kind in pages}
+    scraper = EPD_EPCORDistributionScraper(today=date(2026, 9, 15))
+    with patch.object(scraper, "fetch_page", return_value=document["landing_html"]),\
+            patch.object(scraper, "_fetch_pdf_pages", side_effect=lambda url: by_url.get(url, [])):
+        records = scraper.scrape()
+    assert [record.tariff_code for record in records] == EPD_SEED_CODES
+    assert all("Provenance: seed_fallback" in r.notes for r in records)
+
+
+# ======================================================================
+# FortisAlberta building catalogue (batch 12)
+# ======================================================================
+from scrapers.utilities import fortisalberta as FAB_fa
+from scrapers.utils.parsing import DocumentPage
+import json
+from datetime import date
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+
+FAB_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "fortisalberta.json"
+FAB_TODAY = date(2026, 10, 9)
+FAB_CODES = {"11", "41", "61", "63", "65"}
+FAB_PDF_URL = (
+    "https://www.fortisalberta.com/docs/default-source/default-document-library/"
+    "rates-options-and-riders-schedules-effective-october1-2026.pdf?sfvrsn=859d971b_10"
+)
+
+FAB_FAB_RES = [
+    ("transmission", "Transmission Variable Charge", 0.04256, "$/kWh", None, "2026-01-01", None),
+    ("distribution", "System Usage Charge", 0.033477, "$/kWh", None, "2026-01-01", None),
+    ("fixed", "Facilities and Service Charge", 1.034442, "$/day", None, "2026-01-01", None),
+    ("rider", "Base Transmission Adjustment Rider", -0.59, "%", None, "2026-01-01", "2026-12-31"),
+    ("rider", "Quarterly Transmission Adjustment Rider", 0.000155, "$/kWh", None, "2026-10-01", "2026-12-31"),
+    ("rider", "Balancing Pool Allocation Rider", 0.001198, "$/kWh", None, "2026-01-01", None),
+]
+
+FAB_FAB_41 = [
+    ("transmission", "Transmission System Usage Charge (kW)", 0.150213, "$/kW/day", None, "2026-01-01", None),
+    ("transmission", "Transmission System Usage Charge (kVA)", 0.1351917, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("transmission", "Transmission Capacity Charge (kW)", 0.120582, "$/kW/day", None, "2026-01-01", None),
+    ("transmission", "Transmission Capacity Charge (kVA)", 0.1085238, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("transmission", "Transmission Variable Charge", 0.006276, "$/kWh", None, "2026-01-01", None),
+    ("demand", "Distribution System Usage Charge (kW)", 0.158148, "$/kW/day", None, "2026-01-01", None),
+    ("demand", "Distribution System Usage Charge (kVA)", 0.1423332, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("demand", "Local Facilities Charge (kW)", 0.286351, "$/kW/day", None, "2026-01-01", None),
+    ("demand", "Local Facilities Charge (kVA)", 0.2577159, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("fixed", "Service Charge", 1.11833, "$/day", None, "2026-01-01", None),
+    ("rider", "Base Transmission Adjustment Rider", 3.3, "%", None, "2026-01-01", "2026-12-31"),
+    ("rider", "Quarterly Transmission Adjustment Rider", 0.000212, "$/kWh", None, "2026-10-01", "2026-12-31"),
+    ("rider", "Balancing Pool Allocation Rider", 0.001208, "$/kWh", None, "2026-01-01", None),
+    ("fixed", "Option I Interval Metering Service Charge", 1.158823, "$/day", "conditional", "2026-01-01", None),
+]
+
+FAB_FAB_61 = [
+    ("transmission", "Transmission System Usage Charge (kW)", 0.244663, "$/kW/day", None, "2026-01-01", None),
+    ("transmission", "Transmission System Usage Charge (kVA)", 0.2201967, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("transmission", "Transmission Capacity Charge (kW)", 0.140959, "$/kW/day", None, "2026-01-01", None),
+    ("transmission", "Transmission Capacity Charge (kVA)", 0.1268631, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("transmission", "Transmission Variable Charge", 0.006424, "$/kWh", None, "2026-01-01", None),
+    ("demand", "Distribution System Usage Charge (kW)", 0.107884, "$/kW/day", None, "2026-01-01", None),
+    ("demand", "Distribution System Usage Charge (kVA)", 0.0970956, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("demand", "Local Facilities Charge (kW)", 0.114553, "$/kW/day", None, "2026-01-01", None),
+    ("demand", "Local Facilities Charge (kVA)", 0.1030977, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("fixed", "Service Charge", 1.385825, "$/day", None, "2026-01-01", None),
+    ("rider", "Base Transmission Adjustment Rider", -1.84, "%", None, "2026-01-01", "2026-12-31"),
+    ("rider", "Quarterly Transmission Adjustment Rider", 0.000223, "$/kWh", None, "2026-10-01", "2026-12-31"),
+    ("rider", "Balancing Pool Allocation Rider", 0.001235, "$/kWh", None, "2026-01-01", None),
+    ("rebate", "Option A Local Facilities Credit (kW)", -0.014296, "$/kW/day", "conditional", "2026-01-01", None),
+    ("rebate", "Option A Local Facilities Credit (kVA)", -0.0128664, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("fixed", "Option I Interval Metering Service Charge", 1.158823, "$/day", "conditional", "2026-01-01", None),
+]
+
+FAB_FAB_63 = [
+    ("transmission", "Transmission System Usage Charge (kW)", 0.214447, "$/kW/day", None, "2026-01-01", None),
+    ("transmission", "Transmission System Usage Charge (kVA)", 0.1930023, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("transmission", "Transmission Capacity Charge (kW)", 0.174184, "$/kW/day", None, "2026-01-01", None),
+    ("transmission", "Transmission Capacity Charge (kVA)", 0.1567656, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("transmission", "Transmission Variable Charge", 0.006228, "$/kWh", None, "2026-01-01", None),
+    ("distribution", "Distribution System Usage Charge", 27.080602, "$/km/day", None, "2026-01-01", None),
+    ("demand", "Local Facilities Charge (kW)", 0.01517, "$/kW/day", None, "2026-01-01", None),
+    ("demand", "Local Facilities Charge (kVA)", 0.013653, "$/kVA/day", "alternative", "2026-01-01", None),
+    ("fixed", "Service Charge", 15.998863, "$/day", None, "2026-01-01", None),
+    ("rider", "Base Transmission Adjustment Rider", -2.69, "%", None, "2026-01-01", "2026-12-31"),
+    ("rider", "Quarterly Transmission Adjustment Rider", 0.000251, "$/kWh", None, "2026-10-01", "2026-12-31"),
+    ("rider", "Balancing Pool Allocation Rider", 0.001199, "$/kWh", None, "2026-01-01", None),
+    ("rebate", "Option A Local Facilities Credit (kW)", -0.014296, "$/kW/day", "conditional", "2026-01-01", None),
+    ("rebate", "Option A Local Facilities Credit (kVA)", -0.0128664, "$/kVA/day", "alternative", "2026-01-01", None),
+]
+
+FAB_FAB_65 = [
+    ("transmission", "Transmission Charge (AESO ISO tariff flow-through)", None, None, None, "2026-01-01", None),
+    ("fixed", "Service Charge", 50.61944, "$/day", None, "2026-01-01", None),
+    ("rider", "Base Transmission Adjustment Rider", 4.851, "$/day", None, "2026-01-01", "2026-12-31"),
+]
+
+
+def FAB__document():
+    return json.loads(FAB_FIXTURE.read_text(encoding="utf-8"))
+
+
+def FAB__pages(document=None):
+    return [DocumentPage(p["page_number"], p["text"]) for p in (document or FAB__document())["pages"]]
+
+
+def FAB__parse(pages, today=FAB_TODAY):
+    rejected = {}
+    records = FAB_fa.parse_schedule_pages(pages, FAB_PDF_URL, today, rejected)
+    return {r.tariff_code: r for r in records}, rejected
+
+
+def FAB__mutate(pages, page_number, old, new):
+    out = []
+    for page in pages:
+        if page.page_number == page_number:
+            assert old in page.text, (page_number, old)
+            page = DocumentPage(page_number, page.text.replace(old, new, 1))
+        out.append(page)
+    return out
+
+
+def FAB__drop(pages, page_number):
+    assert any(p.page_number == page_number for p in pages)
+    return [p for p in pages if p.page_number != page_number]
+
+
+def FAB__rows(record):
+    return [(c.component_type, c.component_name, c.charge_value, c.charge_unit, c.sub_component,
+             c.effective_date, c.end_date) for c in record.components]
+
+
+def FAB__component(record, name):
+    (match,) = [c for c in record.components if c.component_name == name]
+    return match
+
+
+def FAB__scraper_with(pages, landing=None, url=FAB_PDF_URL):
+    scraper = FAB_fa.FortisAlbertaScraper()
+    html = landing if landing is not None else FAB__document()["landing_html"]
+
+    def fetch_page(requested, *args, **kwargs):
+        assert requested == FAB_fa.SOURCE_URL
+        return html
+
+    def read_pdf(requested):
+        if requested != url:
+            raise RuntimeError("unexpected download " + requested)
+        return pages
+
+    return scraper, patch.object(scraper, "fetch_page", side_effect=fetch_page),\
+        patch.object(scraper, "_read_pdf", side_effect=read_pdf)
+
+
+def test_fab_fixture_provenance():
+    document = FAB__document()
+    assert document["source_url"] == FAB_PDF_URL
+    assert document["landing_url"] == FAB_fa.SOURCE_URL
+    assert document["retrieved_on"] == "2026-10-09"
+    assert "October 1, 2026" in document["description"]
+    assert [p["page_number"] for p in document["pages"]] == [
+        1, 3, 4, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 41, 42, 43, 44]
+
+
+def test_fab_landing_links_and_edition_dates():
+    links = FAB_fa.schedule_links(FAB__document()["landing_html"])
+    assert links[0] == (FAB_PDF_URL, date(2026, 10, 1))
+    assert [stated for _, stated in links] == [
+        date(2026, 10, 1), date(2026, 7, 1), date(2026, 5, 1), date(2026, 4, 1), date(2026, 1, 1), None, None]
+    assert FAB_fa.document_edition_date(FAB__pages()) == date(2026, 10, 1)
+
+
+def test_fab_all_building_classes_parsed():
+    records, rejected = FAB__parse(FAB__pages())
+    assert rejected == {}
+    assert set(records) == FAB_CODES
+    expected = {
+        "11": ("Residential Distribution (Rate 11)", "residential", None, "flat", None, None, "2026-10-01"),
+        "41": ("Small General Service Distribution (Rate 41)", "commercial", "small general service", "demand",
+               None, 75.0, "2026-10-01"),
+        "61": ("General Service Distribution (Rate 61)", "commercial", "general service", "demand",
+               None, 2000.0, "2026-10-01"),
+        "63": ("Large General Service Distribution (Rate 63)", "commercial", "large general service", "demand",
+               2000.0, None, "2026-10-01"),
+        "65": ("Transmission Connected Service Distribution (Rate 65)", "industrial",
+               "transmission connected service", "mixed", None, None, "2026-01-01"),
+    }
+    for code, (name, cls, sub, structure, low, high, effective) in expected.items():
+        r = records[code]
+        assert (r.tariff_name, r.customer_class, r.sub_class, r.rate_structure) == (name, cls, sub, structure)
+        assert (r.demand_min_kw, r.demand_max_kw, r.effective_date) == (low, high, effective)
+        assert (r.utility_name, r.province, r.utility_type, r.pricing_method) == (
+            "FortisAlberta", "AB", "electricity", "regulated")
+        assert r.source_url == FAB_PDF_URL and r.confidence == "high" and r.end_date is None
+        assert "AUC Decision 30274-D01-2025" in r.notes
+
+
+def test_fab_exact_components():
+    records, _ = FAB__parse(FAB__pages())
+    assert FAB__rows(records["11"]) == FAB_FAB_RES
+    assert FAB__rows(records["41"]) == FAB_FAB_41
+    assert FAB__rows(records["61"]) == FAB_FAB_61
+    assert FAB__rows(records["63"]) == FAB_FAB_63
+    assert FAB__rows(records["65"]) == FAB_FAB_65
+
+
+def test_fab_source_details_and_pages():
+    records, _ = FAB__parse(FAB__pages())
+    res = records["11"]
+    assert FAB__component(res, "System Usage Charge").source_detail == (
+        "PDF page 3 (schedule page 1); Rate 11 Distribution Charges, System Usage Charge")
+    assert FAB__component(res, "Quarterly Transmission Adjustment Rider").source_detail == (
+        "PDF page 42 (schedule page 41); Quarterly Transmission Adjustment Rider, Rate 11 row, Q4 column")
+    assert FAB__component(records["41"], "Local Facilities Charge (kVA)").source_detail == (
+        "PDF page 15 (schedule page 13); Rate 41 Distribution Charges, Local Facilities Charge, kVA Rate")
+    assert FAB__component(records["61"], "Option A Local Facilities Credit (kW)").source_detail.startswith("PDF page 28")
+    assert res.source_page == "PDF pages 3, 41, 42, 43"
+    assert records["41"].source_page == "PDF pages 15, 16, 31, 41, 42, 43"
+    for r in records.values():
+        for c in r.components:
+            assert c.source_url == FAB_PDF_URL and c.confidence == "high" and c.effective_date
+            assert c.source_detail.startswith("PDF page ") and not c.source_detail.startswith("PDF page 1 ")
+
+
+def test_fab_alternatives_and_conditionals_are_marked():
+    records, _ = FAB__parse(FAB__pages())
+    for r in records.values():
+        for c in r.components:
+            if c.charge_unit == "$/kVA/day":
+                assert c.sub_component == "alternative" and c.notes.startswith("Conditional:")
+                kw_name = c.component_name.replace("(kVA)", "(kW)")
+                assert FAB__component(r, kw_name).charge_unit == "$/kW/day"
+            if c.sub_component == "conditional":
+                assert c.notes.startswith("Conditional:")
+            if c.component_type == "rebate":
+                assert c.charge_value < 0 and c.sub_component in ("conditional", "alternative")
+    option_i = FAB__component(records["41"], "Option I Interval Metering Service Charge")
+    assert "less than 333 kW" in option_i.notes
+    option_a = FAB__component(records["63"], "Option A Local Facilities Credit (kW)")
+    assert "not less than 1,000 kW" in option_a.notes and "lesser of" in option_a.notes
+
+
+def test_fab_rate_65_flow_through_and_riders():
+    records, _ = FAB__parse(FAB__pages())
+    flow = FAB__component(records["65"], "Transmission Charge (AESO ISO tariff flow-through)")
+    assert flow.charge_value is None and flow.charge_unit is None
+    assert flow.market_source_url == FAB_fa.AESO_TARIFF_URL
+    assert "Point of Delivery" in flow.market_reference
+    assert "ISO tariff Rider F" in flow.notes
+    names = {c.component_name for c in records["65"].components}
+    assert "Quarterly Transmission Adjustment Rider" not in names
+    assert "Balancing Pool Allocation Rider" not in names
+    assert "Rider A-1" not in records["65"].notes and "Municipal Franchise Fee Riders" in records["65"].notes
+
+
+def test_fab_notes_carry_billing_rules_and_conditions():
+    records, _ = FAB__parse(FAB__pages())
+    small = records["41"].notes
+    assert "less 50 kW" in small and "Rate Minimum of 3 kW" in small and "less 55.5556 kVA" in small
+    assert "The Transmission Minimum Charge is the Capacity Charge." in small
+    assert "Option D (Flat Rate)" in small
+    large = records["63"].notes
+    assert "135% of the Contract Minimum Demand" in large and "Rate Minimum of 2,000 kW" in large
+    assert "The Transmission System Usage Charge is the greater of" in large
+    res = records["11"].notes
+    assert "Distribution Minimum Charge is the Facilities and Service Charge" in res
+    assert "Exclusions: Common use areas" in res
+    for code in ("11", "41", "61", "63"):
+        assert "Conditional (not included): Rider A-1 Municipal Assessment Rider and Municipal Franchise Fee"\
+               in records[code].notes
+
+
+def test_fab_changed_value_propagates():
+    pages = FAB__mutate(FAB__pages(), 3, "$0.033477 /kWh", "$0.034477 /kWh")
+    records, rejected = FAB__parse(pages)
+    assert rejected == {} and set(records) == FAB_CODES
+    assert FAB__component(records["11"], "System Usage Charge").charge_value == 0.034477
+    pages = FAB__mutate(FAB__pages(), 42, "$0.000251/kWh", "($0.000251)/kWh")
+    records, _ = FAB__parse(pages)
+    assert FAB__component(records["63"], "Quarterly Transmission Adjustment Rider").charge_value == -0.000251
+
+
+@pytest.mark.parametrize(("page", "rejected_code"), [
+    (3, "11"), (15, "41"), (16, "41"), (21, "61"), (22, "61"), (24, "63"), (25, "63"), (26, "65"),
+])
+def test_fab_missing_page_rejects_only_that_class(page, rejected_code):
+    records, rejected = FAB__parse(FAB__drop(FAB__pages(), page))
+    assert set(records) == FAB_CODES - {rejected_code}
+    assert set(rejected) == {rejected_code}
+
+
+def test_fab_toc_occurrence_is_skipped():
+    records, rejected = FAB__parse(FAB__drop(FAB__pages(), 3))
+    assert "11" not in records and "schedule not found" in rejected["11"]
+    assert "RATE 11: RESIDENTIAL SERVICE" in FAB__pages()[0].text
+
+
+@pytest.mark.parametrize(("page", "old", "new", "rejected_code"), [
+    (3, "$0.033477 /kWh", "$0.033477 /kW", "11"),
+    (15, "$0.286351 /kW-day", "$0.286351 /kW-month", "41"),
+    (24, "$27.080602 /km-day", "$27.080602 /km", "63"),
+    (26, "$50.619440 /day", "$50.619440 /month", "65"),
+    (21, "Service Charge Daily $1.385825 /day", "Service Charge Daily", "61"),
+])
+def test_fab_wrong_unit_or_missing_value_rejects_only_that_class(page, old, new, rejected_code):
+    records, rejected = FAB__parse(FAB__mutate(FAB__pages(), page, old, new))
+    assert set(records) == FAB_CODES - {rejected_code} and set(rejected) == {rejected_code}
+
+
+@pytest.mark.parametrize(("page", "new", "rejected_code"), [
+    (15, "Effective Date: January 1, 2027", "41"),
+    (21, "", "61"),
+    (26, "Effective Date: 2026", "65"),
+])
+def test_fab_missing_or_future_effective_date_rejects(page, new, rejected_code):
+    records, rejected = FAB__parse(FAB__mutate(FAB__pages(), page, "Effective Date: January 1, 2026", new))
+    assert set(records) == FAB_CODES - {rejected_code} and set(rejected) == {rejected_code}
+
+
+@pytest.mark.parametrize(("page", "old", "new", "rejected_codes"), [
+    (41, "Small General Service 41 3.30%", "Small General Service", {"41"}),
+    (42, "Residential Service 11 $0.000566/kWh ($0.001599)/kWh ($0.002000)/kWh $0.000155/kWh",
+     "Residential Service 11 $0.000566/kWh ($0.001599)/kWh ($0.002000)/kWh", {"11"}),
+    (42, "$0.000223/kWh", "($0.000223/kWh", {"61"}),
+    (43, "Large General Service 63 $0.001199 /kWh", "Large General Service 63", {"63"}),
+    (3, "\u2022 Balancing Pool Allocation Rider", "\u2022 Balancing Pool Allocation Rider \u2022 Rider Z Example", {"11"}),
+])
+def test_fab_garbled_rider_rejects_only_affected_class(page, old, new, rejected_codes):
+    records, rejected = FAB__parse(FAB__mutate(FAB__pages(), page, old, new))
+    assert set(records) == FAB_CODES - rejected_codes and set(rejected) == rejected_codes
+
+
+@pytest.mark.parametrize(("page", "rejected_codes"), [
+    (41, FAB_CODES), (42, {"11", "41", "61", "63"}), (43, {"11", "41", "61", "63"}), (28, {"61", "63"}), (31, {"41", "61"}),
+])
+def test_fab_missing_rider_or_option_page_rejects_classes_that_list_it(page, rejected_codes):
+    records, rejected = FAB__parse(FAB__drop(FAB__pages(), page))
+    assert set(records) == FAB_CODES - rejected_codes and set(rejected) == rejected_codes
+
+
+def test_fab_expired_riders_excluded():
+    records, rejected = FAB__parse(FAB__pages(), today=date(2027, 1, 15))
+    assert rejected == {} and set(records) == FAB_CODES
+    for r in records.values():
+        names = {c.component_name for c in r.components}
+        assert "Base Transmission Adjustment Rider" not in names
+        assert "Quarterly Transmission Adjustment Rider" not in names
+        assert "Base Transmission Adjustment Rider period ended December 31, 2026" in r.notes
+        assert r.effective_date == "2026-01-01"
+    assert FAB__component(records["11"], "Balancing Pool Allocation Rider").charge_value == 0.001198
+    assert "Q4 ended December 31, 2026" in records["11"].notes
+
+
+def test_fab_previous_quarter_and_malformed_credit_cell():
+    records, rejected = FAB__parse(FAB__pages(), today=date(2026, 9, 30))
+    assert set(rejected) == {"41"} and "unbalanced credit parentheses" in rejected["41"]
+    qtar = FAB__component(records["11"], "Quarterly Transmission Adjustment Rider")
+    assert (qtar.charge_value, qtar.effective_date, qtar.end_date) == (-0.002, "2026-07-01", "2026-09-30")
+    assert records["11"].effective_date == "2026-07-01"
+    assert FAB__component(records["63"], "Quarterly Transmission Adjustment Rider").charge_value == -0.001834
+
+
+def test_fab_scrape_marks_live_and_drops_seeds(monkeypatch):
+    monkeypatch.setattr(FAB_fa, "_today", lambda: FAB_TODAY)
+    scraper, page_patch, pdf_patch = FAB__scraper_with(FAB__pages())
+    with page_patch, pdf_patch:
+        records = scraper.scrape()
+    assert {r.tariff_code for r in records} == FAB_CODES
+    assert not {"D10", "D20", "D30"} & {r.tariff_code for r in records}
+    for r in records:
+        assert "live_parsed" in r.notes and "seed_fallback" not in r.notes and r.confidence == "high"
+        assert all("live_parsed" in c.notes for c in r.components)
+
+
+def test_fab_scrape_partial_failure_emits_only_live_classes(monkeypatch):
+    monkeypatch.setattr(FAB_fa, "_today", lambda: FAB_TODAY)
+    pages = FAB__mutate(FAB__pages(), 24, "$27.080602 /km-day", "$27.080602 /km")
+    scraper, page_patch, pdf_patch = FAB__scraper_with(pages)
+    with page_patch, pdf_patch:
+        records = scraper.scrape()
+    assert {r.tariff_code for r in records} == FAB_CODES - {"63"}
+    assert all("seed_fallback" not in r.notes for r in records)
+
+
+def test_fab_scrape_skips_future_edition_without_downloading(monkeypatch):
+    monkeypatch.setattr(FAB_fa, "_today", lambda: FAB_TODAY)
+    future = ('<a class="result pdf" href="https://www.fortisalberta.com/docs/default-source/default-document-library/'
+              'rates-options-and-riders-schedules-effective-january1-2027.pdf">Rates, Options and Riders '
+              'schedules, Effective January 1 2027 (PDF)</a>')
+    landing = FAB__document()["landing_html"].replace('<div class="row results">', '<div class="row results">' + future, 1)
+    assert FAB_fa.schedule_links(landing)[0][1] == date(2027, 1, 1)
+    scraper, page_patch, pdf_patch = FAB__scraper_with(FAB__pages(), landing)
+    with page_patch, pdf_patch:
+        records = scraper.scrape()
+    assert {r.tariff_code for r in records} == FAB_CODES and all("live_parsed" in r.notes for r in records)
+
+
+def test_fab_scrape_edition_label_mismatch_fails_closed(monkeypatch):
+    monkeypatch.setattr(FAB_fa, "_today", lambda: FAB_TODAY)
+    landing = FAB__document()["landing_html"].replace("Effective October 1 2026", "Effective September 1 2026")
+    scraper, page_patch, pdf_patch = FAB__scraper_with(FAB__pages(), landing)
+    with page_patch, pdf_patch:
+        records = scraper.scrape()
+    assert {r.tariff_code for r in records} == {"D10", "D20", "D30"}
+    assert all("seed_fallback" in r.notes for r in records)
+
+
+def test_fab_scrape_total_fetch_failure_returns_labelled_seeds():
+    scraper = FAB_fa.FortisAlbertaScraper()
+    with patch.object(scraper, "fetch_page", side_effect=OSError("down")):
+        records = scraper.scrape()
+    assert [r.tariff_code for r in records] == ["D10", "D20", "D30"]
+    for r in records:
+        assert r.confidence == "unverified" and "seed_fallback" in r.notes and r.province == "AB"
+        assert all(c.confidence == "unverified" and "seed_fallback" in c.notes for c in r.components)
+    assert records[0].components[0].charge_value == FAB_fa.SEED_RESIDENTIAL["basic_charge_per_day"]
+
+
+def test_fab_scrape_all_classes_rejected_returns_labelled_seeds(monkeypatch):
+    monkeypatch.setattr(FAB_fa, "_today", lambda: FAB_TODAY)
+    scraper, page_patch, pdf_patch = FAB__scraper_with(FAB__drop(FAB__pages(), 41))
+    with page_patch, pdf_patch:
+        records = scraper.scrape()
+    assert {r.tariff_code for r in records} == {"D10", "D20", "D30"}
+    assert all(r.confidence == "unverified" and "seed_fallback" in r.notes for r in records)
+
+
+# ======================================================================
+# Alberta Rate of Last Resort providers (batch 12)
+# ======================================================================
+from scrapers.utilities import direct_energy_regulated as ROLR_ders
+from scrapers.utilities import enmax_energy as ROLR_enmax
+from scrapers.utilities import epcor_energy_alberta as ROLR_epcor
+from scrapers.utils import alberta_rolr as ROLR_rolr
+from scrapers.utils.parsing import DocumentPage
+import json
+from contextlib import ExitStack
+from datetime import date
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+
+ROLR_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "alberta_rolr.json"
+ROLR_TODAY = date(2026, 10, 9)
+ROLR_AFTER_TERM = date(2027, 1, 1)
+ROLR_TERM_START = "2025-01-01"
+ROLR_TERM_END = "2026-12-31"
+ROLR_RES = "Rate of Last Resort - Residential"
+ROLR_SB = "Rate of Last Resort - Small Business"
+ROLR_EDTI_RES = "Rate of Last Resort - Residential (EPCOR Distribution area)"
+ROLR_EDTI_SB = "Rate of Last Resort - Small Business (EPCOR Distribution area)"
+ROLR_FAI_RES = "Rate of Last Resort - Residential (FortisAlberta area)"
+ROLR_FAI_SB = "Rate of Last Resort - Small Business (FortisAlberta area)"
+ROLR_EPCOR_NAMES = {ROLR_EDTI_RES, ROLR_EDTI_SB, ROLR_FAI_RES, ROLR_FAI_SB}
+
+
+def ROLR__sources():
+    return json.loads(ROLR_FIXTURE.read_text(encoding="utf-8"))["sources"]
+
+
+def ROLR__html(key):
+    return ROLR__sources()[key]["html"]
+
+
+def ROLR__pages(key):
+    return [DocumentPage(p["page_number"], p["text"]) for p in ROLR__sources()[key]["pages"]]
+
+
+def ROLR__replace(text, old, new, count=1):
+    assert old in text, old
+    return text.replace(old, new, count)
+
+
+def ROLR__replace_page(pages, page_number, old, new):
+    return [DocumentPage(p.page_number, ROLR__replace(p.text, old, new)) if p.page_number == page_number else p
+            for p in pages]
+
+
+def ROLR__ders_inputs(**overrides):
+    src = {"uca": ROLR__html("uca"), "residential": ROLR__html("ders_residential"),
+           "small_business": ROLR__html("ders_small_business")}
+    src.update(overrides)
+    return src
+
+
+def ROLR__enmax_inputs(**overrides):
+    src = {"uca": ROLR__html("uca"), "page": ROLR__html("enmax_page"), "schedule_pages": ROLR__pages("enmax_schedule")}
+    src.update(overrides)
+    return src
+
+
+def ROLR__epcor_inputs(**overrides):
+    sources = ROLR__sources()
+    src = {"uca": sources["uca"]["html"]}
+    for key in ROLR_epcor.AREAS:
+        src[key + "_home"] = sources["epcor_" + key + "_home"]["html"]
+        src[key + "_business"] = sources["epcor_" + key + "_business"]["html"]
+        src[key + "_schedule"] = (sources["epcor_" + key + "_schedule"]["url"], ROLR__pages("epcor_" + key + "_schedule"))
+    src.update(overrides)
+    return src
+
+
+def ROLR__names(records):
+    return {r.tariff_name for r in records}
+
+
+def ROLR__by_name(records):
+    return {r.tariff_name: r for r in records}
+
+
+def ROLR__comp(record, kind):
+    (component,) = [c for c in record.components if c.component_type == kind]
+    return component
+
+
+def ROLR__all_live():
+    return (ROLR_ders.parse_sources(ROLR__ders_inputs(), ROLR_TODAY)[0] + ROLR_enmax.parse_sources(ROLR__enmax_inputs(), ROLR_TODAY)[0]
+            + ROLR_epcor.parse_sources(ROLR__epcor_inputs(), ROLR_TODAY)[0])
+
+
+# ── Fixture and UCA table ─────────────────────────────────────────
+
+def test_rolr_fixture_sources_match_module_urls():
+    sources = ROLR__sources()
+    assert sources["uca"]["url"] == ROLR_rolr.UCA_DEFAULT_RATES_URL
+    assert sources["ders_residential"]["url"] == ROLR_ders.RESIDENTIAL_URL
+    assert sources["ders_small_business"]["url"] == ROLR_ders.COMMERCIAL_URL
+    assert sources["enmax_page"]["url"] == ROLR_enmax.ROLR_URL
+    assert sources["enmax_schedule"]["url"].startswith("https://assets.enmax.com/")
+    for key, area in ROLR_epcor.AREAS.items():
+        assert sources["epcor_" + key + "_home"]["url"] == area["home_url"]
+        assert sources["epcor_" + key + "_business"]["url"] == area["business_url"]
+        assert sources["epcor_" + key + "_tariffs"]["url"] == area["tariffs_url"]
+        listing = sources["epcor_" + key + "_tariffs"]["html"]
+        assert ROLR_epcor.schedule_candidates(listing, key, ROLR_TODAY)[0] == sources["epcor_" + key + "_schedule"]["url"]
+    assert all(entry["retrieved_on"] == "2026-10-09" for entry in sources.values())
+
+
+def test_rolr_uca_table_term_unit_and_prices():
+    table = ROLR_rolr.parse_uca_table(ROLR__html("uca"), ROLR_TODAY)
+    assert (table.period.start.isoformat(), table.period.end.isoformat()) == (ROLR_TERM_START, ROLR_TERM_END)
+    assert {k: str(v) for k, v in table.prices.items()} == {
+        ("EPCOR", "EPCOR Distribution"): "12.01",
+        ("EPCOR", "FortisAlberta Inc."): "12.01",
+        ("ENMAX", "ENMAX Power Corporation"): "12.06",
+        ("Direct Energy Regulated Services", "ATCO Electric"): "12.02",
+    }
+
+
+def test_rolr_uca_table_failures():
+    html = ROLR__html("uca")
+    with pytest.raises(ROLR_rolr.RolrError):
+        ROLR_rolr.parse_uca_table(html, ROLR_AFTER_TERM)
+    with pytest.raises(ROLR_rolr.RolrError):
+        ROLR_rolr.parse_uca_table(ROLR__replace(html, "in ¢/kWh", "in $/kWh"), ROLR_TODAY)
+    with pytest.raises(ROLR_rolr.RolrError):
+        ROLR_rolr.parse_uca_table(ROLR__replace(html, "January 1, 2025 – December 31, 2026 - ", ""), ROLR_TODAY)
+    with pytest.raises(ROLR_rolr.RolrError):
+        ROLR_rolr.parse_uca_table(ROLR__replace(html, "will be in place until December 31, 2026",
+                                      "will be in place until December 31, 2027"), ROLR_TODAY)
+    with pytest.raises(ROLR_rolr.RolrError):
+        ROLR_rolr.parse_uca_table(html.replace("<table", "<div").replace("</table>", "</div>"), ROLR_TODAY)
+
+
+def test_rolr_uca_next_term_table_selected_by_date():
+    html = ROLR__html("uca")
+    start = html.index("<table")
+    end = html.index("</table>", start) + len("</table>")
+    future = (html[start:end].replace("January 1, 2025 – December 31, 2026", "January 1, 2027 – December 31, 2028")
+              .replace("Until Dec. 31", "Until Dec. 31 2028 ").replace("<p>2026</p>", "")
+              .replace("12.02", "12.50"))
+    combined = html[:end] + future + html[end:]
+    assert ROLR_rolr.parse_uca_table(combined, ROLR_TODAY).price("Direct Energy", "ATCO") == ROLR_rolr.parse_cents("12.02", "¢/kWh")
+    later = ROLR_rolr.parse_uca_table(combined, date(2027, 2, 1))
+    assert later.price("Direct Energy", "ATCO") == ROLR_rolr.parse_cents("12.50", "¢/kWh")
+    # A provider still publishing the old term cannot pass against the new table.
+    records, rejections = ROLR_ders.parse_sources(ROLR__ders_inputs(uca=combined), date(2027, 2, 1))
+    assert records == [] and len(rejections) == 2
+
+
+# ── Exact records ─────────────────────────────────────────────────
+
+def test_rolr_ders_records():
+    records, rejections = ROLR_ders.parse_sources(ROLR__ders_inputs(), ROLR_TODAY)
+    assert rejections == []
+    by_name = ROLR__by_name(records)
+    assert set(by_name) == {ROLR_RES, ROLR_SB}
+    expected = {ROLR_RES: ("RoLR-Res", "residential", ROLR_ders.RESIDENTIAL_URL, "Residential Services"),
+                ROLR_SB: ("RoLR-SB", "commercial", ROLR_ders.COMMERCIAL_URL, "Small General Service")}
+    for name, (code, customer_class, url, label) in expected.items():
+        record = by_name[name]
+        assert (record.tariff_code, record.customer_class, record.rate_structure, record.pricing_method) == (
+            code, customer_class, "flat", "regulated")
+        assert (record.effective_date, record.end_date, record.confidence) == (ROLR_TERM_START, ROLR_TERM_END, "high")
+        assert record.source_url == url and record.usage_max is None
+        assert "ATCO Electric" in record.eligibility and label in record.eligibility
+        assert "administration charge" in record.notes and "not included" in record.notes
+        assert [c.component_type for c in record.components] == ["energy"]
+        energy = ROLR__comp(record, "energy")
+        assert (energy.charge_value, energy.charge_unit, energy.effective_date, energy.end_date) == (
+            0.1202, "$/kWh", ROLR_TERM_START, ROLR_TERM_END)
+        assert energy.source_url == url and "12.02 cents/kWh from January 1, 2025" in energy.source_detail
+        assert "Direct Energy Regulated Services / ATCO Electric 12.02 cents/kWh" in energy.notes
+
+
+def test_rolr_enmax_records():
+    records, rejections = ROLR_enmax.parse_sources(ROLR__enmax_inputs(), ROLR_TODAY)
+    assert rejections == []
+    by_name = ROLR__by_name(records)
+    assert set(by_name) == {ROLR_RES, ROLR_SB}
+    schedule_url = ROLR__sources()["enmax_schedule"]["url"]
+    expected = {ROLR_RES: ("RoLR-Res", "residential", 0.4134, "D100", None, None),
+                ROLR_SB: ("RoLR-SB", "commercial", 0.3973, "D200", 250.0, "MWh/year")}
+    for name, (code, customer_class, admin_value, rate_code, usage_max, usage_unit) in expected.items():
+        record = by_name[name]
+        assert (record.tariff_code, record.customer_class, record.rate_structure, record.pricing_method) == (
+            code, customer_class, "flat", "regulated")
+        assert (record.effective_date, record.end_date, record.confidence) == (ROLR_TERM_START, ROLR_TERM_END, "medium")
+        assert (record.usage_max, record.usage_unit) == (usage_max, usage_unit)
+        assert rate_code + " service" in record.eligibility and "City of Calgary" in record.eligibility
+        assert "INTERIM 2026" in record.notes and "Red Deer, Cardston and Ponoka" in record.notes
+        energy, admin = ROLR__comp(record, "energy"), ROLR__comp(record, "fixed")
+        assert (energy.charge_value, energy.charge_unit, energy.effective_date, energy.end_date) == (
+            0.1206, "$/kWh", ROLR_TERM_START, ROLR_TERM_END)
+        assert (admin.charge_value, admin.charge_unit, admin.effective_date, admin.end_date) == (
+            admin_value, "$/day", ROLR_TERM_START, None)
+        assert admin.confidence == "medium" and "Decision 29608-D01-2024" in admin.source_detail
+        assert energy.source_url == schedule_url == admin.source_url
+    assert "less than 250 MWh" in by_name[ROLR_SB].eligibility
+    assert "Medium Commercial (D300)" in by_name[ROLR_SB].notes
+
+
+def test_rolr_epcor_records():
+    records, rejections = ROLR_epcor.parse_sources(ROLR__epcor_inputs(), ROLR_TODAY)
+    assert rejections == []
+    by_name = ROLR__by_name(records)
+    assert set(by_name) == ROLR_EPCOR_NAMES
+    sources = ROLR__sources()
+    expected = {
+        ROLR_EDTI_RES: ("RoLR-Res-EDTI", "residential", 0.23, "edti", "home", None),
+        ROLR_EDTI_SB: ("RoLR-SB-EDTI", "commercial", 0.354, "edti", "business", 250000.0),
+        ROLR_FAI_RES: ("RoLR-Res-FAI", "residential", 0.26, "fortis", "home", None),
+        ROLR_FAI_SB: ("RoLR-SB-FAI", "commercial", 0.198, "fortis", "business", 250000.0),
+    }
+    for name, (code, customer_class, admin_value, area_key, page_key, usage_max) in expected.items():
+        area = ROLR_epcor.AREAS[area_key]
+        record = by_name[name]
+        assert (record.tariff_code, record.customer_class, record.rate_structure, record.pricing_method) == (
+            code, customer_class, "flat", "regulated")
+        assert (record.effective_date, record.end_date, record.confidence) == ("2026-07-01", ROLR_TERM_END, "high")
+        assert record.usage_max == usage_max
+        assert record.usage_unit == ("kWh/year" if usage_max else None)
+        assert record.source_url == area[page_key + "_url"]
+        assert area["service_area"] in record.eligibility
+        energy, admin = ROLR__comp(record, "energy"), ROLR__comp(record, "fixed")
+        assert (energy.charge_value, energy.charge_unit, energy.effective_date, energy.end_date) == (
+            0.1201, "$/kWh", ROLR_TERM_START, ROLR_TERM_END)
+        assert (admin.charge_value, admin.charge_unit, admin.effective_date, admin.end_date) == (
+            admin_value, "$/day", "2026-07-01", None)
+        assert admin.source_url == sources["epcor_" + area_key + "_schedule"]["url"]
+        assert "$/Day/Site" in admin.source_detail
+    assert "single-phase service" in by_name[ROLR_EDTI_RES].eligibility
+    assert "less than 250 megawatt hours" in by_name[ROLR_EDTI_SB].eligibility
+    assert "FortisAlberta Inc." in by_name[ROLR_FAI_SB].eligibility
+
+
+def test_rolr_every_live_component_is_sourced_and_dated():
+    records = ROLR__all_live()
+    assert len(records) == 8
+    for record in records:
+        assert record.province == "AB" and record.utility_type == "electricity"
+        assert not any(c.component_type in ("delivery", "transmission", "rider") for c in record.components)
+        for component in record.components:
+            assert component.source_url and component.source_detail and component.effective_date
+            assert component.charge_value is not None and component.charge_value > 0
+        assert ROLR__comp(record, "energy").end_date == ROLR_TERM_END
+
+
+# ── Mutations: changes propagate, disagreements fail closed ───────
+
+def test_rolr_ders_changed_price_propagates():
+    uca = ROLR__replace(ROLR__html("uca"), "<p>12.02</p>", "<p>12.50</p>")
+    res = ROLR__replace(ROLR__html("ders_residential"), "12.02 cents/kWh", "12.50 cents/kWh")
+    com = ROLR__replace(ROLR__html("ders_small_business"), "12.02 cents/kWh", "12.50 cents/kWh")
+    records, rejections = ROLR_ders.parse_sources(ROLR__ders_inputs(uca=uca, residential=res, small_business=com), ROLR_TODAY)
+    assert rejections == [] and {ROLR__comp(r, "energy").charge_value for r in records} == {0.125}
+
+
+def test_rolr_ders_provider_uca_mismatch_rejects():
+    uca = ROLR__replace(ROLR__html("uca"), "<p>12.02</p>", "<p>12.03</p>")
+    records, rejections = ROLR_ders.parse_sources(ROLR__ders_inputs(uca=uca), ROLR_TODAY)
+    assert records == [] and len(rejections) == 2
+    com = ROLR__replace(ROLR__html("ders_small_business"), "12.02 cents/kWh", "12.03 cents/kWh")
+    records, _ = ROLR_ders.parse_sources(ROLR__ders_inputs(small_business=com), ROLR_TODAY)
+    assert ROLR__names(records) == {ROLR_RES}
+
+
+@pytest.mark.parametrize(("old", "new"), [
+    ("12.02 cents/kWh", "12.02 dollars/kWh"),
+    ("to December 31, 2026", "to December 31, 2027"),
+    ("from January 1, 2025, to December 31, 2026", "from January 2025 to the end of 2026"),
+    ("Small General Service", "General Service"),
+])
+def test_rolr_ders_small_business_unit_term_or_class_drift_rejects_only_that_class(old, new):
+    com = ROLR__ders_inputs()["small_business"].replace(old, new)
+    assert com != ROLR__html("ders_small_business")
+    records, rejections = ROLR_ders.parse_sources(ROLR__ders_inputs(small_business=com), ROLR_TODAY)
+    assert ROLR__names(records) == {ROLR_RES} and len(rejections) == 1
+
+
+def test_rolr_enmax_changed_price_propagates():
+    uca = ROLR__replace(ROLR__html("uca"), "<p>12.06</p>", "<p>12.50</p>")
+    pages = ROLR__pages("enmax_schedule")
+    for number in (2, 3):
+        pages = ROLR__replace_page(pages, number, "Energy Charge $0.1206 per kWh", "Energy Charge $0.1250 per kWh")
+    pages = ROLR__replace_page(pages, 3, "Administration Charge $0.3973 per day", "Administration Charge $0.4000 per day")
+    records, rejections = ROLR_enmax.parse_sources(ROLR__enmax_inputs(uca=uca, schedule_pages=pages), ROLR_TODAY)
+    assert rejections == []
+    by_name = ROLR__by_name(records)
+    assert {ROLR__comp(r, "energy").charge_value for r in records} == {0.125}
+    assert ROLR__comp(by_name[ROLR_SB], "fixed").charge_value == 0.4
+
+
+@pytest.mark.parametrize(("page", "old", "new"), [
+    (2, "Energy Charge $0.1206 per kWh", "Energy Charge $0.1216 per kWh"),
+    (2, "Energy Charge $0.1206 per kWh", "Energy Charge $0.1206 per kW"),
+    (2, "Administration Charge $0.4134 per day", "Administration Charge $0.4134 per month"),
+    (2, "Rider n/a", "Rider $0.1797 per day"),
+    (2, "D100 service", "D110 service"),
+    (2, "Decision 29608-D01-2024, effective January 1, 2025", "Decision 29608-D01-2024"),
+])
+def test_rolr_enmax_schedule_drift_rejects_only_that_class(page, old, new):
+    pages = ROLR__replace_page(ROLR__pages("enmax_schedule"), page, old, new)
+    records, rejections = ROLR_enmax.parse_sources(ROLR__enmax_inputs(schedule_pages=pages), ROLR_TODAY)
+    assert ROLR__names(records) == {ROLR_SB} and len(rejections) == 1
+
+
+def test_rolr_enmax_uca_mismatch_term_and_cover_reject_all():
+    uca = ROLR__replace(ROLR__html("uca"), "<p>12.06</p>", "<p>12.16</p>")
+    assert ROLR_enmax.parse_sources(ROLR__enmax_inputs(uca=uca), ROLR_TODAY)[0] == []
+    page = ROLR__html("enmax_page").replace("remain unchanged until December 31, 2026", "remain unchanged until December 31, 2027")
+    assert page != ROLR__html("enmax_page")
+    assert ROLR_enmax.parse_sources(ROLR__enmax_inputs(page=page), ROLR_TODAY)[0] == []
+    pages = ROLR__replace_page(ROLR__pages("enmax_schedule"), 1, "ENMAX Power Corporation", "Another Utility")
+    assert ROLR_enmax.parse_sources(ROLR__enmax_inputs(schedule_pages=pages), ROLR_TODAY)[0] == []
+    assert ROLR_enmax.parse_sources(ROLR__enmax_inputs(), ROLR_AFTER_TERM)[0] == []
+
+
+def test_rolr_enmax_schedule_for_another_year_rejected():
+    entry = ROLR_enmax.parse_rate_schedule(ROLR__pages("enmax_schedule"))["Residential"]
+    assert str(ROLR_enmax.parse_schedule_charges(entry, ROLR_TODAY)["admin"]) == "0.4134"
+    with pytest.raises(ROLR_rolr.RolrError):
+        ROLR_enmax.parse_schedule_charges(entry, date(2027, 3, 1))
+
+
+def test_rolr_epcor_changed_prices_propagate():
+    sources = ROLR__epcor_inputs()
+    url, pages = sources["edti_schedule"]
+    pages = ROLR__replace_page(pages, 2, "Administration Charge $0.230", "Administration Charge $0.245")
+    records, rejections = ROLR_epcor.parse_sources(ROLR__epcor_inputs(edti_schedule=(url, pages)), ROLR_TODAY)
+    assert rejections == []
+    assert ROLR__comp(ROLR__by_name(records)[ROLR_EDTI_RES], "fixed").charge_value == 0.245
+
+    uca = ROLR__replace(ROLR__html("uca"), "<p>12.01</p>", "<p>12.50</p>")  # first 12.01 cell = EPCOR Distribution
+    home = ROLR__replace(sources["edti_home"], "12.01", "12.50")
+    business = ROLR__replace(sources["edti_business"], "12.01", "12.50")
+    for number in (2, 3):
+        pages = ROLR__replace_page(pages, number, "Energy Charge 12.01", "Energy Charge 12.50")
+    records, rejections = ROLR_epcor.parse_sources(ROLR__epcor_inputs(
+        uca=uca, edti_home=home, edti_business=business, edti_schedule=(url, pages)), ROLR_TODAY)
+    assert rejections == []
+    energy = {r.tariff_name: ROLR__comp(r, "energy").charge_value for r in records}
+    assert energy == {ROLR_EDTI_RES: 0.125, ROLR_EDTI_SB: 0.125, ROLR_FAI_RES: 0.1201, ROLR_FAI_SB: 0.1201}
+
+
+def test_rolr_epcor_uca_mismatch_rejects_only_that_area():
+    html = ROLR__html("uca")
+    first = html.index("<p>12.01</p>")
+    second = html.index("<p>12.01</p>", first + 1)
+    uca = html[:second] + "<p>12.11</p>" + html[second + len("<p>12.01</p>"):]
+    records, rejections = ROLR_epcor.parse_sources(ROLR__epcor_inputs(uca=uca), ROLR_TODAY)
+    assert ROLR__names(records) == {ROLR_EDTI_RES, ROLR_EDTI_SB} and len(rejections) == 2
+
+
+@pytest.mark.parametrize(("kind", "old", "new", "rejected"), [
+    ("home", "12.01", "12.02", {ROLR_EDTI_RES}),
+    ("business", "12.01", "12.02", {ROLR_EDTI_SB}),
+    ("home", "to December 31, 2026", "to December 31, 2027", {ROLR_EDTI_RES}),
+    ("business", "Small Commercial", "Medium Commercial", {ROLR_EDTI_SB}),
+])
+def test_rolr_epcor_page_drift_rejects_only_that_class(kind, old, new, rejected):
+    page = ROLR__replace(ROLR__epcor_inputs()["edti_" + kind], old, new)
+    records, rejections = ROLR_epcor.parse_sources(ROLR__epcor_inputs(**{"edti_" + kind: page}), ROLR_TODAY)
+    assert ROLR__names(records) == ROLR_EPCOR_NAMES - rejected and len(rejections) == len(rejected)
+
+
+@pytest.mark.parametrize(("page", "old", "new", "rejected"), [
+    (2, "Energy Charge 12.01 (cents/kWh)", "Energy Charge 12.01 ($/kWh)", {ROLR_EDTI_RES}),
+    (3, "Energy Charge 12.01 (cents/kWh)", "Energy Charge 12.11 (cents/kWh)", {ROLR_EDTI_SB}),
+    (2, "$0.230 ($/Day/Site)", "$0.230 ($/Month/Site)", {ROLR_EDTI_RES}),
+    (3, "$0.354 ($/Day/Site)", "($0.354) ($/Day/Site)", {ROLR_EDTI_SB}),
+    (2, "Residential Service", "Residence", {ROLR_EDTI_RES}),
+    (2, "Effective Date: July 1, 2026", "Effective Date: July 1, 2025", {ROLR_EDTI_RES, ROLR_EDTI_SB}),
+    (2, "Page 2 of 5", "Page 2 of 6", {ROLR_EDTI_RES, ROLR_EDTI_SB}),
+])
+def test_rolr_epcor_schedule_drift_fails_closed(page, old, new, rejected):
+    url, pages = ROLR__epcor_inputs()["edti_schedule"]
+    pages = ROLR__replace_page(pages, page, old, new)
+    records, _ = ROLR_epcor.parse_sources(ROLR__epcor_inputs(edti_schedule=(url, pages)), ROLR_TODAY)
+    assert ROLR__names(records) == ROLR_EPCOR_NAMES - rejected
+
+
+def test_rolr_epcor_schedule_area_dates_and_completeness():
+    url, pages = ROLR__epcor_inputs()["fortis_schedule"]
+    with pytest.raises(ROLR_rolr.RolrError):
+        ROLR_epcor.parse_price_schedule(pages, "edti", ROLR_TODAY)  # FortisAlberta schedule offered for Edmonton
+    with pytest.raises(ROLR_rolr.RolrError):
+        ROLR_epcor.parse_price_schedule([p for p in pages if p.page_number != 3], "fortis", ROLR_TODAY)
+    with pytest.raises(ROLR_rolr.RolrError):
+        ROLR_epcor.parse_price_schedule(pages, "fortis", date(2026, 6, 30))  # July 1, 2026 schedule not yet in effect
+    assert ROLR_epcor.parse_price_schedule(pages, "fortis", ROLR_TODAY)["effective"] == date(2026, 7, 1)
+    records, _ = ROLR_epcor.parse_sources(ROLR__epcor_inputs(), date(2026, 6, 30))
+    assert records == []
+    assert ROLR_epcor.parse_sources(ROLR__epcor_inputs(), ROLR_AFTER_TERM)[0] == []
+
+
+def test_rolr_epcor_schedule_candidates_newest_effective_first():
+    sources = ROLR__sources()
+    edti = ROLR_epcor.schedule_candidates(sources["epcor_edti_tariffs"]["html"], "edti", ROLR_TODAY)
+    assert edti[0].endswith("/2026-07-edmonton-regulated-rate-tariff.pdf")
+    assert edti[1].endswith("/2025-11-edmonton-regulated-rate-tariff.pdf")
+    earlier = ROLR_epcor.schedule_candidates(sources["epcor_edti_tariffs"]["html"], "edti", date(2026, 6, 30))
+    assert earlier[0].endswith("/2025-11-edmonton-regulated-rate-tariff.pdf")
+    fortis = ROLR_epcor.schedule_candidates(sources["epcor_fortis_tariffs"]["html"], "fortis", ROLR_TODAY)
+    assert fortis[0].endswith("/2026-07-fortis-regulated-rate-tariff.pdf")
+    assert all("edmonton" not in url for url in fortis)
+
+
+# ── Scraper level: live provenance, partial failure, total failure ─
+
+def ROLR__run(scraper, pages_by_url, pdf_by_url=None, today=ROLR_TODAY):
+    pdf_by_url = pdf_by_url or {}
+
+    def fetch_page(url, *args, **kwargs):
+        if url not in pages_by_url:
+            raise OSError("down: " + url)
+        return pages_by_url[url]
+
+    def pdf_pages(data):
+        if data.decode() not in pdf_by_url:
+            raise OSError("no pdf")
+        return pdf_by_url[data.decode()]
+
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(scraper, "fetch_page", side_effect=fetch_page))
+        stack.enter_context(patch.object(scraper, "fetch_bytes", side_effect=lambda url, *a, **k: url.encode()))
+        stack.enter_context(patch.object(scraper, "_today", return_value=today))
+        if hasattr(scraper, "_pdf_pages"):
+            stack.enter_context(patch.object(scraper, "_pdf_pages", side_effect=pdf_pages))
+        return scraper.scrape()
+
+
+def ROLR__ders_urls():
+    return {ROLR_rolr.UCA_DEFAULT_RATES_URL: ROLR__html("uca"), ROLR_ders.RESIDENTIAL_URL: ROLR__html("ders_residential"),
+            ROLR_ders.COMMERCIAL_URL: ROLR__html("ders_small_business")}
+
+
+def ROLR__enmax_urls():
+    sources = ROLR__sources()
+    return ({ROLR_rolr.UCA_DEFAULT_RATES_URL: ROLR__html("uca"), ROLR_enmax.ROLR_URL: ROLR__html("enmax_page")},
+            {sources["enmax_schedule"]["url"]: ROLR__pages("enmax_schedule")})
+
+
+def ROLR__epcor_urls():
+    sources = ROLR__sources()
+    pages = {ROLR_rolr.UCA_DEFAULT_RATES_URL: ROLR__html("uca")}
+    pdfs = {}
+    for key, area in ROLR_epcor.AREAS.items():
+        for kind in ("home", "business", "tariffs"):
+            pages[area[kind + "_url"]] = sources["epcor_" + key + "_" + kind]["html"]
+        pdfs[sources["epcor_" + key + "_schedule"]["url"]] = ROLR__pages("epcor_" + key + "_schedule")
+    return pages, pdfs
+
+
+def ROLR__assert_live(records, names):
+    assert ROLR__names(records) == names
+    for record in records:
+        assert "Provenance: live_parsed" in record.notes and "seed_fallback" not in record.notes
+        assert record.rate_structure == "flat"
+        assert all("Provenance: live_parsed" in c.notes for c in record.components)
+
+
+def ROLR__assert_seed(records):
+    assert ROLR__names(records) == {"Residential Regulated Rate Option", "Commercial Regulated Rate Option"}
+    for record in records:
+        assert record.confidence == "unverified" and "Provenance: seed_fallback" in record.notes
+        assert record.rate_structure == "market"
+        assert all(c.confidence == "unverified" for c in record.components)
+
+
+def test_rolr_ders_scrape_live_partial_and_failure():
+    ROLR__assert_live(ROLR__run(ROLR_ders.DirectEnergyRegulatedScraper(), ROLR__ders_urls()), {ROLR_RES, ROLR_SB})
+    partial = ROLR__ders_urls()
+    partial.pop(ROLR_ders.COMMERCIAL_URL)
+    ROLR__assert_live(ROLR__run(ROLR_ders.DirectEnergyRegulatedScraper(), partial), {ROLR_RES})
+    ROLR__assert_seed(ROLR__run(ROLR_ders.DirectEnergyRegulatedScraper(), {}))
+    ROLR__assert_seed(ROLR__run(ROLR_ders.DirectEnergyRegulatedScraper(), ROLR__ders_urls(), today=ROLR_AFTER_TERM))
+
+
+def test_rolr_enmax_scrape_live_and_failure():
+    pages, pdfs = ROLR__enmax_urls()
+    ROLR__assert_live(ROLR__run(ROLR_enmax.ENMAXEnergyScraper(), pages, pdfs), {ROLR_RES, ROLR_SB})
+    ROLR__assert_seed(ROLR__run(ROLR_enmax.ENMAXEnergyScraper(), {}, pdfs))
+    ROLR__assert_seed(ROLR__run(ROLR_enmax.ENMAXEnergyScraper(), pages, {}))
+    ROLR__assert_seed(ROLR__run(ROLR_enmax.ENMAXEnergyScraper(), pages, pdfs, today=ROLR_AFTER_TERM))
+
+
+def test_rolr_epcor_scrape_live_partial_and_failure():
+    pages, pdfs = ROLR__epcor_urls()
+    ROLR__assert_live(ROLR__run(ROLR_epcor.EPCOREnergyAlbertaScraper(), pages, pdfs), ROLR_EPCOR_NAMES)
+    partial = {url: html for url, html in pages.items() if "/ab/other/" not in url}
+    ROLR__assert_live(ROLR__run(ROLR_epcor.EPCOREnergyAlbertaScraper(), partial, pdfs), {ROLR_EDTI_RES, ROLR_EDTI_SB})
+    ROLR__assert_seed(ROLR__run(ROLR_epcor.EPCOREnergyAlbertaScraper(), {}, pdfs))
+
+
+# ======================================================================
+# Ontario PUC Distribution and market-energy components (batch 12)
+# ======================================================================
+from scrapers.base import BaseScraper
+from scrapers.utilities import ontario_ldc as ONB12_ontario_ldc
+from scrapers.utils import oeb_tariff as ONB12_oeb_tariff
+from scrapers.utils.parsing import DocumentPage
+from scrapers.utils.validation import validate_batch
+import json
+from dataclasses import replace
+from datetime import date
+from pathlib import Path
+
+
+ONB12_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "oeb_tariff_puc.json"
+ONB12_TORONTO_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "oeb_tariff_toronto.json"
+ONB12_OTTAWA_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "oeb_tariff_ottawa.json"
+ONB12_HYDRO_ONE_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "oeb_tariff_hydro_one.json"
+ONB12_ALGOMA_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "oeb_tariff_algoma.json"
+ONB12_BILLDATA_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "oeb_billdata.json"
+ONB12_NAME = "PUC Distribution Inc."
+ONB12_TODAY = date(2026, 10, 9)
+ONB12_NOTE = ("PUC Distribution's approved tariff (EB-2025-0012) prints no Retail Transmission Connection Service Rate; "
+        "only the Network Service Rate is published, so no connection charge is shown.")
+ONB12_RPP_CODES = {"TOU-R", "TIER-R", "ULO-R", "GS-TOU-S", "GS-TIER-S", "GS-ULO-S"}
+ONB12_GS50 = "GENERAL SERVICE 50 TO 4,999 KW"
+ONB12_RES_NETWORK_LINE = "Retail Transmission Rate - Network Service Rate $/kWh 0.0103"
+ONB12_GS50_NETWORK_LINE = "Retail Transmission Rate - Network Service Rate $/kW 3.8677"
+ONB12_EMBEDDED_RIDER = ("Rate Rider for Embedded Generation Adjustment - in effect until the effective date of the next cost "
+                  "of service based rate order")
+ONB12_MARKET_NAME = "Market Energy (Ontario Electricity Market Price + Class B Global Adjustment)"
+ONB12_MARKET_REF = "IESO Ontario Electricity Market Price (OEMP) + Global Adjustment (Class B)"
+ONB12_MARKET_URL = "https://www.ieso.ca/Power-Data/Price-Overview/Ontario-Market-Prices"
+
+
+def ONB12_fixture_pages(mutate=None):
+    data = json.loads(ONB12_FIXTURE.read_text(encoding="utf-8"))
+    pages = [DocumentPage(p["page"], p["text"]) for p in data["pages"]]
+    if mutate:
+        old, new = mutate
+        assert sum(p.text.count(old) for p in pages) == 1, old
+        pages = [DocumentPage(p.page_number, p.text.replace(old, new)) for p in pages]
+    return data, pages
+
+
+def ONB12_puc_sheet():
+    data, pages = ONB12_fixture_pages()
+    return ONB12_oeb_tariff.parse_tariff_pages(pages, data["url"], "2026-10-09")
+
+
+def ONB12_plain_pages(path):
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return data, [DocumentPage(p["page"], p["text"]) for p in data["pages"]]
+
+
+def ONB12_run_scraper(monkeypatch, ldc, pages_by_url):
+    billdata = json.loads(ONB12_BILLDATA_FIXTURE.read_text(encoding="utf-8"))
+    payload = {
+        ONB12_ontario_ldc.OEB_SOURCE_URL: billdata["rpp_html"].encode("utf-8"),
+        ONB12_ontario_ldc.OEB_BILLDATA_RES_URL: billdata["residential_xml"].encode("utf-8"),
+        ONB12_ontario_ldc.OEB_BILLDATA_GS_URL: billdata["gs_xml"].encode("utf-8"),
+    }
+
+    def fake_fetch_bytes(self, url, delay=1.0):
+        if url not in payload:
+            raise RuntimeError("unexpected url " + url)
+        return payload[url]
+
+    def fake_pages(self, url, **kw):
+        if url not in pages_by_url:
+            raise RuntimeError("tariff unavailable " + url)
+        return pages_by_url[url]
+
+    ONB12_ontario_ldc.clear_oeb_cache()
+    monkeypatch.setattr(BaseScraper, "fetch_bytes", fake_fetch_bytes)
+    monkeypatch.setattr(ONB12_ontario_ldc.OntarioLDCScraper, "_fetch_tariff_pages", fake_pages)
+    monkeypatch.setattr(ONB12_ontario_ldc, "_today", lambda: ONB12_TODAY)
+    scraper = ONB12_ontario_ldc.OntarioLDCScraper(registry_entry={"name": ldc})
+    try:
+        return scraper, scraper.scrape()
+    finally:
+        ONB12_ontario_ldc.clear_oeb_cache()
+
+
+def ONB12_run_puc(monkeypatch, mutate=None):
+    data, pages = ONB12_fixture_pages(mutate)
+    return ONB12_run_scraper(monkeypatch, ONB12_NAME, {data["url"]: pages})
+
+
+def ONB12_live_records(records):
+    return [r for r in records if "Provenance: live_parsed" in (r.notes or "")]
+
+
+def ONB12_seed_records(records):
+    return [r for r in records if "Provenance: seed_fallback" in (r.notes or "")]
+
+
+def ONB12_one_record(records, code):
+    found = [r for r in records if r.tariff_code == code]
+    assert len(found) == 1, (code, [r.tariff_code for r in records])
+    return found[0]
+
+
+def ONB12_one_comp(rec, label):
+    found = [c for c in rec.components if c.component_name == label]
+    assert len(found) == 1, (label, [c.component_name for c in rec.components])
+    return found[0]
+
+
+def ONB12_market_parts(rec):
+    return [c for c in rec.components if c.market_reference]
+
+
+# ── Task A: PUC Distribution (EB-2025-0012) ─────────────────────
+
+def test_onb12_fixture_metadata():
+    data, pages = ONB12_fixture_pages()
+    assert data["url"] == ONB12_ontario_ldc._OEB_RDS_DOC.format(936444)
+    assert (data["case_number"], data["effective_date"], data["issued"]) == ("EB-2025-0012", "2026-05-01", "2026-03-19")
+    assert [p.page_number for p in pages] == [7, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    assert all(p.text for p in pages)
+    assert not any("Connection Service Rate" in p.text for p in pages if p.page_number >= 15)
+
+
+def test_onb12_configured_with_connection_flag_only_for_puc():
+    assert ONB12_ontario_ldc.OEB_TARIFF_DOCUMENTS[ONB12_NAME] == [{
+        "url": ONB12_ontario_ldc._OEB_RDS_DOC.format(936444),
+        "case_number": "EB-2025-0012", "zones": None, "default_zone": "",
+        "connection_rate": ONB12_oeb_tariff.CONNECTION_RATE_NOT_PRINTED,
+    }]
+    flagged = [n for n, docs in ONB12_ontario_ldc.OEB_TARIFF_DOCUMENTS.items() for d in docs if "connection_rate" in d]
+    assert flagged == [ONB12_NAME]
+
+
+def test_onb12_sheet_prints_only_network_rates():
+    sheet = ONB12_puc_sheet()
+    assert sheet.errors == [] and sheet.case_number == "EB-2025-0012"
+    assert (sheet.effective_date, sheet.implementation_date, sheet.issued_date) == (
+        "2026-05-01", "2026-05-01", "2026-03-19")
+    categories = {c.name: ONB12_oeb_tariff.classify_classification(c) for c in sheet.classifications}
+    assert categories["RESIDENTIAL"] == "residential"
+    assert categories["GENERAL SERVICE LESS THAN 50 KW"] == "gs_energy"
+    assert categories[ONB12_GS50] == "gs_demand"
+    assert not any(ONB12_oeb_tariff.connection_printed(c) for c in sheet.classifications)
+    assert [c.value for c in sheet.classification(ONB12_GS50).find("transmission_network", conditional=False)] == [3.8677]
+
+
+def test_onb12_note_text():
+    assert ONB12_oeb_tariff.connection_not_printed_note(ONB12_NAME, "EB-2025-0012") == ONB12_NOTE
+
+
+def test_onb12_unflagged_demand_build_rejects_missing_connection():
+    sheet = ONB12_puc_sheet()
+    assert ONB12_oeb_tariff.build_demand_records(sheet, ONB12_NAME, today="2026-10-09") == []
+    assert "Line and Transformation Connection Service Rate' line, found 0" in sheet.rejections[ONB12_GS50]
+
+
+def test_onb12_flagged_demand_build_accepts_and_notes():
+    sheet = ONB12_puc_sheet()
+    records = ONB12_oeb_tariff.build_demand_records(sheet, ONB12_NAME, today="2026-10-09",
+                                              connection_rate=ONB12_oeb_tariff.CONNECTION_RATE_NOT_PRINTED)
+    assert [r.tariff_code for r in records] == ["GS 50-4,999 kW"] and sheet.rejections == {}
+    gs = records[0]
+    assert ONB12_NOTE in gs.notes
+    assert not [c for c in gs.components if "Connection" in c.component_name]
+    assert ONB12_one_comp(gs, "Retail Transmission Rate - Network Service Rate").charge_value == 3.8677
+    assert ONB12_one_comp(gs, "Service Charge").charge_value == 137.59
+    dist = ONB12_one_comp(gs, "Distribution Volumetric Rate")
+    assert (dist.charge_value, dist.charge_unit) == (9.3274, "$/kW")
+    assert len(ONB12_market_parts(gs)) == 1
+
+
+def test_onb12_energy_validation_strict_unless_flagged():
+    res = ONB12_puc_sheet().classification("RESIDENTIAL")
+    reason = ONB12_ontario_ldc.validate_energy_charges(res.charges, "residential", res.unparsed)
+    assert reason == "expected one standard $/kWh Retail Transmission Connection rate, found 0"
+    assert ONB12_ontario_ldc.validate_energy_charges(res.charges, "residential", res.unparsed,
+                                               connection_optional=True) is None
+
+
+def test_onb12_regulatory_section_rider_accepted_unless_non_rpp():
+    res = ONB12_puc_sheet().classification("RESIDENTIAL")
+    rider = next(c for c in res.charges if c.label == ONB12_EMBEDDED_RIDER)
+    assert (rider.kind, rider.section, rider.value) == ("regulatory", "regulatory", -0.0004)
+    non_rpp = replace(rider, label=rider.label + " - Applicable only for Non-RPP Customers")
+    charges = [non_rpp if c is rider else c for c in res.charges]
+    reason = ONB12_ontario_ldc.validate_energy_charges(charges, "residential", [], connection_optional=True)
+    assert reason.startswith("unrecognised regulatory charge")
+
+
+def test_onb12_scraper_builds_seven_live_records(monkeypatch):
+    scraper, records = ONB12_run_puc(monkeypatch)
+    assert scraper.tariff_rejections == {}
+    assert {r.tariff_code for r in ONB12_live_records(records)} == ONB12_RPP_CODES | {"GS 50-4,999 kW"}
+    assert {r.tariff_code for r in ONB12_seed_records(records)} == {"SL"}
+    for rec in ONB12_live_records(records):
+        assert ONB12_NOTE in rec.notes, rec.tariff_code
+        assert not [c for c in rec.components if "Connection" in c.component_name], rec.tariff_code
+        assert rec.effective_date == "2026-05-01" and rec.confidence == "high"
+        for c in rec.components:
+            assert c.source_url and c.source_detail and c.effective_date, (rec.tariff_code, c.component_name)
+    tou = ONB12_one_record(records, "TOU-R")
+    assert ONB12_one_comp(tou, "Service Charge").charge_value == 42.81
+    assert ONB12_one_comp(tou, "Retail Transmission Rate - Network Service Rate").charge_value == 0.0103
+    assert not [c for c in tou.components if c.component_type == "distribution"]
+    rider = ONB12_one_comp(tou, ONB12_EMBEDDED_RIDER)
+    assert (rider.component_type, rider.charge_value, rider.charge_unit) == ("regulatory", -0.0004, "$/kWh")
+    assert "next cost-of-service" in rider.notes
+    assert "Global Adjustment Account" in tou.notes
+    assert not [c for c in tou.components if "Global Adjustment" in c.component_name]
+    gs_tou = ONB12_one_record(records, "GS-TOU-S")
+    assert ONB12_one_comp(gs_tou, "Service Charge").charge_value == 24.91
+    assert ONB12_one_comp(gs_tou, "Distribution Volumetric Rate").charge_value == 0.0356
+    assert not ONB12_market_parts(tou) and not ONB12_market_parts(gs_tou)
+    gs50 = ONB12_one_record(records, "GS 50-4,999 kW")
+    assert gs50.tariff_name == "General Service 50 to 4,999 kW (delivery only)"
+    assert (gs50.customer_class, gs50.demand_min_kw, gs50.demand_max_kw) == ("commercial", 50, 5000)
+    assert len(ONB12_market_parts(gs50)) == 1 and gs50.pricing_method == "market_based"
+    valid, invalid = validate_batch(records)
+    assert invalid == [] and len(valid) == len(records)
+
+
+def test_onb12_flag_still_parses_a_printed_connection_rate(monkeypatch):
+    added = ONB12_RES_NETWORK_LINE + "\nRetail Transmission Rate - Line and Transformation Connection Service Rate $/kWh 0.0050"
+    scraper, records = ONB12_run_puc(monkeypatch, (ONB12_RES_NETWORK_LINE, added))
+    tou = ONB12_one_record(records, "TOU-R")
+    conn = ONB12_one_comp(tou, "Retail Transmission Rate - Line and Transformation Connection Service Rate")
+    assert (conn.charge_value, conn.charge_unit) == (0.005, "$/kWh")
+    assert ONB12_NOTE not in tou.notes
+    assert ONB12_NOTE in ONB12_one_record(records, "GS-TOU-S").notes
+
+
+def test_onb12_flag_does_not_accept_alternative_only_connection(monkeypatch):
+    added = (ONB12_GS50_NETWORK_LINE + "\nRetail Transmission Rate - Line and Transformation Connection Service Rate - "
+             "EV CHARGING $/kW 0.5000")
+    scraper, records = ONB12_run_puc(monkeypatch, (ONB12_GS50_NETWORK_LINE, added))
+    codes = {r.tariff_code for r in records}
+    assert "GS 50-4,999 kW" not in codes and "GS-D1" not in codes
+    assert "found 0" in scraper.tariff_rejections["demand:standard:" + ONB12_GS50]
+    assert ONB12_RPP_CODES <= {r.tariff_code for r in ONB12_live_records(records)}
+
+
+def test_onb12_unflagged_puc_document_rejects_every_class(monkeypatch):
+    doc = dict(ONB12_ontario_ldc.OEB_TARIFF_DOCUMENTS[ONB12_NAME][0])
+    del doc["connection_rate"]
+    monkeypatch.setitem(ONB12_ontario_ldc.OEB_TARIFF_DOCUMENTS, ONB12_NAME, [doc])
+    scraper, records = ONB12_run_puc(monkeypatch)
+    assert not ONB12_live_records(records)
+    for key in ("residential:standard", "gs:standard", "demand:standard:" + ONB12_GS50):
+        assert "Connection" in scraper.tariff_rejections[key], key
+    assert {r.tariff_code for r in ONB12_seed_records(records)} == {"SL"}
+
+
+def test_onb12_unflagged_document_without_connection_rate_still_rejected(monkeypatch):
+    data, pages = ONB12_plain_pages(ONB12_TORONTO_FIXTURE)
+    stripped = [DocumentPage(p.page_number, "\n".join(
+        line for line in p.text.splitlines() if "Connection Service Rate" not in line)) for p in pages]
+    assert "connection_rate" not in ONB12_ontario_ldc.OEB_TARIFF_DOCUMENTS["Toronto Hydro-Electric System Ltd."][0]
+    scraper, records = ONB12_run_scraper(monkeypatch, "Toronto Hydro-Electric System Ltd.", {data["url"]: stripped})
+    assert not ONB12_live_records(records)
+    assert "Connection" in scraper.tariff_rejections["residential:standard"]
+    assert "Connection" in scraper.tariff_rejections["gs:standard"]
+    demand = [v for k, v in scraper.tariff_rejections.items() if k.startswith("demand:")]
+    assert demand and all("Connection" in v for v in demand)
+
+
+# ── Task B: Phase 6B market energy on non-RPP demand classes ───
+
+def test_onb12_market_component_fields_on_demand_records():
+    data, pages = ONB12_plain_pages(ONB12_TORONTO_FIXTURE)
+    sheet = ONB12_oeb_tariff.parse_tariff_pages(pages, data["url"], "2026-10-09")
+    records = ONB12_oeb_tariff.build_demand_records(sheet, "Toronto Hydro-Electric System Ltd.", today="2026-10-09")
+    assert sorted(r.tariff_code for r in records) == ["GS 1,000-4,999 kW", "GS 50-999 kW", "LU"]
+    for rec in records:
+        parts = ONB12_market_parts(rec)
+        assert len(parts) == 1, rec.tariff_code
+        c = parts[0]
+        assert (c.component_type, c.component_name, c.charge_value, c.charge_unit) == (
+            "energy", ONB12_MARKET_NAME, None, "$/kWh")
+        assert (c.market_reference, c.market_source_url, c.source_url) == (ONB12_MARKET_REF, ONB12_MARKET_URL, ONB12_MARKET_URL)
+        assert c.source_detail == "IESO Ontario Market Prices and Global Adjustment pages"
+        assert c.effective_date == rec.effective_date == "2026-01-01"
+        for text in ("Day-Ahead Ontario Zonal Price plus the Load Forecast Deviation Adjustment",
+                     "replaced the HOEP on May 1, 2025",
+                     "https://www.ieso.ca/power-data/price-overview/global-adjustment",
+                     "Conditional: Class A (Industrial Conservation Initiative)", "peak demand factor",
+                     "no value is stored", "Market Pricing view"):
+            assert text in c.notes, text
+        assert (rec.pricing_method, rec.market_reference) == ("market_based", ONB12_MARKET_REF)
+        assert "Ontario Electricity Market Price" in rec.notes and "retired on April 30, 2025" in rec.notes
+        assert "not more than 250,000 kilowatt hours" in rec.notes and "may be eligible for RPP prices" in rec.notes
+        assert "https://www.ontario.ca/laws/regulation/050095" in rec.notes
+    valid, invalid = validate_batch(records)
+    assert invalid == [] and len(valid) == 3
+
+
+def test_onb12_hydro_one_demand_and_st_classes_get_market_component():
+    data = json.loads(ONB12_HYDRO_ONE_FIXTURE.read_text(encoding="utf-8"))
+    pages = [DocumentPage(p["page_number"], p["text"]) for p in data["raw_pages"]]
+    sheet = ONB12_oeb_tariff.parse_tariff_zones(pages, data["url"], "2026-10-09")[None]
+    records = ONB12_oeb_tariff.build_demand_records(sheet, "Hydro One Networks Inc.", today="2026-10-09")
+    assert [r.tariff_code for r in records] == ["UGd", "GSd", "ST", "AUGd", "AGSd"]
+    for rec in records:
+        assert [c.component_name for c in ONB12_market_parts(rec)] == [ONB12_MARKET_NAME], rec.tariff_code
+        assert rec.pricing_method == "market_based", rec.tariff_code
+    assert validate_batch(records)[1] == []
+
+
+def test_onb12_rpp_records_have_no_market_component(monkeypatch):
+    data, pages = ONB12_plain_pages(ONB12_TORONTO_FIXTURE)
+    scraper, records = ONB12_run_scraper(monkeypatch, "Toronto Hydro-Electric System Ltd.", {data["url"]: pages})
+    rpp = [r for r in ONB12_live_records(records) if r.tariff_code in ONB12_RPP_CODES]
+    assert {r.tariff_code for r in rpp} == ONB12_RPP_CODES
+    for rec in rpp:
+        assert not ONB12_market_parts(rec) and (rec.pricing_method, rec.market_reference) == ("regulated", None)
+    demand = [r for r in ONB12_live_records(records) if r.rate_structure == "demand"]
+    assert {r.tariff_code for r in demand} == {"GS 50-999 kW", "GS 1,000-4,999 kW", "LU"}
+    assert all(len(ONB12_market_parts(r)) == 1 for r in demand)
+
+
+def test_onb12_market_component_dated_from_implementation_date(monkeypatch):
+    data, pages = ONB12_plain_pages(ONB12_OTTAWA_FIXTURE)
+    scraper, records = ONB12_run_scraper(monkeypatch, "Hydro Ottawa Ltd.", {data["url"]: pages})
+    demand = [r for r in ONB12_live_records(records) if r.rate_structure == "demand"]
+    assert len(demand) == 3
+    for rec in demand:
+        assert rec.effective_date == "2026-06-01"
+        assert [c.effective_date for c in ONB12_market_parts(rec)] == ["2026-06-01"]
+
+
+def test_onb12_algoma_r2_stays_delivery_only_without_market_component():
+    data = json.loads(ONB12_ALGOMA_FIXTURE.read_text(encoding="utf-8"))
+    pages = [DocumentPage(n, data["text"][str(n)]) for n in data["pages"]]
+    sheet = ONB12_oeb_tariff.parse_tariff_pages(pages, data["source_url"], "2026-10-09")
+    records = ONB12_oeb_tariff.build_demand_records(sheet, "Algoma Power Inc.", today="2026-10-09")
+    assert [r.tariff_code for r in records] == ["R2 50+ kW"]
+    r2 = records[0]
+    assert not ONB12_market_parts(r2) and not [c for c in r2.components if c.component_type == "energy"]
+    assert (r2.pricing_method, r2.market_reference) == ("regulated", None)
+    for text in ("electricity commodity is not included", "relates to, i. a dwelling", "O. Reg. 445/07",
+                 "https://www.ontario.ca/laws/regulation/050095", "RPP commodity prices are not applied"):
+        assert text in r2.notes, text
+    assert ONB12_oeb_tariff.RPP_ELIGIBILITY_NOTE not in r2.notes
+
+
+def test_onb12_commodity_note_uses_market_price_wording():
+    note = ONB12_oeb_tariff.COMMODITY_NOTE
+    assert "Ontario Electricity Market Price" in note and "retired on April 30, 2025" in note
+    assert ONB12_oeb_tariff.HOEP_RETIRED_URL in note and "deferred" not in note
+
+
+def test_onb12_seed_demand_records_use_market_price_wording(monkeypatch):
+    scraper, records = ONB12_run_scraper(monkeypatch, "Hydro Ottawa Ltd.", {})
+    seeds = {r.tariff_code: r for r in ONB12_seed_records(records)}
+    for code in ("GS-D1", "GS-D2", "GS-D3"):
+        rec = seeds[code]
+        assert rec.market_reference == ONB12_MARKET_REF and "HOEP +" not in rec.notes
+        assert "Ontario Electricity Market Price" in rec.notes and "retired April 30, 2025" in rec.notes
+        energy = [c for c in rec.components if c.component_type == "energy"]
+        assert [(c.market_reference, c.market_source_url, c.charge_value) for c in energy] == [
+            (ONB12_MARKET_REF, ONB12_MARKET_URL, None)]
+
+
+# ======================================================================
+# Enbridge Gas rate handbook, three rate zones (batch 12)
+# ======================================================================
+from scrapers.utilities import enbridge_gas as ENB_enbridge_gas
+from scrapers.utilities.enbridge_gas import EnbridgeGasScraper as ENB_EnbridgeGasScraper, blank_overlap_indexes as ENB_blank_overlap_indexes
+from scrapers.utils.parsing import DocumentPage
+import json
+from datetime import date
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+
+ENB_ENB_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "enbridge_gas.json"
+ENB_ENB_TODAY = date(2026, 10, 9)
+ENB_ENB_CODES = {
+    "EGD-1", "EGD-6", "EGD-100", "EGD-110", "EGD-115", "EGD-145", "EGD-170",
+    "UNW-01", "UNE-01", "UNW-10", "UNE-10", "UNW-20", "UNE-20", "UN-25", "UNW-100", "UNE-100",
+    "US-M1", "US-M2", "US-M4", "US-M5",
+}
+ENB_ENB_RIDER_I_CODES = {"EGD-1", "EGD-6", "UNW-01", "UNE-01", "UNW-10", "UNE-10", "US-M1", "US-M2"}
+
+
+def ENB__enb_document():
+    return json.loads(ENB_ENB_FIXTURE.read_text(encoding="utf-8"))
+
+
+def ENB__enb_pages():
+    return {page["page_number"]: page["text"] for page in ENB__enb_document()["pages"]}
+
+
+def ENB__enb_parse(pages, cra=None, today=ENB_ENB_TODAY):
+    document = ENB__enb_document()
+    scraper = ENB_EnbridgeGasScraper()
+    records = scraper.parse_documents([DocumentPage(number, text) for number, text in sorted(pages.items())],
+                                      document["cra_text"] if cra is None else cra, today=today,
+                                      source_url=document["source_url"])
+    return {record.tariff_code: record for record in records}, scraper
+
+
+def ENB__enb_replace(pages, number, old, new):
+    assert old in pages[number], (number, old)
+    pages[number] = pages[number].replace(old, new, 1)
+    return pages
+
+
+def ENB__enb_rows(record):
+    return [(c.component_type, c.component_name, c.charge_value, c.charge_unit, c.sub_component, c.tier_number,
+             c.tier_threshold) for c in record.components]
+
+
+def ENB__enb_component(record, name):
+    (component,) = [c for c in record.components if c.component_name == name]
+    return component
+
+
+def test_enb_fixture_has_official_sources():
+    document = ENB__enb_document()
+    assert document["source_url"] == ENB_enbridge_gas.HANDBOOK_URL
+    assert document["landing_url"] in ENB_enbridge_gas.DISCOVERY_URLS
+    assert document["cra_url"] == ENB_enbridge_gas.CRA_URL
+    assert document["retrieved_on"] == "2026-10-09"
+    numbers = [page["page_number"] for page in document["pages"]]
+    assert {1, 9, 44, 57, 103, 113, 115, 116} <= set(numbers)
+    assert "EB-2026-0221" in document["description"]
+
+
+def test_enb_all_modelled_classes_parse_live():
+    records, scraper = ENB__enb_parse(ENB__enb_pages())
+    assert set(records) == ENB_ENB_CODES
+    assert scraper.rejected_classes == []
+    for record in records.values():
+        assert (record.utility_name, record.province, record.utility_type) == ("Enbridge Gas", "ON", "gas")
+        assert record.effective_date == "2026-10-01" and record.confidence == "high"
+        assert record.pricing_method == "regulated" and record.source_url == ENB_enbridge_gas.HANDBOOK_URL
+        assert "OEB Order EB-2026-0221" in record.notes and "Riders D and E print no current amounts" in record.notes
+        for component in record.components:
+            assert component.source_url == ENB_enbridge_gas.HANDBOOK_URL
+            assert component.source_detail.startswith("Rate Handbook PDF page")
+            assert component.effective_date == "2026-10-01"
+            if component.sub_component == "conditional":
+                assert component.notes.startswith("Conditional:")
+
+
+def test_enb_names_classes_and_structures():
+    records, _ = ENB__enb_parse(ENB__enb_pages())
+    expected = {
+        "EGD-1": ("Rate 1 Residential Service (EGD Rate Zone)", "residential", "tiered"),
+        "EGD-6": ("Rate 6 General Service (EGD Rate Zone)", "commercial", "tiered"),
+        "EGD-100": ("Rate 100 Firm Contract Service (EGD Rate Zone)", "industrial", "demand"),
+        "EGD-145": ("Rate 145 Interruptible Service (EGD Rate Zone)", "industrial", "demand"),
+        "UNW-01": ("Rate 01 Small Volume General Firm Service (Union North West)", "residential", "tiered"),
+        "UNE-10": ("Rate 10 Large Volume General Firm Service (Union North East)", "commercial", "tiered"),
+        "UNW-20": ("Rate 20 Medium Volume Firm Service (Union North West)", "industrial", "demand"),
+        "UN-25": ("Rate 25 Large Volume Interruptible Service (Union North)", "industrial", "flat"),
+        "UNE-100": ("Rate 100 Large Volume High Load Factor Firm Service (Union North East)", "industrial", "demand"),
+        "US-M1": ("Rate M1 Small Volume General Service (Union South)", "residential", "tiered"),
+        "US-M2": ("Rate M2 Large Volume General Service (Union South)", "commercial", "tiered"),
+        "US-M4": ("Rate M4 Firm Industrial and Commercial Contract Service (Union South)", "industrial", "demand"),
+        "US-M5": ("Rate M5 Interruptible Industrial and Commercial Contract Service (Union South)", "industrial",
+                  "flat"),
+    }
+    for code, (name, customer_class, structure) in expected.items():
+        record = records[code]
+        assert (record.tariff_name, record.customer_class, record.rate_structure) == (name, customer_class, structure)
+    usage = {code: (r.usage_min, r.usage_max, r.usage_unit) for code, r in records.items() if r.usage_unit}
+    assert usage == {
+        "EGD-145": (340000.0, None, "m³/year"), "EGD-170": (5000000.0, None, "m³/year"),
+        "UNW-01": (None, 50000.0, "m³/year"), "UNE-01": (None, 50000.0, "m³/year"),
+        "UNW-10": (50000.0, None, "m³/year"), "UNE-10": (50000.0, None, "m³/year"),
+        "US-M1": (None, 50000.0, "m³/year"), "US-M2": (50000.0, None, "m³/year"),
+    }
+    assert records["EGD-1"].eligibility.startswith("EGD Rate Zone: To any Customer")
+    assert "no more than six dwelling units" in records["EGD-1"].eligibility
+
+
+def test_enb_egd_rate_1_exact_components():
+    record = ENB__enb_parse(ENB__enb_pages())[0]["EGD-1"]
+    assert ENB__enb_rows(record) == [
+        ("fixed", "Monthly Customer Charge", 27.69, "$/month", None, None, None),
+        ("delivery", "Delivery Charge — First 30 m³", 0.142691, "$/m³", None, 1, 30.0),
+        ("delivery", "Delivery Charge — Next 55 m³", 0.134308, "$/m³", None, 2, 85.0),
+        ("delivery", "Delivery Charge — Next 85 m³", 0.127744, "$/m³", None, 3, 170.0),
+        ("delivery", "Delivery Charge — Over 170 m³", 0.12285, "$/m³", None, 4, None),
+        ("transmission", "Gas Supply Transportation Charge", 0.054818, "$/m³", None, None, None),
+        ("transmission", "Gas Supply Transportation Dawn Charge", 0.00943, "$/m³", "conditional", None, None),
+        ("commodity", "Gas Supply Commodity Charge", 0.094741, "$/m³", None, None, None),
+        ("rider", "Gas Cost Adjustment (Rider C)", 0.005322, "$/m³", None, None, None),
+        ("rider", "System Expansion Surcharge (Rider I)", 0.23, "$/m³", "conditional", None, None),
+        ("rider", "Temporary Connection Surcharge (Rider I)", 0.23, "$/m³", "conditional", None, None),
+        ("carbon", "Federal Carbon Charge", 0.0, "$/m³", None, None, None),
+        ("carbon", "Facility Carbon Charge", 0.000145, "$/m³", None, None, None),
+    ]
+    assert ENB__enb_component(record, "Monthly Customer Charge").source_detail ==\
+        "Rate Handbook PDF page 9; Rate 1 Residential Service"
+    assert "Rider K" in ENB__enb_component(record, "Monthly Customer Charge").notes
+    rider = ENB__enb_component(record, "Gas Cost Adjustment (Rider C)")
+    assert (rider.effective_date, rider.end_date) == ("2026-10-01", "2027-12-31")
+    assert rider.source_detail == "Rate Handbook PDF pages 103-104; Rider C Gas Cost Adjustment"
+    assert "commodity -0.3661 + transportation 0.3634 + load balancing 0.5349" in rider.notes
+    assert "Western (0.8983)" in rider.notes
+    federal = ENB__enb_component(record, "Federal Carbon Charge")
+    assert federal.source_detail == "Rate Handbook PDF page 115; Rider J Carbon Charges"
+    assert "April 1, 2025" in federal.notes and "March 31, 2025" in federal.notes
+    assert "system-gas (sales service)" in ENB__enb_component(record, "Gas Supply Commodity Charge").notes
+    assert "Rider L" in record.notes and "Rider M" in record.notes
+
+
+def test_enb_egd_general_and_contract_values():
+    records, _ = ENB__enb_parse(ENB__enb_pages())
+    blocks = [c.charge_value for c in records["EGD-6"].components if c.component_name.startswith("Delivery Charge")]
+    assert blocks == [0.137319, 0.109839, 0.090595, 0.078232, 0.072738, 0.071359]
+    assert [c.tier_threshold for c in records["EGD-6"].components if c.tier_number] == [
+        500.0, 1550.0, 6050.0, 13050.0, 28300.0, None]
+    expected = {
+        "EGD-100": (148.76, 0.440136, 0.020495, 0.095, 0.004909),
+        "EGD-110": (712.33, 0.295865, 0.004302, 0.094321, -0.002614),
+        "EGD-115": (755.02, 0.332714, 0.001492, 0.094321, -0.003992),
+        "EGD-145": (150.36, 0.149737, 0.009475, 0.094363, 0.001651),
+        "EGD-170": (339.26, 0.063754, 0.004167, 0.094321, -0.000198),
+    }
+    for code, (fixed, demand, balancing, commodity, rider) in expected.items():
+        record = records[code]
+        assert ENB__enb_component(record, "Monthly Customer Charge").charge_value == fixed
+        contract = ENB__enb_component(record, "Delivery Charge — Contract Demand")
+        assert (contract.charge_value, contract.charge_unit, contract.demand_unit) == (
+            demand, "$/m³/month", "m³/day Contract Demand")
+        assert ENB__enb_component(record, "Gas Supply Load Balancing Charge").charge_value == balancing
+        assert ENB__enb_component(record, "Gas Supply Commodity Charge").charge_value == commodity
+        assert ENB__enb_component(record, "Gas Cost Adjustment (Rider C)").charge_value == rider
+        assert not [c for c in record.components if "Rider I" in c.component_name]
+    assert ENB__enb_component(records["EGD-100"], "Delivery Charge — Gas delivered").charge_value == 0.009727
+    assert [(c.charge_value, c.tier_threshold) for c in records["EGD-110"].components
+            if c.component_name.startswith("Delivery Charge — Gas delivered")] == [(0.010134, 1000000.0),
+                                                                                  (0.00818, None)]
+    assert "Minimum bill: 6.7239" in records["EGD-110"].notes
+    assert "Curtailment credit: $0.50" in records["EGD-145"].notes and "16 hours" in records["EGD-145"].notes
+    assert "Curtailment credit: $1.10" in records["EGD-170"].notes
+
+
+def test_enb_union_north_zone_columns():
+    records, _ = ENB__enb_parse(ENB__enb_pages())
+    expected = {
+        "UNW-01": (0.023746, 0.027031, 0.095866, -0.032294), "UNE-01": (0.05835, 0.017135, 0.156674, 0.015542),
+        "UNW-10": (0.022741, 0.023442, 0.095866, -0.032294), "UNE-10": (0.048124, 0.01567, 0.156674, 0.015542),
+    }
+    for code, (storage, transport, commodity, rider) in expected.items():
+        record = records[code]
+        assert ENB__enb_component(record, "Gas Supply Storage Charge").charge_value == storage
+        assert ENB__enb_component(record, "Gas Supply Transportation Charge").charge_value == transport
+        assert ENB__enb_component(record, "Gas Supply Commodity Charge").charge_value == commodity
+        assert ENB__enb_component(record, "Gas Cost Adjustment (Rider C)").charge_value == rider
+        assert ENB__enb_component(record, "Monthly Customer Charge").charge_value == (28.91 if "01" in code else 85.78)
+    assert [c.charge_value for c in records["UNE-01"].components if c.tier_number] == [
+        0.129082, 0.125877, 0.120796, 0.116134, 0.11228]
+    unw20, une20 = records["UNW-20"], records["UNE-20"]
+    assert [(c.charge_value, c.tier_threshold, c.tier_unit) for c in unw20.components
+            if c.component_type == "demand"] == [(0.389359, 70000.0, "m³/day Contract Demand"), (0.22933, None, None)]
+    assert ENB__enb_component(unw20, "Gas Supply Transportation Demand Charge").charge_value == 0.296506
+    assert ENB__enb_component(une20, "Gas Supply Transportation Demand Charge").charge_value == 0.372347
+    charge_one = ENB__enb_component(une20, "Gas Supply Transportation Charge (Charge 1)")
+    assert charge_one.charge_value == 0.011505 and "× 0.4" in charge_one.notes
+    assert "× 0.3;" in ENB__enb_component(records["UNW-100"], "Gas Supply Transportation Charge (Charge 1)").notes
+    assert ENB__enb_component(records["UNW-100"], "Gas Cost Adjustment (Rider C)").charge_value == -0.0267
+    assert ENB__enb_component(records["UNE-100"], "Gas Cost Adjustment (Rider C)").charge_value == 0.021088
+    assert "maximum prices" in unw20.notes
+
+
+def test_enb_union_north_rate_25_is_negotiated_conditions_only():
+    record = ENB__enb_parse(ENB__enb_pages())[0]["UN-25"]
+    assert ENB__enb_rows(record) == [
+        ("fixed", "Monthly Customer Charge", 408.02, "$/month", None, None, None),
+        ("delivery", "Delivery Charge (negotiated)", None, "$/m³", "conditional", None, None),
+        ("commodity", "Gas Supply Charge (negotiated)", None, "$/m³", "conditional", None, None),
+        ("carbon", "Federal Carbon Charge", 0.0, "$/m³", None, None, None),
+        ("carbon", "Facility Carbon Charge", 0.000145, "$/m³", None, None, None),
+    ]
+    assert "8.5950" in ENB__enb_component(record, "Delivery Charge (negotiated)").notes
+    assert "1.4848 and 675.9484" in ENB__enb_component(record, "Gas Supply Charge (negotiated)").notes
+    assert "Rider C prints no gas cost adjustment" in record.notes and "Rider O" in record.notes
+
+
+def test_enb_union_south_classes():
+    records, _ = ENB__enb_parse(ENB__enb_pages())
+    m1, m2, m4, m5 = (records[code] for code in ("US-M1", "US-M2", "US-M4", "US-M5"))
+    assert [(c.charge_value, c.tier_threshold) for c in m1.components if c.tier_number] == [
+        (0.076394, 100.0), (0.072849, 250.0), (0.063697, None)]
+    assert (ENB__enb_component(m1, "Storage Charge").charge_value, ENB__enb_component(m2, "Storage Charge").charge_value) == (
+        0.010628, 0.011646)
+    for record in (m1, m2, m4, m5):
+        assert ENB__enb_component(record, "Gas Supply Commodity Charge").charge_value == 0.153548
+        assert ENB__enb_component(record, "Gas Cost Adjustment (Rider C)").charge_value == 0.023461
+        assert not [c for c in record.components if c.component_name.startswith("Gas Supply Transportation")]
+    assert not [c for c in m4.components if c.component_type == "fixed"]
+    assert [(c.charge_value, c.tier_threshold) for c in m4.components if c.component_type == "demand"] == [
+        (0.799553, 8450.0), (0.384665, 28150.0), (0.343613, None)]
+    assert [c.charge_value for c in m4.components if c.component_type == "delivery"] == [0.022487, 0.022487, 0.008506]
+    assert "one-time annual adjustment" in m4.notes and "2.4795" in m4.notes
+    bands = [c for c in m5.components if c.component_type == "delivery"]
+    assert [(c.charge_value, c.sub_component, c.tier_threshold) for c in bands] == [
+        (0.054323, "conditional", 17000.0), (0.053024, "conditional", 30000.0),
+        (0.052341, "conditional", 50000.0), (0.051862, "conditional", 60000.0)]
+    assert all("bands are not added" in c.notes for c in bands)
+    rebates = [(c.charge_value, c.sub_component) for c in m5.components if c.component_type == "rebate"]
+    assert rebates == [(-0.00053, "conditional"), (-0.0000212, "conditional")]
+    firm = ENB__enb_component(m5, "Firm Service Delivery Charge — Contract Demand")
+    assert (firm.charge_value, firm.charge_unit, firm.sub_component) == (0.575048, "$/m³/month", "conditional")
+    assert ENB__enb_component(m5, "Monthly Customer Charge").charge_value == 837.79
+
+
+def test_enb_changed_value_propagates():
+    pages = ENB__enb_replace(ENB__enb_pages(), 9, "14.2691 ¢/m³", "15.2691 ¢/m³")
+    pages = ENB__enb_replace(pages, 48, "38.9359 ¢/m³", "39.9359 ¢/m³")
+    records, _ = ENB__enb_parse(pages)
+    assert ENB__enb_component(records["EGD-1"], "Delivery Charge — First 30 m³").charge_value == 0.152691
+    for code in ("UNW-20", "UNE-20"):
+        assert ENB__enb_component(records[code], "Delivery Charge — Contract Demand — First 70,000 m³").charge_value\
+            == 0.399359
+
+
+def test_enb_split_digit_blanks_are_dropped_only_inside_numbers():
+    split = [{"text": "1", "x0": 460.06, "x1": 464.46, "top": 241.56},
+             {"text": " ", "x0": 460.06, "x1": 462.26, "top": 241.56},
+             {"text": "4", "x0": 464.50, "x1": 468.90, "top": 241.56},
+             {"text": ".", "x0": 468.93, "x1": 471.13, "top": 241.56}]
+    assert ENB_blank_overlap_indexes(split) == {1}
+    word_space = [{"text": "e", "x0": 100.0, "x1": 104.4, "top": 50.0},
+                  {"text": " ", "x0": 104.45, "x1": 106.65, "top": 50.0},
+                  {"text": "C", "x0": 106.7, "x1": 112.0, "top": 50.0}]
+    assert ENB_blank_overlap_indexes(word_space) == set()
+    far_columns = [{"text": "1", "x0": 137.5, "x1": 141.9, "top": 80.0},
+                   {"text": " ", "x0": 141.95, "x1": 144.15, "top": 80.0},
+                   {"text": "1", "x0": 393.1, "x1": 397.5, "top": 80.0}]
+    assert ENB_blank_overlap_indexes(far_columns) == set()
+    other_line = [{"text": "1", "x0": 460.06, "x1": 464.46, "top": 241.56},
+                  {"text": " ", "x0": 460.06, "x1": 462.26, "top": 252.0},
+                  {"text": "4", "x0": 464.50, "x1": 468.90, "top": 241.56}]
+    assert ENB_blank_overlap_indexes(other_line) == set()
+
+
+def test_enb_unjoined_split_digits_reject_the_class_instead_of_misreading():
+    pages = ENB__enb_replace(ENB__enb_pages(), 9, "14.2691 ¢/m³", "1 4.2691 ¢/m³")
+    records, scraper = ENB__enb_parse(pages)
+    assert set(records) == ENB_ENB_CODES - {"EGD-1"}
+    assert any(item.startswith("EGD Rate 1:") for item in scraper.rejected_classes)
+
+
+@pytest.mark.parametrize(("number", "rejected"), [
+    (9, {"EGD-1"}), (49, {"UNW-20", "UNE-20"}), (60, {"US-M4"}), (63, {"US-M5"}), (52, {"UN-25"}),
+])
+def test_enb_missing_schedule_page_rejects_only_that_class(number, rejected):
+    pages = ENB__enb_pages()
+    del pages[number]
+    records, scraper = ENB__enb_parse(pages)
+    assert set(records) == ENB_ENB_CODES - rejected
+    assert len(scraper.rejected_classes) == 1
+
+
+@pytest.mark.parametrize(("number", "old", "new", "rejected"), [
+    (9, "14.2691 ¢/m³", "14.2691 $/m³", {"EGD-1"}),
+    (44, "9.5866 ¢/m³ 15.6674 ¢/m³", "9.5866 ¢/m³ 15.6674 $/GJ", {"UNW-01", "UNE-01"}),
+    (11, "Per cubic metre of Contract Demand 44.0136 ¢/m³", "Per cubic metre of Contract Demand 44.0136 $/GJ",
+     {"EGD-100"}),
+    (57, "50,000 m³ per year", "50,000 GJ per year", {"US-M1"}),
+    (57, "M1 SMALL VOLUME GENERAL SERVICE", "M1 SMALL VOLUME SERVICE", {"US-M1"}),
+    (44, "Union Union\nNorth West North East", "Union North", {"UNW-01", "UNE-01"}),
+    (48, "Charge 2 - ¢/m³ - ¢/m³", "Charge 2 0.5000 ¢/m³ 0.5000 ¢/m³", {"UNW-20", "UNE-20"}),
+    (10, "Effective October 1, 2026", "Effective July 1, 2026", {"EGD-6"}),
+    (103, "Rate 6 0.4909", "Rate 6 0.5909", {"EGD-6"}),
+    (115, "Rate 1 0.0000 0.0145", "Rate 1 1.2345 0.0145", {"EGD-1"}),
+    (62, "50,000 m³ and equal to or less than 60,000 m³", "50,000 m³ and equal to or less than 65,000 m³",
+     {"US-M5"}),
+])
+def test_enb_structural_or_unit_drift_rejects_only_that_class(number, old, new, rejected):
+    records, _ = ENB__enb_parse(ENB__enb_replace(ENB__enb_pages(), number, old, new))
+    assert set(records) == ENB_ENB_CODES - rejected
+
+
+@pytest.mark.parametrize(("number", "old", "new"), [
+    (1, "Effective October 1, 2026", "Effective October 1, 2027"),
+    (1, "OEB Order EB-2026-0221", "OEB Order"),
+    (106, "Rate 1 - ¢/m³", "Rate 1 0.1234 ¢/m³"),
+    (116, "¢/m³ ¢/m³", "$/GJ $/GJ"),
+])
+def test_enb_edition_or_required_rider_drift_rejects_everything(number, old, new):
+    records, _ = ENB__enb_parse(ENB__enb_replace(ENB__enb_pages(), number, old, new))
+    assert records == {}
+
+
+def test_enb_future_or_missing_edition_rejects_everything():
+    assert ENB__enb_parse(ENB__enb_pages(), today=date(2026, 9, 30))[0] == {}
+    pages = ENB__enb_pages()
+    del pages[1]
+    assert ENB__enb_parse(pages)[0] == {}
+
+
+def test_enb_missing_carbon_evidence_rejects_everything():
+    assert ENB__enb_parse(ENB__enb_pages(), cra="")[0] == {}
+    document = ENB__enb_document()
+    assert ENB__enb_parse(ENB__enb_pages(), cra=document["cra_text"].replace("Ontario, and", "and"))[0] == {}
+    pages = ENB__enb_pages()
+    del pages[115]
+    assert ENB__enb_parse(pages)[0] == {}
+
+
+def test_enb_expired_rider_c_is_excluded_but_classes_stay_live():
+    pages = ENB__enb_replace(ENB__enb_pages(), 103, "October 1, 2026 to December 31, 2027", "July 1, 2026 to September 30, 2026")
+    records, _ = ENB__enb_parse(pages)
+    assert set(records) == ENB_ENB_CODES
+    for record in records.values():
+        assert not [c for c in record.components if c.component_name == "Gas Cost Adjustment (Rider C)"]
+    assert "Rider C applies only from July 1, 2026 to September 30, 2026" in records["EGD-1"].notes
+
+
+def test_enb_missing_rider_i_rejects_only_classes_that_list_it():
+    pages = ENB__enb_pages()
+    del pages[113]
+    records, _ = ENB__enb_parse(pages)
+    assert set(records) == ENB_ENB_CODES - ENB_ENB_RIDER_I_CODES
+
+
+def ENB__enb_serve(document):
+    handbook_link = ('<a href="/-/media/Extranet-Pages/ontario/business-and-industrial/Commercial-and-Industrial/'
+                     'Large-Volume-Rates-and-Services/EGD-Rates/rate-handbook.pdf?rev=abc&amp;hash=XYZ#page=13">'
+                     'Rate Handbook</a>')
+    pages = [DocumentPage(page["page_number"], page["text"]) for page in document["pages"]]
+    html = {ENB_enbridge_gas.DISCOVERY_URLS[0]: "<html><body>" + handbook_link + "</body></html>",
+            ENB_enbridge_gas.CRA_URL: "<html><main><p>" + document["cra_text"] + "</p></main></html>"}
+    return pages, html
+
+
+def test_enb_scrape_marks_live_from_discovered_handbook():
+    document = ENB__enb_document()
+    pages, html = ENB__enb_serve(document)
+    with patch.object(ENB_EnbridgeGasScraper, "fetch_page", lambda self, url, delay=1.0: html[url]),\
+            patch.object(ENB_EnbridgeGasScraper, "fetch_bytes",
+                         lambda self, url, delay=1.0: b"handbook" if url == ENB_enbridge_gas.HANDBOOK_URL else b""),\
+            patch.object(ENB_enbridge_gas, "extract_handbook_pages",
+                         lambda data: pages if data == b"handbook" else []):
+        records = ENB_EnbridgeGasScraper().scrape()
+    assert {record.tariff_code for record in records} == ENB_ENB_CODES
+    for record in records:
+        assert record.notes.startswith("Provenance: live_parsed.") and "seed_fallback" not in record.notes
+        assert record.source_url == ENB_enbridge_gas.HANDBOOK_URL
+        assert all(c.notes.startswith("Provenance: live_parsed.") for c in record.components)
+
+
+def test_enb_discovery_ignores_foreign_hosts():
+    foreign = '<a href="https://example.com/rate-handbook.pdf">Rate Handbook</a>'
+    with patch.object(ENB_EnbridgeGasScraper, "fetch_page", lambda self, url, delay=1.0: foreign):
+        assert ENB_EnbridgeGasScraper()._discover_handbook() == ENB_enbridge_gas.HANDBOOK_URL
+
+
+def test_enb_total_fetch_failure_returns_labelled_seed():
+    def fail(*args, **kwargs):
+        raise RuntimeError("offline")
+
+    with patch.object(ENB_EnbridgeGasScraper, "fetch_page", fail), patch.object(ENB_EnbridgeGasScraper, "fetch_bytes", fail):
+        records = ENB_EnbridgeGasScraper().scrape()
+    assert [record.tariff_name for record in records] == ["Residential — Rate 1 (Union South)"]
+    assert records[0].confidence == "unverified" and "Provenance: seed_fallback" in records[0].notes
+    assert all(c.confidence == "unverified" for c in records[0].components)
+
+
+def test_enb_unmodelled_schedules_have_reasons():
+    assert ("EGD", "125") in ENB_enbridge_gas.EXCLUDED_SCHEDULES and ("Union South", "T1") in ENB_enbridge_gas.EXCLUDED_SCHEDULES
+    modelled = {(spec.zone, spec.rate) for spec in ENB_enbridge_gas.CLASS_SPECS}
+    assert not modelled & set(ENB_enbridge_gas.EXCLUDED_SCHEDULES)
+
+
+# ======================================================================
+# ATCO Gas North/South rate schedules and default supply (batch 12)
+# ======================================================================
+from scrapers.utils.parsing import DocumentPage
+import json
+from datetime import date
+from pathlib import Path
+
+import pytest
+
+import scrapers.utilities.atco_gas as atg
+
+ATG_LANDING_URL = atg.LANDING_URL
+ATG_PAGE_URLS = atg.PAGE_URLS
+ATG_SCHEDULE_URLS = atg.SCHEDULE_URLS
+ATG_ATCOGasScraper = atg.ATCOGasScraper
+ATG_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "atco_gas.json"
+ATG_TODAY = date(2026, 10, 9)
+ATG_CODES = {"N-LOW", "N-MID", "N-HIGH", "N-UHU", "N-ATA", "S-LOW", "S-MID", "S-HIGH", "S-UHU", "S-ATA"}
+ATG_DRT_CODES = {"N-LOW", "N-MID", "N-HIGH", "S-LOW", "S-MID", "S-HIGH"}
+ATG_EN_DASH = "\u2013"
+ATG_LDQ = "\u201c"
+ATG_RDQ = "\u201d"
+
+ATG_FIXED = "Fixed Charge"
+ATG_VARIABLE = "Variable Charge"
+ATG_DEMAND = "Demand Charge"
+ATG_RIDER_L = "Rider L \u2014 Load Balancing Deferral Account"
+ATG_RIDER_T = "Rider T \u2014 Transmission Service Charge"
+ATG_RIDER_W = "Rider W \u2014 Weather Deferral Account"
+ATG_DRT = "Default Supply Gas Charge (DERS Rider F)"
+ATG_CARBON = "Federal Carbon Charge"
+ATG_L_PERIOD = ("2026-05-01", "2026-12-31")
+ATG_GAS = ("commodity", ATG_DRT, 1.458, "$/GJ", "2026-10-01", "2026-10-31")
+ATG_ZERO_CARBON = ("carbon", ATG_CARBON, 0.0, "$/GJ", "2025-04-01", None)
+
+
+def ATG__base(fixed, variable, rider_l, rider_t, demand=None):
+    rows = [("fixed", ATG_FIXED, fixed, "$/day", "2026-01-01", None),
+            ("delivery", ATG_VARIABLE, variable, "$/GJ", "2026-01-01", None)]
+    if demand is not None:
+        rows.append(("demand", ATG_DEMAND, demand, "$/GJ/day", "2026-01-01", None))
+    rows.append(("rider", ATG_RIDER_L, rider_l, "$/GJ") + ATG_L_PERIOD)
+    rows.append(("transmission", ATG_RIDER_T, rider_t, "$/GJ/day" if demand is not None else "$/GJ", "2026-01-01", None))
+    return rows
+
+
+ATG_EXPECTED = {
+    "N-LOW": ATG__base(0.997, 1.049, 0.091, 1.357) + [ATG_GAS, ATG_ZERO_CARBON],
+    "N-MID": ATG__base(1.909, 1.045, 0.087, 1.289) + [ATG_GAS, ATG_ZERO_CARBON],
+    "N-HIGH": ATG__base(7.367, 0.0, 0.083, 0.445, demand=0.207) + [ATG_GAS, ATG_ZERO_CARBON],
+    "N-UHU": ATG__base(8.008, 0.0, 0.071, 0.339, demand=0.191) + [ATG_ZERO_CARBON],
+    "N-ATA": ATG__base(0.475, 6.863, 0.091, 1.357) + [ATG_ZERO_CARBON],
+    "S-LOW": ATG__base(0.876, 1.0, 0.091, 1.357)
+    + [("rider", ATG_RIDER_W, 0.325, "$/GJ", "2026-09-01", "2026-12-31"), ATG_GAS, ATG_ZERO_CARBON],
+    "S-MID": ATG__base(1.957, 0.816, 0.087, 1.289)
+    + [("rider", ATG_RIDER_W, 0.268, "$/GJ", "2026-09-01", "2026-12-31"), ATG_GAS, ATG_ZERO_CARBON],
+    "S-HIGH": ATG__base(5.813, 0.0, 0.083, 0.445, demand=0.188) + [ATG_GAS, ATG_ZERO_CARBON],
+    "S-UHU": ATG__base(8.457, 0.0, 0.071, 0.339, demand=0.172) + [ATG_ZERO_CARBON],
+    "S-ATA": ATG__base(0.418, 6.422, 0.091, 1.357) + [ATG_ZERO_CARBON],
+}
+ATG_RECORDS = {
+    # code: (tariff name, customer class, structure, effective, usage_min, usage_max, class page)
+    "N-LOW": ("Low Use Delivery Service (North)", "residential", "flat", "2026-10-01", None, 1200, 10),
+    "N-MID": ("Mid Use Delivery Service (North)", "commercial", "flat", "2026-10-01", 1200, 8000, 11),
+    "N-HIGH": ("High Use Delivery Service (North)", "commercial", "demand", "2026-10-01", 8000, 100000, 12),
+    "N-UHU": ("Ultra High Use Delivery Service (North)", "industrial", "demand", "2026-05-01", 100000, None, 13),
+    "N-ATA": ("Alternative Technology and Appliance Delivery Service (North)", "residential", "flat",
+              "2026-05-01", None, 40, 14),
+    "S-LOW": ("Low Use Delivery Service (South)", "residential", "flat", "2026-10-01", None, 1200, 12),
+    "S-MID": ("Mid Use Delivery Service (South)", "commercial", "flat", "2026-10-01", 1200, 8000, 13),
+    "S-HIGH": ("High Use Delivery Service (South)", "commercial", "demand", "2026-10-01", 8000, 100000, 14),
+    "S-UHU": ("Ultra High Use Delivery Service (South)", "industrial", "demand", "2026-05-01", 100000, None, 15),
+    "S-ATA": ("Alternative Technology and Appliance Delivery Service (South)", "residential", "flat",
+              "2026-05-01", None, 40, 16),
+}
+
+
+def ATG__fixture():
+    return json.loads(ATG_FIXTURE.read_text(encoding="utf-8"))
+
+
+def ATG__documents():
+    return {territory: [DocumentPage(page["page_number"], page["text"]) for page in document["pages"]]
+            for territory, document in ATG__fixture()["documents"].items()}
+
+
+def ATG__pages():
+    return {key: entry.get("html") or entry.get("text") for key, entry in ATG__fixture()["pages"].items()}
+
+
+def ATG__parse(documents=None, pages=None, today=ATG_TODAY):
+    scraper = ATG_ATCOGasScraper()
+    records = scraper.parse_sources(ATG__documents() if documents is None else documents,
+                                    ATG__pages() if pages is None else pages, today)
+    return {record.tariff_code: record for record in records}, scraper.rejections
+
+
+def ATG__replace(documents, territory, old, new):
+    hits = [index for index, page in enumerate(documents[territory]) if old in page.text]
+    assert len(hits) == 1, (territory, old, hits)
+    page = documents[territory][hits[0]]
+    documents[territory][hits[0]] = DocumentPage(page.page_number, page.text.replace(old, new, 1))
+    return documents
+
+
+def ATG__drop_page(documents, territory, marker):
+    kept = [page for page in documents[territory] if marker not in page.text]
+    assert len(kept) == len(documents[territory]) - 1, marker
+    documents[territory] = kept
+    return documents
+
+
+def ATG__edit_page(pages, key, old, new):
+    assert old in pages[key], (key, old)
+    pages[key] = pages[key].replace(old, new, 1)
+    return pages
+
+
+def ATG__comps(record, kind):
+    return [component for component in record.components if component.component_type == kind]
+
+
+def ATG__serve(monkeypatch, documents=None, pages=None, failing=()):
+    documents = ATG__documents() if documents is None else documents
+    pages = ATG__pages() if pages is None else pages
+    pdfs = {url: documents[territory] for territory, url in ATG_SCHEDULE_URLS.items() if territory in documents}
+    html = {ATG_PAGE_URLS[key]: text for key, text in pages.items()}
+
+    def pdf_pages(self, url):
+        if url in failing or url not in pdfs:
+            raise OSError("schedule unavailable")
+        return pdfs[url]
+
+    def fetch_page(self, url, delay=1.0):
+        if url in failing or url not in html:
+            raise OSError("page unavailable")
+        return html[url]
+
+    monkeypatch.setattr(ATG_ATCOGasScraper, "_pdf_pages", pdf_pages)
+    monkeypatch.setattr(ATG_ATCOGasScraper, "fetch_page", fetch_page)
+    monkeypatch.setattr(ATG_ATCOGasScraper, "_today", staticmethod(lambda: ATG_TODAY))
+
+
+# ── Fixture and exact records ─────────────────────────────────
+
+def test_atg_fixture_matches_official_sources():
+    fixture = ATG__fixture()
+    assert fixture["retrieved_on"] == "2026-10-09" and fixture["landing_url"] == ATG_LANDING_URL
+    assert fixture["source_urls"]["north"] == ATG_SCHEDULE_URLS["North"]
+    assert fixture["source_urls"]["south"] == ATG_SCHEDULE_URLS["South"]
+    for key, entry in fixture["pages"].items():
+        assert entry["url"] == ATG_PAGE_URLS[key] == fixture["source_urls"][key]
+    for territory, document in fixture["documents"].items():
+        assert document["url"] == ATG_SCHEDULE_URLS[territory] and document["pages"]
+    assert "RATE SCHEDULES August 1, 2026" in fixture["documents"]["North"]["pages"][0]["text"]
+    assert "RATE SCHEDULES September 1, 2026" in fixture["documents"]["South"]["pages"][0]["text"]
+
+
+def test_atg_all_building_classes_parsed_live():
+    records, rejections = ATG__parse()
+    assert set(records) == ATG_CODES and rejections == []
+    for code, (name, customer_class, structure, effective, low, high, page) in ATG_RECORDS.items():
+        record = records[code]
+        territory = "North" if code.startswith("N") else "South"
+        assert record.tariff_name == name and record.customer_class == customer_class
+        assert record.rate_structure == structure and record.effective_date == effective
+        assert (record.usage_min, record.usage_max, record.usage_unit) == (low, high, "GJ/year")
+        assert record.utility_name == "ATCO Gas" and record.province == "AB" and record.utility_type == "gas"
+        assert record.sub_class == territory and record.pricing_method == "regulated"
+        assert record.confidence == "high" and record.source_url == ATG_SCHEDULE_URLS[territory]
+        assert record.source_page.endswith("PDF page " + str(page))
+        assert "GST is not included." in record.notes
+
+
+def test_atg_exact_component_values_units_and_dates():
+    records, _ = ATG__parse()
+    for code, expected in ATG_EXPECTED.items():
+        actual = [(c.component_type, c.component_name, c.charge_value, c.charge_unit, c.effective_date, c.end_date)
+                  for c in records[code].components]
+        assert actual == expected, code
+
+
+def test_atg_every_component_is_sourced_and_dated():
+    records, _ = ATG__parse()
+    for record in records.values():
+        for component in record.components:
+            assert component.source_url and component.source_detail and component.effective_date
+            assert component.confidence == "high"
+    low = records["N-LOW"]
+    assert low.components[0].source_detail == "North rate schedule PDF page 10; Low Use Delivery Service, Fixed Charge"
+    assert low.components[2].source_detail == "North rate schedule PDF page 7; Rider L, Low Use Delivery Rate"
+    assert low.components[3].source_detail == "North rate schedule PDF page 9; Rider T, Low Use Delivery Rate"
+    assert records["S-UHU"].components[4].source_detail == (
+        "South rate schedule PDF page 10; Rider T, Ultra-High Use Delivery Rate")
+    assert records["S-LOW"].components[4].source_detail == (
+        "South rate schedule PDF page 11; Rider W, Low Use Delivery Rate")
+    assert "AUC Decision 30301-D01-2025" in low.components[0].notes
+    assert "AUC Decision 30594-D01-2026" in low.components[2].notes
+    assert "AUC Decision 30329-D01-2025" in low.components[3].notes
+    assert "AUC Decision 30876-D01-2026" in records["S-LOW"].components[4].notes
+
+
+def test_atg_demand_classes_keep_native_units_and_billing_demand():
+    records, _ = ATG__parse()
+    for code, minimum in (("N-HIGH", "50"), ("N-UHU", "400"), ("S-HIGH", "50"), ("S-UHU", "400")):
+        (demand,) = ATG__comps(records[code], "demand")
+        (transmission,) = ATG__comps(records[code], "transmission")
+        assert demand.demand_unit == transmission.demand_unit == "GJ/day"
+        assert "24-hour Billing Demand" in demand.notes and minimum + " GJ/day" in demand.notes
+        assert "24-hour Billing Demand" in transmission.notes
+    assert "summer period" in ATG__comps(records["N-HIGH"], "demand")[0].notes
+    for code in ("N-LOW", "N-MID", "N-ATA", "S-LOW", "S-MID", "S-ATA"):
+        assert not ATG__comps(records[code], "demand")
+
+
+def test_atg_default_supply_price_only_on_drt_classes():
+    records, _ = ATG__parse()
+    for code, record in records.items():
+        gas = ATG__comps(record, "commodity")
+        if code in ATG_DRT_CODES:
+            (component,) = gas
+            assert component.market_reference and "changes monthly" in component.notes
+            assert "retailer contract prices are excluded" in component.notes
+            assert "UCA 2026 Natural Gas Regulated Rates" in component.source_detail
+            assert "Billing Period 26-Oct" in component.source_detail
+        else:
+            assert not gas and "Gas supply is not included" in record.notes
+    assert ATG__comps(records["N-LOW"], "commodity")[0].source_url == ATG_PAGE_URLS["ders_residential"]
+    assert ATG__comps(records["S-HIGH"], "commodity")[0].source_url == ATG_PAGE_URLS["ders_commercial"]
+
+
+def test_atg_carbon_is_zero_with_cra_evidence():
+    records, _ = ATG__parse()
+    for record in records.values():
+        (carbon,) = ATG__comps(record, "carbon")
+        assert carbon.source_url == ATG_PAGE_URLS["carbon"] and "Alberta" in carbon.notes
+
+
+def test_atg_municipal_riders_and_rider_e_are_notes_without_values():
+    records, _ = ATG__parse()
+    for record in records.values():
+        assert "Conditional: Rider A (municipal franchise fee) and Rider B" in record.notes
+        assert not [c for c in record.components if "Rider A" in c.component_name or "Rider E" in c.component_name]
+        assert all(c.charge_value != 3.15 for c in record.components)
+    for code in ("S-LOW", "S-MID", "S-HIGH", "S-UHU", "S-ATA"):
+        assert "Rider E, a deemed value of natural gas of $3.150 per GJ (effective March 1, 2025)" in records[code].notes
+    assert "Rider E" not in records["N-LOW"].notes
+
+
+def test_atg_class_specific_notes():
+    records, _ = ATG__parse()
+    assert "classed residential here" in records["N-LOW"].notes
+    assert "Conditional eligibility: available by request only" in records["S-ATA"].notes
+    assert records["N-ATA"].eligibility.startswith("Available by request only")
+    assert "net zero/near net zero emission homes" in records["N-ATA"].eligibility
+    assert "\u2022" not in records["N-ATA"].eligibility
+
+
+def test_atg_excluded_classes_never_emitted():
+    records, _ = ATG__parse()
+    names = " ".join(record.tariff_name for record in records.values())
+    assert not any(word in names for word in ("Irrigation", "Producer", "Unmetered"))
+    assert all(c.charge_value != 0.044 for record in records.values() for c in record.components)
+
+
+# ── Mutations: values, pages, units, dates ────────────────────
+
+def test_atg_changed_value_propagates():
+    documents = ATG__replace(ATG__documents(), "North", "Fixed Charge: $ 0.997 per Day", "Fixed Charge: $ 0.998 per Day")
+    records, _ = ATG__parse(documents)
+    assert ATG__comps(records["N-LOW"], "fixed")[0].charge_value == 0.998
+    pages = ATG__edit_page(ATG__pages(), "ders_residential", "1.458", "1.512")
+    pages = ATG__edit_page(pages, "ders_commercial", "1.458", "1.512")
+    pages = ATG__edit_page(pages, "uca", "1.458", "1.512")
+    records, rejections = ATG__parse(pages=pages)
+    assert set(records) == ATG_CODES and rejections == []
+    assert ATG__comps(records["S-MID"], "commodity")[0].charge_value == 1.512
+
+
+def test_atg_missing_class_page_rejects_only_that_class():
+    records, rejections = ATG__parse(ATG__drop_page(ATG__documents(), "North", "MID USE DELIVERY SERVICE"))
+    assert set(records) == ATG_CODES - {"N-MID"}
+    assert rejections == ["N-MID: Mid Use Delivery Service page is missing"]
+
+
+def test_atg_wrong_fixed_unit_rejects_only_that_class():
+    documents = ATG__replace(ATG__documents(), "South", "Fixed Charge: $ 0.876 per Day", "Fixed Charge: $ 0.876 per Month")
+    records, rejections = ATG__parse(documents)
+    assert set(records) == ATG_CODES - {"S-LOW"} and rejections[0].startswith("S-LOW: unexpected units")
+
+
+def test_atg_wrong_rider_t_unit_rejects_only_that_class():
+    documents = ATG__replace(ATG__documents(), "North", "High Use Delivery Rate $0.445 per GJ per Day of 24 Hr. Billing Demand",
+                         "High Use Delivery Rate $0.445 per GJ")
+    records, rejections = ATG__parse(documents)
+    assert set(records) == ATG_CODES - {"N-HIGH"}
+    assert rejections == ['N-HIGH: Rider "T" unit $/GJ does not fit High Use Delivery Service']
+
+
+def test_atg_unreadable_rider_l_row_rejects_only_that_class():
+    old = "Mid Use Delivery Rate " + ATG_EN_DASH + " May 1, 2026 to December 31, 2026 $0.087 per GJ Debit"
+    documents = ATG__replace(ATG__documents(), "South", old, old.replace(" Debit", ""))
+    records, rejections = ATG__parse(documents)
+    assert set(records) == ATG_CODES - {"S-MID"} and "row is unreadable" in rejections[0]
+
+
+def test_atg_rider_l_credit_is_negative():
+    old = "Low Use Delivery Rate " + ATG_EN_DASH + " May 1, 2026 to December 31, 2026 $0.091 per GJ Debit"
+    documents = ATG__replace(ATG__documents(), "North", old, old.replace("Debit", "Credit"))
+    records, _ = ATG__parse(documents)
+    (rider,) = ATG__comps(records["N-LOW"], "rider")
+    assert rider.charge_value == -0.091 and rider.notes.startswith("Credit (a refund)")
+    assert ATG__comps(records["N-ATA"], "rider")[0].charge_value == 0.091
+
+
+def test_atg_future_class_effective_date_rejects_that_class():
+    old = "ATCO Gas Effective January 1, 2026 by Decision 30301-D01-2025\nThis Replaces High Use"
+    documents = ATG__replace(ATG__documents(), "North", old, old.replace("January 1, 2026", "November 1, 2026"))
+    records, rejections = ATG__parse(documents)
+    assert set(records) == ATG_CODES - {"N-HIGH"}
+    assert rejections == ["N-HIGH: rates effective 2026-11-01 are not yet in force"]
+
+
+def test_atg_missing_class_header_rejects_that_class():
+    old = "ATCO Gas Effective January 1, 2026 by Decision 30301-D01-2025\nThis Replaces Alternative"
+    documents = ATG__replace(ATG__documents(), "South", old, "This Replaces Alternative")
+    records, rejections = ATG__parse(documents)
+    assert set(records) == ATG_CODES - {"S-ATA"}
+    assert rejections == ["S-ATA: effective-date header is missing"]
+
+
+def test_atg_future_edition_rejects_the_territory():
+    documents = ATG__replace(ATG__documents(), "North", "RATE SCHEDULES August 1, 2026", "RATE SCHEDULES November 1, 2026")
+    documents = ATG__replace(documents, "North", "ATCO Gas Effective August 1, 2026\nATCO GAS AND PIPELINES LTD. - NORTH",
+                         "ATCO Gas Effective November 1, 2026\nATCO GAS AND PIPELINES LTD. - NORTH")
+    records, rejections = ATG__parse(documents)
+    assert set(records) == {code for code in ATG_CODES if code.startswith("S-")}
+    assert len(rejections) == 5 and all("not yet in effect" in reason for reason in rejections)
+
+
+def test_atg_cover_and_index_edition_mismatch_rejects_the_territory():
+    documents = ATG__replace(ATG__documents(), "South", "RATE SCHEDULES September 1, 2026", "RATE SCHEDULES October 1, 2026")
+    records, rejections = ATG__parse(documents)
+    assert set(records) == {code for code in ATG_CODES if code.startswith("N-")}
+    assert all("edition date differs" in reason for reason in rejections)
+
+
+def test_atg_missing_schedule_rejects_only_that_territory():
+    documents = ATG__documents()
+    documents.pop("South")
+    records, rejections = ATG__parse(documents)
+    assert set(records) == {code for code in ATG_CODES if code.startswith("N-")}
+    assert rejections[0] == "S-LOW: South rate schedule PDF unavailable"
+
+
+def test_atg_listed_rider_without_schedule_rejects_that_class():
+    old = "Transmission Service Charge: Rider " + ATG_LDQ + "T" + ATG_RDQ + "\nRATE SWITCHING: A Low Use"
+    new = old.replace("\nRATE", "\nWeather Deferral Account Rider: Rider " + ATG_LDQ + "W" + ATG_RDQ + "\nRATE")
+    records, rejections = ATG__parse(ATG__replace(ATG__documents(), "North", old, new))
+    assert set(records) == ATG_CODES - {"N-LOW"}
+    assert rejections == ['N-LOW: Rider "W" schedule page is missing']
+
+
+def test_atg_rider_applicability_mismatch_rejects_that_class():
+    old = "Transmission Service Charge: Rider " + ATG_LDQ + "T" + ATG_RDQ + "\nRATE SWITCHING:\nCustomers switching"
+    documents = ATG__replace(ATG__documents(), "North", old, "RATE SWITCHING:\nCustomers switching")
+    records, rejections = ATG__parse(documents)
+    assert set(records) == ATG_CODES - {"N-ATA"}
+    assert "disagree on whether it applies" in rejections[0]
+
+
+def test_atg_extra_unmodelled_charge_rejects_that_class():
+    old = "Variable Charge: $ 1.045 per GJ"
+    documents = ATG__replace(ATG__documents(), "North", old, old + "\nMinimum Charge: $ 5.000 per Month")
+    records, rejections = ATG__parse(documents)
+    assert set(records) == ATG_CODES - {"N-MID"}
+    assert rejections == ["N-MID: unexpected additional charge in the CHARGES section"]
+
+
+# ── Riders by date ────────────────────────────────────────────
+
+def test_atg_expired_rider_w_is_excluded_with_note():
+    documents = ATG__replace(ATG__documents(), "South", "effective September 1, 2026 to December 31, 2026.",
+                         "effective September 1, 2026 to September 30, 2026.")
+    records, rejections = ATG__parse(documents)
+    assert set(records) == ATG_CODES and rejections == []
+    for code in ("S-LOW", "S-MID"):
+        assert not [c for c in records[code].components if c.component_name == ATG_RIDER_W]
+        assert 'Rider "W" (Weather Deferral Account Rider) applied from September 1, 2026 to September 30, 2026'\
+            in records[code].notes
+        assert records[code].effective_date == "2026-10-01"
+
+
+def test_atg_expired_rider_l_is_excluded_and_new_month_needs_supply_price():
+    records, rejections = ATG__parse(today=date(2027, 1, 5))
+    assert set(records) == {"N-UHU", "N-ATA", "S-UHU", "S-ATA"}
+    for record in records.values():
+        assert not [c for c in record.components if c.component_name == ATG_RIDER_L]
+        assert 'Rider "L" (Load Balancing Deferral Account Rider) applied from May 1, 2026 to December 31, 2026'\
+            in record.notes
+        assert record.effective_date == "2026-01-01"
+    assert any("UCA table '2027 Natural Gas Regulated Rates in $/GJ' is missing" in r or "27-Jan" in r
+               for r in rejections)
+
+
+def test_atg_future_rider_period_rejects_classes_that_list_it():
+    old = "Low Use Delivery Rate " + ATG_EN_DASH + " May 1, 2026 to December 31, 2026 $0.091 per GJ Debit"
+    documents = ATG__replace(ATG__documents(), "South", old, old.replace("May 1, 2026", "November 1, 2026"))
+    records, rejections = ATG__parse(documents)
+    assert set(records) == ATG_CODES - {"S-LOW"}
+    assert rejections == ['S-LOW: Rider "L" has no value in force on 2026-10-09']
+
+
+# ── Default supply price (DERS + UCA) ─────────────────────────
+
+def test_atg_next_month_without_published_price_rejects_drt_classes():
+    records, rejections = ATG__parse(today=date(2026, 11, 2))
+    assert set(records) == ATG_CODES - ATG_DRT_CODES
+    assert all("26-Nov" in reason for reason in rejections) and len(rejections) == 6
+
+
+def test_atg_uca_month_missing_rejects_drt_classes():
+    pages = ATG__pages()
+    start = pages["uca"].index("October")
+    row_start = pages["uca"].rindex("<tr", 0, start)
+    row_end = pages["uca"].index("</tr>", start) + len("</tr>")
+    pages["uca"] = pages["uca"][:row_start] + pages["uca"][row_end:]
+    records, rejections = ATG__parse(pages=pages)
+    assert set(records) == ATG_CODES - ATG_DRT_CODES
+    assert all("UCA table has no October 2026 default rate yet" in reason for reason in rejections)
+
+
+def test_atg_ders_and_uca_disagreement_rejects_drt_classes():
+    records, rejections = ATG__parse(pages=ATG__edit_page(ATG__pages(), "uca", "1.458", "1.459"))
+    assert set(records) == ATG_CODES - ATG_DRT_CODES
+    assert all("differs from the UCA default-rates table" in reason for reason in rejections)
+
+
+def test_atg_ders_wrong_unit_rejects_classes_using_that_page():
+    pages = ATG__edit_page(ATG__pages(), "ders_residential", 'data-rate-heading-measure-label-text="/GJ"',
+                       'data-rate-heading-measure-label-text="/m\u00b3"')
+    records, rejections = ATG__parse(pages=pages)
+    assert set(records) == ATG_CODES - {"N-LOW", "S-LOW"}
+    assert all("/GJ unit is missing" in reason for reason in rejections)
+
+
+def test_atg_missing_ders_page_rejects_only_drt_classes():
+    pages = ATG__pages()
+    pages.pop("ders_commercial")
+    records, rejections = ATG__parse(pages=pages)
+    assert set(records) == ATG_CODES - {"N-MID", "N-HIGH", "S-MID", "S-HIGH"}
+    assert len(rejections) == 4
+
+
+# ── Carbon evidence ───────────────────────────────────────────
+
+@pytest.mark.parametrize(("old", "new"), [
+    ("by setting all fuel charge rates to zero", "by setting fuel charge rates"),
+    ("The rates applied in Alberta, Manitoba,", "The rates applied in Manitoba,"),
+])
+def test_atg_missing_carbon_evidence_rejects_everything(old, new):
+    records, rejections = ATG__parse(pages=ATG__edit_page(ATG__pages(), "carbon", old, new))
+    assert records == {} and rejections[0].startswith("all classes: CRA evidence")
+
+
+# ── Scraper level ─────────────────────────────────────────────
+
+def test_atg_scrape_marks_all_records_live(monkeypatch):
+    ATG__serve(monkeypatch)
+    records = ATG_ATCOGasScraper().scrape()
+    assert {record.tariff_code for record in records} == ATG_CODES
+    assert all("Provenance: live_parsed" in record.notes and "seed_fallback" not in record.notes for record in records)
+    assert all(c.notes.startswith("Provenance: live_parsed") for record in records for c in record.components)
+
+
+def test_atg_scrape_supply_outage_keeps_only_classes_without_supply_price(monkeypatch):
+    ATG__serve(monkeypatch, failing=(ATG_PAGE_URLS["ders_residential"], ATG_PAGE_URLS["ders_commercial"]))
+    records = ATG_ATCOGasScraper().scrape()
+    assert {record.tariff_code for record in records} == ATG_CODES - ATG_DRT_CODES
+    assert all("live_parsed" in record.notes and "seed_fallback" not in record.notes for record in records)
+
+
+def test_atg_scrape_total_failure_returns_labelled_seeds():
+    records = ATG_ATCOGasScraper().scrape()
+    assert [record.tariff_code for record in records] == ["D-South", "D-North"]
+    assert all(record.confidence == "unverified" and "seed_fallback" in record.notes for record in records)
+    assert all(c.confidence == "unverified" for record in records for c in record.components)
+
+
+def test_atg_scrape_without_carbon_evidence_returns_labelled_seeds(monkeypatch):
+    ATG__serve(monkeypatch, failing=(ATG_PAGE_URLS["carbon"],))
+    records = ATG_ATCOGasScraper().scrape()
+    assert [record.tariff_code for record in records] == ["D-South", "D-North"]
+    assert all("seed_fallback" in record.notes for record in records)
+
+
+# ======================================================================
+# EPCOR Natural Gas Ontario, Aylmer and Southern Bruce (batch 12)
+# ======================================================================
+from scrapers.utils.parsing import DocumentPage
+from scrapers.utilities.epcor_gas_ontario import CRA_URL as EPG_CRA_URL, RDS_SEARCH_URL as EPG_RDS_SEARCH_URL, UTILITY_NAME as EPG_UTILITY_NAME, ZONES as EPG_ZONES, EPCOROntarioGasScraper as EPG_EPCOROntarioGasScraper, find_rate_order_url as EPG_find_rate_order_url, notice_case as EPG_notice_case, notice_url as EPG_notice_url, page_effective_date as EPG_page_effective_date
+import json
+from datetime import date
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+
+EPG_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "epcor_gas_ontario.json"
+EPG_TODAY = date(2026, 10, 9)
+EPG_EFF = "2026-10-01"
+EPG_END = "2026-12-31"
+EPG_AYLMER_ORDER = "https://www.rds.oeb.ca/CMWebDrawer/Record/956907/File/document"
+EPG_SB_ORDER = "https://www.rds.oeb.ca/CMWebDrawer/Record/956917/File/document"
+EPG_CARBON = ("carbon", "Federal Carbon Charge", 0.0, "$/m³", "2025-04-01", None, None)
+EPG_TRANSPORT = ("delivery", "Transportation Charge", 0.029161, "$/m³", EPG_EFF, None, None)
+EPG_AYL_SUPPLY = [
+    ("commodity", "Gas Supply Charge — PGCVA Reference Price", 0.17444, "$/m³", EPG_EFF, None, None),
+    ("commodity", "Gas Supply Charge — GPRA Recovery Rate", -0.001408, "$/m³", EPG_EFF, None, None),
+]
+EPG_SB_SUPPLY = ("commodity", "Gas Supply Charge", 0.151554, "$/m³", EPG_EFF, None, None)
+
+
+def EPG__ayl_riders(wacc):
+    return [
+        ("rider", "Rate Rider for PGTVA Recovery", 0.003241, "$/m³", EPG_EFF, EPG_END, None),
+        ("rider", "Rate Rider for UFGVA Recovery", 0.00427, "$/m³", EPG_EFF, EPG_END, None),
+        ("rider", "Rate Rider for WACC Recovery", wacc, "$/m³", EPG_EFF, EPG_END, None),
+        ("rider", "Rate Rider for REDA Recovery", 0.06, "$/month", EPG_EFF, EPG_END, None),
+    ]
+
+
+def EPG__sb_riders(delay, ecva, ciacva, mtva, orda, cvva, ufgva, stva):
+    riders = [
+        ("rider", "Rate Rider for Delay in Revenue Recovery", delay, "$/m³", EPG_EFF, "2028-12-31", None),
+        ("rider", "Rate Rider for ECVA Recovery", ecva, "$/m³", EPG_EFF, EPG_END, None),
+        ("rider", "Rate Rider for CIACVA Recovery", ciacva, "$/m³", EPG_EFF, EPG_END, None),
+        ("rider", "Rate Rider for MTVA Recovery", mtva, "$/m³", EPG_EFF, EPG_END, None),
+        ("rider", "Rate Rider for ORDA Recovery", orda, "$/m³", EPG_EFF, EPG_END, None),
+    ]
+    if cvva is not None:
+        riders.append(("rider", "Rate Rider for CVVA Recovery", cvva, "$/month", EPG_EFF, EPG_END, None))
+    return riders + [
+        ("rider", "Rate Rider for UFGVA Recovery", ufgva, "$/m³", EPG_EFF, EPG_END, None),
+        ("rider", "Rate Rider for S&TVA Recovery", stva, "$/m³", EPG_EFF, EPG_END, None),
+    ]
+
+
+def EPG__block(text, value, season=None):
+    name = "Delivery Charge — " + text + (" (" + season + ")" if season else "")
+    return ("delivery", name, value, "$/m³", EPG_EFF, None, None)
+
+
+EPG_SB1 = [
+    ("fixed", "Monthly Fixed Charge", 29.57, "$/month", EPG_EFF, None, None),
+    EPG__block("first 100 m³ per month", 0.306018),
+    EPG__block("next 400 m³ per month", 0.29999),
+    EPG__block("over 500 m³ per month", 0.291129),
+    ("delivery", "Upstream Recovery Charge", 0.01474, "$/m³", EPG_EFF, None, None),
+    ("delivery", "Transportation and Storage Charge", 0.026982, "$/m³", EPG_EFF, None, None),
+    *EPG__sb_riders(0.01633, 0.001794, 0.020743, -0.004139, -0.002478, 8.53, -0.00163, 0.011569),
+    EPG_SB_SUPPLY, EPG_CARBON,
+]
+APR_OCT, NOV_MAR = "April 1 - October 31", "November 1 - March 31"
+APR_DEC, JAN_MAR = "April 1 - December 31", "January 1 - March 31"
+
+# name: (code, customer_class, rate_structure, usage_min, usage_max, components)
+EPG_EXPECTED = {
+    "Rate 1 Residential (Aylmer)": ("AYL-1-RES", "residential", "flat", None, None, [
+        ("fixed", "Monthly Fixed Charge", 29.32, "$/month", EPG_EFF, None, None),
+        ("delivery", "Delivery Charge", 0.087763, "$/m³", EPG_EFF, None, None),
+        *EPG__ayl_riders(-0.00177), EPG_TRANSPORT, *EPG_AYL_SUPPLY, EPG_CARBON]),
+    "Rate 1 General Service (Aylmer)": ("AYL-1-GS", "commercial", "tiered", None, None, [
+        ("fixed", "Monthly Fixed Charge", 28.73, "$/month", EPG_EFF, None, None),
+        EPG__block("first 1,000 m³ per month", 0.120116), EPG__block("over 1,000 m³ per month", 0.095904),
+        *EPG__ayl_riders(-0.00068), EPG_TRANSPORT, *EPG_AYL_SUPPLY, EPG_CARBON]),
+    "Rate 2 Seasonal Service (Aylmer)": ("AYL-2", "commercial", "tiered", None, None, [
+        ("fixed", "Monthly Fixed Charge", 25.09, "$/month", EPG_EFF, None, None),
+        EPG__block("first 1,000 m³ per month", 0.174482, APR_OCT), EPG__block("first 1,000 m³ per month", 0.22652, NOV_MAR),
+        EPG__block("next 24,000 m³ per month", 0.078075, APR_OCT), EPG__block("next 24,000 m³ per month", 0.145808, NOV_MAR),
+        EPG__block("over 25,000 m³ per month", 0.056454, APR_OCT), EPG__block("over 25,000 m³ per month", 0.158877, NOV_MAR),
+        *EPG__ayl_riders(-0.000559), EPG_TRANSPORT, *EPG_AYL_SUPPLY, EPG_CARBON]),
+    "Rate 3 Special Large Volume Contract (Aylmer)": ("AYL-3", "industrial", "demand", 113000.0, None, [
+        ("fixed", "Monthly Customer Charge — firm or interruptible service", 240.79, "$/month", EPG_EFF, None,
+         "conditional"),
+        ("fixed", "Monthly Customer Charge — combined firm and interruptible service", 267.2, "$/month", EPG_EFF, None,
+         "conditional"),
+        ("demand", "Monthly Demand Charge", 0.348861, "$/m³/month", EPG_EFF, None, None),
+        ("delivery", "Monthly Firm Delivery Charge", 0.017997, "$/m³", EPG_EFF, None, None),
+        ("delivery", "Monthly Interruptible Delivery Charge (negotiated)", None, "$/m³", EPG_EFF, None, "conditional"),
+        *EPG__ayl_riders(-0.000602), EPG_TRANSPORT, *EPG_AYL_SUPPLY, EPG_CARBON]),
+    "Rate 4 General Service Peaking (Aylmer)": ("AYL-4", "commercial", "tiered", None, None, [
+        ("fixed", "Monthly Fixed Charge", 25.45, "$/month", EPG_EFF, None, None),
+        EPG__block("first 1,000 m³ per month", 0.197641, APR_DEC), EPG__block("first 1,000 m³ per month", 0.259215, JAN_MAR),
+        EPG__block("over 1,000 m³ per month", 0.111341, APR_DEC), EPG__block("over 1,000 m³ per month", 0.194469, JAN_MAR),
+        *EPG__ayl_riders(-0.001196), EPG_TRANSPORT, *EPG_AYL_SUPPLY, EPG_CARBON]),
+    "Rate 5 Interruptible Peaking Contract (Aylmer)": ("AYL-5", "industrial", "flat", 50000.0, None, [
+        ("fixed", "Monthly Fixed Charge", 202.35, "$/month", EPG_EFF, None, None),
+        ("delivery", "Monthly Interruptible Delivery Charge (negotiated)", None, "$/m³", EPG_EFF, None, "conditional"),
+        *EPG__ayl_riders(-0.000567), EPG_TRANSPORT, *EPG_AYL_SUPPLY, EPG_CARBON]),
+    "Rate 1 General Firm Service — Residential (Southern Bruce)": ("SB-1", "residential", "tiered", None, 10000.0,
+                                                                  EPG_SB1),
+    "Rate 1 General Firm Service — Commercial (Southern Bruce)": ("SB-1", "commercial", "tiered", None, 10000.0,
+                                                                 EPG_SB1),
+    "Rate 6 Large Volume General Firm Service (Southern Bruce)": ("SB-6", "commercial", "tiered", 10000.0, None, [
+        ("fixed", "Monthly Fixed Charge", 117.49, "$/month", EPG_EFF, None, None),
+        EPG__block("first 1,000 m³ per month", 0.282309), EPG__block("next 6,000 m³ per month", 0.254079),
+        EPG__block("over 7,000 m³ per month", 0.241373),
+        ("delivery", "Upstream Recovery Charge", 0.0292, "$/m³", EPG_EFF, None, None),
+        ("delivery", "Transportation and Storage Charge", 0.056413, "$/m³", EPG_EFF, None, None),
+        *EPG__sb_riders(0.00909, 0.001949, 0.026496, -0.006861, -0.002007, 26.03, -0.001575, 0.015659),
+        EPG_SB_SUPPLY, EPG_CARBON]),
+    "Rate 11 Large Volume Seasonal Service (Southern Bruce)": ("SB-11", "commercial", "flat", 10000.0, None, [
+        ("fixed", "Monthly Fixed Charge", 233.99, "$/month", EPG_EFF, None, None),
+        ("delivery", "Delivery Charge", 0.175362, "$/m³", EPG_EFF, None, None),
+        ("delivery", "Authorized Overrun Charge (December 16 - April 30)", 0.179151, "$/m³", EPG_EFF, None,
+         "conditional"),
+        ("delivery", "Unauthorized Overrun Charge (December 16 - April 30)", 4.290039, "$/m³", EPG_EFF, None,
+         "conditional"),
+        ("delivery", "Upstream Recovery Charge", 0.000352, "$/m³", EPG_EFF, None, None),
+        ("delivery", "Transportation and Storage Charge", 0.018166, "$/m³", EPG_EFF, None, None),
+        *EPG__sb_riders(0.005524, 0.001031, 0.004372, -0.001135, -0.000662, None, -0.001973, 0.004799),
+        EPG_SB_SUPPLY, EPG_CARBON]),
+}
+EPG_AYLMER = {name for name in EPG_EXPECTED if name.endswith("(Aylmer)")}
+EPG_SOUTHERN_BRUCE = set(EPG_EXPECTED) - EPG_AYLMER
+
+
+def EPG__doc():
+    return json.loads(EPG_FIXTURE.read_text(encoding="utf-8"))
+
+
+def EPG__sources(doc=None):
+    doc = doc or EPG__doc()
+    zones = {}
+    for key, zone in doc["zones"].items():
+        zones[key] = {
+            "page_url": zone["page"]["url"],
+            "page_html": zone["page"]["html"],
+            "notice_url": zone["notice"]["url"],
+            "notice_pages": [DocumentPage(p["page_number"], p["text"]) for p in zone["notice"]["pages"]],
+            "order_url": zone["order"]["url"],
+            "order_pages": [DocumentPage(p["page_number"], p["text"]) for p in zone["order"]["pages"]],
+        }
+    return {"cra": doc["cra"]["text"], "zones": zones}
+
+
+def EPG__parse(sources=None, today=EPG_TODAY):
+    scraper = EPG_EPCOROntarioGasScraper()
+    records = scraper.parse_sources(sources if sources is not None else EPG__sources(), today)
+    return {record.tariff_name: record for record in records}, scraper
+
+
+def EPG__edit_page(sources, zone, old, new, count=-1):
+    html = sources["zones"][zone]["page_html"]
+    assert old in html, old
+    sources["zones"][zone]["page_html"] = html.replace(old, new, count)
+    return sources
+
+
+def EPG__edit_order(sources, zone, old, new):
+    pages = sources["zones"][zone]["order_pages"]
+    assert any(old in page.text for page in pages), old
+    sources["zones"][zone]["order_pages"] = [DocumentPage(page.page_number, page.text.replace(old, new))
+                                             for page in pages]
+    return sources
+
+
+def EPG__edit_notice(sources, zone, old, new):
+    pages = sources["zones"][zone]["notice_pages"]
+    assert any(old in page.text for page in pages), old
+    sources["zones"][zone]["notice_pages"] = [DocumentPage(page.page_number, page.text.replace(old, new))
+                                              for page in pages]
+    return sources
+
+
+def EPG__component(record, name):
+    (match,) = [c for c in record.components if c.component_name == name]
+    return match
+
+
+def test_epg_fixture_sources_match_module_urls():
+    doc = EPG__doc()
+    assert doc["retrieved_on"] == "2026-10-09" and doc["cra"]["url"] == EPG_CRA_URL
+    assert set(doc["zones"]) == set(EPG_ZONES)
+    for key, zone in doc["zones"].items():
+        assert zone["page"]["url"] == EPG_ZONES[key].page_url
+        assert zone["notice"]["url"] == EPG_notice_url(EPG_ZONES[key], date(2026, 10, 1))
+        assert zone["rds_search"]["url"].startswith(EPG_RDS_SEARCH_URL.split("{")[0])
+    assert doc["zones"]["aylmer"]["order"]["url"] == EPG_AYLMER_ORDER
+    assert doc["zones"]["sb"]["order"]["url"] == EPG_SB_ORDER
+
+
+def test_epg_expected_records_exact():
+    records, scraper = EPG__parse()
+    assert set(records) == set(EPG_EXPECTED)
+    assert scraper.rejections == [] and scraper.unmodelled == []
+    for name, (code, customer_class, structure, usage_min, usage_max, components) in EPG_EXPECTED.items():
+        record = records[name]
+        assert (record.utility_name, record.province, record.utility_type) == (EPG_UTILITY_NAME, "ON", "gas")
+        assert (record.tariff_code, record.customer_class, record.rate_structure) == (code, customer_class, structure)
+        assert (record.usage_min, record.usage_max) == (usage_min, usage_max)
+        assert record.usage_unit == ("m³/year" if usage_min or usage_max else None)
+        assert record.effective_date == EPG_EFF and record.end_date is None and record.pricing_method == "regulated"
+        assert record.confidence == "high" and record.eligibility and record.description
+        assert [(c.component_type, c.component_name, c.charge_value, c.charge_unit, c.effective_date, c.end_date,
+                 c.sub_component) for c in record.components] == components, name
+
+
+def test_epg_zone_sources_and_dates_on_every_component():
+    records, _ = EPG__parse()
+    for name, record in records.items():
+        zone = "Aylmer" if name in EPG_AYLMER else "Southern Bruce"
+        assert record.sub_class == zone + " service area"
+        assert record.source_url == EPG_ZONES["aylmer" if zone == "Aylmer" else "sb"].page_url
+        for component in record.components:
+            assert component.source_url and component.source_detail and component.effective_date
+            assert component.charge_currency == "CAD"
+            if component.component_type == "rider":
+                assert component.end_date and "Rider period" in component.notes
+        case = "EB-2026-0225" if zone == "Aylmer" else "EB-2026-0226"
+        assert case in record.notes and case in record.source_page
+
+
+def test_epg_reda_rider_follows_the_approved_schedule_unit():
+    records, _ = EPG__parse()
+    for name in EPG_AYLMER:
+        reda = EPG__component(records[name], "Rate Rider for REDA Recovery")
+        assert (reda.charge_value, reda.charge_unit, reda.source_url) == (0.06, "$/month", EPG_AYLMER_ORDER)
+        assert "0.06¢ per month" in reda.source_detail and "$0.06 per month" in reda.notes
+        assert "0.06¢ per month" in records[name].notes
+
+
+def test_epg_rate4_season_split_follows_the_approved_schedule():
+    records, _ = EPG__parse()
+    record = records["Rate 4 General Service Peaking (Aylmer)"]
+    blocks = [c for c in record.components if c.component_name.startswith("Delivery Charge")]
+    assert [(c.season, c.season_months, c.tier_number, c.tier_threshold) for c in blocks] == [
+        (APR_DEC, "Apr-Dec", 1, 1000.0), (JAN_MAR, "Jan-Mar", 1, 1000.0),
+        (APR_DEC, "Apr-Dec", 2, None), (JAN_MAR, "Jan-Mar", 2, None)]
+    assert "April 1 to October 31 and November 1 to March 31" in record.notes
+    rate2 = records["Rate 2 Seasonal Service (Aylmer)"]
+    assert {c.season_months for c in rate2.components if c.season} == {"Apr-Oct", "Nov-Mar"}
+    assert "Season periods" not in rate2.notes
+
+
+def test_epg_tiers_join_up():
+    records, _ = EPG__parse()
+    sb6 = records["Rate 6 Large Volume General Firm Service (Southern Bruce)"]
+    blocks = [c for c in sb6.components if c.tier_number]
+    assert [(c.tier_number, c.tier_threshold, c.tier_unit) for c in blocks] == [
+        (1, 1000.0, "m³/month"), (2, 7000.0, "m³/month"), (3, None, None)]
+
+
+def test_epg_negotiated_ranges_stay_conditions_without_value():
+    records, _ = EPG__parse()
+    for name, low, high in (("Rate 3 Special Large Volume Contract (Aylmer)", "6.6129", "10.0852"),
+                            ("Rate 5 Interruptible Peaking Contract (Aylmer)", "4.1116", "7.5930")):
+        negotiated = EPG__component(records[name], "Monthly Interruptible Delivery Charge (negotiated)")
+        assert negotiated.charge_value is None and negotiated.sub_component == "conditional"
+        assert negotiated.notes.startswith("Conditional:") and low in negotiated.notes and high in negotiated.notes
+
+
+def test_epg_conditional_components_are_marked():
+    records, _ = EPG__parse()
+    conditional = [(name, c) for name, record in records.items() for c in record.components
+                   if c.sub_component == "conditional"]
+    assert len(conditional) == 6
+    assert all(c.notes.startswith("Conditional:") for _, c in conditional)
+
+
+def test_epg_carbon_is_dated_cra_zero():
+    records, _ = EPG__parse()
+    for record in records.values():
+        (carbon,) = [c for c in record.components if c.component_type == "carbon"]
+        assert (carbon.charge_value, carbon.effective_date, carbon.source_url) == (0.0, "2025-04-01", EPG_CRA_URL)
+        assert "April 1, 2025" in carbon.notes and "Ontario" in carbon.notes
+
+
+def test_epg_fixed_charge_bill32_note_needs_the_schedule_footnote():
+    records, _ = EPG__parse()
+    fixed = [c for record in records.values() for c in record.components if c.component_name == "Monthly Fixed Charge"]
+    assert len(fixed) == 9 and all("Bill 32" in c.notes for c in fixed)
+    sources = EPG__edit_order(EPG__sources(), "sb", "one dollar per month in accordance with Bill 32",
+                          "one dollar per month")
+    records, _ = EPG__parse(sources)
+    assert EPG__component(records["Rate 11 Large Volume Seasonal Service (Southern Bruce)"],
+                      "Monthly Fixed Charge").notes is None
+
+
+def test_epg_exclusions_reported_not_built():
+    records, scraper = EPG__parse()
+    assert any(entry.startswith("Aylmer Rate 6:") for entry in scraper.exclusions)
+    assert any(entry.startswith("Southern Bruce Rate 16:") for entry in scraper.exclusions)
+    assert not any("Rate 6 " in name and "Aylmer" in name for name in records)
+    assert not any("Rate 16" in name for name in records)
+
+
+def test_epg_value_changed_in_both_sources_propagates():
+    sources = EPG__edit_page(EPG__sources(), "aylmer", "8.7763¢ per m³", "8.9123¢ per m³")
+    EPG__edit_order(sources, "aylmer", "8.7763 cents per m3", "8.9123 cents per m3")
+    records, _ = EPG__parse(sources)
+    assert EPG__component(records["Rate 1 Residential (Aylmer)"], "Delivery Charge").charge_value == 0.089123
+    assert set(records) == set(EPG_EXPECTED)
+
+
+def test_epg_page_value_not_in_approved_schedule_rejects_only_that_class():
+    records, scraper = EPG__parse(EPG__edit_page(EPG__sources(), "aylmer", "12.0116¢ per m³", "12.1116¢ per m³"))
+    assert set(records) == set(EPG_EXPECTED) - {"Rate 1 General Service (Aylmer)"}
+    assert any("AYL-1-GS" in entry for entry in scraper.rejections)
+
+
+def test_epg_missing_class_rejects_only_that_class():
+    records, scraper = EPG__parse(EPG__edit_page(EPG__sources(), "sb", "Rate 6: Large Volume (Large volume general firm service)",
+                                         "Rate 6: Large Volume Firm Service"))
+    assert set(records) == set(EPG_EXPECTED) - {"Rate 6 Large Volume General Firm Service (Southern Bruce)"}
+    assert scraper.unmodelled == ["Southern Bruce Rate 6: Large Volume Firm Service"]
+
+
+def test_epg_missing_zone_rejects_only_that_zone():
+    sources = EPG__sources()
+    sources["zones"]["sb"] = {}
+    records, scraper = EPG__parse(sources)
+    assert set(records) == EPG_AYLMER
+    assert scraper.rejections == ["Southern Bruce: rates page unavailable"]
+
+
+def test_epg_wrong_unit_rejects_class():
+    records, _ = EPG__parse(EPG__edit_page(EPG__sources(), "aylmer", "8.7763¢ per m³", "8.7763¢ per GJ"))
+    assert set(records) == set(EPG_EXPECTED) - {"Rate 1 Residential (Aylmer)"}
+
+
+def test_epg_unidentified_line_rejects_class():
+    records, _ = EPG__parse(EPG__edit_page(EPG__sources(), "aylmer", "Transportation Charge", "Transportation Surcharge", 1))
+    assert set(records) == set(EPG_EXPECTED) - {"Rate 1 Residential (Aylmer)"}
+
+
+def test_epg_range_never_becomes_a_value():
+    records, _ = EPG__parse(EPG__edit_page(EPG__sources(), "aylmer", "6.6129 - 10.0852¢ per m³", "6.6129¢ per m³"))
+    assert set(records) == set(EPG_EXPECTED) - {"Rate 3 Special Large Volume Contract (Aylmer)"}
+
+
+def test_epg_missing_effective_date_rejects_zone():
+    sources = EPG__edit_page(EPG__sources(), "sb", "The rates below are effective October 1, 2026",
+                         "The rates below are current")
+    records, scraper = EPG__parse(sources)
+    assert set(records) == EPG_AYLMER
+    assert scraper.rejections == ["Southern Bruce: rates page effective date missing"]
+
+
+def test_epg_future_effective_date_rejects_zones():
+    records, scraper = EPG__parse(today=date(2026, 9, 30))
+    assert records == {}
+    assert len(scraper.rejections) == 2 and all("in the future" in entry for entry in scraper.rejections)
+
+
+def test_epg_notice_effective_date_mismatch_rejects_zone():
+    records, scraper = EPG__parse(EPG__edit_notice(EPG__sources(), "aylmer", "effective Oct 1, 2026.", "effective Jul 1, 2026."))
+    assert set(records) == EPG_SOUTHERN_BRUCE
+    assert scraper.rejections == ["Aylmer: OEB QRAM notice effective date differs from the rates page"]
+
+
+@pytest.mark.parametrize(("zone", "old", "new", "kept"), [
+    ("aylmer", "= 17.3032¢/m³", "= 17.4032¢/m³", EPG_SOUTHERN_BRUCE),
+    ("sb", "= 15.1554¢/m³", "= 15.2554¢/m³", EPG_AYLMER),
+])
+def test_epg_notice_commodity_mismatch_rejects(zone, old, new, kept):
+    records, _ = EPG__parse(EPG__edit_notice(EPG__sources(), zone, old, new))
+    assert set(records) == kept
+
+
+def test_epg_gas_supply_parts_must_reconcile():
+    sources = EPG__edit_page(EPG__sources(), "aylmer", "(0.1408)¢/m³", "(0.1508)¢/m³")
+    EPG__edit_order(sources, "aylmer", "-0.1408 cents per m3", "-0.1508 cents per m3")
+    records, scraper = EPG__parse(sources)
+    assert set(records) == EPG_SOUTHERN_BRUCE
+    assert scraper.rejections == ["Aylmer: gas supply parts do not add to the printed total"]
+
+
+def test_epg_missing_carbon_evidence_rejects_everything():
+    sources = EPG__sources()
+    sources["cra"] = sources["cra"].replace("Alberta, Manitoba, Ontario, and Saskatchewan", "Alberta and Manitoba")
+    records, scraper = EPG__parse(sources)
+    assert records == {} and scraper.rejections[0].startswith("all:")
+
+
+def test_epg_nonzero_notice_carbon_rejects_zone():
+    records, _ = EPG__parse(EPG__edit_notice(EPG__sources(), "sb", "Facilities Carbon Charge (¢/m3) 0.0000¢",
+                                     "Facilities Carbon Charge (¢/m3) 1.2000¢"))
+    assert set(records) == EPG_AYLMER
+
+
+def test_epg_expired_rider_rejects_classes():
+    records, scraper = EPG__parse(today=date(2027, 1, 5))
+    assert records == {}
+    assert any("period ended" in entry for entry in scraper.rejections)
+
+
+def test_epg_missing_approved_schedule_rejects_only_that_class():
+    sources = EPG__edit_order(EPG__sources(), "aylmer", "RATE 5 - Interruptible Peaking Contract Rate",
+                          "RATE 5 - Interruptible Contract Rate")
+    records, _ = EPG__parse(sources)
+    assert set(records) == set(EPG_EXPECTED) - {"Rate 5 Interruptible Peaking Contract (Aylmer)"}
+
+
+def test_epg_unavailable_or_wrong_order_rejects_zone():
+    sources = EPG__sources()
+    sources["zones"]["sb"]["order_pages"] = []
+    records, _ = EPG__parse(sources)
+    assert set(records) == EPG_AYLMER
+    sources = EPG__sources()
+    sources["zones"]["aylmer"]["order_pages"] = EPG__sources()["zones"]["sb"]["order_pages"]
+    records, scraper = EPG__parse(sources)
+    assert set(records) == EPG_SOUTHERN_BRUCE
+    assert scraper.rejections == ["Aylmer: OEB Decision and Rate Order is not EB-2026-0225 for Aylmer"]
+
+
+def test_epg_discovery_helpers():
+    doc = EPG__doc()
+    sources = EPG__sources(doc)
+    for key, zone in doc["zones"].items():
+        case = EPG_notice_case(sources["zones"][key]["notice_pages"])
+        assert case == {"aylmer": "EB-2026-0225", "sb": "EB-2026-0226"}[key]
+        assert EPG_find_rate_order_url(zone["rds_search"]["html"], case) == zone["order"]["url"]
+        assert EPG_find_rate_order_url(zone["rds_search"]["html"], "EB-2026-9999") is None
+        assert EPG_page_effective_date(zone["page"]["html"]) == date(2026, 10, 1)
+
+
+def EPG__responses():
+    doc = EPG__doc()
+    pages = {doc["cra"]["url"]: doc["cra"]["text"]}
+    pdfs = {}
+    for zone in doc["zones"].values():
+        pages[zone["page"]["url"]] = zone["page"]["html"]
+        pages[zone["rds_search"]["url"]] = zone["rds_search"]["html"]
+        for key in ("notice", "order"):
+            pdfs[zone[key]["url"]] = [DocumentPage(p["page_number"], p["text"]) for p in zone[key]["pages"]]
+    return pages, pdfs
+
+
+def EPG__scrape(pages, pdfs):
+    scraper = EPG_EPCOROntarioGasScraper()
+    scraper.today = EPG_TODAY
+    with patch.object(scraper, "fetch_page", side_effect=lambda url, *a, **k: pages[url]),\
+            patch.object(scraper, "_fetch_pdf_pages", side_effect=lambda url: pdfs[url]):
+        return scraper.scrape()
+
+
+def test_epg_scrape_marks_live_with_mocked_fetch():
+    records = EPG__scrape(*EPG__responses())
+    assert {record.tariff_name for record in records} == set(EPG_EXPECTED)
+    assert all(record.notes.startswith("Provenance: live_parsed.") for record in records)
+    assert all("seed_fallback" not in record.notes and record.confidence == "high" for record in records)
+    assert all(c.notes.startswith("Provenance: live_parsed.") for record in records for c in record.components)
+
+
+def test_epg_partial_fetch_failure_keeps_other_zone_live():
+    pages, pdfs = EPG__responses()
+    del pages[EPG_ZONES["sb"].page_url]
+    records = EPG__scrape(pages, pdfs)
+    assert {record.tariff_name for record in records} == EPG_AYLMER
+
+
+def test_epg_total_fetch_failure_returns_no_records():
+    scraper = EPG_EPCOROntarioGasScraper(registry_entry={"name": EPG_UTILITY_NAME})
+    assert scraper.scrape() == []
+    assert scraper.rejections and scraper.rejections[0].startswith("all:")

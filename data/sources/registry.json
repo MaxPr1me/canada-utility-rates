@@ -8,22 +8,46 @@
       "utility_type": "gas",
       "scraper_module": "scrapers.utilities.enbridge_gas",
       "scraper_class": "EnbridgeGasScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.enbridgegas.com/residential/my-account/understanding-my-bill/rates",
-          "source_type": "html",
-          "description": "Residential natural gas rates for the Enbridge Gas Distribution service area",
+          "url": "https://www.enbridgegas.com/-/media/Extranet-Pages/ontario/business-and-industrial/Commercial-and-Industrial/Large-Volume-Rates-and-Services/EGD-Rates/rate-handbook.pdf",
+          "source_type": "pdf",
+          "description": "Enbridge Gas Rate Handbook: OEB-approved rate schedules and riders for the EGD, Union North and Union South rate zones (re-issued each QRAM; EB-2026-0221 effective October 1, 2026)",
           "is_primary": true
         },
         {
-          "url": "https://www.enbridgegas.com/business-industrial/accounts-billing/rates",
+          "url": "https://www.enbridgegas.com/ontario/business-industrial/commercial-industrial/large-volume-services-rates/leg-rate-zone-rates/rate-110",
           "source_type": "html",
-          "description": "Commercial and industrial natural gas rates",
+          "description": "Discovery page linking the current Rate Handbook",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.enbridgegas.com/business-industrial/commercial-industrial/large-volume-services-rates/union-south/rate-m4",
+          "source_type": "html",
+          "description": "Second discovery page linking the Rate Handbook",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/fcrates/fuel-charge-rates.html",
+          "source_type": "html",
+          "description": "CRA fuel charge rates: federal charge zero from April 1, 2025 (Ontario period ended March 31, 2025); required carbon evidence",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.enbridgegas.com/ontario/my-account/rates",
+          "source_type": "html",
+          "description": "Residential natural gas rates page (reference)",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.enbridgegas.com/ontario/business-industrial/business/rates",
+          "source_type": "html",
+          "description": "Business natural gas rates page (reference)",
           "is_primary": false
         }
       ],
-      "notes": "Enbridge Gas Inc. was formed by the merger of Enbridge Gas Distribution and Union Gas in 2019. Rates vary by rate zone (former EGD vs. former Union Gas territories). Regulated by the Ontario Energy Board (OEB)."
+      "notes": "Enbridge Gas Inc. was formed by the merger of Enbridge Gas Distribution and Union Gas in 2019; rates differ by rate zone. Regulated by the Ontario Energy Board (OEB). Live parser of the approved Rate Handbook (EB-2026-0221, effective October 1, 2026): EGD Rates 1/6/100/110/115/145/170, Union North Rates 01/10/20/100 for the North West and North East zones plus Rate 25, and Union South Rates M1/M2/M4/M5 (20 system-gas records). Monthly customer charges, block delivery charges in $/m3 (printed in cents), contract-demand charges, the quarterly gas supply (QRAM) commodity and transportation charges, Rider C (sales-service column), Rider J federal carbon (zero, with CRA evidence) and the facility carbon charge are separate components; Rider I expansion surcharges and marketer-only Dawn transportation are conditional; negotiated prices and ranges are conditions without values. Excluded: storage/transportation-only, unbundled and wholesale services (EGD 125/135/200/300/315/316/320/401; Union M7/M9/T1-T3). Riders D/E must print no amounts."
     },
     {
       "name": "Énergir",
@@ -101,16 +125,52 @@
       "utility_type": "gas",
       "scraper_module": "scrapers.utilities.atco_gas",
       "scraper_class": "ATCOGasScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.atco.com/en-ca/for-home/natural-gas/natural-gas-rates.html",
-          "source_type": "html",
-          "description": "ATCO residential natural gas distribution rates in Alberta",
+          "url": "https://gas.atco.com/content/dam/atco-gas-website/en-ca/assets/understanding-rates/documents/north-rate-schedule.pdf",
+          "source_type": "pdf",
+          "description": "ATCO Gas North Rate Schedules (AUC-approved; republished in place)",
           "is_primary": true
+        },
+        {
+          "url": "https://gas.atco.com/content/dam/atco-gas-website/en-ca/assets/understanding-rates/documents/south-rate-schedule.pdf",
+          "source_type": "pdf",
+          "description": "ATCO Gas South Rate Schedules (adds Riders W and E)",
+          "is_primary": true
+        },
+        {
+          "url": "https://gas.atco.com/en-ca/understanding-rates/how-rates-are-set.html",
+          "source_type": "html",
+          "description": "Script-rendered landing page linking both rate schedule PDFs",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.directenergy.ca/en/regulated/residential-natural-gas-rates",
+          "source_type": "html",
+          "description": "Direct Energy Regulated Services monthly default rate (Default Rate Tariff) chart for the ATCO Gas service area",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.directenergy.ca/en/regulated/commercial-natural-gas-rates",
+          "source_type": "html",
+          "description": "Same default rate chart on the business page",
+          "is_primary": false
+        },
+        {
+          "url": "https://ucahelps.alberta.ca/utility-choices/current-rates-and-pricing/default-rates/",
+          "source_type": "html",
+          "description": "Utilities Consumer Advocate $/GJ default-rate table: required monthly cross-check",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/fcrates/fuel-charge-rates.html",
+          "source_type": "html",
+          "description": "CRA fuel charge rates: federal charge zero from April 1, 2025; required carbon evidence",
+          "is_primary": false
         }
       ],
-      "notes": "ATCO Gas is one of the largest natural gas distribution companies in Alberta, serving over 1.1 million customers. Distribution charges are regulated by the Alberta Utilities Commission (AUC); commodity gas is purchased at market rates."
+      "notes": "ATCO Gas is one of the largest natural gas distribution companies in Alberta. Distribution charges are regulated by the Alberta Utilities Commission (AUC). Live from the North and South rate schedule PDFs: Low Use, Mid Use, High Use, Ultra High Use and Alternative Technology and Appliance (ATA) delivery service with fixed $/day, $/GJ and $/GJ/day demand charges, and Riders L and T (and South Rider W) as dated components. The default gas supply price is Direct Energy Regulated Services' monthly Default Rate Tariff, attached to Low, Mid and High Use only (the schedules it names) and required to match the UCA table for the current month; retailer contract prices are excluded. CRA zero federal fuel charge evidence is required. Riders A/B (municipal) and South Rider E are notes. Irrigation, producer receipt and unmetered gas light service excluded. The web summary is not used (South Ultra High Use 8.475 on the web versus 8.457 in the approved PDF)."
     },
     {
       "name": "EPCOR Natural Gas",
@@ -118,7 +178,7 @@
       "utility_type": "gas",
       "scraper_module": "scrapers.utilities.epcor_gas",
       "scraper_class": "EPCORGasScraper",
-      "status": "active",
+      "status": "retired",
       "sources": [
         {
           "url": "https://www.epcor.com/products-services/encor/rates/Pages/natural-gas-rate.aspx",
@@ -127,7 +187,60 @@
           "is_primary": true
         }
       ],
-      "notes": "EPCOR provides natural gas distribution in Edmonton and surrounding areas. Regulated by the Alberta Utilities Commission (AUC)."
+      "notes": "RETIRED 2026-10-09 (user decision): mis-registration. EPCOR does not distribute natural gas in Alberta (Edmonton gas distribution is ATCO Gas); the URL was a retail (EnCor) product page and is dead. EPCOR's regulated gas distribution is in Ontario and is now the separate entry 'EPCOR Natural Gas (Ontario)'. Skipped by monthly runs; stored seed records remain labelled history."
+    },
+    {
+      "name": "EPCOR Natural Gas (Ontario)",
+      "province": "ON",
+      "utility_type": "gas",
+      "scraper_module": "scrapers.utilities.epcor_gas_ontario",
+      "scraper_class": "EPCOROntarioGasScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.epcor.com/ca/en/on/aylmer-area/account/rates/natural-gas-rates.html",
+          "source_type": "html",
+          "description": "Aylmer area natural gas rates page: Rates 1-6 and gas supply charges",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.epcor.com/ca/en/on/kincardine-area/account/rates/natural-gas-rates.html",
+          "source_type": "html",
+          "description": "Southern Bruce (Kincardine and area) natural gas rates page: Rates 1, 6, 11 and 16",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.oeb.ca/sites/default/files/qram-epcor-aylmer-20261001-en.pdf",
+          "source_type": "pdf",
+          "description": "OEB QRAM notice (Aylmer, EB-2026-0225): gas supply price and effective date; URL follows the page date",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.oeb.ca/sites/default/files/qram-epcor-sb-20261001-en.pdf",
+          "source_type": "pdf",
+          "description": "OEB QRAM notice (Southern Bruce, EB-2026-0226): gas supply price and effective date",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/956907/File/document",
+          "source_type": "pdf",
+          "description": "OEB Decision and Rate Order EB-2026-0225, Appendix A approved schedules (found by case number in OEB RDS each run)",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/956917/File/document",
+          "source_type": "pdf",
+          "description": "OEB Decision and Rate Order EB-2026-0226, Appendix A approved schedules",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/fcrates/fuel-charge-rates.html",
+          "source_type": "html",
+          "description": "CRA fuel charge rates: federal charge zero from April 1, 2025; required carbon evidence",
+          "is_primary": false
+        }
+      ],
+      "notes": "EPCOR's OEB-regulated natural gas distribution in Ontario: EPCOR Natural Gas Limited Partnership (Aylmer) and EPCOR Southern Bruce Gas Inc. (Kincardine and area), modelled as two rate zones. Aylmer Rates 1 (residential and general service), 2, 3, 4 and 5 and Southern Bruce Rates 1, 6 and 11 are parsed live from EPCOR's rates pages; every value must appear in the OEB Decision and Rate Order Appendix A (which governs on variance), the gas supply charge must match the OEB QRAM notice and CRA zero-carbon evidence is required. Negotiated delivery ranges are conditions without values. Excluded: Aylmer Rate 6 (single ethanol facility) and Southern Bruce Rate 16 (direct-purchase contract; rider basis not identifiable). Replaces the retired, mis-registered Alberta 'EPCOR Natural Gas' entry (2026-10-09). New entry with no seed data: if sources fail it returns no records."
     },
     {
       "name": "Centra Gas Manitoba",
@@ -1807,8 +1920,14 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.ontario_ldc",
       "scraper_class": "OntarioLDCScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
+        {
+          "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/936444/File/document",
+          "source_type": "pdf",
+          "description": "OEB-approved Tariff of Rates and Charges (EB-2025-0012); delivery value source; prints no Retail Transmission Connection rate",
+          "is_primary": false
+        },
         {
           "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
           "source_type": "html",
@@ -1816,7 +1935,7 @@
           "is_primary": true
         }
       ],
-      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB)."
+      "notes": "Ontario LDC — OEB-regulated energy rates, LDC-specific delivery charges. Regulated by the Ontario Energy Board (OEB). The approved tariff prints only the Retail Transmission Network Service Rate; configured with connection_rate \"not_printed\" (user decision 2026-10-09), so its records carry no connection charge and a note saying so."
     },
     {
       "name": "Rideau St. Lawrence Distribution Inc.",
@@ -2050,16 +2169,52 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.atco_electric",
       "scraper_class": "ATCOElectricScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.atco.com/en-ca/for-home/electricity/understand-your-bill.html",
-          "source_type": "html",
-          "description": "ATCO Electric distribution tariff information",
+          "url": "https://electric.atco.com/content/dam/atco-electric-website/en-ca/assets/understanding-rates/2026-01-01-atco-electric-price-schedules.pdf",
+          "source_type": "pdf",
+          "description": "ATCO Electric 2026 distribution price schedules (AUC Decision 30300-D01-2025; republished in place; link rediscovered from the rates page model each run)",
           "is_primary": true
+        },
+        {
+          "url": "https://electric.atco.com/en-ca/understanding-rates/rates.html",
+          "source_type": "html",
+          "description": "ATCO Electric understanding rates page (Distribution Tariffs - Effective, riders)",
+          "is_primary": false
+        },
+        {
+          "url": "https://electric.atco.com/en-ca/understanding-rates/rates.model.json",
+          "source_type": "json",
+          "description": "Rates page model used to discover the current price-schedule and rider PDF links each run",
+          "is_primary": false
+        },
+        {
+          "url": "https://electric.atco.com/content/dam/atco-electric-website/en-ca/assets/understanding-rates/2026-01-01-rider-b.pdf",
+          "source_type": "pdf",
+          "description": "Rider B Balancing Pool Adjustment, January 1 to December 31, 2026",
+          "is_primary": false
+        },
+        {
+          "url": "https://electric.atco.com/content/dam/atco-electric-website/en-ca/assets/understanding-rates/2026-01-01-rider-g.pdf",
+          "source_type": "pdf",
+          "description": "Rider G Temporary Adjustment, January 1 to December 31, 2026",
+          "is_primary": false
+        },
+        {
+          "url": "https://electric.atco.com/content/dam/atco-electric-website/en-ca/assets/understanding-rates/2026-10-01-rider-s-q4-2026.pdf",
+          "source_type": "pdf",
+          "description": "Rider S SAS Adjustment, Q4 2026 (effective October 1, 2026)",
+          "is_primary": false
+        },
+        {
+          "url": "https://electric.atco.com/content/dam/atco-electric-website/en-ca/assets/understanding-rates/2025-09-01-rider-j.pdf",
+          "source_type": "pdf",
+          "description": "Rider J PBR Re-Opener Refund (ended February 28, 2026; recorded as a note, not a component)",
+          "is_primary": false
         }
       ],
-      "notes": "Alberta distribution utility serving rural Alberta. Distribution charges only; energy from retailers. Regulated by the AUC."
+      "notes": "Alberta distribution utility serving northern and east-central Alberta. Live parser of the 2026 price schedules: D11 Standard Residential, D13 Time of Use Residential (by request), D21 Standard Small General Service (up to 500 kW), D31 Large General Service - Distribution Connected and T31 Large General Service - Transmission Connected. Transmission, distribution and service rows are separate components and must reconcile to each printed TOTAL PRICE; Riders B, G and S are separate dated components cross-checked against the copies bound into the price schedules. T31 transmission charges are an AESO tariff flow-through not priced here (noted, no component). Rider A municipal assessment and price options F/H/P are notes. Excluded: D22 Small Technology, D23 EV charging, D24/D34 isolated industrial areas, D25/D26 irrigation, D32 standby, D33/T33 opportunity, D41/D44 oilfield, D51/D52/D56 farm, D61/D63 lighting. Energy is billed separately (Rate of Last Resort: Direct Energy Regulated Services). Regulated by the AUC."
     },
     {
       "name": "FortisAlberta",
@@ -2067,16 +2222,28 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.fortisalberta",
       "scraper_class": "FortisAlbertaScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
           "url": "https://www.fortisalberta.com/customer-service/rates-and-billing/rates-options-and-riders",
           "source_type": "html",
-          "description": "FortisAlberta Rates, Options and Riders schedules (AUC-approved tariff PDFs)",
+          "description": "FortisAlberta Rates, Options and Riders schedules (AUC-approved tariff PDFs); newest edition in effect re-selected each run",
           "is_primary": true
+        },
+        {
+          "url": "https://www.fortisalberta.com/docs/default-source/default-document-library/rates-options-and-riders-schedules-effective-october1-2026.pdf?sfvrsn=859d971b_10",
+          "source_type": "pdf",
+          "description": "Rates, Options and Riders Schedules effective October 1, 2026",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.aeso.ca/rules-standards-and-tariff/tariff/",
+          "source_type": "html",
+          "description": "AESO ISO tariff; Rate 65 transmission is a pass-through of this tariff (no value stored)",
+          "is_primary": false
         }
       ],
-      "notes": "Alberta distribution utility serving central/southern Alberta. Distribution charges only; energy from retailers. Regulated by the AUC."
+      "notes": "Alberta distribution utility serving central/southern Alberta. Live Rates 11 Residential, 41 Small General Service, 61 General Service, 63 Large General Service and 65 Transmission Connected from the newest in-effect Rates, Options and Riders PDF (link date must match the printed effective date): transmission and distribution charges as separate components, kW/kVA demand pairs as alternatives, and the Base Transmission Adjustment, Quarterly Transmission Adjustment and Balancing Pool Allocation riders as dated components. Options A/I are conditional; municipal franchise riders are notes. Rate 65 transmission is the AESO tariff passed through (value-less component). Excluded: farm (21/22/23), irrigation (26), lighting (31/33/38), oil and gas (44/45), EV charging (62), opportunity transmission (66), distributed generation (Option M), customer-specific facilities (Rider E) and REA charges. Energy is billed separately (Rate of Last Resort: EPCOR Energy Alberta). Regulated by the AUC."
     },
     {
       "name": "EPCOR Distribution",
@@ -2084,16 +2251,46 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.epcor_distribution",
       "scraper_class": "EPCORDistributionScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.epcor.com/products-services/power/rates-tariffs/Pages/default.aspx",
+          "url": "https://www.epcor.com/ca/en/ab/edmonton/account/rates/special-fees-charges/electricity-tariffs.html",
           "source_type": "html",
-          "description": "EPCOR Distribution electricity rate schedules",
+          "description": "EPCOR Edmonton electricity tariffs and riders page; dated DAS/SAS tariff and rider PDFs discovered each run",
           "is_primary": true
+        },
+        {
+          "url": "https://www.epcor.com/content/dam/epcor/documents/rates/distribution-access-service-tariffs/2026-01-distribution-access-service-tariff.pdf",
+          "source_type": "pdf",
+          "description": "EPCOR Distribution & Transmission Distribution Access Service tariff, effective January 1, 2026 (2026 interim rates)",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.epcor.com/content/dam/epcor/documents/rates/system-access-service-tariffs/2026-01-system-access-service-tariff.pdf",
+          "source_type": "pdf",
+          "description": "EPCOR System Access Service (transmission) tariff, effective January 1, 2026 (2026 interim rates)",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.epcor.com/content/dam/epcor/documents/rates/riders/2026-01-rider-g.pdf",
+          "source_type": "pdf",
+          "description": "Rider G Balancing Pool Rider, January 1 to December 31, 2026",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.epcor.com/content/dam/epcor/documents/rates/riders/2026-01-rider-j.pdf",
+          "source_type": "pdf",
+          "description": "Rider J SAS True-Up Rider, January 1 to December 31, 2026",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.epcor.com/content/dam/epcor/documents/rates/riders/2026-10-rider-k.pdf",
+          "source_type": "pdf",
+          "description": "Rider K TCDA True-Up Rider, effective October 1, 2026 (quarterly)",
+          "is_primary": false
         }
       ],
-      "notes": "Alberta distribution utility serving Edmonton. Distribution charges only; energy from retailers. Regulated by the AUC."
+      "notes": "Alberta distribution utility serving Edmonton (EPCOR Distribution & Transmission Inc.). Live 2026 interim DAS + SAS schedules for DAS-R Residential, DAS-SC (<50 kVA), DAS-MC (50 to <150 kVA), DAS-TOU (150 to <5,000 kVA secondary) and DAS-TOUP (primary, 150 kVA and over), medium confidence because the AUC approved them on an interim basis. Distribution and transmission charges are separate components; values must match the tariffs' own lookup tables; Riders G, J and K are dated components. The SAS operating reserve charge is a percentage of the AESO pool price (value-less market component). Excluded: CS/CST (closed, customer-specific), DC (AESO tariff flow-through), DGEN (generation) and lighting. Edmonton local access fee is a note. Energy is billed separately (Rate of Last Resort: EPCOR Energy Alberta). Regulated by the AUC."
     },
     {
       "name": "ENMAX Power",
@@ -2101,16 +2298,22 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.enmax_power",
       "scraper_class": "ENMAXPowerScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.enmax.com/home/rates-and-billing/understand-your-bill",
+          "url": "https://www.enmax.com/tariffs",
           "source_type": "html",
-          "description": "ENMAX Power distribution tariff information",
+          "description": "ENMAX tariffs page; 'View current distribution tariff' link (opaque asset URL, rediscovered each run)",
           "is_primary": true
+        },
+        {
+          "url": "https://assets.enmax.com/api/public/content/cd1e0f8abc01404693d2c35a4502d11d?v=f9d61f49",
+          "source_type": "pdf",
+          "description": "ENMAX Power Corporation Distribution Tariff Rate Schedule, rates in effect as of October 1, 2026 (new edition each quarter)",
+          "is_primary": false
         }
       ],
-      "notes": "Alberta distribution utility serving Calgary. Distribution charges only; energy from retailers. Regulated by the AUC."
+      "notes": "Alberta distribution utility serving Calgary (ENMAX Power Corporation). Live parser of the current Distribution Tariff Rate Schedule: D100 Residential, D200 Small Commercial, D300 Medium Commercial, D310 Large Commercial Secondary and D410 Large Commercial Primary, with distribution (DAS) and transmission (SAS) charges as separate components and the Balancing Pool Allocation, quarterly TAC Adjustment and TAC Deferral Account riders as dated components. D300 transformation credits are conditional; the City of Calgary Local Access Fee is a note. Excluded: D500 streetlights, D600 distributed generation; D700 transmission-connected is source-blocked (only a service charge is printed; transmission is an ISO cost flow-through). Energy is billed separately (Rate of Last Resort: ENMAX Energy). Regulated by the AUC (Decision 30299-D01-2025)."
     },
     {
       "name": "Direct Energy Regulated Services",
@@ -2118,16 +2321,28 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.direct_energy_regulated",
       "scraper_class": "DirectEnergyRegulatedScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.directenergyregulatedservices.com/",
+          "url": "https://www.directenergy.ca/en/regulated/residential-electricity-rates",
           "source_type": "html",
-          "description": "Direct Energy Regulated Rate Option for ATCO Electric area",
+          "description": "Direct Energy Regulated Services residential Rate of Last Resort page (price and term)",
           "is_primary": true
+        },
+        {
+          "url": "https://www.directenergy.ca/en/regulated/commercial-electricity-rates",
+          "source_type": "html",
+          "description": "Direct Energy Regulated Services commercial Rate of Last Resort page (small general service)",
+          "is_primary": false
+        },
+        {
+          "url": "https://ucahelps.alberta.ca/utility-choices/current-rates-and-pricing/default-rates/",
+          "source_type": "html",
+          "description": "Utilities Consumer Advocate default-rates table: required Rate of Last Resort price/term cross-check",
+          "is_primary": false
         }
       ],
-      "notes": "RRO provider for ATCO Electric service area. Regulated Rate Option tracks AESO pool price. Regulated by the AUC."
+      "notes": "Rate of Last Resort (RoLR) provider for the ATCO Electric service area; RoLR replaced the Regulated Rate Option on January 1, 2025. Live residential and small business energy price (12.02 cents/kWh, fixed January 1, 2025 to December 31, 2026) from the provider pages, cross-checked with the UCA table; fails closed after the term ends until the next term is published. The daily administration charge is not emitted (website value undated; last dated schedule differs). Old RRO seeds remain fallback/history. Regulated by the AUC."
     },
     {
       "name": "ENMAX Energy Corporation",
@@ -2135,16 +2350,28 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.enmax_energy",
       "scraper_class": "ENMAXEnergyScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.enmax.com/home/rates-and-billing/understand-your-bill/regulated-rate-option",
+          "url": "https://www.enmax.com/rateoflastresort",
           "source_type": "html",
-          "description": "ENMAX Energy Regulated Rate Option for Calgary area",
+          "description": "ENMAX Rate of Last Resort page (term; links the rate schedule)",
           "is_primary": true
+        },
+        {
+          "url": "https://assets.enmax.com/api/public/content/516f331f11314de58342afacbb98bc1e?v=52c9f5c0",
+          "source_type": "pdf",
+          "description": "ENMAX Energy Rate of Last Resort rate schedule, Interim 2026 Regulated Rate Tariff (rediscovered from the RoLR page each run)",
+          "is_primary": false
+        },
+        {
+          "url": "https://ucahelps.alberta.ca/utility-choices/current-rates-and-pricing/default-rates/",
+          "source_type": "html",
+          "description": "Utilities Consumer Advocate default-rates table: required Rate of Last Resort price/term cross-check",
+          "is_primary": false
         }
       ],
-      "notes": "RRO provider for ENMAX Power (Calgary) service area. Regulated Rate Option tracks AESO pool price. Regulated by the AUC."
+      "notes": "Rate of Last Resort (RoLR) provider for the ENMAX Power (Calgary) service area; RoLR replaced the Regulated Rate Option on January 1, 2025. Live residential (D100) and small business (D200, under 250 MWh/year) energy price (12.06 cents/kWh, fixed January 1, 2025 to December 31, 2026) plus daily administration charges from the Interim 2026 rate schedule (medium confidence), cross-checked with the UCA table; fails closed after the term ends. Municipally set RoLR areas (Red Deer, Cardston, Ponoka) and D300/D310/D410 are not covered. Old RRO seeds remain fallback/history. Regulated by the AUC."
     },
     {
       "name": "EPCOR Energy Alberta",
@@ -2152,16 +2379,64 @@
       "utility_type": "electricity",
       "scraper_module": "scrapers.utilities.epcor_energy_alberta",
       "scraper_class": "EPCOREnergyAlbertaScraper",
-      "status": "active",
+      "status": "partial",
       "sources": [
         {
-          "url": "https://www.epcor.com/products-services/power/rates-tariffs/Pages/regulated-rate-option.aspx",
+          "url": "https://www.epcor.com/ca/en/ab/edmonton/start-services/home/rate-of-last-resort.html",
           "source_type": "html",
-          "description": "EPCOR Energy Alberta Regulated Rate Option for Edmonton area",
+          "description": "EPCOR Rate of Last Resort page, Edmonton (EPCOR Distribution area)",
           "is_primary": true
+        },
+        {
+          "url": "https://www.epcor.com/ca/en/ab/edmonton/start-services/business/regulated.html",
+          "source_type": "html",
+          "description": "EPCOR small commercial Rate of Last Resort, Edmonton (250,000 kWh/year limit)",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.epcor.com/ca/en/ab/edmonton/account/rates/special-fees-charges/electricity-tariffs.html",
+          "source_type": "html",
+          "description": "EPCOR Edmonton electricity tariffs page; regulated rate tariff (price schedule) PDF discovered each run",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.epcor.com/ca/en/ab/other/start-services/home/rate-of-last-resort.html",
+          "source_type": "html",
+          "description": "EPCOR Rate of Last Resort page, FortisAlberta service area",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.epcor.com/ca/en/ab/other/start-services/business/regulated.html",
+          "source_type": "html",
+          "description": "EPCOR small commercial Rate of Last Resort, FortisAlberta service area",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.epcor.com/ca/en/ab/other/account/rates/special-fees-charges/electricity-tariffs.html",
+          "source_type": "html",
+          "description": "EPCOR tariffs page for the FortisAlberta service area; regulated rate tariff PDF discovered each run",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.epcor.com/content/dam/epcor/documents/rates/regulated-rate-tariffs/2026-07-edmonton-regulated-rate-tariff.pdf",
+          "source_type": "pdf",
+          "description": "EPCOR Energy Alberta regulated rate tariff price schedule, EPCOR Distribution area, effective July 1, 2026",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.epcor.com/content/dam/epcor/documents/rates/regulated-rate-tariffs/2026-07-fortis-regulated-rate-tariff.pdf",
+          "source_type": "pdf",
+          "description": "EPCOR Energy Alberta regulated rate tariff price schedule, FortisAlberta area, effective July 1, 2026",
+          "is_primary": false
+        },
+        {
+          "url": "https://ucahelps.alberta.ca/utility-choices/current-rates-and-pricing/default-rates/",
+          "source_type": "html",
+          "description": "Utilities Consumer Advocate default-rates table: required Rate of Last Resort price/term cross-check",
+          "is_primary": false
         }
       ],
-      "notes": "RRO provider for EPCOR Distribution (Edmonton) service area. Regulated Rate Option tracks AESO pool price. Regulated by the AUC."
+      "notes": "Rate of Last Resort (RoLR) provider for the EPCOR Distribution (Edmonton) and FortisAlberta service areas; RoLR replaced the Regulated Rate Option on January 1, 2025. Live residential and small business (250,000 kWh/year limit) records per area: energy 12.01 cents/kWh fixed January 1, 2025 to December 31, 2026 and the area's daily administration charge from the price schedule effective July 1, 2026, cross-checked with the UCA table; fails closed after the term ends. The REA price schedule is not covered. Old RRO seeds remain fallback/history. Regulated by the AUC."
     },
     {
       "name": "Alberta Electric System Operator",

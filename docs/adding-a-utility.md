@@ -9,16 +9,21 @@ eligibility, not an assumption that NECB 2025 defines tariff classes. Do not exp
 farm/oil-field processes, irrigation, standalone lighting, wholesale or other non-building
 services merely to complete a catalogue. Existing implementations remain reference data.
 
-The active run extends the 16 already-registered utilities in BC/QC/MB/SK/NB/NS/PE/NL;
-it does not onboard additional inventory utilities or update ON/AB/YT/NT/NU. Use
-this guide to fill missing classes in the owning utility module, and consult the
-[current coverage matrix](phase5_completion_matrix.md) before choosing work.
+Every active registered utility except AESO (a market reference) now has live output: the
+16 campaign utilities in BC/QC/MB/SK/NB/NS/PE/NL, the four territorial utilities, all 47 active
+Ontario distributors and, since batch 12 (October 9), Alberta electricity and Ontario/Alberta gas.
+Batch 12 also registered one new utility, EPCOR Natural Gas (Ontario), to replace a mis-registered
+Alberta entry that is now `status: "retired"`; other inventory utilities are not being onboarded
+without a decision. Use this guide to fill missing classes in the owning utility module, and
+consult the [current coverage matrix](phase5_completion_matrix.md) before choosing work.
 Current examples include page-aware domestic options, NL Hydro service alternatives,
 and SaskEnergy/Centra gas variants with separately dated required components. The
 October 5 gas batch adds two more reusable patterns: following a page's current
 document link each run (Energir's tariff PDF, Eastward's monthly rate table) and
-requiring a page summary to agree with that document before accepting live output. They
-are reusable patterns, not proof that every class at those utilities is complete.
+requiring a page summary to agree with that document before accepting live output. Batch 12
+patterns (separate transmission and dated riders, interim rates, value-less market components,
+independent cross-check sources) are listed at the end of this guide. They are reusable
+patterns, not proof that every class at those utilities is complete.
 
 ## 1. Research the utility
 
@@ -153,6 +158,12 @@ Add an entry to `data/sources/registry.json`:
 }
 ```
 
+Use `"status": "partial"` while building classes remain unaudited (most live utilities are
+partial). Monthly runs scrape only `active` and `partial` entries; `merged` entries (absorbed
+Ontario distributors, with `merged_into`) and `retired` entries (mis-registrations) are skipped
+but keep their stored history. Do not delete an entry that has history: retire it and add a
+corrected entry, as was done for EPCOR's Ontario gas utility.
+
 ## 5. Test it
 
 ```bash
@@ -250,3 +261,17 @@ This prevents broken parsers from silently corrupting data. Changes are classifi
 8. Update the README, maintainer guides and coverage/gap reports with actual test and source-check results. Fixture-tested but inaccessible sources remain blocked, not live-verified.
 9. Preserve stable tariff names when adding coverage. Shared published codes can have distinct billing variants (for example, per-account and bulk per-unit service); keep those variants separate. A combined code record is valid only while every published column represented by it agrees.
 10. Resolve dated interim/future tariff phases before using advertised prices. A product page may show a later pricing structure while the tariff has conditional interim rules. Preserve the condition and enrollment status explicitly; do not claim a participant's operational status is known. Keep plan identity stable across transitions so older phases remain history rather than duplicate current products.
+
+## Batch 12 patterns: wires, default supply and market-indexed charges
+
+These rules come from the Alberta electricity, Ontario/Alberta gas and Ontario PUC Distribution
+work (October 9). Utility details are in the [gap report](live_parser_gap_report.md).
+
+- **Transmission is its own component.** Alberta wires tariffs publish distribution and transmission (System Access Service) charges separately; store transmission as `transmission` components instead of folding it into distribution.
+- **Current riders are dated components.** Store each current rider (balancing pool, quarterly transmission/TAC adjustments, true-ups) as its own component with its effective date and end date or quarter gate, refreshed each run. Exclude an expired rider by its date (a note may remain).
+- **Printed totals must reconcile.** When a schedule prints a total (ATCO Electric's TOTAL PRICE rows), the separate transmission, distribution and service components must add up to it or the class is rejected. When a tariff carries its own lookup tables (EPCOR Distribution), parsed values must match them.
+- **Interim rates are labelled.** A tariff stamped interim (EPCOR Distribution's "2026 INTERIM RATE", like Qulliq) may be live at `medium` confidence with an interim note while the source still says interim.
+- **Market-indexed parts have no number.** A charge that follows a market (Ontario non-RPP demand-class energy: Ontario Electricity Market Price plus Class B Global Adjustment; EPCOR's operating reserve as a percentage of the AESO pool price) is a component with `charge_value=None`, `market_reference` and `market_source_url`; the site shows "Variable". Never store a modeled, averaged or guessed value in a tariff. A pass-through of another published tariff (FortisAlberta Rate 65 transmission) can also be value-less; a flow-through with no published price (ATCO T31 transmission) is a note.
+- **Use independent cross-check sources.** Where an official second source exists, require it and fail closed on a mismatch: the Utilities Consumer Advocate default-rates table for Alberta Rate of Last Resort and default gas prices; the OEB Decision and Rate Order Appendix A and the QRAM notice for Ontario gas; the CRA fuel-charge page for zero federal carbon. A fixed-term product (Alberta Rate of Last Resort, to December 31, 2026) stops being live after its term until the next term is published.
+- **Per-document OEB exceptions need evidence.** `OEB_TARIFF_DOCUMENTS` entries may carry `"extract": {"y_tolerance": N}` for PDFs whose values print above their labels; only PUC Distribution carries `"connection_rate": "not_printed"`, because its approved tariff prints no Retail Transmission Connection rate (each record notes it). Every other document stays strict.
+- **No seed, no output.** A newly registered utility without seed data (EPCOR Natural Gas (Ontario); the Ontario successors Enova and GrandBridge) returns no records when its sources fail. Do not invent a seed just to keep output.

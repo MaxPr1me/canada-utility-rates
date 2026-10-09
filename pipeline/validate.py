@@ -177,6 +177,9 @@ def run_validation(conn: sqlite3.Connection) -> list[dict]:
 
 def print_issues(issues: list[dict]) -> None:
     """Print validation issues in a readable format."""
+    # Windows consoles default to cp1252, which cannot print some tariff names.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
     print()
     print("=" * 60)
     print("  DATA VALIDATION REPORT")
