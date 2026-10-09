@@ -43,7 +43,7 @@ unverified fallback records remain estimates regardless of the export date.
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
 | Historical snapshots | **3,616**; batch 12 runs 27 and 28 appended 563 and 40 without changing prior snapshots |
 | DB validation | **0 errors, 2 existing AESO warnings** |
-| Deterministic tests | **1,564 passing** across 8 modules |
+| Deterministic tests | **1,574 passing** across 8 modules |
 
 Live output currently includes BC Hydro (17), FortisBC Electric (11), Manitoba Hydro (18), NB Power (10),
 Nova Scotia Power (18), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
@@ -72,8 +72,9 @@ entry), PUC Distribution and value-less market energy components for Ontario dem
 (Phase 6B). Open batch 12 decisions are listed in the matrix queue. In progress and not yet
 published: the observed IESO market model (Phase 6A, blocked because the IESO keeps only about
 90 days of hourly day-ahead price files; options await a user decision), market wording and
-charge formatting on the site, a per-run live/seed summary in `run_scrape`, and the Phase 7A
-crosswalk, 7B engine and tax table (built, awaiting user review). Then the remaining future
+charge formatting on the site, and the Phase 7A
+crosswalk, 7B engine and tax table (built, awaiting user review). A per-run live/seed summary in
+`run_scrape` is now published. Then the remaining future
 phases (see the Roadmap): 6C-6E market work, 7 Representative Models, 8 automatic model refresh
 and 9 product follow-up including the Across-Canada comparison. First CI runs of the updated
 workflows are still unverified.
@@ -166,7 +167,8 @@ python -m pipeline.run_scrape
 
 **What this does:** Runs every active scraper, fetches rate data from official utility websites, validates it, and stores it in the database.
 
-Check the per-utility `Live-parsed` and `Seed fallback` messages. A final
+The end-of-run summary now counts live and seed (estimated) records and names seed-only
+utilities; on GitHub Actions the same table is written to the run's Summary page. A final
 `utilities succeeded` count only means execution completed, not that every rate was live.
 Run `python -m pipeline.validate` before exporting. Network retries and rendered pages
 can make a full scrape take several minutes.
@@ -259,7 +261,7 @@ canada-utility-costs/
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── tests/                    ← 1,564 deterministic tests across 8 test modules
+├── tests/                    ← 1,574 deterministic tests across 8 test modules
 │   ├── fixtures/             ← Source-derived fixtures; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
@@ -465,7 +467,7 @@ features, **not evidence that all registered utilities or published classes are 
 | 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | All nine active gas utilities have live output: the six campaign utilities plus, from batch 12 (October 9), Enbridge Gas (20), ATCO Gas (10) and the new EPCOR Natural Gas (Ontario) entry (10), which replaces a retired, mis-registered Alberta entry; building-service gaps and open decisions remain |
 | 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Batch 12 (October 9): ENMAX Power, ATCO Electric, EPCOR Distribution (2026 interim rates, medium confidence) and FortisAlberta live (5 each; transmission and dated riders separate) plus Rate of Last Resort energy from all three providers (8); AESO stays a market reference (Phase 6C); transmission-connected and admin-charge decisions open |
 | 5G: Ontario | Batches 1-2 (October 7-8) plus PUC Distribution (October 9; its tariff prints no connection rate, noted on each record): all 47 active distributors live from OEB tariff sheets (490 records); rejected classes no longer re-emit estimates. Non-RPP demand classes carry a value-less market energy component (Phase 6B) | Done for active distributors; observed market energy waits for 6A |
-| 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; first CI run verification and provenance reporting remain |
+| 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; per-run live/seed summary published (October 9); first CI run verification remains |
 
 **Definition of done for each utility:** account for the standard published classes
 relevant to building energy costs, including single-family homes,

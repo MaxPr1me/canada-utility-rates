@@ -25,6 +25,7 @@ import hashlib
 import importlib
 import json
 import logging
+import os
 import sqlite3
 import sys
 from dataclasses import asdict
@@ -35,6 +36,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from pipeline.export_json import derive_provenance
 from scrapers.base import BaseScraper, TariffRecord
 from scrapers.registry import load_registry, get_active_utilities
 from scrapers.utils.logging_config import setup_logging
@@ -263,6 +265,98 @@ def store_results(records: list[TariffRecord], run_id: int, conn: sqlite3.Connec
     return stored
 
 
+# ─── Run provenance summary ──────────────────────────────────
+
+# Ranked problems first; the summary table is sorted in this order.
+SUMMARY_STATUS_ORDER = ("failed", "no valid records", "seed only", "live + seed", "live")
+
+
+def tally_provenance(records: list[TariffRecord]) -> dict[str, int]:
+    """Count records the way the site labels them: ``live`` or ``seed`` (estimated)."""
+    counts = {"live": 0, "seed": 0}
+    for record in records:
+        counts[derive_provenance(record.confidence, record.notes)] += 1
+    return counts
+
+
+def summarize_run(per_utility: dict[str, dict]) -> dict:
+    """Aggregate per-utility tallies into totals, problem lists and problems-first rows.
+
+    Each value holds ``live``/``seed`` counts of valid records, an ``invalid``
+    count and ``error``, which is set only when the utility failed (no scraper
+    configured or an exception).
+    """
+    rows = []
+    for name, tally in per_utility.items():
+        live, seed = tally.get("live", 0), tally.get("seed", 0)
+        error = tally.get("error")
+        if error is not None:
+            status = "failed"
+        elif live + seed == 0:
+            status = "no valid records"
+        elif live == 0:
+            status = "seed only"
+        else:
+            status = "live + seed" if seed else "live"
+        rows.append({"utility": name, "live": live, "seed": seed,
+                     "invalid": tally.get("invalid", 0), "status": status, "error": error})
+    rows.sort(key=lambda row: (
+        SUMMARY_STATUS_ORDER.index(row["status"]), not row["invalid"], row["utility"].lower(),
+    ))
+
+    def names_with(status: str) -> list[str]:
+        return sorted((row["utility"] for row in rows if row["status"] == status), key=str.lower)
+
+    return {
+        "utilities": len(rows),
+        "live": sum(row["live"] for row in rows),
+        "seed": sum(row["seed"] for row in rows),
+        "invalid": sum(row["invalid"] for row in rows),
+        "failed": names_with("failed"),
+        "no_records": names_with("no valid records"),
+        "seed_only": names_with("seed only"),
+        "rows": rows,
+    }
+
+
+def format_summary_markdown(summary: dict, dry_run: bool = False) -> str:
+    """Render a run summary as a short Markdown section with problem utilities first."""
+    def cell(text: str) -> str:
+        return " ".join(text.split()).replace("|", "\\|")
+
+    lines = ["## Scrape provenance summary", ""]
+    if dry_run:
+        lines += ["_Dry run: nothing saved to the database._", ""]
+    lines += [
+        f"- Live records: {summary['live']}; seed (estimated) records: {summary['seed']}; "
+        f"invalid records: {summary['invalid']}",
+        f"- Utilities: {summary['utilities']}; failed: {len(summary['failed'])}; "
+        f"no valid records: {len(summary['no_records'])}; seed only: {len(summary['seed_only'])}",
+        "",
+        "| Utility | Live | Seed | Invalid | Status |",
+        "| --- | ---: | ---: | ---: | --- |",
+    ]
+    for row in summary["rows"]:
+        status = row["status"]
+        if row["error"]:
+            reason = " ".join(row["error"].split())
+            status += ": " + (reason if len(reason) <= 120 else reason[:117] + "...")
+        lines.append(f"| {cell(row['utility'])} | {row['live']} | {row['seed']} | {row['invalid']} | {cell(status)} |")
+    return "\n".join(lines) + "\n"
+
+
+def append_step_summary(markdown: str) -> None:
+    """Append Markdown to the GitHub Actions job summary; a write failure only logs a warning."""
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not path:
+        return
+    try:
+        with open(path, "a", encoding="utf-8", errors="replace") as handle:
+            handle.write(markdown)
+    except (OSError, ValueError) as exc:
+        logger.warning("Could not append the run summary to GITHUB_STEP_SUMMARY (%s): %s", path, exc)
+
+
 # ─── Main ─────────────────────────────────────────────────────
 
 def main() -> None:
@@ -328,6 +422,7 @@ def main() -> None:
     # Run scrapers
     all_records: list[TariffRecord] = []
     errors: list[str] = []
+    per_utility: dict[str, dict] = {}
     attempted = 0
     succeeded = 0
 
@@ -339,11 +434,13 @@ def main() -> None:
         scraper = load_scraper(entry)
         if scraper is None:
             errors.append(f"{name}: no scraper configured")
+            per_utility[name] = {"error": "no scraper configured"}
             continue
 
         try:
             records = scraper.scrape()
             valid, invalid = validate_batch(records)
+            counts = tally_provenance(valid)
 
             if invalid:
                 errors.append(f"{name}: {len(invalid)} invalid records")
@@ -355,10 +452,17 @@ def main() -> None:
                 "%s: scraped %d tariffs (%d valid, %d invalid)",
                 name, len(records), len(valid), len(invalid),
             )
+            per_utility[name] = {**counts, "invalid": len(invalid), "error": None}
+            logger.log(
+                logging.INFO if counts["live"] else logging.WARNING,
+                "%s: %d live, %d seed, %d invalid",
+                name, counts["live"], counts["seed"], len(invalid),
+            )
 
         except Exception as e:
             logger.error("FAILED to scrape %s: %s", name, e, exc_info=True)
             errors.append(f"{name}: {e}")
+            per_utility[name] = {"error": str(e) or type(e).__name__}
 
     # Store results
     if conn and run_id and all_records:
@@ -386,10 +490,17 @@ def main() -> None:
         conn.close()
 
     # Summary
+    summary = summarize_run(per_utility)
     print()
     print("=" * 60)
     print(f"  Scrape complete: {succeeded}/{attempted} utilities succeeded")
     print(f"  Total tariffs scraped: {len(all_records)}")
+    print(f"  Live records: {summary['live']} | Seed (estimated) records: {summary['seed']}")
+    if summary["seed_only"]:
+        print(f"  Seed-only utilities ({len(summary['seed_only'])}): {', '.join(summary['seed_only'])}")
+    if summary["no_records"]:
+        print(f"  Utilities with no valid records ({len(summary['no_records'])}): "
+              f"{', '.join(summary['no_records'])}")
     if errors:
         print(f"  Errors: {len(errors)}")
         for err in errors:
@@ -397,6 +508,8 @@ def main() -> None:
     if args.dry_run:
         print("  (dry run — nothing saved to database)")
     print("=" * 60)
+
+    append_step_summary(format_summary_markdown(summary, dry_run=args.dry_run))
 
 
 if __name__ == "__main__":

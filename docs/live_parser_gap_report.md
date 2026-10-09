@@ -10,7 +10,7 @@ ATCO Gas, EPCOR Natural Gas (Ontario)). Export: 1,396 stored tariff versions / 1
 campaign utilities, 109 territorial, 490 Ontario electricity at 47 distributors, 28 Alberta
 electricity and 40 Ontario/Alberta gas. History: 3,616 snapshots (runs 27 and 28 appended 563 and 40;
 prior snapshots and non-target tariffs unchanged). DB validation: 0 errors, 2 existing AESO warnings;
-1,564 passing tests. AESO (a market reference) is the only active registered utility without live
+1,574 passing tests. AESO (a market reference) is the only active registered utility without live
 output. Fixtures, export timestamps and process-success counts alone do not prove live coverage.
 
 **Evidence (historical, batch 11):** The October 7 batch 11 export (a full refresh of all 20 campaign utilities) has 358
@@ -97,7 +97,7 @@ other live utilities still have catalogue, component or verification gaps.
 - **TOU 80 and CPP 70:** enrollment is closed. October records are named `Conditional Pilot` with explicit interim-phase eligibility and an October 31 end date. The tariff makes interim applicability depend on system-restoration provisions; the scraper does not verify an individual participant's restoration status or assert that every customer is on this phase. Product pages' advertised time-varying prices are not substituted for dated interim charges.
 - **Dated transition:** November 1, 2026 winter prices are implemented and tested but not activated on October 2. TOU uses source-derived morning/evening windows and holiday rules; CPP uses declared four-hour events and published event/notice limits. Stable plan names let a newer phase supersede its old version in the latest-per-name browser. Rates after the supported 2026 tariff/rider year fail closed pending a new review.
 - **MURB and solar:** Rate89 adds its General/MURB FAM/DSM/storm rows, ten-unit house-meter eligibility and minimum bill as a condition. The printed peak-price weekend/holiday rule was visually checked. Solar Garden and Community Solar are separate optional adjustments, credited against subscriber-attributable generation rather than household consumption.
-- **Verification:** The source fixture includes MURB pages35-37, matching rider rows, Solar Garden69-73 and Community Solar80-83. Tests cover required continuations, billing basis, positive prices and repeat storage/export; the full suite had 994 passing tests across 8 modules at batch 10 (1,564 after batch 12).
+- **Verification:** The source fixture includes MURB pages35-37, matching rider rows, Solar Garden69-73 and Community Solar80-83. Tests cover required continuations, billing basis, positive prices and repeat storage/export; the full suite had 994 passing tests across 8 modules at batch 10 (1,574 after batch 12).
 - **Business:** Rates 10/11/12 preserve FAM/DSM/storm riders and conditional transformer discounts; pilots 72/73/82/83 are conditional October-interim/November-date-gated variants, never evidence of an individual's restoration status.
 - **Industrial (batch 10):** Small (21), Medium (22) and Large Industrial firm (23) plus the Interruptible Rider (25) come from book pages 40-49 with their own FAM/DSM/storm rows. The distribution cost adder, transformer-ownership reduction and interruptible demand credit (-$7.638/kVA, only on billed interruptible demand) are conditional; minimum bills and interruption penalties are conditions. ELIADC (customer-specific) and Load Retention (contract) are excluded; one-part real-time pricing is market-indexed and deferred with market-rate work.
 - **Still incomplete:** operational confirmation of which pilot phase applies to existing participants and further building-service classes. MURB, solar and business pilots are implemented; residential product pages are not the entire building tariff catalogue.
@@ -141,7 +141,7 @@ other live utilities still have catalogue, component or verification gaps.
 - **Billing context:** preserve minimum-bill rules, demand ratchets and TOU hours from continuation pages. These are source conditions, not a calculated bill total. kVA eligibility is kept as text rather than written into kW-only fields.
 - **Safety gates:** require complete column counts, source dates that are not future dates, correct currency/units, and required continuation data. Reject malformed groups independently. Known failed classes retain unverified seeds; unknown classes are logged, not invented.
 - **Fixtures:** six SaskPower JSON fixtures cover residential, supplied/customer-owned transformation, renewable access and retained farm/oil-field PDFs, with source URLs, retrieval dates, page numbers and table/condition excerpts.
-- **Tests:** 53 focused SaskPower parser/storage/export cases; 994 tests in the full suite at batch 10 (1,564 after batch 12). Coverage includes source-value mutations, cent glyph variation, wrong units/signs, missing/reordered/divergent columns, dates, failed fetches, required continuations, per-unit billing, seasonal/equipment units, historical closure notices, repeated storage and shared-code/codeless-class identity.
+- **Tests:** 53 focused SaskPower parser/storage/export cases; 994 tests in the full suite at batch 10 (1,574 after batch 12). Coverage includes source-value mutations, cent glyph variation, wrong units/signs, missing/reordered/divergent columns, dates, failed fetches, required continuations, per-unit billing, seasonal/equipment units, historical closure notices, repeated storage and shared-code/codeless-class identity.
 - **Persistence:** targeted storage/export retained all 519 previous snapshots and unchanged non-SaskPower records. The two old generic commercial seed records remain labelled estimates; history was not deleted.
 
 **Building audit result:** the currently published building-service schedules linked
@@ -240,7 +240,7 @@ in-scope gas and building-catalogue gaps. Ontario and Alberta ran as separate bl
 | DB validation | 0 errors, 2 existing AESO warnings |
 | Newly added SaskPower live tariffs | 40 since the original residential-only parser |
 | Observation provenance | October 1 CI baseline plus later stored batches through October 9; utility source-check dates are listed in the matrix |
-| Deterministic suite | 1,564 passing across 8 test modules |
+| Deterministic suite | 1,574 passing across 8 test modules |
 
 ## Recommended Next Steps
 

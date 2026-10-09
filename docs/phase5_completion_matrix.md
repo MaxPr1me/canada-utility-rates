@@ -24,7 +24,7 @@ mis-registered Alberta entry). No other inventory utilities are being registered
 **Current checkpoint (October 9):** batch 12 stored and exported (scrape runs 27 and 28):
 **910 latest live records across 77 utilities**: **243 at the 16 provincial targets**, **109 at
 the four territorial utilities**, **490 at 47 Ontario distributors**, **28 at seven Alberta
-electricity utilities** and **40 at three Ontario/Alberta gas utilities**; **1,564 passing tests
+electricity utilities** and **40 at three Ontario/Alberta gas utilities**; **1,574 passing tests
 across 8 modules**. DB validation reported 0 errors and 2 existing AESO warnings
 (`pipeline.validate` now reconfigures its output so Windows consoles no longer crash on
 non-ASCII names). No campaign utility is seed-only; the reconciliation table below classifies
@@ -38,7 +38,7 @@ building coverage; counts include optional adjustments and reference records.
 | Priority | Utility queue | Next work |
 |---|---|---|
 | Decisions needed (batch 12) | DERS RoLR admin charge; ENMAX D700 and ATCO T31 partial records; EPCOR Edmonton local access fee ($0.01388/kWh) as a conditional rider; FortisAlberta Rate 65; Apex Utilities (Alberta gas distributor, not registered); Enbridge Rate 135; ATCO Gas ATA commodity and DERS gas admin charge; EPCOR Aylmer Rates 2/4/5 inclusion | Ask the user; current handling is recorded in the Alberta Electricity and Natural Gas sections |
-| In progress (not yet published) | Phase 6A observed IESO market model; site market wording and charge formatter; per-run live/seed summary in `run_scrape`; Phase 7A crosswalk, 7B engine and tax table | 6A is blocked: the IESO keeps only about 90 days of hourly day-ahead zonal price files, so a trailing 12-month hourly window cannot be built until about August 2027 unless data is accumulated; options await a user decision. 7A/7B and the tax table are built and await user review |
+| In progress (not yet published) | Phase 6A observed IESO market model; site market wording and charge formatter; Phase 7A crosswalk, 7B engine and tax table | 6A is blocked: the IESO keeps only about 90 days of hourly day-ahead zonal price files, so a trailing 12-month hourly window cannot be built until about August 2027 unless data is accumulated; options await a user decision. 7A/7B and the tax table are built and await user review |
 | Planned (in order) | Phase 6 remainder (6C Alberta market, 6D deferred market-indexed products, 6E gas commodity cadence); Phase 7 Representative Models; Phase 8 model refresh automation; Phase 9 product follow-up incl. Across-Canada comparison | See Next Batches items 5-8 |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11); re-transcribe when Appendix A changes |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Alberta RoLR term end (December 31, 2026); EPCOR Distribution final 2026 rates | Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; RoLR records fail closed after the term until the next term is published |
@@ -386,7 +386,7 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
 1. The campaign's priced, dated gaps are closed (batch 11). Monitor: Qulliq final GRA instruction, NTPC Snare TPSP reconciliation, Centra Appendix A edition changes, monthly Yukon joint-book file name.
 2. Re-check source-blocked items periodically (reconciliation table). Market-indexed FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing and NL Hydro monthly non-firm prices wait for Phase 6 (Market Integration).
 3. Audit remaining building catalogues and fixtures, maintain SaskPower's audited building schedules, then run a full refresh and class-level reconciliation that now includes the Alberta and ON/AB gas utilities (their exclusions and open questions are in their tables above).
-4. Separate operational track: Chromium installation in source health, test/scrape failure issues, successful Monthly Scrape `workflow_run` deployment from `main`, and release-asset `data-history` database restore/upload after validation/export are implemented, pending first CI run verification (Deploy Site for `1b05a2f` succeeded; Source Health still needs a manual dispatch). Pages source must be GitHub Actions; `workflow_run` fires from the default branch. A per-run live/seed provenance summary in `run_scrape` is in progress (not yet published).
+4. Separate operational track: Chromium installation in source health, test/scrape failure issues, successful Monthly Scrape `workflow_run` deployment from `main`, and release-asset `data-history` database restore/upload after validation/export are implemented, pending first CI run verification (Deploy Site for `1b05a2f` succeeded; Source Health still needs a manual dispatch). Pages source must be GitHub Actions; `workflow_run` fires from the default branch. A per-run live/seed provenance summary in `run_scrape` (console box plus a GitHub step-summary table naming seed-only utilities) is published.
 5. **Phase 6: Market Integration** ([README](../README.md#phase-6-market-integration-in-progress)):
     6B (Ontario demand-class energy) is implemented as value-less components (batch 12). Ontario
     market observations (6A, replacing fixed model inputs and correcting the market-model

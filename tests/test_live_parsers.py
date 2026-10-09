@@ -13869,3 +13869,223 @@ def test_epg_total_fetch_failure_returns_no_records():
     scraper = EPG_EPCOROntarioGasScraper(registry_entry={"name": EPG_UTILITY_NAME})
     assert scraper.scrape() == []
     assert scraper.rejections and scraper.rejections[0].startswith("all:")
+
+
+# ======================================================================
+# Per-run live/seed provenance summary in run_scrape (batch 12)
+# ======================================================================
+from scrapers.base import RateComponent, TariffRecord
+import logging
+import sys
+from types import SimpleNamespace
+
+from pipeline import run_scrape
+from pipeline.run_scrape import append_step_summary, format_summary_markdown, summarize_run, tally_provenance
+
+OPS_SUMMARY_LIVE_NOTE = "Provenance: live_parsed"
+OPS_SUMMARY_VERIFIED_NOTE = "Provenance: officially_verified"
+OPS_SUMMARY_SEED_NOTE = "Provenance: seed_fallback"
+
+
+def OPS__summary_record(utility, notes, name="Residential", components=True):
+    return TariffRecord(
+        utility_name=utility, province="NS", utility_type="electricity", tariff_name=name,
+        confidence="unverified" if notes == OPS_SUMMARY_SEED_NOTE else "high", notes=notes,
+        components=[RateComponent("energy", "Energy Charge", 0.1, "$/kWh")] if components else [],
+    )
+
+
+def OPS__summary_scraper(records):
+    return SimpleNamespace(scrape=lambda: records)
+
+
+def OPS__summary_failing_scrape():
+    raise RuntimeError("source unavailable")
+
+
+def OPS__summary_run_main(monkeypatch, tmp_path, scrapers_by_name, argv):
+    entries = [{"name": name, "province": "NS", "status": "partial"} for name in scrapers_by_name]
+    monkeypatch.setattr(run_scrape, "setup_logging", lambda *args, **kwargs: None)
+    monkeypatch.setattr(run_scrape, "DB_PATH", tmp_path / "rates.db")
+    monkeypatch.setattr(run_scrape, "load_registry", lambda *args, **kwargs: entries)
+    monkeypatch.setattr(run_scrape, "get_active_utilities", lambda registry=None: list(registry))
+    monkeypatch.setattr(run_scrape, "load_scraper", lambda entry: scrapers_by_name[entry["name"]])
+    monkeypatch.setattr(sys, "argv", ["run_scrape"] + argv)
+    run_scrape.main()
+
+
+def test_ops_tally_provenance_counts_live_markers_and_everything_else_as_seed():
+    records = [
+        OPS__summary_record("A", OPS_SUMMARY_LIVE_NOTE),
+        OPS__summary_record("A", "Rider table checked. " + OPS_SUMMARY_VERIFIED_NOTE, name="Commercial"),
+        OPS__summary_record("A", OPS_SUMMARY_SEED_NOTE, name="Seed"),
+        OPS__summary_record("A", None, name="Legacy"),
+    ]
+    assert tally_provenance(records) == {"live": 2, "seed": 2}
+    assert tally_provenance([]) == {"live": 0, "seed": 0}
+
+
+def test_ops_summarize_run_totals_problem_lists_and_problems_first_rows():
+    summary = summarize_run({
+        "Alpha Power": {"live": 3, "seed": 0, "invalid": 0, "error": None},
+        "Bravo Gas": {"live": 0, "seed": 2, "invalid": 0, "error": None},
+        "Charlie Hydro": {"error": "source unavailable"},
+        "Delta Energy": {"live": 0, "seed": 0, "invalid": 1, "error": None},
+        "Echo Electric": {"live": 1, "seed": 1, "invalid": 0, "error": None},
+        "Foxtrot Utility": {"live": 0, "seed": 0, "invalid": 0, "error": None},
+    })
+    assert (summary["utilities"], summary["live"], summary["seed"], summary["invalid"]) == (6, 4, 3, 1)
+    assert summary["failed"] == ["Charlie Hydro"]
+    assert summary["no_records"] == ["Delta Energy", "Foxtrot Utility"]
+    assert summary["seed_only"] == ["Bravo Gas"]
+    assert [(row["utility"], row["status"]) for row in summary["rows"]] == [
+        ("Charlie Hydro", "failed"),
+        ("Delta Energy", "no valid records"),
+        ("Foxtrot Utility", "no valid records"),
+        ("Bravo Gas", "seed only"),
+        ("Echo Electric", "live + seed"),
+        ("Alpha Power", "live"),
+    ]
+
+
+def test_ops_summarize_run_puts_invalid_records_first_within_a_status_and_any_error_fails():
+    summary = summarize_run({
+        "Alpha Power": {"live": 2, "seed": 0, "invalid": 0},
+        "Zulu Power": {"live": 2, "seed": 0, "invalid": 3},
+        "beta power": {"live": 1, "seed": 0, "invalid": 0},
+        "Quiet Failure": {"error": ""},
+    })
+    assert [row["utility"] for row in summary["rows"]] == ["Quiet Failure", "Zulu Power", "Alpha Power", "beta power"]
+    assert summary["failed"] == ["Quiet Failure"]
+    assert summary["no_records"] == summary["seed_only"] == []
+    assert summarize_run({})["rows"] == []
+
+
+def test_ops_format_summary_markdown_renders_problems_first_and_escapes_cells():
+    summary = summarize_run({
+        "Alpha Power": {"live": 3, "seed": 0, "invalid": 0, "error": None},
+        "Bravo Gas": {"live": 0, "seed": 2, "invalid": 0, "error": None},
+        "Charlie|Hydro": {"error": "HTTP 503\nService   Unavailable"},
+        "Delta Energy": {"error": "timeout | " + "x" * 200},
+        "Echo": {"error": ""},
+    })
+    markdown = format_summary_markdown(summary)
+    lines = markdown.splitlines()
+    assert markdown.endswith("\n")
+    assert lines[0] == "## Scrape provenance summary"
+    assert "Dry run" not in markdown
+    assert "- Live records: 3; seed (estimated) records: 2; invalid records: 0" in lines
+    assert "- Utilities: 5; failed: 3; no valid records: 0; seed only: 1" in lines
+    header = lines.index("| Utility | Live | Seed | Invalid | Status |")
+    assert lines[header + 1] == "| --- | ---: | ---: | ---: | --- |"
+    rows = lines[header + 2:]
+    assert len(rows) == 5
+    assert rows[0] == "| Charlie\\|Hydro | 0 | 0 | 0 | failed: HTTP 503 Service Unavailable |"
+    assert rows[1].startswith("| Delta Energy | 0 | 0 | 0 | failed: timeout \\| xxx")
+    assert rows[1].endswith("x... |") and "x" * 108 not in rows[1]
+    assert rows[2] == "| Echo | 0 | 0 | 0 | failed |"
+    assert rows[3] == "| Bravo Gas | 0 | 2 | 0 | seed only |"
+    assert rows[4] == "| Alpha Power | 3 | 0 | 0 | live |"
+
+
+def test_ops_format_summary_markdown_marks_dry_runs():
+    lines = format_summary_markdown(summarize_run({}), dry_run=True).splitlines()
+    assert "_Dry run: nothing saved to the database._" in lines
+    assert "- Utilities: 0; failed: 0; no valid records: 0; seed only: 0" in lines
+    assert lines[-1] == "| --- | ---: | ---: | ---: | --- |"
+
+
+def test_ops_append_step_summary_appends_utf8_to_the_github_summary_file(tmp_path, monkeypatch):
+    target = tmp_path / "step_summary.md"
+    target.write_text("previous step\n", encoding="utf-8")
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(target))
+    append_step_summary("| Énergir | 1 |\n")
+    append_step_summary("second\n")
+    assert target.read_text(encoding="utf-8") == "previous step\n| Énergir | 1 |\nsecond\n"
+
+
+def test_ops_append_step_summary_is_a_no_op_without_a_summary_path(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
+    append_step_summary("ignored\n")
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", "")
+    append_step_summary("ignored\n")
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_ops_append_step_summary_write_failure_only_logs_a_warning(tmp_path, monkeypatch, caplog):
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(tmp_path / "missing" / "summary.md"))
+    with caplog.at_level(logging.WARNING, logger=run_scrape.logger.name):
+        append_step_summary("text\n")
+    assert "Could not append the run summary to GITHUB_STEP_SUMMARY" in caplog.text
+    assert not (tmp_path / "missing").exists()
+
+
+def test_ops_main_dry_run_reports_live_seed_counts_and_appends_the_step_summary(tmp_path, monkeypatch, capsys, caplog):
+    summary_file = tmp_path / "step_summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_file))
+    caplog.set_level(logging.INFO, logger=run_scrape.logger.name)
+    scrapers = {
+        "Live Utility": OPS__summary_scraper([
+            OPS__summary_record("Live Utility", OPS_SUMMARY_LIVE_NOTE),
+            OPS__summary_record("Live Utility", OPS_SUMMARY_VERIFIED_NOTE, name="Commercial"),
+            OPS__summary_record("Live Utility", OPS_SUMMARY_SEED_NOTE, name="Street Lighting"),
+            OPS__summary_record("Live Utility", OPS_SUMMARY_LIVE_NOTE, name="Broken Class", components=False),
+        ]),
+        "Seed Utility": OPS__summary_scraper([
+            OPS__summary_record("Seed Utility", OPS_SUMMARY_SEED_NOTE),
+            OPS__summary_record("Seed Utility", OPS_SUMMARY_SEED_NOTE, name="Commercial"),
+        ]),
+        "Broken Utility": SimpleNamespace(scrape=OPS__summary_failing_scrape),
+        "Unconfigured Utility": None,
+    }
+    OPS__summary_run_main(monkeypatch, tmp_path, scrapers, ["--dry-run"])
+
+    lines = capsys.readouterr().out.splitlines()
+    total = lines.index("  Total tariffs scraped: 5")
+    assert lines[total - 1] == "  Scrape complete: 2/4 utilities succeeded"
+    assert lines[total + 1:total + 4] == [
+        "  Live records: 2 | Seed (estimated) records: 3",
+        "  Seed-only utilities (1): Seed Utility",
+        "  Errors: 3",
+    ]
+    assert not any("no valid records" in line for line in lines)
+    assert {"    - Live Utility: 1 invalid records", "    - Broken Utility: source unavailable",
+            "    - Unconfigured Utility: no scraper configured"} <= set(lines)
+    assert "  (dry run — nothing saved to database)" in lines
+
+    assert "Live Utility: 2 live, 1 seed, 1 invalid" in caplog.messages
+    seed_logs = [r for r in caplog.records if r.getMessage() == "Seed Utility: 0 live, 2 seed, 0 invalid"]
+    assert [r.levelno for r in seed_logs] == [logging.WARNING]
+
+    markdown = summary_file.read_text(encoding="utf-8")
+    assert "_Dry run: nothing saved to the database._" in markdown
+    assert "- Live records: 2; seed (estimated) records: 3; invalid records: 1" in markdown
+    assert "- Utilities: 4; failed: 2; no valid records: 0; seed only: 1" in markdown
+    assert [line for line in markdown.splitlines() if line.startswith("| ") and "---" not in line] == [
+        "| Utility | Live | Seed | Invalid | Status |",
+        "| Broken Utility | 0 | 0 | 0 | failed: source unavailable |",
+        "| Unconfigured Utility | 0 | 0 | 0 | failed: no scraper configured |",
+        "| Seed Utility | 0 | 2 | 0 | seed only |",
+        "| Live Utility | 2 | 1 | 1 | live + seed |",
+    ]
+    assert not (tmp_path / "rates.db").exists()
+
+
+def test_ops_main_all_live_run_keeps_the_existing_box_and_survives_an_unwritable_summary(tmp_path, monkeypatch, capsys,
+                                                                                      caplog):
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(tmp_path / "missing" / "summary.md"))
+    scrapers = {"Live Utility": OPS__summary_scraper([OPS__summary_record("Live Utility", OPS_SUMMARY_LIVE_NOTE)])}
+    with caplog.at_level(logging.WARNING, logger=run_scrape.logger.name):
+        OPS__summary_run_main(monkeypatch, tmp_path, scrapers, ["--dry-run", "--utility", "live utility"])
+
+    assert capsys.readouterr().out.splitlines()[-6:] == [
+        "=" * 60,
+        "  Scrape complete: 1/1 utilities succeeded",
+        "  Total tariffs scraped: 1",
+        "  Live records: 1 | Seed (estimated) records: 0",
+        "  (dry run — nothing saved to database)",
+        "=" * 60,
+    ]
+    assert "Could not append the run summary to GITHUB_STEP_SUMMARY" in caplog.text
+    assert list(tmp_path.iterdir()) == []
