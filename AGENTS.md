@@ -16,8 +16,14 @@ It works in three stages:
 2. **Store** — That information gets organized into a database (a structured file on your computer).
 3. **Display** — A simple website reads the database and shows the rates in a browsable format.
 
-GitHub Actions schedules a monthly scrape. Deployment and durable history across
-cloud runs have new workflows awaiting first CI run verification; see [README.md](README.md).
+GitHub Actions (GitHub's cloud computers) runs a monthly scrape on the 1st and a "source
+health" test scrape, which publishes nothing, on the 15th. On October 9 the website was
+published successfully after each of the four changes pushed that day, and a hand-started
+source health run passed every step, including a full scrape (about 11 minutes); its
+per-utility list of live and estimated records has not been reviewed yet. Three monthly-scrape
+steps have never run: keeping the database between cloud runs, opening an issue automatically
+when something fails, and publishing the website automatically afterwards. The first scheduled
+monthly scrape is November 1; see "How the Monthly Updates Work" below and [README.md](README.md).
 The latest export (October 9, batch 12) has 910 latest live tariffs and 480 estimates; stored
 history contains 916 live versions and 3,616 snapshots. Registry coverage is not the same as
 live coverage. The active campaign covers 16 provincial utilities (243 latest live records) and,
@@ -249,11 +255,18 @@ The file `.github/workflows/scrape.yml` tells GitHub Actions to:
 8. Leave deployment to the separate **Deploy Site** workflow, now triggered by a successful **Monthly Scrape** run and checking out `main`.
 9. Attempt to create a GitHub Issue for test, scrape or validation/export failures.
 
-**Known limitations:** these workflow changes, including source-health's Chromium
-installation, have not yet been exercised in CI. Verify the first run's database
-restore/upload, failure issues and deployment trigger before trusting them. GitHub
-Pages must use **GitHub Actions** as its source; `workflow_run` fires from the default
-branch. Keep your local database to preserve history; do not delete it when updating a parser.
+**Known limitations:** only part of this has run on GitHub so far. On October 9 the **Deploy
+Site** workflow published the website successfully after each of the four changes pushed that
+day, and a hand-started **Source Health** run (run #4) passed every step: it installed the
+Chromium browser, ran the full scrape without publishing anything (about 11 minutes) and
+uploaded its logs. Its per-utility summary of live and estimated records has not been reviewed
+yet. Never run yet: restoring and uploading the database through the `data-history` release
+(steps 3 and 7), the automatic failure issues (step 9) and Deploy Site starting by itself after
+a successful Monthly Scrape (step 8). The first scheduled Monthly Scrape is November 1; the
+project owner may start one by hand earlier (see below). Check that first run before trusting
+those steps. GitHub Pages must use **GitHub Actions** as its source; the automatic trigger
+(`workflow_run`) only fires from the default branch. Keep your local database to preserve
+history; do not delete it when updating a parser.
 
 **To run it early (not waiting for the 1st of the month):**
 1. Go to the repository on GitHub.
@@ -579,33 +592,73 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - **`.yml`** — YAML file. Used for GitHub Actions configuration.
 - **`.md`** — Markdown file. Human-readable documentation (like this file).
 
-## Phase 5: Live Sources, Fallbacks, and History
+---
 
-- **Live parsed** means the scraper read the current official page/document and rebuilt the tariff.
-- **Officially verified** means the project already knows the tariff structure and proved every component in its tariff, label, and unit context in a current official document. It is not a number-only match.
-- If fetching fails or a schedule changes shape, `mark_fallback()` labels every tariff and component `unverified` and adds `Provenance: seed_fallback` to notes. Never raise this confidence by hand.
-- “Structural drift” in logs names components that could not be verified. Open the registry URL, find the current approved schedule, update the utility-specific interpretation and fixture, then run its targeted dry run.
-- Ontario updates start with the OEB common-rate page, then each distributor's approved tariff. Alberta wires, default retail, AESO, gas, and northern sources must remain separate and preserve their published classes, communities, tiers, and units.
-- Ontario batch 1 (October 7): 24 distributors are read from their OEB-approved Tariff of Rates and Charges PDF; the OEB bill-data XML is only a cross-check, never a value source. Homes and small business (GS<50) get the live provincial RPP energy price plus the distributor's delivery charges; larger demand classes show delivery charges only, because their energy price is market-based (deferred). Each rate zone gets its own records. A class that cannot be read cleanly is rejected, not guessed, and no new estimate is made for it (older estimates stay in history, labelled). Merged distributors keep their history; their successor now publishes the rates.
-- Ontario batch 2 (October 8): 22 more distributors, so 46 in total. Some PDFs print values slightly above their labels; the fix is a per-document text-reading setting (`"extract": {"y_tolerance": N}`), not a guessed value. Algoma's R1 is split into year-round dwellings (fully fixed) and O. Reg. 445/07 customers; its R2 (50 kW and over, billed per kW) is delivery-only. A configured distributor that rejects a class, or publishes no such class, no longer re-sends old estimates for it; estimates are still used if the tariff cannot be downloaded at all. Distributors' delivery costs are close to each other (typical monthly delivery varies about 15-20%; Hydro One is the main outlier).
-- Batch 12 (October 9), Alberta and gas: the four Alberta wires companies (ENMAX Power, ATCO Electric, EPCOR Distribution, FortisAlberta) list distribution and transmission as separate lines and keep each current rider as its own dated line; a rider that has expired is left out by its date. ATCO's lines must add up to the total printed in its schedule. EPCOR's 2026 rates are interim, so they are medium confidence with a note. The three Rate of Last Resort providers are live, each checked against the Utilities Consumer Advocate table. Enbridge Gas, ATCO Gas and a new EPCOR Natural Gas (Ontario) entry are live; the old Alberta EPCOR gas entry was a registration mistake and is retired, with its history kept. A price that follows a market is stored without a number ("Variable"), never a made-up value.
-- Batch 12, Ontario: PUC Distribution is now set up, with a note on each record that its approved tariff prints no transmission connection rate, so all 47 active Ontario distributors are live (490 records). Large demand classes now carry a "Market Energy" line with no number; Algoma's R2 does not, because accounts for homes stay eligible for the Regulated Price Plan. Totals after batch 12: 910 latest live tariffs, 916 stored live versions, 3,616 snapshots (prior snapshots unchanged); validation shows 0 errors and the 2 old AESO warnings; 1,638 passing tests once the representative models were added. Since published: the live/estimate count after each scrape, the Ontario representative models (Phase 7A/7B; rebuilt at every export, not shown on the website yet) and, later on October 9, the real Ontario market history (Phase 6A: hourly HOEP prices for 2020-2024 plus the actual Class B Global Adjustment) with the website wording and charge-display fixes; 1,683 tests now pass.
-- Test comparison locally with `python -m http.server --directory site 8000`: add two cards, open **Compare**, remove/replace either, and check the mobile horizontal table. It never calculates a bill total.
-- Every successful stored scrape appends `historical_snapshots`. Canonical hashes ignore component ordering but change for values, units, tiers, dates, or structure; old effective-date versions are never deleted.
-- The October 1 SaskPower batches parse 41 live tariffs, including completed reference-only classes. Building scope includes standard, bulk-metered and diesel residential service and R23/R24 renewable access. Standard E01/E03 keeps its identity only when both published columns agree; bulk fixed charges are per unit, not per account. Maintain this coverage; the four provincial gas utilities that were seed-only now have live parsers (October 5), so the next work is the recorded catalogue gaps. See [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).
-- Yukon Energy Rate 1160 now lists base rates, R/J/J1 percentage riders, fuel Rider F and dated residential relief separately. Do not add riders to a price that already includes them. Its old version remains in history; the browser keeps the latest version. Since October 7 the other residential and general-service classes come from ATCO's text joint rate book, checked against Yukon Energy's cross-reference; Yukon Energy's own schedule PDFs are still image-only.
-- NSPower residential service includes standard, storage-heating TOD and closed-enrollment TOU/critical-peak pilots. Pilot records explicitly distinguish the tariff's conditional interim phase from its dated November pricing. Do not assume an existing customer's system-restoration status from an advertising page. Mandatory FAM/DSM/storm riders are separate from base energy; Green Power blocks are opt-in, not a standard charge. Dates past the supported tariff/rider year fail closed.
-- Hydro-Quebec DP, grandfathered DM and northern off-grid DN are now parsed alongside D/G/M. DP has summer/winter demand charges; DM/DN charges and energy allowances depend on the approved multiplier. DN applies north of the 53rd parallel except Schefferville and normally uses multiplier one; its older DM-eligibility exception is not a restriction on every DN customer. Conditional supply-voltage credits do not apply to everyone. Minimum bills, demand allowances and transformation-loss rules remain conditions, not extra charges or calculated totals. Missing continuation pages reject only the affected class. The remaining domestic catalogue is still incomplete.
-- Completing a utility means auditing its building-relevant standard published classes, not just replacing existing seed values or completing every unrelated service. A complete class can stay live when another class fails, but never stamp a mixed live/seed list as entirely live.
-- The regional campaign covers the 16 registered provincial utilities outside Ontario and Alberta plus, from October 7, the four territorial utilities; Ontario electricity and, from batch 12, Alberta electricity and Ontario/Alberta gas ran as separate blocks. Parallel workers own separate utility files; database/export/registry/test integration and publication are serial. Preserve all earlier snapshots.
-- Batch 10 (historical) was stored and exported: 994 passing tests, 1,790 snapshots (220 new, prior snapshots unchanged), 824 versions / 5,286 components / 344 stored live / 480 seed; 339 latest live across 21 utilities. DB validation: 0 errors and 2 existing AESO warnings.
-- Batch 10 added NSPower industrial rates, FortisBC Energy Rate 7 and transportation rates, SaskEnergy Small Industrial, BC Hydro transmission pilots and generation credits, Hydro-Quebec DR Commitment, Manitoba LUBD and live territorial rates (NTPC, Qulliq, Yukon Energy, ATCO Electric Yukon). Territorial government subsidies are kept separate and conditional; never fold them into base prices. Qulliq's rates are interim until a final decision is published.
-- Decisions (October 7): BC Hydro RS1828 and Hydro-Quebec F/FP are excluded. Market-indexed prices (FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing, NL Hydro monthly non-firm prices) wait for Phase 6 (Market Integration). FortisBC 11RNG is excluded.
-- Batch 11 (October 7) closes out the campaign's priced gaps: FortisBC Energy Customer Choice and RNG variants, SaskEnergy service fees, NTPC Taltson interruptible heating (conditional) and Centra Mainline Interruptible. The Centra prices exist only on scanned pages, so they were typed in once by hand, checked visually, and are shown at medium confidence; the scraper drops them automatically if those scanned pages ever change. Do not use this approach for other scanned documents without asking. The matrix now has a class-by-class reconciliation table for all 20 utilities.
-- Batch 9 (historical) stored and exported: 801 passing tests, 1,570 snapshots (106 new, prior snapshots unchanged), 694 versions / 4,453 components / 214 stored live / 480 seed; 209 latest live across 18 utilities, 207 at all 16 campaign utilities. Source-check dates, live-record counts and catalogue completion are different facts. Follow the current [coverage matrix](docs/phase5_completion_matrix.md) and [parser gap report](docs/live_parser_gap_report.md).
-- Batch 9 added NL Hydro Island/Labrador Industrial Firm and conditional net metering; Energir D5 and optional replacement RNG supply; Newfoundland Power Curtailable Option 1 and domestic net metering; NB Power Large Industrial; BC Hydro RS1830 and closed RS1289; FortisBC Electric RS31/33; Hydro-Quebec L/LG/H and business Demand Response Leeway. Manitoba Hydro isolates residential/commercial page failures without adding records. Source-blocked and conditional prices are not universal charges.
-- FortisBC Energy Rates 1-3 have per-day basic charges; Rates 4/5 and Revelstoke propane are also parsed. Energir and Eastward follow the current document link and fail closed on edition/month mismatch. Energir's load balancing and renewable-gas charges are conditional; Eastward's municipal riders have a limited charge base; Liberty's MGS/LGS customer charges are alternatives.
-- Gas batch 4: FortisBC Energy now also parses Rate 5 (written contract, about 5,000 GJ+/yr) and seasonal Rate 4 (April 1-November 1) from their approved schedules; the Rate 5 basic charge is **monthly** as printed in the tariff, even though the business page says daily, so Rate 5 is not interchangeable with the daily Rates 1-3. Fort Nelson Rates 4/5 have no published price table (gap). Energir D3/D4 share one schedule: minimum daily obligation bands are per m³/day of **subscribed volume**, and above-subscribed-volume withdrawal and average load-balancing prices are conditional. Eastward Rate Class 3's demand charge is per GJ of Billing Demand per month (greater of 225 GJ, contract demand or maximum 24-hour use), a unit taken from the approved tariff PDF rather than the rate table; Rate Class 4 is negotiated per site and not published, so it is an exclusion, not a parser gap. Liberty's Off-Peak Service is April-November eligibility only, with the December-March overrun as a note.
-- Hydro-Quebec DT uses temperature switching, not clock-based TOU. Flex D uses notified events; Winter Credit is a closed, conditional adjustment to Rate D and retains the published reference-energy rules. NL Hydro's phase/amperage fixed charges are alternatives, not cumulative charges; seasonal options require their matching base schedules. SaskEnergy delivery-only service excludes private commodity prices. A missing carbon source cannot be hidden under a live label; assembled tariff dates reflect the latest required component while component dates remain intact.
-- FortisBC Electric's current residential price is flat; its older tiered version remains history. Rate 21's kW/kVA charges are alternatives, and voltage/transformation discounts are conditional negative credits. NSPower MURB has its own rider rows and minimum-bill condition; the approved book explicitly applies its peak price on weekends/holidays. Solar Garden and Community Solar records are subscriber adjustments to another tariff, not replacement household energy prices. Centra keeps published delivery/demand parts separate, with no guessed heat conversion or private marketer commodity price.
-- Batch 8: BC Hydro's power-factor surcharge is a conditional percentage of the business rate charges for poor (lagging) power factor; it is not an extra charge for every customer. Centra classes now need the approved PUB schedule's volume, contract and billing-demand conditions. FortisBC Revelstoke business rates are live only when the approved tariff index says each class is offered in Revelstoke. Energir inventory adjustments depend on each customer's storage use and have no published price, so they are explained, never given a number.
+## Phase 5: Live Sources and Fallbacks - Rules That Still Apply
+
+These rules came out of the live-source work (Phase 5). They still apply to every change.
+
+### Labels and checks
+
+- **Live parsed** means the scraper read the current official page or document and rebuilt the tariff from it.
+- **Officially verified** means the project already knows the tariff's structure and proved every component, with its tariff, label and unit, in a current official document. Finding the same number somewhere is not enough.
+- **Estimate (fallback):** if fetching fails or a schedule changes shape, `mark_fallback()` labels every tariff and component `unverified` and adds `Provenance: seed_fallback` to the notes. Never raise this confidence by hand.
+- **"Structural drift"** in the logs names components that could not be verified. Open the registry URL, find the current approved schedule, update that utility's interpretation and test fixture, then run its targeted dry run.
+- A class that was read completely can stay live when another class of the same utility fails, but a mixed list of live and estimated records is never labelled entirely live.
+- "Fails closed" means a doubtful source is rejected instead of guessed. A missing carbon-charge source cannot be hidden under a live label. When a tariff is built from parts with different dates, the tariff takes the latest required part's date and each part keeps its own date.
+- Conditional, optional and source-blocked prices are not charges that every customer pays.
+- Source-check dates, live-record counts and catalogue completion are different facts. **Completing a utility** means auditing its building-relevant standard published classes, not just replacing existing estimates or completing every unrelated service.
+- Different kinds of sources (Alberta wires, Alberta default retail, AESO, gas and northern utilities) stay separate and keep their published classes, communities, tiers and units.
+- Some products are left out on purpose (for example BC Hydro RS1828, Hydro-Quebec Rate F/FP and FortisBC Energy 11RNG). Exclusions and remaining gaps are listed in the [parser gap report](docs/live_parser_gap_report.md) and the [coverage matrix](docs/phase5_completion_matrix.md).
+
+### History, testing and teamwork
+
+- Every successful stored scrape adds a copy of each tariff to `historical_snapshots`. The snapshot fingerprint ignores the order of components but changes when values, units, tiers, dates or structure change. Old effective-date versions are never deleted; the website shows the latest version of each tariff.
+- Merged and retired registry entries are skipped by monthly runs but keep their history.
+- To test the Compare view locally, run `python -m http.server --directory site 8000`, add two cards, open **Compare**, remove or replace either one, and check the sideways-scrolling table on a phone-sized screen. It never calculates a bill total.
+- Parallel workers may each own separate utility files, but database, export, registry and test integration and publishing are done one at a time. Preserve all earlier snapshots.
+
+### Market prices
+
+- A price that follows a market (for example the energy price of Ontario's large customers) is stored without a number and shown as "Variable", never as a made-up value.
+- Four market-indexed products wait for Phase 6D, which will add them as "Variable" lines: BC Hydro RS1892, FortisBC Electric RS38, NSPower one-part real-time pricing and NL Hydro monthly non-firm prices.
+
+### Ontario electricity
+
+- Updates start with the OEB common-rate page, then each distributor's OEB-approved Tariff of Rates and Charges PDF. The OEB bill-data XML is only a cross-check, never a source of values. Each rate zone gets its own records.
+- Homes and small businesses (GS<50) get the live provincial Regulated Price Plan (RPP) energy price plus the distributor's delivery charges. Larger demand classes get delivery charges plus a "Market Energy" line with no number ("Variable").
+- Algoma's R1 is split into year-round dwellings (fully fixed) and O. Reg. 445/07 customers. Its R2 (50 kW and over, billed per kW) is delivery-only and has no "Market Energy" line, because accounts for homes stay eligible for the Regulated Price Plan.
+- A class that cannot be read cleanly is rejected, not guessed, and no new estimate is made for it; older estimates stay in history, labelled. A configured distributor that rejects a class, or publishes no such class, does not re-send old estimates for it. Estimates are still used if the tariff cannot be downloaded or read at all.
+- Some PDFs print values slightly above their labels; the fix is a per-document text-reading setting (`"extract": {"y_tolerance": N}`), never a guessed value.
+- PUC Distribution's approved tariff prints no transmission connection rate, so each of its records carries a note saying so.
+- Merged distributors keep their history; their successors (Enova Power and GrandBridge Energy) now publish the rates. The successors have no estimates, so they return nothing if their tariff cannot be read.
+
+### Alberta
+
+See also "Alberta's Deregulated Market" above.
+
+- The wires companies list distribution and transmission as separate lines and keep each current rider as its own dated line; an expired rider is left out by its date. Wires charges and energy prices are never added into one price.
+- ATCO Electric's lines must add up to the total printed in its schedule.
+- EPCOR Distribution's 2026 rates are interim, so they are shown at medium confidence with a note.
+- Each Rate of Last Resort price, and ATCO Gas's monthly default gas price, must match the Utilities Consumer Advocate table. After the fixed term ends (December 31, 2026), the Rate of Last Resort records stop counting as live until the next price is published.
+
+### Other utilities
+
+- **BC Hydro:** the power-factor surcharge is a conditional percentage of the business rate charges for poor (lagging) power factor, not an extra charge for every customer.
+- **FortisBC Electric:** the current residential price is flat; the older tiered version stays in history. Rate 21's kW and kVA charges are alternatives, and voltage/transformation discounts are conditional negative credits.
+- **FortisBC Energy:** Rates 1-3 have **daily** basic charges. The Rate 5 basic charge (written contract, about 5,000 GJ or more a year) is **monthly** as printed in the tariff, even though the business page says daily, so Rate 5 is not interchangeable with Rates 1-3. Rate 4 is seasonal (April 1-November 1). Revelstoke business rates are live only when the approved tariff index says the class is offered in Revelstoke. Fort Nelson Rates 4/5 have no published price table (a gap).
+- **Hydro-Quebec:** DM (grandfathered) and DN charges and energy allowances depend on the approved multiplier. DP has summer and winter demand charges. DN applies north of the 53rd parallel except Schefferville and normally uses multiplier one; its older DM-eligibility exception does not restrict every DN customer. Supply-voltage credits are conditional and do not apply to everyone. Minimum bills, demand allowances and transformation-loss rules stay conditions, not extra charges or calculated totals. A missing continuation page rejects only the affected class. DT switches price with the outdoor temperature, not the clock. Flex D uses notified events. Winter Credit is a closed, conditional adjustment to Rate D that keeps the published reference-energy rules.
+- **Manitoba Hydro:** a failure on the residential page or the commercial page affects only that page's records.
+- **SaskPower:** maintain the audited building scope (standard, bulk-metered and diesel residential service and R23/R24 renewable access). Standard E01/E03 keeps its identity only when both published columns agree. Bulk fixed charges are per unit, not per account.
+- **SaskEnergy:** delivery-only service leaves out private (retailer) commodity prices.
+- **Centra Gas:** published delivery and demand parts stay separate, with no guessed heat conversion and no private marketer commodity price. Classes need the approved PUB schedule's volume, contract and billing-demand conditions. Mainline Interruptible prices exist only on scanned pages, so they were typed in once by hand, checked visually and are shown at medium confidence; the scraper drops them automatically if those scanned pages ever change. Do not use this approach for any other scanned document without asking.
+- **NL Hydro:** phase/amperage fixed charges are alternatives, not added together; seasonal options need their matching base schedules.
+- **NSPower:** the mandatory FAM, DSM and storm riders are separate from base energy; Green Power blocks are opt-in, not a standard charge. Residential service includes standard service, storage-heating time-of-day service and closed-enrollment TOU and critical-peak pilots. The pilots are conditional, and their records separate the tariff's conditional interim phase from its dated November pricing; do not assume an existing customer's system-restoration status from an advertising page. MURB has its own rider rows and a minimum-bill condition, and the approved book applies its peak price on weekends and holidays. Solar Garden and Community Solar records are subscriber adjustments to another tariff, not replacement household energy prices. Dates past the supported tariff/rider year fail closed.
+- **Energir:** follows the current document link and fails closed on an edition/month mismatch. D3/D4 minimum daily obligation bands are per m³/day of **subscribed volume**; above-subscribed-volume withdrawal, average load-balancing and renewable-gas charges are conditional. Inventory adjustments depend on each customer's storage use and have no published price, so they are explained, never given a number.
+- **Eastward (Heritage Gas):** follows the current document link and fails closed on an edition/month mismatch. Municipal riders apply to a limited charge base. Rate Class 3's demand charge is per GJ of Billing Demand per month (the greater of 225 GJ, contract demand or maximum 24-hour use), a unit taken from the approved tariff PDF rather than the rate table. Rate Class 4 is negotiated per site and not published, so it is an exclusion, not a parser gap.
+- **Liberty NB:** the MGS/LGS customer charges are alternatives. Off-Peak Service eligibility is April-November only; the December-March overrun is a note.
+- **Territories:** government subsidies stay separate and conditional; never fold them into base prices. NTPC's Taltson interruptible heating is conditional. Qulliq's rates are interim (medium confidence) until a final decision is published.
+- **Yukon Energy:** Rate 1160 lists base rates, the R/J/J1 percentage riders, fuel Rider F and dated residential relief separately; never add riders to a price that already includes them. The other residential and general-service classes come from ATCO's text joint rate book, checked against Yukon Energy's cross-reference. Yukon Energy's own schedule PDFs are image-only and are never read into live values.
+
+**History:** batch-by-batch history (dates, counts and decisions) is in the History section of
+[docs/phase5_completion_matrix.md](docs/phase5_completion_matrix.md) and in git history.

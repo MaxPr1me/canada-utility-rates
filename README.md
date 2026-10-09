@@ -70,7 +70,7 @@ active Ontario distributors are live, and batch 12 added Alberta electricity (fo
 utilities and the three Rate of Last Resort providers), Ontario/Alberta gas (Enbridge Gas, ATCO
 Gas and a new EPCOR Natural Gas (Ontario) entry that replaces a retired, mis-registered Alberta
 entry), PUC Distribution and value-less market energy components for Ontario demand classes
-(Phase 6B). Remaining open items (optional follow-ups) are listed in the matrix queue. A per-run
+(Phase 6B). Remaining open items (optional follow-ups, Lane E below) are listed in the matrix queue. A per-run
 live/seed summary in `run_scrape` is published. Phase 7A (crosswalk, usage levels and tax table)
 and 7B (the model engine) are done for Ontario: every export now writes Ontario electricity
 [representative models](#phase-7-representative-models-in-progress) to
@@ -80,11 +80,25 @@ coverage. Phase 6A is also done (October 9; user decision): the Market Pricing v
 observed legacy HOEP hourly prices for 2020-2024 plus actual monthly Class B Global Adjustment
 rates, clearly labelled as the market before May 2025, and the site's market wording and charge
 display were corrected (see [Ontario Market Pricing](#ontario-market-pricing-observed-legacy-history)).
-Next: 7C (all provinces, including Alberta wires plus Rate of Last Resort combinations), 7D gas,
-7E all-in market energy (needs a decision on how to use the 6A history; Alberta needs 6C) and 7F
-the site view, alongside the remaining 6C-6E market work; then 8 automatic model refresh and 9 product
-follow-up including the Across-Canada comparison (see the Roadmap). First CI runs of the updated
-workflows are still unverified.
+In CI on October 9, Deploy Site succeeded on push and a manual Source Health run passed every step;
+the Monthly Scrape chain (database history, failure issues, automatic deployment) has not been
+exercised yet (see [How Monthly Updates Work](#how-monthly-updates-work)).
+
+**Next (user-approved lanes, in integration order):**
+
+1. **Lane F (CI triage):** review the Source Health run's live/seed summary, then verify the Monthly
+   Scrape chain.
+2. **Lane C (Phase 6D):** BC Hydro RS1892, FortisBC Electric RS38, NSPower one-part real-time
+   pricing and NL Hydro monthly non-firm prices as value-less "Variable" components.
+3. **Lane E (optional items):** each after a yes/no decision (listed in the matrix queue).
+4. **Lane A (Phase 7C):** representative models for all provinces, including Alberta wires + Rate of
+   Last Resort pairs.
+5. **Lane B (Phase 7F):** the site view for the models (province-agnostic).
+6. **Lane D (Phase 6C):** Alberta market (AESO pool price history; research the data source first).
+
+7D gas, 7E all-in market energy (needs a decision on how to use the 6A history), the rest of 6E,
+8 automatic model refresh and 9 product follow-up including the Across-Canada comparison come
+later (see the Roadmap).
 
 See the [coverage matrix](docs/phase5_completion_matrix.md) for the implementation queue
 and [parser gap report](docs/live_parser_gap_report.md) for class-level details.
@@ -355,12 +369,20 @@ validation/export failures.
 [Non-blocking Source Health](.github/workflows/source-health.yml) runs on the 15th
 and uploads a dry-run log without publishing; it now installs Playwright Chromium.
 
-**Remaining operational gaps:** these workflow changes are implemented but have not
-been exercised in CI. Verify release-asset history restoration/upload, failure issues,
-browser-enabled source health and the deployment handoff on the first CI run; do not
-assume durable CI history or automatic deployment yet. GitHub Pages must use **GitHub
-Actions** as its source, and `workflow_run` fires from the default branch. Manual
-workflows are available in **Actions**.
+**CI status (October 9):** Deploy Site's push trigger succeeded for all four October 9 commits
+(`9087f30`, `32e0782`, `453d949`, `a52afc2`). Source Health was dispatched by hand
+([run #4](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/37979034570)) and every
+step passed: the Chromium install, the full scrape without publishing (about 11 minutes) and the
+log upload. Its per-utility live/seed summary has not been reviewed yet; that review is the next
+step. The next scheduled Source Health run is October 15.
+
+**Remaining operational gaps:** the Monthly Scrape chain has never been exercised in CI:
+restoring and uploading the database through the `data-history` release asset, the automatic
+failure issues, and Deploy Site starting after a successful Monthly Scrape (`workflow_run`). Do
+not assume durable CI history or automatic deployment yet. The next scheduled Monthly Scrape is
+November 1; the owner may dispatch one earlier. GitHub Pages must use **GitHub Actions** as its
+source, and `workflow_run` fires from the default branch. Manual workflows are available in
+**Actions**.
 
 ---
 
@@ -506,7 +528,7 @@ features, **not evidence that all registered utilities or published classes are 
 | 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | All nine active gas utilities have live output: the six campaign utilities plus, from batch 12 (October 9), Enbridge Gas (20), ATCO Gas (10) and the new EPCOR Natural Gas (Ontario) entry (10), which replaces a retired, mis-registered Alberta entry; building-service gaps and open decisions remain |
 | 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Batch 12 (October 9): ENMAX Power, ATCO Electric, EPCOR Distribution (2026 interim rates, medium confidence) and FortisAlberta live (5 each; transmission and dated riders separate) plus Rate of Last Resort energy from all three providers (8); AESO stays a market reference (Phase 6C); transmission-connected and admin-charge decisions open |
 | 5G: Ontario | Batches 1-2 (October 7-8) plus PUC Distribution (October 9; its tariff prints no connection rate, noted on each record): all 47 active distributors live from OEB tariff sheets (490 records); rejected classes no longer re-emit estimates. Non-RPP demand classes carry a value-less market energy component (Phase 6B) | Done for active distributors; tariff market energy stays value-less (the observed 6A history is shown only in the Market Pricing view) |
-| 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; per-run live/seed summary published (October 9); first CI run verification remains |
+| 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; per-run live/seed summary published (October 9). Verified in CI on October 9: Deploy Site on push (all four October 9 commits) and a manual Source Health run (Chromium install, full scrape without publishing, log upload; its live/seed summary is not yet reviewed). Not yet exercised: the Monthly Scrape's `data-history` restore/upload, failure issues and `workflow_run` deployment (next scheduled Monthly Scrape November 1) |
 
 **Definition of done for each utility:** account for the standard published classes
 relevant to building energy costs, including single-family homes,

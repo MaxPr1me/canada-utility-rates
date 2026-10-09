@@ -174,6 +174,10 @@ python -m pytest -q
 python -m pipeline.run_scrape --utility "[Utility Name]" --dry-run
 ```
 
+The run ends with a live/seed summary: it counts live and seed (estimated) records and names any
+seed-only utility. A utility listed as seed-only returned no live records, even though the run
+completed.
+
 ## 6. Verify the data
 
 After scraping, export and check:
@@ -188,6 +192,22 @@ Inspect the utility's exported classes, component counts, units, effective dates
 provenance, not merely the scrape success count. Repeat storage in a test database to
 prove classes keep their own components and snapshots are appended without duplicates.
 Never delete the real database to validate a parser change.
+
+## 7. Representative models (Phase 7)
+
+Every new latest live tariff must be mapped in the representative-model crosswalk, even when it is
+not modelled:
+
+- A rule in `data/models/crosswalk.json` must map it to a model key (province, fuel, sector,
+  structure and, where relevant, size band) or exclude it with a reason from the file's exclusion
+  vocabulary; add a rule when no existing rule fits. Rules are read in order and the first match
+  wins, so put a utility-specific rule before its province's generic (`*`) rules and before the
+  territory rules.
+- After exporting, run `python -m pipeline.representative_models --coverage` (it reads
+  `site/data/rates.json`); it must report 0 unmapped.
+- The model tests use frozen fixtures (`tests/fixtures/rm_*.json`), so live data never breaks the
+  tests that run before the monthly scrape. Those tests do not see a new utility's records; the
+  coverage command is the check.
 
 ## Tips
 
@@ -272,6 +292,6 @@ work (October 9). Utility details are in the [gap report](live_parser_gap_report
 - **Printed totals must reconcile.** When a schedule prints a total (ATCO Electric's TOTAL PRICE rows), the separate transmission, distribution and service components must add up to it or the class is rejected. When a tariff carries its own lookup tables (EPCOR Distribution), parsed values must match them.
 - **Interim rates are labelled.** A tariff stamped interim (EPCOR Distribution's "2026 INTERIM RATE", like Qulliq) may be live at `medium` confidence with an interim note while the source still says interim.
 - **Market-indexed parts have no number.** A charge that follows a market (Ontario non-RPP demand-class energy: Ontario Electricity Market Price plus Class B Global Adjustment; EPCOR's operating reserve as a percentage of the AESO pool price) is a component with `charge_value=None`, `market_reference` and `market_source_url`; the site shows "Variable". Never store a modeled, averaged or guessed value in a tariff. A pass-through of another published tariff (FortisAlberta Rate 65 transmission) can also be value-less; a flow-through with no published price (ATCO T31 transmission) is a note.
-- **Use independent cross-check sources.** Where an official second source exists, require it and fail closed on a mismatch: the Utilities Consumer Advocate default-rates table for Alberta Rate of Last Resort and default gas prices; the OEB Decision and Rate Order Appendix A and the QRAM notice for Ontario gas; the CRA fuel-charge page for zero federal carbon. A fixed-term product (Alberta Rate of Last Resort, to December 31, 2026) stops being live after its term until the next term is published.
+- **Use independent cross-check sources.** Where an official second source exists, require it and fail closed on a mismatch: the Utilities Consumer Advocate default-rates table for Alberta Rate of Last Resort and default gas prices; the OEB Decision and Rate Order Appendix A and the QRAM notice for Ontario gas; the CRA fuel-charge page for zero federal carbon. A fixed-term product (Alberta Rate of Last Resort, to December 31, 2026) stops being live after its term until the next term is published. For Alberta Rate of Last Resort-type sources, reuse the shared helper `scrapers/utils/alberta_rolr.py`: it reads the UCA table, accepts only cents/kWh prices, requires a published term that covers the run date and fails closed on any provider/UCA difference.
 - **Per-document OEB exceptions need evidence.** `OEB_TARIFF_DOCUMENTS` entries may carry `"extract": {"y_tolerance": N}` for PDFs whose values print above their labels; only PUC Distribution carries `"connection_rate": "not_printed"`, because its approved tariff prints no Retail Transmission Connection rate (each record notes it). Every other document stays strict.
 - **No seed, no output.** A newly registered utility without seed data (EPCOR Natural Gas (Ontario); the Ontario successors Enova and GrandBridge) returns no records when its sources fail. Do not invent a seed just to keep output.

@@ -72,9 +72,9 @@ cannot query SQLite directly.
 │ sub_class         │     │ month                │
 │ description       │     │ day_type             │
 │ eligibility       │     │ hour                 │
-│ threshold_kw      │     │ avg_hoep             │
-│ threshold_kwh     │     │ avg_ga               │
-│ is_default        │     │ combined_energy      │
+│ threshold_kw      │     │ component            │
+│ threshold_kwh     │     │ value                │
+│ is_default        │     │ unit                 │
 └───────────────────┘     │ derivation_method    │
                           │ history_window_years │
                           └──────────────────────┘
@@ -102,6 +102,11 @@ cannot query SQLite directly.
 6. **Customer class tracking** — `customer_classes` records which classes each
    utility serves and their eligibility thresholds, enabling coverage audits.
 
-7. **Market pricing** — `market_pricing` stores representative hourly wholesale
-   prices (576 bins for Ontario IESO: 12 months × 2 day types × 24 hours),
-   used by the Market Pricing dashboard and market-based tariff components.
+7. **Market pricing** — the `market_pricing` table is defined but not populated
+   by the pipeline; it is kept for possible future use. The Ontario market
+   history lives in `site/data/market_pricing_ontario.json`, built by
+   `scripts/generate_market_pricing.py` (Phase 6A: observed legacy HOEP
+   2020-2024 plus actual Class B Global Adjustment rates). Its 576 bins
+   (12 months × 2 day types × 24 hours) store `avg_energy_price`,
+   `avg_ga_class_b` and `combined` in $/kWh for the Market Pricing dashboard;
+   tariffs never copy these averages.

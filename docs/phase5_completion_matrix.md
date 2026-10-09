@@ -1,6 +1,6 @@
 # Phase 5 Completion Matrix
 
-**Updated:** 2026-10-09 (batch 12, then the Phase 7A/7B Ontario representative models and the Phase 6A Ontario market history). Scope: all 87 registered utilities (8 Ontario entries
+**Updated:** 2026-10-09 (batch 12, then the Phase 7A/7B Ontario representative models and the Phase 6A Ontario market history; CI status and the next-week lanes recorded after commit `a52afc2`). Scope: all 87 registered utilities (8 Ontario entries
 `merged`, 1 mis-registered Alberta gas entry `retired`), not every utility in the broader Canadian
 inventory. The export has 1,396 stored tariff versions / 14,179 components / **916 stored live
 versions / 480 seed**. Latest-per-name coverage is **910 live tariffs across 77 utilities** (490 at
@@ -34,21 +34,52 @@ Phase 7A/7B are done for Ontario: every export also writes Ontario electricity r
 models to `site/data/representative_models.json` (modeled comparison indicators, not live
 coverage, not shown on the site yet). Phase 6A is done: the Market Pricing view shows observed
 legacy HOEP hourly history for 2020-2024 plus actual monthly Class B Global Adjustment rates,
-labelled as the market before May 2025 and never copied into a tariff. Remaining open items are
-in the queue below.
+labelled as the market before May 2025 and never copied into a tariff.
+
+**CI (October 9):** Deploy Site on push succeeded for all four October 9 commits (`9087f30`,
+`32e0782`, `453d949`, `a52afc2`). Source Health was dispatched by hand
+([run #4](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/37979034570)) and every
+step passed (Chromium install, full scrape without publishing in about 11 minutes, log upload),
+but its per-utility live/seed summary has not been reviewed, so no CI-only source failure is
+recorded yet. The Monthly Scrape chain has never been exercised: database restore/upload through
+the `data-history` release asset, automatic failure issues and Deploy Site starting after a
+successful Monthly Scrape (`workflow_run`). The next scheduled Monthly Scrape is November 1 (the
+owner may dispatch one earlier).
+
+The queue below follows the user-approved next-week lanes in integration order (F, C, E, A, B,
+D), then the open defaults, later phases and monitoring; the calendar after it lists dated checks.
 
 A successful scrape or one live residential class does not establish complete
 building coverage; counts include optional adjustments and reference records.
 
 | Priority | Utility queue | Next work |
 |---|---|---|
-| Open items (batch 12; optional follow-ups, not requested now) | DERS RoLR admin charge (schedule research); ENMAX D700 partial record (source-blocked); EPCOR Edmonton local access fee ($0.01388/kWh) as a conditional rider; Apex Utilities (Alberta gas distributor, not registered); Enbridge Rate 135; ATCO Gas ATA commodity and DERS gas admin charge; EPCOR Aylmer Rates 2/4/5 inclusion | Current handling is recorded in the Alberta Electricity and Natural Gas sections. Decided October 9: FortisAlberta Rate 65 and ATCO T31 stay live partial records (transmission is an AESO pass-through, noted) |
-| Open questions (Phase 6A defaults kept) | GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays | Phase 6A is done (October 9): observed legacy HOEP hourly history 2020-2024 plus actual monthly Class B GA rates, labelled as the market before May 2025. The user can change these defaults; rebuild with `python scripts/generate_market_pricing.py`. An Ontario Price (OEMP) history would need 12 months of self-archived daily IESO files (not started) |
-| Planned | Next: Phase 7C (all provinces, including Alberta all-in models that combine wires and Rate of Last Resort records), then 7D gas, 7E all-in market energy (needs a decision on how to use the 6A legacy history; Alberta needs 6C) and 7F site view; Phase 6 remainder (6C Alberta market, 6D deferred market-indexed products, 6E gas commodity cadence); Phase 8 model refresh automation (change threshold still proposed: 2%); Phase 9 product follow-up incl. Across-Canada comparison | See Next Batches items 5-8 |
+| Lane F (first): CI triage | Source Health run #4 (manual, October 9): every step passed; its per-utility live/seed summary is not yet reviewed. Never exercised: the Monthly Scrape's `data-history` database restore/upload, automatic failure issues and Deploy Site's `workflow_run` start | Review the summary (job Summary page and uploaded log) and record any CI-only source failure per utility in the gap report; then verify the Monthly Scrape chain on its first run (scheduled November 1; may be dispatched earlier). See Next Batches item 1 |
+| Lane C: Phase 6D market-indexed products | BC Hydro RS1892; FortisBC Electric RS38; NSPower one-part real-time pricing; NL Hydro monthly non-firm (5.1L, Island non-thermal) | Store each market-indexed price as a value-less "Variable" component (market reference and source URL, no number), like Ontario's Phase 6B market energy; new records need crosswalk rules |
+| Lane E: optional items (each after a yes/no decision) | DERS RoLR admin charge (schedule research); ENMAX D700 partial record (source-blocked); EPCOR Edmonton local access fee ($0.01388/kWh) as a conditional rider; Apex Utilities (Alberta gas distributor, not registered); Enbridge Rate 135; ATCO Gas ATA commodity and DERS gas admin charge; EPCOR Aylmer Rates 2/4/5 inclusion | Current handling is recorded in the Alberta Electricity and Natural Gas sections. Decided October 9: FortisAlberta Rate 65 and ATCO T31 stay live partial records (transmission is an AESO pass-through, noted) |
+| Lane A: Phase 7C | Representative electricity models for all provinces with live data, including Alberta wires + Rate of Last Resort pairs | Integrated after lanes F, C and E (their new records need crosswalk rules first); territories stay planned separately |
+| Lane B: Phase 7F | Site view for the representative models (province-agnostic) | The site does not read `site/data/representative_models.json` yet |
+| Lane D: Phase 6C | Alberta market: AESO pool price history | Research the official data source first; AESO stays a seed/market reference until then |
+| Open defaults (the user may change them) | Phase 6A: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones. Phase 8: change threshold 2% (proposed) | Phase 6A is done (October 9): observed legacy HOEP hourly history 2020-2024 plus actual monthly Class B GA rates, labelled as the market before May 2025; after a change, rebuild with `python scripts/generate_market_pricing.py`. An Ontario Price (OEMP) history would need 12 months of self-archived daily IESO files (not started) |
+| Planned (after the lanes) | Phase 7D gas; 7E all-in market energy (needs a decision on how to use the 6A legacy history; Alberta needs 6C); the rest of 6E gas commodity cadence; Phase 8 model refresh automation; Phase 9 product follow-up incl. Across-Canada comparison | See Next Batches items 7-10 |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11); re-transcribe when Appendix A changes |
-| Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Alberta RoLR term end (December 31, 2026); EPCOR Distribution final 2026 rates | Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; RoLR records fail closed after the term until the next term is published |
+| Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |
-| Deferred to Phase 6 (Market Integration) | FortisBC Electric RS38; BC Hydro RS1892; NSPower one-part real-time pricing; NL Hydro monthly non-firm (5.1L, Island non-thermal) | Market-indexed energy prices (sub-phase 6D) |
+
+**Calendar:**
+
+- **October 15:** scheduled Source Health run.
+- **November 1:** scheduled Monthly Scrape (the first exercise of the `data-history` restore/upload,
+  failure issues and `workflow_run` deployment, unless one is dispatched earlier) and new OEB RPP
+  prices; the next OEB RPP Price Report may also update the Ontario TOU/ULO usage shares used by
+  the models (`data/models/usage_levels.json`).
+- **December 31, 2026:** the Alberta Rate of Last Resort fixed term ends; its records fail closed
+  until the 2027-2028 term is published and appears in the UCA table.
+- **January 1, 2027:** Alberta quarterly riders; Enbridge and EPCOR Ontario QRAM; 2027 tariffs for
+  Ontario distributors with January rate years (update their `OEB_TARIFF_DOCUMENTS` entries).
+- **May 1, 2027:** 2027 tariffs for Ontario distributors with May rate years.
+- **No fixed date:** Qulliq final GRA, NTPC Snare TPSP, Centra Appendix A editions, Yukon joint-book
+  file name, EPCOR Distribution final 2026 rates, Oakville GS<50 rejection (Monitor row above).
 
 **Decisions (October 7):** BC Hydro RS1828 (biomass-program contract), Hydro-Quebec
 Rate F/FP (unmetered) and FortisBC Energy 11RNG are excluded. Territories are reopened for
@@ -393,14 +424,49 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
 
 0. **Batch 12 (done October 9):** Alberta wires and Rate of Last Resort, ON/AB gas (Enbridge, ATCO
    Gas, EPCOR Natural Gas (Ontario)), PUC Distribution (all 47 active Ontario distributors live)
-   and Phase 6B value-less market energy. Remaining open items are in the queue table; Phase 6A
-   (observed legacy market history) followed the same day (item 5).
+   and Phase 6B value-less market energy. The per-run live/seed summary, Phase 7A/7B and Phase 6A
+   (observed legacy market history) followed the same day (items 7 and 8).
 
-1. The campaign's priced, dated gaps are closed (batch 11). Monitor: Qulliq final GRA instruction, NTPC Snare TPSP reconciliation, Centra Appendix A edition changes, monthly Yukon joint-book file name.
-2. Re-check source-blocked items periodically (reconciliation table). Market-indexed FortisBC RS38, BC Hydro RS1892, NSPower real-time pricing and NL Hydro monthly non-firm prices wait for Phase 6 (Market Integration).
-3. Audit remaining building catalogues and fixtures, maintain SaskPower's audited building schedules, then run a full refresh and class-level reconciliation that now includes the Alberta and ON/AB gas utilities (their exclusions and open questions are in their tables above).
-4. Separate operational track: Chromium installation in source health, test/scrape failure issues, successful Monthly Scrape `workflow_run` deployment from `main`, and release-asset `data-history` database restore/upload after validation/export are implemented, pending first CI run verification (Deploy Site for `1b05a2f` succeeded; Source Health still needs a manual dispatch). Pages source must be GitHub Actions; `workflow_run` fires from the default branch. A per-run live/seed provenance summary in `run_scrape` (console box plus a GitHub step-summary table naming seed-only utilities) is published.
-5. **Phase 6: Market Integration** ([README](../README.md#phase-6-market-integration-in-progress)):
+Items 1-6 are the next-week lanes (user-approved October 9) in integration order. Independent lane
+work may proceed in parallel; shared registry, crosswalk, database, export and documentation
+changes are integrated serially in this order.
+
+1. **Lane F: CI triage.** Deploy Site on push succeeded for all four October 9 commits, and the
+   manual Source Health run #4 passed every step (Chromium install, full scrape without publishing
+   in about 11 minutes, log upload). First review its per-utility live/seed summary and record any
+   CI-only source failures per utility in the [gap report](live_parser_gap_report.md) as a fix
+   list. Then verify the never-exercised Monthly Scrape chain on its first run (scheduled
+   November 1; may be dispatched earlier): release-asset `data-history` database restore/upload
+   after validation/export, test/scrape failure issues and Deploy Site's `workflow_run` start from
+   `main`. Pages source must be GitHub Actions; `workflow_run` fires from the default branch. A
+   per-run live/seed provenance summary in `run_scrape` (console box plus a GitHub step-summary
+   table naming seed-only utilities) is published.
+2. **Lane C: Phase 6D market-indexed products.** BC Hydro RS1892 (freshet energy, Mid-C index),
+   FortisBC Electric RS38 (Mid-C index), NSPower one-part real-time pricing and NL Hydro monthly
+   non-firm prices (5.1L, Island non-thermal) become value-less "Variable" components with a market
+   reference and source URL, as for Ontario demand-class market energy (6B); no averaged or guessed
+   number goes into a tariff.
+3. **Lane E: optional items, each after a yes/no decision:** DERS RoLR admin charge, ENMAX D700
+   partial record, EPCOR Edmonton local access fee, Apex Utilities, Enbridge Rate 135, ATCO Gas ATA
+   commodity and DERS gas admin charge, EPCOR Aylmer Rates 2/4/5 (details in the Lane E queue row).
+4. **Lane A: Phase 7C, electricity models for all provinces.** Residential and commercial models
+   for every province with live data, including Alberta all-in models that pair each wires utility
+   with the Rate of Last Resort provider for its area; single-source labelling and a coverage
+   report. Territories stay planned separately.
+5. **Lane B: Phase 7F, site view.** A Representative Models view next to Rate Browser, Market
+   Pricing and Compare that reads `site/data/representative_models.json` for whichever provinces it
+   contains (province-agnostic), with method/coverage disclosure, an accessible table and
+   desktop/mobile checks.
+6. **Lane D: Phase 6C, Alberta market.** AESO pool price history; research the official data source
+   first. Rate of Last Resort fixed prices are already live (5F) and EPCOR Distribution's operating
+   reserve charge is stored value-less. An optional Alberta region in the Market Pricing dashboard,
+   only if its variation warrants it, follows Lane B.
+
+Every lane milestone needs the acceptance checks at the end of this section where they apply. New
+live records also need crosswalk rules: after export,
+`python -m pipeline.representative_models --coverage` must report 0 unmapped.
+
+7. **Phase 6: Market Integration** ([README](../README.md#phase-6-market-integration-in-progress)):
     6B (Ontario demand-class energy) is implemented as value-less components (batch 12). **6A is
     done (October 9):** `scripts/generate_market_pricing.py` replaced the fixed model inputs with
     observed legacy HOEP hourly history for 2020-2024 plus actual monthly Class B Global Adjustment
@@ -408,13 +474,12 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
     (60 months) and failing closed; the site labels it as the market before May 2025, and its
     market wording and charge display were corrected. The IESO keeps only about 90 days of hourly
     day-ahead zonal price files, so an Ontario Price history would need 12 months of self-archived
-    daily files (not started). Open questions with defaults kept are in the queue. Still planned:
-    Alberta market and
-    the conditional Alberta Market Pricing region (6C), the deferred market-indexed products in
-    item 2 (6D) and gas commodity cadence (6E; current QRAM and default-supply prices are already
-    dated commodity components). Every market price needs an official source, period and
-    freshness date.
-6. **Phase 7: Representative Models** ([README](../README.md#phase-7-representative-models-in-progress);
+    daily files (not started). Open defaults are in the queue. Still planned: Alberta market and
+    the conditional Alberta Market Pricing region (6C, Lane D), the deferred market-indexed
+    products (6D, Lane C) and the rest of gas commodity cadence (6E; current QRAM and
+    default-supply prices are already dated commodity components). Every market price needs an
+    official source, period and freshness date.
+8. **Phase 7: Representative Models** ([README](../README.md#phase-7-representative-models-in-progress);
     sub-phases 7A-7F). One modeled tariff per province, sector and offered rate structure: median
     across utilities, single-source where only one utility exists, all-in energy from Phase 6, its
     own site view and generated method statements. Decided: prices without and with tax; a model per
@@ -425,17 +490,24 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
     unmapped), `usage_levels.json` (user-approved levels and a reviewed reference-customer list),
     `taxes.json` and the engine `pipeline/representative_models.py`, which every export runs to
     write `site/data/representative_models.json` (labelled modeled, never live coverage, not shown
-    on the site yet). Ontario demand-class models are *market energy pending*. **Next: 7C** (all
-    provinces, including Alberta all-in models that combine wires and Rate of Last Resort
-    records), then 7D gas, 7E all-in market energy (needs a decision on how to use the 6A history;
-    Alberta needs 6C) and 7F the site view.
-7. **Phase 8: Representative Model Refresh Automation** ([README](../README.md#phase-8-representative-model-refresh-automation-planned)):
+    on the site yet). Ontario demand-class models are *market energy pending*. **Next: 7C (Lane A)
+    and 7F (Lane B)**; 7D gas and 7E all-in market energy (needs a decision on how to use the 6A
+    history; Alberta needs 6C) follow.
+9. **Phase 8: Representative Model Refresh Automation** ([README](../README.md#phase-8-representative-model-refresh-automation-planned)):
     GitHub Actions rebuild models after the Monthly Scrape and publish only on considerable change
     (proposed: 2% or more at any usage level, or membership/structure/tax/method change), with a
-    changelog and stale-input issues. Depends on 7B/7C and item 4's CI verification.
-8. **Phase 9: Product Follow-up** ([README](../README.md#phase-9-product-follow-up-planned)):
+    changelog and stale-input issues. Depends on 7B/7C and Lane F's CI verification.
+10. **Phase 9: Product Follow-up** ([README](../README.md#phase-9-product-follow-up-planned)):
     historical charts and AI exports, calculator/API scoping, and the Across-Canada comparison
     view built on the Phase 7 models. Roadmap items, not implemented features.
+11. **Monitoring and maintenance:** the campaign's priced, dated gaps are closed (batch 11).
+    Monitor the queue's Monitor row and the calendar (Qulliq final GRA instruction, NTPC Snare TPSP
+    reconciliation, Centra Appendix A edition changes, monthly Yukon joint-book file name, EPCOR
+    Distribution final 2026 rates, Oakville GS<50 rejection, Alberta RoLR term end). Re-check
+    source-blocked items periodically (reconciliation table). Audit remaining building catalogues
+    and fixtures, maintain SaskPower's audited building schedules, then run a full refresh and
+    class-level reconciliation that now includes the Alberta and ON/AB gas utilities (their
+    exclusions and open questions are in their tables above).
 
 Each batch requires source-derived positive/negative tests, a source-inspected dry run,
 validated storage/export, preserved history and a ledger update. Record observation dates
@@ -448,5 +520,6 @@ Detailed checkpoints are kept in the maintainer's local tracker; earlier publish
 checkpoints are in git history (commits `0e43ca6` through `08531d2`). Batch 9 was
 stored and exported October 6. Ontario batch 1 was stored and pushed October 7 (`1f3ae6c`);
 the log cap and recorded decisions followed in `91c15cc`. Ontario batch 2 was pushed October 8
-(`bb6f46f`); batch 12 (October 9) is described above, followed the same day by Phase 7A/7B
-(`453d949`) and Phase 6A. Use the current queue above for next work.
+(`bb6f46f`); batch 12 (October 9, `9087f30`) is described above, followed the same day by the
+per-run live/seed summary (`32e0782`), Phase 7A/7B (`453d949`) and Phase 6A (`a52afc2`). Use the
+current queue above for next work.
