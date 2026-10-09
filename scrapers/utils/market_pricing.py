@@ -1,70 +1,70 @@
 """
-market_pricing.py -- Utility to load and query Ontario IESO market pricing data.
+market_pricing.py -- Load and query the Ontario legacy market history surface.
 
-Ontario commercial customers >= 50 kW pay market-based energy rates:
-  HOEP (Hourly Ontario Energy Price) + GA (Global Adjustment)
+Since May 1, 2025, Ontario customers on market prices pay the hourly Ontario Electricity Market Price
+(OEMP, the "Ontario Price" = Day-Ahead Ontario Zonal Price + Load Forecast Deviation Adjustment) plus the
+Global Adjustment (Class B: monthly rate per kWh; Class A: by peak demand factor).
 
-This module provides access to the representative historical pricing
-surface built from 5 years of IESO data.
+site/data/market_pricing_ontario.json is built by scripts/generate_market_pricing.py from official IESO
+history: 576 bins (month x weekday/weekend x hour) of observed averages of the legacy Hourly Ontario Energy
+Price (HOEP, retired April 30, 2025) and the Class B Global Adjustment actual monthly rates over full calendar
+years (2020-2024 by default), in $/kWh. They are legacy-market context only, not a tariff or a forecast.
 """
 from __future__ import annotations
 
 import json
 import logging
+import re
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 MARKET_DATA_PATH = PROJECT_ROOT / "site" / "data" / "market_pricing_ontario.json"
+OBSERVED_METHOD_RE = re.compile(r"^observed_legacy_hoep_\d{4}_\d{4}_average$")
+PRICE_FIELDS = ("avg_energy_price", "avg_ga_class_b", "combined")
 
 
-def load_ontario_market_pricing() -> dict:
-    """Load the Ontario IESO market pricing surface."""
-    with open(MARKET_DATA_PATH, encoding="utf-8") as f:
-        return json.load(f)
+def load_ontario_market_pricing(path: Path = MARKET_DATA_PATH) -> dict:
+    """Load the observed legacy surface; reject files that are not built from IESO observations."""
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    method = (data.get("metadata") or {}).get("derivation_method")
+    if not OBSERVED_METHOD_RE.fullmatch(method or ""):
+        raise ValueError(f"{path} is not an observed IESO market surface (derivation_method={method!r})")
+    return data
 
 
-def get_representative_rate(month: int, day_type: str, hour: int) -> dict:
+def get_observed_bin(month: int, day_type: str, hour: int, path: Path = MARKET_DATA_PATH) -> dict:
     """
-    Get the representative HOEP + GA rate for a specific time slot.
+    Get the observed average for one bin.
 
     Args:
         month: 1-12
         day_type: "weekday" or "weekend"
-        hour: 0-23
+        hour: 0-23 (hour beginning, Eastern Standard Time)
 
     Returns:
-        dict with avg_hoep, avg_ga, combined_energy_component
+        dict with hours_count and avg_energy_price (legacy HOEP), avg_ga_class_b, combined ($/kWh)
     """
-    data = load_ontario_market_pricing()
+    data = load_ontario_market_pricing(path)
     for entry in data["hourly_surface"]:
         if entry["month"] == month and entry["day_type"] == day_type and entry["hour"] == hour:
             return entry
     raise ValueError(f"No data for month={month}, day_type={day_type}, hour={hour}")
 
 
-def get_monthly_average(month: int) -> dict:
-    """Get the weighted average rate for a given month across all hours."""
-    data = load_ontario_market_pricing()
+def get_monthly_average(month: int, path: Path = MARKET_DATA_PATH) -> dict:
+    """Average of all observed hours in a month (each bin weighted by its hours_count), $/kWh."""
+    data = load_ontario_market_pricing(path)
     entries = [e for e in data["hourly_surface"] if e["month"] == month]
-    # Weight weekday 5/7, weekend 2/7
-    weekday_entries = [e for e in entries if e["day_type"] == "weekday"]
-    weekend_entries = [e for e in entries if e["day_type"] == "weekend"]
-
-    def avg(lst, key):
-        return sum(e[key] for e in lst) / len(lst) if lst else 0
-
-    wd_weight = 5 / 7
-    we_weight = 2 / 7
-
-    return {
-        "month": month,
-        "avg_hoep": round(avg(weekday_entries, "avg_hoep") * wd_weight + avg(weekend_entries, "avg_hoep") * we_weight, 4),
-        "avg_ga": round(avg(weekday_entries, "avg_ga") * wd_weight + avg(weekend_entries, "avg_ga") * we_weight, 4),
-        "combined": round(avg(weekday_entries, "combined_energy_component") * wd_weight + avg(weekend_entries, "combined_energy_component") * we_weight, 4),
-    }
+    hours = sum(e["hours_count"] for e in entries)
+    if not hours:
+        raise ValueError(f"No observations for month={month}")
+    result = {"month": month, "hours": hours}
+    for field in PRICE_FIELDS:
+        result[field] = round(sum(e[field] * e["hours_count"] for e in entries) / hours, 6)
+    return result
 
 
 def get_market_tariff_metadata() -> dict:
@@ -74,9 +74,12 @@ def get_market_tariff_metadata() -> dict:
     """
     return {
         "pricing_method": "market_based",
-        "formula": "HOEP + GA",
+        "formula": "Ontario Electricity Market Price (DA-OZP + LFDA) + Global Adjustment",
         "market_reference": "IESO",
-        "history_window_years": 5,
-        "ga_allocation": "Class B uniform per-kWh",
-        "notes": "Representative modeled hourly price based on 5 years of IESO historical data. Actual customer bills use real-time HOEP and monthly GA.",
+        "ga_allocation": "Class B: monthly rate per kWh; Class A: peak demand factor",
+        "notes": (
+            "Energy is billed at the hourly Ontario Price plus Global Adjustment. The Market Pricing view "
+            "shows legacy HOEP history (2020-2024; the HOEP retired April 30, 2025) with Class B Global "
+            "Adjustment for context only; it is not a tariff value."
+        ),
     }

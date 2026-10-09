@@ -15102,3 +15102,577 @@ def test_rm7b_export_hook_writes_compact_models_and_keeps_the_previous_file_on_f
     monkeypatch.setattr(representative_models, "build_models", lambda *args, **kwargs: {"models": [], "x": float("nan")})
     assert export_json.export_representative_models(tariffs, out) is None
     assert out.read_bytes() == previous and not list(out.parent.glob("*.tmp"))
+
+
+# ======================================================================
+# Ontario legacy HOEP market history, Phase 6A (batch 12)
+# ======================================================================
+from scrapers.utils import market_pricing as IESO6A_market_pricing
+import calendar
+import functools
+import importlib.util
+import io
+import json
+import re
+import sys
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
+
+import openpyxl
+import pytest
+
+
+IESO6A_ROOT = Path(__file__).resolve().parents[1]
+IESO6A_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "ieso_market.json"
+IESO6A_SCRIPT = IESO6A_ROOT / "scripts" / "generate_market_pricing.py"
+
+
+def IESO6A__load_script():
+    spec = importlib.util.spec_from_file_location("generate_market_pricing", IESO6A_SCRIPT)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+IESO6A_gmp = IESO6A__load_script()
+IESO6A_DATA = json.loads(IESO6A_FIXTURE.read_text(encoding="utf-8"))
+IESO6A_CSV_EXCERPT = IESO6A_DATA["hoep_hourly"]["csv_excerpt"]
+IESO6A_AVERAGES_XML = IESO6A_DATA["hoep_averages"]["xml"]
+IESO6A_PAGE = IESO6A_DATA["hoep_page"]["html_excerpt"]
+IESO6A_GA_MWH_SHEETS = IESO6A_DATA["ga_mwh_workbook"]["sheets"]
+IESO6A_GA_KWH_SHEETS = IESO6A_DATA["ga_kwh_workbook"]["sheets"]
+IESO6A_YEARS = [2020, 2021, 2022, 2023, 2024]
+SATURDAY, SUNDAY, HOLIDAY = date(2024, 6, 29), date(2024, 6, 30), date(2024, 7, 1)
+IESO6A_RUN_DATE = date(2026, 10, 9)
+IESO6A_GENERATED = datetime(2026, 10, 9, 12, 0, tzinfo=timezone.utc)
+IESO6A_STATEMENT = "The Hourly Ontario Energy Price (HOEP) retired on April 30, 2025, and was replaced with the Ontario Price."
+
+
+def IESO6A__excerpt_prices():
+    """Independent plain split of the fixture's hourly rows (not the parser under test)."""
+    prices = {}
+    for line in IESO6A_CSV_EXCERPT.splitlines()[4:]:
+        cells = line.split(",")
+        prices.setdefault(date.fromisoformat(cells[0]), {})[int(cells[1])] = float(cells[2])
+    return prices
+
+
+IESO6A_PROFILES = IESO6A__excerpt_prices()
+
+
+def IESO6A__dates(year, month):
+    return [date(year, month, day) for day in range(1, calendar.monthrange(year, month)[1] + 1)]
+
+
+def IESO6A__hoep(day, hour):
+    """Real Saturday, Sunday or weekday (Canada Day) profile, shifted by month and year so that bins differ."""
+    profile = IESO6A_PROFILES[{5: SATURDAY, 6: SUNDAY}.get(day.weekday(), HOLIDAY)]
+    return round(profile[hour] + day.month + (day.year - 2020) * 0.5, 2)
+
+
+def IESO6A__month_mean(year, month):
+    values = [IESO6A__hoep(day, hour) for day in IESO6A__dates(year, month) for hour in range(1, 25)]
+    return sum(values) / len(values)
+
+
+def IESO6A__weighted(year, month):
+    return round(IESO6A__month_mean(year, month) + 1, 2)
+
+
+def IESO6A__hoep_csv(year, drop=(), header=None):
+    """The native layout (preamble, header, nine columns) for a synthetic year."""
+    lines = IESO6A_CSV_EXCERPT.splitlines()[:4]
+    lines[2] = lines[2].replace("2024", str(year))
+    if header is not None:
+        lines[3] = header
+    day = date(year, 1, 1)
+    while day.year == year:
+        for hour in range(1, 25):
+            if day not in drop and (day, hour) not in drop:
+                lines.append(",".join([day.isoformat(), str(hour), "%.2f" % IESO6A__hoep(day, hour)] + ["0.00"] * 6))
+        day += timedelta(days=1)
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
+def IESO6A__averages_xml(year, override=None, drop=None):
+    """The native 2024 report re-dated to year, with the synthetic arithmetic means rounded like the IESO.
+
+    override = {month: printed ArithmeticAve text}; drop = a month whose block is removed.
+    """
+    override = override or {}
+    text = IESO6A_AVERAGES_XML.replace("<ReportYear>2024</ReportYear>", "<ReportYear>" + str(year) + "</ReportYear>")
+
+    def swap(match):
+        month = IESO6A_gmp.MONTH_NAMES.index(match.group(1)) + 1
+        if month == drop:
+            return ""
+        arithmetic = override.get(month, "%.2f" % IESO6A__month_mean(year, month))
+        block = re.sub(r"<ArithmeticAve>[^<]*<", "<ArithmeticAve>" + arithmetic + "<", match.group(0))
+        return re.sub(r"<WeightedAve>[^<]*<", "<WeightedAve>%.2f<" % IESO6A__weighted(year, month), block)
+
+    return re.sub(r"<HOEP>\s*<Month>(\w+)</Month>.*?</HOEP>", swap, text, flags=re.S).encode("utf-8")
+
+
+def IESO6A__page(scale=1.0, html=None):
+    """The real page excerpt with a cents-per-kWh table for the synthetic years (2025 row kept partial)."""
+    html = IESO6A_PAGE if html is None else html
+    rows = ["<tr><td><strong>2025</strong></td><td>6.83</td><td>7.84</td><td>4.89</td><td>4.11</td>"
+            + "<td></td>" * 8 + "</tr>"]
+    for year in reversed(IESO6A_YEARS):
+        cells = "".join("<td>%.2f</td>" % (round(IESO6A__weighted(year, month) / 10, 2) * scale) for month in range(1, 13))
+        rows.append("<tr><td><strong>" + str(year) + "</strong></td>" + cells + "</tr>")
+    start = html.index("<tbody>") + len("<tbody>")
+    end = html.index("</tbody>", start)
+    return (html[:start] + "\n".join(rows) + html[end:]).encode("utf-8")
+
+
+def IESO6A__xlsx(sheets):
+    workbook = openpyxl.Workbook()
+    default = workbook.worksheets[0]
+    for title, rows in sheets.items():
+        sheet = workbook.create_sheet(title)
+        for row in rows:
+            sheet.append(row)
+    workbook.remove(default)
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
+
+
+def IESO6A__copy(sheets):
+    return json.loads(json.dumps(sheets))
+
+
+def IESO6A__actual_row(rows, year):
+    """The row holding a year's actual rates (year in column A of the block's first row)."""
+    current = None
+    for row in rows:
+        if row and isinstance(row[0], int):
+            current = row[0]
+        if current == year and len(row) > 1 and str(row[1]).replace("\u200b", "").startswith("Actual"):
+            return row
+    raise AssertionError("no actual row for " + str(year))
+
+
+def IESO6A__ga_actual(year, month):
+    return IESO6A__actual_row(IESO6A_GA_MWH_SHEETS["Global Adjustment $MWh"], year)[month + 1]
+
+
+def IESO6A__listing(names):
+    lines = ['<img src="/icons/text.gif" alt="[TXT]"> <a href="' + name + '">' + name + "</a>" for name in names]
+    return ("<html><body><pre>\n" + "\n".join(lines) + "\n</pre></body></html>").encode("utf-8")
+
+
+def IESO6A__hoep_name(year):
+    return "PUB_PriceHOEPPredispOR_" + str(year) + "_v3.csv"
+
+
+def IESO6A__average_name(year):
+    return "PUB_PriceHOEPAverage_" + str(year) + "_v2.xml"
+
+
+@functools.lru_cache(maxsize=1)
+def IESO6A__base_world():
+    world = {}
+    for year in IESO6A_YEARS:
+        world[IESO6A_gmp.HOEP_DIR + IESO6A__hoep_name(year)] = IESO6A__hoep_csv(year)
+        world[IESO6A_gmp.HOEP_AVERAGE_DIR + IESO6A__average_name(year)] = IESO6A__averages_xml(year)
+    world[IESO6A_gmp.HOEP_DIR] = IESO6A__listing([name for year in IESO6A_YEARS for name in (
+        "PUB_PriceHOEPPredispOR_" + str(year) + ".csv", IESO6A__hoep_name(year))])
+    world[IESO6A_gmp.HOEP_AVERAGE_DIR] = IESO6A__listing([name for year in IESO6A_YEARS for name in (
+        "PUB_PriceHOEPAverage_" + str(year) + ".xml", IESO6A__average_name(year))])
+    world[IESO6A_gmp.GA_MWH_URL] = IESO6A__xlsx(IESO6A_GA_MWH_SHEETS)
+    world[IESO6A_gmp.GA_KWH_URL] = IESO6A__xlsx(IESO6A_GA_KWH_SHEETS)
+    world[IESO6A_gmp.HOEP_PAGE_URL] = IESO6A__page()
+    return world
+
+
+def IESO6A__world(**changes):
+    world = dict(IESO6A__base_world())
+    world.update(changes)
+    return world
+
+
+def IESO6A__fetcher(world):
+    def fetch(url):
+        if url not in world:
+            raise IESO6A_gmp.MarketDataError("could not download " + url + ": HTTP 404")
+        return world[url]
+    return fetch
+
+
+def IESO6A__document(world, start_year=2020, end_year=2024):
+    source = IESO6A_gmp.ReportSource(None, IESO6A_RUN_DATE, fetch=IESO6A__fetcher(world), delay=0)
+    return IESO6A_gmp.build_document(source, start_year, end_year, generated_at=IESO6A_GENERATED)
+
+
+@functools.lru_cache(maxsize=1)
+def IESO6A__base_document():
+    return IESO6A__document(IESO6A__world())
+
+
+def IESO6A__bin(document, month, day_type, hour):
+    return next(b for b in document["hourly_surface"]
+                if (b["month"], b["day_type"], b["hour"]) == (month, day_type, hour))
+
+
+def IESO6A__strings(value):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from IESO6A__strings(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from IESO6A__strings(item)
+
+
+def IESO6A__hoep_sentences(texts):
+    for text in texts:
+        if text.startswith("http"):
+            continue
+        for sentence in re.split(r"(?<=[.;])\s+", text):
+            if "HOEP" in sentence or "Hourly Ontario Energy Price" in sentence:
+                yield sentence
+
+
+# -- parsers ---------------------------------------------------------------------------------------
+
+def test_ieso6a_yearly_hoep_report_parses_hour_ending_prices_in_dollars_per_mwh():
+    prices = IESO6A_gmp.parse_hoep_csv(IESO6A_CSV_EXCERPT, 2024, "PUB_PriceHOEPPredispOR_2024_v395.csv")
+    assert prices == IESO6A_PROFILES
+    assert sorted(prices) == [SATURDAY, SUNDAY, HOLIDAY]
+    assert all(sorted(hours) == list(range(1, 25)) for hours in prices.values())
+    assert prices[SATURDAY][1] == 7.95 and prices[HOLIDAY][24] == 24.29
+
+
+@pytest.mark.parametrize("old, new, message", [
+    ("Date,Hour,HOEP,", "Date,Hour,HOEP (cents/kWh),", "unexpected header"),
+    ("\\\\For 2024", "\\\\For 2023", "expected the yearly HOEP report for 2024"),
+    ("\\\\Yearly HOEP OR Predispatch Report", "\\\\Yearly Ontario Price Report", "expected the yearly HOEP report"),
+    ("2024-06-29,2,4.01,", "2024-06-29,25,4.01,", "invalid hour"),
+    ("2024-06-29,2,4.01,", "2024-06-29,1,4.01,", "duplicate 2024-06-29 hour 1"),
+    ("2024-06-29,2,4.01,", "2024-06-29,2,n/a,", "expected a number"),
+    ("2024-06-29,2,4.01,", "2024-06-29,2,,", "expected a number"),
+    ("2024-06-29,2,4.01,", "2024-06-29,2,2400.00,", "outside +/-2000"),
+    ("2024-06-29,2,4.01,", "2023-06-29,2,4.01,", "outside 2024"),
+    ("2024-06-29,2,4.01,6.18,5.90,6.46,0.15,0.12,0.12", "2024-06-29,2,4.01,6.18", "expected 9 columns"),
+])
+def test_ieso6a_yearly_hoep_report_rejects_layout_unit_or_value_changes(old, new, message):
+    assert old in IESO6A_CSV_EXCERPT
+    with pytest.raises(IESO6A_gmp.MarketDataError, match=re.escape(message)):
+        IESO6A_gmp.parse_hoep_csv(IESO6A_CSV_EXCERPT.replace(old, new, 1), 2024)
+
+
+def test_ieso6a_monthly_averages_report_gives_arithmetic_and_weighted_averages():
+    averages = IESO6A_gmp.parse_hoep_averages(IESO6A_AVERAGES_XML.encode("utf-8"), 2024)
+    assert len(averages) == 12
+    assert averages["2024-01"] == {"arithmetic": 42.27, "weighted": 43.29}
+    assert averages["2024-12"] == {"arithmetic": 38.43, "weighted": 39.42}
+
+
+@pytest.mark.parametrize("old, new, message", [
+    ('docID="PriceHOEPAverage"', 'docID="PriceOEMPAverage"', "expected an IESO PriceHOEPAverage document"),
+    ("<ReportYear>2024</ReportYear>", "<ReportYear>2023</ReportYear>", "expected ReportYear 2024"),
+    ("<Month>March</Month>", "<Month>Mar</Month>", "unexpected month"),
+    ("<Month>March</Month>", "<Month>February</Month>", "duplicate month 2024-02"),
+    ("<ArithmeticAve>42.27</ArithmeticAve>", "<ArithmeticAve>-</ArithmeticAve>", "expected a number"),
+    ('<?xml version="1.0" encoding="UTF-8"?>', '<?xml version="1.0"?><!DOCTYPE d [<!ENTITY e "x">]>', "DOCTYPE"),
+])
+def test_ieso6a_monthly_averages_report_rejects_changed_documents(old, new, message):
+    assert old in IESO6A_AVERAGES_XML
+    with pytest.raises(IESO6A_gmp.MarketDataError, match=re.escape(message)):
+        IESO6A_gmp.parse_hoep_averages(IESO6A_AVERAGES_XML.replace(old, new, 1).encode("utf-8"), 2024)
+
+
+def test_ieso6a_hoep_page_requires_the_retirement_statement_and_its_cents_table():
+    weighted = IESO6A_gmp.parse_hoep_page(IESO6A_PAGE)
+    assert IESO6A_STATEMENT == IESO6A_gmp.HOEP_RETIREMENT_STATEMENT
+    assert weighted["2024-01"] == 4.33 and weighted["2020-04"] == 0.61 and weighted["2025-04"] == 4.11
+    assert "2025-05" not in weighted and len(weighted) == 64
+    averages = IESO6A_gmp.parse_hoep_averages(IESO6A_AVERAGES_XML.encode("utf-8"), 2024)
+    assert all(abs(averages[key]["weighted"] / 10 - weighted[key]) <= 0.006 for key in averages)
+
+
+@pytest.mark.parametrize("old, new, message", [
+    (IESO6A_STATEMENT, "The HOEP is the hourly price.", "retirement statement"),
+    ("Average Weighted Hourly Price (&cent;/kWh)", "Average Weighted Hourly Price ($/MWh)", "not found"),
+    ("<strong>Dec</strong>", "<strong>Total</strong>", "unexpected columns"),
+])
+def test_ieso6a_hoep_page_rejects_missing_statement_or_relabelled_table(old, new, message):
+    assert old in IESO6A_PAGE
+    with pytest.raises(IESO6A_gmp.MarketDataError, match=re.escape(message)):
+        IESO6A_gmp.parse_hoep_page(IESO6A_PAGE.replace(old, new, 1))
+
+
+def test_ieso6a_ga_workbooks_give_class_b_actual_rates_deferral_and_recovery():
+    sheets = IESO6A_gmp.read_workbook(IESO6A__xlsx(IESO6A_GA_MWH_SHEETS), "GA $/MWh workbook")
+    rates = IESO6A_gmp.parse_ga_mwh(sheets)
+    assert (rates["2020-01"], rates["2022-08"], rates["2024-12"], rates["2025-12"]) == (102.32, 4.99, 61.77, -2.92)
+    assert [rates["2020-04"], rates["2020-05"], rates["2020-06"]] == [115, 115, 115]
+    assert len(rates) == 84
+    cents = IESO6A_gmp.parse_ga_kwh(IESO6A_gmp.read_workbook(IESO6A__xlsx(IESO6A_GA_KWH_SHEETS), "GA cents/kWh workbook"))
+    assert (cents["2020-01"], cents["2015-05"], cents["2015-03"], cents["2025-12"]) == (10.23, 9.67, 6.29, -0.29)
+    assert IESO6A_gmp.parse_ga_deferral(sheets) == (115.0, {"2020-04": 150.57, "2020-05": 147.18, "2020-06": 128.4})
+    recovery = IESO6A_gmp.parse_ga_recovery(sheets)
+    assert len(recovery) == 12 and recovery["2021-02"] == 7.09 and recovery["2021-12"] == 5.47
+
+
+def IESO6A__relabel(old, new):
+    sheets = IESO6A__copy(IESO6A_GA_MWH_SHEETS)
+    for row in sheets["Global Adjustment $MWh"]:
+        for index, value in enumerate(row):
+            if value == old:
+                row[index] = new
+                return sheets
+    raise AssertionError(old)
+
+
+def IESO6A__with_actual(year, month, value):
+    sheets = IESO6A__copy(IESO6A_GA_MWH_SHEETS)
+    IESO6A__actual_row(sheets["Global Adjustment $MWh"], year)[month + 1] = value
+    return sheets
+
+
+@pytest.mark.parametrize("change, message", [
+    (lambda: IESO6A__relabel("Actual Rate ($/MWh)", "Actual Rate (cents/kWh)"), "unexpected row label"),
+    (lambda: IESO6A__relabel("Sept", "Oct"), "unexpected month headings"),
+    (lambda: {"Sheet1": IESO6A_GA_MWH_SHEETS["Global Adjustment $MWh"]}, "sheet 'Global Adjustment $MWh' not found"),
+    (lambda: IESO6A__with_actual(2020, 1, "n/a"), "expected a number"),
+    (lambda: IESO6A__with_actual(2020, 1, 1023.2), "outside +/-1000"),
+])
+def test_ieso6a_ga_workbook_rejects_unit_label_or_layout_changes(change, message):
+    with pytest.raises(IESO6A_gmp.MarketDataError, match=re.escape(message)):
+        IESO6A_gmp.parse_ga_mwh(IESO6A_gmp.read_workbook(IESO6A__xlsx(change()), "GA $/MWh workbook"))
+
+
+def test_ieso6a_ga_workbook_rejects_files_that_are_not_workbooks_or_lack_the_deferral_statement():
+    with pytest.raises(IESO6A_gmp.MarketDataError, match="not a readable .xlsx workbook"):
+        IESO6A_gmp.read_workbook(b"<html>Moved</html>", "GA $/MWh workbook")
+    sheets = IESO6A__copy(IESO6A_GA_MWH_SHEETS)
+    sheets["2020 Deferral Information"][0][0] = "Deferral information."
+    with pytest.raises(IESO6A_gmp.MarketDataError, match="deferral cap statement not found"):
+        IESO6A_gmp.parse_ga_deferral(IESO6A_gmp.read_workbook(IESO6A__xlsx(sheets), "GA $/MWh workbook"))
+
+
+# -- window, completeness, cross-checks ------------------------------------------------------------
+
+def test_ieso6a_window_is_full_calendar_years_of_the_legacy_hoep():
+    assert IESO6A_gmp.check_years(2020, 2024) == IESO6A_YEARS
+    months = IESO6A_gmp.window_months(2020, 2024)
+    assert len(months) == 60 and months[0] == (2020, 1) and months[-1] == (2024, 12)
+    assert sum(len(IESO6A__dates(year, month)) for year, month in months) == 1827
+    for start, end in ((2020, 2025), (2002, 2024), (2024, 2020)):
+        with pytest.raises(IESO6A_gmp.MarketDataError):
+            IESO6A_gmp.check_years(start, end)
+
+
+def test_ieso6a_missing_day_or_hour_fails_closed():
+    world = IESO6A__world(**{IESO6A_gmp.HOEP_DIR + IESO6A__hoep_name(2022): IESO6A__hoep_csv(2022, drop={date(2022, 2, 14)})})
+    with pytest.raises(IESO6A_gmp.MarketDataError, match=r"HOEP missing for 1 day\(s\): 2022-02-14"):
+        IESO6A__document(world, 2022, 2022)
+    world = IESO6A__world(**{IESO6A_gmp.HOEP_DIR + IESO6A__hoep_name(2023): IESO6A__hoep_csv(2023, drop={(date(2023, 3, 12), 3)})})
+    with pytest.raises(IESO6A_gmp.MarketDataError, match=r"HOEP hours missing for 1 day\(s\): 2023-03-12 hour\(s\) \[3\]"):
+        IESO6A__document(world, 2023, 2023)
+
+
+def test_ieso6a_missing_year_report_or_ga_month_fails_closed():
+    names = [name for name in re.findall(r'href="([^"]+)"', IESO6A__base_world()[IESO6A_gmp.HOEP_DIR].decode()) if "2021" not in name]
+    with pytest.raises(IESO6A_gmp.MarketDataError, match="yearly HOEP report not available for 2021"):
+        IESO6A__document(IESO6A__world(**{IESO6A_gmp.HOEP_DIR: IESO6A__listing(names)}))
+    with pytest.raises(IESO6A_gmp.MarketDataError, match="GA Class B actual rate missing for 2023-07"):
+        IESO6A__document(IESO6A__world(**{IESO6A_gmp.GA_MWH_URL: IESO6A__xlsx(IESO6A__with_actual(2023, 7, None))}), 2023, 2023)
+
+
+def test_ieso6a_unit_or_format_changes_fail_closed():
+    header = "Date,Hour,HOEP (cents/kWh),Hour 1 Predispatch,Hour 2 Predispatch,Hour 3 Predispatch,OR 10 Min Sync,"\
+             "OR 10 Min non-sync,OR 30 Min"
+    with pytest.raises(IESO6A_gmp.MarketDataError, match="unexpected header"):
+        IESO6A__document(IESO6A__world(**{IESO6A_gmp.HOEP_DIR + IESO6A__hoep_name(2020): IESO6A__hoep_csv(2020, header=header)}), 2020, 2020)
+    with pytest.raises(IESO6A_gmp.MarketDataError, match="HOEP unit check .* failed"):
+        IESO6A__document(IESO6A__world(**{IESO6A_gmp.HOEP_PAGE_URL: IESO6A__page(scale=10)}), 2024, 2024)
+    cents = IESO6A__copy(IESO6A_GA_KWH_SHEETS)
+    IESO6A__actual_row(cents["Global Adjustment kWh"], 2022)[8 + 1] = 4.99
+    with pytest.raises(IESO6A_gmp.MarketDataError, match=r"GA unit check .* failed .*2022-08 4\.99 \$/MWh vs 4\.99 cents/kWh"):
+        IESO6A__document(IESO6A__world(**{IESO6A_gmp.GA_KWH_URL: IESO6A__xlsx(cents)}), 2022, 2022)
+
+
+def test_ieso6a_cross_check_against_the_published_arithmetic_averages():
+    close = {3: "%.3f" % (IESO6A__month_mean(2022, 3) + 0.008)}
+    passing = IESO6A__document(IESO6A__world(**{IESO6A_gmp.HOEP_AVERAGE_DIR + IESO6A__average_name(2022): IESO6A__averages_xml(2022, override=close)}),
+                        2022, 2022)
+    check = passing["metadata"]["cross_check"]["hoep_monthly_arithmetic"]
+    assert 0.0075 <= check["max_abs_difference"] <= IESO6A_gmp.HOEP_AVERAGE_TOLERANCE_PER_MWH == 0.01
+    far = {3: "%.3f" % (IESO6A__month_mean(2022, 3) + 0.012)}
+    with pytest.raises(IESO6A_gmp.MarketDataError, match="HOEP cross-check .* failed .*2022-03 computed"):
+        IESO6A__document(IESO6A__world(**{IESO6A_gmp.HOEP_AVERAGE_DIR + IESO6A__average_name(2022): IESO6A__averages_xml(2022, override=far)}),
+                  2022, 2022)
+    with pytest.raises(IESO6A_gmp.MarketDataError, match="2022-03 is not in the published report"):
+        IESO6A__document(IESO6A__world(**{IESO6A_gmp.HOEP_AVERAGE_DIR + IESO6A__average_name(2022): IESO6A__averages_xml(2022, drop=3)}), 2022, 2022)
+
+
+# -- output ----------------------------------------------------------------------------------------
+
+def IESO6A__expected_bin(month, day_type, hour):
+    days = [day for year in IESO6A_YEARS for day in IESO6A__dates(year, month) if (day.weekday() >= 5) == (day_type == "weekend")]
+    energy = sum(IESO6A__hoep(day, hour + 1) for day in days) / len(days) / 1000
+    adjustment = sum(IESO6A__ga_actual(day.year, month) for day in days) / len(days) / 1000
+    return len(days), energy, adjustment
+
+
+def test_ieso6a_bins_average_observed_hours_by_month_day_type_and_hour_beginning():
+    document = IESO6A__base_document()
+    surface = document["hourly_surface"]
+    assert len(surface) == 576 and all(set(b) == set(IESO6A_gmp.BIN_FIELDS) for b in surface)
+    for month, day_type, hour in ((7, "weekday", 16), (7, "weekend", 4), (2, "weekend", 23), (4, "weekday", 0)):
+        count, energy, adjustment = IESO6A__expected_bin(month, day_type, hour)
+        entry = IESO6A__bin(document, month, day_type, hour)
+        assert entry["hours_count"] == count
+        assert entry["avg_energy_price"] == pytest.approx(energy, abs=1e-6)
+        assert entry["avg_ga_class_b"] == pytest.approx(adjustment, abs=1e-6)
+        assert entry["combined"] == pytest.approx(energy + adjustment, abs=2e-6)
+    assert IESO6A_gmp.day_type(HOLIDAY) == "weekday"  # Canada Day 2024 (a Monday) counts as a weekday
+    assert IESO6A__bin(document, 7, "weekday", 16)["hours_count"] == 110
+    assert IESO6A__bin(document, 4, "weekday", 0)["avg_ga_class_b"] != IESO6A__bin(document, 4, "weekend", 0)["avg_ga_class_b"]
+    assert sum(b["hours_count"] for b in surface) == 43848
+
+
+def test_ieso6a_metadata_describes_the_window_sources_checks_and_ga_programs():
+    metadata = IESO6A__base_document()["metadata"]
+    assert set(IESO6A_gmp.REQUIRED_METADATA) <= set(metadata)
+    assert metadata["derivation_method"] == "observed_legacy_hoep_2020_2024_average"
+    assert (metadata["window_start"], metadata["window_end"], metadata["years"]) == ("2020-01-01", "2024-12-31", IESO6A_YEARS)
+    assert metadata["generated_at"] == "2026-10-09T12:00:00Z"
+    assert metadata["coverage"] == {
+        "days": 1827, "hours": 43848, "months": 60, "weekday_days": 1305, "weekend_days": 522,
+        "hours_per_bin": {"weekday": {"min": 101, "max": 112}, "weekend": {"min": 41, "max": 46}},
+    }
+    assert len(metadata["months"]) == 60
+    assert metadata["months"][0] == {"month": "2020-01", "days": 31, "weekday_days": 23, "weekend_days": 8,
+                                     "hours": 744, "ga_class_b_actual_per_mwh": 102.32}
+    assert metadata["hoep_retirement"] == {"retired_on": "2025-04-30", "statement": IESO6A_STATEMENT,
+                                           "source_url": IESO6A_gmp.HOEP_PAGE_URL}
+    urls = {source["url"] for source in metadata["sources"]}
+    assert {IESO6A_gmp.HOEP_DIR, IESO6A_gmp.HOEP_AVERAGE_DIR, IESO6A_gmp.GA_MWH_URL, IESO6A_gmp.GA_KWH_URL, IESO6A_gmp.HOEP_PAGE_URL} <= urls
+    assert all(set(source) == {"name", "url", "type"} for source in metadata["sources"])
+    checks = metadata["cross_check"]
+    assert [checks[name]["months_checked"] for name in ("hoep_monthly_arithmetic", "hoep_unit", "ga_class_b_units")]\
+        == [60, 60, 60]
+    assert len(checks["hoep_monthly_arithmetic"]["months"]) == 60
+    assert checks["hoep_monthly_arithmetic"]["max_abs_difference"] <= 0.005
+    assert [note["type"] for note in metadata["ga_adjustments"]] == ["deferral_cap", "deferral_recovery_not_included"]
+    assert metadata["ga_adjustments"][0]["unadjusted_actual_per_mwh"]["2020-04"] == 150.57
+    assert "do not include" in metadata["ga_adjustments"][1]["description"]
+    assert "hour-ending" in metadata["hour_convention"] and "Eastern Standard Time" in metadata["hour_convention"]
+    assert "holiday counts as the day of the week" in metadata["day_type_rule"]
+    for phrase in ("not a tariff, a bill or a forecast", "Class A", "peak demand factor", IESO6A_STATEMENT,
+                   "Since May 1, 2025, market-billed customers pay the Ontario Electricity Market Price (OEMP"):
+        assert phrase in metadata["notes"]
+    later = IESO6A__document(IESO6A__world(), 2023, 2024)["metadata"]
+    assert later["derivation_method"] == "observed_legacy_hoep_2023_2024_average" and later["ga_adjustments"] == []
+
+
+def test_ieso6a_metadata_never_presents_hoep_as_current():
+    texts = list(IESO6A__strings(IESO6A__base_document()["metadata"]))
+    sentences = list(IESO6A__hoep_sentences(texts))
+    assert sentences
+    for sentence in sentences:
+        lower = sentence.lower()
+        assert "retire" in lower or "legacy" in lower, sentence
+    joined = " ".join(texts).lower()
+    for phrase in ("current hoep", "hoep is ", "trailing 12", "representative"):
+        assert phrase not in joined
+
+
+def test_ieso6a_main_writes_only_after_every_check_passes(tmp_path, monkeypatch):
+    output = tmp_path / "market.json"
+    monkeypatch.setattr(IESO6A_gmp, "REQUEST_DELAY_SECONDS", 0)
+    broken = IESO6A__world(**{IESO6A_gmp.HOEP_DIR + IESO6A__hoep_name(2020): IESO6A__hoep_csv(2020, drop={date(2020, 12, 25)})})
+    monkeypatch.setattr(IESO6A_gmp, "http_get", IESO6A__fetcher(broken))
+    output.write_text("previous", encoding="utf-8")
+    assert IESO6A_gmp.main(["--output", str(output)]) == 1
+    assert output.read_text(encoding="utf-8") == "previous"
+    monkeypatch.setattr(IESO6A_gmp, "http_get", IESO6A__fetcher(IESO6A__world()))
+    assert IESO6A_gmp.main(["--output", str(output), "--start-year", "2020", "--end-year", "2024"]) == 0
+    written = json.loads(output.read_text(encoding="utf-8"))
+    assert len(written["hourly_surface"]) == 576
+    assert written["metadata"]["window_end"] == "2024-12-31"
+    assert not list(tmp_path.glob("*.tmp"))
+    assert IESO6A_gmp.main(["--output", str(tmp_path / "other.json"), "--end-year", "2025"]) == 1
+    assert not (tmp_path / "other.json").exists()
+
+
+def test_ieso6a_cache_dir_keeps_versioned_reports_as_an_archive(tmp_path):
+    calls = []
+    world = IESO6A__base_world()
+
+    def fetch(url):
+        calls.append(url)
+        return world[url]
+
+    source = IESO6A_gmp.ReportSource(tmp_path, IESO6A_RUN_DATE, fetch=fetch, delay=0)
+    assert len(IESO6A_gmp.load_hoep(source, [2024])) == 366
+    folder = tmp_path / "reports-public.ieso.ca_public_PriceHOEPPredispOR"
+    assert (folder / IESO6A__hoep_name(2024)).is_file() and (folder / IESO6A_RUN_DATE.isoformat() / "_listing.html").is_file()
+
+    def offline(url):
+        raise IESO6A_gmp.MarketDataError("offline: " + url)
+
+    later = IESO6A_gmp.ReportSource(tmp_path, date(2026, 12, 1), fetch=offline, delay=0)
+    assert later.archived(IESO6A_gmp.HOEP_DIR, IESO6A_gmp.HOEP_FILE_RE) == {"2024": (3, IESO6A__hoep_name(2024))}
+    assert later.get(IESO6A_gmp.HOEP_DIR + IESO6A__hoep_name(2024), immutable=True) == world[IESO6A_gmp.HOEP_DIR + IESO6A__hoep_name(2024)]
+    with pytest.raises(IESO6A_gmp.MarketDataError, match="offline"):
+        later.get(IESO6A_gmp.HOEP_DIR, immutable=False)
+    assert calls.count(IESO6A_gmp.HOEP_DIR + IESO6A__hoep_name(2024)) == 1
+
+
+# -- consumers -------------------------------------------------------------------------------------
+
+def test_ieso6a_market_pricing_module_reads_the_legacy_surface(tmp_path):
+    document = IESO6A__base_document()
+    path = tmp_path / "market.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    assert IESO6A_market_pricing.get_observed_bin(7, "weekday", 16, path) == IESO6A__bin(document, 7, "weekday", 16)
+    july = IESO6A_market_pricing.get_monthly_average(7, path)
+    bins = [b for b in document["hourly_surface"] if b["month"] == 7]
+    assert july["hours"] == 31 * 24 * 5
+    assert july["combined"] == pytest.approx(sum(b["combined"] * b["hours_count"] for b in bins) / july["hours"],
+                                             abs=1e-6)
+    renamed = dict(document["metadata"], derivation_method="observed_legacy_hoep_2019_2023_average")
+    path.write_text(json.dumps(dict(document, metadata=renamed)), encoding="utf-8")
+    assert IESO6A_market_pricing.load_ontario_market_pricing(path)["hourly_surface"]
+    tariff = IESO6A_market_pricing.get_market_tariff_metadata()
+    assert "Ontario Electricity Market Price" in tariff["formula"]
+    for sentence in IESO6A__hoep_sentences(IESO6A__strings(tariff)):
+        assert "retire" in sentence.lower() or "legacy" in sentence.lower(), sentence
+
+
+@pytest.mark.parametrize("method", [
+    "representative_historical_model", "observed_trailing_12_month_average", "observed_legacy_hoep_2020_2024", None,
+])
+def test_ieso6a_market_pricing_module_rejects_files_not_built_from_observations(tmp_path, method):
+    path = tmp_path / "market.json"
+    path.write_text(json.dumps({"metadata": {"derivation_method": method}, "hourly_surface": []}), encoding="utf-8")
+    with pytest.raises(ValueError, match="not an observed IESO market surface"):
+        IESO6A_market_pricing.load_ontario_market_pricing(path)
+
+
+def test_ieso6a_site_reads_the_generated_method_and_labels_the_legacy_market():
+    app = (IESO6A_ROOT / "site" / "js" / "app.js").read_text(encoding="utf-8")
+    match = re.search(r"const OBSERVED_MARKET_METHOD = /(.+)/;", app)
+    assert match, "OBSERVED_MARKET_METHOD regex not found in app.js"
+    pattern = re.compile(match.group(1))
+    for method in (IESO6A__base_document()["metadata"]["derivation_method"], "observed_legacy_hoep_2019_2023_average"):
+        assert pattern.search(method) and IESO6A_market_pricing.OBSERVED_METHOD_RE.fullmatch(method)
+    for method in ("representative_historical_model", "observed_trailing_12_month_average"):
+        assert not pattern.search(method) and not IESO6A_market_pricing.OBSERVED_METHOD_RE.fullmatch(method)
+    assert "Ontario Electricity Market Price" in app and "legacy HOEP history" in app
+    html = (IESO6A_ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    view = html[html.index('id="view-market"'):html.index("/view-market")]
+    for label in ("HOEP (legacy)", "Class B GA (actual)", "Combined"):
+        assert ">" + label + "</option>" in view
+    text = " ".join(re.sub(r"<[^>]+>", " ", view).split())
+    sentences = list(IESO6A__hoep_sentences([text]))
+    assert sentences and all("retire" in s.lower() or "legacy" in s.lower() for s in sentences), sentences

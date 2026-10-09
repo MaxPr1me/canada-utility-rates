@@ -124,9 +124,18 @@
 
             <section class="market-header">
                 <h2>Electricity Market Pricing</h2>
-                <p>Historical hourly energy price bins for market-based rate classes.</p>
+                <p id="market-intro">Observed historical averages of the legacy Hourly Ontario Energy Price (HOEP; retired April 30, 2025) and the Class B Global Adjustment (actual monthly rates) by month, weekday/weekend and hour. For comparison only: not a tariff, a bill or a forecast.</p>
+                <p id="market-window"></p>
             </section>
 
+            <section class="estimated-banner" role="note">
+                <span>The Hourly Ontario Energy Price (HOEP) retired on April 30, 2025, and was replaced with the Ontario Price. Since May 1, 2025, market-billed customers pay the Ontario Electricity Market Price (OEMP) plus Global Adjustment; this view does not show the Ontario Price.</span>
+                <a href="https://www.ieso.ca/Power-Data/Price-Overview/Ontario-Market-Prices" target="_blank" rel="noopener">Current Ontario Price (IESO) &rarr;</a>
+            </section>
+
+            <section id="market-notice" class="estimated-banner hidden" role="status"></section>
+
+            <div id="market-content">
             <section class="market-controls">
                 <div class="filter-group">
                     <label for="market-region">Region</label>
@@ -144,16 +153,16 @@
                 <div class="filter-group">
                     <label for="market-display">Display</label>
                     <select id="market-display">
-                        <option value="combined_energy_component">Combined (HOEP + GA)</option>
-                        <option value="avg_hoep">HOEP Only</option>
-                        <option value="avg_ga">Global Adjustment Only</option>
+                        <option value="avg_energy_price">HOEP (legacy)</option>
+                        <option value="avg_ga_class_b">Class B GA (actual)</option>
+                        <option value="combined" selected>Combined</option>
                     </select>
                 </div>
             </section>
 
             <section id="market-heatmap" class="market-section">
                 <h3>Hourly Price Heatmap</h3>
-                <p class="section-desc">Rows = months, columns = hours of day. Hover for values.</p>
+                <p class="section-desc">Rows = calendar months (each averaged over every observed year), columns = hour beginning (EST). Hover for values and observed hours.</p>
                 <div id="heatmap-container"></div>
             </section>
 
@@ -173,6 +182,7 @@
                 <h3>Methodology &amp; Sources</h3>
                 <div id="methodology-container"></div>
             </section>
+            </div><!-- /market-content -->
 
         </div><!-- /view-market -->
 

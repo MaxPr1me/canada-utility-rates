@@ -712,6 +712,11 @@ header h1 {
     padding: 1.5rem 1.5rem 0.5rem;
 }
 
+#market-notice.hidden,
+#market-content.hidden {
+    display: none;
+}
+
 .market-header h2 {
     font-size: 1.35rem;
     font-weight: 700;
@@ -842,6 +847,10 @@ header h1 {
 }
 
 /* ── Market table ─────────────────────────────────────────── */
+
+#market-table-container {
+    overflow-x: auto;
+}
 
 #market-table-container table {
     width: 100%;

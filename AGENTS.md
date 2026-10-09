@@ -28,7 +28,9 @@ electricity (28 records: four wires companies and three Rate of Last Resort prov
 Ontario/Alberta gas (40 records: Enbridge Gas, ATCO Gas and EPCOR Natural Gas (Ontario)).
 Only AESO, a market reference, has no live output.
 Since October 9 the export also writes Ontario electricity "representative models" (typical
-monthly costs; see the glossary), which the website does not show yet.
+monthly costs; see the glossary), which the website does not show yet. Also since October 9,
+the website's Market Pricing page shows real hourly Ontario market prices from 2020-2024 (the old
+HOEP market, before May 2025; see "Ontario Market Pricing" below).
 These counts include conditional products and reference-only services, not that many
 fully audited building classes. SaskPower's scoped building schedules are audited;
 remaining utility gaps are listed in the [coverage matrix](docs/phase5_completion_matrix.md).
@@ -111,7 +113,7 @@ an exact percentage. Preserve history and do not stage unrelated work.
 | `scrapers/registry.py` | Reads the list of all utilities and their scraper info. |
 | `scrapers/utils/parsing.py` | HTML/PDF parsing helpers, including PDF URL resolution and strict `verify_tariff_values()` checks that prove fallback values still appear in an official schedule. |
 | `scrapers/utils/change_detection.py` | Compares live-parsed rates against seed data. Flags changes by severity (info/warning/critical). If critical drift is detected, the scraper rejects live data and falls back to seed. |
-| `scrapers/utils/market_pricing.py` | Ontario IESO market pricing model (HOEP + GA hourly bins). |
+| `scrapers/utils/market_pricing.py` | Reads the Ontario market history file (real hourly HOEP prices plus the actual Class B Global Adjustment, 2020-2024). It refuses a file that was not built from real observed prices. |
 | `scrapers/utils/validation.py` | Data quality checks run after every scrape. |
 
 ### Where the data lives
@@ -123,7 +125,7 @@ an exact percentage. Preserve history and do not stage unrelated work.
 | `data/db/rates.db` | The SQLite database where scraped rates are stored. Created automatically when you first run the scraper. |
 | `data/excel/old_urls.xlsm` | **Audit reference only.** An Excel file with historical URLs and rate data. NO scraper reads this file. It is git-ignored. |
 | `site/data/rates.json` | The JSON file the website reads. Created by running the export script. |
-| `site/data/market_pricing_ontario.json` | Ontario IESO hourly market pricing bins (576 bins: 12 months x 2 day types x 24 hours). |
+| `site/data/market_pricing_ontario.json` | Ontario market history: 576 averages (12 months x weekday/weekend x 24 hours) of the real hourly HOEP price and the actual monthly Class B Global Adjustment for 2020-2024. Rebuilt by `scripts/generate_market_pricing.py` (see "Ontario Market Pricing" below). |
 | `site/data/market_structure_notes.json` | Research notes on market structure for every Canadian province/territory. |
 | `site/data/missing_classes_report.json` | Audit report showing which utilities are missing customer classes. |
 | `site/data/source_review_report.json` | Source URL audit — compares Excel reference URLs against registry. |
@@ -400,22 +402,47 @@ The older Hourly Ontario Energy Price (HOEP) was retired on April 30, 2025. Sinc
 large customers' tariffs show a "Market Energy" line with no number, labelled "Variable",
 because the price changes every hour; no made-up average is stored in a tariff.
 
-The project models this with a **576-bin hourly pricing surface** stored in `site/data/market_pricing_ontario.json`. Each bin represents a typical $/kWh cost for:
-- A specific **month** (1-12)
-- A specific **day type** (weekday or weekend)
-- A specific **hour** (0-23)
+The website's **Market Pricing** page shows what this market really cost before it changed:
+**real (observed) prices**, not estimates, clearly labelled as the market before May 2025.
+In plain words:
 
-The included generator uses fixed monthly inputs and hourly multipliers; it does
-not download five years of observations. Treat the bins as modeled estimates.
-The dashboard's historical-data wording (which still says HOEP) is a known issue
-scheduled for correction.
+- The **HOEP** was Ontario's wholesale electricity price, set every hour, until April 30, 2025.
+- The **Global Adjustment (GA)** is charged per kWh and changes once a month. "Class B" is the
+  version most customers pay; the page uses its actual monthly rates.
+- A large customer buying at market prices paid roughly HOEP + GA for each kWh.
 
-**How to update it:** Re-running the current generator only rebuilds the same model.
-A rework that reads real IESO prices (Phase 6A) is in progress but not published. The IESO
-only keeps about 90 days of hourly day-ahead price files, so a full 12-month window of the new
-Ontario Price cannot be built until about August 2027. The project owner decided on October 9
-to use real hourly HOEP prices from 2020-2024 plus the actual monthly Class B Global Adjustment
-rates instead, clearly labelled as the market before May 2025. This is still being built.
+The page covers every hour of the five full years 2020-2024. The averages are stored in
+`site/data/market_pricing_ontario.json` as 576 "bins", one for each:
+- **month** (1-12)
+- **day type**: weekday (Monday-Friday) or weekend (Saturday-Sunday); a statutory holiday counts
+  as the weekday it falls on
+- **hour** (0-23, Eastern Standard Time)
+
+Each weekday bin is the average of 101-112 real hours and each weekend bin of 41-46. Example: on
+July weekdays at 4 p.m. the HOEP averaged 5.09 cents/kWh and the GA 6.58 cents/kWh, so 11.67
+cents/kWh together, over 110 hours.
+
+**Why old prices?** The HOEP ended on April 30, 2025. The new Ontario Price only started in May
+2025, and the IESO keeps only about 90 days of its hourly files online, so a full year of it
+cannot be downloaded. (The project would have to save the daily files itself for 12 months; that
+has not started.) A note on the page that is always visible says this and links to the IESO's
+current prices. These averages are never copied into a tariff: large customers' tariffs keep
+their "Variable" line.
+
+**How to update it:** run `python scripts/generate_market_pricing.py`. It downloads the official
+IESO files (the yearly hourly HOEP prices and the GA spreadsheet), checks that every month's
+average matches the IESO's own published monthly average (all 60 months agree within one cent
+per MWh) and that the units are right, and only then rewrites the file. If anything is missing
+or a check fails, it writes nothing and stops with an error, so the old file stays as it was.
+It is not part of the monthly automation. Because 2020-2024 are finished years, the numbers do
+not change unless someone chooses other years (`--start-year` and `--end-year`).
+
+Two GA details are written into the file: April-June 2020 use the lower, capped GA (115 $/MWh)
+that the IESO published under a provincial emergency order, and the 2021 rates leave out a
+separate recovery charge billed that year to Class B customers who were not on the Regulated
+Price Plan. These choices, and counting holidays as weekdays, are defaults the project owner can
+change. If the file was not built from real prices, the website hides the dashboard and shows a
+"not available" notice instead.
 
 ---
 
@@ -474,11 +501,11 @@ When choosing which URL to use for a utility, prefer:
 | **OEB** | Ontario Energy Board — the regulator that sets many Ontario utility rates. |
 | **QRAM** | Quarterly Rate Adjustment Mechanism — the Ontario Energy Board process that resets Ontario natural gas supply prices every three months. |
 | **IESO** | Independent Electricity System Operator — operates Ontario's wholesale electricity market. |
-| **HOEP** | Hourly Ontario Energy Price — Ontario's former real-time wholesale electricity price. **Retired April 30, 2025** and replaced by the Ontario Price (OEMP). |
+| **HOEP** | Hourly Ontario Energy Price — Ontario's former real-time wholesale electricity price. **Retired April 30, 2025** and replaced by the Ontario Price (OEMP). The Market Pricing page shows its real hourly history for 2020-2024. |
 | **Ontario Price (OEMP)** | Ontario Electricity Market Price — Ontario's hourly wholesale electricity price since May 1, 2025: the Day-Ahead Ontario Zonal Price plus a Load Forecast Deviation Adjustment. Large customers who are not on the Regulated Price Plan pay it plus the Global Adjustment. |
 | **DA-OZP** | Day-Ahead Ontario Zonal Price — the hourly price for the Ontario zone set a day ahead in the IESO market; the main part of the Ontario Price. The IESO keeps only about 90 days of the hourly files online. |
 | **Variable (market) charge** | A charge that follows a market price that changes over time (for example the Ontario Price). It is stored with a link to the market but no number, and the website shows "Variable". |
-| **GA** | Global Adjustment — monthly charge in Ontario covering contracted/regulated generation costs. |
+| **GA** | Global Adjustment — monthly charge in Ontario covering contracted/regulated generation costs. The Market Pricing page shows the actual monthly Class B rates for 2020-2024. |
 | **AESO** | Alberta Electric System Operator — operates Alberta's wholesale electricity market. |
 | **RRO** | Regulated Rate Option — Alberta's former default retail electricity rate. **Replaced by the Rate of Last Resort on January 1, 2025**; old RRO estimates stay in history. |
 | **RoLR** | Rate of Last Resort — Alberta's default retail electricity rate since January 1, 2025, for customers without a retail contract. Each provider's price is fixed for a two-year term (currently January 1, 2025 to December 31, 2026). |
@@ -498,7 +525,7 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 1,638 tests across 8 test modules, including `test_phase5_hardening` for
+There are 1,683 tests across 8 test modules, including `test_phase5_hardening` for
 provenance, storage and history. Normal tests block unmocked network access.
 The BC Hydro, FortisBC Electric, Hydro-Quebec, NL Hydro, Manitoba Hydro, NB Power,
 Newfoundland Power, Maritime Electric, NSPower, SaskPower, SaskEnergy, Centra Gas,
@@ -512,7 +539,9 @@ territories, and batch 12 adds the Alberta, Ontario/Alberta gas and PUC Distribu
 a fixture covers only the saved classes and conditions and does not prove
 the entire utility catalogue is complete. The representative model tests use frozen copies of
 exported records (`rm_records_sample.json`, `rm_engine_sample.json` and `rm_records_b12.json`),
-so the tests that run before each monthly scrape never depend on that month's data.
+so the tests that run before each monthly scrape never depend on that month's data. The Ontario
+market history tests use `ieso_market.json`, small saved excerpts of the official IESO files, so
+they never download anything.
 
 If the test run seems to freeze, check the size of `logs/scrape.log`. PDF libraries
 can write huge debug logs; `setup_logging()` now keeps them quiet and caps the file at
@@ -560,7 +589,7 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - Ontario batch 1 (October 7): 24 distributors are read from their OEB-approved Tariff of Rates and Charges PDF; the OEB bill-data XML is only a cross-check, never a value source. Homes and small business (GS<50) get the live provincial RPP energy price plus the distributor's delivery charges; larger demand classes show delivery charges only, because their energy price is market-based (deferred). Each rate zone gets its own records. A class that cannot be read cleanly is rejected, not guessed, and no new estimate is made for it (older estimates stay in history, labelled). Merged distributors keep their history; their successor now publishes the rates.
 - Ontario batch 2 (October 8): 22 more distributors, so 46 in total. Some PDFs print values slightly above their labels; the fix is a per-document text-reading setting (`"extract": {"y_tolerance": N}`), not a guessed value. Algoma's R1 is split into year-round dwellings (fully fixed) and O. Reg. 445/07 customers; its R2 (50 kW and over, billed per kW) is delivery-only. A configured distributor that rejects a class, or publishes no such class, no longer re-sends old estimates for it; estimates are still used if the tariff cannot be downloaded at all. Distributors' delivery costs are close to each other (typical monthly delivery varies about 15-20%; Hydro One is the main outlier).
 - Batch 12 (October 9), Alberta and gas: the four Alberta wires companies (ENMAX Power, ATCO Electric, EPCOR Distribution, FortisAlberta) list distribution and transmission as separate lines and keep each current rider as its own dated line; a rider that has expired is left out by its date. ATCO's lines must add up to the total printed in its schedule. EPCOR's 2026 rates are interim, so they are medium confidence with a note. The three Rate of Last Resort providers are live, each checked against the Utilities Consumer Advocate table. Enbridge Gas, ATCO Gas and a new EPCOR Natural Gas (Ontario) entry are live; the old Alberta EPCOR gas entry was a registration mistake and is retired, with its history kept. A price that follows a market is stored without a number ("Variable"), never a made-up value.
-- Batch 12, Ontario: PUC Distribution is now set up, with a note on each record that its approved tariff prints no transmission connection rate, so all 47 active Ontario distributors are live (490 records). Large demand classes now carry a "Market Energy" line with no number; Algoma's R2 does not, because accounts for homes stay eligible for the Regulated Price Plan. Totals after batch 12: 910 latest live tariffs, 916 stored live versions, 3,616 snapshots (prior snapshots unchanged); validation shows 0 errors and the 2 old AESO warnings; 1,638 passing tests once the representative models were added. Since published: the live/estimate count after each scrape, and the Ontario representative models (Phase 7A/7B; rebuilt at every export, not shown on the website yet). Still in progress and not published: the real IESO price model (Phase 6A) and website wording and charge-display fixes.
+- Batch 12, Ontario: PUC Distribution is now set up, with a note on each record that its approved tariff prints no transmission connection rate, so all 47 active Ontario distributors are live (490 records). Large demand classes now carry a "Market Energy" line with no number; Algoma's R2 does not, because accounts for homes stay eligible for the Regulated Price Plan. Totals after batch 12: 910 latest live tariffs, 916 stored live versions, 3,616 snapshots (prior snapshots unchanged); validation shows 0 errors and the 2 old AESO warnings; 1,638 passing tests once the representative models were added. Since published: the live/estimate count after each scrape, the Ontario representative models (Phase 7A/7B; rebuilt at every export, not shown on the website yet) and, later on October 9, the real Ontario market history (Phase 6A: hourly HOEP prices for 2020-2024 plus the actual Class B Global Adjustment) with the website wording and charge-display fixes; 1,683 tests now pass.
 - Test comparison locally with `python -m http.server --directory site 8000`: add two cards, open **Compare**, remove/replace either, and check the mobile horizontal table. It never calculates a bill total.
 - Every successful stored scrape appends `historical_snapshots`. Canonical hashes ignore component ordering but change for values, units, tiers, dates, or structure; old effective-date versions are never deleted.
 - The October 1 SaskPower batches parse 41 live tariffs, including completed reference-only classes. Building scope includes standard, bulk-metered and diesel residential service and R23/R24 renewable access. Standard E01/E03 keeps its identity only when both published columns agree; bulk fixed charges are per unit, not per account. Maintain this coverage; the four provincial gas utilities that were seed-only now have live parsers (October 5), so the next work is the recorded catalogue gaps. See [docs/live_parser_gap_report.md](docs/live_parser_gap_report.md).

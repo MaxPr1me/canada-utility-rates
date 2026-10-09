@@ -6,7 +6,7 @@
  *   2. Populates filter dropdowns from the data
  *   3. Renders rate cards based on active filters
  *   4. Shows detailed tariff info in a modal (with enhanced source & confidence)
- *   5. Provides a Market Pricing tab with heatmap, chart, and methodology
+ *   5. Provides a Market Pricing tab with observed legacy Ontario HOEP and Class B GA averages (heatmap, chart, table, methodology)
  *
  * No build tools needed — this is plain JS that runs in any modern browser.
  */
@@ -376,7 +376,7 @@
             const compRows = components.map(c => `
                 <div class="component-row">
                     <span class="comp-name">${escapeHtml(c.component_name)}</span>
-                    <span class="comp-value">${formatCharge(c)}</span>
+                    <span class="comp-value">${escapeHtml(formatCharge(c))}</span>
                 </div>
             `).join("");
 
@@ -479,7 +479,7 @@
                 const [type, name, unit] = key.split("|");
                 return `<tr><th scope="row"><span class="component-type">${escapeHtml(type)}</span>${escapeHtml(name)} <small>${escapeHtml(unit)}</small></th>${comparison.map(rate => {
                     const c = (rate.components || []).find(item => [item.component_type, item.component_name, item.charge_unit || "variable"].join("|") === key);
-                    return `<td>${c ? `${formatCharge(c)}${c.market_reference ? ' <span class="market-ref-badge">Market-indexed</span>' : ''}<br><small>${escapeHtml(formatDetails(c))}</small>` : "—"}</td>`;
+                    return `<td>${c ? `${escapeHtml(formatCharge(c))}${c.market_reference ? ' <span class="market-ref-badge">Market-indexed</span>' : ''}<br><small>${escapeHtml(formatDetails(c))}</small>` : "—"}</td>`;
                 }).join("")}</tr>`;
             }).join("")}</tbody></table></div>`;
         container.querySelectorAll(".compare-remove").forEach(button => button.addEventListener("click", () => {
@@ -504,8 +504,7 @@
                     <tr>
                         <th>Type</th>
                         <th>Component</th>
-                        <th>Value</th>
-                        <th>Unit</th>
+                        <th>Charge</th>
                         <th>Details</th>
                     </tr>
                 </thead>
@@ -514,8 +513,7 @@
                         <tr>
                             <td>${escapeHtml(c.component_type || "")}</td>
                             <td>${escapeHtml(c.component_name || "")}${c.market_reference ? ` <span class="market-ref-badge">Market</span>` : ""}</td>
-                            <td>${c.charge_value != null ? c.charge_value : (c.market_reference ? `<em>Variable</em>` : "\u2014")}</td>
-                            <td>${escapeHtml(c.charge_unit || "")}</td>
+                            <td>${c.charge_value == null && c.market_reference ? "<em>Variable</em>" : escapeHtml(formatCharge(c, true))}</td>
                             <td>${escapeHtml(formatDetails(c))}</td>
                         </tr>
                     `).join("")}
@@ -638,10 +636,12 @@
         if (hasIESO) {
             parts.push(`
                 <div class="callout-item">
-                    <strong>Ontario Electricity Market Pricing:</strong>
-                    The energy component for this rate class is based on the IESO Hourly Ontario Energy Price (HOEP) plus Global Adjustment (GA).
-                    Actual costs vary by hour and month.
-                    <a href="#" class="btn-market-link" data-market="ontario">View Ontario Electricity Energy Price Bins &rarr;</a>
+                    <strong>Ontario Electricity Market Price:</strong>
+                    Market-billed customers now pay the IESO Ontario Electricity Market Price (the Ontario Price) for each hour,
+                    plus the Global Adjustment: Class B customers pay the monthly Class B rate per kWh; Class A customers pay by their peak demand factor.
+                    Actual costs vary by hour and month. For context, the Market Pricing view shows legacy HOEP history
+                    (the Hourly Ontario Energy Price, which the Ontario Price replaced after it retired on April 30, 2025).
+                    <a href="#" class="btn-market-link" data-market="ontario">View legacy HOEP history &rarr;</a>
                 </div>
             `);
         }
@@ -650,8 +650,7 @@
             parts.push(`
                 <div class="callout-item">
                     <strong>Alberta Electricity Market Pricing:</strong>
-                    The energy component is based on the AESO pool price, passed through via the Regulated Rate Option (RRO).
-                    Actual costs vary hourly based on wholesale market conditions.
+                    This component is indexed to the AESO wholesale pool price, so actual charges vary with market conditions.
                 </div>
             `);
         }
@@ -691,12 +690,90 @@
 
     // ── Market Pricing View ───────────────────────────────────
 
+    // Legacy HOEP history from scripts/generate_market_pricing.py, e.g. "observed_legacy_hoep_2020_2024_average".
+    const OBSERVED_MARKET_METHOD = /^observed_legacy_hoep_\d{4}_\d{4}_average$/;
+    const MARKET_FIELD_LABELS = {
+        combined: "Combined: HOEP (legacy) + Class B GA (actual)",
+        avg_energy_price: "HOEP (legacy)",
+        avg_ga_class_b: "Class B GA (actual)",
+    };
+
+    // Only surfaces built from IESO observations are shown; anything else gets a notice instead.
+    function hasObservedMarketData() {
+        const meta = marketPricingON.metadata || {};
+        const surface = marketPricingON.hourly_surface;
+        return OBSERVED_MARKET_METHOD.test(meta.derivation_method || "")
+            && Array.isArray(meta.years) && meta.years.length > 0
+            && Array.isArray(surface) && surface.length === 576
+            && surface.every(b => b.hours_count > 0 && Number.isFinite(b.avg_energy_price)
+                && Number.isFinite(b.avg_ga_class_b) && Number.isFinite(b.combined));
+    }
+
     function renderMarketPricing() {
-        if (!marketPricingON.hourly_surface) return;
+        const observed = hasObservedMarketData();
+        const notice = document.getElementById("market-notice");
+        document.getElementById("market-content").classList.toggle("hidden", !observed);
+        notice.classList.toggle("hidden", observed);
+        if (!observed) {
+            document.getElementById("market-window").textContent = "";
+            notice.textContent = "Observed historical HOEP and Global Adjustment averages are not available. "
+                + "This view only shows values built from official IESO observations.";
+            return;
+        }
+        renderMarketWindow();
         renderMarketHeatmap();
         renderMarketChart();
         renderMarketTable();
         renderMarketMethodology();
+    }
+
+    // Each bin averages one calendar month over every observed year.
+    function marketMonths() {
+        return MONTH_NAMES.map((_, i) => ({ month: i + 1 }));
+    }
+
+    function monthLabel(entry) {
+        return MONTH_NAMES[entry.month - 1];
+    }
+
+    // Parse "YYYY-MM-DD" by hand so the browser time zone cannot shift the day.
+    function formatIsoDate(iso) {
+        const parts = String(iso || "").split("-").map(Number);
+        if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return iso || "";
+        return `${MONTH_NAMES[parts[1] - 1]} ${parts[2]}, ${parts[0]}`;
+    }
+
+    function formatGeneratedAt(iso) {
+        const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(iso || "");
+        return match ? `${match[1]} ${match[2]} UTC` : (iso || "");
+    }
+
+    function marketWindowLabel() {
+        const years = (marketPricingON.metadata || {}).years || [];
+        if (years.length === 0) return "";
+        const first = years[0], last = years[years.length - 1];
+        return first === last ? String(first) : `${first}\u2013${last}`;
+    }
+
+    function formatCount(value) {
+        return Number.isFinite(value) ? value.toLocaleString("en-CA") : "\u2014";
+    }
+
+    function renderMarketWindow() {
+        const meta = marketPricingON.metadata;
+        const coverage = meta.coverage || {};
+        document.getElementById("market-intro").textContent =
+            `Observed historical averages of the legacy Hourly Ontario Energy Price (HOEP, ${marketWindowLabel()}; `
+            + "retired April 30, 2025) and the Class B Global Adjustment (actual monthly rates) by month, "
+            + "weekday/weekend and hour. For comparison only: not a tariff, a bill or a forecast.";
+        document.getElementById("market-window").textContent =
+            `Observed ${formatIsoDate(meta.window_start)} \u2013 ${formatIsoDate(meta.window_end)}: `
+            + `${formatCount(coverage.days)} days, ${formatCount(coverage.hours)} hours `
+            + `(generated ${formatGeneratedAt(meta.generated_at)}).`;
+    }
+
+    function hourLabel(hour) {
+        return `${String(hour).padStart(2, "0")}:00`;
     }
 
     function getMarketControls() {
@@ -723,11 +800,11 @@
         }
 
         // Get value range for color normalization
-        const values = bins.map(b => b[field]);
+        const values = bins.map(b => b[field]).filter(Number.isFinite);
         const minVal = Math.min(...values);
         const maxVal = Math.max(...values);
 
-        // Build grid: rows = months (1-12), cols = hours (0-23)
+        // Build grid: rows = calendar months, cols = hours of day
         let html = '<div class="heatmap-grid">';
 
         // Header row with hour labels
@@ -736,17 +813,22 @@
             html += `<div class="heatmap-hour-label">${h}</div>`;
         }
 
-        for (let m = 1; m <= 12; m++) {
-            html += `<div class="heatmap-month-label">${MONTH_NAMES[m - 1]}</div>`;
+        const period = marketWindowLabel();
+        marketMonths().forEach(entry => {
+            html += `<div class="heatmap-month-label">${monthLabel(entry)}</div>`;
             for (let h = 0; h < 24; h++) {
-                const bin = bins.find(b => b.month === m && b.hour === h);
-                const val = bin ? bin[field] : 0;
+                const bin = bins.find(b => b.month === entry.month && b.hour === h);
+                const val = bin ? bin[field] : NaN;
+                if (!Number.isFinite(val)) {
+                    html += `<div class="heatmap-cell" style="background:#e5e7eb" title="${monthLabel(entry)} ${hourLabel(h)} EST \u2014 no observations"></div>`;
+                    continue;
+                }
                 const pct = maxVal > minVal ? (val - minVal) / (maxVal - minVal) : 0.5;
                 const color = heatmapColor(pct);
                 const cents = (val * 100).toFixed(2);
-                html += `<div class="heatmap-cell" style="background:${color}" title="${MONTH_NAMES[m - 1]} ${String(h).padStart(2, '0')}:00 — ${cents} \u00a2/kWh"></div>`;
+                html += `<div class="heatmap-cell" style="background:${color}" title="${monthLabel(entry)} ${hourLabel(h)} EST \u2014 ${cents} \u00a2/kWh (${bin.hours_count} hours, ${period})"></div>`;
             }
-        }
+        });
 
         html += '</div>';
 
@@ -799,42 +881,39 @@
             marketChart = null;
         }
 
-        // 12 datasets, one per month
+        // 12 datasets, one per calendar month
         const colors = [
             "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b",
             "#e377c2", "#7f7f7f", "#bcbd22", "#17becf", "#aec7e8", "#ffbb78",
         ];
 
-        const datasets = [];
-        for (let m = 1; m <= 12; m++) {
-            const monthBins = bins.filter(b => b.month === m).sort((a, b) => a.hour - b.hour);
-            datasets.push({
-                label: MONTH_NAMES[m - 1],
+        const datasets = marketMonths().map((entry, i) => {
+            const monthBins = bins.filter(b => b.month === entry.month).sort((a, b) => a.hour - b.hour);
+            return {
+                label: monthLabel(entry),
                 data: monthBins.map(b => +(b[field] * 100).toFixed(2)),
-                borderColor: colors[m - 1],
-                backgroundColor: colors[m - 1] + "33",
+                borderColor: colors[i],
+                backgroundColor: colors[i] + "33",
                 borderWidth: 1.5,
                 pointRadius: 2,
                 tension: 0.3,
-            });
-        }
-
-        const fieldLabels = {
-            combined_energy_component: "Combined Energy (HOEP + GA)",
-            avg_hoep: "Hourly Ontario Energy Price (HOEP)",
-            avg_ga: "Global Adjustment (GA)",
-        };
+            };
+        });
 
         marketChart = new Chart(canvas, {
             type: "line",
             data: {
-                labels: Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, "0")}:00`),
+                labels: Array.from({ length: 24 }, (_, i) => hourLabel(i)),
                 datasets: datasets,
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
+                    title: {
+                        display: true,
+                        text: `${MARKET_FIELD_LABELS[field] || field}, ${dayType}s \u2014 observed legacy-market averages, ${marketWindowLabel()}`,
+                    },
                     legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
                     tooltip: {
                         callbacks: {
@@ -843,7 +922,7 @@
                     },
                 },
                 scales: {
-                    x: { title: { display: true, text: "Hour of Day" } },
+                    x: { title: { display: true, text: "Hour beginning (EST)" } },
                     y: { title: { display: true, text: "\u00a2/kWh" }, beginAtZero: false },
                 },
             },
@@ -862,46 +941,46 @@
             return;
         }
 
+        const cents = value => `${(value * 100).toFixed(2)}\u00a2`;
         let html = `
+            <p class="section-desc">Observed ${escapeHtml(dayType)} averages, ${escapeHtml(marketWindowLabel())}, in \u00a2/kWh, weighted by observed hours. Hours are hour beginning, EST.</p>
             <table>
                 <thead>
                     <tr>
                         <th>Month</th>
-                        <th>Avg HOEP</th>
-                        <th>Avg GA</th>
+                        <th>HOEP (legacy)</th>
+                        <th>Class B GA (actual)</th>
                         <th>Combined</th>
-                        <th>Peak Hour</th>
-                        <th>Off-Peak Hour</th>
+                        <th>Highest Hour</th>
+                        <th>Lowest Hour</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
 
-        for (let m = 1; m <= 12; m++) {
-            const monthBins = bins.filter(b => b.month === m);
-            if (monthBins.length === 0) continue;
+        marketMonths().forEach(entry => {
+            const monthBins = bins.filter(b => b.month === entry.month);
+            const hours = monthBins.reduce((s, b) => s + b.hours_count, 0);
+            if (hours === 0) return;
+            const average = key => monthBins.reduce((s, b) => s + b[key] * b.hours_count, 0) / hours;
 
-            const avgHoep = monthBins.reduce((s, b) => s + b.avg_hoep, 0) / monthBins.length;
-            const avgGa = monthBins.reduce((s, b) => s + b.avg_ga, 0) / monthBins.length;
-            const avgCombined = monthBins.reduce((s, b) => s + b.combined_energy_component, 0) / monthBins.length;
-
-            let peakBin = monthBins[0], offPeakBin = monthBins[0];
+            let highBin = monthBins[0], lowBin = monthBins[0];
             monthBins.forEach(b => {
-                if (b.combined_energy_component > peakBin.combined_energy_component) peakBin = b;
-                if (b.combined_energy_component < offPeakBin.combined_energy_component) offPeakBin = b;
+                if (b.combined > highBin.combined) highBin = b;
+                if (b.combined < lowBin.combined) lowBin = b;
             });
 
             html += `
                 <tr>
-                    <td>${MONTH_NAMES[m - 1]}</td>
-                    <td>${(avgHoep * 100).toFixed(2)}\u00a2</td>
-                    <td>${(avgGa * 100).toFixed(2)}\u00a2</td>
-                    <td><strong>${(avgCombined * 100).toFixed(2)}\u00a2</strong></td>
-                    <td>${String(peakBin.hour).padStart(2, "0")}:00 (${(peakBin.combined_energy_component * 100).toFixed(2)}\u00a2)</td>
-                    <td>${String(offPeakBin.hour).padStart(2, "0")}:00 (${(offPeakBin.combined_energy_component * 100).toFixed(2)}\u00a2)</td>
+                    <td>${monthLabel(entry)}</td>
+                    <td>${cents(average("avg_energy_price"))}</td>
+                    <td>${cents(average("avg_ga_class_b"))}</td>
+                    <td><strong>${cents(average("combined"))}</strong></td>
+                    <td>${hourLabel(highBin.hour)} (${cents(highBin.combined)})</td>
+                    <td>${hourLabel(lowBin.hour)} (${cents(lowBin.combined)})</td>
                 </tr>
             `;
-        }
+        });
 
         html += "</tbody></table>";
         container.innerHTML = html;
@@ -920,8 +999,26 @@
 
         const sourcesList = (meta.sources || []).map(s => {
             const link = s.url ? `<a class="source-link" href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.name)}</a>` : escapeHtml(s.name);
-            return `<li>${link}: ${escapeHtml(s.description || "")}</li>`;
+            return `<li>${link}${s.type ? ` <small>(${escapeHtml(s.type.replace(/_/g, " "))})</small>` : ""}</li>`;
         }).join("");
+
+        const checks = meta.cross_check || {};
+        const coverage = meta.coverage || {};
+        const perBin = coverage.hours_per_bin || {};
+        const binRange = kind => perBin[kind] ? `${kind} ${perBin[kind].min}\u2013${perBin[kind].max}` : "";
+        const checkLines = [];
+        const arithmetic = checks.hoep_monthly_arithmetic;
+        if (arithmetic) {
+            checkLines.push(`Monthly HOEP averages match the IESO published arithmetic averages for ${arithmetic.months_checked} months within ${arithmetic.tolerance} $/MWh (largest difference ${arithmetic.max_abs_difference} $/MWh).`);
+        }
+        if (checks.hoep_unit) {
+            checkLines.push(`Unit check: the published weighted HOEP averages match the IESO \u00a2/kWh table for ${checks.hoep_unit.months_checked} months within ${checks.hoep_unit.tolerance} \u00a2/kWh.`);
+        }
+        if (checks.ga_class_b_units) {
+            checkLines.push(`Class B GA rates in $/MWh match the IESO \u00a2/kWh workbook for ${checks.ga_class_b_units.months_checked} months within ${checks.ga_class_b_units.tolerance} $/MWh.`);
+        }
+        const gaPrograms = (meta.ga_adjustments || []).map(a => escapeHtml(a.description || "")).filter(Boolean);
+        const retirement = (meta.hoep_retirement || {}).statement || "";
 
         container.innerHTML = `
             <div class="methodology-grid">
@@ -929,19 +1026,40 @@
                 <span>${escapeHtml(meta.market_operator || "")}</span>
 
                 <span class="meta-label">Province</span>
-                <span>${PROVINCE_NAMES[meta.province] || meta.province || ""}</span>
+                <span>${escapeHtml(PROVINCE_NAMES[meta.province] || meta.province || "")}</span>
 
-                <span class="meta-label">Historical Window</span>
-                <span>${meta.history_window_years || ""} years (${escapeHtml(meta.history_period || "")})</span>
+                <span class="meta-label">Market</span>
+                <span>Legacy IESO market (before May 1, 2025). ${escapeHtml(retirement)}</span>
+
+                <span class="meta-label">Observation Window</span>
+                <span>${escapeHtml(formatIsoDate(meta.window_start))} \u2013 ${escapeHtml(formatIsoDate(meta.window_end))}</span>
+
+                <span class="meta-label">Coverage</span>
+                <span>${formatCount(coverage.days)} days, ${formatCount(coverage.hours)} hours; hours per bin: ${escapeHtml([binRange("weekday"), binRange("weekend")].filter(Boolean).join(", "))}</span>
+
+                <span class="meta-label">Generated</span>
+                <span>${escapeHtml(formatGeneratedAt(meta.generated_at))}</span>
 
                 <span class="meta-label">Derivation Method</span>
                 <span>${escapeHtml((meta.derivation_method || "").replace(/_/g, " "))}</span>
 
-                <span class="meta-label">Binning</span>
-                <span>Month (1\u201312) &times; Day Type (weekday/weekend) &times; Hour (0\u201323) = 576 bins</span>
+                <span class="meta-label">Energy Price</span>
+                <span>${escapeHtml(meta.price_basis || "")}</span>
 
-                <span class="meta-label">GA Allocation</span>
-                <span>${escapeHtml(meta.ga_allocation_method || "Uniform per-kWh allocation")}</span>
+                <span class="meta-label">Global Adjustment</span>
+                <span>${escapeHtml(meta.ga_basis || "")}${gaPrograms.length ? "<br>" + gaPrograms.join("<br>") : ""}</span>
+
+                <span class="meta-label">Hours</span>
+                <span>${escapeHtml(meta.hour_convention || "")}</span>
+
+                <span class="meta-label">Day Types</span>
+                <span>${escapeHtml(meta.day_type_rule || "")}</span>
+
+                <span class="meta-label">Binning</span>
+                <span>Month (1\u201312) &times; Day Type (weekday/weekend) &times; Hour (0\u201323) = 576 bins, each averaging every observed hour of ${escapeHtml(marketWindowLabel())} and showing its number of observed hours</span>
+
+                ${checkLines.length ? `<span class="meta-label">Cross-checks</span>
+                <span>${checkLines.map(line => escapeHtml(line)).join("<br>")}</span>` : ""}
             </div>
 
             <h4 style="margin-top: 1rem;">Data Sources</h4>
@@ -950,9 +1068,10 @@
             ${meta.notes ? `<p class="methodology-notes">${escapeHtml(meta.notes)}</p>` : ""}
 
             <p class="methodology-summary">
-                Based on ${meta.history_window_years || "5"} years of official IESO market data, binned by month,
-                weekday/weekend, and hour of day. Combined energy = HOEP + Global Adjustment.
-                Values represent historical averages and may not reflect current or future prices.
+                Observed legacy-market averages, ${escapeHtml(marketWindowLabel())}, binned by month, weekday/weekend and hour of day.
+                Combined = legacy Hourly Ontario Energy Price (HOEP, retired April 30, 2025) + Class B Global Adjustment actual rate.
+                For comparison only: not a tariff, a bill or a forecast. Since May 1, 2025, market-billed customers pay the
+                Ontario Electricity Market Price (the Ontario Price) plus Global Adjustment.
             </p>
         `;
     }
@@ -971,17 +1090,26 @@
         return str.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
     }
 
-    function formatCharge(comp) {
+    // "$" prefixes the amount only for dollar units ("$/kWh" -> "$0.0500/kWh"); other units follow the number.
+    // exact = true keeps the published precision (detail view), with at least two decimals for dollar amounts.
+    function formatCharge(comp, exact) {
         if (comp.charge_value == null) {
             if (comp.market_reference) return "Variable";
             return "\u2014";
         }
-        const val = comp.charge_value;
-        const unit = comp.charge_unit || "";
-        if (Math.abs(val) < 1) {
-            return `$${val.toFixed(4)} ${unit}`.trim();
+        const val = Number(comp.charge_value);
+        const unit = String(comp.charge_unit || "").trim();
+        if (unit.startsWith("$")) {
+            const magnitude = Math.abs(val);
+            const text = String(magnitude);
+            const decimals = (text.split(".")[1] || "").length;
+            const amount = !exact ? magnitude.toFixed(magnitude < 1 ? 4 : 2)
+                : /e/i.test(text) ? magnitude.toFixed(8) : (decimals < 2 ? magnitude.toFixed(2) : text);
+            return `${val < 0 ? "-" : ""}$${amount}${unit.slice(1)}`;
         }
-        return `$${val.toFixed(2)} ${unit}`.trim();
+        const number = exact ? String(val) : String(Number(val.toFixed(4)));
+        if (!unit) return number;
+        return unit.startsWith("%") ? `${number}${unit}` : `${number} ${unit}`;
     }
 
     function formatDetails(comp) {
