@@ -13,6 +13,7 @@
         <nav class="main-nav" id="main-nav">
             <button class="nav-tab active" data-view="rates">Rate Browser</button>
             <button class="nav-tab" data-view="market">Market Pricing</button>
+            <button class="nav-tab" data-view="models">Representative Models</button>
             <button class="nav-tab" data-view="compare">Compare <span id="compare-count">0/2</span></button>
         </nav>
     </header>
@@ -186,6 +187,54 @@
 
         </div><!-- /view-market -->
 
+        <!-- ── Representative Models View ─────────────────────── -->
+        <div id="view-models" class="view-panel hidden">
+
+            <section class="market-header">
+                <h2>Representative Models</h2>
+            </section>
+
+            <section class="estimated-banner" role="note">
+                <span>Representative models are comparison indicators: the median monthly cost across utilities at set usage levels, built from live tariffs. They are not a rate anyone is billed.<span id="models-asof"></span></span>
+            </section>
+
+            <p id="models-loading" class="rm-loading" role="status">Loading representative models&hellip;</p>
+            <section id="models-notice" class="estimated-banner hidden" role="status"></section>
+
+            <div id="models-content" class="hidden">
+                <section class="market-controls">
+                    <div class="filter-group">
+                        <label for="models-province">Province</label>
+                        <select id="models-province"></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="models-fuel">Fuel</label>
+                        <select id="models-fuel"></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="models-segment">Sector</label>
+                        <select id="models-segment"></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="models-structure">Rate Structure</label>
+                        <select id="models-structure"></select>
+                    </div>
+                </section>
+
+                <section class="market-section">
+                    <div class="rm-heading">
+                        <h3 id="models-title"></h3>
+                        <span id="models-badge" class="rm-badge"></span>
+                    </div>
+                    <p id="models-reasons" class="section-desc hidden"></p>
+                    <div id="models-table-wrap" class="rm-table-wrap"></div>
+                </section>
+
+                <section id="models-notes" class="market-section"></section>
+            </div><!-- /models-content -->
+
+        </div><!-- /view-models -->
+
         <div id="view-compare" class="view-panel hidden">
             <section class="market-header">
                 <h2>Side-by-Side Tariff Comparison</h2>
@@ -220,5 +269,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/models.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # Live Parser Gap Report
 
-**Updated:** 2026-10-09 (batch 12: Alberta electricity, Ontario/Alberta gas, PUC Distribution and Phase 6B stored and exported; Phase 6A Ontario market history published; CI status and next-week lanes recorded after commit `a52afc2`)
+**Updated:** 2026-10-15 (no parser or data change; CI status, the 7F site view and the Ontario Price archive recorded; tariff evidence below is from batch 12, October 9)
 **Scope:** Building-energy parser coverage, including single-family homes and building-related industrial general facility service defined by size, voltage or interruptibility. Process-specific farm, oil-field, irrigation, NGV fuelling, EV charging, lighting, wholesale/reseller and standby-only service is excluded; completed non-building schedules remain reference.
 
 **Evidence (October 9, batch 12):** scrape run 27 (seven Alberta electricity utilities, plus all 47
@@ -10,7 +10,7 @@ ATCO Gas, EPCOR Natural Gas (Ontario)). Export: 1,396 stored tariff versions / 1
 campaign utilities, 109 territorial, 490 Ontario electricity at 47 distributors, 28 Alberta
 electricity and 40 Ontario/Alberta gas. History: 3,616 snapshots (runs 27 and 28 appended 563 and 40;
 prior snapshots and non-target tariffs unchanged). DB validation: 0 errors, 2 existing AESO warnings;
-1,683 passing tests (after Phase 6A). AESO (a market reference) is the only active registered utility without live
+1,683 passing tests (after Phase 6A; 1,732 across 10 modules on October 15). AESO (a market reference) is the only active registered utility without live
 output. Fixtures, export timestamps and process-success counts alone do not prove live coverage.
 
 **Evidence (historical, batch 11):** The October 7 batch 11 export (a full refresh of all 20 campaign utilities) has 358
@@ -241,19 +241,19 @@ in-scope gas and building-catalogue gaps. Ontario and Alberta ran as separate bl
 | DB validation | 0 errors, 2 existing AESO warnings |
 | Newly added SaskPower live tariffs | 40 since the original residential-only parser |
 | Observation provenance | October 1 CI baseline plus later stored batches through October 9; utility source-check dates are listed in the matrix |
-| Deterministic suite | 1,683 passing across 8 test modules |
+| Deterministic suite | 1,732 passing across 10 test modules (October 15) |
 
 ## Recommended Next Steps
 
 The next-week lanes (user-approved October 9), in integration order:
 
-1. **Lane F (CI triage):** Deploy Site on push succeeded for all four October 9 commits, and a manual Source Health run (#4, October 9) passed every step: Chromium install, the full scrape without publishing (about 11 minutes) and the log upload. Its per-utility live/seed summary has not been reviewed yet, so **no CI-only source failures are recorded here yet**; after the review, list any per utility in this report. Then verify the never-exercised Monthly Scrape chain (release-asset `data-history` database restore/upload, test/scrape failure issues and Deploy Site's `workflow_run` start; next scheduled run November 1). The per-run live/seed provenance summary in `run_scrape` (console and GitHub step summary) is published; do not claim the rest of the automation works until exercised.
+1. **Lane F (CI):** Source Health run #6 (dispatched October 15) passed and its public notice reads "Live 909, seed 46, invalid 0; utilities 78 (45 live + seed); failed: none; no valid records: none; seed only: Alberta Electric System Operator". No utility failed or returned only estimates in CI apart from AESO, and a local dry run the same day gave identical totals, so **no CI-only failure is recorded here**. The one record missing from the export's 910 latest live is EPCOR Energy Alberta's residential Rate of Last Resort for the FortisAlberta area: its home page (`https://www.epcor.com/ca/en/ab/other/start-services/home/rate-of-last-resort.html`) now returns 404 and the record fails closed (fix list: find the new address, then update the registry and the scraper constant). Next, verify the never-exercised Monthly Scrape chain (release-asset `data-history` database restore/upload, test/scrape failure issues and Deploy Site's `workflow_run` start) and the new Ontario Price Archive workflow; both are next scheduled for November 1. Do not claim the rest of the automation works until exercised.
 2. **Lane C (Phase 6D):** BC Hydro RS1892, FortisBC Electric RS38, NSPower one-part real-time pricing and NL Hydro monthly non-firm prices (5.1L, Island non-thermal) as value-less "Variable" market components (market reference and source URL, no stored number); see Phase 6 in the [README roadmap](../README.md#phase-6-market-integration-in-progress).
 3. **Lane E (optional items, each after a yes/no decision):** DERS RoLR admin charge, ENMAX D700 partial record, EPCOR Edmonton local access fee ($0.01388/kWh), Apex Utilities, Enbridge Rate 135, ATCO Gas ATA commodity and DERS gas admin charge, EPCOR Aylmer Rates 2/4/5 (current handling in the Alberta and gas sections above).
 4. **Lane A (Phase 7C):** representative models for all provinces, including Alberta wires + Rate of Last Resort pairs. It is integrated after lanes F, C and E, whose new live records need crosswalk rules first.
-5. **Lane B (Phase 7F):** the site view for the models (province-agnostic); the site does not read `site/data/representative_models.json` yet.
+5. **Lane B (Phase 7F):** done October 15; the site's Representative Models tab reads `site/data/representative_models.json`.
 6. **Lane D (Phase 6C):** Alberta market (AESO pool price history); research the official data source first. AESO stays a seed/market reference until then.
-7. **Ongoing:** batch 11 closed the campaign's priced, dated gaps (FortisBC Energy U/RNG variants, SaskEnergy fees, Centra Mainline Interruptible transcription, NTPC Taltson heating). Monitor Qulliq's final GRA instruction, NTPC Snare TPSP, Centra Appendix A editions, the monthly Yukon joint-book file name, EPCOR Distribution's final 2026 rates, the Oakville GS<50 rejection and the Alberta RoLR term end (December 31, 2026); dated checks are in the [matrix](phase5_completion_matrix.md) calendar. Re-check source-blocked items periodically (matrix reconciliation table) and never invent their prices. Maintain SaskPower's audited building schedules and retained references. Later phases: 7D gas, 7E all-in market energy (needs a decision on how to use the 6A history), the rest of 6E, 8 model refresh automation and 9 product follow-up.
+7. **Ongoing:** batch 11 closed the campaign's priced, dated gaps (FortisBC Energy U/RNG variants, SaskEnergy fees, Centra Mainline Interruptible transcription, NTPC Taltson heating). Monitor Qulliq's final GRA instruction, NTPC Snare TPSP, Centra Appendix A editions, the monthly Yukon joint-book file name, EPCOR Distribution's final 2026 rates, the Oakville GS<50 rejection and the Alberta RoLR term end (December 31, 2026); dated checks are in the [matrix](phase5_completion_matrix.md) calendar. Re-check source-blocked items periodically (matrix reconciliation table) and never invent their prices. Maintain SaskPower's audited building schedules and retained references. Later phases: the Ontario market continuation (a continuous monthly HOEP-to-Ontario Price total; next session), 7D gas, 7E all-in market energy, the rest of 6E, 8 model refresh automation and 9 product follow-up.
 
 ## Phase 5-wide Status
 
