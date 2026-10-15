@@ -176,7 +176,7 @@ python -m pipeline.run_scrape --utility "[Utility Name]" --dry-run
 
 The run ends with a live/seed summary: it counts live and seed (estimated) records and names any
 seed-only utility. A utility listed as seed-only returned no live records, even though the run
-completed.
+completed. On GitHub Actions the same totals also appear as a public notice on the run page.
 
 ## 6. Verify the data
 
@@ -208,6 +208,8 @@ not modelled:
 - The model tests use frozen fixtures (`tests/fixtures/rm_*.json`), so live data never breaks the
   tests that run before the monthly scrape. Those tests do not see a new utility's records; the
   coverage command is the check.
+- The site's Representative Models tab (`site/js/models.js`) lists every model in the exported
+  file, so a newly modelled province appears there without site changes.
 
 ## Tips
 

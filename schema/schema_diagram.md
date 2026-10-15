@@ -109,4 +109,6 @@ cannot query SQLite directly.
    2020-2024 plus actual Class B Global Adjustment rates). Its 576 bins
    (12 months × 2 day types × 24 hours) store `avg_energy_price`,
    `avg_ga_class_b` and `combined` in $/kWh for the Market Pricing dashboard;
-   tariffs never copy these averages.
+   tariffs never copy these averages. The hourly Ontario Price archive
+   (`data/market/ontario_price_hourly.csv`, from July 11, 2026, extended by
+   `scripts/archive_ontario_price.py`) is also kept outside the database.

@@ -66,7 +66,7 @@ Pricing view and is never copied into a tariff). Alberta wires records
 keep distribution and transmission separate; Rate of Last Resort energy is a separate retail
 record. AESO is the only active registered utility without live output.
 
-**Where we stand (October 9):** the 20-utility regional campaign is closed out (batch 11), all 47
+**Where we stand (October 15):** the 20-utility regional campaign is closed out (batch 11), all 47
 active Ontario distributors are live, and batch 12 added Alberta electricity (four wires
 utilities and the three Rate of Last Resort providers), Ontario/Alberta gas (Enbridge Gas, ATCO
 Gas and a new EPCOR Natural Gas (Ontario) entry that replaces a retired, mis-registered Alberta
@@ -130,10 +130,10 @@ for the queue and the [parser gap report](docs/live_parser_gap_report.md) for pa
 
 1. **Scrapes** utility rate data from official Canadian utility websites.
 2. **Stores** everything in a normalized SQLite database that preserves every rate detail — not just a single "cost per kWh" number.
-3. **Tracks history** — each stored scrape appends snapshots. Keep the local database; CI restore/save via a release asset is implemented but awaits its first CI run verification.
+3. **Tracks history** — each stored scrape appends snapshots. Keep the local database; CI restore/save via the `data-history` release asset (seeded from the local database on October 15) awaits its first Monthly Scrape run.
 4. **Exports** the data as JSON for the GitHub Pages static site.
-5. **Serves** a browsable web interface with multi-select filters, confidence indicators, source attribution, and an interactive Market Pricing dashboard (observed legacy Ontario market history, 2020-2024) with heatmaps and charts.
-6. **Provides automation** through monthly scraping, separate Pages deployment, and non-blocking source-health workflows. The new publication handoff still awaits its first CI run verification.
+5. **Serves** a browsable web interface with multi-select filters, confidence indicators, source attribution, an interactive Market Pricing dashboard (observed legacy Ontario market history, 2020-2024) with heatmaps and charts, and a Representative Models view (typical Ontario monthly costs, without and with tax).
+6. **Provides automation** through monthly scraping, separate Pages deployment, non-blocking source-health runs and a twice-monthly Ontario Price archive update. The monthly publication chain still awaits its first CI run.
 
 ---
 
@@ -328,6 +328,7 @@ canada-utility-costs/
 | Compare two scrape runs | `python -m pipeline.diff_report` |
 | Check the representative-model crosswalk | `python -m pipeline.representative_models --coverage` |
 | Rebuild the Ontario market history (downloads IESO files) | `python scripts/generate_market_pricing.py` |
+| Extend the hourly Ontario Price archive (downloads IESO files) | `python scripts/archive_ontario_price.py` |
 | Run tests | `pytest` |
 | Serve the website locally | `python -m http.server --directory site 8000` |
 | See verbose output | `python -m pipeline.run_scrape --verbose` |
@@ -538,6 +539,9 @@ substitute for current approved tariff documents.
 ### The website shows no data
 → Make sure you've run `python -m pipeline.export_json` after scraping. The site reads from `site/data/rates.json`.
 
+### The Ontario Price Archive workflow opened an issue
+→ A monthly check against the IESO's published Ontario Price table failed, or an official file could not be read, so nothing was written. Run `python scripts/archive_ontario_price.py --dry-run` to see which month or file failed, and fix it soon: the IESO deletes each daily price file after about 90 days.
+
 ---
 
 ## Data Format Recommendation
@@ -557,7 +561,8 @@ substitute for current approved tariff documents.
 Earlier phases delivered the scraper framework, granular schema, 84-entry registry,
 seed class models, validation, local historical snapshots and JSON export. The website
 has multi-select filters, detail/source views, estimated-rate hiding, side-by-side
-comparison without bill totals, and a Market Pricing dashboard. These are implemented
+comparison without bill totals, a Market Pricing dashboard and (since October 15) a
+Representative Models view. These are implemented
 features, **not evidence that all registered utilities or published classes are live**.
 
 ### Phase 5: Live Parser Completion
@@ -569,9 +574,9 @@ features, **not evidence that all registered utilities or published classes are 
 | 5C: Residential products and building-service expansion | Review optional residential plans and retain building-service gaps | Nine batches delivered; remaining building catalogues still incomplete |
 | 5D: Provincial/territorial depth | Building-class audits at already-live utilities; later territorial coverage | NL Hydro 21 records implemented; territories reopened October 7 (NTPC, Qulliq, Yukon Energy and ATCO Electric Yukon live) |
 | 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | All nine active gas utilities have live output: the six campaign utilities plus, from batch 12 (October 9), Enbridge Gas (20), ATCO Gas (10) and the new EPCOR Natural Gas (Ontario) entry (10), which replaces a retired, mis-registered Alberta entry; building-service gaps and open decisions remain |
-| 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Batch 12 (October 9): ENMAX Power, ATCO Electric, EPCOR Distribution (2026 interim rates, medium confidence) and FortisAlberta live (5 each; transmission and dated riders separate) plus Rate of Last Resort energy from all three providers (8); AESO stays a market reference (Phase 6C); transmission-connected and admin-charge decisions open |
+| 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Batch 12 (October 9): ENMAX Power, ATCO Electric, EPCOR Distribution (2026 interim rates, medium confidence) and FortisAlberta live (5 each; transmission and dated riders separate) plus Rate of Last Resort energy from all three providers (8); AESO stays a market reference (Phase 6C); transmission-connected and admin-charge decisions open. Since October 15 EPCOR Energy Alberta's FortisAlberta-area residential page returns 404, so that record fails closed until its address is fixed (Lane F) |
 | 5G: Ontario | Batches 1-2 (October 7-8) plus PUC Distribution (October 9; its tariff prints no connection rate, noted on each record): all 47 active distributors live from OEB tariff sheets (490 records); rejected classes no longer re-emit estimates. Non-RPP demand classes carry a value-less market energy component (Phase 6B) | Done for active distributors; tariff market energy stays value-less (the observed 6A history is shown only in the Market Pricing view) |
-| 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; per-run live/seed summary published (October 9). Verified in CI on October 9: Deploy Site on push (all four October 9 commits) and a manual Source Health run (Chromium install, full scrape without publishing, log upload; its live/seed summary is not yet reviewed). Not yet exercised: the Monthly Scrape's `data-history` restore/upload, failure issues and `workflow_run` deployment (next scheduled Monthly Scrape November 1) |
+| 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; per-run live/seed summary published (October 9) and, since October 15, a public notice on every scrape run, steps that fail under `pipefail` and runners pinned to `ubuntu-24.04`. Verified in CI: Deploy Site on every push and Source Health run #6 (October 15: live 909, seed 46, AESO the only seed-only utility; a local dry run matched). The owner seeded the `data-history` release on October 15. Not yet exercised: the Monthly Scrape's release restore/upload, failure issues and `workflow_run` deployment, and the Ontario Price Archive workflow (next scheduled November 1) |
 
 **Definition of done for each utility:** account for the standard published classes
 relevant to building energy costs, including single-family homes,
@@ -789,7 +794,7 @@ underneath changes considerably, without noise commits for trivial drift.
 
 1. Add historical rate charts and AI-ready exports after coverage is dependable.
 2. Scope a bill calculator and optional API separately; the current comparison never calculates a total.
-3. **Across-Canada comparison view:** expand the Compare tab with a separate national view alongside the existing two-tariff comparison. Compare common customer classes and rate structures across provinces, using the Phase 7 representative models as the provincial values (electricity first, gas after 7D, all-in after 7E). Starts after 7F.
+3. **Across-Canada comparison view:** expand the Compare tab with a separate national view alongside the existing two-tariff comparison. Compare common customer classes and rate structures across provinces, using the Phase 7 representative models as the provincial values (electricity first, gas after 7D, all-in after 7E). 7F (the Representative Models view) is done since October 15; this national view starts after 7C.
 
 #### Across-Canada Comparison: Design Direction
 

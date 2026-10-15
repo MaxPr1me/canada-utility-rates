@@ -1,6 +1,6 @@
 # Phase 5 Completion Matrix
 
-**Updated:** 2026-10-09 (batch 12, then the Phase 7A/7B Ontario representative models and the Phase 6A Ontario market history; CI status and the next-week lanes recorded after commit `a52afc2`). Scope: all 87 registered utilities (8 Ontario entries
+**Updated:** 2026-10-15 (CI fixes, the Ontario Price archive, the Representative Models tab and the old-vs-new Ontario market comparison; no scrape stored, so the tariff counts below are batch 12's from October 9). Scope: all 87 registered utilities (8 Ontario entries
 `merged`, 1 mis-registered Alberta gas entry `retired`), not every utility in the broader Canadian
 inventory. The export has 1,396 stored tariff versions / 14,179 components / **916 stored live
 versions / 480 seed**. Latest-per-name coverage is **910 live tariffs across 77 utilities** (490 at
@@ -74,7 +74,7 @@ building coverage; counts include optional adjustments and reference records.
 | Lane B: Phase 7F | Site view for the representative models (province-agnostic) | **Done October 15** for the Ontario models: Representative Models tab (`site/js/models.js`); gas usage text needs an update with 7D |
 | Lane D: Phase 6C | Alberta market: AESO pool price history | Research the official data source first; AESO stays a seed/market reference until then |
 | Open defaults (the user may change them) | Phase 6A: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones. Phase 8: change threshold 2% (proposed) | Phase 6A is done (October 9): observed legacy HOEP hourly history 2020-2024 plus actual monthly Class B GA rates, labelled as the market before May 2025; after a change, rebuild with `python scripts/generate_market_pricing.py`. An Ontario Price (OEMP) history needs 12 months of self-archived daily IESO files: the archive started October 15 (`data/market/ontario_price_hourly.csv`, from July 11, 2026) |
-| Planned (after the lanes) | Phase 7D gas; 7E all-in market energy (needs a decision on how to use the 6A legacy history; Alberta needs 6C); the rest of 6E gas commodity cadence; Phase 8 model refresh automation; Phase 9 product follow-up incl. Across-Canada comparison | See Next Batches items 7-10 |
+| Planned (after the lanes) | Phase 7D gas; 7E all-in market energy (can use the continuous Ontario market total; Alberta needs 6C); the rest of 6E gas commodity cadence; Phase 8 model refresh automation; Phase 9 product follow-up incl. Across-Canada comparison | See Next Batches items 7-10 |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11); re-transcribe when Appendix A changes |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |
@@ -311,8 +311,9 @@ remain RPP-eligible).
 
 **Remaining Ontario:** no active distributor is unconfigured. Phase 6A (done October 9) shows
 observed legacy HOEP 2020-2024 plus Class B GA history in the Market Pricing view only; tariff
-market energy stays value-less, and all-in model energy (7E) needs a decision on how to use that
-history.
+market energy stays value-less. The hourly Ontario Price has been archived since October 15, and
+all-in model energy (7E) can use the planned continuous monthly total (legacy HOEP, then the
+Ontario Price, each plus Class B GA).
 
 Original registry distributors: Alectra Utilities, Algoma Power Inc., Atikokan Hydro Inc., Bluewater
 Power Distribution, Brantford Power Inc., Burlington Hydro Inc., Canadian Niagara
@@ -353,7 +354,7 @@ expired rider is excluded by its date. kVA limits stay in eligibility text.
 | FortisAlberta | 5 / Oct 9 | Rates 11 Residential (existing identity kept), 41 Small General Service, 61 General Service, 63 Large General Service and 65 Transmission Connected from the newest in-effect Rates, Options and Riders PDF (October 1, 2026; link date must match the printed effective date). Transmission and distribution separate; kW/kVA demand pairs alternatives; Base Transmission Adjustment, Quarterly Transmission Adjustment and Balancing Pool Allocation riders dated; Options A/I conditional; municipal riders notes; Rate 65 transmission is the AESO tariff passed through (value-less) | Rate 65 stays a live partial record (user decision, October 9). Excluded: farm 21/22/23, irrigation 26, lighting 31/33/38, oil and gas 44/45, EV 62, opportunity 66, distributed generation (Option M), Rider E, REA charges. Old D10/D20/D30 seeds are no longer emitted when live |
 | Direct Energy Regulated Services | 2 / Oct 9 | Rate of Last Resort for the ATCO Electric area: residential and small business at 12.02 cents/kWh, fixed January 1, 2025 to December 31, 2026; UCA default-rates table required | Daily administration charge not emitted (website value undated; last dated schedule differs); decision open. Next term after December 31, 2026 |
 | ENMAX Energy Corporation | 2 / Oct 9 | Rate of Last Resort for the ENMAX Power area: D100/D200 at 12.06 cents/kWh plus daily administration charges from the Interim 2026 rate schedule (medium confidence); UCA table required | Municipally set RoLR areas (Red Deer, Cardston, Ponoka) and D300/D310/D410 not covered. Next term after December 31, 2026 |
-| EPCOR Energy Alberta | 4 / Oct 9 | Rate of Last Resort for the EPCOR Distribution and FortisAlberta areas: residential and small business (250,000 kWh/year limit) per area at 12.01 cents/kWh plus each area's administration charge from price schedules effective July 1, 2026; UCA table required | REA price schedule not covered. Next term after December 31, 2026 |
+| EPCOR Energy Alberta | 4 / Oct 9 | Rate of Last Resort for the EPCOR Distribution and FortisAlberta areas: residential and small business (250,000 kWh/year limit) per area at 12.01 cents/kWh plus each area's administration charge from price schedules effective July 1, 2026; UCA table required | FortisAlberta-area residential page returns 404 since October 15: that record fails closed (3 emitted) until the new address is registered (Lane F). REA price schedule not covered. Next term after December 31, 2026 |
 | Alberta Electric System Operator | 0 | Seed/market reference | Dated official pool-price observations with published units and cadence (Phase 6C) |
 
 The Rate of Last Resort replaced the Regulated Rate Option on January 1, 2025. Prices are fixed
@@ -438,14 +439,18 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
 
 ## Next Batches and Acceptance
 
-0. **Batch 12 (done October 9):** Alberta wires and Rate of Last Resort, ON/AB gas (Enbridge, ATCO
+0. **Done.** Batch 12 (October 9): Alberta wires and Rate of Last Resort, ON/AB gas (Enbridge, ATCO
    Gas, EPCOR Natural Gas (Ontario)), PUC Distribution (all 47 active Ontario distributors live)
    and Phase 6B value-less market energy. The per-run live/seed summary, Phase 7A/7B and Phase 6A
-   (observed legacy market history) followed the same day (items 7 and 8).
+   (observed legacy market history) followed the same day (items 7 and 8). October 15: CI fixes,
+   the Ontario Price archive and **Lane B, Phase 7F**: the Representative Models tab next to Rate
+   Browser, Market Pricing and Compare reads `site/data/representative_models.json` for whichever
+   provinces it contains (selectors, a table with range bars, tax lines, method and coverage
+   disclosure); desktop (1365 px) and phone (390 px) checks passed with no JavaScript errors.
 
-Items 1-6 are the next-week lanes (user-approved October 9) in integration order. Independent lane
-work may proceed in parallel; shared registry, crosswalk, database, export and documentation
-changes are integrated serially in this order.
+Items 1-6 are the user-approved lanes (October 9; order updated October 15) in integration order.
+Independent lane work may proceed in parallel; shared registry, crosswalk, database, export and
+documentation changes are integrated serially in this order.
 
 1. **Lane F: CI.** October 15: workflow steps run under `bash -o pipefail`, runners are pinned to
    `ubuntu-24.04`, `run_scrape` posts a public provenance notice per run, and the owner created
@@ -456,27 +461,33 @@ changes are integrated serially in this order.
    test/scrape failure issues and Deploy Site's `workflow_run` start from `main`; and the first
    Ontario Price Archive run. Pages source must be GitHub Actions; `workflow_run` fires from the
    default branch. After the first CI Monthly Scrape, the release database is the newest history:
-   download it before a local stored scrape and upload the result afterwards.
-2. **Lane C: Phase 6D market-indexed products.** BC Hydro RS1892 (freshet energy, Mid-C index),
+   download it before a local stored scrape and upload the result afterwards. Fix first: EPCOR
+   Energy Alberta's FortisAlberta-area residential page moved (404 since October 15); find the new
+   address, update the registry, the scraper constant and its fixture, then dry-run (expect 4 live).
+2. **Ontario market continuation (user decision October 15).** One continuous monthly series of
+   energy, Class B GA and their total from January 2020 to the latest month: legacy HOEP to April
+   2025, the Ontario Price after (the IESO monthly Ontario Price table for May 2025-July 2026, then
+   the archive), the change marked; a monthly timeline on the Market Pricing page. A new
+   `derivation_method` must be accepted by `site/js/app.js` and `scrapers/utils/market_pricing.py`.
+   The hourly heatmap keeps 2020-2024 until 12 complete archived months exist (August 2027 at the
+   earliest). Never copied into a tariff.
+3. **Lane C: Phase 6D market-indexed products.** BC Hydro RS1892 (freshet energy, Mid-C index),
    FortisBC Electric RS38 (Mid-C index), NSPower one-part real-time pricing and NL Hydro monthly
    non-firm prices (5.1L, Island non-thermal) become value-less "Variable" components with a market
    reference and source URL, as for Ontario demand-class market energy (6B); no averaged or guessed
    number goes into a tariff.
-3. **Lane E: optional items, each after a yes/no decision:** DERS RoLR admin charge, ENMAX D700
+4. **Lane E: optional items, each after a yes/no decision:** DERS RoLR admin charge, ENMAX D700
    partial record, EPCOR Edmonton local access fee, Apex Utilities, Enbridge Rate 135, ATCO Gas ATA
    commodity and DERS gas admin charge, EPCOR Aylmer Rates 2/4/5 (details in the Lane E queue row).
-4. **Lane A: Phase 7C, electricity models for all provinces.** Residential and commercial models
+5. **Lane A: Phase 7C, electricity models for all provinces.** Residential and commercial models
    for every province with live data, including Alberta all-in models that pair each wires utility
    with the Rate of Last Resort provider for its area; single-source labelling and a coverage
-   report. Territories stay planned separately.
-5. **Lane B: Phase 7F, site view (done October 15).** The Representative Models tab next to Rate
-   Browser, Market Pricing and Compare reads `site/data/representative_models.json` for whichever
-   provinces it contains: selectors, a table with range bars, tax lines, method and coverage
-   disclosure; desktop (1365 px) and phone (390 px) checks passed with no JavaScript errors.
+   report. Territories stay planned separately. The Representative Models tab shows new provinces
+   without code changes.
 6. **Lane D: Phase 6C, Alberta market.** AESO pool price history; research the official data source
    first. Rate of Last Resort fixed prices are already live (5F) and EPCOR Distribution's operating
    reserve charge is stored value-less. An optional Alberta region in the Market Pricing dashboard,
-   only if its variation warrants it, follows Lane B.
+   only if its variation warrants it, follows 6C.
 
 Every lane milestone needs the acceptance checks at the end of this section where they apply. New
 live records also need crosswalk rules: after export,

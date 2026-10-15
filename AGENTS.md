@@ -283,6 +283,9 @@ release and upload the new `rates.db`).
 3. Click **"Monthly Scrape"** on the left.
 4. Click the **"Run workflow"** button on the right.
 
+The **Ontario Price Archive** workflow can be started the same way. This computer has no GitHub
+command-line tool, so start workflows from the website.
+
 After a successful data update, **Deploy Site** can still be run manually if the
 new automatic handoff has not yet been verified.
 
@@ -350,18 +353,35 @@ See [docs/adding-a-utility.md](docs/adding-a-utility.md) for the full guide.
 3. Has the page layout changed? The scraper's HTML parsing needs updating.
 4. Is the page down temporarily? Wait and try again.
 
+Example (October 15): EPCOR Energy Alberta's page for homes in the FortisAlberta area started
+answering "not found" (404). The scraper skips that one record instead of guessing; its October 9
+version stays the latest stored until the new address is put in the registry and the scraper.
+
 ### The monthly automation fails
 
 **What happened:** The GitHub Actions workflow encountered an error.
 
 **What to do:**
 1. Go to the **Actions** tab on GitHub.
-2. Click on the failed run to see the error log.
+2. Click on the failed run to see the error log. Every scrape run also shows a short public note
+   with its totals; a utility named there as failed or estimates-only is the one to check.
 3. Common causes:
    - A utility website was down during the scrape.
    - A dependency (Python library) had a breaking update.
    - GitHub Actions had a temporary problem.
 4. You can re-run the workflow by clicking **"Re-run all jobs"**.
+
+### The Ontario Price Archive opened an issue
+
+**What happened:** a month in the archive did not match the IESO's own monthly Ontario Price
+table, or an official IESO file could not be read. Nothing was written, so the archive is safe.
+
+**What to do (soon):** the IESO deletes each daily price file after about 90 days, so a problem
+left too long loses hours for good.
+1. Run `python scripts/archive_ontario_price.py --dry-run` on your computer; it names the month or
+   file that failed and writes nothing.
+2. If the IESO changed its table or files, the script needs updating; if its website was down,
+   start the workflow again later.
 
 ### The website shows no data
 
