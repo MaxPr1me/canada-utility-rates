@@ -1,0 +1,88 @@
+# Ontario Price Archive
+#
+# Keeps the permanent hourly archive of the Ontario Price (DA-OZP + LFDA) in
+# data/market/ontario_price_hourly.csv. The IESO keeps its daily DA-OZP reports
+# online for only about 90 days, so this runs twice a month.
+#
+# What it does:
+#   1. Installs Python and dependencies
+#   2. Adds new official IESO data to the archive (official reports only, no
+#      website API); the script fails closed and writes nothing on any doubt
+#   3. Commits the archive CSV if it changed
+#   4. Creates a GitHub Issue if the run fails
+
+name: Ontario Price Archive
+
+on:
+  # 06:00 UTC on the 1st and 15th of every month
+  schedule:
+    - cron: "0 6 1,15 * *"
+
+  # Allow manual runs from the GitHub Actions UI
+  workflow_dispatch:
+
+# Only one archive update at a time
+concurrency:
+  group: ontario-price-archive
+  cancel-in-progress: false
+
+permissions:
+  contents: write       # to commit the updated archive
+  issues: write         # to create an issue on failures
+
+# Explicit bash adds pipefail, so a failing command piped into tee fails its step.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  archive:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Update the Ontario Price archive
+        run: python scripts/archive_ontario_price.py --no-site-api 2>&1 | tee archive_output.txt
+
+      - name: Commit updated archive
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/market/ontario_price_hourly.csv
+          if git diff --staged --quiet; then
+            echo "No archive changes to commit."
+          else
+            git commit -m "data: Ontario Price archive update $(date +%Y-%m-%d)"
+            git pull --rebase origin main
+            git push
+          fi
+
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.existsSync('archive_output.txt')
+              ? fs.readFileSync('archive_output.txt', 'utf8')
+              : 'No archive output available.';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Ontario Price archive failed on ${new Date().toISOString().split('T')[0]}`,
+              body: `## Archive Output\n\n\`\`\`\n${output.slice(-3000)}\n\`\`\`\n\nThe IESO keeps its daily DA-OZP reports online for only about 90 days: fix this before the oldest missing days disappear.\n\nThis issue was created automatically by the Ontario Price Archive workflow.`,
+              labels: ['scrape-issue', 'automated'],
+            });
