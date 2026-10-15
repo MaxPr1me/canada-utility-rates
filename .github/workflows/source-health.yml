@@ -8,10 +8,15 @@ on:
 permissions:
   contents: read
 
+# Explicit bash adds pipefail, so a failing command piped into tee fails its step.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   live-source-check:
     continue-on-error: true
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -23,7 +28,7 @@ jobs:
         run: python -m playwright install --with-deps chromium
       - name: Exercise all official sources without publishing
         run: python -m pipeline.run_scrape --dry-run 2>&1 | tee source-health.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: source-health-${{ github.run_id }}

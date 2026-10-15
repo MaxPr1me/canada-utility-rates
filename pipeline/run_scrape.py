@@ -357,6 +357,28 @@ def append_step_summary(markdown: str) -> None:
         logger.warning("Could not append the run summary to GITHUB_STEP_SUMMARY (%s): %s", path, exc)
 
 
+def format_github_notice(summary: dict, dry_run: bool = False) -> str:
+    """One ``::notice`` workflow command with the run totals and the problem utilities."""
+    partial = sum(1 for row in summary["rows"] if row["status"] == "live + seed")
+
+    def names(key: str) -> str:
+        return ", ".join(summary[key]) or "none"
+
+    message = (
+        f"{'Dry run. ' if dry_run else ''}Live {summary['live']}, seed {summary['seed']}, "
+        f"invalid {summary['invalid']}; utilities {summary['utilities']} ({partial} live + seed); "
+        f"failed: {names('failed')}; no valid records: {names('no_records')}; seed only: {names('seed_only')}"
+    )
+    escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    return f"::notice title=Scrape provenance::{escaped}"
+
+
+def emit_github_notice(summary: dict, dry_run: bool = False) -> None:
+    """Print the notice on GitHub Actions only; annotations stay public when the logs need sign-in."""
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print(format_github_notice(summary, dry_run), flush=True)
+
+
 # ─── Main ─────────────────────────────────────────────────────
 
 def main() -> None:
@@ -510,6 +532,7 @@ def main() -> None:
     print("=" * 60)
 
     append_step_summary(format_summary_markdown(summary, dry_run=args.dry_run))
+    emit_github_notice(summary, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

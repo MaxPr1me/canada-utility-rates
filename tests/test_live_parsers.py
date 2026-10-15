@@ -13880,7 +13880,8 @@ import sys
 from types import SimpleNamespace
 
 from pipeline import run_scrape
-from pipeline.run_scrape import append_step_summary, format_summary_markdown, summarize_run, tally_provenance
+from pipeline.run_scrape import (append_step_summary, emit_github_notice, format_github_notice,
+                                 format_summary_markdown, summarize_run, tally_provenance)
 
 OPS_SUMMARY_LIVE_NOTE = "Provenance: live_parsed"
 OPS_SUMMARY_VERIFIED_NOTE = "Provenance: officially_verified"
@@ -13903,7 +13904,7 @@ def OPS__summary_failing_scrape():
     raise RuntimeError("source unavailable")
 
 
-def OPS__summary_run_main(monkeypatch, tmp_path, scrapers_by_name, argv):
+def OPS__summary_run_main(monkeypatch, tmp_path, scrapers_by_name, argv, github_actions=False):
     entries = [{"name": name, "province": "NS", "status": "partial"} for name in scrapers_by_name]
     monkeypatch.setattr(run_scrape, "setup_logging", lambda *args, **kwargs: None)
     monkeypatch.setattr(run_scrape, "DB_PATH", tmp_path / "rates.db")
@@ -13911,6 +13912,11 @@ def OPS__summary_run_main(monkeypatch, tmp_path, scrapers_by_name, argv):
     monkeypatch.setattr(run_scrape, "get_active_utilities", lambda registry=None: list(registry))
     monkeypatch.setattr(run_scrape, "load_scraper", lambda entry: scrapers_by_name[entry["name"]])
     monkeypatch.setattr(sys, "argv", ["run_scrape"] + argv)
+    # The Monthly Scrape runs these tests on GitHub Actions, where the notice would otherwise print.
+    if github_actions:
+        monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    else:
+        monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
     run_scrape.main()
 
 
@@ -14089,6 +14095,52 @@ def test_ops_main_all_live_run_keeps_the_existing_box_and_survives_an_unwritable
     ]
     assert "Could not append the run summary to GITHUB_STEP_SUMMARY" in caplog.text
     assert list(tmp_path.iterdir()) == []
+
+
+def test_ops_format_github_notice_lists_totals_and_problem_utilities():
+    summary = summarize_run({
+        "Alpha Power": {"live": 3, "seed": 0, "invalid": 0, "error": None},
+        "Bravo Gas": {"live": 0, "seed": 2, "invalid": 0, "error": None},
+        "Charlie Hydro": {"error": "source unavailable"},
+        "Delta Energy": {"live": 0, "seed": 0, "invalid": 1, "error": None},
+        "Echo Electric": {"live": 1, "seed": 1, "invalid": 0, "error": None},
+    })
+    assert format_github_notice(summary) == (
+        "::notice title=Scrape provenance::Live 4, seed 3, invalid 1; utilities 5 (1 live + seed); "
+        "failed: Charlie Hydro; no valid records: Delta Energy; seed only: Bravo Gas"
+    )
+    assert format_github_notice(summarize_run({}), dry_run=True) == (
+        "::notice title=Scrape provenance::Dry run. Live 0, seed 0, invalid 0; utilities 0 (0 live + seed); "
+        "failed: none; no valid records: none; seed only: none"
+    )
+
+
+def test_ops_format_github_notice_escapes_workflow_command_characters():
+    notice = format_github_notice(summarize_run({"100% Hydro\r\nCo": {"error": "x"}}))
+    assert "\n" not in notice and "\r" not in notice
+    assert "failed: 100%25 Hydro%0D%0ACo;" in notice
+
+
+def test_ops_emit_github_notice_prints_only_on_github_actions(monkeypatch, capsys):
+    summary = summarize_run({"Alpha Power": {"live": 1, "seed": 0, "invalid": 0, "error": None}})
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    emit_github_notice(summary)
+    monkeypatch.setenv("GITHUB_ACTIONS", "false")
+    emit_github_notice(summary)
+    assert capsys.readouterr().out == ""
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    emit_github_notice(summary)
+    assert capsys.readouterr().out == format_github_notice(summary) + "\n"
+
+
+def test_ops_main_emits_the_notice_after_the_box_on_github_actions(tmp_path, monkeypatch, capsys):
+    monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
+    scrapers = {"Seed Utility": OPS__summary_scraper([OPS__summary_record("Seed Utility", OPS_SUMMARY_SEED_NOTE)])}
+    OPS__summary_run_main(monkeypatch, tmp_path, scrapers, ["--dry-run"], github_actions=True)
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[-2] == "=" * 60
+    assert lines[-1] == ("::notice title=Scrape provenance::Dry run. Live 0, seed 1, invalid 0; utilities 1 "
+                         "(0 live + seed); failed: none; no valid records: none; seed only: Seed Utility")
 
 
 # ======================================================================
