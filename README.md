@@ -20,13 +20,17 @@ but further expansion of those classes is deferred. Shared general-service tarif
 still be relevant to buildings even when the utility also offers them to other users.
 Inventory counts below include reference-only records, not just building tariffs.
 
-## Current Status (2026-10-15)
+## Current Status (2026-10-16)
 
 The framework and website are implemented; **nationwide live-rate coverage is not complete**.
-The export was regenerated on **2026-10-09** after batch 12 (scrape run 27: Alberta electricity
+The tariff export was regenerated on **2026-10-09** after batch 12 (scrape run 27: Alberta electricity
 plus all 47 Ontario distributors re-stored with PUC Distribution and Phase 6B; scrape run 28:
 Ontario/Alberta gas). History was preserved. October 15 added CI fixes, the Representative
-Models tab and the Ontario Price archive; no new scrape was stored.
+Models tab and the Ontario Price archive. October 16 (batch 14) fixed EPCOR Energy Alberta's moved
+pages, made CI the only writer of the history database, turned the Market Pricing page into a
+rolling five-year history and built representative models for all ten provinces (7C) plus a
+clearly labelled illustrative estimate (7E). No scrape was stored on either day, so the tariff
+counts below are still batch 12's.
 A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
 
@@ -44,7 +48,8 @@ unverified fallback records remain estimates regardless of the export date.
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
 | Historical snapshots | **3,616**; batch 12 runs 27 and 28 appended 563 and 40 without changing prior snapshots |
 | DB validation | **0 errors, 2 existing AESO warnings** |
-| Deterministic tests | **1,732 passing** across 10 modules |
+| Representative models | **55** across the ten provinces (October 16, method 7C-2): 16 modeled, 20 single-source, 6 *market energy pending*, 13 not computable; comparison indicators, never live coverage |
+| Deterministic tests | **1,863 passing** across 14 modules (October 16) |
 
 Live output currently includes BC Hydro (17), FortisBC Electric (11), Manitoba Hydro (18), NB Power (10),
 Nova Scotia Power (18), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
@@ -66,47 +71,61 @@ Pricing view and is never copied into a tariff). Alberta wires records
 keep distribution and transmission separate; Rate of Last Resort energy is a separate retail
 record. AESO is the only active registered utility without live output.
 
-**Where we stand (October 15):** the 20-utility regional campaign is closed out (batch 11), all 47
+**Where we stand (October 16):** the 20-utility regional campaign is closed out (batch 11), all 47
 active Ontario distributors are live, and batch 12 added Alberta electricity (four wires
 utilities and the three Rate of Last Resort providers), Ontario/Alberta gas (Enbridge Gas, ATCO
 Gas and a new EPCOR Natural Gas (Ontario) entry that replaces a retired, mis-registered Alberta
 entry), PUC Distribution and value-less market energy components for Ontario demand classes
-(Phase 6B). Remaining open items (optional follow-ups, Lane E below) are listed in the matrix queue. A per-run
-live/seed summary in `run_scrape` is published. Phase 7A (crosswalk, usage levels and tax table)
-and 7B (the model engine) are done for Ontario: every export now writes Ontario electricity
-[representative models](#phase-7-representative-models-in-progress) to
-`site/data/representative_models.json`, and since October 15 the site's **Representative Models**
-tab shows them (Phase 7F); the models are labelled modeled, are never billed tariffs and never
-count as live coverage. Phase 6A is also done (October 9; user decision): the Market Pricing view now shows
-observed legacy HOEP hourly prices for 2020-2024 plus actual monthly Class B Global Adjustment
-rates, clearly labelled as the market before May 2025, and the site's market wording and charge
-display were corrected (see [Ontario Market Pricing](#ontario-market-pricing-observed-legacy-history)).
-In CI on October 15, workflow steps began failing when a piped command fails, runners were pinned
-to Ubuntu 24.04, every scrape run started posting a public live/seed notice, and the owner seeded
-the `data-history` release with the local database. A hand-started Source Health run passed.
-The Monthly Scrape chain (database history, failure issues, automatic deployment) has still
-not run (see [How Monthly Updates Work](#how-monthly-updates-work)). October 15 also started a
-permanent hourly Ontario Price archive and compared what Class B customers paid before and after
-the HOEP ended (see [Ontario Market Pricing](#ontario-market-pricing-observed-legacy-history)).
+(Phase 6B). A per-run live/seed summary in `run_scrape` is published, and every scrape run posts
+a public live/seed notice. Batch 14 (October 16; commits `a919684`, `b070725`, `49a0daa`):
 
-**Next (user-approved lanes, in integration order):**
+- **Lane F:** EPCOR Energy Alberta moved its Rate of Last Resort pages (the FortisAlberta-area
+  residential page had returned 404 since October 15). The registry and scraper follow the new
+  addresses and a dry run gives 4 live records again (12.01 cents/kWh); the next CI Monthly Scrape
+  stores them.
+- **CI is the only writer of the history database** (user decision): the Monthly Scrape restores
+  `data/db/rates.db` from the `data-history` release, checks it and uploads it with a dated backup
+  only after a history-only-grows check passes. Local copies are read-only mirrors
+  (`python scripts/pull_history_db.py`), and nobody stores scrapes locally (see
+  [How Monthly Updates Work](#how-monthly-updates-work)). Not yet exercised in a real CI run.
+- **Market Pricing** shows a rolling five-year history: the latest 60 complete months (September
+  2021-August 2026), the legacy HOEP to April 2025 and then the Ontario Price, plus the actual
+  Class B Global Adjustment: 10.40 cents/kWh on average. The heatmap uses observed hours only, and
+  the Ontario Price Archive workflow rebuilds the history twice a month (see
+  [Ontario Market Pricing](#ontario-market-pricing-rolling-five-year-history)).
+- **Representative models** ([Phase 7](#phase-7-representative-models-in-progress)): 7A, 7B and
+  now 7C are done. Every export writes electricity models for all ten provinces (in Alberta each
+  wires utility is paired with the Rate of Last Resort provider for its area) to
+  `site/data/representative_models.json`, and the site's **Representative Models** tab (7F) shows
+  them. They are labelled modeled, are never billed tariffs and never count as live coverage.
+  **7E is illustrative only:** the two Ontario demand-class models carry a separate all-in estimate
+  built from a made-up (synthetic) business-hours load profile, hidden behind a checkbox, labelled
+  SYNTHETIC and never used in medians, outliers or comparisons; it needs further analysis.
 
-1. **Lane F (CI):** check the first Monthly Scrape run (started by hand or the scheduled November 1
-   run) and the first Ontario Price Archive run.
-2. **Ontario market continuation (user decision, October 15):** a continuous monthly timeline of
-   energy, Class B GA and their total from 2020 to the latest month, with the May 1, 2025 change
-   marked. The hourly heatmap keeps 2020-2024 until 12 complete months of archived hourly Ontario
-   Price exist.
-3. **Lane C (Phase 6D):** BC Hydro RS1892, FortisBC Electric RS38, NSPower one-part real-time
-   pricing and NL Hydro monthly non-firm prices as value-less "Variable" components.
-4. **Lane E (optional items):** each after a yes/no decision (listed in the matrix queue).
-5. **Lane A (Phase 7C):** representative models for all provinces, including Alberta wires + Rate of
-   Last Resort pairs.
-6. **Lane D (Phase 6C):** Alberta market (AESO pool price history; research the data source first).
+**Next (in order, October 16):**
 
-7D gas, 7E all-in market energy (it can use the continuous market total), the rest of 6E,
-8 automatic model refresh and 9 product follow-up including the Across-Canada comparison come
-later (see the Roadmap).
+1. **First CI runs (owner):** start **Monthly Scrape** by hand: its first run as the only writer
+   (restore and checks, store including the Lane F record, backup asset, bot commit, then Deploy
+   Site through `workflow_run`); and start **Ontario Price Archive** (archive plus market history
+   build). Otherwise both run on November 1. Check each step before trusting it.
+2. **Manitoba Hydro block parser fix:** its stored energy blocks are malformed (tier numbers 1 and
+   3; "Next 8,500 kWh" stored as a cumulative bound; single- and three-phase basic charge
+   variants), so three Manitoba commercial models are not computable.
+3. **Decisions:** the length of NB Power's and Maritime Electric's "Billing Period" (their block
+   thresholds state no period); a reference customer for amperage/phase fixed-charge alternatives
+   (Newfoundland Power, NL Hydro); 30-day versus 30.4375-day months (Hydro-Quebec and Manitoba
+   Hydro define a month as 30 days; the engine uses 30.4375).
+4. **7E further analysis:** compare the synthetic profile with real commercial load profiles, test
+   other business hours, use an Ontario Price-era hourly shape once 12 archived months exist, and
+   look at Class A and loss factors.
+5. **Remaining lanes:** C (Phase 6D: BC Hydro RS1892, FortisBC Electric RS38, NSPower one-part
+   real-time pricing and NL Hydro monthly non-firm prices as value-less "Variable" components),
+   E (optional items, each after a yes/no decision; listed in the matrix queue), D (Phase 6C,
+   Alberta market), 7D gas, Phase 8 (automatic model refresh; must ignore illustrative values) and
+   Phase 9 (product follow-up, including the Across-Canada comparison).
+6. **Calendar:** November 1, new OEB RPP prices and the next RPP Price Report's TOU/ULO shares
+   (update `data/models/usage_levels.json` by hand); November 15, Ontario Price Archive and Source
+   Health.
 
 See the [coverage matrix](docs/phase5_completion_matrix.md) for the implementation queue
 and [parser gap report](docs/live_parser_gap_report.md) for class-level details.
@@ -130,10 +149,10 @@ for the queue and the [parser gap report](docs/live_parser_gap_report.md) for pa
 
 1. **Scrapes** utility rate data from official Canadian utility websites.
 2. **Stores** everything in a normalized SQLite database that preserves every rate detail — not just a single "cost per kWh" number.
-3. **Tracks history** — each stored scrape appends snapshots. Keep the local database; CI restore/save via the `data-history` release asset (seeded from the local database on October 15) awaits its first Monthly Scrape run.
+3. **Tracks history** — each stored scrape appends snapshots. Since October 16 only the Monthly Scrape workflow stores scrapes: it keeps `data/db/rates.db` in the `data-history` GitHub release with dated backups and checks that history only grows; local copies are read-only mirrors (`python scripts/pull_history_db.py`).
 4. **Exports** the data as JSON for the GitHub Pages static site.
-5. **Serves** a browsable web interface with multi-select filters, confidence indicators, source attribution, an interactive Market Pricing dashboard (observed legacy Ontario market history, 2020-2024) with heatmaps and charts, and a Representative Models view (typical Ontario monthly costs, without and with tax).
-6. **Provides automation** through monthly scraping, separate Pages deployment, non-blocking source-health runs and a twice-monthly Ontario Price archive update. The monthly publication chain still awaits its first CI run.
+5. **Serves** a browsable web interface with multi-select filters, confidence indicators, source attribution, an interactive Market Pricing dashboard (a rolling five-year observed Ontario market history: legacy HOEP, then the Ontario Price, plus Class B GA) with a monthly chart, table and heatmap, and a Representative Models view (typical monthly electricity costs for the ten provinces, without and with tax).
+6. **Provides automation** through monthly scraping, separate Pages deployment, non-blocking source-health runs and a twice-monthly Ontario Price archive and market history update. The monthly publication chain and the market history build still await their first CI runs.
 
 ---
 
@@ -180,27 +199,33 @@ python -m playwright install chromium
 
 **What this does:** Installs the Python libraries and Chromium needed for JavaScript-rendered rate pages. Use the same Python 3.10+ environment for installation, tests, and scraping. A virtual environment is recommended; an older or empty environment will not work just because it is activated.
 
-### Step 4: Initialize the Database
+### Step 4: Get the History Database
 
 ```bash
-python -m pipeline.run_scrape --init-db
+python scripts/pull_history_db.py
 ```
 
-**What this does:** Creates an empty SQLite database file at `data/db/rates.db` with all the right tables.
+**What this does:** Downloads the project's history database (`data/db/rates.db`) from the public
+`data-history` GitHub release, checks it against the SHA-256 digest GitHub publishes and keeps any
+older local copy in `data/db/backups/`. Since October 16 only the Monthly Scrape workflow writes
+the real history; your copy is a read-only mirror. For an empty practice database instead, run
+`python -m pipeline.run_scrape --init-db`.
 
-### Step 5: Run Your First Scrape
+### Step 5: Try a Scrape Without Saving
 
 ```bash
-python -m pipeline.run_scrape
+python -m pipeline.run_scrape --dry-run
 ```
 
-**What this does:** Runs every active scraper, fetches rate data from official utility websites, validates it, and stores it in the database.
+**What this does:** Runs every active scraper, fetches rate data from official utility websites
+and validates it, without storing anything. To store new data, push your code and start the
+**Monthly Scrape** workflow (optionally for one utility or one province), or wait for the 1st of
+the month. Do not store scrapes in a local copy, and never upload one.
 
-The end-of-run summary now counts live and seed (estimated) records and names seed-only
+The end-of-run summary counts live and seed (estimated) records and names seed-only
 utilities; on GitHub Actions the same table is written to the run's Summary page. A final
 `utilities succeeded` count only means execution completed, not that every rate was live.
-Run `python -m pipeline.validate` before exporting. Network retries and rendered pages
-can make a full scrape take several minutes.
+Network retries and rendered pages can make a full scrape take several minutes.
 
 ### Step 6: Export Data for the Website
 
@@ -208,7 +233,7 @@ can make a full scrape take several minutes.
 python -m pipeline.export_json
 ```
 
-**What this does:** Reads the database and creates JSON files in `site/data/` that the static website uses.
+**What this does:** Reads the database and creates JSON files in `site/data/` that the static website uses. Run `python -m pipeline.validate` first to check the database.
 
 ### Step 7: View the Website Locally
 
@@ -235,7 +260,7 @@ canada-utility-costs/
 │   │   ├── parsing.py        ← HTML / PDF / spreadsheet parsing + rate extraction
 │   │   ├── validation.py     ← Data quality checks
 │   │   ├── change_detection.py ← Compare live-parsed vs seed data, alert on drift
-│   │   ├── market_pricing.py ← Reads the observed Ontario market history (legacy HOEP + Class B GA)
+│   │   ├── market_pricing.py ← Reads the observed Ontario market history (rolling HOEP/Ontario Price + Class B GA; legacy 2020-2024 files still accepted)
 │   │   ├── oeb_tariff.py     ← Ontario OEB Tariff of Rates and Charges PDF reader
 │   │   ├── alberta_rolr.py   ← Shared Alberta Rate of Last Resort helpers (UCA cross-check, term gate)
 │   │   └── logging_config.py ← Logging setup
@@ -262,7 +287,7 @@ canada-utility-costs/
 ├── pipeline/                 ← Scripts that run the whole process
 │   ├── run_scrape.py         ← Main entry: run scrapers → validate → store
 │   ├── export_json.py        ← Export database → JSON for the website (also runs the model builder)
-│   ├── representative_models.py ← Phase 7 representative models: crosswalk coverage and cost engine
+│   ├── representative_models.py ← Phase 7 representative models: crosswalk coverage, cost engine, Alberta pairs, 7E illustrative block
 │   ├── diff_report.py        ← Compare two scrape runs to see changes
 │   └── validate.py           ← Data quality checks
 │
@@ -271,13 +296,17 @@ canada-utility-costs/
 │   └── schema_diagram.md     ← Visual diagram of the schema
 │
 ├── data/                     ← Data files
-│   ├── db/                   ← SQLite database (created by the scraper)
+│   ├── db/                   ← SQLite history database: read-only mirror of the CI copy (backups/ is git-ignored)
 │   ├── exports/              ← CSV/Excel exports (optional)
 │   ├── excel/                ← Audit reference files (not system of record, git-ignored)
-│   ├── market/ontario_price_hourly.csv ← Hourly Ontario Price archive (DA-OZP + LFDA) since July 11, 2026
+│   ├── market/               ← Ontario market history kept in git (outside the database)
+│   │   ├── ontario_price_hourly.csv   ← Hourly Ontario Price archive (DA-OZP + LFDA) since July 11, 2026
+│   │   ├── ontario_market_monthly.csv ← Permanent monthly energy + Class B GA history since January 2020
+│   │   └── hoep_hourly.csv   ← Legacy hourly HOEP, January 2020-March 2025 (imported once)
 │   ├── models/               ← Phase 7 representative model inputs
-│   │   ├── crosswalk.json    ← Ordered rules: live record → model key or exclusion reason
-│   │   ├── usage_levels.json ← Usage levels, TOU/ULO shares, reference-customer charges
+│   │   ├── crosswalk.json    ← Ordered rules: live record → model key or exclusion reason; Alberta pairs
+│   │   ├── usage_levels.json ← Usage levels, TOU/ULO shares, reference-customer charges, 7E synthetic profile
+│   │   ├── block_periods.json ← Reviewed periods for block thresholds printed without one
 │   │   └── taxes.json        ← Sales taxes and automatic point-of-sale rebates
 │   ├── sources/registry.json ← Master list of where to find rate data
 │   └── inventory/            ← Full utility inventory
@@ -285,6 +314,7 @@ canada-utility-costs/
 ├── site/                     ← Static website (deployed to GitHub Pages)
 │   ├── index.html            ← Main page: Rate Browser, Market Pricing, Representative Models and Compare tabs
 │   ├── css/style.css         ← Styles inc. multi-select filters, heatmap, confidence
+│   ├── css/models.css        ← Representative Models styles, incl. the illustrative (synthetic) block
 │   ├── js/app.js             ← SPA logic: filters, cards, modal, market viz
 │   ├── js/models.js          ← Representative Models tab (loads its JSON on first open)
 │   └── data/                 ← Six pipeline exports plus separately maintained market/audit data
@@ -293,16 +323,19 @@ canada-utility-costs/
 │       ├── summary.json      ← Provincial summaries
 │       ├── missing.json      ← Known data gaps
 │       ├── missing_classes_report.json  ← Customer class coverage audit
-│       ├── representative_models.json   ← Phase 7 models (Ontario electricity; Representative Models tab)
-│       ├── market_pricing_ontario.json  ← Observed legacy HOEP + Class B GA bins, 2020-2024 (scripts/generate_market_pricing.py)
+│       ├── representative_models.json   ← Phase 7 models (ten provinces; Representative Models tab)
+│       ├── market_pricing_ontario.json  ← Rolling 60-month market history + observed-hours bins (scripts/build_ontario_market.py)
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
-├── scripts/                  ← Market data builders
-│   ├── generate_market_pricing.py ← Observed legacy HOEP + Class B GA history (manual)
-│   └── archive_ontario_price.py   ← Extends the hourly Ontario Price archive (Ontario Price Archive workflow)
+├── scripts/                  ← Market data builders and database history tools
+│   ├── build_ontario_market.py    ← Rolling five-year Ontario market history (Ontario Price Archive workflow)
+│   ├── archive_ontario_price.py   ← Extends the hourly Ontario Price archive (Ontario Price Archive workflow)
+│   ├── generate_market_pricing.py ← Legacy 6A HOEP 2020-2024 surface (manual; its readers are reused by the builder)
+│   ├── check_db_history.py        ← Monthly Scrape check: database integrity, history only grows
+│   └── pull_history_db.py         ← Downloads the CI history database into a read-only local mirror
 │
-├── tests/                    ← 1,732 deterministic tests across 10 test modules
+├── tests/                    ← 1,863 deterministic tests across 14 test modules
 │   ├── fixtures/             ← Source-derived fixtures and frozen export samples; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
@@ -316,9 +349,13 @@ canada-utility-costs/
 
 ## Common Commands
 
+Stored scrapes are made only by the Monthly Scrape workflow (since October 16); on your computer,
+use `--dry-run` and get the history with `python scripts/pull_history_db.py`.
+
 | What you want to do | Command |
 |---|---|
-| Initialize the database | `python -m pipeline.run_scrape --init-db` |
+| Get the CI history database (read-only mirror) | `python scripts/pull_history_db.py` |
+| Initialize an empty practice database | `python -m pipeline.run_scrape --init-db` |
 | Scrape all active utilities | `python -m pipeline.run_scrape` |
 | Scrape one utility | `python -m pipeline.run_scrape --utility "BC Hydro"` |
 | Scrape all utilities in a province | `python -m pipeline.run_scrape --province ON` |
@@ -327,8 +364,11 @@ canada-utility-costs/
 | Validate data quality | `python -m pipeline.validate` |
 | Compare two scrape runs | `python -m pipeline.diff_report` |
 | Check the representative-model crosswalk | `python -m pipeline.representative_models --coverage` |
-| Rebuild the Ontario market history (downloads IESO files) | `python scripts/generate_market_pricing.py` |
+| Build the representative models (summary; `--output PATH` writes the JSON) | `python -m pipeline.representative_models --build` |
+| Rebuild the rolling Ontario market history (downloads IESO files) | `python scripts/build_ontario_market.py` |
+| Rebuild the legacy 2020-2024 market surface (Phase 6A, manual; its default output would overwrite the rolling site file) | `python scripts/generate_market_pricing.py --output PATH` |
 | Extend the hourly Ontario Price archive (downloads IESO files) | `python scripts/archive_ontario_price.py` |
+| Record database statistics (the Monthly Scrape history check) | `python scripts/check_db_history.py stats --db data/db/rates.db --out stats.json` |
 | Run tests | `pytest` |
 | Serve the website locally | `python -m http.server --directory site 8000` |
 | See verbose output | `python -m pipeline.run_scrape --verbose` |
@@ -366,46 +406,68 @@ See [docs/adding-a-utility.md](docs/adding-a-utility.md) for a detailed guide.
 1. Create a new file in `scrapers/utilities/`.
 2. Write a class that inherits from `BaseScraper` and implements `scrape()`.
 3. Add the utility to `data/sources/registry.json`.
-4. Test with `python -m pipeline.run_scrape --utility "Your Utility"`.
+4. Test with `python -m pipeline.run_scrape --utility "Your Utility" --dry-run`. After the code is pushed, the Monthly Scrape workflow stores it (start it by hand with the `utility` input, or wait for the 1st).
 
 ---
 
 ## How Monthly Updates Work
 
-The [Monthly Scrape workflow](.github/workflows/scrape.yml) runs on the 1st at
-08:00 UTC or on manual dispatch. It installs dependencies and Chromium, runs tests,
-scrapes, validates, rejects empty exports, and commits updated data. It now restores
-`data/db/rates.db` from the GitHub Release asset tagged `data-history` and uploads it
-only after validation and export succeed. Failure issues cover tests, scraping and
-validation/export failures.
+The [Monthly Scrape workflow](.github/workflows/scrape.yml) runs on the 1st at 08:00 UTC or on
+manual dispatch, with optional inputs for one `utility` or one two-letter `province` (not both;
+the inputs reach the shell through environment variables). Since October 16 (user decision) it is
+the **only writer** of the history database `data/db/rates.db`, kept as asset `rates.db` of the
+`data-history` GitHub release:
+
+1. **Restore:** if the release exists, the download must succeed and match the asset's SHA-256
+   digest, or the run stops; only a missing release (HTTP 404) starts a new database. Before
+   October 16 a failed lookup silently started an empty database, which the `--clobber` upload
+   could then have used to wipe the history. `scripts/check_db_history.py stats` records
+   integrity-checked statistics right after the restore.
+2. **Test, scrape, validate, export:** deterministic tests, the scrape (all active utilities, one
+   utility or one province), validation, JSON export and a check that rejects empty exports.
+3. **Check before upload:** `scripts/check_db_history.py verify` requires SQLite `integrity_check`
+   "ok", no fewer snapshots, tariff versions or scrape runs, and every earlier snapshot unchanged
+   (a digest over all earlier rows). It posts a public "Database history" notice on the run page.
+4. **Upload:** a dated gzip backup (`rates-YYYY-MM-DD.db.gz`), then `rates.db`. The bot then
+   commits `site/data/` (rebasing on `main` first, because the archive workflow also commits on
+   the 1st), and dated backups are pruned to the newest 12.
+5. **Failure issue:** a failed step opens a GitHub issue with the test, scrape, validation,
+   database-history and diff output; a failed check uploads nothing.
+
+Local machines never upload: `python scripts/pull_history_db.py` downloads the public release
+copy, checks its digest and keeps the old local copy in `data/db/backups/` (git-ignored). To store
+new data, push the code and start Monthly Scrape (optionally for one utility or one province), or
+wait for the 1st. `python -m pipeline.run_scrape --province XX` skips merged and retired registry
+entries. **Risk:** deleting the `data-history` release deletes `rates.db` and every backup.
 
 [Deploy Site](.github/workflows/deploy.yml) is a separate push/manual workflow with a
 `workflow_run` trigger after a successful Monthly Scrape; it checks out `main`.
 [Non-blocking Source Health](.github/workflows/source-health.yml) runs on the 15th
-and uploads a dry-run log without publishing; it now installs Playwright Chromium.
+and uploads a dry-run log without publishing; it installs Playwright Chromium.
 [Ontario Price Archive](.github/workflows/ontario-price-archive.yml) runs at 06:00 UTC on the 1st
-and 15th, extends `data/market/ontario_price_hourly.csv` and commits only that file.
+and 15th. It extends `data/market/ontario_price_hourly.csv` and commits it first, then runs
+`scripts/build_ontario_market.py` and commits `site/data/market_pricing_ontario.json` and
+`data/market/ontario_market_monthly.csv` in a second commit. A failure opens an issue whose title
+says which part failed.
 
-**CI status (October 15):** steps that pipe output into `tee` now run under `bash -o pipefail`,
-so a failing command fails its step; all workflows run on `ubuntu-24.04`; and each scrape run
-posts a public notice on its run page with the live, seed and invalid totals and any failed or
-seed-only utility (the step summary and logs need a GitHub sign-in). The owner created the
-`data-history` release from the local database (48,701,440 bytes, the same SHA-256 as the local
-file). [Source Health run #6](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/38808829718)
-(started by hand, 13 minutes) passed: live 909, seed 46, invalid 0; 78 utilities, 45 of them with
-both live and seed records; no failures; AESO the only seed-only utility. A warning that `git`
-exited with code 128 also appears on earlier runs; its cause is not known yet (it needs the
-signed-in log).
+**CI status (October 16):** steps that pipe output into `tee` run under `bash -o pipefail`, so a
+failing command fails its step; all workflows run on `ubuntu-24.04`; and each scrape run posts a
+public notice on its run page with the live, seed and invalid totals and any failed or seed-only
+utility (the step summary and logs need a GitHub sign-in). Deploy Site succeeds on every push.
+[Source Health run #6](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/38808829718)
+(October 15, started by hand, 13 minutes) passed: live 909, seed 46, invalid 0; 78 utilities, 45
+of them with both live and seed records; no failures; AESO the only seed-only utility. The one
+missing live record was EPCOR Energy Alberta's FortisAlberta-area residential Rate of Last
+Resort, whose page had moved; Lane F fixed it on October 16. A warning that `git` exited with code
+128 also appears on earlier runs; its cause is not known yet (it needs the signed-in log). The
+owner created the `data-history` release from the local database on October 15 (48,701,440
+bytes, the same SHA-256 as the local file).
 
-**Remaining operational gaps:** the Monthly Scrape chain has never run in CI: restoring and
-uploading the database through the `data-history` release asset, the automatic failure issues,
-and Deploy Site starting after a successful Monthly Scrape (`workflow_run`). The Ontario Price
-Archive workflow has not run in CI either. Before the monthly run commits, it now rebases on
-`main`, because the archive also commits on the 1st. After the first Monthly Scrape, the release
-copy of the database is the newest history: download it before storing a local scrape. The next
-scheduled Monthly Scrape is November 1; the owner may dispatch one earlier. GitHub Pages must use
-**GitHub Actions** as its source, and `workflow_run` fires from the default branch. Manual
-workflows are available in **Actions**.
+**Not yet exercised in a real CI run:** the new restore, check, upload and backup chain, the
+automatic failure issues, Deploy Site starting after a successful Monthly Scrape (`workflow_run`)
+and the Ontario Price Archive workflow with its market history build. The owner may start both
+from the **Actions** tab; otherwise they run on November 1. GitHub Pages must use
+**GitHub Actions** as its source, and `workflow_run` fires from the default branch.
 
 ---
 
@@ -423,34 +485,82 @@ modules still fetch URL constants directly, so source corrections must update bo
 registry and the owning scraper where necessary. The Excel reference file
 (`data/excel/old_urls.xlsm`) is audit-only and is never read by a scraper.
 
-### Ontario Market Pricing (observed legacy history)
+### Ontario Market Pricing (rolling five-year history)
 
-The Market Pricing dashboard shows **observed** historical averages of the legacy Hourly Ontario
-Energy Price (HOEP) and the actual monthly Class B Global Adjustment (GA) for January 1, 2020 -
-December 31, 2024 (Phase 6A, user decision October 9), clearly labelled as the market before
-May 2025. `site/data/market_pricing_ontario.json` holds 576 bins: 12 months x weekday/weekend x
-24 hours (hour beginning, Eastern Standard Time), built from 1,827 days and 43,848 hours (101-112
-observed hours per weekday bin, 41-46 per weekend bin). Each bin stores its hour count and the
-average HOEP, Class B GA and combined price in $/kWh. Weekdays are Monday-Friday; a statutory
-holiday counts as the weekday it falls on. Example: July weekdays at 16:00 average 5.09
-cents/kWh HOEP + 6.58 cents/kWh GA = 11.67 cents/kWh over 110 hours.
+The Market Pricing dashboard shows what market-billed Ontario electricity really cost over the
+**latest 60 complete months** (user decisions October 15-16): the energy price is the legacy
+Hourly Ontario Energy Price (HOEP) up to April 2025 and the Ontario Price after it, plus the
+actual monthly Class B Global Adjustment (GA). Full cost = energy + Class B GA. It is observed
+history for comparison, never a tariff, a bill or a forecast.
 
 **HOEP retired:** the IESO retired the HOEP on April 30, 2025. Since May 1, 2025 market-billed
 customers pay the Ontario Electricity Market Price (OEMP, "the Ontario Price": the Day-Ahead
 Ontario Zonal Price plus the Load Forecast Deviation Adjustment) plus GA. An always-visible note
-on the dashboard says so and links to the IESO's Ontario market prices; the dashboard does not
-show the Ontario Price yet.
+on the dashboard says so and links to the IESO's current Ontario market prices.
 
-**Ontario Price archive (October 15):** the IESO keeps only about 90 days of hourly day-ahead
-files, and its website's chart data reaches back only about 10 days, so hourly prices from May
-2025 to July 10, 2026 can no longer be collected. `scripts/archive_ontario_price.py` keeps what is
+**Current window (October 16):** September 2021-August 2026, 44 legacy HOEP months and 16 Ontario
+Price months (September 2026 is not in the IESO monthly table yet). Average full cost 104.02
+$/MWh = 10.40 cents/kWh (energy 4.49 + GA 5.92); 10.13 cents/kWh in the legacy months and 11.16
+in the Ontario Price months. The page shows a headline, the window, a monthly chart of energy, GA
+and total with May 2025 marked, a 60-row monthly table with each month's era and sources, the
+heatmap and the methodology.
+
+**Complete months:** a month enters the window when it has ended, its energy value is validated
+(legacy HOEP: the hourly mean matches the IESO HOEP Monthly Averages report within 0.01 $/MWh;
+Ontario Price: listed in the IESO monthly table, and a month the archive covers must match it
+within 0.01 $/MWh) and its Class B GA actual rate is published (IESO Data Directory workbook or
+monthly GA reports; where both exist they must agree within 0.005 $/MWh). April 2025 uses the
+report value and has no observed hours, because the April mean of the IESO yearly hourly file
+(39.181 $/MWh) disagrees with the monthly report (39.22).
+
+**Heatmap (user option a):** 576 bins (12 months x weekday/weekend x 24 hours, hour beginning EST;
+a statutory holiday counts as the weekday it falls on) built from **observed hours only**: 32,640
+of the window's 43,824 hours (31,392 legacy HOEP hours, 96.2%; 1,248 Ontario Price hours, 3.8%).
+Weekday bins hold 63-89 hours and weekend bins 25-37, and each cell shows its hour count. The
+hourly Ontario Price from May 1, 2025 to July 10, 2026 is no longer published (the IESO keeps
+about 90 days of daily files, and its website's chart data reaches back only about 10 days), so
+that gap is disclosed and never filled with modelled hours. As archived months enter the window,
+the Ontario Price share of the heatmap grows.
+
+**Files:**
+- `data/market/ontario_market_monthly.csv`: the permanent monthly history (80 months, January
+  2020-August 2026): era, energy (arithmetic and demand-weighted), Class B GA, total, sources and
+  observed hours. It is never trimmed; a month may be revised only within 6 months of its end.
+- `data/market/hoep_hourly.csv`: legacy hourly HOEP, January 1, 2020-March 31, 2025 (46,008
+  hours), imported once with `--refresh-hoep`; CI never downloads legacy HOEP files.
+- `data/market/ontario_price_hourly.csv`: the hourly Ontario Price archive (below).
+- `site/data/market_pricing_ontario.json` (schema 2, `derivation_method`
+  `observed_rolling_60m_hoep_oemp_ga`): metadata (window, eras, gap, change date, source codes,
+  cross-checks), the 60 monthly records and the 576 bins with `hours_hoep` and `hours_oemp`.
+
+**Updating:** `scripts/build_ontario_market.py` (options `--output`, `--monthly-csv`,
+`--hoep-csv`, `--archive`, `--cache-dir`, `--as-of`, `--dry-run`, `--refresh-hoep`) runs in the
+Ontario Price Archive workflow after the archive commit. In CI it downloads only the IESO monthly
+table page, the GA workbooks and the monthly GA reports (18 files). It fails closed: on any
+missing or inconsistent input it writes nothing and exits with an error, and a run without new
+data leaves every file unchanged. All 80 monthly values matched the October 15 comparison to the
+cent. `scrapers/utils/market_pricing.py` and the site accept only observed files (this rolling
+method or the legacy one below); otherwise the site shows a "not available" notice.
+
+**Legacy surface (Phase 6A, October 9):** `scripts/generate_market_pricing.py` (manual; options
+`--start-year`/`--end-year`, default 2020 and 2024, `--output`, `--cache-dir`) still builds the
+fixed 2020-2024 HOEP surface from the IESO yearly hourly reports (`PUB_PriceHOEPPredispOR_YYYY`)
+and the Data Directory GA workbook, cross-checking all 60 monthly means against the HOEP Monthly
+Averages report; the rolling builder reuses its readers. Its default `--output` is still
+`site/data/market_pricing_ontario.json`, so pass another path: by default it would replace the
+rolling file. GA defaults the user may change, kept in
+both builds: April-June 2020 use the published capped 115 $/MWh (provincial emergency order;
+unadjusted 150.57, 147.18 and 128.40), the 2021 actual rates exclude the separate 2021 recovery
+rates (5.01-7.09 $/MWh), and holidays count as weekdays.
+
+**Ontario Price archive (since October 15):** `scripts/archive_ontario_price.py` keeps what is
 still published: `data/market/ontario_price_hourly.csv` holds one row per hour from July 11, 2026
-(2,352 hours to October 16 at creation) with DA-OZP, LFDA, OEMP, the report version and the LFDA
-status (Final or Preliminary). A blank LFDA hour stays blank, never zero (the IESO's published
-monthly LFDA averages leave blanks out). Every complete month must match the IESO's monthly
-Ontario Price table within 0.01 $/MWh for DA-OZP, LFDA and OEMP (user decision: all three
-strict); otherwise nothing is written and the workflow opens an issue. Fix such an issue before
-the oldest unarchived daily files disappear.
+(2,352 hours to October 16) with DA-OZP, LFDA, OEMP, the report version and the LFDA status
+(Final or Preliminary). A blank LFDA hour stays blank, never zero (the IESO's published monthly
+LFDA averages leave blanks out). Every complete month must match the IESO's monthly Ontario Price
+table within 0.01 $/MWh for DA-OZP, LFDA and OEMP (user decision: all three strict); otherwise
+nothing is written and the workflow opens an issue. Fix such an issue before the oldest
+unarchived daily files disappear.
 
 **Old and new market compared (October 15):** what a market-billed Class B customer pays, energy
 plus Class B GA, stayed similar after the change, while energy alone did not. The HOEP years
@@ -459,35 +569,14 @@ Ontario Price (May 2025-April 2026) averaged 108.44 and the latest 12 (September
 2026) 111.08, with 10 and 9 of the 12 months inside the range of the same calendar month in the
 HOEP years; energy alone fell inside that range in only 3 and 2 months. With the separate 2021
 GA recovery rates added to the HOEP years, the latest 12 months are only partly similar (8 of
-12). GA moves opposite to the
-energy price (monthly correlation -0.94 in the HOEP years, -0.97 to -0.99 since), so the total is
-steadier than either part. Decision: show the old and new markets as one continuous total (see
-Next above).
+12). GA moves opposite to the energy price (monthly correlation -0.94 in the HOEP years, -0.97 to
+-0.99 since), so the total is steadier than either part. That is why the page shows the old and
+new markets as one continuous total (done October 16).
 
-**Sources and checks:** `scripts/generate_market_pricing.py` downloads the IESO yearly hourly HOEP
-reports (`PUB_PriceHOEPPredispOR_YYYY` CSV, $/MWh, hours 1-24 hour-ending EST) and the Class B GA
-"Actual Rate ($/MWh)" values from the IESO Data Directory workbook, cross-checked against the
-cents-per-kWh workbook. Every month's computed average must match the IESO HOEP Monthly Averages
-report (60 months; largest difference 0.005 $/MWh, tolerance 0.01) and the units must match the
-HOEP historic prices page, which must carry the retirement notice. If any month, day or hour is
-missing or any check fails, the script writes nothing and exits with an error. GA notes in the
-file: April-June 2020 use the published capped 115 $/MWh (provincial emergency order; unadjusted
-150.57, 147.18 and 128.40), and the published 2021 actual rates exclude the separate 2021 recovery
-rates (5.01-7.09 $/MWh) charged to non-RPP Class B customers. GA ranges from 4.99 $/MWh (August
-2022) to 128.06 (October 2020). `scrapers/utils/market_pricing.py` loads only observed files, and
-the site hides the dashboard behind a "not available" notice if the file was not built from
-observations.
-
-**Updating:** run `python scripts/generate_market_pricing.py` (options `--start-year` and
-`--end-year`, default 2020 and 2024; `--output`; `--cache-dir`). It downloads the official files
-and is a manual step, not part of the Monthly Scrape. Open questions (defaults kept; the user can
-change them): capped or unadjusted GA for April-June 2020, adding the 2021 recovery rates, and
-counting holidays as weekdays.
-
-Ontario demand-class tariffs never copy these averages: since batch 12 their non-RPP records
-carry a market energy component with no stored number (Phase 6B), and Class A Global Adjustment
-(by peak demand factor) is a conditional note. All-in market energy for the representative models
-(7E) can use the continuous total once it is built.
+Ontario demand-class tariffs never copy these averages: their non-RPP records carry a market
+energy component with no stored number (Phase 6B), and Class A Global Adjustment (by peak demand
+factor) is a conditional note. The only model use is the Phase 7E **illustrative** estimate, which
+weights the monthly values with a synthetic load profile (see Phase 7).
 
 ### Alberta Deregulated Market
 
@@ -501,7 +590,10 @@ January 1, 2025, is live for its three providers: a fixed energy price to Decemb
 cents/kWh), cross-checked with the Utilities Consumer Advocate (UCA) default-rates table.
 These records fail closed after the term ends until the next term is published; old RRO
 seeds remain labelled history. Competitive retail contracts are not included. AESO pool-price
-observations remain a market reference for Phase 6C.
+observations remain a market reference for Phase 6C. The representative models (7C, October 16)
+pair each wires utility with the Rate of Last Resort provider for its area, but only below
+250,000 kWh a year, the RoLR limit; larger commercial models show wires charges with market
+energy pending until 6C.
 
 ### Other Provinces
 
@@ -542,6 +634,12 @@ substitute for current approved tariff documents.
 ### The Ontario Price Archive workflow opened an issue
 → A monthly check against the IESO's published Ontario Price table failed, or an official file could not be read, so nothing was written. Run `python scripts/archive_ontario_price.py --dry-run` to see which month or file failed, and fix it soon: the IESO deletes each daily price file after about 90 days.
 
+### An issue says "Ontario market history update failed"
+→ The archive part of the run was saved; only the market history build failed closed and wrote nothing, so the Market Pricing page keeps its previous data. Run `python scripts/build_ontario_market.py --dry-run` to see the reason (for example a month that disagrees with the IESO table) and fix it before the next run on the 1st or 15th.
+
+### The database history check failed
+→ The Monthly Scrape found a problem with `data/db/rates.db` (a failed restore or digest, a failed integrity check, fewer snapshots, tariff versions or scrape runs, or a changed earlier snapshot) and uploaded nothing, so the release copy is unchanged. Read the "Database History" part of the issue. Do not upload a database by hand: fix the cause, then start Monthly Scrape again.
+
 ---
 
 ## Data Format Recommendation
@@ -574,9 +672,9 @@ features, **not evidence that all registered utilities or published classes are 
 | 5C: Residential products and building-service expansion | Review optional residential plans and retain building-service gaps | Nine batches delivered; remaining building catalogues still incomplete |
 | 5D: Provincial/territorial depth | Building-class audits at already-live utilities; later territorial coverage | NL Hydro 21 records implemented; territories reopened October 7 (NTPC, Qulliq, Yukon Energy and ATCO Electric Yukon live) |
 | 5E: Gas | Building heating/service tariffs preserving zones, components, units and dates | All nine active gas utilities have live output: the six campaign utilities plus, from batch 12 (October 9), Enbridge Gas (20), ATCO Gas (10) and the new EPCOR Natural Gas (Ontario) entry (10), which replaces a retired, mis-registered Alberta entry; building-service gaps and open decisions remain |
-| 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Batch 12 (October 9): ENMAX Power, ATCO Electric, EPCOR Distribution (2026 interim rates, medium confidence) and FortisAlberta live (5 each; transmission and dated riders separate) plus Rate of Last Resort energy from all three providers (8); AESO stays a market reference (Phase 6C); transmission-connected and admin-charge decisions open. Since October 15 EPCOR Energy Alberta's FortisAlberta-area residential page returns 404, so that record fails closed until its address is fixed (Lane F) |
+| 5F: Alberta electricity | Building-relevant wires/default retail products; separate AESO reference where required | Batch 12 (October 9): ENMAX Power, ATCO Electric, EPCOR Distribution (2026 interim rates, medium confidence) and FortisAlberta live (5 each; transmission and dated riders separate) plus Rate of Last Resort energy from all three providers (8); AESO stays a market reference (Phase 6C); transmission-connected and admin-charge decisions open. EPCOR Energy Alberta moved its Rate of Last Resort pages (404 from October 15); fixed October 16 (Lane F: a dry run gives 4 live again; the next CI Monthly Scrape stores it) |
 | 5G: Ontario | Batches 1-2 (October 7-8) plus PUC Distribution (October 9; its tariff prints no connection rate, noted on each record): all 47 active distributors live from OEB tariff sheets (490 records); rejected classes no longer re-emit estimates. Non-RPP demand classes carry a value-less market energy component (Phase 6B) | Done for active distributors; tariff market energy stays value-less (the observed 6A history is shown only in the Market Pricing view) |
-| 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; per-run live/seed summary published (October 9) and, since October 15, a public notice on every scrape run, steps that fail under `pipefail` and runners pinned to `ubuntu-24.04`. Verified in CI: Deploy Site on every push and Source Health run #6 (October 15: live 909, seed 46, AESO the only seed-only utility; a local dry run matched). The owner seeded the `data-history` release on October 15. Not yet exercised: the Monthly Scrape's release restore/upload, failure issues and `workflow_run` deployment, and the Ontario Price Archive workflow (next scheduled November 1) |
+| 5H: Reliable publication | Source-health/browser setup, live-vs-fallback reporting, failure notifications, deployment trigger and durable CI history | Browser setup, failure issues, deployment trigger and release-asset history implemented; per-run live/seed summary published (October 9) and, since October 15, a public notice on every scrape run, steps that fail under `pipefail` and runners pinned to `ubuntu-24.04`. **October 16: CI is the only writer of the history database:** the restore must succeed and match the asset's SHA-256 digest, integrity and history-only-grows checks run before the upload, dated backups are pruned to the newest 12, a public "Database history" notice is posted and a `province` input was added; local copies are read-only mirrors. Verified in CI: Deploy Site on every push and Source Health run #6 (October 15: live 909, seed 46, AESO the only seed-only utility; a local dry run matched). Not yet exercised: the Monthly Scrape's database chain, failure issues and `workflow_run` deployment, and the Ontario Price Archive workflow with its market history build (the owner may start them; otherwise November 1) |
 
 **Definition of done for each utility:** account for the standard published classes
 relevant to building energy costs, including single-family homes,
@@ -611,7 +709,7 @@ copied into a tariff.
 
 | Phase | Work and completion gate | Depends on | Status |
 |---|---|---|---|
-| 6A: Ontario market observations | Replace the fixed generator inputs of the Ontario market model with reproducible official IESO observations (hourly energy prices and actual Class B Global Adjustment) and freshness checks; correct the market-model metadata and UI disclosure | - | **Done October 9 (legacy history).** The IESO keeps only about 90 days of hourly day-ahead zonal price files, so a 12-month Ontario Electricity Market Price window cannot be built from public files. User decision (October 9): observed legacy HOEP hourly prices for 2020-2024 plus actual monthly Class B Global Adjustment rates, clearly labelled as the market before May 2025 (the HOEP was retired April 30, 2025). `scripts/generate_market_pricing.py` downloads the official files, cross-checks all 60 monthly averages and fails closed; the 2020-2024 window is fixed (no freshness check applies) and rebuilt manually. An Ontario Price history would need 12 months of self-archived daily files: the hourly archive started October 15 (from July 11, 2026); the continuous monthly total (legacy HOEP, then Ontario Price, each plus Class B GA) is next |
+| 6A: Ontario market observations | Replace the fixed generator inputs of the Ontario market model with reproducible official IESO observations (hourly energy prices and actual Class B Global Adjustment) and freshness checks; correct the market-model metadata and UI disclosure | - | **Done.** October 9 (legacy history): the IESO keeps only about 90 days of hourly day-ahead zonal price files, so the user chose observed legacy HOEP hourly prices for 2020-2024 plus actual monthly Class B Global Adjustment rates (`scripts/generate_market_pricing.py`: all 60 monthly averages cross-checked; fails closed). October 15: hourly Ontario Price archive (from July 11, 2026). **October 16: rolling five-year history** (`scripts/build_ontario_market.py`): the latest 60 complete months (legacy HOEP to April 2025, then the Ontario Price) plus Class B GA, a permanent monthly CSV since January 2020 and a heatmap from observed hours only (the gap May 1, 2025-July 10, 2026 disclosed), rebuilt twice a month by the Ontario Price Archive workflow; a month enters the window only once its energy and GA values are published and validated |
 | 6B: Ontario demand-class energy | Attach modeled market energy (wholesale price plus Class B GA) to GS 50-4,999 kW and Large Use delivery-only records as labelled components; Class A noted as conditional | 6A for observed averages | **Implemented October 9 (batch 12) as value-less components:** non-RPP demand classes (including Hydro One UGd/GSd/AUGd/AGSd and ST) carry "Market Energy (Ontario Electricity Market Price + Class B Global Adjustment)" with a market reference and the IESO source URL; Class A and RPP eligibility are conditional notes; Algoma R2 (residential dwellings stay RPP-eligible) has none |
 | 6C: Alberta market | AESO pool price observations; default retail (RoLR) energy from 5F; optional Alberta region in the Market Pricing dashboard if its variation warrants it (Alberta-specific values, sources, periods and methodology, never Ontario's market-price-plus-GA assumptions; wholesale, retail and wires kept distinct) | 5F | Planned. RoLR fixed prices are live from 5F; EPCOR Distribution's operating reserve charge (a percentage of the pool price) is stored value-less |
 | 6D: Deferred market-indexed products | FortisBC Electric RS38 (Mid-C), BC Hydro RS1892, NSPower one-part real-time pricing, NL Hydro monthly non-firm (5.1L, Island non-thermal) | 6A methods | Planned |
@@ -635,9 +733,55 @@ Pricing and Compare; planned now, implemented later. The October 8 scratch proto
 (`logs/_on2_r_model.py`: typical monthly delivery varied about 18% across 46 distributors,
 Hydro One the main outlier) is superseded by the 7B engine.
 
-**Status (October 15):** 7A is done and 7B is done for Ontario electricity. Every export now
-writes `site/data/representative_models.json` (compact JSON, about 0.5 MB), and the site's
-Representative Models tab reads it (7F). Ontario medians, $/month:
+**Status (October 16):** 7A, 7B and 7C are done for electricity in all ten provinces (method
+7C-2), and the site's Representative Models tab (7F) shows them; 7E exists only as a clearly
+labelled illustrative estimate (below). Every export writes `site/data/representative_models.json`
+(compact JSON, about 0.8 MB). Of the 910 latest live records, 557 are mapped to a model, 353 are
+excluded with a reason and 0 are unmapped. The 55 models by province:
+
+| Province | Models | Modeled | Single source | Market energy pending | Not computable | Residential at 1,000 kWh, $/month without / with tax |
+|---|---|---|---|---|---|---|
+| AB | 6 | 3 | - | 3 | - | 225.16 / 236.42 (flat; 4 wires + Rate of Last Resort pairs) |
+| BC | 6 | 5 | 1 | - | - | 157.21 / 165.08 (flat; 2 utilities); tiered 133.02 / 139.67 (BC Hydro) |
+| MB | 5 | - | 2 | - | 3 | 129.22 / 144.73 (Manitoba Hydro) |
+| NB | 4 | - | 1 | - | 3 | 189.22 / 201.76 (NB Power) |
+| NL | 6 | 2 | 1 | - | 3 | Withheld: Newfoundland Power is not computable |
+| NS | 6 | - | 6 | - | - | 211.36 / 221.93 (Nova Scotia Power) |
+| ON | 9 | 6 | - | 3 | - | 192.11 / 171.94 (TOU; 47 distributors) |
+| PE | 4 | - | - | - | 4 | Not computable: "Billing Period" length not stated |
+| QC | 5 | - | 5 | - | - | 84.70 / 97.38 (Rate D) |
+| SK | 4 | - | 4 | - | - | 185.92 / 195.22 (SaskPower) |
+| **Total** | **55** | **16** | **20** | **6** | **13** | |
+
+*Single source* means one utility contributes, with no averaging. Models for 5,000 kW and over
+report component buckets only (no usage level yet). Alberta's 50-499 kW, 500-4,999 kW and 5,000 kW
+and over models are wires charges with market energy pending (above the Rate of Last Resort limit;
+Phase 6C), like Ontario's three demand-class models.
+
+**7C rules (user decisions, October 16):**
+- **Alberta pairs:** each all-in unit pairs a wires utility with the Rate of Last Resort provider
+  for its area: ENMAX Power + ENMAX Energy; ATCO Electric + Direct Energy Regulated Services (no
+  administration charge, noted); EPCOR Distribution + EPCOR Energy Alberta; FortisAlberta + EPCOR
+  Energy Alberta. Each pair counts once and every component keeps its own source and dates. The
+  Rate of Last Resort applies only below 250,000 kWh a year (the residential and small-commercial
+  levels); larger loads are wires plus *market energy pending*.
+- **Market energy:** a model is pending only when its energy itself is market-priced. EPCOR
+  Distribution's operating reserve (a percentage of the AESO pool price) is excluded and named.
+- **Exclusions:** optional TOU/peak-event products and pilots outside Ontario (BC Hydro 2101
+  combinations, FortisBC 22A/32, Hydro-Quebec Flex D/G, ATCO D13); ATCO T31, FortisAlberta 65,
+  ENMAX D410 and EPCOR DAS-TOUP are supply-voltage alternatives.
+- **Units:** no assumed conversions. FortisBC "$/two months" charges are halved; per-day energy
+  blocks are multiplied by 30.4375 (Hydro-Quebec Rate D: 40 kWh a day); block thresholds printed
+  without a period use the reviewed `data/models/block_periods.json` entries quoted from the
+  tariffs. NB Power GS1 and Maritime Electric stay not computable because their "Billing Period"
+  has no stated length, and amperage/phase fixed-charge alternatives stay not computable. The
+  Newfoundland and Labrador residential model is withheld while Newfoundland Power is not
+  computable (it would otherwise show NL Hydro's Labrador zone alone).
+- **Known blockers:** Manitoba Hydro's stored energy blocks are malformed (a parser fix is
+  needed); Hydro-Quebec and Manitoba Hydro define a month as 30 days while the engine uses
+  30.4375 (open question).
+
+Ontario results are unchanged by 7C. Ontario medians, $/month:
 
 | Ontario model (usage level) | Utilities | Without tax | With tax | Notes |
 |---|---|---|---|---|
@@ -649,16 +793,39 @@ Representative Models tab reads it (7F). Ontario medians, $/month:
 The residential and under-50 kW costs are lower with tax than without because the Ontario
 Electricity Rebate (23.5% of the pre-tax amount) exceeds the 13% HST, which is charged on the
 pre-rebate amount. Demand-class models are in the *market energy pending* state because Ontario
-market energy is a value-less component; all-in market energy is 7E.
+market energy is a value-less component; a source-backed all-in market energy (7E) is not built.
 
-**Inputs (`data/models/`, 7A):**
-- `crosswalk.json`: 224 ordered rules (first match wins) map every latest live record to a model
-  key (province, fuel, sector, structure, size band) or to an exclusion with its reason. October 9
-  coverage: 548 of 910 records mapped, 362 excluded, 0 unmapped; 15 intentional rule overrides
-  are reported. Alberta electricity records are excluded until 7C (its all-in models need wires
-  plus Rate of Last Resort combinations), Ontario and Alberta gas records until 7D and territorial
-  records until their own plan. Other provinces' electricity and gas records are already mapped;
-  7B builds Ontario models only.
+**7E illustrative estimate (October 16; user decision):** the Ontario 50-499 kW and 500-4,999 kW
+models keep their delivery-only medians and the *market energy pending* state. A separate
+`illustrative_all_in` block adds market energy for a **synthetic load profile**
+(`ON_SYNTHETIC_BUSINESS_HOURS` under `synthetic_profiles` in `data/models/usage_levels.json`:
+Monday-Friday hours beginning 7-18 EST at the level's kW and a constant base load at all other
+hours, sized so the month's kWh equals the level; holidays count as weekdays). Each month's
+published energy level is multiplied by that calendar month's profile-weighted shape factor from
+the heatmap bins, that month's Class B GA is added, and the 60 months of the market window are
+averaged. Class B only; loss factors are not modelled; no estimate is made if the market window
+ends more than 4 months before the as-of date.
+
+| Ontario model (level) | Market energy, synthetic profile | Base load | Illustrative median without / with tax |
+|---|---|---|---|
+| 50-499 kW (40,000 kWh at 100 kW) | 10.83 cents/kWh | 29.6 kW | $6,197.08 / $7,002.71 |
+| 500-4,999 kW (500,000 kWh at 1,000 kW) | 10.64 cents/kWh | 509.2 kW | $71,164.80 / $80,416.23 |
+
+On the site it is hidden behind the checkbox "Show illustrative all-in estimate (synthetic load
+profile)", with a warning, a SYNTHETIC badge and the text "Representative only: not a forecast, a
+quote or a bill. Do not use it for decisions; it needs further analysis." It is never used in
+medians, outliers, the closest utility, Phase 8 change detection or Phase 9 comparisons. Further
+analysis needed: comparison with real commercial load profiles, sensitivity to the business
+hours, an Ontario Price-era hourly shape once 12 archived months exist, Class A and loss factors.
+
+**Inputs (`data/models/`):**
+- `crosswalk.json`: 240 ordered rules (first match wins) map every latest live record to a model
+  key (province, fuel, sector, structure, size band) or to an exclusion with its reason (15
+  intentional rule overrides are reported). A `pairs` section defines the Alberta wires + Rate of
+  Last Resort units (the eight Rate of Last Resort records are excluded as
+  `paired_retail_component` and used through their pairs), and `required_contributors` withholds
+  a level when a required utility is not computable. Ontario and Alberta gas records wait for 7D
+  and territorial records for their own plan.
 - `usage_levels.json` (user-approved monthly levels): residential 500, 1,000 and 2,000 kWh;
   commercial under 50 kW 2,000 kWh at 10 kW and 8,000 kWh at 25 kW; 50-499 kW 40,000 kWh at
   100 kW; 500-4,999 kW 500,000 kWh at 1,000 kW; no 5,000 kW and over level yet. 30.4375 days per
@@ -668,7 +835,11 @@ market energy is a value-less component; all-in market energy is 7E.
   reviewed *reference customer* list adds four Ontario conditional charges that every typical
   customer pays: Class B Capacity Based Recovery riders, non-RPP Class B Global Adjustment riders
   (demand sectors only), riders for customers that are not wholesale market participants and the
-  Standard Supply Service administration charge.
+  Standard Supply Service administration charge. Since October 16 it also holds the 7E synthetic
+  load profile (`synthetic_profiles`).
+- `block_periods.json` (October 16): 20 reviewed entries, each quoting its tariff, give the period
+  (for example a month or two months) of energy block thresholds printed in kWh without one; an
+  entry with no stated period (NB Power GS1, Maritime Electric) leaves the record not computable.
 - `taxes.json`: 13 provinces and territories x electricity/gas x residential/commercial: GST,
   HST, PST, QST or RST plus automatic point-of-sale rebates (for example the Ontario Electricity
   Rebate 23.5%, Nova Scotia's Your Energy Rebate 9% and New Brunswick's 10% residential
@@ -717,7 +888,8 @@ market energy is a value-less component; all-in market energy is 7E.
   charges; monthly or quarterly gas commodity) comes from the market model, is labelled
   modeled with its period basis, and comes from Phase 6 (Market Integration). Where Phase 6 has
   no market data yet, the model shows delivery plus a *market energy pending*
-  state, never a guessed number.
+  state, never a guessed number. The 7E illustrative estimate (synthetic load profile) is a
+  separate, opt-in block beside such a model; it never replaces the pending state.
 - **Transparency text:** every model carries a generated method statement, for example
   "Median of 44 Ontario LDC TOU delivery charges (default rate zones, Hydro One included) plus
   the province-wide OEB RPP TOU prices and hours effective November 1, 2025; excludes Algoma (no
@@ -725,10 +897,11 @@ market energy is a value-less component; all-in market energy is 7E.
   Service is the only utility; no averaging". It also lists contributing utilities, record ids,
   effective dates, source URLs, coverage (n of N utilities), exclusions with reasons, outliers,
   generated date and the input export.
-- **Outputs:** the builder (`pipeline/representative_models.py`, method version 7B-2) runs
-  inside `pipeline/export_json.py` and writes `site/data/representative_models.json` (compact
-  JSON) on every export; the file is kept in git history. A model-build failure is logged and
-  leaves the previous file in place; it never fails the export. No schema change.
+- **Outputs:** the builder (`pipeline/representative_models.py`, method version 7C-2) runs
+  inside `pipeline/export_json.py` for the ten provinces and writes
+  `site/data/representative_models.json` (compact JSON) on every export; the file is kept in git
+  history. A model-build failure is logged and leaves the previous file in place; it never fails
+  the export. No schema change.
 - **Site view:** a **Representative Models** tab with province, fuel, sector and structure
   selectors; a component table with spread, a 24-hour/season strip for TOU, a tier-step chart, a
   demand-band ladder, the method statement and an expandable list of contributing tariffs. A
@@ -742,11 +915,11 @@ market energy is a value-less component; all-in market energy is 7E.
 | Phase | Work and completion gate | Depends on | Status |
 |---|---|---|---|
 | 7A: Taxonomy and crosswalk | Model keys and size bands; reviewed crosswalk for every live utility; exclusion reasons; tests for unmapped/ambiguous records | Current live data | **Done October 9:** crosswalk, usage levels and tax table in `data/models/` (see Inputs above); 0 unmapped records |
-| 7B: Engine (delivery + regulated energy) | Bucket normalization, median/spread, cost at each common usage level without and with tax, closest utility, outlier notes, TOU hour surfaces, tier curves, demand bands, method text and provenance; synthetic and fixture tests; Ontario first (promote the scratch prototype) | 7A | **Done for Ontario October 9:** `pipeline/representative_models.py` (method version 7B-2), run by every export; Ontario's province-wide RPP periods and tiers are used as published; demand-class models are *market energy pending* |
-| 7C: Electricity, all provinces | Residential and commercial models for every province with live data, including Alberta all-in models that combine wires and Rate of Last Resort records; single-source labelling; coverage report (territories planned separately) | 7B | Planned (next) |
+| 7B: Engine (delivery + regulated energy) | Bucket normalization, median/spread, cost at each common usage level without and with tax, closest utility, outlier notes, TOU hour surfaces, tier curves, demand bands, method text and provenance; synthetic and fixture tests; Ontario first (promote the scratch prototype) | 7A | **Done for Ontario October 9:** `pipeline/representative_models.py` (method version 7B-2; 7C-2 since October 16), run by every export; Ontario's province-wide RPP periods and tiers are used as published; demand-class models are *market energy pending* |
+| 7C: Electricity, all provinces | Residential and commercial models for every province with live data, including Alberta all-in models that combine wires and Rate of Last Resort records; single-source labelling; coverage report (territories planned separately) | 7B | **Done October 16 (method 7C-2):** 55 models across the ten provinces (16 modeled, 20 single-source, 6 *market energy pending*, 13 not computable); four Alberta wires + Rate of Last Resort pairs; reviewed block periods; Newfoundland and Labrador residential withheld while Newfoundland Power is not computable. Open: the Manitoba Hydro parser fix and the decisions under Next |
 | 7D: Gas | Residential and commercial gas models (commodity, delivery, carbon kept as buckets) | 7B; ON/AB gas parsers | Planned |
-| 7E: All-in market energy | Market-priced energy from Phase 6 with period basis; *pending* state where Phase 6 data is missing | Phase 6 (6A, 6C) | Planned; can use the continuous Ontario market total (legacy HOEP, then Ontario Price, each plus Class B GA; Alberta: 6C) |
-| 7F: Site view | Representative Models tab, charts, method/coverage disclosure, accessible table, desktop/mobile checks | 7C | **Done for Ontario October 15** (before 7C; the view handles any province): province, fuel, sector and structure selectors, default Ontario residential TOU at 1,000 kWh, a table with medians without and with tax, middle half, range bars, closest utility and outliers, tax lines, the method, coverage and expandable contributing utilities and exclusions. User decision: no new charts (the TOU strip, tier-step chart and demand ladder above were not built). Gas usage levels (7D) need a label update |
+| 7E: All-in market energy | Market-priced energy from Phase 6 with period basis; *pending* state where Phase 6 data is missing | Phase 6 (6A, 6C) | **Illustrative only (October 16):** the two Ontario demand-class models carry a synthetic-profile all-in estimate, hidden by default and never used in medians or comparisons; their state stays *market energy pending*. A source-backed all-in value needs further analysis (Ontario) and 6C (Alberta) |
+| 7F: Site view | Representative Models tab, charts, method/coverage disclosure, accessible table, desktop/mobile checks | 7C | **Done October 15** (before 7C; the view handles any province): province, fuel, sector and structure selectors, default Ontario residential TOU at 1,000 kWh, a table with medians without and with tax, middle half, range bars, closest utility and outliers, tax lines, the method, coverage and expandable contributing utilities and exclusions. User decision: no new charts (the TOU strip, tier-step chart and demand ladder above were not built). October 16: all ten provinces, contributor wording such as "wires + Rate of Last Resort pairs", a note on excluded market-indexed charges and the opt-in 7E block (`site/css/models.css`). Gas usage levels (7D) need a label update |
 
 **Decisions before 7A (user, October 8):**
 - **Taxes:** every all-in model is shown both without tax and with tax (applicable GST/HST/PST,
@@ -781,7 +954,8 @@ underneath changes considerably, without noise commits for trivial drift.
 - **Safeguards:** models use live records only. If a contributing utility drops out because its
   scraper failed or fell back to estimates (not because its tariff changed), keep the previous
   model, mark the input stale and open or update a GitHub issue instead of publishing. History is
-  never overwritten.
+  never overwritten. Illustrative values (the 7E synthetic-profile estimate) are never inputs:
+  change detection reads only the source-backed model values.
 
 | Phase | Work and completion gate | Depends on |
 |---|---|---|
@@ -794,7 +968,7 @@ underneath changes considerably, without noise commits for trivial drift.
 
 1. Add historical rate charts and AI-ready exports after coverage is dependable.
 2. Scope a bill calculator and optional API separately; the current comparison never calculates a total.
-3. **Across-Canada comparison view:** expand the Compare tab with a separate national view alongside the existing two-tariff comparison. Compare common customer classes and rate structures across provinces, using the Phase 7 representative models as the provincial values (electricity first, gas after 7D, all-in after 7E). 7F (the Representative Models view) is done since October 15; this national view starts after 7C.
+3. **Across-Canada comparison view:** expand the Compare tab with a separate national view alongside the existing two-tariff comparison. Compare common customer classes and rate structures across provinces, using the Phase 7 representative models as the provincial values (electricity first, gas after 7D, all-in only once 7E is more than illustrative). 7F (the Representative Models view, October 15) and 7C (all ten provinces, October 16) are done, so this national view can start; it never uses the illustrative (synthetic-profile) values.
 
 #### Across-Canada Comparison: Design Direction
 

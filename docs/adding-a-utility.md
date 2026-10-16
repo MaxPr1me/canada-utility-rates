@@ -180,18 +180,28 @@ completed. On GitHub Actions the same totals also appear as a public notice on t
 
 ## 6. Verify the data
 
-After scraping, export and check:
+Since October 16 only the Monthly Scrape workflow stores scrapes: CI is the only writer of
+`data/db/rates.db`, and local copies are read-only mirrors. Do not store a scrape locally, and
+never upload a database by hand. Instead:
+
+1. Inspect the dry run's records (classes, component counts, units, effective dates and
+   provenance), not merely the scrape success count.
+2. Prove storage in tests: repeat storage in a temporary test database to show that classes keep
+   their own components and snapshots are appended without duplicates.
+3. Push the parser, fixture, registry entry and tests, then start **Monthly Scrape** from the
+   Actions tab with the `utility` input (or a two-letter `province` input), or wait for the 1st.
+   Its history check (integrity, nothing fewer, earlier snapshots unchanged) must pass before the
+   database is uploaded.
+4. Afterwards, refresh your mirror and check the stored data:
 
 ```bash
-python -m pipeline.run_scrape --utility "[Utility Name]"
+python scripts/pull_history_db.py
 python -m pipeline.validate
 python -m pipeline.export_json
 ```
 
-Inspect the utility's exported classes, component counts, units, effective dates and
-provenance, not merely the scrape success count. Repeat storage in a test database to
-prove classes keep their own components and snapshots are appended without duplicates.
-Never delete the real database to validate a parser change.
+Never delete the real database (or the `data-history` release, which holds it and its backups)
+to validate a parser change.
 
 ## 7. Representative models (Phase 7)
 
@@ -204,10 +214,33 @@ not modelled:
   wins, so put a utility-specific rule before its province's generic (`*`) rules and before the
   territory rules.
 - After exporting, run `python -m pipeline.representative_models --coverage` (it reads
-  `site/data/rates.json`); it must report 0 unmapped.
-- The model tests use frozen fixtures (`tests/fixtures/rm_*.json`), so live data never breaks the
-  tests that run before the monthly scrape. Those tests do not see a new utility's records; the
-  coverage command is the check.
+  `site/data/rates.json`); it must report 0 unmapped. Since October 16 (Phase 7C, method 7C-2) the
+  models cover all ten provinces, so a new record in a modelled province can change a median:
+  check `python -m pipeline.representative_models --build` (a summary; add `--output PATH` to
+  write the JSON elsewhere) for the affected province.
+- **Block periods:** an energy block threshold printed in kWh without a period ("first 5,000 kWh")
+  needs a reviewed entry in `data/models/block_periods.json` that quotes the tariff and records
+  its `threshold_period` (for example `month` or `two_months`). When the tariff never states the
+  period, record `null`: the record stays not computable (NB Power GS1, Maritime Electric). Never
+  assume a period.
+- **Alberta pairs:** the crosswalk's `pairs` section pairs each Alberta wires class with the Rate
+  of Last Resort record for its area; each pair counts as one utility and the Rate of Last Resort
+  applies only below 250,000 kWh a year. A new Alberta wires class needs a pairing (otherwise it
+  is not computable at those levels); Rate of Last Resort records themselves are excluded as
+  `paired_retail_component`.
+- **Required contributors:** `required_contributors` in the crosswalk withholds a model level when
+  a listed utility is not computable there, instead of showing the others alone (Newfoundland
+  Power for the Newfoundland and Labrador residential model).
+- **Units:** only disclosed conversions are used ($/day x 30.4375; FortisBC $/two months / 2;
+  per-day energy blocks x 30.4375; kVA = kW / 0.9). Amperage/phase fixed-charge alternatives and
+  any other unit needing an assumed conversion leave the record not computable, with the reason
+  listed. A market-priced energy charge makes the model *market energy pending*; the 7E
+  illustrative (synthetic-profile) estimate is never an input to medians, change detection or
+  comparisons.
+- The model tests use frozen fixtures (`tests/fixtures/rm_*.json`, including `rm_records_b14.json`
+  for the other provinces and Alberta), so live data never breaks the tests that run before the
+  monthly scrape. Those tests do not see a new utility's records; the coverage command is the
+  check.
 - The site's Representative Models tab (`site/js/models.js`) lists every model in the exported
   file, so a newly modelled province appears there without site changes.
 
