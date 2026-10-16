@@ -910,8 +910,10 @@ def _price(prep: dict, kwh: float, kw: Optional[float]) -> dict:
             quantity *= item.get("share", 1.0)
         weight = len(item["months"]) / 12 if item.get("months") else 1.0
         amounts.append(float(item["value"]) * item["factor"] * quantity * weight)
-    per_kwh = sum(a for (item, _), a in zip(prep["priced"], amounts) if item["basis"] == "kwh")
-    return {"status": "ok", "cost": sum(amounts), "energy_charge_subtotal": per_kwh, "reasons": [], "amounts": amounts}
+    # math.fsum: built-in sum() of floats differs between Python 3.11 and 3.12, flipping cents
+    per_kwh = math.fsum(a for (item, _), a in zip(prep["priced"], amounts) if item["basis"] == "kwh")
+    return {"status": "ok", "cost": math.fsum(amounts), "energy_charge_subtotal": per_kwh, "reasons": [],
+            "amounts": amounts}
 
 
 def _clean(value: Any) -> Any:

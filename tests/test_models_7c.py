@@ -310,7 +310,7 @@ def test_ontario_engine_fixture_keeps_its_7b_numbers():
     assert (typical["without_tax"]["median"], typical["with_tax"]["median"]) == (198.09, 177.29)
     assert _model(result, "ON|electricity|residential|tou|-")["cost_basis"] == "delivery_and_energy"
     medium = _model(result, "ON|electricity|commercial|demand|commercial_medium")
-    assert _level(medium, "m1")["without_tax"]["median"] == 1908.07
+    assert _level(medium, "m1")["without_tax"]["median"] == 1908.08
     assert medium["cost_basis"] == "delivery_only_no_energy_component"
     assert [(o["utility"], o["deviation_pct"]) for o in _level(medium, "m1")["outliers"]] == [
         ("Hydro One Networks Inc.", 76.0), ("Ottawa River Power Corporation", -46.2)]
@@ -558,7 +558,7 @@ def test_illustrative_sidecar_adds_synthetic_market_energy_and_never_changes_the
     result = _on_build(fx, market_document=_market_doc())
     baseline = _on_build(_on_fixture(profiles=False), market_document=_market_doc())
     assert _without_sidecar(result["models"]) == baseline["models"]
-    assert _level(_model(result, ON_MEDIUM), "m1")["without_tax"]["median"] == 1908.07
+    assert _level(_model(result, ON_MEDIUM), "m1")["without_tax"]["median"] == 1908.08
     for model_id in (ON_MEDIUM, ON_LARGE):
         model = _model(result, model_id)
         assert model["state"] == "market_energy_pending"

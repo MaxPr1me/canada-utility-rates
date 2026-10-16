@@ -54,8 +54,13 @@ provenance notice. Source Health
 Operator". A local dry run gave the same totals. The one record missing from the export's 910
 latest live was EPCOR Energy Alberta's residential Rate of Last Resort for the FortisAlberta area:
 its page had moved and returned 404, so the record failed closed; Lane F registered the new
-addresses on October 16 (dry run 4 live). A "git exited with code 128" warning (also on earlier
-runs) is unexplained; the log needs a sign-in. The owner created the `data-history` release from
+addresses on October 16 (dry run 4 live). The "git exited with code 128" warning on every run comes
+from the checkout clean-up step: two `.claude/worktrees` folders are committed as submodule links
+without a `.gitmodules` file (harmless). The first Monthly Scrape under the new database rules
+(October 16, run 38939983665) restored and checked the database correctly, then stopped at the
+tests (4 failures: Python 3.12 adds up decimals slightly differently from 3.11, which moved one
+median by a cent), so nothing was saved (issue #3); the calculation now uses exact sums (`math.fsum`).
+The owner created the `data-history` release from
 the local database on October 15 (same SHA-256). **Since October 16 the Monthly Scrape is the only
 writer of the history database** (user decision): the restore must succeed and match the asset's
 SHA-256 digest (only a missing release starts a new database); `scripts/check_db_history.py`

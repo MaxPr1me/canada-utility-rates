@@ -14858,7 +14858,7 @@ def test_rm7b_fixture_exact_medians_median_of_zones():
         (RM7B_RES_ULO, "typical"): (4, 200.97, 179.87, "Burlington Hydro Inc."),
         (RM7B_SMALL_TOU, "s1"): (6, 396.94, 355.26, "Burlington Hydro Inc."),
         (RM7B_SMALL_TOU, "s2"): (6, 1481.26, 1325.72, "Burlington Hydro Inc."),
-        (RM7B_MEDIUM, "m1"): (6, 1908.07, 2156.12, "Enova Power Corp."),
+        (RM7B_MEDIUM, "m1"): (6, 1908.08, 2156.12, "Enova Power Corp."),
         (RM7B_LARGE, "l1"): (6, 18897.15, 21353.78, "Burlington Hydro Inc."),
     }
     for (model_id, level_id), (n, median, taxed, closest) in expected.items():
@@ -14935,7 +14935,7 @@ def test_rm7b_fixture_market_pending_after_injecting_value_less_market_energy():
         model = RM7B__model(result, model_id)
         assert model["state"] == "market_energy_pending"
         assert model["cost_basis"] == "delivery_only_market_energy_pending" and model["energy"]["market_pending"]
-    assert RM7B__level(RM7B__model(result, RM7B_MEDIUM), "m1")["without_tax"]["median"] == 1908.07
+    assert RM7B__level(RM7B__model(result, RM7B_MEDIUM), "m1")["without_tax"]["median"] == 1908.08
     assert RM7B__model(result, RM7B_RES_TOU)["state"] == "modeled"
 
 

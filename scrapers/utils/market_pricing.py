@@ -77,7 +77,7 @@ def get_monthly_average(month: int, path: Path = MARKET_DATA_PATH) -> dict:
         raise ValueError(f"No observations for month={month}")
     result = {"month": month, "hours": hours}
     for field in PRICE_FIELDS:
-        result[field] = round(sum(e[field] * e["hours_count"] for e in entries) / hours, 6)
+        result[field] = round(math.fsum(e[field] * e["hours_count"] for e in entries) / hours, 6)
     return result
 
 
@@ -248,6 +248,6 @@ def synthetic_profile_price(document: dict, *, kwh: float, kw: float, business_h
                                  "shape_factor": round(factor, 6), "shaped_energy": round(shaped, 6),
                                  "ga_class_b": entry["ga_class_b"], "total": round(total, 6)})
     result["shape_factors"] = {str(month): round(factor, 6) for month, factor in factors.items()}
-    result["price_per_kwh"] = round(sum(totals) / len(totals), 6)
+    result["price_per_kwh"] = round(math.fsum(totals) / len(totals), 6)
     result["ok"] = True
     return result
