@@ -2382,7 +2382,7 @@
       "status": "partial",
       "sources": [
         {
-          "url": "https://www.epcor.com/ca/en/ab/edmonton/start-services/home/rate-of-last-resort.html",
+          "url": "https://www.epcor.com/ca/en/ab/edmonton/start-services/home/compare-electricity-rates/rate-of-last-resort.html",
           "source_type": "html",
           "description": "EPCOR Rate of Last Resort page, Edmonton (EPCOR Distribution area)",
           "is_primary": true
@@ -2400,7 +2400,7 @@
           "is_primary": false
         },
         {
-          "url": "https://www.epcor.com/ca/en/ab/other/start-services/home/rate-of-last-resort.html",
+          "url": "https://www.epcor.com/ca/en/ab/other/start-services/home/compare-electricity-rates/rate-of-last-resort.html",
           "source_type": "html",
           "description": "EPCOR Rate of Last Resort page, FortisAlberta service area",
           "is_primary": false

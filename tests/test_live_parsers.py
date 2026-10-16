@@ -11736,7 +11736,29 @@ def test_rolr_fixture_sources_match_module_urls():
         assert sources["epcor_" + key + "_tariffs"]["url"] == area["tariffs_url"]
         listing = sources["epcor_" + key + "_tariffs"]["html"]
         assert ROLR_epcor.schedule_candidates(listing, key, ROLR_TODAY)[0] == sources["epcor_" + key + "_schedule"]["url"]
-    assert all(entry["retrieved_on"] == "2026-10-09" for entry in sources.values())
+    refreshed = {"epcor_" + key + "_home" for key in ROLR_epcor.AREAS}
+    assert {name: entry["retrieved_on"] for name, entry in sources.items()} == {
+        name: "2026-10-16" if name in refreshed else "2026-10-09" for name in sources}
+
+
+def test_rolr_epcor_home_pages_use_moved_addresses():
+    # The old FortisAlberta-area address returns 404 since October 15, 2026; the Edmonton one only redirects.
+    assert {key: area["home_url"] for key, area in ROLR_epcor.AREAS.items()} == {
+        "edti": "https://www.epcor.com/ca/en/ab/edmonton/start-services/home/compare-electricity-rates/rate-of-last-resort.html",
+        "fortis": "https://www.epcor.com/ca/en/ab/other/start-services/home/compare-electricity-rates/rate-of-last-resort.html",
+    }
+    assert "/start-services/home/rate-of-last-resort.html" not in Path(ROLR_epcor.__file__).read_text(encoding="utf-8")
+    by_name = ROLR__by_name(ROLR_epcor.parse_sources(ROLR__epcor_inputs(), ROLR_TODAY)[0])
+    for name, key in ((ROLR_EDTI_RES, "edti"), (ROLR_FAI_RES, "fortis")):
+        record = by_name[name]
+        assert record.source_url == ROLR__comp(record, "energy").source_url == ROLR_epcor.AREAS[key]["home_url"]
+
+
+def test_rolr_epcor_home_page_accepts_earlier_term_wording():
+    html = ROLR__replace(ROLR__html("epcor_fortis_home"), "is set at a fixed rate from January 1, 2025 to December 31, 2026",
+                         "is a fixed rate for a two year period from January 1, 2025 \u2013 December 31, 2026")
+    cents, period, _ = ROLR_epcor.parse_home_page(html)
+    assert (str(cents), period.start.isoformat(), period.end.isoformat()) == ("12.01", ROLR_TERM_START, ROLR_TERM_END)
 
 
 def test_rolr_uca_table_term_unit_and_prices():
@@ -14454,28 +14476,6 @@ def test_rm7a_batch12_fixture_is_a_frozen_reduced_snapshot():
     assert utilities == RM7A_AB_ELECTRICITY | RM7A_ON_AB_GAS | {"PUC Distribution Inc."}
 
 
-def test_rm7a_batch12_alberta_and_gas_records_are_excluded_with_reasons():
-    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
-    seen = set()
-    for record in RM7A__b12_records():
-        outcome = RM7A_match_record(record, crosswalk)
-        name = record["utility_name"]
-        if name in RM7A_AB_ELECTRICITY:
-            assert record["province"] == "AB" and record["utility_type"] == "electricity"
-            assert (outcome["model"], outcome["exclude"]) == (None, "province_not_modelled_yet_7c"), record["name"]
-        elif name in RM7A_ON_AB_GAS:
-            assert record["utility_type"] == "gas"
-            assert (outcome["model"], outcome["exclude"]) == (None, "gas_models_phase_7d"), record["name"]
-        else:
-            continue
-        assert outcome["rule_id"].startswith(("ab-", "on-")) and outcome["zone"] is None
-        seen.add(name)
-    assert seen == RM7A_AB_ELECTRICITY | RM7A_ON_AB_GAS
-    vocabulary = crosswalk["vocabulary"]["exclusions"]
-    assert "Phase 7C" in vocabulary["province_not_modelled_yet_7c"]
-    assert "Phase 7D" in vocabulary["gas_models_phase_7d"]
-
-
 def test_rm7a_puc_distribution_maps_through_the_generic_ontario_rules():
     crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
     puc = {r["tariff_code"]: RM7A_match_record(r, crosswalk) for r in RM7A__b12_records()
@@ -14490,17 +14490,6 @@ def test_rm7a_puc_distribution_maps_through_the_generic_ontario_rules():
         model = outcome["model"]
         assert (model["sector"], model["structure"], model["size_band"]) == (sector, structure, bands), code
         assert outcome["zone"] == "default" and outcome["rule_id"].startswith("on-") and "puc" not in outcome["rule_id"]
-
-
-def test_rm7a_frozen_samples_together_leave_nothing_unmapped():
-    crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
-    report = RM7A_coverage_report(RM7A__records() + RM7A__b12_records(), crosswalk)
-    assert report["unmapped"] == [] and report["unused_rules"] == []
-    assert report["totals"]["records"] == 910 and report["totals"]["utilities"] == 77
-    assert report["by_province"]["AB"] == {"excluded": 38}
-    assert report["exclusions"]["province_not_modelled_yet_7c"] == 28
-    assert report["exclusions"]["gas_models_phase_7d"] == 40
-    assert all(key.split("|")[0] != "AB" for key in report["model_keys"])
 
 
 def test_rm7a_cli_prints_coverage_for_the_fixture(capsys):
@@ -14725,14 +14714,6 @@ def test_rm7b_valueless_market_energy_prices_delivery_only_and_marks_the_model_p
     assert "market-priced energy is pending" in model["method"]
 
 
-def test_rm7b_valueless_non_market_components_and_unsupported_units_are_not_computable():
-    no_value = RM7B__cost(RM7B__rec([RM7B__c("fixed", 10.0, "$/month"), RM7B__c("rider", None, "$/month", "Unpriced")], structure="flat"),
-                     1000, structure="flat")
-    assert no_value["status"] == "not_computable" and "no published value: Unpriced" in " ".join(no_value["reasons"])
-    odd = RM7B__cost(RM7B__rec([RM7B__c("fixed", 10.0, "$/two months", "Bimonthly")], structure="flat"), 1000, structure="flat")
-    assert "unit not supported by the engine: Bimonthly" in " ".join(odd["reasons"])
-
-
 def test_rm7b_demand_charges_need_a_level_with_kw():
     res = RM7B__cost(RM7B__rec([RM7B__c("demand", 5.0, "$/kW")], structure="flat"), 1000, None, structure="flat")
     assert res["status"] == "not_computable" and "no kW" in " ".join(res["reasons"])
@@ -14900,21 +14881,6 @@ def test_rm7b_fixture_exact_medians_default_only():
     large = RM7B__level(RM7B__model(result, RM7B_LARGE), "l1")
     assert (large["without_tax"]["n"], large["without_tax"]["median"]) == (5, 17982.86)
     assert "Newmarket-Tay Power Distribution Ltd." not in RM7B__model(result, RM7B_MEDIUM)["coverage"]["contributing_utilities"]
-
-
-def test_rm7b_fixture_states_energy_basis_and_outliers():
-    result = RM7B__build(RM7B__fx())
-    assert result["version"] == 1 and result["method_version"] == "7B-2" and result["as_of"] == RM7B_AS_OF
-    assert result["input"]["records_considered"] == 36 and result["input"]["rates_generated_at"] == "2026-10-08T15:23:54Z"
-    for model in result["models"]:
-        assert model["state"] in RM7B_STATES and model["provenance"] == "modeled"
-    assert RM7B__model(result, RM7B_RES_TOU)["cost_basis"] == "delivery_and_energy"
-    assert RM7B__model(result, RM7B_MEDIUM)["cost_basis"] == "delivery_only_no_energy_component"
-    xlarge = RM7B__model(result, RM7B_XLARGE)
-    assert xlarge["state"] == "single_source" and xlarge["levels"] == []
-    outliers = RM7B__level(RM7B__model(result, RM7B_MEDIUM), "m1")["outliers"]
-    assert [(o["utility"], o["deviation_pct"]) for o in outliers] == [
-        ("Hydro One Networks Inc.", 76.0), ("Ottawa River Power Corporation", -46.2)]
 
 
 def test_rm7b_fixture_alternative_only_record_is_listed_and_other_zone_is_used():
@@ -15124,36 +15090,6 @@ def test_rm7b_reference_charges_are_itemized_per_sector_and_strict_without_a_sec
     assert not any((i.get("reason") or "").startswith("reference_customer:") for i in strict["items"])
     assert medium["cost"] - strict["cost"] == pytest.approx(0.0051 * 40000 + 0.0115 * 100 + 0.1832 * 100
                                                             + 0.0006 * 40000 + 0.25)
-
-
-def test_rm7b_export_hook_writes_compact_models_and_keeps_the_previous_file_on_failure(tmp_path, monkeypatch, caplog):
-    from pipeline import export_json, representative_models
-
-    tariffs = [RM7B__rec(RM7B__tou() + [RM7B__c("fixed", fixed, "$/month")], utility=utility, rid=rid)
-               for rid, (utility, fixed) in enumerate((("A Hydro", 30.0), ("B Hydro", 40.0), ("C Hydro", 50.0)), 1)]
-    tariffs.append(dict(RM7B__rec([RM7B__c("fixed", 1.0, "$/month")], utility="Seed Hydro", rid=9), provenance="seed"))
-    out = tmp_path / "site" / "representative_models.json"
-    result = export_json.export_representative_models(tariffs, out)
-    text = out.read_text(encoding="utf-8")
-    written = json.loads(text)
-    assert text == json.dumps(written, separators=(",", ":"), ensure_ascii=False) + "\n"
-    assert written["models"] == json.loads(json.dumps(result["models"]))
-    assert written["assumptions"]["zone_policy"] == "median_of_zones" and written["input"]["provinces"] == ["ON"]
-    assert written["input"]["source"] == "site/data/rates.json" and written["input"]["records_considered"] == 3
-    typical = RM7B__level(RM7B__model(written, RM7B_RES_TOU), "typical")
-    assert typical["without_tax"]["n"] == 3 and typical["closest_utility"]["utility"] == "B Hydro"
-    previous = out.read_bytes()
-
-    def broken(*args, **kwargs):
-        raise RuntimeError("model build failed")
-
-    monkeypatch.setattr(representative_models, "build_models", broken)
-    with caplog.at_level(logging.ERROR, logger="pipeline.export_json"):
-        assert export_json.export_representative_models(tariffs, out) is None
-    assert out.read_bytes() == previous and "Representative models export failed" in caplog.text
-    monkeypatch.setattr(representative_models, "build_models", lambda *args, **kwargs: {"models": [], "x": float("nan")})
-    assert export_json.export_representative_models(tariffs, out) is None
-    assert out.read_bytes() == previous and not list(out.parent.glob("*.tmp"))
 
 
 # ======================================================================

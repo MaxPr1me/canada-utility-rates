@@ -1,5 +1,5 @@
 {
- "description": "Alberta Rate of Last Resort (RoLR) official sources for DERS (ATCO Electric area), ENMAX Energy (ENMAX Power area) and EPCOR Energy Alberta (EPCOR Distribution and FortisAlberta areas), plus the Utilities Consumer Advocate default-rates cross-check. HTML entries are verbatim fragments of the live pages (ENMAX: pruned __NEXT_DATA__ keeping the RoLR strings); PDF entries hold scrapers.utils.parsing.extract_pdf_pages text per page. Built by logs/_b12_rolr_mkfix.py.",
+ "description": "Alberta Rate of Last Resort (RoLR) official sources for DERS (ATCO Electric area), ENMAX Energy (ENMAX Power area) and EPCOR Energy Alberta (EPCOR Distribution and FortisAlberta areas), plus the Utilities Consumer Advocate default-rates cross-check. HTML entries are verbatim fragments of the live pages (ENMAX: pruned __NEXT_DATA__ keeping the RoLR strings); PDF entries hold scrapers.utils.parsing.extract_pdf_pages text per page. Built by logs/_b12_rolr_mkfix.py; the EPCOR residential page entries (moved under compare-electricity-rates) were refreshed on 2026-10-16 by logs/_b14_w4_mkfix.py.",
  "retrieved_on": "2026-10-09",
  "sources": {
   "uca": {
@@ -54,8 +54,8 @@
    ]
   },
   "epcor_edti_home": {
-   "url": "https://www.epcor.com/ca/en/ab/edmonton/start-services/home/rate-of-last-resort.html",
-   "retrieved_on": "2026-10-09",
+   "url": "https://www.epcor.com/ca/en/ab/edmonton/start-services/home/compare-electricity-rates/rate-of-last-resort.html",
+   "retrieved_on": "2026-10-16",
    "kind": "html",
    "html": "<html><body><li>The Rate of Last Resort is set at a fixed rate from January 1, 2025 to December 31, 2026.</li><div class=\"cmp-rate-card__description-block\">\n<div class=\"cmp-rate-card__title\">Rate of Last Resort</div>\n<div class=\"cmp-rate-card__sub-title\"> </div>\n<div class=\"cmp-rate-card__summary\">Provided by EPCOR</div>\n<div class=\"cmp-rate-card__price\">12.01¢</div>\n<div class=\"cmp-rate-card__measurement\">per kWh*</div>\n</div></body></html>"
   },
@@ -99,10 +99,10 @@
    ]
   },
   "epcor_fortis_home": {
-   "url": "https://www.epcor.com/ca/en/ab/other/start-services/home/rate-of-last-resort.html",
-   "retrieved_on": "2026-10-09",
+   "url": "https://www.epcor.com/ca/en/ab/other/start-services/home/compare-electricity-rates/rate-of-last-resort.html",
+   "retrieved_on": "2026-10-16",
    "kind": "html",
-   "html": "<html><body><div class=\"cmp-text\" data-cmp-data-layer=\"{&quot;text-716f964f28&quot;:{&quot;@type&quot;:&quot;epcor/components/content/text&quot;,&quot;repo:modifyDate&quot;:&quot;2026-09-03T21:14:36Z&quot;,&quot;xdm:text&quot;:&quot;&lt;p&gt;In Alberta, you have choice. &lt;b&gt;You can choose between a competitive electricity plan or the Rate of Last Resort (RoLR), &lt;/b&gt;the default electricity rate in Alberta. If you don't sign up for a plan, or can't, you will be on the Rate of Last Resort.&lt;/p&gt;\\r\\n&lt;ul&gt;\\r\\n&lt;li&gt;It is a fixed rate for a two year period from January 1, 2025 – December 31, 2026.&lt;/li&gt;\\r\\n&lt;li&gt;There is no contract and&amp;nbsp;you can switch to a competitive plan at anytime.&amp;nbsp;&lt;/li&gt;\\r\\n&lt;/ul&gt;\\r\\n&quot;}}\" id=\"text-716f964f28\">\n<p>In Alberta, you have choice. <b>You can choose between a competitive electricity plan or the Rate of Last Resort (RoLR), </b>the default electricity rate in Alberta. If you don't sign up for a plan, or can't, you will be on the Rate of Last Resort.</p>\n<ul><li>It is a fixed rate for a two year period from January 1, 2025 – December 31, 2026.</li><li>There is no contract and you can switch to a competitive plan at anytime. </li></ul>\n</div><div class=\"cmp-rate-card__description-block\">\n<div class=\"cmp-rate-card__title\">Rate of Last Resort</div>\n<div class=\"cmp-rate-card__sub-title\"> </div>\n<div class=\"cmp-rate-card__summary\">Provided by EPCOR</div>\n<div class=\"cmp-rate-card__price\">12.01¢</div>\n<div class=\"cmp-rate-card__measurement\">per kWh*</div>\n</div></body></html>"
+   "html": "<html><body><li>The Rate of Last Resort is set at a fixed rate from January 1, 2025 to December 31, 2026.</li><div class=\"cmp-rate-card__description-block\">\n<div class=\"cmp-rate-card__title\">Rate of Last Resort</div>\n<div class=\"cmp-rate-card__sub-title\"> </div>\n<div class=\"cmp-rate-card__summary\">Provided by EPCOR</div>\n<div class=\"cmp-rate-card__price\">12.01¢</div>\n<div class=\"cmp-rate-card__measurement\">per kWh*</div>\n</div></body></html>"
   },
   "epcor_fortis_business": {
    "url": "https://www.epcor.com/ca/en/ab/other/start-services/business/regulated.html",
