@@ -1,9 +1,11 @@
-"""Representative models: crosswalk/coverage (Phase 7A) and the modeled-cost engine (Phase 7B)."""
+"""Representative models: crosswalk/coverage (Phase 7A), the modeled-cost engine (Phase 7B), all provinces with
+Alberta wires + Rate of Last Resort pairs (Phase 7C) and the Phase 7E illustrative sidecar (synthetic load profile)."""
 from __future__ import annotations
 
 import argparse
 import json
 import math
+import os
 import re
 import statistics
 from collections import Counter, defaultdict
@@ -17,6 +19,8 @@ CROSSWALK_PATH = ROOT / "data" / "models" / "crosswalk.json"
 USAGE_LEVELS_PATH = ROOT / "data" / "models" / "usage_levels.json"
 TAXES_PATH = ROOT / "data" / "models" / "taxes.json"
 RATES_PATH = ROOT / "site" / "data" / "rates.json"
+BLOCK_PERIODS_PATH = ROOT / "data" / "models" / "block_periods.json"
+MARKET_PATH = ROOT / "site" / "data" / "market_pricing_ontario.json"
 DEMAND_BOUNDS = "@demand_bounds"
 MATCH_FIELDS = ("tariff_code", "tariff_code_regex", "name_regex", "customer_class", "rate_structure")
 UNMAPPED = {"rule_id": None, "model": None, "exclude": None, "zone": None}
@@ -260,7 +264,8 @@ def format_coverage(report: dict, limit: int = 25) -> str:
 
 # Phase 7B engine: per-record modeled monthly cost, per-utility aggregation, taxes and statistics.
 
-METHOD_VERSION = "7B-2"
+METHOD_VERSION = "7C-2"
+MODEL_FUELS = ("electricity",)
 ZONE_POLICIES = ("median_of_zones", "default_only")
 ZONE_POLICY_TEXT = {
     "median_of_zones": "the median of each utility's standard rate-zone records covering the level",
@@ -291,14 +296,19 @@ PROVINCE_NAMES = {"AB": "Alberta", "BC": "British Columbia", "MB": "Manitoba", "
                   "NL": "Newfoundland and Labrador", "NS": "Nova Scotia", "NT": "Northwest Territories",
                   "NU": "Nunavut", "ON": "Ontario", "PE": "Prince Edward Island", "QC": "Quebec",
                   "SK": "Saskatchewan", "YT": "Yukon"}
-UTILITY_NOUNS = {("ON", "electricity"): "distributors"}
+UTILITY_NOUNS = {("ON", "electricity"): ("distributor", "distributors"),
+                 ("AB", "electricity"): ("wires + Rate of Last Resort pair", "wires + Rate of Last Resort pairs")}
+DEFAULT_NOUNS = ("utility", "utilities")
 STRUCTURE_LABELS = {"flat": "flat-rate", "tiered": "tiered", "tou": "time-of-use (TOU)",
                     "tiered_tou": "tiered time-of-day", "ulo": "ultra-low overnight (ULO)",
                     "critical_peak": "critical-peak", "seasonal": "seasonal", "demand": "demand-billed",
                     "demand_tou": "demand time-of-use", "interruptible": "interruptible"}
 NOT_APPLIED = {("ON", "electricity"): (
     "distribution loss factors (Ontario bills energy, transmission and regulatory charges on loss-adjusted kWh)",
-    "Class A Global Adjustment")}
+    "Class A Global Adjustment"),
+    ("AB", "electricity"): (
+    "municipal franchise and local access fees",
+    "competitive retail energy contracts (only the Rate of Last Resort is priced)")}
 EXCLUSION_TEXT = {
     "expired": "expired before the as-of date",
     "not_yet_effective": "not yet in effect at the as-of date",
@@ -306,26 +316,35 @@ EXCLUSION_TEXT = {
     "optional": "optional",
     "conditional": "conditional (applies only to some customers)",
     "market_pending": "market price with no stored value (pending Phase 6)",
+    "market_indexed_non_energy": "market-indexed non-energy charge with no stored value (left out until market prices "
+                                 "are modelled)",
     "no_value": "no published value",
     "percentage_base_not_computable": "percentage adjustment whose base is not computable",
     "unsupported_unit": "unit not supported by the engine",
 }
 COMPONENT_RULES = (
     "Included: unconditional components in effect at the as-of date (fixed, energy, distribution, demand, "
-    "transmission, regulatory, riders, carbon, other) in $/month, $/30 days, $/day, $/year, $/kWh, $/MWh, $/kW, "
-    "$/kVA (per month or per day).",
+    "transmission, regulatory, riders, carbon, other) in $/month, $/30 days, $/day, $/year, $/two months (/ 2), "
+    "$/kWh, $/MWh, $/kW, $/kVA (per month or per day).",
     "Included as reference-customer charges: conditional components that a reviewed usage_levels.json "
     "'reference_customer' entry lists for the province, fuel and sector (Ontario: Class B CBR, Standard Supply "
     "Service administration, non-wholesale-market-participant riders, and non-RPP Class B Global Adjustment riders "
     "at 50 kW and over), itemized with reason 'reference_customer:<id>'.",
     "Excluded and counted: other conditional components (sub_component 'conditional'/'conditional_credit' or "
     "notes starting 'Conditional'), alternatives, optional components, components expired (end_date before the "
-    "as-of date) or not yet effective, value-less market components (model state market_energy_pending) and "
-    "percentage adjustments (no computable base).",
+    "as-of date) or not yet effective, value-less market energy (model state market_energy_pending), value-less "
+    "market-indexed non-energy charges (named in the method; the state does not change) and percentage "
+    "adjustments (no computable base).",
+    "Thresholds as published: demand charges with a demand threshold bill only the kW above it; demand and energy "
+    "blocks use their published bounds (kVA bounds at the power factor; per-kW and per-kVA energy blocks scale "
+    "with the level's demand; per-day blocks x days per month; a block published in bare 'kWh' only with the "
+    "first matching reviewed entry of data/models/block_periods.json: month as published, two months / 2, day x "
+    "days per month; a null period or no entry is not computable).",
     "Not computable (record left out at that level, reason listed): a charge published only as conditional "
-    "alternatives, an unconditional component without value or in an unsupported unit, TOU periods without an "
-    "official share, ambiguous tier thresholds, seasons that do not cover the year, demand charges at a level "
-    "without kW.",
+    "alternatives, unconditional fixed charges published as variants of one charge (e.g. by amperage or phase) "
+    "without a selection rule, an unconditional component without value or in an unsupported unit (e.g. per "
+    "billing period), TOU periods without an official share, ambiguous tier thresholds, seasons that do not "
+    "cover the year, demand charges at a level without kW.",
 )
 _PROVENANCE_PREFIX = re.compile(r"^\s*Provenance:\s*[\w-]+\.\s*")
 _PER_30_DAYS = re.compile(r"\bper 30 days\b", re.IGNORECASE)
@@ -341,6 +360,11 @@ _PERIOD_END_RE = re.compile(r"\bto\s+([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})")
 _TIER_UNITS = ("kwh/month", "kwh per month")
 REFERENCE_PREFIX = "reference_customer:"
 REFERENCE_MATCH_FIELDS = ("notes_regex", "name_regex")
+BLOCK_PERIOD_MATCH_FIELDS = ("tariff_code", "tariff_code_regex", "name_regex")
+BLOCK_PERIOD_WORDS = {"month": "per month", "two_months": "per two months, halved",
+                      "day": "per day, x days per month"}
+SYNTHETIC_LABEL = "SYNTHETIC LOAD PROFILE - ILLUSTRATIVE ONLY"
+_DEFAULT: Any = object()
 
 
 def load_taxes(path: PathLike = None) -> dict:
@@ -391,7 +415,9 @@ def component_exclusion(component: dict, as_of: Union[date, str, None] = None) -
     if conditional:
         return "conditional"
     if component.get("charge_value") is None:
-        return "market_pending" if component.get("market_reference") else "no_value"
+        if not component.get("market_reference"):
+            return "no_value"
+        return "market_pending" if component.get("component_type") == "energy" else "market_indexed_non_energy"
     return None
 
 
@@ -422,7 +448,8 @@ def price_basis(component: dict, days_per_month: float = DEFAULT_DAYS_PER_MONTH,
     if unit.startswith("%") or unit.startswith("fraction"):
         return "percent", 1.0, []
     fixed = {"$/month": (1.0, []), "$/30 days": (days_per_month / 30, [f"$/30 days x {dpm}/30"]),
-             "$/day": (days_per_month, [f"$/day x {dpm}"]), "$/year": (1 / 12, ["$/year / 12"])}
+             "$/day": (days_per_month, [f"$/day x {dpm}"]), "$/year": (1 / 12, ["$/year / 12"]),
+             "$/two months": (0.5, ["$/two months / 2"])}
     if unit in fixed:
         return ("month",) + fixed[unit]
     if unit == "$/kwh":
@@ -509,61 +536,226 @@ def bucket_of(component_type: Any, basis: str) -> str:
 
 
 def _context(province: Any, fuel: Any, structure: Any, sector: Any, usage_levels: Optional[dict],
-             as_of: date) -> dict:
+             as_of: date, block_periods: Optional[list] = None) -> dict:
     usage_levels = usage_levels or {}
     shares_id, entry = find_tou_shares(usage_levels, province, fuel, structure, sector)
     return {"as_of": as_of, "province": province, "fuel": fuel, "sector": sector, "usage_levels": usage_levels,
             "days_per_month": float(usage_levels.get("days_per_month") or DEFAULT_DAYS_PER_MONTH),
             "power_factor": float(usage_levels.get("power_factor_for_kva") or DEFAULT_POWER_FACTOR),
             "shares_id": shares_id, "shares": (entry or {}).get("shares"), "shares_entry": entry,
-            "reference": reference_customer_entries(usage_levels, province, fuel, sector)}
+            "reference": reference_customer_entries(usage_levels, province, fuel, sector),
+            "block_periods": [e for e in block_periods or [] if isinstance(e, dict)]}
 
 
-def _tier_windows(group: list[tuple[dict, dict]]) -> list[str]:
-    """Set tier_lower/tier_upper (kWh/month) on one season's tier items; blockers when thresholds are ambiguous."""
-    rows = sorted(group, key=lambda pair: pair[1].get("tier_number") or 0)
-    numbers = [comp.get("tier_number") for _, comp in rows]
-    names = ", ".join(item["component"] for item, _ in rows)
-    if numbers != list(range(1, len(rows) + 1)):
-        return [f"tier numbers {numbers} are not 1..n: {names}"]
-    lower = 0.0
-    for index, (item, comp) in enumerate(rows):
-        threshold = comp.get("tier_threshold")
-        if threshold is not None and (comp.get("tier_unit") or "").strip().lower() not in _TIER_UNITS:
-            return [f"tier threshold unit {comp.get('tier_unit')!r} not supported (kWh/month only): {names}"]
-        if index == len(rows) - 1:
-            if threshold is not None and float(threshold) != lower:
-                return [f"last tier threshold {threshold} differs from the previous upper bound {lower:g}: {names}"]
-            upper = math.inf
-        elif threshold is None or float(threshold) < lower:
-            return [f"tier thresholds missing or decreasing: {names}"]
+def _block_period_problem(entry: Any) -> Optional[str]:
+    if not isinstance(entry, dict) or not entry.get("id") or not entry.get("utility"):
+        return "id and utility are required"
+    match = entry.get("match")
+    if not isinstance(match, dict) or not match or not set(match) <= set(BLOCK_PERIOD_MATCH_FIELDS):
+        return "match must use tariff_code, tariff_code_regex or name_regex"
+    if "threshold_period" not in entry:
+        return "threshold_period missing"
+    if not entry.get("reviewed"):
+        return "not reviewed"
+    return None
+
+
+def block_periods_config(data: Any) -> dict:
+    """Usable entries of a block_periods document ({'entries': [...]}) or entry list; unreviewed or malformed entries
+    are skipped with a reason, so they never apply."""
+    doc = data if isinstance(data, dict) else {"entries": data if isinstance(data, list) else []}
+    entries, skipped = [], []
+    for entry in doc.get("entries") or []:
+        problem = _block_period_problem(entry)
+        if problem:
+            skipped.append({"id": entry.get("id") if isinstance(entry, dict) else None, "reason": problem})
         else:
-            upper = float(threshold)
-        item["tier_lower"], item["tier_upper"] = lower, upper
+            entries.append(entry)
+    return {"version": doc.get("version"), "status": doc.get("status"), "problem": doc.get("problem"),
+            "entries": entries, "skipped": skipped}
+
+
+def load_block_periods(path: PathLike = None) -> dict:
+    """Reviewed periods of bare-'kWh' block thresholds (default data/models/block_periods.json). A missing or unreadable
+    file gives no entries (those blocks stay not computable) and states the problem; it never fails a build."""
+    target = Path(path or BLOCK_PERIODS_PATH)
+    try:
+        data = json.loads(target.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {**block_periods_config(None), "problem": f"{target.name} not found"}
+    except (OSError, ValueError) as exc:
+        return {**block_periods_config(None), "problem": f"{target.name} unreadable ({exc})"}
+    if not isinstance(data, dict):
+        return {**block_periods_config(None), "problem": f"{target.name} is not a JSON object"}
+    return block_periods_config(data)
+
+
+def block_period_entry(record: dict, components: Iterable[dict], entries: Iterable[dict]) -> Optional[dict]:
+    """First block_periods entry for the record: same utility, every match criterion holds (tariff_code exact,
+    tariff_code_regex/name_regex full match) and, when given, component_name_regex fully matches the name of at least
+    one block component."""
+    names = [comp.get("component_name") or "" for comp in components]
+    for entry in entries:
+        match = entry.get("match") or {}
+        if entry.get("utility") != record.get("utility_name") or not match:
+            continue
+        if "tariff_code" in match and record.get("tariff_code") != match["tariff_code"]:
+            continue
+        if "tariff_code_regex" in match and not _fullmatch(match["tariff_code_regex"], record.get("tariff_code")):
+            continue
+        if "name_regex" in match and not _fullmatch(match["name_regex"], record.get("name")):
+            continue
+        regex = entry.get("component_name_regex")
+        if regex is not None and not any(_fullmatch(regex, name) for name in names):
+            continue
+        return entry
+    return None
+
+
+def _energy_tier_scale(unit: Any, record: dict, ctx: dict, components: list[dict]
+                       ) -> tuple[Optional[str], float, list[str], Optional[str], Optional[str]]:
+    """(scale 'month'|'kw'|'kva', factor to the scale, conversions, problem, block_periods entry id) of an energy block
+    threshold unit; a bare 'kWh' threshold needs a reviewed data/models/block_periods.json entry."""
+    text = re.sub(r"\s+", " ", (unit or "").strip().lower())
+    dpm = ctx["days_per_month"]
+    if text in _TIER_UNITS:
+        return "month", 1.0, [], None, None
+    if text in ("kwh/day", "kwh per day"):
+        return "month", dpm, [f"block threshold kWh/day x {dpm:g}"], None, None
+    if re.fullmatch(r"kwh ?(?:/|per) ?(?:kw|kilowatt)(?: of (?:billing|maximum) demand)?(?:/month| per month)?", text):
+        return "kw", 1.0, ["block threshold per kW x the level's kW"], None, None
+    if re.fullmatch(r"kwh ?(?:/|per) ?kva(?: of (?:billing|maximum) demand)?(?:/month| per month)?", text):
+        return "kva", 1.0, [f"block threshold per kVA x the level's kVA (kW / {ctx['power_factor']:g})"], None, None
+    if text != "kwh":
+        return None, 1.0, [], f"tier threshold unit {unit!r} not supported", None
+    entry = block_period_entry(record, components, ctx.get("block_periods") or [])
+    if entry is None:
+        return None, 1.0, [], (f"tier threshold unit {unit!r} has no stated period (no reviewed "
+                               "data/models/block_periods.json entry)"), None
+    period, entry_id = entry.get("threshold_period"), entry.get("id")
+    factors = {"month": (1.0, f"block threshold kWh per month ({entry_id})"),
+               "two_months": (0.5, f"block threshold kWh per two months / 2 ({entry_id})"),
+               "day": (dpm, f"block threshold kWh per day x {dpm:g} ({entry_id})")}
+    if period not in factors:
+        state = "no period stated" if period is None else f"unsupported threshold_period {period!r}"
+        return None, 1.0, [], (f"tier threshold unit {unit!r} has no stated period (data/models/block_periods.json "
+                               f"entry {entry_id}: {state})"), None
+    factor, conversion = factors[period]
+    return "month", factor, [conversion], None, entry_id
+
+
+def _demand_tier_factor(unit: Any, power_factor: float) -> Optional[float]:
+    """kW per threshold unit for demand blocks (kVA bounds at the power factor); None when unsupported."""
+    text = re.sub(r"\s+", " ", (unit or "").strip().lower())
+    match = re.fullmatch(r"(kw|kva)(?: of (?:billing|maximum|peak metered) demand)?", text)
+    if not match:
+        return None
+    return power_factor if match.group(1) == "kva" else 1.0
+
+
+def _block_windows(rows: list[tuple[dict, dict]], factor: float) -> tuple[Optional[dict], Optional[str]]:
+    """Windows per tier number: two-block schedules share one boundary (an item may cover one block only);
+    longer schedules need one item per tier 1..n with increasing cumulative bounds."""
+    numbers = [comp.get("tier_number") for _, comp in rows]
+    if set(numbers) <= {1, 2}:
+        bounds = {float(comp["tier_threshold"]) for _, comp in rows if comp.get("tier_threshold") is not None}
+        if len(bounds) != 1:
+            return None, "tier thresholds missing or inconsistent"
+        boundary = bounds.pop() * factor
+        return {1: (0.0, boundary), 2: (boundary, math.inf)}, None
+    if numbers != list(range(1, len(rows) + 1)):
+        return None, f"tier numbers {numbers} are not 1..n"
+    windows, lower = {}, 0.0
+    for index, (_, comp) in enumerate(rows):
+        threshold = comp.get("tier_threshold")
+        if index == len(rows) - 1:
+            if threshold is not None and float(threshold) * factor != lower:
+                return None, f"last tier threshold {threshold} differs from the previous upper bound {lower:g}"
+            upper = math.inf
+        elif threshold is None or float(threshold) * factor < lower:
+            return None, "tier thresholds missing or decreasing"
+        else:
+            upper = float(threshold) * factor
+        windows[comp.get("tier_number")] = (lower, upper)
         lower = upper
+    return windows, None
+
+
+def _tier_windows(group: list[tuple[dict, dict]], ctx: dict, record: dict) -> list[str]:
+    """Set tier_lower/tier_upper (kWh/month, or kWh per kW/kVA) on one season's energy block items."""
+    rows = sorted(group, key=lambda pair: pair[1].get("tier_number") or 0)
+    names = ", ".join(item["component"] for item, _ in rows)
+    units = {comp.get("tier_unit") for _, comp in rows if comp.get("tier_threshold") is not None}
+    if len(units) > 1:
+        return [f"tier threshold units differ {sorted(map(str, units))}: {names}"]
+    scale, factor, conversions, problem, entry_id = _energy_tier_scale(
+        next(iter(units), "kWh/month"), record, ctx, [comp for _, comp in rows if comp.get("tier_threshold") is not None])
+    if problem:
+        return [f"{problem}: {names}"]
+    if scale in ("kw", "kva") and any(_CAP_RE.search((comp.get("component_name") or "") + " " + _note_body(comp))
+                                      for _, comp in rows):
+        return [f"block threshold with a published cap that is not structured: {names}"]
+    windows, problem = _block_windows(rows, factor)
+    if problem:
+        return [f"{problem}: {names}"]
+    for item, comp in rows:
+        item["tier_lower"], item["tier_upper"] = windows[comp.get("tier_number")]
+        item["tier_scale"] = scale
+        item["conversions"] = list(item.get("conversions") or []) + conversions
+        if entry_id:
+            item["block_period"] = entry_id
     return []
 
 
-def _period_and_tier_checks(priced: list[tuple[dict, dict]], ctx: dict) -> list[str]:
-    """Attach TOU shares and tier windows to priced items; blockers for anything not computable."""
+def _demand_windows(group: list[tuple[dict, dict]], ctx: dict) -> list[str]:
+    """Set demand_lower/demand_upper (kW) on one season's demand block items."""
+    rows = sorted(group, key=lambda pair: pair[1].get("tier_number") or 0)
+    names = ", ".join(item["component"] for item, _ in rows)
+    units = {comp.get("tier_unit") for _, comp in rows if comp.get("tier_threshold") is not None}
+    if not units:
+        return [f"demand block thresholds missing: {names}"]
+    factors = {_demand_tier_factor(unit, ctx["power_factor"]) for unit in units}
+    if len(factors) != 1 or None in factors:
+        return [f"demand block threshold unit {sorted(map(str, units))} not supported: {names}"]
+    windows, problem = _block_windows(rows, factors.pop())
+    if problem:
+        return [f"demand {problem}: {names}"]
+    for item, comp in rows:
+        item["demand_lower"], item["demand_upper"] = windows[comp.get("tier_number")]
+    return []
+
+
+def _period_and_tier_checks(priced: list[tuple[dict, dict]], ctx: dict, record: Optional[dict] = None) -> list[str]:
+    """Attach TOU shares, block windows and demand thresholds to priced items; blockers for anything not computable."""
     blockers: list[str] = []
     shares = ctx.get("shares")
     energy_periods: set[str] = set()
     tier_groups: dict[tuple, list[tuple[dict, dict]]] = defaultdict(list)
+    demand_groups: dict[tuple, list[tuple[dict, dict]]] = defaultdict(list)
     seasons: dict[str, list[int]] = {}
     for item, comp in priced:
         period, tier = comp.get("tou_period"), comp.get("tier_number")
         if item["basis"] == "kw":
+            threshold = comp.get("demand_threshold_kw")
             if period:
                 blockers.append(f"time-period demand charge not computable: {item['component']}")
-            if comp.get("demand_threshold_kw") is not None:
-                blockers.append(f"demand threshold not computable: {item['component']}")
+            elif tier is not None and threshold is not None:
+                blockers.append(f"demand block and demand threshold both set: {item['component']}")
+            elif tier is not None:
+                demand_groups[(item["type"], item.get("season"))].append((item, comp))
+            elif threshold is not None:
+                if "kva" in (item.get("unit") or "").lower():
+                    blockers.append(f"kW demand threshold on a kVA charge not computable: {item['component']}")
+                else:
+                    item["demand_lower"], item["demand_upper"] = float(threshold), math.inf
             continue
         if item["basis"] != "kwh":
             continue
         if period:
             share = (shares or {}).get(period)
-            if share is None:
+            if share is None and float(item["value"]) == 0.0:
+                item["share"] = 0.0
+            elif share is None:
                 source = ctx.get("shares_id") or "no matching share set"
                 blockers.append(f"no official kWh share for TOU period '{period}' ({source}): {item['component']}")
             else:
@@ -583,8 +775,31 @@ def _period_and_tier_checks(priced: list[tuple[dict, dict]], ctx: dict) -> list[
         blockers.append("seasonal energy prices do not cover each month exactly once: "
                         + json.dumps(seasons, sort_keys=True))
     for group in tier_groups.values():
-        blockers.extend(_tier_windows(group))
+        blockers.extend(_tier_windows(group, ctx, record or {}))
+    for group in demand_groups.values():
+        blockers.extend(_demand_windows(group, ctx))
     return blockers
+
+
+_VARIANT_NAME = re.compile(r"^(.*\S)\s*\(([^()]*)\)\s*$")
+_CAP_RE = re.compile(r"\bup to a maximum of\b|\bcapped at\b|\bmaximum of [\d,.]+\s*(?:kilowatt-hours|kwh)", re.IGNORECASE)
+
+
+def _stem(name: str) -> str:
+    match = _VARIANT_NAME.match(name or "")
+    return (match.group(1) if match else name or "").strip().lower()
+
+
+def _unmarked_fixed_variants(priced: list[tuple[dict, dict]]) -> list[str]:
+    """Unconditional fixed charges printed as variants of one charge, e.g. 'Basic Charge (single phase)' and
+    'Basic Charge (three phase)': the record gives no rule to pick one, so they are never added together."""
+    groups: dict[str, list[str]] = defaultdict(list)
+    for item, comp in priced:
+        match = _VARIANT_NAME.match(item["component"]) if item["type"] == "fixed" else None
+        if match:
+            groups[match.group(1).lower()].append(item["component"])
+    return ["fixed charge published as variants without a selection rule: " + "; ".join(names)
+            for names in groups.values() if len(names) > 1]
 
 
 def _prepare(record: dict, ctx: dict) -> dict:
@@ -594,7 +809,9 @@ def _prepare(record: dict, ctx: dict) -> dict:
     blockers: list[str] = []
     alternatives: dict[tuple, list[str]] = defaultdict(list)
     priced_slots: set[tuple] = set()
+    covered_stems: set[tuple] = set()
     market: list[str] = []
+    market_other: list[str] = []
     energy_seen = market_energy = False
     for comp in record.get("components") or []:
         name = comp.get("component_name") or ""
@@ -605,6 +822,8 @@ def _prepare(record: dict, ctx: dict) -> dict:
         for field in ("tou_period", "season", "tier_number", "effective_date", "end_date"):
             if comp.get(field) is not None:
                 item[field] = comp.get(field)
+        if comp.get("pair_part"):
+            item["pair_part"] = comp["pair_part"]
         reason = component_exclusion(comp, ctx["as_of"])
         reference = reference_customer_match(comp, ctx["reference"]) if reason == "conditional" else None
         if reference:
@@ -617,9 +836,13 @@ def _prepare(record: dict, ctx: dict) -> dict:
             blockers.append(f"{EXCLUSION_TEXT[reason]}: {name} ({item['unit']})")
         elif reason == "market_pending":
             market.append(name)
-            market_energy = market_energy or ctype == "energy"
+            market_energy = True
+        elif reason == "market_indexed_non_energy":
+            market_other.append(f"{name} ({comp.get('market_reference')})")
         elif reason == "alternative":
             alternatives[(ctype, comp.get("sub_component"))].append(name)
+        elif reason in ("conditional", "optional"):
+            covered_stems.add((ctype, _stem(name)))
         if reason:
             item.update(status="excluded", reason=reason)
             items.append(item)
@@ -636,10 +859,15 @@ def _prepare(record: dict, ctx: dict) -> dict:
         items.append(item)
         priced.append((item, comp))
         priced_slots.add((ctype, comp.get("sub_component")))
+        covered_stems.add((ctype, _stem(name)))
     for slot, names in sorted(alternatives.items(), key=str):
-        if slot not in priced_slots:
+        if slot not in priced_slots and not all(
+                (slot[0], _stem(name)) in covered_stems for name in names):
             blockers.append("charge published only as conditional alternatives: " + "; ".join(names))
-    blockers.extend(_period_and_tier_checks(priced, ctx))
+    blockers.extend(_unmarked_fixed_variants(priced))
+    if (record.get("pair") or {}).get("blocker"):
+        blockers.append(record["pair"]["blocker"])
+    blockers.extend(_period_and_tier_checks(priced, ctx, record))
     if market_energy:
         energy_status = "market_pending"
     elif any(item["type"] == "energy" for item, _ in priced):
@@ -650,7 +878,7 @@ def _prepare(record: dict, ctx: dict) -> dict:
     else:
         energy_status = "absent"
     return {"items": items, "priced": priced, "blockers": blockers, "energy_status": energy_status,
-            "market_pending": market}
+            "market_pending": market, "market_other": market_other, "power_factor": ctx["power_factor"]}
 
 
 def _price(prep: dict, kwh: float, kw: Optional[float]) -> dict:
@@ -658,6 +886,9 @@ def _price(prep: dict, kwh: float, kw: Optional[float]) -> dict:
     reasons = list(prep["blockers"])
     if kw is None and any(item["basis"] == "kw" for item, _ in prep["priced"]):
         reasons.append("demand charges present but the usage level has no kW")
+    if kw is None:
+        reasons.extend(f"tier threshold unit per {item['tier_scale']} not supported at a level without kW: "
+                       f"{item['component']}" for item, _ in prep["priced"] if item.get("tier_scale") in ("kw", "kva"))
     if reasons:
         return {"status": "not_computable", "cost": None, "energy_charge_subtotal": None, "reasons": reasons,
                 "amounts": []}
@@ -667,10 +898,15 @@ def _price(prep: dict, kwh: float, kw: Optional[float]) -> dict:
             quantity = 1.0
         elif item["basis"] == "kw":
             quantity = float(kw or 0.0)
+            if "demand_lower" in item:
+                quantity = max(0.0, min(quantity, item["demand_upper"]) - item["demand_lower"])
         else:
             quantity = float(kwh)
             if "tier_lower" in item:
-                quantity = max(0.0, min(quantity, item["tier_upper"]) - item["tier_lower"])
+                scale = {"kw": float(kw or 0.0), "kva": float(kw or 0.0) / prep["power_factor"]}.get(
+                    item.get("tier_scale"), 1.0)
+                upper = item["tier_upper"] * scale if math.isfinite(item["tier_upper"]) else math.inf
+                quantity = max(0.0, min(quantity, upper) - item["tier_lower"] * scale)
             quantity *= item.get("share", 1.0)
         weight = len(item["months"]) / 12 if item.get("months") else 1.0
         amounts.append(float(item["value"]) * item["factor"] * quantity * weight)
@@ -686,14 +922,15 @@ def _clean(value: Any) -> Any:
 
 def record_monthly_cost(record: dict, kwh: float, kw: Optional[float] = None, *, sector: Optional[str] = None,
                         structure: Optional[str] = None, usage_levels: Optional[dict] = None,
-                        as_of: Union[date, str, None] = None) -> dict:
+                        as_of: Union[date, str, None] = None, block_periods: Any = None) -> dict:
     """Modeled monthly cost of one record at (kWh/month, kW) with an itemized included/excluded component list.
 
-    ``sector`` (residential or a commercial size band) also selects the usage_levels reference-customer entries."""
+    ``sector`` (residential or a commercial size band) also selects the usage_levels reference-customer entries;
+    ``block_periods`` is a block_periods document or entry list (default: none)."""
     if sector is None:
         sector = "residential" if record.get("customer_class") == "residential" else None
     ctx = _context(record.get("province"), record.get("utility_type"), structure or record.get("rate_structure"),
-                   sector, usage_levels, _as_of(as_of))
+                   sector, usage_levels, _as_of(as_of), block_periods_config(block_periods)["entries"])
     prep = _prepare(record, ctx)
     priced = _price(prep, kwh, kw)
     amounts = {id(item): amount for (item, _), amount in zip(prep["priced"], priced["amounts"])}
@@ -711,7 +948,15 @@ def record_monthly_cost(record: dict, kwh: float, kw: Optional[float] = None, *,
 
 
 def record_covers_level(record: dict, kwh: Optional[float], kw: Optional[float]) -> bool:
-    """True when the record's published demand ([min, max) kW) and kWh usage bounds include the level."""
+    """True when the record's published demand ([min, max) kW) and kWh usage bounds include the level; a pair
+    variant also needs its Rate of Last Resort annual-use bound (with retail energy below it, wires alone at or above)."""
+    pair = record.get("pair") or {}
+    if pair and kwh is not None:
+        annual = float(kwh) * 12
+        if pair.get("below_annual_kwh") is not None and not annual < float(pair["below_annual_kwh"]):
+            return False
+        if pair.get("from_annual_kwh") is not None and annual < float(pair["from_annual_kwh"]):
+            return False
     if kw is not None:
         lo, hi = _kw(record.get("demand_min_kw"), 0.0), _kw(record.get("demand_max_kw"), math.inf)
         if not lo <= kw < hi:
@@ -831,9 +1076,13 @@ def _rate(stats: dict) -> dict:
 
 
 def _record_brief(record: dict, zone: str, rule_id: Optional[str]) -> dict:
-    return {"record_id": record.get("id"), "tariff_code": record.get("tariff_code"), "name": record.get("name"),
-            "zone": zone, "rule_id": rule_id, "effective_date": record.get("effective_date"),
-            "source_url": record.get("source_url"), "confidence": record.get("confidence")}
+    brief = {"record_id": record.get("id"), "tariff_code": record.get("tariff_code"), "name": record.get("name"),
+             "zone": zone, "rule_id": rule_id, "effective_date": record.get("effective_date"),
+             "source_url": record.get("source_url"), "confidence": record.get("confidence")}
+    if record.get("pair"):
+        brief["pair"] = {k: record["pair"].get(k) for k in ("unit", "variant", "wires_record_id", "retail_record_id")}
+        brief["retail_source_url"] = record.get("retail_source_url")
+    return brief
 
 
 def _period_label(item: dict) -> Optional[str]:
@@ -919,9 +1168,9 @@ def _fmt_money(value: Optional[float]) -> str:
 
 
 def _method_text(model: dict, key: tuple, levels: list[dict], component_counts: Counter,
-                 component_examples: dict, conversions: set[str], zone_policy: str) -> str:
+                 component_examples: dict, conversions: set[str], zone_policy: str, pair_text: Optional[str] = None) -> str:
     province, fuel, sector, structure, band = key
-    noun = UTILITY_NOUNS.get((province, fuel), "utilities")
+    singular, noun = UTILITY_NOUNS.get((province, fuel), DEFAULT_NOUNS)
     prov = PROVINCE_NAMES.get(province, province)
     cov = model["coverage"]
     contributors = cov["contributing_utilities"]
@@ -932,8 +1181,8 @@ def _method_text(model: dict, key: tuple, levels: list[dict], component_counts: 
     if n == 1:
         only = next(u for u in model["utilities"] if u["utility"] == contributors[0])
         records = ", ".join(f"{r['name']} [{r['tariff_code']}]" for r in only["records"])
-        parts.append(f"Single source: {contributors[0]} ({records}) is the only {prov} utility with a computable live "
-                     f"{sector_text} {structure_text} record; no averaging.")
+        parts.append(f"Single source: {contributors[0]} ({records}) is the only {prov} {singular} with a computable "
+                     f"live {sector_text} {structure_text} record; no averaging.")
     elif n:
         what = "at each usage level" if levels else "(component buckets only)"
         parts.append(f"Median of {n} {prov} {noun}' {sector_text} {structure_text} tariffs {what}, each counted once "
@@ -941,6 +1190,13 @@ def _method_text(model: dict, key: tuple, levels: list[dict], component_counts: 
                      f"{len(cov['multi_zone_utilities'])} with more than one zone record).")
     else:
         parts.append("No contributing utility: every mapped record was excluded (see exclusions).")
+    for entry in model.get("required_contributors") or []:
+        if entry["withheld_at"]:
+            parts.append(f"Withheld at {', '.join(entry['withheld_at'])}: required {singular} "
+                         f"{' and '.join(entry['utilities'])} is not computable there, so the other {noun} are not "
+                         f"shown alone ({(entry.get('reason') or '').rstrip('.')}; decided {entry.get('decided')}).")
+    if pair_text:
+        parts.append(pair_text)
     tou, tiers = model.get("tou"), model.get("tiers")
     energy = model["energy"]["status"]
     if energy == "market_pending":
@@ -951,6 +1207,11 @@ def _method_text(model: dict, key: tuple, levels: list[dict], component_counts: 
                      "charges only.")
     elif energy == "mixed":
         parts.append("Energy: contributing records differ (some without energy); compare with care.")
+    other = sorted({name for entry in model["energy"].get("market_indexed_excluded") or [] for name in entry["components"]})
+    if other:
+        parts.append("Excludes market-indexed charges with no stored value that are not the energy price ("
+                     + "; ".join(other[:3]) + f"), pending Phase {'6C' if province == 'AB' else '6'}; the model "
+                     "state does not change.")
     if tou:
         scope = "province-wide prices identical in every contributing record" if tou["identical_in_all_records"] \
             else "prices that differ between records (median per period shown)"
@@ -976,6 +1237,11 @@ def _method_text(model: dict, key: tuple, levels: list[dict], component_counts: 
         parts.append("No usage level is defined for this size band yet; only component buckets are reported.")
     if conversions:
         parts.append("Conversions: " + "; ".join(sorted(conversions)) + ".")
+    if model.get("block_periods"):
+        parts.append("Block thresholds published in kWh without a period use reviewed data/models/block_periods.json "
+                     "entries: " + "; ".join(f"{e['id']} ({e['utility']}, "
+                                             f"{BLOCK_PERIOD_WORDS.get(e['threshold_period'], e['threshold_period'])})"
+                                             for e in model["block_periods"]) + ".")
     lines = {}
     for level in model["levels"]:
         for line in level["with_tax"].get("lines") or []:
@@ -1006,21 +1272,183 @@ def _method_text(model: dict, key: tuple, levels: list[dict], component_counts: 
     not_applied = NOT_APPLIED.get((province, fuel))
     if not_applied:
         parts.append("Not modeled: " + "; ".join(not_applied) + ".")
-    parts.append(f"Coverage: {n} of {cov['utilities_in_province']} {prov} {fuel} utilities with live records"
+    parts.append(f"Coverage: {n} of {cov['utilities_in_province']} {prov} {fuel} {noun} with live records"
                  + (f"; no mapped record: {', '.join(cov['missing_utilities'])}" if cov["missing_utilities"] else "")
                  + ". Contributing: " + (", ".join(contributors) or "none") + ".")
     parts.append(f"Generated {model['generated_from']['as_of']} from {model['generated_from']['input']}.")
     return re.sub(r"\.\.(?=\s|$)", ".", " ".join(parts))
 
 
+def required_contributors(crosswalk: dict, key: tuple) -> list[dict]:
+    """Crosswalk 'required_contributors' entries for a model key (province, fuel and, when set, sector, structure and
+    size_band): a level where a listed utility is not computable is withheld instead of showing the others alone."""
+    province, fuel, sector, structure, band = key
+    return [entry for entry in (crosswalk or {}).get("required_contributors") or []
+            if isinstance(entry, dict) and entry.get("utilities") and entry.get("province") == province
+            and entry.get("fuel", fuel) == fuel and entry.get("sector", sector) == sector
+            and entry.get("structure", structure) == structure and entry.get("size_band", band) == band]
+
+
+def find_synthetic_profile(usage_levels: Optional[dict], province: Any, fuel: Any, sector: Any,
+                           level_sector: Any) -> tuple[Optional[str], Optional[dict]]:
+    """(id, entry) of the usage_levels synthetic_profiles entry whose applies_to matches a model; (None, None) else."""
+    for key, entry in ((usage_levels or {}).get("synthetic_profiles") or {}).items():
+        applies = entry.get("applies_to") if isinstance(entry, dict) else None
+        if not isinstance(applies, dict):
+            continue
+        sectors = applies.get("sectors") or []
+        if (applies.get("province") == province and applies.get("fuel", fuel) == fuel
+                and (level_sector in sectors or sector in sectors)):
+            return key, entry
+    return None, None
+
+
+def load_market_document(path: PathLike = None) -> tuple[Optional[dict], Optional[str]]:
+    """The observed Ontario market history (default site/data/market_pricing_ontario.json) read with
+    scrapers.utils.market_pricing; (None, reason) when it is missing or not an observed IESO file."""
+    target = Path(path or MARKET_PATH)
+    if not target.is_file():
+        return None, f"market history file {target.name} not found"
+    try:
+        from scrapers.utils.market_pricing import load_ontario_market_pricing
+
+        return load_ontario_market_pricing(target), None
+    except Exception as exc:  # a bad market file only makes the illustrative estimate unavailable
+        return None, f"market history file {target.name} not usable ({exc})"
+
+
+def _market_context(document: Any) -> dict:
+    if document is _DEFAULT:
+        document, problem = load_market_document()
+    elif not isinstance(document, dict):
+        document, problem = None, "no market history document was supplied"
+    else:
+        problem = None
+    meta = (document or {}).get("metadata")
+    info = {"derivation_method": meta.get("derivation_method"), "generated_at": meta.get("generated_at")} \
+        if isinstance(meta, dict) else None
+    return {"document": document, "problem": problem, "file": info}
+
+
+def _hours_text(hours: list[int]) -> str:
+    if hours and hours == list(range(hours[0], hours[-1] + 1)):
+        return f"{hours[0]}-{hours[-1]}"
+    return ", ".join(map(str, hours))
+
+
+def _illustrative_level(level: dict, priced: dict, inputs: dict, profile_id: Optional[str], label: str) -> dict:
+    """Per-utility delivery cost + synthetic-profile market energy, the level's tax lines, then the same statistics."""
+    price = float(priced["price_per_kwh"])
+    energy_cost = price * level["kwh"]
+    applied = inputs["applied"]
+    without, taxed, line_amounts = [], [], defaultdict(list)
+    for rows in inputs["zone_rows"].values():
+        totals = [apply_tax_lines(cost + energy_cost, energy + energy_cost, applied) for cost, energy in rows]
+        without.append(statistics.median([cost + energy_cost for cost, _ in rows]))
+        taxed.append(statistics.median([total for total, _ in totals]))
+        for index in range(len(applied)):
+            line_amounts[index].append(statistics.median([amounts[index] for _, amounts in totals]))
+    return {"synthetic_profile": True, "illustrative_only": True, "label": label, "profile_id": profile_id,
+            "market_energy_per_kwh": price, "market_energy_cost": round(energy_cost, 2),
+            "profile": priced["profile"], "shape_factors": priced["shape_factors"], "months": priced["months"],
+            "without_tax": _money(summary_stats(without)),
+            "with_tax": {**_money(summary_stats(taxed)),
+                         "lines": [{**line, "median_amount": round(statistics.median(line_amounts[i]), 2)
+                                    if line_amounts[i] else None} for i, line in enumerate(applied)],
+                         "not_applied": inputs["not_applied"]}}
+
+
+def _illustrative_method(profile_id: Optional[str], profile: dict, done: list[tuple[dict, dict]], document: dict,
+                         market_file: Optional[dict], noun: str) -> str:
+    window = done[0][1].get("window") or {}
+    months = window.get("months")
+    eras = Counter(entry.get("era") for entry in document.get("monthly") or [] if isinstance(entry, dict))
+    era_text = f" ({eras['hoep']} legacy HOEP months, {eras['oemp']} Ontario Price months)" \
+        if eras.get("hoep") or eras.get("oemp") else ""
+    loads = "; ".join(f"{lv['id']}: {lv['kw']:,.0f} kW in business hours, base load {pr['profile']['base_kw']:,.1f} kW"
+                      for lv, pr in done)
+    prices = "; ".join(f"{lv['id']} ${pr['price_per_kwh']:.6f}/kWh" for lv, pr in done)
+    file_text = "" if not market_file else (
+        f" Market file: site/data/market_pricing_ontario.json ({market_file.get('derivation_method')}, generated "
+        f"{market_file.get('generated_at')}).")
+    return (f"{SYNTHETIC_LABEL}: an all-in estimate that adds market energy, priced with a made-up business-hours load "
+            "profile, to the delivery-only costs of this model. Representative only: not a forecast, a quote or a "
+            "bill, and not a basis for decisions; it needs further analysis. "
+            f"Profile {profile_id}: the level's kW during {profile.get('days') or 'Monday-Friday'} hours beginning "
+            f"{_hours_text(sorted(profile.get('business_hours_beginning') or []))} "
+            f"{profile.get('time_basis') or 'EST (IESO market time)'} (holidays "
+            f"{profile.get('holidays') or 'counted as the weekday they fall on'}) and a constant base load at all other "
+            f"hours, sized so the month's kWh equals the usage level ({loads}). Market energy: for each of the {months} "
+            f"months {window.get('start_month')} to {window.get('end_month')}{era_text}, the month's published energy "
+            "price level x that calendar month's shape factor (profile-weighted / time-weighted mean energy price of "
+            "the month's observed weekday and weekend hourly heatmap bins), plus that month's actual Class B Global "
+            f"Adjustment; the price is the mean of the {months} monthly totals ({prices}). Class B Global Adjustment "
+            "only (Class A customers pay it by peak demand factor; not modelled); distribution loss factors not "
+            "modelled. Taxes: the model's tax lines applied to the delivery + market energy subtotal of each "
+            f"{noun}. The model state stays market_energy_pending; its delivery-only medians, outliers and closest "
+            f"{noun} are unchanged." + file_text)
+
+
+def _illustrative(model: dict, profile_id: Optional[str], profile: dict, market: dict, level_inputs: dict,
+                  as_of: date) -> dict:
+    """Phase 7E sidecar: each level's delivery cost plus market energy priced with a SYNTHETIC load profile, with the
+    same tax lines and statistics. Never changes the model's own numbers, state, outliers or closest utility."""
+    info = {"available": False, "reason": None, "profile_id": profile_id,
+            "label": profile.get("label") or SYNTHETIC_LABEL, "caveat": profile.get("caveat"),
+            "status": profile.get("status"), "method": None, "window": None, "market_file": market.get("file")}
+    hours, lag = profile.get("business_hours_beginning"), profile.get("max_window_lag_months")
+    if model["state"] != "market_energy_pending":
+        info["reason"] = (f"model state is {model['state']}; the illustrative estimate is made only when the energy is "
+                          "market-priced and pending")
+        return info
+    if not isinstance(hours, list) or not hours or not isinstance(lag, int):
+        info["reason"] = f"synthetic profile {profile_id} lacks business_hours_beginning or max_window_lag_months"
+        return info
+    document = market.get("document")
+    if document is None:
+        info["reason"] = market.get("problem") or "no market history document"
+        return info
+    from scrapers.utils.market_pricing import synthetic_profile_price
+
+    reasons, done = {}, []
+    for level in model["levels"]:
+        inputs = level_inputs.get(level["id"]) or {}
+        if not inputs.get("zone_rows"):
+            reasons[str(level["id"])] = "no utility is computable at this level"
+            continue
+        try:
+            priced = synthetic_profile_price(document, kwh=level["kwh"], kw=level["kw"], business_hours=hours,
+                                             as_of=as_of, max_lag_months=lag)
+        except Exception as exc:  # fail closed: only the sidecar becomes unavailable
+            priced = {"ok": False, "reason": f"market price calculation failed ({exc})"}
+        info["window"] = info["window"] or priced.get("window")
+        if not priced.get("ok"):
+            reasons[str(level["id"])] = priced.get("reason") or "not computable"
+            continue
+        level["illustrative_all_in"] = _illustrative_level(level, priced, inputs, profile_id, info["label"])
+        done.append((level, priced))
+    if not done:
+        info["reason"] = "; ".join(dict.fromkeys(reasons.values())) or "no usage level"
+        return info
+    info["available"] = True
+    if reasons:
+        info["level_reasons"] = reasons
+    info["method"] = _illustrative_method(profile_id, profile, done, document, market.get("file"),
+                                          model["coverage"]["contributor_noun"]["singular"])
+    return info
+
+
 def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, crosswalk: dict, usage_levels: dict,
-                 taxes: dict, as_of: date, zone_policy: str, province_utilities: set[str], input_label: str) -> dict:
+                 taxes: dict, as_of: date, zone_policy: str, province_utilities: set[str], input_label: str,
+                 block_periods: Optional[list] = None, market: Optional[dict] = None) -> dict:
     """One model: per-utility costs at each usage level, statistics, buckets, energy blocks and method text."""
     province, fuel, sector, structure, band = key
     level_sector = band if sector == "commercial" and band else sector
     raw_levels = (usage_levels.get(fuel) or {}).get(level_sector) if isinstance(usage_levels.get(fuel), dict) else None
     levels = [lv for lv in raw_levels if isinstance(lv, dict)] if isinstance(raw_levels, list) else []
-    ctx = _context(province, fuel, structure, level_sector, usage_levels, as_of)
+    ctx = _context(province, fuel, structure, level_sector, usage_levels, as_of, block_periods)
+    required = required_contributors(crosswalk, key)
+    required_names = sorted({name for entry in required for name in entry.get("utilities") or []})
     by_utility: dict[str, list[tuple[dict, str, Optional[str]]]] = defaultdict(list)
     for record, zone, rule_id in entries:
         by_utility[record.get("utility_name") or ""].append((record, zone, rule_id))
@@ -1038,13 +1466,18 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
             chosen[utility] = keep
     preps = {id(record): _prepare(record, ctx) for rows in chosen.values() for record, _, _ in rows}
     used_ids: set = set()
+    withheld_ids: set = set()
+    withheld_missing: dict[Any, list[str]] = {}
     contributing: dict[str, list[tuple[dict, dict]]] = defaultdict(list)
+    zone_fallbacks: dict[str, list] = defaultdict(list)
+    level_inputs: dict[Any, dict] = {}
     level_out = []
     for level in levels:
         kwh = float(level.get("kwh") or 0.0)
         kw = None if level.get("kw") is None else float(level["kw"])
         applied, not_applied = tax_lines(taxes, province, fuel, level_sector, kwh, kw, as_of)
         costs, taxed, line_amounts, rows_out = {}, {}, defaultdict(list), []
+        level_used, level_fallbacks, zone_inputs = [], [], {}
         for utility, rows in chosen.items():
             zone_rows, reasons = [], []
             for record, zone, rule_id in rows:
@@ -1057,25 +1490,45 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
                     reasons.append(f"{record.get('tariff_code')}: " + "; ".join(priced["reasons"]))
                     continue
                 with_tax, amounts = apply_tax_lines(priced["cost"], priced["energy_charge_subtotal"], applied)
-                zone_rows.append((record, zone, priced["cost"], with_tax, amounts))
+                zone_rows.append((record, zone, priced["cost"], with_tax, amounts, priced["energy_charge_subtotal"]))
             if not zone_rows:
                 exclusions.append({"scope": "utility", "utility": utility, "level": level.get("id"),
                                    "reason": " | ".join(reasons) or "no record"})
                 continue
+            if all(row[1] != "default" for row in zone_rows) and any(zone == "default" for _, zone, _ in rows):
+                level_fallbacks.append(utility)
             costs[utility] = statistics.median([row[2] for row in zone_rows])
             taxed[utility] = statistics.median([row[3] for row in zone_rows])
             for index in range(len(applied)):
                 line_amounts[index].append(statistics.median([row[4][index] for row in zone_rows]))
-            for record, zone, *_ in zone_rows:
-                if id(record) not in used_ids:
-                    contributing[utility].append((preps[id(record)], record))
-                used_ids.add(id(record))
+            level_used.extend((utility, row[0]) for row in zone_rows)
+            zone_inputs[utility] = [(row[2], row[5]) for row in zone_rows]
             rows_out.append({"utility": utility, "cost_without_tax": round(costs[utility], 2),
                              "cost_with_tax": round(taxed[utility], 2),
                              "records": [row[0].get("id") for row in zone_rows],
                              "zone_costs": [{"record_id": row[0].get("id"), "tariff_code": row[0].get("tariff_code"),
                                              "zone": row[1], "cost_without_tax": round(row[2], 2)}
                                             for row in zone_rows] if len(zone_rows) > 1 else None})
+        missing = [name for name in required_names if name not in costs]
+        withheld = None
+        if missing and costs:
+            rules = [e for e in required if set(e.get("utilities") or []) & set(missing)]
+            withheld = {"missing_required": missing, "computed_utilities": sorted(costs),
+                        "rules": [e.get("id") for e in rules], "reason": " ".join(e.get("reason") or "" for e in rules)}
+            withheld_missing[level.get("id")] = missing
+            withheld_ids.update(id(record) for _, record in level_used)
+            exclusions.append({"scope": "level", "level": level.get("id"),
+                               "reason": f"required contributor not computable: {', '.join(missing)}; computed "
+                                         f"{', '.join(sorted(costs))} withheld ({withheld['reason']})"})
+            costs, taxed, line_amounts, rows_out, zone_inputs = {}, {}, defaultdict(list), [], {}
+        else:
+            for utility in level_fallbacks:
+                zone_fallbacks[utility].append(level.get("id"))
+            for utility, record in level_used:
+                if id(record) not in used_ids:
+                    contributing[utility].append((preps[id(record)], record))
+                used_ids.add(id(record))
+        level_inputs[level.get("id")] = {"zone_rows": zone_inputs, "applied": applied, "not_applied": not_applied}
         stats = summary_stats(costs.values())
         closest = closest_to_median(costs, stats["median"])
         closest_rows = [row for row in rows_out if row["utility"] == closest]
@@ -1096,18 +1549,36 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
             "outliers": [{**o, "cost": round(o["cost"], 2)} for o in find_outliers(costs, stats)],
             "utilities": rows_out,
         })
+        if withheld:
+            level_out[-1]["withheld"] = withheld
     if not levels:
         for utility, rows in chosen.items():
             for record, _, _ in rows:
+                if (record.get("pair") or {}).get("variant") == "retail":
+                    continue
                 if not preps[id(record)]["blockers"]:
                     contributing[utility].append((preps[id(record)], record))
                     used_ids.add(id(record))
+        missing = [name for name in required_names if name not in contributing]
+        if missing and contributing:
+            withheld_missing["component buckets"] = missing
+            withheld_ids.update(used_ids)
+            exclusions.append({"scope": "model", "reason": f"required contributor not computable: {', '.join(missing)}; "
+                                                          f"{', '.join(sorted(contributing))} withheld"})
+            contributing.clear()
+            used_ids.clear()
     for utility, rows in chosen.items():
         for record, zone, _ in rows:
             prep = preps[id(record)]
             if id(record) in used_ids:
                 continue
-            if prep["blockers"]:
+            if record.get("pair") and (not levels or not any(record_covers_level(record, lv.get("kwh"), lv.get("kw"))
+                                                             for lv in levels)):
+                continue
+            if id(record) in withheld_ids:
+                reason = ("computable, but withheld: required contributor(s) " + ", ".join(required_names)
+                          + " not computable (see level exclusions)")
+            elif prep["blockers"]:
                 reason = "; ".join(prep["blockers"])
             elif levels and not any(record_covers_level(record, lv.get("kwh"), lv.get("kw")) for lv in levels):
                 reason = (f"eligibility ({record.get('demand_min_kw')}-{record.get('demand_max_kw')} kW) covers no usage "
@@ -1121,18 +1592,25 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
     reference_counts: Counter = Counter()
     reference_examples: dict[str, list[str]] = defaultdict(list)
     conversions: set[str] = set()
+    block_ids: set[str] = set()
     statuses: Counter = Counter()
     pending: list[dict] = []
+    market_other: list[dict] = []
     for utility, pairs in sorted(contributing.items()):
         for prep, record in pairs:
             statuses[prep["energy_status"]] += 1
             if prep["market_pending"]:
                 pending.append({"utility": utility, "record_id": record.get("id"), "components": prep["market_pending"]})
+            if prep["market_other"]:
+                market_other.append({"utility": utility, "record_id": record.get("id"),
+                                     "components": prep["market_other"]})
             for item in prep["items"]:
                 if item["status"] == "excluded":
                     counts, examples, slot = component_counts, component_examples, item["reason"]
                 else:
                     conversions.update(item.get("conversions") or [])
+                    if item.get("block_period"):
+                        block_ids.add(item["block_period"])
                     slot = (item.get("reason") or "").partition(REFERENCE_PREFIX)[2]
                     if not slot:
                         continue
@@ -1170,6 +1648,10 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
             warnings.append(f"TOU shares {ctx.get('shares_id')} cover {entry.get('period')}; the as-of date is later")
     if energy == "mixed":
         warnings.append("contributing records differ in energy basis: " + json.dumps(dict(statuses), sort_keys=True))
+    for utility, level_ids in sorted(zone_fallbacks.items()):
+        warnings.append(f"{utility}: the default-zone record is not computable at {', '.join(map(str, level_ids))}; "
+                        "only other-zone records contribute (see exclusions)")
+    singular, plural = UTILITY_NOUNS.get((province, fuel), DEFAULT_NOUNS)
     model = {
         "id": key_label(key),
         "key": {"province": province, "fuel": fuel, "sector": sector, "structure": structure, "size_band": band},
@@ -1177,7 +1659,8 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
         "state": state,
         "provenance": "modeled",
         "cost_basis": cost_basis,
-        "energy": {"status": energy, "records_by_status": dict(sorted(statuses.items())), "market_pending": pending},
+        "energy": {"status": energy, "records_by_status": dict(sorted(statuses.items())), "market_pending": pending,
+                   "market_indexed_excluded": market_other},
         "coverage": {
             "utilities_in_province": len(province_utilities),
             "utilities_mapped": len(by_utility),
@@ -1190,6 +1673,7 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
             "zone_policy": zone_policy,
             "effective_dates": sorted({r.get("effective_date") for pairs in contributing.values()
                                        for _, r in pairs if r.get("effective_date")}),
+            "contributor_noun": {"singular": singular, "plural": plural},
         },
         "buckets": _bucket_stats(bucket_rows),
         "levels": level_out,
@@ -1203,7 +1687,22 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
         "warnings": warnings,
         "generated_from": {"as_of": as_of.isoformat(), "input": input_label},
     }
-    model["method"] = _method_text(model, key, levels, component_counts, component_examples, conversions, zone_policy)
+    if block_ids:
+        model["block_periods"] = [{k: e.get(k) for k in ("id", "utility", "threshold_period", "quote", "source_url",
+                                                         "location")}
+                                  for e in ctx["block_periods"] if e.get("id") in block_ids]
+    if required:
+        model["required_contributors"] = [
+            {"id": e.get("id"), "utilities": list(e.get("utilities") or []), "reason": e.get("reason"),
+             "decided": e.get("decided"),
+             "withheld_at": [str(level_id) for level_id, names in withheld_missing.items()
+                             if set(names) & set(e.get("utilities") or [])]} for e in required]
+    has_pairs = any(record.get("pair") for rows in chosen.values() for record, _, _ in rows)
+    model["method"] = _method_text(model, key, levels, component_counts, component_examples, conversions, zone_policy,
+                                   pair_config(crosswalk).get("method_note") if has_pairs else None)
+    profile_id, profile = find_synthetic_profile(usage_levels, province, fuel, sector, level_sector)
+    if profile is not None:
+        model["illustrative"] = _illustrative(model, profile_id, profile, market or {}, level_inputs, as_of)
     return model
 
 
@@ -1215,26 +1714,139 @@ def _model_order(key: tuple, crosswalk: dict) -> tuple:
             structures.index(structure) if structure in structures else len(structures), str(structure))
 
 
+_CONFIDENCE_ORDER = ("high", "medium", "low", "unverified")
+
+
+def pair_config(crosswalk: dict) -> dict:
+    """The crosswalk 'pairs' section (wires + retail units), or {}."""
+    pairs = (crosswalk or {}).get("pairs")
+    return pairs if isinstance(pairs, dict) else {}
+
+
+def _pair_composite(unit: dict, wires: dict, retail: Optional[dict], variant: str, cfg: dict,
+                    blocker: Optional[str] = None) -> dict:
+    """One wires + retail (variant 'retail') or wires-only (variant 'market') record counted as the unit."""
+    parts = [("wires", wires)] + ([("retail", retail)] if retail is not None and variant == "retail" else [])
+    components = [{**comp, "pair_part": part, "source_url": comp.get("source_url") or rec.get("source_url")}
+                  for part, rec in parts for comp in rec.get("components") or []]
+    threshold = cfg.get("retail_below_annual_kwh")
+    pair = {"unit": unit.get("id"), "label": unit.get("label"), "variant": variant, "wires_record_id": wires.get("id"),
+            "retail_record_id": retail.get("id") if retail is not None and variant == "retail" else None}
+    if variant == "retail":
+        pair["below_annual_kwh"] = threshold
+        name = f"{wires.get('name')} + {retail.get('name')}" if retail is not None else wires.get("name")
+        record_id = f"{wires.get('id')}+{retail.get('id')}" if retail is not None else f"{wires.get('id')}+none"
+        code = f"{wires.get('tariff_code')}+{retail.get('tariff_code')}" if retail is not None else wires.get("tariff_code")
+    else:
+        pair["from_annual_kwh"] = threshold
+        market = cfg.get("market_energy") or {}
+        components.append({"component_type": "energy", "component_name": market.get("component_name"),
+                           "charge_value": None, "charge_unit": "$/kWh", "market_reference": market.get("market_reference"),
+                           "market_source_url": market.get("market_source_url"), "pair_part": "market",
+                           "notes": "Provenance: modeled. " + (market.get("note") or "")})
+        name, record_id, code = wires.get("name"), wires.get("id"), wires.get("tariff_code")
+    if blocker:
+        pair["blocker"] = blocker
+    records = [rec for _, rec in parts]
+    ranks = [_CONFIDENCE_ORDER.index(r.get("confidence")) for r in records if r.get("confidence") in _CONFIDENCE_ORDER]
+    return {**wires, "id": record_id, "utility_name": unit.get("label"), "name": name, "tariff_code": code,
+            "effective_date": max((r.get("effective_date") or "") for r in records) or None,
+            "confidence": _CONFIDENCE_ORDER[max(ranks)] if ranks else wires.get("confidence"),
+            "retail_source_url": retail.get("source_url") if retail is not None and variant == "retail" else None,
+            "components": components, "pair": pair}
+
+
+def compose_pairs(live: Iterable[dict], crosswalk: dict) -> tuple[dict[int, list[dict]], dict[str, str], set[str]]:
+    """Pair variants per paired wires record (keyed by id(record)), wires utility -> unit label and retail utilities.
+
+    A configured wires class gets a retail variant (wires + Rate of Last Resort record) used below the annual-use
+    threshold and a market variant (wires + value-less market energy) used at or above it. A wires record without a
+    configured class, or whose retail record is missing, gets variants that carry the reason as a blocker."""
+    cfg = pair_config(crosswalk)
+    live = list(live)
+    by_code = {(r.get("utility_name"), r.get("tariff_code")): r for r in live}
+    variants: dict[int, list[dict]] = {}
+    wires_units: dict[str, str] = {}
+    retail_utilities: set[str] = set()
+    for unit in cfg.get("units") or []:
+        if not isinstance(unit, dict) or not unit.get("wires") or not unit.get("label"):
+            continue
+        wires_units[unit["wires"]] = unit["label"]
+        retail_utilities.add(unit.get("retail"))
+        classes = {cls.get("wires_code"): cls for cls in unit.get("classes") or [] if isinstance(cls, dict)}
+        for record in live:
+            if record.get("utility_name") != unit["wires"]:
+                continue
+            cls = classes.get(record.get("tariff_code"))
+            if cls is None:
+                blocker = f"wires class {record.get('tariff_code')} has no retail pairing in crosswalk pairs"
+                retail = None
+            elif not cls.get("retail_code"):
+                blocker, retail = f"no Rate of Last Resort record for {record.get('tariff_code')} sites: " \
+                                  f"{cls.get('retail_missing') or 'not configured'}", None
+            else:
+                retail = by_code.get((unit.get("retail"), cls["retail_code"]))
+                blocker = None if retail is not None else \
+                    f"Rate of Last Resort record {unit.get('retail')} {cls['retail_code']} is not live"
+            market_blocker = f"wires class {record.get('tariff_code')} has no retail pairing in crosswalk pairs" \
+                if cls is None else None
+            variants[id(record)] = [_pair_composite(unit, record, retail, "retail", cfg, blocker),
+                                    _pair_composite(unit, record, None, "market", cfg, market_blocker)]
+    return variants, wires_units, retail_utilities
+
+
+def apply_usage_bounds(record: dict, crosswalk: dict) -> dict:
+    """Copy of a record with reviewed annual-use eligibility bounds (crosswalk usage_bounds) when the record publishes
+    them only in its eligibility text; the record itself when no entry matches or it already has usage bounds."""
+    if record.get("usage_min") is not None or record.get("usage_max") is not None:
+        return record
+    for entry in (crosswalk or {}).get("usage_bounds") or []:
+        if (isinstance(entry, dict) and entry.get("utility") == record.get("utility_name")
+                and _fullmatch(entry.get("tariff_code_regex"), record.get("tariff_code"))):
+            return {**record, "usage_min": entry.get("min_annual_kwh"), "usage_max": entry.get("max_annual_kwh"),
+                    "usage_unit": "kWh/year", "usage_bounds_entry": entry.get("id")}
+    return record
+
+
 def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: dict, taxes: dict,
                  provinces: Optional[Iterable[str]] = ("ON",), as_of: Union[date, str, None] = None,
-                 zone_policy: str = "median_of_zones", input_label: str = "site/data/rates.json") -> dict:
-    """Representative models for every crosswalk model key of the given provinces (Phase 7B)."""
+                 zone_policy: str = "median_of_zones", input_label: str = "site/data/rates.json",
+                 fuels: Optional[Iterable[str]] = MODEL_FUELS, block_periods: Any = _DEFAULT,
+                 market_document: Any = _DEFAULT) -> dict:
+    """Representative models for every crosswalk model key of the given provinces and fuels (Phases 7B/7C).
+
+    ``block_periods``: a block_periods document or entry list (default data/models/block_periods.json; a missing file
+    means no entries). ``market_document``: observed Ontario market history for the Phase 7E illustrative sidecar
+    (default site/data/market_pricing_ontario.json, read only when a model matches a synthetic profile; None or an
+    unusable document makes the sidecar unavailable, never the build)."""
     if zone_policy not in ZONE_POLICIES:
         raise ValueError(f"zone_policy must be one of {ZONE_POLICIES}")
     as_of_date = _as_of(as_of)
+    periods = load_block_periods() if block_periods is _DEFAULT else block_periods_config(block_periods)
     rows = rates.get("records", []) if isinstance(rates, dict) else list(rates)
     wanted = None if provinces is None else {str(p).upper() for p in provinces}
-    live = [r for r in latest_live_records(rows) if wanted is None or r.get("province") in wanted]
+    wanted_fuels = None if fuels is None else {str(f) for f in fuels}
+    live = [apply_usage_bounds(r, crosswalk) for r in latest_live_records(rows)
+            if (wanted is None or r.get("province") in wanted)
+            and (wanted_fuels is None or r.get("utility_type") in wanted_fuels)]
+    variants, wires_units, retail_utilities = compose_pairs(live, crosswalk)
     groups: dict[tuple, list] = defaultdict(list)
     province_utilities: dict[tuple, set[str]] = defaultdict(set)
     for record in live:
-        province_utilities[(record.get("province"), record.get("utility_type"))].add(record.get("utility_name") or "")
+        name = record.get("utility_name") or ""
+        if name not in retail_utilities:
+            province_utilities[(record.get("province"), record.get("utility_type"))].add(wires_units.get(name, name))
         outcome = match_record(record, crosswalk)
         for key in model_keys(outcome):
-            groups[key].append((record, outcome.get("zone") or "default", outcome.get("rule_id")))
+            for row in variants.get(id(record), [record]):
+                groups[key].append((row, outcome.get("zone") or "default", outcome.get("rule_id")))
+    profiled = [key for key in groups if find_synthetic_profile(
+        usage_levels, key[0], key[1], key[2], key[4] if key[2] == "commercial" and key[4] else key[2])[1] is not None]
+    market = _market_context(market_document) if profiled else None
     models = [_build_model(key, groups[key], crosswalk=crosswalk, usage_levels=usage_levels, taxes=taxes,
                            as_of=as_of_date, zone_policy=zone_policy,
-                           province_utilities=province_utilities[(key[0], key[1])], input_label=input_label)
+                           province_utilities=province_utilities[(key[0], key[1])], input_label=input_label,
+                           block_periods=periods["entries"], market=market)
               for key in sorted(groups, key=lambda k: _model_order(k, crosswalk))]
     created = [str(r["created_at"]) for r in live if r.get("created_at")]
     shares = {k: {"applies_to": v.get("applies_to"), "shares": v.get("shares"), "period": v.get("period"),
@@ -1247,6 +1859,7 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
         "as_of": as_of_date.isoformat(),
         "input": {"source": input_label, "records_considered": len(live),
                   "provinces": sorted(wanted) if wanted is not None else None,
+                  "fuels": sorted(wanted_fuels) if wanted_fuels is not None else None,
                   "rates_generated_at": rates.get("generated_at") if isinstance(rates, dict) else None,
                   "latest_record_created_at": max(created) if created else None},
         "assumptions": {
@@ -1270,6 +1883,28 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
                                    for entry in usage_levels.get("reference_customer") or []
                                    if isinstance(entry, dict) and (wanted is None or entry.get("province") in wanted)],
             "buckets": dict(BUCKET_TEXT),
+            "fuels": "Electricity only; gas models are Phase 7D (gas records are reported in the coverage report, "
+                     "not modelled)." if wanted_fuels == {"electricity"} else None,
+            "pairs": {k: pair_config(crosswalk).get(k) for k in ("basis", "province", "fuel", "retail_below_annual_kwh",
+                                                                 "retail_rule", "market_energy", "units")}
+            if pair_config(crosswalk) and (wanted is None or pair_config(crosswalk).get("province") in wanted) else None,
+            "block_periods": {
+                "source": "data/models/block_periods.json" if block_periods is _DEFAULT else "argument",
+                "version": periods.get("version"), "status": periods.get("status"), "problem": periods.get("problem"),
+                "rule": "A block threshold published in bare kWh (no period) uses the first matching reviewed entry "
+                        "(utility; tariff_code, tariff_code_regex or name_regex; optional component_name_regex on a "
+                        "block component): month as published, two_months / 2, day x days per month; a null period "
+                        "or no entry is not computable.",
+                "entries": [{k: e.get(k) for k in ("id", "utility", "match", "component_name_regex", "threshold_period",
+                                                   "quote", "source_url", "location")} for e in periods["entries"]],
+                "skipped": periods.get("skipped")},
+            "required_contributors": [e for e in crosswalk.get("required_contributors") or [] if isinstance(e, dict)
+                                      and (wanted is None or e.get("province") in wanted)],
+            "synthetic_profiles": {k: v for k, v in (usage_levels.get("synthetic_profiles") or {}).items()
+                                   if isinstance(v, dict) and (wanted is None or (v.get("applies_to") or {}).get(
+                                       "province") in wanted)} or None,
+            "market_file": (market or {}).get("file"),
+            "usage_bounds": [e for e in crosswalk.get("usage_bounds") or [] if isinstance(e, dict)],
             "taxes": {"as_of": taxes.get("as_of"), "rule": "Lines from data/models/taxes.json for province, fuel and "
                       "sector, in effect at the as-of date; eligibility thresholds use the level's kW and kWh x 12 "
                       "(either test when both are set); amount = rate x base; never compounded; rebates subtracted."},
@@ -1289,7 +1924,10 @@ def write_models(path: PathLike, **kwargs: Any) -> dict:
                           usage_levels or load_usage_levels(), taxes or load_taxes(), **kwargs)
     target = Path(path or ROOT / "site" / "data" / "representative_models.json")
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(result, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    tmp = target.with_name(target.name + ".tmp")
+    tmp.write_text(json.dumps(result, separators=(",", ":"), ensure_ascii=False, allow_nan=False) + "\n",
+                   encoding="utf-8")
+    os.replace(tmp, target)
     return result
 
 
@@ -1307,6 +1945,15 @@ def format_models(result: dict) -> str:
             lines.append(f"  {level['id']:8} n={wo['n']:<3} median {_fmt_money(wo['median'])} / with tax "
                          f"{_fmt_money(wt['median'])}  range {_fmt_money(wo['min'])}-{_fmt_money(wo['max'])}  "
                          f"closest {closest.get('utility')}" + (f"  outliers: {outliers}" if outliers else ""))
+            illustrative = level.get("illustrative_all_in")
+            if illustrative:
+                lines.append(f"           {SYNTHETIC_LABEL}: market energy ${illustrative['market_energy_per_kwh']:.6f}"
+                             f"/kWh (${illustrative['market_energy_cost']:,.2f}/month); median "
+                             f"{_fmt_money(illustrative['without_tax']['median'])} / with tax "
+                             f"{_fmt_money(illustrative['with_tax']['median'])}")
+        info = model.get("illustrative")
+        if info and not info["available"]:
+            lines.append(f"  illustrative estimate unavailable: {info['reason']}")
     return "\n".join(lines)
 
 
@@ -1321,7 +1968,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--taxes", default=str(TAXES_PATH))
     parser.add_argument("--output", default=None, help="write the models JSON to this path (default: summary only)")
     parser.add_argument("--zone-policy", choices=ZONE_POLICIES, default="median_of_zones")
-    parser.add_argument("--province", action="append", help="province code, repeatable (default ON)")
+    parser.add_argument("--province", action="append",
+                        help="province code, repeatable (default: the export's MODEL_PROVINCES)")
     parser.add_argument("--as-of", default=None, help="YYYY-MM-DD (default: today, UTC)")
     args = parser.parse_args(argv)
     if not (args.coverage or args.build):
@@ -1331,8 +1979,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.coverage:
         print(format_coverage(coverage_report(rates, crosswalk)))
     if args.build:
+        from pipeline.export_json import MODEL_PROVINCES  # the export's list is the single source of truth
+
         kwargs = {"rates": rates, "crosswalk": crosswalk, "usage_levels": load_usage_levels(args.usage_levels),
-                  "taxes": load_taxes(args.taxes), "provinces": tuple(args.province or ("ON",)),
+                  "taxes": load_taxes(args.taxes), "provinces": tuple(args.province or MODEL_PROVINCES),
                   "as_of": args.as_of, "zone_policy": args.zone_policy,
                   "input_label": Path(args.rates).as_posix()}
         result = write_models(args.output, **kwargs) if args.output else build_models(**kwargs)

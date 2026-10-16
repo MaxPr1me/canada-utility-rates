@@ -235,3 +235,148 @@ def test_rm7f_css_block_is_appended_once():
     block = css.split("/* Representative models (Phase 7F) */", 1)[1]
     assert re.search(r"\.rm-table-wrap\s*\{[^}]*overflow-x:\s*auto", block)
     assert "#view-models .hidden" in block
+
+
+# Phase 7C contributor nouns and the Phase 7E illustrative sidecar (synthetic load profile).
+MODELS_JS = SITE / "js" / "models.js"
+MODELS_CSS = SITE / "css" / "models.css"
+ILLUSTRATIVE_TOGGLE = "Show illustrative all-in estimate (synthetic load profile)"
+ILLUSTRATIVE_LABEL = "SYNTHETIC LOAD PROFILE - ILLUSTRATIVE ONLY"
+ILLUSTRATIVE_WARNING = ("Representative only: not a forecast, a quote or a bill. "
+                        "Do not use it for decisions; it needs further analysis.")
+NOUN_FIELDS = ("contributor_noun", "singular", "plural", "market_indexed_excluded", "components")
+ILLUSTRATIVE_FIELDS = ("available", "reason", "caveat", "method", "window")
+WINDOW_FIELDS = ("start_month", "end_month", "months")
+ILLUSTRATIVE_LEVEL_FIELDS = ("synthetic_profile", "illustrative_only", "market_energy_per_kwh", "market_energy_cost",
+                             "profile", "without_tax", "with_tax")
+PROFILE_FIELDS = ("peak_kw", "base_kw", "business_hours_beginning", "days", "time_basis", "holidays",
+                  "business_hours_per_month", "other_hours_per_month")
+ILLUSTRATIVE_BANDS = {"commercial_medium", "commercial_large"}
+
+
+def _js_functions(source):
+    """Top-level function name -> source text up to the next top-level function of the models.js IIFE."""
+    starts = [(m.group(1), m.start()) for m in re.finditer(r"^    function (\w+)\(", source, flags=re.M)]
+    ends = [start for _, start in starts[1:]] + [len(source)]
+    return {name: source[start:end] for (name, start), end in zip(starts, ends)}
+
+
+def _js_string(source, name):
+    match = re.search(rf'const {name} = ((?:"[^"]*"\s*\+?\s*)+);', source)
+    assert match, f"models.js has no string constant {name}"
+    return "".join(re.findall(r'"([^"]*)"', match.group(1)))
+
+
+def test_rm7e_models_js_fixes_the_toggle_label_warning_and_badge_texts():
+    source = MODELS_JS.read_text(encoding="utf-8")
+    assert _js_string(source, "ILLUSTRATIVE_TOGGLE_TEXT") == ILLUSTRATIVE_TOGGLE
+    assert _js_string(source, "ILLUSTRATIVE_LABEL") == ILLUSTRATIVE_LABEL
+    assert _js_string(source, "ILLUSTRATIVE_WARNING") == ILLUSTRATIVE_WARNING
+    block = _js_functions(source)["illustrativeBlock"]
+    assert 'warning.setAttribute("role", "note")' in block
+    assert '"SYNTHETIC"' in block and "ILLUSTRATIVE_LABEL" in block and "ILLUSTRATIVE_WARNING" in block
+    # The warning comes first in the block, before any number.
+    assert block.index("section.append(warning)") < block.index("illustrativeLevel(")
+
+
+def test_rm7e_toggle_is_a_labelled_unticked_checkbox_and_builds_the_block_only_while_ticked():
+    functions = _js_functions(MODELS_JS.read_text(encoding="utf-8"))
+    controls = functions["illustrativeControls"]
+    for needle in ('input.type = "checkbox"', "input.checked = false", "label.htmlFor = ILLUSTRATIVE_TOGGLE_ID",
+                   "label.append(input, el(\"span\", null, ILLUSTRATIVE_TOGGLE_TEXT))"):
+        assert needle in controls, needle
+    assert re.search(r'addEventListener\("change", \(\) => \{\s*slot\.replaceChildren\(\.\.\.\(input\.checked \? '
+                     r"\[illustrativeBlock\(", controls)
+    callers = sorted(name for name, body in functions.items() if "illustrativeBlock(" in body)
+    assert callers == ["illustrativeBlock", "illustrativeControls"]
+    # Fail closed: the model must say available and every level must be flagged synthetic and illustrative.
+    gate = functions["illustrativeLevels"]
+    for needle in ("info.available !== true", "all.synthetic_profile === true", "all.illustrative_only === true"):
+        assert needle in gate, needle
+    # Rebuilt (unticked) on every model render, so switching models resets the toggle.
+    assert "illustrativeControls(model)" in functions["renderNotes"]
+
+
+def test_rm7e_illustrative_numbers_never_reach_the_main_table_badge_or_statistics():
+    functions = _js_functions(MODELS_JS.read_text(encoding="utf-8"))
+    readers = sorted(name for name, body in functions.items() if "illustrative_all_in" in body)
+    assert readers == ["illustrativeLevel", "illustrativeLevels"]
+    for name in ("renderModel", "renderBadge", "stateText", "renderTable", "levelRow", "rangeBar", "closestCell",
+                 "outliersCell", "taxBlock", "factsGrid", "contributorsDetails"):
+        assert "illustrative" not in functions[name].lower(), name
+
+
+def test_rm7c_models_js_uses_the_contributor_noun_with_a_utility_fallback():
+    source = MODELS_JS.read_text(encoding="utf-8")
+    functions = _js_functions(source)
+    assert 'const DEFAULT_NOUN = { singular: "utility", plural: "utilities" };' in source
+    noun_of = functions["nounOf"]
+    assert "contributor_noun" in noun_of and "DEFAULT_NOUN" in noun_of
+    assert "ok(noun.singular) && ok(noun.plural)" in noun_of
+    for name in ("stateText", "renderTable", "coverageText", "contributorsDetails"):
+        assert "nounOf(model)" in functions[name], name
+    for text in ("utilities`", "Utilities (n)", "Contributing utilities", "mapped utilities", '"Utility"',
+                 "closest utility and", "Median across utilities"):
+        assert text not in source, f"hard-coded model noun left in models.js: {text!r}"
+    note = functions["marketIndexedNote"]
+    assert "market_indexed_excluded" in note and "entry.components" in note and "entry.utility" in note
+
+
+def test_rm7c_7e_models_js_reads_the_new_contract_fields():
+    source = MODELS_JS.read_text(encoding="utf-8")
+    fields = (set(NOUN_FIELDS) | {"illustrative", "illustrative_all_in"} | set(ILLUSTRATIVE_FIELDS)
+              | set(WINDOW_FIELDS) | set(ILLUSTRATIVE_LEVEL_FIELDS) | set(PROFILE_FIELDS) | set(STAT_FIELDS))
+    unread = sorted(f for f in fields if not re.search(rf"\b{re.escape(f)}\b", source))
+    assert not unread, f"listed in the contract but not read by models.js: {unread}"
+
+
+@pytest.mark.parametrize("name", sorted(BUILDS))
+def test_rm7c_7e_optional_engine_fields_have_the_shape_models_js_reads(name):
+    for model in BUILDS[name]["models"]:
+        where = f"{name} {model['id']}"
+        noun = model["coverage"].get("contributor_noun")
+        if noun is not None:
+            assert all(isinstance(noun.get(f), str) and noun[f].strip() for f in ("singular", "plural")), where
+        for entry in (model.get("energy") or {}).get("market_indexed_excluded") or []:
+            assert isinstance(entry.get("utility"), str), where
+            assert entry.get("components") and all(isinstance(c, str) and c for c in entry["components"]), where
+        info = model.get("illustrative")
+        levels = [level for level in model["levels"] if level.get("illustrative_all_in") is not None]
+        if info is None:
+            assert not levels, f"{where}: illustrative_all_in without model.illustrative"
+            continue
+        _assert_fields(info, ("available", "reason"), f"{where} illustrative")
+        if info["available"] is not True:
+            assert not levels, f"{where}: illustrative_all_in on an unavailable model"
+            continue
+        _assert_fields(info, ILLUSTRATIVE_FIELDS, f"{where} illustrative")
+        assert model["key"]["province"] == "ON" and model["key"]["size_band"] in ILLUSTRATIVE_BANDS, where
+        assert model["state"] == "market_energy_pending", f"{where}: the state must stay market_energy_pending"
+        _assert_fields(info["window"], WINDOW_FIELDS, f"{where} illustrative.window")
+        assert levels, where
+        for level in levels:
+            all_in = level["illustrative_all_in"]
+            _assert_fields(all_in, ILLUSTRATIVE_LEVEL_FIELDS, f"{where} {level['id']} illustrative_all_in")
+            assert all_in["synthetic_profile"] is True and all_in["illustrative_only"] is True, where
+            _assert_fields(all_in["profile"], PROFILE_FIELDS, f"{where} {level['id']} profile")
+            for side in ("without_tax", "with_tax"):
+                _assert_fields(all_in[side], STAT_FIELDS, f"{where} {level['id']} illustrative {side}")
+
+
+def test_rm7e_models_css_styles_every_sidecar_class_and_marks_the_block_dashed():
+    css = MODELS_CSS.read_text(encoding="utf-8")
+    source = MODELS_JS.read_text(encoding="utf-8")
+    used = sorted(set(re.findall(r"\brm-illus[\w-]*", source)))
+    assert "rm-illus" in used and "rm-illus-badge" in used and "rm-illus-warning" in used
+    unstyled = [name for name in used if not re.search(rf"\.{re.escape(name)}(?![\w-])[^{{]*\{{", css)]
+    assert not unstyled, f"classes used by models.js without a models.css rule: {unstyled}"
+    block = re.search(r"^\.rm-illus\s*\{([^}]*)\}", css, flags=re.M).group(1)
+    assert re.search(r"border:\s*\d+px\s+dashed", block)
+    assert "!important" not in css
+
+
+def test_rm7e_index_html_links_models_css_after_style_css():
+    _, tags = _index()
+    sheets = [attrs.get("href") for tag, attrs in tags if tag == "link" and attrs.get("rel") == "stylesheet"]
+    assert "css/models.css" in sheets, "index.html must link css/models.css after css/style.css"
+    assert sheets.index("css/models.css") > sheets.index("css/style.css")

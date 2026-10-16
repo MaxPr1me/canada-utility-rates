@@ -11,7 +11,7 @@ Output:
     site/data/utilities.json    — list of all utilities
     site/data/rates.json        — all tariffs with components
     site/data/summary.json      — high-level stats and metadata
-    site/data/representative_models.json — Phase 7 representative models (Ontario; not read by the site yet)
+    site/data/representative_models.json — Phase 7 representative models (all provinces; Representative Models tab)
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = PROJECT_ROOT / "data" / "db" / "rates.db"
 SITE_DATA_DIR = PROJECT_ROOT / "site" / "data"
-MODEL_PROVINCES = ("ON",)
+MODEL_PROVINCES = ("ON", "AB", "BC", "MB", "NB", "NL", "NS", "PE", "QC", "SK")
 
 
 def derive_provenance(confidence: str | None, notes: str | None) -> str:

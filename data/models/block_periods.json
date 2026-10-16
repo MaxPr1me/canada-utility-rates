@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "updated": "2026-10-16",
+  "status": "Reviewed per-tariff billing periods for energy block thresholds published as plain kWh (user decision 2026-10-16). Each entry quotes the official text; entries without a stated period have threshold_period null and stay not computable.",
+  "entries": [
+    {
+      "id": "bc-hydro-1101-two-month-step",
+      "utility": "BC Hydro",
+      "match": {"tariff_code_regex": "^1101(?:\\+2101)?$"},
+      "threshold_period": "two_months",
+      "quote": "Step 1: First 1350 kWh per two months",
+      "source_url": "https://www.bchydro.com/content/dam/BCHydro/customer-portal/documents/corporate/tariff-filings/electric-tariff/bchydro-electric-tariff.pdf",
+      "location": "Electric Tariff Rate Schedule 1101 (Revision 13, effective April 1, 2026), Energy Charge (b) 'For Customers billed bi-monthly', PDF page 83",
+      "reviewed": "2026-10-16",
+      "note": "The stored records carry the bi-monthly 1,350 kWh threshold; the same schedule prints '(a) For Customers billed monthly: Step 1: First 675 kWh per month', the halved value. Carries over the former crosswalk.json tier_threshold_periods entry of the same id. Quote checked against the saved official excerpt tests/fixtures/bc_hydro_residential.json (retrieved 2026-10-01), not re-fetched."
+    },
+    {
+      "id": "mb-gs-small",
+      "utility": "Manitoba Hydro",
+      "match": {"name_regex": "^General Service Small \\((?:Non-Demand|Demand)\\)$"},
+      "threshold_period": "month",
+      "quote": "All Rates Schedules in the publication are applied on a MONTHLY basis except as noted.",
+      "source_url": "https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf",
+      "location": "Electric Rate Schedule effective January 1, 2026 (Order 1/26): Definitions, PDF page 3 (printed Page 1); blocks in Small Single Phase/Three Phase Tariff Nos. 2026-20/2026-21, PDF page 7 (printed Page 5)",
+      "reviewed": "2026-10-16",
+      "note": "General clause: the block line ('First 11,000 kWh', 'Next 8,500 kWh') prints no period and no exception is noted for these schedules. 'Billing Month' is defined as 'the period of time, generally 30 days, in which Energy and/or Demand is consumed and thereafter billed to the Customer.' The website splits the schedule into non-demand and demand records."
+    },
+    {
+      "id": "mb-gs-medium",
+      "utility": "Manitoba Hydro",
+      "match": {"name_regex": "^General Service Medium$"},
+      "threshold_period": "month",
+      "quote": "All Rates Schedules in the publication are applied on a MONTHLY basis except as noted.",
+      "source_url": "https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf",
+      "location": "Electric Rate Schedule effective January 1, 2026 (Order 1/26): Definitions, PDF page 3 (printed Page 1); block in Medium Tariff No. 2026-30, PDF page 11 (printed Page 9)",
+      "reviewed": "2026-10-16",
+      "note": "General clause: the block line ('First 19,500 kWh') prints no period and no exception is noted for this schedule. 'Billing Month' is defined as generally 30 days."
+    },
+    {
+      "id": "mb-diesel-gs",
+      "utility": "Manitoba Hydro",
+      "match": {"name_regex": "^Diesel General Service$"},
+      "threshold_period": "month",
+      "quote": "All Rates Schedules in the publication are applied on a MONTHLY basis except as noted.",
+      "source_url": "https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf",
+      "location": "Electric Rate Schedule effective January 1, 2026 (Order 1/26): Definitions, PDF page 3 (printed Page 1); block in General Service Diesel Tariff No. 2026-40, PDF page 10 (printed Page 8)",
+      "reviewed": "2026-10-16",
+      "note": "General clause: the block line ('First 2,000 kWh') prints no period and no exception is noted for this schedule. 'Billing Month' is defined as generally 30 days."
+    },
+    {
+      "id": "mb-gs-seasonal",
+      "utility": "Manitoba Hydro",
+      "match": {"name_regex": "^General Service Seasonal \\(Single Phase\\)$"},
+      "threshold_period": null,
+      "quote": "The account is billed twice a year, April and October, each for a six-month period.",
+      "source_url": "https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf",
+      "location": "Electric Rate Schedule effective January 1, 2026 (Order 1/26): Seasonal Tariff Nos. 2026-22/2026-27, PDF page 9 (printed Page 7)",
+      "reviewed": "2026-10-16",
+      "note": "This schedule is an exception to the MONTHLY rule (annual basic charge, minimum annual bill, two six-month bills). The schedule does not state whether 'First 66,000 kWh' applies per six-month bill or per year, so no period is recorded."
+    },
+    {
+      "id": "nb-power-gs1",
+      "utility": "NB Power",
+      "match": {"tariff_code": "GS1"},
+      "threshold_period": null,
+      "quote": "for first 5000 kWh per Billing Period",
+      "source_url": "https://www.nbpower.com/en/accounts-billing/understanding-your-bill/rate-schedules-and-policies/n-rate-schedules-and-rate-application-guidelines/",
+      "location": "Rate Schedules and Policies effective April 14, 2026: N-2 General Service Rate Schedule, General Service I (printable version https://www.nbpower.com/media/1494118/2026-27-rate-schedules-and-policies-effective-2026-04-14.pdf, PDF page 51)",
+      "reviewed": "2026-10-16",
+      "note": "The block is per Billing Period, but 'Billing Period' is defined only as 'The period of time for which a Customer is billed for services provided by NB Power.' (B Definition of Terms, PDF page 7); its length is not stated. Indirect wording only (B: 'The monthly Service Charge ...' while GS I charges '$30.87 per Billing Period'; O-7: 'Meter will be read bi-monthly and billed monthly' for AMI opt-out customers). Needs a user decision before recording 'month'."
+    },
+    {
+      "id": "nl-hydro-2-1",
+      "utility": "NL Hydro",
+      "match": {"tariff_code": "2.1"},
+      "threshold_period": "month",
+      "quote": "Hydro shall bill the Customer monthly for charges for Service.",
+      "source_url": "https://nlhydro.com/wp-content/uploads/2026/07/Schedule-of-Rates-Rules-and-Regulations_Jul_2026.pdf",
+      "location": "Schedule of Rates, Rules and Regulations effective July 1, 2026: Regulation 10 Billing (a), PDF page 30 (RR-12); block 'First 3,500 kilowatt-hours' in Rate No. 2.1, PDF page 38 (ISL-4)",
+      "reviewed": "2026-10-16",
+      "note": "General clause: the rate page prints no period beside the block. Regulation 9(j) (PDF page 29, RR-11) also refers to 'the full monthly billing period'."
+    },
+    {
+      "id": "nl-hydro-2-4",
+      "utility": "NL Hydro",
+      "match": {"tariff_code": "2.4"},
+      "threshold_period": "month",
+      "quote": "Hydro shall bill the Customer monthly for charges for Service.",
+      "source_url": "https://nlhydro.com/wp-content/uploads/2026/07/Schedule-of-Rates-Rules-and-Regulations_Jul_2026.pdf",
+      "location": "Schedule of Rates, Rules and Regulations effective July 1, 2026: Regulation 10 Billing (a), PDF page 30 (RR-12); block 'First 75,000 kilowatt-hours' in Rate No. 2.4, PDF page 40 (ISL-6)",
+      "reviewed": "2026-10-16",
+      "note": "General clause: the rate page prints no period beside the block. Regulation 9(j) (PDF page 29, RR-11) also refers to 'the full monthly billing period'."
+    },
+    {
+      "id": "newfoundland-power-2-1",
+      "utility": "Newfoundland Power",
+      "match": {"tariff_code": "2.1"},
+      "threshold_period": "month",
+      "quote": "The Company shall bill the Customer monthly for charges for Service.",
+      "source_url": "https://www.newfoundlandpower.com/-/media/PDFs/Business-Services/Commercial-Rates/RateBook_July1_2026_20260612.pdf",
+      "location": "RateBook (Schedule of Rates, Rules and Regulations) effective July 1, 2026: Regulation 10 Billing (a), PDF page 13 (printed Page 10); block 'First 3,500 kilowatt-hours' in Rate #2.1, PDF page 26 (printed Page 23)",
+      "reviewed": "2026-10-16",
+      "note": "General clause: the rate page prints no period beside the block. Regulation 9(j) (PDF page 12, printed Page 9) also refers to 'the full monthly billing period'."
+    },
+    {
+      "id": "newfoundland-power-2-4",
+      "utility": "Newfoundland Power",
+      "match": {"tariff_code": "2.4"},
+      "threshold_period": "month",
+      "quote": "The Company shall bill the Customer monthly for charges for Service.",
+      "source_url": "https://www.newfoundlandpower.com/-/media/PDFs/Business-Services/Commercial-Rates/RateBook_July1_2026_20260612.pdf",
+      "location": "RateBook (Schedule of Rates, Rules and Regulations) effective July 1, 2026: Regulation 10 Billing (a), PDF page 13 (printed Page 10); block 'First 75,000 kilowatt-hours' in Rate #2.4, PDF page 28 (printed Page 25)",
+      "reviewed": "2026-10-16",
+      "note": "General clause: the rate page prints no period beside the block. Regulation 9(j) (PDF page 12, printed Page 9) also refers to 'the full monthly billing period'."
+    },
+    {
+      "id": "maritime-electric-residential",
+      "utility": "Maritime Electric",
+      "match": {"tariff_code_regex": "^(?:110|130|131|133)$"},
+      "threshold_period": null,
+      "quote": "17.84¢ per kWh for first 2000 kWh per Billing Period",
+      "source_url": "https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/",
+      "location": "Rate Schedule and General Rules and Regulations effective August 1, 2026: Residential Service Rate Schedule, Rate Codes 110/130/131/133 (the N-28 Schedule of Adjusted Rates PDF prints 'for first 2,000 kWh' with no period)",
+      "reviewed": "2026-10-16",
+      "note": "The block is per Billing Period, but 'Billing Period' is defined only as 'The period of time for which a customer is billed for services provided by Maritime Electric.'; its length is not stated. Indirect wording only (Equalized Billing lists 'Monthly service charges'; the seasonal options say 'bills shall be rendered for May, June, July, August, September and October'). Needs a user decision before recording 'month'."
+    },
+    {
+      "id": "maritime-electric-general-service",
+      "utility": "Maritime Electric",
+      "match": {"tariff_code_regex": "^(?:232|233)$"},
+      "threshold_period": null,
+      "quote": "21.88¢ per kWh for first 5000 kWh per Billing Period",
+      "source_url": "https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/",
+      "location": "Rate Schedule and General Rules and Regulations effective August 1, 2026: General Service Rate Schedules, Rate Codes 232/233 (the N-28 Schedule of Adjusted Rates PDF prints 'for first 5,000 kWh' with no period)",
+      "reviewed": "2026-10-16",
+      "note": "Same gap as the residential entry: 'Billing Period' has no stated length. Needs a user decision before recording 'month'."
+    },
+    {
+      "id": "hydro-quebec-g",
+      "utility": "Hydro-Québec",
+      "match": {"tariff_code": "G"},
+      "threshold_period": "month",
+      "quote": "The structure of monthly Rate G for an annual contract is as follows:",
+      "source_url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
+      "location": "Electricity Rates 2026: article 3.2 (block '12.388¢ per kilowatthour for the first 15,090 kilowatthours'), PDF page 37 (printed page 33); article 12.11, PDF page 154",
+      "reviewed": "2026-10-16",
+      "note": "Article 12.11: 'The monthly rates described in these Rates are applied without adjustment when the consumption period is 30 consecutive days'; for other durations 'the number of kilowatthours or hours of use included, if applicable, in each rate tier' is divided by 30 days and multiplied by the days in the consumption period (a 30-day month)."
+    },
+    {
+      "id": "hydro-quebec-m",
+      "utility": "Hydro-Québec",
+      "match": {"tariff_code": "M"},
+      "threshold_period": "month",
+      "quote": "The structure of monthly Rate M for an annual contract is as follows:",
+      "source_url": "https://www.hydroquebec.com/data/documents-donnees/pdf/electricity-rates.pdf",
+      "location": "Electricity Rates 2026: article 4.2 (block '6.292¢ per kilowatthour for the first 210,000 kilowatthours'), PDF page 47; article 12.11, PDF page 154",
+      "reviewed": "2026-10-16",
+      "note": "Article 12.11: monthly rates apply unadjusted to a 30-day consumption period; the kWh in each rate tier is prorated per day for other durations (a 30-day month)."
+    },
+    {
+      "id": "saskpower-e04",
+      "utility": "SaskPower",
+      "match": {"tariff_code": "E04"},
+      "threshold_period": "month",
+      "quote": "First 650 kWh/month (¢/kWh) 15.476¢",
+      "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/report-rates-residential.pdf",
+      "location": "Residential Rates, Diesel Rate E04 (effective February 1, 2026), PDF page 2",
+      "reviewed": "2026-10-16"
+    },
+    {
+      "id": "saskpower-e05-e06",
+      "utility": "SaskPower",
+      "match": {"tariff_code_regex": "^E0[56]$"},
+      "threshold_period": "month",
+      "quote": "First block kWh/month 16,750 kWh 15,500 kWh",
+      "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-saskpowersuppliedtransformation.pdf",
+      "location": "SaskPower-Supplied Transformation Rates, Standard Rate E05 (Urban)/E06 (Rural) (effective February 1, 2026), PDF page 1",
+      "reviewed": "2026-10-16"
+    },
+    {
+      "id": "saskpower-e35",
+      "utility": "SaskPower",
+      "match": {"tariff_code": "E35"},
+      "threshold_period": "month",
+      "quote": "First 650 kWh/month (¢/kWh) 16.086¢",
+      "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-saskpowersuppliedtransformation.pdf",
+      "location": "SaskPower-Supplied Transformation Rates, General Service Diesel Rate E35 (effective February 1, 2026), PDF page 8",
+      "reviewed": "2026-10-16"
+    },
+    {
+      "id": "saskpower-e75-e76",
+      "utility": "SaskPower",
+      "match": {"tariff_code_regex": "^E7[56]$"},
+      "threshold_period": "month",
+      "quote": "First block kWh/month 14,500 kWh 13,000 kWh",
+      "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-saskpowersuppliedtransformation.pdf",
+      "location": "SaskPower-Supplied Transformation Rates, Small Commercial Rate E75 (Urban)/E76 (Rural) (effective February 1, 2026), PDF page 3",
+      "reviewed": "2026-10-16"
+    },
+    {
+      "id": "saskpower-e77-e78",
+      "utility": "SaskPower",
+      "match": {"tariff_code_regex": "^E7[78]$"},
+      "threshold_period": "month",
+      "quote": "First block kWh/month 14,500 kWh 13,000 kWh",
+      "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-customerownedtransformation.pdf",
+      "location": "Customer-Owned Transformation Rates, Small Commercial Rate E77 (Urban)/E78 (Rural) (effective February 1, 2026), PDF page 3",
+      "reviewed": "2026-10-16"
+    },
+    {
+      "id": "saskpower-e34",
+      "utility": "SaskPower",
+      "match": {"tariff_code": "E34"},
+      "threshold_period": "month",
+      "quote": "First 16,000 kWh/month (¢/kWh) 13.852¢",
+      "source_url": "https://www.saskpower.com/-/media/saskpower/accounts-and-services/rates/service-rates/power-supply-rates/servicerates-farm.pdf",
+      "location": "Farm Rates, Standard Rate E34 (effective February 1, 2026), PDF page 1",
+      "reviewed": "2026-10-16",
+      "note": "Farm service is outside the building scope and excluded by the crosswalk; recorded for completeness."
+    }
+  ]
+}

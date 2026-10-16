@@ -1,8 +1,8 @@
 {
   "version": 1,
   "phase": "7A",
-  "updated": "2026-10-09",
-  "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list.",
+  "updated": "2026-10-16",
+  "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list. A SYNTHETIC business-hours load profile ('synthetic_profiles') was added October 16, 2026 (user-approved) for the Phase 7E illustrative estimate only; it never changes a model's own numbers.",
   "days_per_month": 30.4375,
   "hours_per_month": 730.5,
   "power_factor_for_kva": 0.9,
@@ -160,5 +160,19 @@
       }
     }
   ],
+  "synthetic_profiles": {
+    "ON_SYNTHETIC_BUSINESS_HOURS": {
+      "applies_to": {"province": "ON", "fuel": "electricity", "sectors": ["commercial_medium", "commercial_large"]},
+      "status": "SYNTHETIC: user-approved 2026-10-16 for an illustrative estimate only; needs further analysis",
+      "days": "Monday-Friday",
+      "business_hours_beginning": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "time_basis": "EST (IESO market time)",
+      "holidays": "counted as the weekday they fall on",
+      "base_load": "constant at all other hours, sized so the month's kWh equals the usage level",
+      "max_window_lag_months": 4,
+      "label": "SYNTHETIC LOAD PROFILE - ILLUSTRATIVE ONLY",
+      "caveat": "Built from a made-up business-hours load profile, not from any real customer's data. Representative only: not a forecast, a quote or a bill, and not a basis for decisions. Needs further analysis."
+    }
+  },
   "basis": "Monthly usage levels approved by the user on October 9, 2026: residential 500/1,000/2,000 kWh; commercial under 50 kW at 2,000 kWh with 10 kW and 8,000 kWh with 25 kW; 50-499 kW at 40,000 kWh with 100 kW; 500-4,999 kW at 500,000 kWh with 1,000 kW; no level yet for 5,000 kW and over. Daily charges convert to monthly at 30.4375 days (365.25 / 12); hours per month 730.5. kVA demand is derived from kW at the disclosed 0.9 power factor (kVA = kW / 0.9) and never treated as kW. Implied load factors (kWh / (kW x 730.5)): s1 27.4%, s2 43.8%, m1 54.8%, l1 68.4%. Levels are comparison points for modeled costs, not a load profile of any customer."
 }
