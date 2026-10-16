@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canada Utility Rates</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/models.css">
 </head>
 <body>
     <header>
@@ -125,18 +126,31 @@
 
             <section class="market-header">
                 <h2>Electricity Market Pricing</h2>
-                <p id="market-intro">Observed historical averages of the legacy Hourly Ontario Energy Price (HOEP; retired April 30, 2025) and the Class B Global Adjustment (actual monthly rates) by month, weekday/weekend and hour. For comparison only: not a tariff, a bill or a forecast.</p>
+                <p id="market-intro">Observed Ontario wholesale electricity prices plus the Class B Global Adjustment (GA) for the latest 60 complete months: the legacy Hourly Ontario Energy Price (HOEP, retired April 30, 2025) up to April 2025, then the Ontario Price from May 1, 2025. Full cost = energy + Class B GA. For comparison only: not a tariff, a bill or a forecast.</p>
                 <p id="market-window"></p>
             </section>
 
             <section class="estimated-banner" role="note">
-                <span>The Hourly Ontario Energy Price (HOEP) retired on April 30, 2025, and was replaced with the Ontario Price. Since May 1, 2025, market-billed customers pay the Ontario Electricity Market Price (OEMP) plus Global Adjustment; this view does not show the Ontario Price.</span>
+                <span>The Hourly Ontario Energy Price (HOEP) retired on April 30, 2025 (legacy market). Since May 1, 2025, market-billed customers pay the Ontario Electricity Market Price (the Ontario Price: Day-Ahead Ontario Zonal Price plus Load Forecast Deviation Adjustment) plus the Global Adjustment: Class B customers pay the actual monthly Class B rate per kWh, and Class A customers pay by their peak demand factor. <span id="market-note-scope"></span></span>
                 <a href="https://www.ieso.ca/Power-Data/Price-Overview/Ontario-Market-Prices" target="_blank" rel="noopener">Current Ontario Price (IESO) &rarr;</a>
             </section>
 
             <section id="market-notice" class="estimated-banner hidden" role="status"></section>
 
             <div id="market-content">
+            <section id="market-headline" class="market-section hidden" data-market-schema="rolling" aria-labelledby="market-headline-title">
+                <h3 id="market-headline-title">Average Full Cost (Energy + Class B GA)</h3>
+                <div id="market-headline-body" class="market-headline"></div>
+            </section>
+
+            <section id="market-monthly" class="market-section hidden" data-market-schema="rolling">
+                <h3>Monthly Energy, Class B GA and Total</h3>
+                <p class="section-desc">Monthly averages in &cent;/kWh for every month of the window. The dark vertical line marks May 2025, the first Ontario Price month; earlier months use the legacy HOEP, which retired on April 30, 2025. Hover the chart for each month's values and era.</p>
+                <div class="market-chart-container">
+                    <canvas id="market-monthly-canvas" role="img" aria-label="Line chart of monthly energy, Class B Global Adjustment and total in cents per kWh. The Monthly Summary table lists the same values."></canvas>
+                </div>
+            </section>
+
             <section class="market-controls">
                 <div class="filter-group">
                     <label for="market-region">Region</label>
@@ -163,11 +177,12 @@
 
             <section id="market-heatmap" class="market-section">
                 <h3>Hourly Price Heatmap</h3>
-                <p class="section-desc">Rows = calendar months (each averaged over every observed year), columns = hour beginning (EST). Hover for values and observed hours.</p>
+                <p class="section-desc">Rows = calendar months (each averaging every observed hour of that month in the window), columns = hour beginning (EST). Hover a cell for its value and observed hours.</p>
+                <p id="market-heatmap-basis" class="market-basis-note hidden" data-market-schema="rolling" role="note"></p>
                 <div id="heatmap-container"></div>
             </section>
 
-            <section id="market-chart" class="market-section">
+            <section id="market-chart" class="market-section" data-market-schema="legacy">
                 <h3>Hourly Price Curves by Month</h3>
                 <div class="market-chart-container">
                     <canvas id="market-chart-canvas"></canvas>

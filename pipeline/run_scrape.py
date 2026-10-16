@@ -419,7 +419,8 @@ def main() -> None:
             logger.error("Utility %r not found in registry", args.utility)
             sys.exit(1)
     elif args.province:
-        entries = [e for e in registry if e.get("province", "").upper() == args.province.upper()]
+        entries = [e for e in get_active_utilities(registry)
+                   if e.get("province", "").upper() == args.province.upper()]
         if not entries:
             logger.error("No utilities found for province %r", args.province)
             sys.exit(1)

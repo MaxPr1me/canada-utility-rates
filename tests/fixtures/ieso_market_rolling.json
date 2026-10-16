@@ -1,0 +1,273 @@
+{
+ "description": "Small excerpts of official IESO files for the rolling Ontario market history tests (scripts/build_ontario_market.py). Tests build full synthetic months from these templates; they never download anything.",
+ "retrieved_on": "2026-10-16",
+ "hoep_hourly": {
+  "source_url": "https://reports-public.ieso.ca/public/PriceHOEPPredispOR/PUB_PriceHOEPPredispOR_2025_v119.csv",
+  "excerpt": "preamble, header and the 24 rows of 2025-01-15 (a Wednesday)",
+  "csv_excerpt": "\\\\Yearly HOEP OR Predispatch Report,,,,,,,,\n\\\\Created at 2025-05-01 08:00:15,,,,,,,,\n\\\\For 2025,,,,,,,,\nDate,Hour,HOEP,Hour 1 Predispatch,Hour 2 Predispatch,Hour 3 Predispatch,OR 10 Min Sync,OR 10 Min non-sync,OR 30 Min\n2025-01-15,1,53.82,54.04,54.04,60.51,0.99,0.18,0.18\n2025-01-15,2,51.19,57.33,57.33,53.99,1.19,0.18,0.18\n2025-01-15,3,53.75,54.31,54.01,53.94,1.19,0.16,0.10\n2025-01-15,4,53.31,54.00,53.99,54.00,1.19,0.16,0.10\n2025-01-15,5,53.84,54.15,54.15,53.99,1.00,0.16,0.10\n2025-01-15,6,53.87,78.02,67.09,61.09,0.42,0.16,0.10\n2025-01-15,7,53.77,65.09,60.19,60.19,5.99,5.99,0.75\n2025-01-15,8,57.32,210.00,201.67,125.00,30.10,30.10,1.05\n2025-01-15,9,54.04,241.00,210.00,155.00,30.74,30.74,0.75\n2025-01-15,10,57.02,80.00,127.48,95.00,24.35,24.35,1.06\n2025-01-15,11,55.29,60.19,70.51,95.65,6.97,6.97,2.00\n2025-01-15,12,54.59,55.10,65.20,60.19,2.42,2.42,1.69\n2025-01-15,13,54.10,65.20,58.10,55.10,1.19,1.19,1.01\n2025-01-15,14,54.01,57.33,118.11,54.04,2.23,2.23,0.75\n2025-01-15,15,54.03,54.32,65.20,62.51,4.05,4.05,0.75\n2025-01-15,16,54.16,60.19,111.16,100.32,6.81,6.81,0.75\n2025-01-15,17,54.03,130.00,130.00,133.33,30.10,30.10,0.75\n2025-01-15,18,54.02,206.73,193.00,200.00,30.10,30.10,0.75\n2025-01-15,19,53.13,62.33,220.47,154.61,30.10,30.10,0.75\n2025-01-15,20,51.42,59.45,97.26,120.00,18.61,18.61,0.75\n2025-01-15,21,52.73,55.21,60.19,60.19,7.11,7.11,0.75\n2025-01-15,22,53.70,54.04,54.31,54.31,4.04,4.04,0.75\n2025-01-15,23,51.58,53.92,53.93,53.93,0.68,0.68,0.46\n2025-01-15,24,48.89,53.34,50.76,50.60,0.16,0.16,0.10\n"
+ },
+ "hoep_averages": {
+  "source_url": "https://reports-public.ieso.ca/public/PriceHOEPAverage/PUB_PriceHOEPAverage_2025_v4.xml",
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<?xml-stylesheet type=\"text/xsl\" href=\"https://reports-public.ieso.ca/docrefs/stylesheet/PriceHOEPAverage_HTML_t1-1.xsl\" ?>\n<Document docID=\"PriceHOEPAverage\" xmlns=\"http://www.ieso.ca/schema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.ieso.ca/schema https://reports-public.ieso.ca/docrefs/schema/PriceHOEPAverage_r1.xsd\">\n<DocHeader>\n<DocTitle>HOEP Monthly Averages Report</DocTitle>\n<DocRevision>1</DocRevision>\n<DocConfidentiality>\n<DocConfClass>PUB</DocConfClass>\n</DocConfidentiality>\n<CreatedAt>2025-05-14T09:14:46</CreatedAt>\n</DocHeader>\n<DocBody>\n<ReportYear>2025</ReportYear>\n<HOEP>\n<Month>January</Month>\n<ArithmeticAve>65.98</ArithmeticAve>\n<WeightedAve>68.28</WeightedAve>\n<ArithmeticOnPeakAve>81.27</ArithmeticOnPeakAve>\n<ArithmeticOffPeakAve>52.26</ArithmeticOffPeakAve>\n<WeightedOnPeakAve>82.80</WeightedOnPeakAve>\n<WeightedOffPeakAve>53.28</WeightedOffPeakAve>\n</HOEP>\n<HOEP>\n<Month>February</Month>\n<ArithmeticAve>76.68</ArithmeticAve>\n<WeightedAve>78.41</WeightedAve>\n<ArithmeticOnPeakAve>82.10</ArithmeticOnPeakAve>\n<ArithmeticOffPeakAve>72.20</ArithmeticOffPeakAve>\n<WeightedOnPeakAve>83.55</WeightedOnPeakAve>\n<WeightedOffPeakAve>73.71</WeightedOffPeakAve>\n</HOEP>\n<HOEP>\n<Month>March</Month>\n<ArithmeticAve>47.44</ArithmeticAve>\n<WeightedAve>48.92</WeightedAve>\n<ArithmeticOnPeakAve>51.71</ArithmeticOnPeakAve>\n<ArithmeticOffPeakAve>43.93</ArithmeticOffPeakAve>\n<WeightedOnPeakAve>52.79</WeightedOnPeakAve>\n<WeightedOffPeakAve>45.45</WeightedOffPeakAve>\n</HOEP>\n<HOEP>\n<Month>April</Month>\n<ArithmeticAve>39.22</ArithmeticAve>\n<WeightedAve>41.09</WeightedAve>\n<ArithmeticOnPeakAve>44.23</ArithmeticOnPeakAve>\n<ArithmeticOffPeakAve>35.19</ArithmeticOffPeakAve>\n<WeightedOnPeakAve>45.63</WeightedOnPeakAve>\n<WeightedOffPeakAve>37.00</WeightedOffPeakAve>\n</HOEP>\n</DocBody>\n</Document>\n"
+ },
+ "ga_mwh_workbook": {
+  "source_url": "https://www.ieso.ca/-/media/Files/IESO/Power-Data/data-directory/Global-Adjustment-Values-MWh.xlsx",
+  "sheet_rows": "sheet 'Global Adjustment $MWh': header row and the 2024 and 2025 blocks (columns A-N)",
+  "sheets": {
+   "Global Adjustment $MWh": [
+    [
+     "Year",
+     null,
+     "Jan",
+     "Feb",
+     "Mar",
+     "Apr",
+     "May",
+     "Jun",
+     "Jul",
+     "Aug",
+     "Sept",
+     "Oct",
+     "Nov",
+     "Dec"
+    ],
+    [
+     2024,
+     "1st Estimate ($/MWh)",
+     54.13,
+     84.98,
+     83.66,
+     84.98,
+     45.88,
+     45.88,
+     45.88,
+     55.52,
+     67.5,
+     81.71,
+     76.8,
+     79.28
+    ],
+    [
+     null,
+     "2nd Estimate ($/MWh)",
+     50.1,
+     68.68,
+     83.1,
+     69.05,
+     79.76,
+     74.3,
+     64.55,
+     53.75,
+     86.69,
+     64.78,
+     89.48,
+     52.77
+    ],
+    [
+     null,
+     "Actual Rate ($/MWh)",
+     45.88,
+     66.32,
+     81.71,
+     74.27,
+     77.63,
+     78.4,
+     63.71,
+     63.23,
+     79.28,
+     74.84,
+     89.04,
+     61.77
+    ],
+    [],
+    [
+     2025,
+     "1st Estimate ($/MWh)",
+     83.92,
+     89.04,
+     41.09,
+     3,
+     40.05,
+     89.04,
+     115.93,
+     3,
+     3,
+     74.82,
+     39.61,
+     22.26
+    ],
+    [
+     null,
+     "2nd Estimate ($/MWh)",
+     45.78,
+     0.18,
+     61.2,
+     59.91,
+     143.7,
+     87.76,
+     -1.76,
+     17.46,
+     81.91,
+     42.2,
+     25.5,
+     -25.73
+    ],
+    [
+     null,
+     "Actual Rate ($/MWh)",
+     41.09,
+     3,
+     69.48,
+     69.15,
+     134.93,
+     59.72,
+     14.38,
+     30.1,
+     61.85,
+     48.85,
+     18.16,
+     -2.92
+    ]
+   ]
+  }
+ },
+ "ga_kwh_workbook": {
+  "source_url": "https://www.ieso.ca/-/media/Files/IESO/Power-Data/data-directory/Global-Adjustment-kWh.xlsx",
+  "sheet_rows": "sheet 'Global Adjustment kWh': header row and the 2024 and 2025 blocks (columns A-N)",
+  "sheets": {
+   "Global Adjustment kWh": [
+    [
+     "Year",
+     null,
+     "​January",
+     "February",
+     "March",
+     "April",
+     "​May",
+     "June",
+     "July",
+     "August",
+     "September",
+     "October",
+     "November",
+     "December"
+    ],
+    [
+     2024,
+     "1st estimate",
+     5.41,
+     8.5,
+     8.37,
+     8.5,
+     4.59,
+     4.59,
+     4.59,
+     5.55,
+     6.75,
+     8.17,
+     7.68,
+     7.93
+    ],
+    [
+     null,
+     "2nd estimate",
+     5.01,
+     6.87,
+     8.31,
+     6.91,
+     7.98,
+     7.43,
+     6.46,
+     5.38,
+     8.67,
+     6.48,
+     8.95,
+     5.28
+    ],
+    [
+     null,
+     "Actual",
+     4.59,
+     6.63,
+     8.17,
+     7.43,
+     7.76,
+     7.84,
+     6.37,
+     6.32,
+     7.93,
+     7.48,
+     8.9,
+     6.18
+    ],
+    [],
+    [
+     2025,
+     "1st estimate",
+     8.39,
+     8.9,
+     4.11,
+     0.3,
+     4.01,
+     8.9,
+     11.59,
+     0.3,
+     0.3,
+     7.48,
+     3.96,
+     2.23
+    ],
+    [
+     null,
+     "2nd estimate",
+     4.58,
+     0.02,
+     6.12,
+     5.99,
+     14.37,
+     8.78,
+     -0.18,
+     1.75,
+     8.19,
+     4.22,
+     2.55,
+     -2.57
+    ],
+    [
+     null,
+     "Actual",
+     4.11,
+     0.3,
+     6.95,
+     6.92,
+     13.49,
+     5.97,
+     1.44,
+     3.01,
+     6.19,
+     4.89,
+     1.82,
+     -0.29
+    ]
+   ]
+  }
+ },
+ "ga_reports": {
+  "listing_url": "https://reports-public.ieso.ca/public/GlobalAdjustment/",
+  "listing_html": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n<html>\n <head>\n  <title>Index of /public/GlobalAdjustment</title>\n </head>\n <body>\n<h1><image src=\"/images/banner.gif\"></h1><h1>Global Adjustment Report</h1>\n<pre><img src=\"/icons/blank.gif\" alt=\"Icon \"> <a href=\"?C=N;O=D\">Name</a>                               <a href=\"?C=M;O=A\">Last modified</a>      <a href=\"?C=S;O=A\">Size</a>  <a href=\"?C=D;O=A\">Description</a><hr><img src=\"/icons/back.gif\" alt=\"[PARENTDIR]\"> <a href=\"/public/\">Parent Directory</a>                                        -   \n<img src=\"/icons/text.gif\" alt=\"[TXT]\"> <a href=\"PUB_GlobalAdjustment_202608.xml\">PUB_GlobalAdjustment_202608.xml</a>    15-Sep-2026 14:31  917   Global Adjustment Report\n<img src=\"/icons/text.gif\" alt=\"[TXT]\"> <a href=\"PUB_GlobalAdjustment_202608_v2.xml\">PUB_GlobalAdjustment_202608_v2.xml</a> 31-Aug-2026 14:31  859   Global Adjustment Report\n<img src=\"/icons/text.gif\" alt=\"[TXT]\"> <a href=\"PUB_GlobalAdjustment_202608_v3.xml\">PUB_GlobalAdjustment_202608_v3.xml</a> 15-Sep-2026 14:31  917   Global Adjustment Report\n<img src=\"/icons/text.gif\" alt=\"[TXT]\"> <a href=\"PUB_GlobalAdjustment_202609.xml\">PUB_GlobalAdjustment_202609.xml</a>    15-Oct-2026 14:33  917   Global Adjustment Report\n<img src=\"/icons/text.gif\" alt=\"[TXT]\"> <a href=\"PUB_GlobalAdjustment_202609_v1.xml\">PUB_GlobalAdjustment_202609_v1.xml</a> 31-Aug-2026 14:32  769   Global Adjustment Report\n<img src=\"/icons/text.gif\" alt=\"[TXT]\"> <a href=\"PUB_GlobalAdjustment_202609_v2.xml\">PUB_GlobalAdjustment_202609_v2.xml</a> 29-Sep-2026 14:31  859   Global Adjustment Report\n<img src=\"/icons/text.gif\" alt=\"[TXT]\"> <a href=\"PUB_GlobalAdjustment_202609_v3.xml\">PUB_GlobalAdjustment_202609_v3.xml</a> 15-Oct-2026 14:33  917   Global Adjustment Report\n<hr></pre>\n</body></html>\n",
+  "xml": {
+   "PUB_GlobalAdjustment_202609_v3.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<?xml-stylesheet type=\"text/xsl\" href=\"https://reports-public.ieso.ca/docrefs/stylesheet/GlobalAdjustment_HTML_t1-2.xsl\" ?>\n<Document docID=\"GlobalAdjustment\" xmlns=\"http://www.ieso.ca/schema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.ieso.ca/schema https://reports-public.ieso.ca/docrefs/schema/GlobalAdjustment_r1.xsd\">\n<DocHeader>\n<DocTitle>IESO Global Adjustment Class B Rates</DocTitle>\n<DocRevision>1</DocRevision>\n<DocConfidentiality>\n<DocConfClass>PUB</DocConfClass>\n</DocConfidentiality>\n<CreatedAt>2026-10-15T14:30:10</CreatedAt>\n</DocHeader>\n<DocBody>\n<TradeMonth>2026-09</TradeMonth>\n<GAValues>\n<FirstEstimateRate>64.78</FirstEstimateRate>\n<SecondEstimate>583245920</SecondEstimate>\n<SecondEstimateRate>63.51</SecondEstimateRate>\n<Actual>611512762</Actual>\n<ActualRate>64.77</ActualRate>\n</GAValues>\n</DocBody>\n</Document>\n",
+   "PUB_GlobalAdjustment_202610_v1.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<?xml-stylesheet type=\"text/xsl\" href=\"https://reports-public.ieso.ca/docrefs/stylesheet/GlobalAdjustment_HTML_t1-2.xsl\" ?>\n<Document docID=\"GlobalAdjustment\" xmlns=\"http://www.ieso.ca/schema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.ieso.ca/schema https://reports-public.ieso.ca/docrefs/schema/GlobalAdjustment_r1.xsd\">\n<DocHeader>\n<DocTitle>IESO Global Adjustment Class B Rates</DocTitle>\n<DocRevision>1</DocRevision>\n<DocConfidentiality>\n<DocConfClass>PUB</DocConfClass>\n</DocConfidentiality>\n<CreatedAt>2026-09-29T14:30:09</CreatedAt>\n</DocHeader>\n<DocBody>\n<TradeMonth>2026-10</TradeMonth>\n<GAValues>\n<FirstEstimateRate>61.09</FirstEstimateRate>\n</GAValues>\n</DocBody>\n</Document>\n"
+  }
+ },
+ "market_prices": {
+  "source_url": "https://www.ieso.ca/Power-Data/Price-Overview/Ontario-Market-Prices",
+  "retrieved_on": "2026-10-09",
+  "rows": "Aug 2026, Jul 2026, May 2026 and May 2025 of both tabs",
+  "html_excerpt": "<div class=\"tab-content\">\n<div role=\"tabpanel\" class=\"tab-pane active\" id=\"AA\">\n<div class=\"ieso-table-container col-12\">\n<table cellspacing=\"0\" width=\"100%\" class=\"ieso-data-rates responsive-table\">\n    <thead>\n        <tr>\n            <th>Date</th>\n            <th>DA-OZP</th>\n            <th>LFDA</th>\n            <th>Ontario Price (OEMP)</th>\n        </tr>\n    </thead>\n    <tbody>\n\n<tr>\n            <td data-label=\"Date\">Aug 2026</td>\n            <td data-label=\"DA-OZP\" style=\"background-color: #f4f4f4;\">63.88</td>\n            <td data-label=\"LFDA\">0.52</td>\n            <td data-label=\"Ontario Price (OEMP)\">64.40</td>\n        </tr>\n\n\n        <tr>\n            <td data-label=\"Date\">Jul 2026</td>\n            <td data-label=\"DA-OZP\" style=\"background-color: #f4f4f4;\">71.82</td>\n            <td data-label=\"LFDA\">1.04</td>\n            <td data-label=\"Ontario Price (OEMP)\">72.86</td>\n        </tr>\n        <tr>\n            <td data-label=\"Date\">May 2026</td>\n            <td data-label=\"DA-OZP\" style=\"background-color: #f4f4f4;\">33.49</td>\n            <td data-label=\"LFDA\">0.77</td>\n            <td data-label=\"Ontario Price (OEMP)\">34.26</td>\n        </tr>\n        <tr>\n            <td data-label=\"Date\">May 2025</td>\n            <td data-label=\"DA-OZP\" style=\"background-color: #f4f4f4;\">22.13</td>\n            <td data-label=\"LFDA\">0.33</td>\n            <td data-label=\"Ontario Price (OEMP)\">22.46</td>\n        </tr>\n    </tbody>\n</table>\n</div>\n</div>\n<div role=\"tabpanel\" class=\"tab-pane\" id=\"WA\">\n<div class=\"ieso-table-container col-12\">\n<table cellspacing=\"0\" width=\"100%\" class=\"ieso-data-rates responsive-table\">\n    <thead>\n        <tr>\n            <th>Date</th>\n            <th>DA-OZP</th>\n            <th>LFDA</th>\n            <th>Ontario Price (OEMP)</th>\n        </tr>\n    </thead>\n    <tbody>\n\n        <tr>\n            <td data-label=\"Date\">Aug 2026</td>\n            <td data-label=\"DA-OZP\" style=\"background-color: #f4f4f4;\">67.66</td>\n            <td data-label=\"LFDA\">0.56</td>\n            <td data-label=\"Ontario Price (OEMP)\">68.22</td>\n        </tr>\n\n        <tr>\n            <td data-label=\"Date\">Jul 2026</td>\n            <td data-label=\"DA-OZP\" style=\"background-color: #f4f4f4;\">79.16</td>\n            <td data-label=\"LFDA\">1.16</td>\n            <td data-label=\"Ontario Price (OEMP)\">80.32</td>\n        </tr>\n        <tr>\n            <td data-label=\"Date\">May 2026</td>\n            <td data-label=\"DA-OZP\" style=\"background-color: #f4f4f4;\">34.86</td>\n            <td data-label=\"LFDA\">0.85</td>\n            <td data-label=\"Ontario Price (OEMP)\">35.71</td>\n        </tr>\n        <tr>\n            <td data-label=\"Date\">May 2025</td>\n            <td data-label=\"DA-OZP\" style=\"background-color: #f4f4f4;\">24.31</td>\n            <td data-label=\"LFDA\">0.36</td>\n            <td data-label=\"Ontario Price (OEMP)\">24.67</td>\n        </tr>\n    </tbody>\n</table>\n</div>\n</div>\n</div>\n"
+ },
+ "archive": {
+  "path": "data/market/ontario_price_hourly.csv",
+  "csv_excerpt": "date,hour_ending,da_ozp,lfda,oemp,da_ozp_source,da_ozp_version,lfda_status\n2026-08-01,1,38.27,1.02,39.29,report,1,Final\n2026-08-01,2,34.36,0.04,34.40,report,1,Final\n2026-08-01,3,32.51,0.04,32.55,report,1,Final\n2026-08-01,4,32.22,0.03,32.25,report,1,Final\n2026-08-01,5,32.30,0.03,32.33,report,1,Final\n2026-08-01,6,31.46,0.01,31.47,report,1,Final\n2026-08-01,7,32.66,0.10,32.76,report,1,Final\n2026-08-01,8,38.57,0.14,38.71,report,1,Final\n2026-08-01,9,45.11,0.26,45.37,report,1,Final\n2026-08-01,10,60.43,0.36,60.79,report,1,Final\n2026-08-01,11,66.74,0.54,67.28,report,1,Final\n2026-08-01,12,72.85,0.84,73.69,report,1,Final\n2026-08-01,13,81.41,0.58,81.99,report,1,Final\n2026-08-01,14,85.59,0.20,85.79,report,1,Final\n2026-08-01,15,82.89,2.54,85.43,report,1,Final\n2026-08-01,16,85.37,1.18,86.55,report,1,Final\n2026-08-01,17,86.85,0.67,87.52,report,1,Final\n2026-08-01,18,81.85,0.08,81.93,report,1,Final\n2026-08-01,19,75.11,0.21,75.32,report,1,Final\n2026-08-01,20,69.20,-0.22,68.98,report,1,Final\n2026-08-01,21,61.23,1.22,62.45,report,1,Final\n2026-08-01,22,55.88,1.53,57.41,report,1,Final\n2026-08-01,23,41.90,2.10,44.00,report,1,Final\n2026-08-01,24,41.33,0.28,41.61,report,1,Final\n"
+ }
+}

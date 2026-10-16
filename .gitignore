@@ -27,6 +27,7 @@ Thumbs.db
 # Data (keep schema and exports, ignore large temp files)
 data/db/*.db
 !data/db/.gitkeep
+data/db/backups/
 data/exports/*.csv
 data/exports/*.xlsx
 !data/exports/.gitkeep

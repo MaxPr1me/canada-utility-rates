@@ -1031,3 +1031,22 @@ footer a:hover {
 @media (max-width: 768px) {
   #view-models .market-controls { align-items: stretch; }
 }
+
+/* Market Pricing: rolling model (batch 14) */
+#view-market .hidden { display: none; }
+#market-window { margin-top: 0.4rem; }
+.market-headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1.25rem; max-width: 900px; padding: 1rem 1.25rem; background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--color-primary); border-radius: var(--radius); }
+.market-headline-value { font-size: 2.25rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.market-headline-unit { margin-left: 0.3rem; font-size: 1rem; color: var(--color-text-secondary); }
+.market-headline-parts { font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.market-headline-desc { flex-basis: 100%; font-size: 0.85rem; color: var(--color-text-secondary); }
+.market-basis-note { max-width: 900px; margin-bottom: 0.75rem; padding: 0.6rem 0.8rem; border-left: 4px solid #b45309; border-radius: 4px; background: #fffbeb; color: #78350f; font-size: 0.85rem; }
+#market-table-container caption { caption-side: top; text-align: left; padding-bottom: 0.5rem; font-size: 0.8rem; color: var(--color-text-secondary); }
+#market-table-container tbody th { background: none; color: var(--color-text); font-size: inherit; font-weight: 600; text-transform: none; letter-spacing: normal; white-space: nowrap; }
+#market-table-container .market-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#market-table-container .market-source { font-size: 0.75rem; color: var(--color-text-secondary); }
+#market-table-container .market-row-change > * { border-bottom: 2px solid #111827; }
+.methodology-grid > span, .methodology-sources li { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 768px) {
+  .market-headline-value { font-size: 1.75rem; }
+}

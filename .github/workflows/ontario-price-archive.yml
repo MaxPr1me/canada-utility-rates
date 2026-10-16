@@ -8,8 +8,11 @@
 #   1. Installs Python and dependencies
 #   2. Adds new official IESO data to the archive (official reports only, no
 #      website API); the script fails closed and writes nothing on any doubt
-#   3. Commits the archive CSV if it changed
-#   4. Creates a GitHub Issue if the run fails
+#   3. Commits the archive CSV if it changed (before anything else can fail)
+#   4. Rebuilds the Ontario market history (site/data/market_pricing_ontario.json
+#      and data/market/ontario_market_monthly.csv; fails closed, writes nothing
+#      on failure) and commits those two files if they changed
+#   5. Creates a GitHub Issue if the run fails
 
 name: Ontario Price Archive
 
@@ -69,20 +72,49 @@ jobs:
             git push
           fi
 
+      - name: Build the Ontario market history
+        id: market
+        run: python scripts/build_ontario_market.py 2>&1 | tee market_output.txt
+
+      - name: Commit updated market history
+        id: market_commit
+        run: |
+          git add site/data/market_pricing_ontario.json data/market/ontario_market_monthly.csv
+          if git diff --staged --quiet; then
+            echo "No market history changes to commit."
+          else
+            git commit -m "data: Ontario market history update $(date +%Y-%m-%d)"
+            git pull --rebase origin main
+            git push
+          fi
+
       - name: Create issue on failure
         if: failure()
         uses: actions/github-script@v8
+        env:
+          MARKET_FAILED: ${{ steps.market.outcome == 'failure' || steps.market_commit.outcome == 'failure' }}
         with:
           script: |
             const fs = require('fs');
             const output = fs.existsSync('archive_output.txt')
               ? fs.readFileSync('archive_output.txt', 'utf8')
               : 'No archive output available.';
+            const marketOutput = fs.existsSync('market_output.txt')
+              ? fs.readFileSync('market_output.txt', 'utf8')
+              : 'No market history output available.';
+            const marketFailed = process.env.MARKET_FAILED === 'true';
+            const day = new Date().toISOString().split('T')[0];
+            const title = marketFailed
+              ? `Ontario market history update failed on ${day}`
+              : `Ontario Price archive failed on ${day}`;
+            const note = marketFailed
+              ? 'The archive itself was saved; only the market history files were not rebuilt or committed.'
+              : 'The IESO keeps its daily DA-OZP reports online for only about 90 days: fix this before the oldest missing days disappear.';
 
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Ontario Price archive failed on ${new Date().toISOString().split('T')[0]}`,
-              body: `## Archive Output\n\n\`\`\`\n${output.slice(-3000)}\n\`\`\`\n\nThe IESO keeps its daily DA-OZP reports online for only about 90 days: fix this before the oldest missing days disappear.\n\nThis issue was created automatically by the Ontario Price Archive workflow.`,
+              title,
+              body: `## Archive Output\n\n\`\`\`\n${output.slice(-3000)}\n\`\`\`\n\n## Market History Output\n\n\`\`\`\n${marketOutput.slice(-3000)}\n\`\`\`\n\n${note}\n\nThis issue was created automatically by the Ontario Price Archive workflow.`,
               labels: ['scrape-issue', 'automated'],
             });

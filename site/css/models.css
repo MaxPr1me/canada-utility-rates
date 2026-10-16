@@ -1,0 +1,26 @@
+/* Representative models: Phase 7E illustrative all-in estimate (synthetic load profile).
+   Loaded after style.css; the amber, dashed block must never look like the source-backed table. */
+
+.rm-illus-wrap { max-width: 900px; margin: 0.25rem 0 1rem; }
+.rm-illus-switch { display: inline-flex; align-items: flex-start; gap: 0.5rem; max-width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #f0c36d; border-radius: var(--radius); background: #fffbeb; color: #78350f; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+.rm-illus-switch input { flex: none; width: 1.05rem; height: 1.05rem; margin-top: 0.1rem; accent-color: #b45309; cursor: pointer; }
+.rm-illus-switch:has(input:focus-visible) { outline: 2px solid #b45309; outline-offset: 2px; }
+.rm-illus-hint { margin-top: 0.35rem; font-size: 0.8rem; color: var(--color-text-secondary); }
+
+.rm-illus { margin-top: 0.75rem; padding: 1rem; border: 3px dashed #b45309; border-radius: var(--radius); background: repeating-linear-gradient(135deg, #fffbeb 0 14px, #fef6dc 14px 28px); color: #422006; overflow-wrap: anywhere; }
+.rm-illus-warning { padding: 0.75rem 1rem; border-left: 6px solid #b45309; border-radius: 4px; background: #fef3c7; color: #78350f; font-size: 0.9rem; }
+.rm-illus-warning p + p { margin-top: 0.4rem; }
+.rm-illus-title { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; }
+.rm-illus-badge { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 4px; background: #b45309; color: #fff; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; }
+.rm-illus-label { font-size: 1rem; font-weight: 800; letter-spacing: 0.04em; }
+.rm-illus-fixed { font-weight: 700; }
+#models-notes .rm-illus h4 { margin: 1rem 0 0.25rem; font-size: 0.95rem; }
+.rm-illus-grid { max-width: none; }
+.rm-illus-grid .meta-label { color: #78350f; }
+.rm-illus-method { margin-top: 0.25rem; padding: 0.75rem; border-radius: var(--radius); background: rgba(255, 255, 255, 0.7); font-size: 0.85rem; line-height: 1.5; }
+
+@media (max-width: 640px) {
+  .rm-illus { padding: 0.75rem; }
+  .rm-illus-grid { grid-template-columns: minmax(0, 1fr); gap: 0 0; }
+  .rm-illus-grid .meta-label { margin-top: 0.5rem; }
+}
