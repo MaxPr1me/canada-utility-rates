@@ -11,7 +11,9 @@
 #   3. Commits the archive CSV if it changed (before anything else can fail)
 #   4. Rebuilds the Ontario market history (site/data/market_pricing_ontario.json
 #      and data/market/ontario_market_monthly.csv; fails closed, writes nothing
-#      on failure) and commits those two files if they changed
+#      on failure) and commits those two files if they changed. This also runs
+#      when step 2 fails: it only needs the IESO monthly table, the GA files and
+#      the archive already in the repository
 #   5. Creates a GitHub Issue if the run fails
 
 name: Ontario Price Archive
@@ -52,14 +54,17 @@ jobs:
           cache: "pip"
 
       - name: Install dependencies
+        id: install
         run: |
           pip install -r requirements.txt
           pip install -e .
 
       - name: Update the Ontario Price archive
+        id: archive
         run: python scripts/archive_ontario_price.py --no-site-api 2>&1 | tee archive_output.txt
 
       - name: Commit updated archive
+        id: archive_commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -72,13 +77,19 @@ jobs:
             git push
           fi
 
+      # Runs even when the archive step failed (the committed archive is used), but
+      # not after a failed install or a failed archive commit.
       - name: Build the Ontario market history
         id: market
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.archive_commit.outcome != 'failure' }}
         run: python scripts/build_ontario_market.py 2>&1 | tee market_output.txt
 
       - name: Commit updated market history
         id: market_commit
+        if: ${{ !cancelled() && steps.market.outcome == 'success' }}
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add site/data/market_pricing_ontario.json data/market/ontario_market_monthly.csv
           if git diff --staged --quiet; then
             echo "No market history changes to commit."
@@ -92,7 +103,9 @@ jobs:
         if: failure()
         uses: actions/github-script@v8
         env:
+          ARCHIVE_FAILED: ${{ steps.archive.outcome != 'success' || steps.archive_commit.outcome == 'failure' }}
           MARKET_FAILED: ${{ steps.market.outcome == 'failure' || steps.market_commit.outcome == 'failure' }}
+          MARKET_SAVED: ${{ steps.market_commit.outcome == 'success' }}
         with:
           script: |
             const fs = require('fs');
@@ -102,14 +115,26 @@ jobs:
             const marketOutput = fs.existsSync('market_output.txt')
               ? fs.readFileSync('market_output.txt', 'utf8')
               : 'No market history output available.';
+            const archiveFailed = process.env.ARCHIVE_FAILED === 'true';
             const marketFailed = process.env.MARKET_FAILED === 'true';
             const day = new Date().toISOString().split('T')[0];
-            const title = marketFailed
-              ? `Ontario market history update failed on ${day}`
-              : `Ontario Price archive failed on ${day}`;
-            const note = marketFailed
-              ? 'The archive itself was saved; only the market history files were not rebuilt or committed.'
-              : 'The IESO keeps its daily DA-OZP reports online for only about 90 days: fix this before the oldest missing days disappear.';
+            const title = archiveFailed && marketFailed
+              ? `Ontario Price archive and market history update failed on ${day}`
+              : marketFailed
+                ? `Ontario market history update failed on ${day}`
+                : `Ontario Price archive failed on ${day}`;
+            const notes = [];
+            if (archiveFailed) {
+              notes.push('The archive was not updated. The IESO keeps its daily DA-OZP reports online for only about 90 days: fix this before the oldest missing days disappear.');
+            } else {
+              notes.push('The archive itself was saved.');
+            }
+            if (marketFailed) {
+              notes.push('The market history files were not rebuilt or committed; the website keeps the previous version.');
+            } else if (process.env.MARKET_SAVED === 'true') {
+              notes.push('The market history was still rebuilt from the archive already in the repository.');
+            }
+            const note = notes.join(' ');
 
             await github.rest.issues.create({
               owner: context.repo.owner,

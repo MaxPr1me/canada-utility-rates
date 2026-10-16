@@ -23,14 +23,17 @@ thing that saves new data into the project's database; computers like yours keep
 copy. On October 15 a hand-started source health run passed and posted a public note with its
 totals: 909 live and 46 estimated records, no failures, and AESO the only utility with estimates
 only. The one missing live record (an EPCOR Energy Alberta page that had moved) was fixed on
-October 16. The new monthly-scrape steps (getting the database from GitHub, checking it, saving
-it with a dated backup, opening an issue when something fails, and publishing the website
-afterwards) have not run on GitHub yet. The project owner may start the monthly scrape by hand;
-otherwise it first runs on November 1. See "How the Monthly Updates Work" below and
+October 16, and the same day the project owner started the monthly scrape by hand. Its first try
+stopped at the tests and saved nothing (fixed the same day). The second run (scrape run 29) got
+the database from GitHub, checked it, stored 910 live and 46 estimated records, saved the
+database with its first dated backup, and the website was then published automatically. The
+Ontario Price archive, also started by hand on October 16, stopped safely and saved nothing
+because the IESO had published its 2026 LFDA file empty (see "The Ontario Price Archive opened
+an issue" below). See "How the Monthly Updates Work" below and
 [README.md](README.md).
-The latest export (October 9, batch 12) has 910 latest live tariffs and 480 estimates; stored
-history contains 916 live versions and 3,616 snapshots. No scrape was stored on October 15 or 16,
-so these counts did not change. Registry coverage is not the same as
+The latest export (October 16, scrape run 29 on GitHub) has 910 latest live tariffs and 480
+estimates; stored history contains 916 live versions and 4,572 snapshots. That scrape found no
+changed rates, so only the snapshot count grew (956 more, one per record). Registry coverage is not the same as
 live coverage. The active campaign covers 16 provincial utilities (243 latest live records) and,
 from October 7, the four territorial utilities (109 latest live records). All 20 have live output.
 All 47 active Ontario distributors are live (490 records); PUC Distribution was added on
@@ -178,7 +181,7 @@ shows them.
 | `.github/workflows/scrape.yml` | Monthly tests, scrape, validation and export on the 1st. Since October 16 the only writer of the database: it gets the database from the `data-history` release, checks it, and saves it back with a dated backup. |
 | `.github/workflows/deploy.yml` | Separate GitHub Pages deployment on push or manual dispatch. |
 | `.github/workflows/source-health.yml` | Non-blocking dry run on the 15th; uploads logs without publishing. |
-| `.github/workflows/ontario-price-archive.yml` | At 06:00 UTC on the 1st and 15th: saves the Ontario Price archive first, then rebuilds and saves the Ontario market history (Market Pricing page) in a second save; opens an issue if a check fails. |
+| `.github/workflows/ontario-price-archive.yml` | At 06:00 UTC on the 1st and 15th: saves the Ontario Price archive first, then rebuilds and saves the Ontario market history (Market Pricing page) in a second save, even when the archive step failed; opens an issue naming the part that failed. |
 | `scripts/check_db_history.py` | The Monthly Scrape's safety check: the database is not damaged, and nothing old was lost or changed. |
 | `scripts/pull_history_db.py` | Downloads the newest database from GitHub to your computer, checks it, and keeps your old copy. It never uploads anything. |
 | `scripts/build_ontario_market.py` | Builds the five-year Market Pricing history (runs inside the Ontario Price Archive workflow). |
@@ -295,17 +298,18 @@ and start Monthly Scrape (for everything, one utility or one province), or wait 
 Never upload a database by hand. **Careful:** deleting the `data-history` release on GitHub
 deletes the database and all its backups.
 
-**Known limitations:** only part of this has run on GitHub so far. **Deploy Site** has published
-the website after every push, and on October 15 a hand-started **Source Health** run (run #6)
-passed. Every scrape run posts a short public note on its GitHub run page with its totals (live,
-estimated and invalid records, and any utility that failed or returned only estimates); the full
-log still needs a GitHub sign-in. A failing command stops its step instead of being hidden by the
-copy written to the log. Never run yet: the new database steps (3, 7 and 8; the project owner
-created the release from the local database on October 15), the automatic failure issues (step
-10), Deploy Site starting by itself (step 9) and the Ontario Price Archive with its market history
-build. The first scheduled Monthly Scrape is November 1; the project owner may start one by hand
-earlier (see below). Check that first run before trusting those steps. GitHub Pages must use
-**GitHub Actions** as its source; the automatic trigger (`workflow_run`) only fires from the
+**Known limitations:** most of this has now run on GitHub. On October 16 the project owner started
+Monthly Scrape by hand. The first try (run #10) stopped at the tests and opened an issue by
+itself, as designed; nothing was saved. After the fix, run #11 did every step: it got the database
+and checked its fingerprint, stored scrape run 29, checked the history ("3,616 earlier snapshots
+unchanged"), saved `rates.db` and `rates-2026-10-16.db.gz` to the release, saved the website data,
+and **Deploy Site** then started by itself and published the website. Every scrape run posts a
+short public note on its GitHub run page with its totals (live, estimated and invalid records, and
+any utility that failed or returned only estimates) and the database check; the full log still
+needs a GitHub sign-in. A failing command stops its step instead of being hidden by the copy
+written to the log. Not yet seen on GitHub: a scheduled run (the first is November 1), the removal
+of old backups (there is only one so far) and the Ontario market history build. GitHub Pages must
+use **GitHub Actions** as its source; the automatic trigger (`workflow_run`) only fires from the
 default branch.
 
 **To run it early (not waiting for the 1st of the month):**
@@ -389,7 +393,7 @@ Example (October 15-16): EPCOR Energy Alberta moved its Rate of Last Resort page
 for homes in the FortisAlberta area answered "not found" (404). The scraper skipped that one
 record instead of guessing, so its October 9 version stayed the latest stored. On October 16 the
 new addresses went into the registry, the scraper and its test file, and a test run gave all 4
-records live again; the next Monthly Scrape saves them.
+records live again; the Monthly Scrape on GitHub stored them the same day (scrape run 29).
 
 ### The monthly automation fails
 
@@ -409,12 +413,16 @@ records live again; the next Monthly Scrape saves them.
 
 **What happened:** a month in the archive did not match the IESO's own monthly Ontario Price
 table, or an official IESO file could not be read. Nothing was written, so the archive is safe.
+The market history build still runs, using the archive already saved.
 
 **What to do (soon):** the IESO deletes each daily price file after about 90 days, so a problem
 left too long loses hours for good.
 1. Run `python scripts/archive_ontario_price.py --dry-run` on your computer; it names the month or
    file that failed and writes nothing.
-2. If the IESO changed its table or files, the script needs updating; if its website was down,
+2. If it says "the IESO published this file empty", nothing is wrong with the project: start the
+   workflow again a day or two later. This happened on October 16 with the 2026 LFDA file. (Project
+   owner decision, October 16: wait for the IESO rather than save prices without their LFDA.)
+3. If the IESO changed its table or files, the script needs updating; if its website was down,
    start the workflow again later.
 
 ### The database history check failed
@@ -434,9 +442,10 @@ than before, or an older snapshot changed.
 
 ### The Ontario market history update failed
 
-**What happened:** the Ontario Price Archive workflow opened an issue titled "Ontario market
-history update failed". The archive itself was saved; only the Market Pricing history was not
-rebuilt, so the website keeps the previous version. The build writes nothing when a number
+**What happened:** the Ontario Price Archive workflow opened an issue whose title names the
+market history ("Ontario market history update failed", or "Ontario Price archive and market
+history update failed" when both parts failed). The Market Pricing history was not rebuilt, so
+the website keeps the previous version. The build writes nothing when a number
 disagrees with the IESO's own tables or a file cannot be read.
 
 **What to do:**
@@ -550,7 +559,8 @@ enter the heatmap.
 - `site/data/market_pricing_ontario.json`: what the website reads (the 60 months and the heatmap).
 
 **How it is updated:** automatically. The **Ontario Price Archive** workflow (1st and 15th, 06:00
-UTC) first saves the archive, then runs `python scripts/build_ontario_market.py`. That script
+UTC) first saves the archive, then runs `python scripts/build_ontario_market.py` (also when the
+archive step failed: the build then uses the archive already saved). That script
 downloads only the IESO's monthly price table and Global Adjustment files (18 files), checks every
 number, and only then rewrites the files. If anything is missing or a check fails, it writes
 nothing and GitHub opens an issue (see "What to Do When Something Breaks"). You can run the same
@@ -680,7 +690,7 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 1,863 tests across 14 test modules, including `test_phase5_hardening` for
+There are 1,867 tests across 14 test modules, including `test_phase5_hardening` for
 provenance, storage and history, `test_ontario_price_archive` for the Ontario Price archive,
 `test_market_rolling` and `test_market_site` for the five-year market history and its page,
 `test_ci_history` for the database safety check and download script, `test_models_7c` for the

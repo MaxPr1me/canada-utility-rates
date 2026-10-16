@@ -335,6 +335,9 @@ def download_reports(source: ReportSource, files: dict[date, tuple[int, str]],
 
 def parse_lfda_csv(text: str, year: int, label: str) -> dict[tuple[date, int], tuple[Decimal | None, str]]:
     """{(date, hour ending): (LFDA in $/MWh, or None when published blank; status)} from a yearly LFDA report."""
+    if not text.lstrip("\ufeff").strip():
+        # Seen October 16, 2026: the IESO published the 2026 files with 0 bytes for hours.
+        raise MarketDataError(f"{label}: the IESO published this file empty; run again once it is republished")
     lines = list(csv.reader(io.StringIO(text.lstrip("\ufeff"))))
     header = [cell.strip() for cell in lines[0]] if lines else []
     if header != LFDA_HEADER:

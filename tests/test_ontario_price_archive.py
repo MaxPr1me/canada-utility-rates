@@ -435,6 +435,19 @@ def test_cli_failure_exits_1_and_leaves_the_existing_archive_untouched(tmp_path,
     assert "expected hours 1-24" in capsys.readouterr().err
 
 
+@pytest.mark.parametrize("empty", ["", "\ufeff", "\r\n\r\n"])
+def test_empty_lfda_file_fails_closed_with_a_clear_message(tmp_path, capsys, empty):
+    output = tmp_path / "archive.csv"
+    arguments = ["--output", str(output), "--no-site-api"]
+    assert aop.main(arguments, fetch=_fetch(_web()), run_date=RUN_DATE) == 0
+    before = output.read_bytes()
+
+    assert aop.main(arguments, fetch=_fetch(_web(lfda_2026=empty)), run_date=RUN_DATE) == 1
+
+    assert output.read_bytes() == before
+    assert "PUB_HourlyLFDA_2026_v1.csv: the IESO published this file empty" in capsys.readouterr().err
+
+
 @pytest.mark.parametrize("change, message", [
     (lambda lines: lines[:-1], "expected hours 1-24"),
     (lambda lines: [lines[0].replace("oemp", "price")] + lines[1:], "unexpected header"),

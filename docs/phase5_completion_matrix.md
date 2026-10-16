@@ -1,12 +1,12 @@
 # Phase 5 Completion Matrix
 
-**Updated:** 2026-10-16 (batch 14: EPCOR Energy Alberta's moved pages, CI as the only writer of the history database, the rolling five-year Ontario market history, Phase 7C for all ten provinces and the 7E illustrative estimate; no scrape stored, so the tariff counts below are batch 12's from October 9). Scope: all 87 registered utilities (8 Ontario entries
+**Updated:** 2026-10-16 (batch 14: EPCOR Energy Alberta's moved pages, CI as the only writer of the history database, the rolling five-year Ontario market history, Phase 7C for all ten provinces and the 7E illustrative estimate; the first Monthly Scrape on GitHub as the only database writer (scrape run 29) found no changed rates, so the tariff counts below are batch 12's from October 9). Scope: all 87 registered utilities (8 Ontario entries
 `merged`, 1 mis-registered Alberta gas entry `retired`), not every utility in the broader Canadian
 inventory. The export has 1,396 stored tariff versions / 14,179 components / **916 stored live
 versions / 480 seed**. Latest-per-name coverage is **910 live tariffs across 77 utilities** (490 at
 47 Ontario distributors, 28 Alberta electricity, 40 Ontario/Alberta gas); older versions remain in
-history. History: 3,616 snapshots (batch 12 runs 27 and 28 appended 563 and 40, prior snapshots
-unchanged). Every active registered utility has live output except AESO, a market reference.
+history. History: 4,572 snapshots (CI scrape run 29 appended 956 on October 16; the 3,616 earlier
+snapshots unchanged). Every active registered utility has live output except AESO, a market reference.
 Counts include retained non-building reference records, not only building tariffs.
 
 ## Active Regional Campaign (2026-10-09)
@@ -37,13 +37,14 @@ Phase 6A was done the same day (observed legacy HOEP 2020-2024 plus Class B Glob
 since October 16 the Market Pricing view shows the rolling 60-month history (legacy HOEP, then the
 Ontario Price, plus Class B GA), never copied into a tariff.
 
-**October 15 and 16 (no scrape stored; counts above unchanged):** October 15: CI fixes
+**October 15 and 16:** October 15: CI fixes
 (`1b10d9a`), the Ontario Price hourly archive and its workflow (`8561352`), the Representative
 Models tab (Phase 7F, Ontario) and an old-vs-new Ontario market comparison. October 16 (batch 14):
 Lane F (`a919684`: EPCOR Energy Alberta's moved Rate of Last Resort pages; dry run 4 live, 0 seed),
 CI as the only writer of the history database and the rolling five-year Ontario market history
-(`b070725`), and Phase 7C for all ten provinces plus the 7E illustrative sidecar (`49a0daa`);
-**1,863 passing tests across 14 modules**.
+(`b070725`), and Phase 7C for all ten provinces plus the 7E illustrative sidecar (`49a0daa`),
+exact float sums (`a89e436`), then the first stored CI scrape (run 29, below) and the archive
+workflow change; **1,867 passing tests across 14 modules**.
 
 **CI (October 16):** Deploy Site succeeds on every push. Workflow steps run under
 `bash -o pipefail`, runners are pinned to `ubuntu-24.04`, and every scrape run posts a public
@@ -69,28 +70,41 @@ fewer; earlier snapshots unchanged) before the upload; a dated gzip backup is up
 `rates.db` and backups are pruned to the newest 12; a public "Database history" notice is posted;
 a `province` dispatch input was added. Local copies are read-only mirrors
 (`python scripts/pull_history_db.py`); nobody stores scrapes locally or uploads by hand. Deleting
-the release would delete the database and all backups. Never exercised: this chain, automatic
-failure issues, Deploy Site starting after a successful Monthly Scrape (`workflow_run`) and the
-Ontario Price Archive workflow with its market history build. The owner may dispatch them;
-otherwise they first run on November 1.
+the release would delete the database and all backups. Monthly Scrape
+[run #11](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/38944665359) (dispatched
+on `a89e436`, October 16, 14 minutes) then passed every step: digest-checked restore, tests,
+scrape run 29 ("Live 910, seed 46, invalid 0; ... seed only: Alberta Electric System Operator";
+EPCOR Energy Alberta 4 live), "History verified, 3,616 earlier snapshots unchanged: tariff
+versions 1,396 (+0), snapshots 4,572 (+956), scrape runs 29 (+1)", upload of
+`rates-2026-10-16.db.gz` (3,716,941 bytes) and `rates.db` (60,391,424 bytes), bot commit
+`ac1b35e`, pruning (nothing to delete) and Deploy Site through `workflow_run`. The first Ontario
+Price Archive run (run 38948395749, dispatched October 16) failed closed and wrote nothing
+(issue #4): the IESO's `PUB_HourlyLFDA_2026.csv` and `_v1.csv` were empty (0 bytes, last modified
+13:21 GMT that day). User decisions (October 16): an empty or unreadable LFDA file keeps stopping
+the whole archive run (re-run once the IESO republishes it; the error now says "the IESO published
+this file empty"), and the market history build runs even when the archive step fails (a local
+market dry run that day passed with no changes). Never exercised: a scheduled run, pruning with
+more than 12 backups and the market history build in CI. Deploy Site follows only Monthly Scrape,
+and pushes made by a workflow start no other workflow, so a market update from the 15th reaches
+the site with the next deployment.
 
-The queue below follows the order agreed on October 16: the first CI runs, the Manitoba Hydro
-parser fix, three user decisions and the 7E analysis, then the remaining lanes (C, E, D), later
-phases and monitoring; the calendar after it lists dated checks.
+The queue below follows the order agreed on October 16: the Ontario Price Archive re-run, the
+Manitoba Hydro parser fix, three user decisions and the 7E analysis, then the remaining lanes
+(C, E, D), later phases and monitoring; the calendar after it lists dated checks.
 
 A successful scrape or one live residential class does not establish complete
 building coverage; counts include optional adjustments and reference records.
 
 | Priority | Utility queue | Next work |
 |---|---|---|
-| 1. First CI runs (owner) | Monthly Scrape as the only database writer (never run): digest-checked restore, `check_db_history.py` stats and verify, store (including the Lane F records), dated backup and `rates.db` upload, bot commit, Deploy Site through `workflow_run`; Ontario Price Archive with its market history build (never run) | The owner starts both from the Actions tab (otherwise November 1: archive 06:00 UTC, Monthly Scrape 08:00 UTC). Check through the public API: the release asset's update time, a new `rates-YYYY-MM-DD.db.gz` asset, the "Database history" notice, the bot commits and the Deploy Site run. Never upload a database by hand. See Next Batches item 1 |
+| 1. Ontario Price Archive re-run (owner) | Monthly Scrape as the only database writer passed on October 16 (run #11). The first Ontario Price Archive run failed closed because the IESO published its 2026 LFDA files empty (issue #4); its market history build has not run in CI yet | Once the LFDA file at `https://reports-public.ieso.ca/public/HourlyLFDA/` is non-empty again, the owner starts Ontario Price Archive from the Actions tab (otherwise November 1, 06:00 UTC) and closes issues #3 and #4. Check the archive and market commits through the public API. Open question: should Deploy Site also follow the archive workflow? See Next Batches item 1 |
 | 2. Manitoba Hydro block parser fix (7C blocker) | Stored commercial energy blocks are malformed: tier numbers 1 and 3, "Next 8,500 kWh" stored as a cumulative bound, single- and three-phase basic charge variants | Fix the parser and fixture so tiers are numbered 1..n with consistent bounds; then re-check the three not-computable Manitoba commercial models (small, 50-499 kW, 500-4,999 kW). The basic-charge variants also need decision 3b |
 | 3. Decisions (user) | (a) NB Power GS1 and Maritime Electric block thresholds are per "Billing Period", whose length is not stated (`block_periods.json` period `null`); (b) a reference customer for amperage/phase fixed-charge alternatives (Newfoundland Power 1.1, NL Hydro, Manitoba Hydro basic charges); (c) 30-day versus 30.4375-day months (Hydro-Quebec and Manitoba Hydro define a month as 30 days) | Until decided, these records stay not computable and the Newfoundland and Labrador residential model stays withheld; nothing is guessed |
 | 4. 7E further analysis | The illustrative synthetic-profile estimate for the Ontario 50-499 kW and 500-4,999 kW models | Compare with real commercial load profiles; test business-hours sensitivity; use an Ontario Price-era hourly shape once 12 archived months exist (August 2027 at the earliest); consider Class A and loss factors. Until then it stays hidden by default, labelled SYNTHETIC and out of medians and comparisons |
 | Lane C: Phase 6D market-indexed products | BC Hydro RS1892; FortisBC Electric RS38; NSPower one-part real-time pricing; NL Hydro monthly non-firm (5.1L, Island non-thermal) | Store each market-indexed price as a value-less "Variable" component (market reference and source URL, no number), like Ontario's Phase 6B market energy; new records need crosswalk rules |
 | Lane E: optional items (each after a yes/no decision) | DERS RoLR admin charge (schedule research); ENMAX D700 partial record (source-blocked); EPCOR Edmonton local access fee ($0.01388/kWh) as a conditional rider; Apex Utilities (Alberta gas distributor, not registered); Enbridge Rate 135; ATCO Gas ATA commodity and DERS gas admin charge; EPCOR Aylmer Rates 2/4/5 inclusion | Current handling is recorded in the Alberta Electricity and Natural Gas sections. Decided October 9: FortisAlberta Rate 65 and ATCO T31 stay live partial records (transmission is an AESO pass-through, noted) |
 | Lane D: Phase 6C | Alberta market: AESO pool price history | Research the official data source first; AESO stays a seed/market reference until then. The Alberta 50-499 kW and larger models stay *market energy pending* until 6C |
-| Done (October 15-16) | Lane B (7F site view, October 15); Lane F (EPCOR Energy Alberta's moved pages), CI as the only database writer, the Ontario market continuation (rolling 60-month history), Lane A (7C, all ten provinces) and the 7E illustrative sidecar (all October 16) | See Next Batches item 0 |
+| Done (October 15-16) | Lane B (7F site view, October 15); Lane F (EPCOR Energy Alberta's moved pages), CI as the only database writer (first stored run: Monthly Scrape #11, scrape run 29), the Ontario market continuation (rolling 60-month history), Lane A (7C, all ten provinces) and the 7E illustrative sidecar (all October 16) | See Next Batches item 0 |
 | Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones; the 7E synthetic profile (Monday-Friday hours beginning 7-18 EST). Phase 8: change threshold 2% (proposed) | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
 | Planned (after the lanes) | Phase 7D gas; the rest of 6E gas commodity cadence; Phase 8 model refresh automation (must ignore illustrative values); Phase 9 product follow-up incl. the Across-Canada comparison (never uses illustrative values) | See Next Batches items 7-10 |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11); re-transcribe when Appendix A changes |
@@ -100,10 +114,10 @@ building coverage; counts include optional adjustments and reference records.
 **Calendar:**
 
 - **October 15-16 (done):** scheduled Source Health run #5 and dispatched run #6 passed (October
-  15); batch 14 was pushed (October 16).
-- **November 1:** first scheduled Ontario Price Archive run with its market history build (06:00
-  UTC) and scheduled Monthly Scrape (08:00 UTC; the first exercise of the single-writer database
-  chain, failure issues and `workflow_run` deployment, unless the owner dispatches them earlier);
+  15); batch 14 was pushed and Monthly Scrape run #11 stored scrape run 29 (October 16); the first
+  Ontario Price Archive run failed closed on an empty IESO LFDA file (October 16).
+- **November 1:** scheduled Ontario Price Archive with its market history build (06:00 UTC) and the
+  first scheduled Monthly Scrape (08:00 UTC);
   new OEB RPP prices; the next OEB RPP Price Report may also update the Ontario TOU/ULO usage
   shares used by the models (update `data/models/usage_levels.json` by hand).
 - **November 15:** Ontario Price Archive (with the market history build) and Source Health.
@@ -390,7 +404,7 @@ expired rider is excluded by its date. kVA limits stay in eligibility text.
 | FortisAlberta | 5 / Oct 9 | Rates 11 Residential (existing identity kept), 41 Small General Service, 61 General Service, 63 Large General Service and 65 Transmission Connected from the newest in-effect Rates, Options and Riders PDF (October 1, 2026; link date must match the printed effective date). Transmission and distribution separate; kW/kVA demand pairs alternatives; Base Transmission Adjustment, Quarterly Transmission Adjustment and Balancing Pool Allocation riders dated; Options A/I conditional; municipal riders notes; Rate 65 transmission is the AESO tariff passed through (value-less) | Rate 65 stays a live partial record (user decision, October 9). Excluded: farm 21/22/23, irrigation 26, lighting 31/33/38, oil and gas 44/45, EV 62, opportunity 66, distributed generation (Option M), Rider E, REA charges. Old D10/D20/D30 seeds are no longer emitted when live |
 | Direct Energy Regulated Services | 2 / Oct 9 | Rate of Last Resort for the ATCO Electric area: residential and small business at 12.02 cents/kWh, fixed January 1, 2025 to December 31, 2026; UCA default-rates table required | Daily administration charge not emitted (website value undated; last dated schedule differs); decision open. Next term after December 31, 2026 |
 | ENMAX Energy Corporation | 2 / Oct 9 | Rate of Last Resort for the ENMAX Power area: D100/D200 at 12.06 cents/kWh plus daily administration charges from the Interim 2026 rate schedule (medium confidence); UCA table required | Municipally set RoLR areas (Red Deer, Cardston, Ponoka) and D300/D310/D410 not covered. Next term after December 31, 2026 |
-| EPCOR Energy Alberta | 4 / Oct 9 (dry run Oct 16) | Rate of Last Resort for the EPCOR Distribution and FortisAlberta areas: residential and small business (250,000 kWh/year limit) per area at 12.01 cents/kWh plus each area's administration charge from price schedules effective July 1, 2026; UCA table required | Pages moved (the FortisAlberta-area residential page returned 404 from October 15): fixed October 16 (Lane F) with the new `.../start-services/home/compare-electricity-rates/rate-of-last-resort.html` addresses in the registry, scraper and fixture; dry run 4 live, 0 seed; stored by the next CI Monthly Scrape. REA price schedule not covered. Next term after December 31, 2026 |
+| EPCOR Energy Alberta | 4 / Oct 9 (dry run Oct 16) | Rate of Last Resort for the EPCOR Distribution and FortisAlberta areas: residential and small business (250,000 kWh/year limit) per area at 12.01 cents/kWh plus each area's administration charge from price schedules effective July 1, 2026; UCA table required | Pages moved (the FortisAlberta-area residential page returned 404 from October 15): fixed October 16 (Lane F) with the new `.../start-services/home/compare-electricity-rates/rate-of-last-resort.html` addresses in the registry, scraper and fixture; dry run 4 live, 0 seed; stored by CI scrape run 29 (October 16). REA price schedule not covered. Next term after December 31, 2026 |
 | Alberta Electric System Operator | 0 | Seed/market reference | Dated official pool-price observations with published units and cadence (Phase 6C) |
 
 The Rate of Last Resort replaced the Regulated Rate Option on January 1, 2025. Prices are fixed
@@ -486,19 +500,21 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
    October 16 (batch 14): **Lane F** (`a919684`: EPCOR Energy Alberta's moved Rate of Last Resort
    pages; dry run 4 live, 0 seed), **CI as the only writer of the history database** and the
    **rolling five-year Ontario market history** (`b070725`), and **Lane A, Phase 7C** for all ten
-   provinces with the **7E illustrative sidecar** (`49a0daa`); 1,863 tests across 14 modules.
+   provinces with the **7E illustrative sidecar** (`49a0daa`); exact float sums (`a89e436`); the
+   first stored CI scrape (Monthly Scrape #11, scrape run 29); 1,867 tests across 14 modules.
 
 Items 1-6 follow the order agreed on October 16. Independent work may proceed in parallel; shared
 registry, crosswalk, database, export and documentation changes are integrated serially in this
 order.
 
-1. **First CI runs (owner).** Start Monthly Scrape by hand: its first run as the only writer of
-   the history database (digest-checked restore, `scripts/check_db_history.py` stats and verify,
-   store including the Lane F records, dated backup and `rates.db` upload, bot commit, Deploy Site
-   through `workflow_run` from `main`). Start Ontario Price Archive too (archive commit, then the
-   market history build and its commit). Otherwise both run on November 1. Verify every step
-   through the public API before trusting it. Pages source must be GitHub Actions; `workflow_run`
-   fires from the default branch. Never upload a database by hand; local copies come from
+1. **Ontario Price Archive re-run (owner).** Monthly Scrape passed every step on October 16
+   (run #11; see the CI paragraph above). The first Ontario Price Archive run failed closed because
+   the IESO published its 2026 LFDA files empty (issue #4). Once the file is non-empty again, start
+   Ontario Price Archive by hand (archive commit, then the market history build and its commit;
+   the build now also runs when the archive step fails); otherwise it runs on November 1. Verify
+   the commits through the public API and close issues #3 and #4. Open question for the owner:
+   should Deploy Site also follow the archive workflow, so the 15th's market update is published?
+   Never upload a database by hand; local copies come from
    `python scripts/pull_history_db.py`.
 2. **Manitoba Hydro block parser fix.** The stored commercial energy blocks are malformed (tier
    numbers 1 and 3; "Next 8,500 kWh" stored as a cumulative bound; single- and three-phase basic
@@ -568,7 +584,7 @@ live records also need crosswalk rules: after export,
     GitHub Actions rebuild models after the Monthly Scrape and publish only on considerable change
     (proposed: 2% or more at any usage level, or membership/structure/tax/method change), with a
     changelog and stale-input issues; illustrative values are never inputs. Depends on 7B/7C and
-    the first CI runs (item 1).
+    the first stored CI scrape (October 16; item 1 covers the archive re-run).
 10. **Phase 9: Product Follow-up** ([README](../README.md#phase-9-product-follow-up-planned)):
     historical charts and AI exports, calculator/API scoping, and the Across-Canada comparison
     view built on the Phase 7 models (it can start now that 7C is done; it never uses illustrative

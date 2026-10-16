@@ -513,6 +513,29 @@ def test_archive_workflow_commits_the_archive_before_building_the_market_history
     assert "'market_output.txt'" in issue and "'archive_output.txt'" in issue
 
 
+def test_archive_workflow_builds_the_market_history_even_when_the_archive_step_fails():
+    steps = _steps(ARCHIVE_WORKFLOW)
+    for name, step_id in (("Install dependencies", "install"), ("Update the Ontario Price archive", "archive"),
+                          ("Commit updated archive", "archive_commit")):
+        assert f"\n        id: {step_id}\n" in _step(steps, name)
+    assert "\n        if:" not in _step(steps, "Commit updated archive")
+    market = _step(steps, "Build the Ontario market history")
+    assert ("if: ${{ !cancelled() && steps.install.outcome == 'success' "
+            "&& steps.archive_commit.outcome != 'failure' }}") in market
+    market_commit = _step(steps, "Commit updated market history")
+    assert "if: ${{ !cancelled() && steps.market.outcome == 'success' }}" in market_commit
+    # The archive commit step (which also sets the git identity) is skipped when the archive fails.
+    assert _run(market_commit).index('git config user.name "github-actions[bot]"') < _run(market_commit).index(
+        "git commit")
+    issue = _step(steps, "Create issue on failure")
+    assert "if: failure()" in issue
+    assert ("ARCHIVE_FAILED: ${{ steps.archive.outcome != 'success' "
+            "|| steps.archive_commit.outcome == 'failure' }}") in issue
+    assert "`Ontario Price archive and market history update failed on ${day}`" in issue
+    assert "`Ontario market history update failed on ${day}`" in issue
+    assert "`Ontario Price archive failed on ${day}`" in issue
+
+
 def test_workflows_parse_as_yaml():
     yaml = pytest.importorskip("yaml")
     for workflow in (SCRAPE_WORKFLOW, ARCHIVE_WORKFLOW):
