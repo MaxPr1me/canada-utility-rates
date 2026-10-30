@@ -4,7 +4,8 @@
  "catalogue_review": {
   "retrieved": "2026-10-06",
   "rate_index": {
-   "url": "https://www.hydro.mb.ca/accounts_and_services/rates/",
+   "url": "https://www.hydro.mb.ca/account/rates/",
+   "url_note": "Moved: the captured address https://www.hydro.mb.ca/accounts_and_services/rates/ answers HTTP 301 to this page (checked 2026-10-30).",
    "schedule_url": "https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf",
    "excerpt": "Electric Rate Schedule - January 1, 2026"
   },
@@ -33,7 +34,8 @@
  },
  "pages": {
   "residential": {
-   "url": "https://www.hydro.mb.ca/accounts_and_services/rates/residential_rates/",
+   "url": "https://www.hydro.mb.ca/account/rates/residential/",
+   "url_note": "Moved: the captured address https://www.hydro.mb.ca/accounts_and_services/rates/residential_rates/ answers HTTP 301 to this page. Checked 2026-10-30: every line below still appears, in order, in the live page text (one line differs only in whitespace); values and the January 1, 2026 date unchanged.",
    "section": "Electricity (Rates effective January 1, 2026)",
    "lines": [
     "Rates effective January 1, 2026",
@@ -68,7 +70,8 @@
    ]
   },
   "commercial": {
-   "url": "https://www.hydro.mb.ca/accounts_and_services/rates/commercial_rates/",
+   "url": "https://www.hydro.mb.ca/account/rates/commercial/",
+   "url_note": "Moved: the captured address https://www.hydro.mb.ca/accounts_and_services/rates/commercial_rates/ answers HTTP 301 to this page. Checked 2026-10-30: every line below still appears, in order, in the live page text; values and the January 1, 2026 date unchanged.",
    "section": "Electricity (Rates effective January 1, 2026): general service and diesel",
    "lines": [
     "Rates effective January 1, 2026",

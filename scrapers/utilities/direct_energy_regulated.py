@@ -29,6 +29,7 @@ from datetime import date
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
+from scrapers.utilities.aeso import REPORT_URL
 from scrapers.utils.alberta_rolr import (
     DATE_PATTERN,
     UCA_DEFAULT_RATES_URL,
@@ -45,10 +46,9 @@ from scrapers.utils.alberta_rolr import (
 
 logger = logging.getLogger(__name__)
 
-AESO_MARKET_URL = (
-    "https://www.aeso.ca/market/market-and-system-reporting/"
-    "hourly-pool-price-report/"
-)
+# Pool price citation of the RRO seed records. The old aeso.ca hourly-pool-price-report page answered HTTP 404 on
+# 2026-10-30, so cite the ETS Historical Pool Price report that scrapers.utilities.aeso verifies each run.
+AESO_MARKET_URL = REPORT_URL
 
 RESIDENTIAL_URL = "https://www.directenergy.ca/en/regulated/residential-electricity-rates"
 COMMERCIAL_URL = "https://www.directenergy.ca/en/regulated/commercial-electricity-rates"

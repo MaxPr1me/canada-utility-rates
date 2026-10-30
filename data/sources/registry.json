@@ -526,13 +526,13 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/residential_rates/",
+          "url": "https://www.hydro.mb.ca/account/rates/residential/",
           "source_type": "html",
           "description": "Residential electricity rates including basic charge and energy charge",
           "is_primary": true
         },
         {
-          "url": "https://www.hydro.mb.ca/accounts_and_services/rates/commercial_rates/",
+          "url": "https://www.hydro.mb.ca/account/rates/commercial/",
           "source_type": "html",
           "description": "Commercial and industrial electricity rates",
           "is_primary": false
@@ -544,7 +544,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Manitoba Hydro is a Crown corporation providing electricity in Manitoba. Electricity rates are among the lowest in Canada due to abundant hydroelectric generation. Regulated by the Manitoba Public Utilities Board (PUB). Twelve live January 2026 building records: residential standard, seasonal and diesel (basic charge also published for service over 200 A), plus general service small/medium/large/seasonal and diesel general service and diesel government/First Nation education. Large general-service voltage tiers cover building-related industrial service. Batch 10 adds six Limited Use of Billing Demand options 2026-50 to 2026-55 from the approved schedule as conditional alternatives that replace standard General Service charges (18 live); a schedule failure keeps the page classes and vice versa. Curtailable and surplus-energy programs publish no complete dated price; the net-billing credit lacks a published start date; standard service charges are not in the approved schedule and the $150 reconnection fee is undated. A failed residential or commercial page no longer discards the other page's live classes. Lighting is excluded."
+      "notes": "Manitoba Hydro is a Crown corporation providing electricity in Manitoba. Electricity rates are among the lowest in Canada due to abundant hydroelectric generation. Regulated by the Manitoba Public Utilities Board (PUB). Twelve live January 2026 building records: residential standard, seasonal and diesel (basic charge also published for service over 200 A), plus general service small/medium/large/seasonal and diesel general service and diesel government/First Nation education. Large general-service voltage tiers cover building-related industrial service. Batch 10 adds six Limited Use of Billing Demand options 2026-50 to 2026-55 from the approved schedule as conditional alternatives that replace standard General Service charges (18 live); a schedule failure keeps the page classes and vice versa. Curtailable and surplus-energy programs publish no complete dated price; the net-billing credit lacks a published start date; standard service charges are not in the approved schedule and the $150 reconnection fee is undated. A failed residential or commercial page no longer discards the other page's live classes. Lighting is excluded. The rate pages moved to /account/rates/residential/ and /account/rates/commercial/: the old /accounts_and_services/rates/residential_rates/ and commercial_rates/ addresses answer HTTP 301 (checked 2026-10-30, same page text)."
     },
     {
       "name": "SaskPower",

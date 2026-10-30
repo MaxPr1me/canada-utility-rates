@@ -6,8 +6,8 @@ Manitoba benefits from abundant hydroelectric generation, resulting in some
 of the lowest electricity rates in Canada.
 
 Official sources:
-  Residential: https://www.hydro.mb.ca/accounts_and_services/rates/residential_rates/
-  Commercial:  https://www.hydro.mb.ca/accounts_and_services/rates/commercial_rates/
+  Residential: https://www.hydro.mb.ca/account/rates/residential/
+  Commercial:  https://www.hydro.mb.ca/account/rates/commercial/
   Schedule:    https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf (LUBD options)
 
 Regulated by: Public Utilities Board of Manitoba (PUB Manitoba)
@@ -27,8 +27,10 @@ from scrapers.utils.change_detection import compare_to_seed, log_change_alerts, 
 logger = logging.getLogger(__name__)
 
 # ── URLs ──────────────────────────────────────────────────────────
-RESIDENTIAL_URL = "https://www.hydro.mb.ca/accounts_and_services/rates/residential_rates/"
-COMMERCIAL_URL = "https://www.hydro.mb.ca/accounts_and_services/rates/commercial_rates/"
+# The old /accounts_and_services/rates/residential_rates/ and .../commercial_rates/ addresses answer HTTP 301 to these
+# pages (checked 2026-10-30; same page text). Centra Gas reads its gas tables from the same two pages.
+RESIDENTIAL_URL = "https://www.hydro.mb.ca/account/rates/residential/"
+COMMERCIAL_URL = "https://www.hydro.mb.ca/account/rates/commercial/"
 SCHEDULE_URL = "https://www.hydro.mb.ca/docs/billing/electricity-rate-schedule.pdf"
 
 # ── Seed / fallback data (updated to January 1, 2026 published rates) ──

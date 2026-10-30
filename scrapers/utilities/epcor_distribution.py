@@ -71,6 +71,8 @@ SEED_LARGE_COMMERCIAL = {
 DISCOVERY_URL = (
     "https://www.epcor.com/ca/en/ab/edmonton/account/rates/special-fees-charges/electricity-tariffs.html"
 )
+# AESO's "Market and System Reporting" index, which links the ETS pool price reports; it answered HTTP 200 on
+# 2026-10-30, so it stays the operating reserve citation (only its hourly-pool-price-report child page is 404).
 AESO_POOL_PRICE_URL = "https://www.aeso.ca/market/market-and-system-reporting/"
 _DOCUMENTS = "https://www.epcor.com/content/dam/epcor/documents/rates/"
 
