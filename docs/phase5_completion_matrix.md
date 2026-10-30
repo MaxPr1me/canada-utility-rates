@@ -508,13 +508,24 @@ is complete. Scope: the 78 active registered utilities (not every Canadian utili
 output for main building classes with every exclusion, source-blocked and deferred item written
 down; AESO (6C) and the four 6D products must be done first; representative-model gaps do not
 block. `python scripts/coverage_gate.py` is the measure, reading `data/sources/coverage_ledger.json`
-(workstream 0, done October 30; baseline 16 of 78 pass). Remaining workstreams, in order: (1)
-class-level audits and ledger entries for the 58 unaudited utilities (47 Ontario distributors, 7
-Alberta utilities, 3 gas, AESO), including Ontario rejected classes such as Oakville GS<50; (2)
+(workstream 0 done October 30; workstream 1 done the same day: all 78 active utilities have a ledger
+audit, baseline 66 of 78 pass). Workstream 1 evidence: a dry run of all 47 Ontario distributors
+(date set to 2026-11-01, see the calendar note below) gave 490 live records equal to the stored
+export with one real class gap, Oakville GS<50 (its approved tariff prints the LRAM rider as
+$/kW on an energy-billed class; decision needed), and Algoma's by-design absent GS classes; dry
+runs of the ten Alberta and gas utilities matched the class inventories above. Remaining
+workstreams, in order: (2)
 Manitoba Hydro block parser; (3) Phase 6D, four products; (4) Phase 6C, AESO; (5) Lane E yes/no
-items, each declined one becoming a dated exclusion; (6) re-verification after the November 1
+items and the Oakville decision, each declined one becoming a dated exclusion; (6) re-verification after the November 1
 scheduled scrape, the November 15 runs and the December 31 Rate of Last Resort term end (the gate
 warns 30 days before records expire); (7) the README flip and a documentation review.
+
+**Calendar note (found October 30):** the OEB RPP page already lists prices effective November 1,
+2026, and the Ontario parser rejects an RPP page dated in the future. Until November 1 a scrape
+builds no Residential or GS<50 records for any Ontario distributor (the stored versions stay the
+latest; nothing is lost). Do not start a Monthly Scrape for Ontario before November 1; the
+scheduled November 1 run (08:00 UTC) is unaffected. The November 1 TOU/ULO share update in
+`data/models/usage_levels.json` is still manual.
 
 Items 1-6 follow the order agreed on October 16. Independent work may proceed in parallel; shared
 registry, crosswalk, database, export and documentation changes are integrated serially in this

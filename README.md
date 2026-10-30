@@ -27,8 +27,8 @@ Scope decided October 30 (user): "complete" means the 78 active registered utili
 output for their main building classes, with every exclusion, source-blocked item and deferred item
 written down, and with AESO and the four market-indexed products (Phases 6C and 6D) done first.
 `python scripts/coverage_gate.py` checks this against `data/sources/coverage_ledger.json`; the
-README line changes only when it passes (baseline October 30: 16 of 78 pass; AESO has no live
-output, 58 utilities have no ledger audit yet, 4 deferred items are open). The Monthly Scrape
+README line changes only when it passes (baseline October 30: 66 of 78 pass; AESO has no live
+output and 12 deferred or undecided items are open). The Monthly Scrape
 reports the result in a public notice and never blocks on it.
 The tariff export was regenerated on **2026-10-09** after batch 12 (scrape run 27: Alberta electricity
 plus all 47 Ontario distributors re-stored with PUC Distribution and Phase 6B; scrape run 28:
@@ -57,7 +57,7 @@ unverified fallback records remain estimates regardless of the export date.
 | Historical snapshots | **4,572**; CI scrape run 29 (October 16) appended 956 without changing the 3,616 earlier snapshots |
 | DB validation | **0 errors, 2 existing AESO warnings** |
 | Representative models | **55** across the ten provinces (October 16, method 7C-2): 16 modeled, 20 single-source, 6 *market energy pending*, 13 not computable; comparison indicators, never live coverage |
-| Deterministic tests | **1,882 passing** (1,867 on October 16 plus 15 coverage-gate tests) across 15 modules |
+| Deterministic tests | **1,885 passing** (1,867 on October 16 plus 18 coverage-gate tests) across 15 modules |
 
 Live output currently includes BC Hydro (17), FortisBC Electric (11), Manitoba Hydro (18), NB Power (10),
 Nova Scotia Power (18), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
@@ -346,7 +346,7 @@ canada-utility-costs/
 │   ├── coverage_gate.py           ← Live-rate coverage gate: live output, audit ledger, deferred and monitored items (Monthly Scrape reports it)
 │   └── pull_history_db.py         ← Downloads the CI history database into a read-only local mirror
 │
-├── tests/                    ← 1,882 deterministic tests across 15 test modules
+├── tests/                    ← 1,885 deterministic tests across 15 test modules
 │   ├── fixtures/             ← Source-derived fixtures and frozen export samples; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation

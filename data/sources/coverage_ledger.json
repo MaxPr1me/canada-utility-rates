@@ -1,6 +1,16 @@
 {
   "_description": "Audit ledger behind scripts/coverage_gate.py. One entry per active registry utility: when its published classes were last audited (class-level reconciliation), what is deliberately excluded, what is blocked by the source, what is deferred (an open item that fails the gate) and what is monitored (with a review_by date). Items quote the maintained tables in docs/phase5_completion_matrix.md. An entry never changes a rate: the registry and scrapers decide what is live.",
   "schema_version": 1,
+  "groups": {
+    "ontario_electricity": {
+      "audit": {
+        "date": "2026-10-30",
+        "basis": "Dry run of all 47 active Ontario distributors with the date set to 2026-11-01 (the OEB RPP page already lists prices effective 2026-11-01 and the parser rejects a future date), simulating the scheduled November 1 scrape: 490 live records, equal to the stored export, no errors. Every in-scope class in an approved tariff either yields a live record or is a recorded parser rejection (fail-closed). Rejections: Oakville GS<50 and Algoma's by-design absent GS classes. The only non-live record per distributor is the labelled street-lighting estimate (an excluded class); GrandBridge and Enova have none.",
+        "source": "docs/phase5_completion_matrix.md, Ontario Registry Inventory; docs/live_parser_gap_report.md, Ontario Distributors"
+      },
+      "excluded": ["Street lighting (labelled seed estimate)", "Unmetered scattered load", "Embedded distributor", "microFIT", "Standby"]
+    }
+  },
   "utilities": {
     "BC Hydro": {
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
@@ -107,6 +117,113 @@
       "excluded": ["Streetlights", "standby"],
       "source_blocked": ["Government/municipal commercial base charges", "fuel rider"],
       "monitor": [{"item": "Final 2025/26 GRA instruction (rates are interim, medium confidence)", "review_by": "2026-11-30"}]
-    }
+    },
+    "ENMAX Power": {
+      "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 5 live records (D100, D200, D300, D310, D410), equal to the batch 12 class inventory; exclusions and open decisions listed here", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
+      "excluded": ["D500 streetlights", "D600 distributed generation"],
+      "source_blocked": ["D700 transmission-connected (only a service charge is printed; transmission is an ISO cost flow-through)"],
+      "deferred": ["D700 live partial record: yes/no decision (Lane E)"]
+    },
+    "ATCO Electric": {
+      "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 5 live records (D11, D13, D21, D31, T31), equal to the batch 12 class inventory; rows reconcile to each printed TOTAL PRICE", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
+      "excluded": ["D22", "D23", "D24/D34", "D25/D26", "D32", "D33/T33", "D41/D44", "D51/D52/D56", "D61/D63"],
+      "source_blocked": ["T31 transmission is an AESO tariff flow-through, noted without a component (live partial record, user decision October 9)"]
+    },
+    "EPCOR Distribution": {
+      "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 5 live records (DAS-R, DAS-SC, DAS-MC, DAS-TOU, DAS-TOUP) at medium confidence (2026 interim rates), equal to the batch 12 class inventory", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
+      "excluded": ["CS/CST (closed, customer-specific)", "DC (AESO flow-through)", "DGEN", "lighting"],
+      "deferred": ["Edmonton local access fee ($0.01388/kWh) as a conditional rider: yes/no decision (Lane E)"],
+      "monitor": [{"item": "Final 2026 rates after the interim approval", "review_by": "2026-11-30"}]
+    },
+    "FortisAlberta": {
+      "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 5 live records (Rates 11, 41, 61, 63, 65), equal to the batch 12 class inventory", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
+      "excluded": ["Farm 21/22/23", "irrigation 26", "lighting 31/33/38", "oil and gas 44/45", "EV 62", "opportunity 66", "distributed generation (Option M)", "Rider E", "REA charges"],
+      "source_blocked": ["Rate 65 transmission is the AESO tariff passed through, value-less (live partial record, user decision October 9)"]
+    },
+    "Direct Energy Regulated Services": {
+      "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 2 live Rate of Last Resort records (residential, small business) at 12.02 cents/kWh, fixed to 2026-12-31 and matched to the UCA table", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
+      "deferred": ["Daily administration charge (website value undated; last dated schedule differs): yes/no decision (Lane E)"],
+      "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}]
+    },
+    "ENMAX Energy Corporation": {
+      "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 2 live Rate of Last Resort records (D100, D200) with daily administration charges, matched to the UCA table", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
+      "excluded": ["D300/D310/D410 (not covered)"],
+      "source_blocked": ["Municipally set Rate of Last Resort areas (Red Deer, Cardston, Ponoka) not covered"],
+      "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}]
+    },
+    "EPCOR Energy Alberta": {
+      "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 4 live Rate of Last Resort records (residential and small business for the EPCOR Distribution and FortisAlberta areas), matched to the UCA table", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
+      "source_blocked": ["REA price schedule not covered"],
+      "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}]
+    },
+    "Alberta Electric System Operator": {
+      "audit": {"date": "2026-10-30", "basis": "AESO publishes no customer tariff; it is a market reference and has no live output today (seed estimate only)", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
+      "deferred": ["Phase 6C: dated official pool-price observations as live market-reference output (what counts as AESO live output is still to be decided)"]
+    },
+    "ATCO Gas": {
+      "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 10 live records (North and South Low, Mid, High, Ultra High Use and ATA), equal to the batch 12 class inventory", "source": "docs/phase5_completion_matrix.md, Natural Gas"},
+      "excluded": ["Irrigation", "producer receipt", "unmetered gas lights"],
+      "deferred": ["ATA commodity and DERS gas admin charge: yes/no decision (Lane E)"]
+    },
+    "Enbridge Gas": {
+      "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 20 live records (EGD, Union North and Union South rate zones), equal to the batch 12 class inventory", "source": "docs/phase5_completion_matrix.md, Natural Gas"},
+      "excluded": ["EGD 125/200/300/315/316/320/401 and Union M7/M9/T1-T3 (storage, transport-only, unbundled and wholesale service)"],
+      "deferred": ["Rate 135 inclusion: yes/no decision (Lane E)"]
+    },
+    "EPCOR Natural Gas (Ontario)": {
+      "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 10 live records (Aylmer Rates 1-5, Southern Bruce Rates 1, 6, 11), equal to the batch 12 class inventory; no seed", "source": "docs/phase5_completion_matrix.md, Natural Gas"},
+      "excluded": ["Aylmer Rate 6 (single ethanol facility)", "Southern Bruce Rate 16 (direct purchase; rider basis unclear)"],
+      "deferred": ["Aylmer Rates 2/4/5 inclusion review: yes/no decision (Lane E)"]
+    },
+    "Alectra Utilities": {"group": "ontario_electricity"},
+    "Algoma Power Inc.": {"group": "ontario_electricity", "excluded": ["No General Service < 50 kW or demand-billed GS class is published (R2 is a delivery-only residential demand record)"]},
+    "Atikokan Hydro Inc.": {"group": "ontario_electricity"},
+    "Bluewater Power Distribution": {"group": "ontario_electricity"},
+    "GrandBridge Energy Inc.": {"group": "ontario_electricity"},
+    "Burlington Hydro Inc.": {"group": "ontario_electricity"},
+    "Canadian Niagara Power Inc.": {"group": "ontario_electricity"},
+    "Centre Wellington Hydro Ltd.": {"group": "ontario_electricity"},
+    "Elexicon Energy Inc.": {"group": "ontario_electricity"},
+    "Entegrus Powerlines Inc.": {"group": "ontario_electricity"},
+    "Enwin Utilities Ltd.": {"group": "ontario_electricity", "excluded": ["Dedicated Transformer Station class"]},
+    "Erie Thames Powerlines Corp.": {"group": "ontario_electricity"},
+    "Essex Powerlines Corp.": {"group": "ontario_electricity"},
+    "Festival Hydro Inc.": {"group": "ontario_electricity"},
+    "Fort Frances Power Corp.": {"group": "ontario_electricity"},
+    "Greater Sudbury Hydro Inc.": {"group": "ontario_electricity"},
+    "Grimsby Power Inc.": {"group": "ontario_electricity"},
+    "Halton Hills Hydro Inc.": {"group": "ontario_electricity"},
+    "Hearst Power Distribution Co. Ltd.": {"group": "ontario_electricity"},
+    "Hydro 2000 Inc.": {"group": "ontario_electricity"},
+    "Hydro Hawkesbury Inc.": {"group": "ontario_electricity"},
+    "Hydro One Networks Inc.": {"group": "ontario_electricity", "excluded": ["ST outside the >500 kW load path", "R2 Distribution Rate Protection cap (not modelled)"]},
+    "Hydro Ottawa Ltd.": {"group": "ontario_electricity"},
+    "Innpower Corporation": {"group": "ontario_electricity"},
+    "Kingston Hydro Corporation": {"group": "ontario_electricity"},
+    "Enova Power Corp.": {"group": "ontario_electricity"},
+    "Lakefront Utilities Inc.": {"group": "ontario_electricity"},
+    "Lakeland Power Distribution Ltd.": {"group": "ontario_electricity"},
+    "London Hydro Inc.": {"group": "ontario_electricity", "excluded": ["Co-generation class"]},
+    "Milton Hydro Distribution Inc.": {"group": "ontario_electricity"},
+    "Newmarket-Tay Power Distribution Ltd.": {"group": "ontario_electricity"},
+    "Niagara Peninsula Energy Inc.": {"group": "ontario_electricity"},
+    "North Bay Hydro Distribution Ltd.": {"group": "ontario_electricity"},
+    "Northern Ontario Wires Inc.": {"group": "ontario_electricity"},
+    "Oakville Hydro Electricity Distribution Inc.": {
+      "group": "ontario_electricity",
+      "deferred": ["GS<50 rejected: the approved tariff prints its Prospective LRAM rider as $/kW 0.0010 on an energy-billed class (probably a unit misprint). Decision needed: keep it rejected as source-blocked, or accept it with a note"]
+    },
+    "Orangeville Hydro Limited": {"group": "ontario_electricity"},
+    "Oshawa PUC Networks Inc.": {"group": "ontario_electricity"},
+    "Ottawa River Power Corporation": {"group": "ontario_electricity"},
+    "PUC Distribution Inc.": {"group": "ontario_electricity", "notes": "The approved tariff prints no Retail Transmission Connection Service Rate (user decision October 9); each record carries a note."},
+    "Rideau St. Lawrence Distribution Inc.": {"group": "ontario_electricity"},
+    "Sioux Lookout Hydro Inc.": {"group": "ontario_electricity"},
+    "Synergy North Corporation": {"group": "ontario_electricity"},
+    "Tillsonburg Hydro Inc.": {"group": "ontario_electricity"},
+    "Toronto Hydro-Electric System Ltd.": {"group": "ontario_electricity"},
+    "Wasaga Distribution Inc.": {"group": "ontario_electricity"},
+    "Welland Hydro-Electric System Corp.": {"group": "ontario_electricity"},
+    "Westario Power Inc.": {"group": "ontario_electricity"}
   }
 }

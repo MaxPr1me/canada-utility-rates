@@ -180,8 +180,43 @@ def test_the_committed_ledger_is_well_formed_and_only_names_active_registry_util
     assert gate.validate_ledger(ledger) == []
     active = {u["name"] for u in gate.active_utilities(registry)}
     assert set(ledger["utilities"]) <= active
-    for name, entry in ledger["utilities"].items():
-        assert entry["audit"]["date"] <= "2026-10-30", name
+    for name in ledger["utilities"]:
+        assert gate.resolve_entry(ledger, name)["audit"]["date"] <= "2026-10-30", name
+
+
+def test_committed_ledger_covers_every_active_utility_with_a_dated_audit():
+    ledger = json.loads((ROOT / "data" / "sources" / "coverage_ledger.json").read_text(encoding="utf-8"))
+    registry = json.loads((ROOT / "data" / "sources" / "registry.json").read_text(encoding="utf-8"))
+    for utility in gate.active_utilities(registry):
+        entry = gate.resolve_entry(ledger, utility["name"])
+        assert entry is not None and isinstance(entry.get("audit"), dict), utility["name"]
+
+
+def test_groups_give_entries_an_audit_and_standard_exclusions():
+    ledger = {"schema_version": 1,
+              "groups": {"g": {"audit": AUDIT, "excluded": ["lighting"], "deferred": ["group item"]}},
+              "utilities": {"A": {"group": "g", "excluded": ["standby"], "deferred": ["own item"]},
+                            "B": {"group": "g", "audit": {**AUDIT, "date": "2026-10-20"}}}}
+    assert gate.validate_ledger(ledger) == []
+    a = gate.resolve_entry(ledger, "A")
+    assert a["audit"] == AUDIT and a["excluded"] == ["lighting", "standby"]
+    assert a["deferred"] == ["group item", "own item"]
+    assert gate.resolve_entry(ledger, "B")["audit"]["date"] == "2026-10-20"
+    assert gate.resolve_entry(ledger, "missing") is None
+    result = gate.evaluate(_registry(("A", "active"), ("B", "active")), [_live("A"), _live("B")], ledger, AS_OF)
+    assert result["audited_utilities"] == 2 and result["errors"] == {"deferred_open": 3}
+
+
+def test_group_problems_are_reported():
+    bad = {"schema_version": 1, "groups": {"g": {"excluded": [""], "stored_name": "x"}},
+           "utilities": {"A": {"group": "nope"}, "B": {"group": "g"}, "C": {}}}
+    problems = gate.validate_ledger(bad)
+    assert any("group g:" in p and "'excluded'" in p for p in problems)
+    assert any("group g:" in p and "unknown key 'stored_name'" in p for p in problems)
+    assert any(p.startswith("A:") and "unknown group 'nope'" in p for p in problems)
+    assert any(p.startswith("B:") and "'audit' object is required" in p for p in problems)
+    assert any(p.startswith("C:") and "'audit' object is required" in p for p in problems)
+    assert gate.validate_ledger({"schema_version": 1, "groups": [], "utilities": {}}) == ["'groups' must be an object"]
 
 
 def test_scrape_workflow_runs_the_gate_in_report_only_mode_without_blocking_the_save():

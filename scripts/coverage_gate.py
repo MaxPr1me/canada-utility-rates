@@ -41,7 +41,8 @@ SCHEMA_VERSION = 1
 DEFAULT_MAX_AGE_DAYS = 120
 DEFAULT_WARN_DAYS = 30
 LIST_KEYS = ("excluded", "source_blocked", "deferred")
-ENTRY_KEYS = {"audit", "monitor", "notes", "stored_name", *LIST_KEYS}
+ENTRY_KEYS = {"audit", "monitor", "notes", "stored_name", "group", *LIST_KEYS}
+GROUP_KEYS = {"audit", "monitor", "notes", *LIST_KEYS}
 ERROR_ORDER = ("no_live_output", "no_audit", "stale_audit", "deferred_open", "monitor_overdue",
                "ledger_orphan", "ledger_invalid")
 
@@ -88,47 +89,87 @@ def validate_ledger(ledger: dict) -> list[str]:
     problems: list[str] = []
     if ledger.get("schema_version") != SCHEMA_VERSION:
         problems.append(f"schema_version must be {SCHEMA_VERSION}")
+    groups = ledger.get("groups", {})
+    if not isinstance(groups, dict):
+        problems.append("'groups' must be an object")
+        groups = {}
+    for gname, group in groups.items():
+        _validate_block(problems, f"group {gname}:", group, GROUP_KEYS, require_audit=False)
     utilities = ledger.get("utilities")
     if not isinstance(utilities, dict):
         return problems + ["'utilities' must be an object keyed by registry name"]
     for name, entry in utilities.items():
         where = f"{name}:"
-        if not isinstance(entry, dict):
-            problems.append(f"{where} entry must be an object")
-            continue
-        for key in sorted(set(entry) - ENTRY_KEYS):
-            problems.append(f"{where} unknown key {key!r}")
-        audit = entry.get("audit")
-        if not isinstance(audit, dict):
-            problems.append(f"{where} 'audit' object is required")
-        else:
-            for key in ("date", "basis", "source"):
-                if not isinstance(audit.get(key), str) or not audit[key].strip():
-                    problems.append(f"{where} audit.{key} must be a non-empty string")
-            if isinstance(audit.get("date"), str):
-                try:
-                    _parse_date(audit["date"], f"{where} audit.date")
-                except ValueError as exc:
-                    problems.append(str(exc))
-        for key in LIST_KEYS:
-            items = entry.get(key, [])
-            if not isinstance(items, list) or not all(isinstance(i, str) and i.strip() for i in items):
-                problems.append(f"{where} '{key}' must be a list of non-empty strings")
-        if "stored_name" in entry and (not isinstance(entry["stored_name"], str) or not entry["stored_name"].strip()):
-            problems.append(f"{where} 'stored_name' must be a non-empty string")
-        monitor = entry.get("monitor", [])
-        if not isinstance(monitor, list):
-            problems.append(f"{where} 'monitor' must be a list")
-            continue
-        for item in monitor:
-            if not isinstance(item, dict) or not isinstance(item.get("item"), str) or not item["item"].strip():
-                problems.append(f"{where} each monitor entry needs an 'item' string")
-                continue
+        if isinstance(entry, dict) and "group" in entry and entry["group"] not in groups:
+            problems.append(f"{where} unknown group {entry['group']!r}")
+        own_audit = isinstance(entry, dict) and "audit" in entry
+        group_audit = isinstance(entry, dict) and "audit" in groups.get(entry.get("group"), {})
+        _validate_block(problems, where, entry, ENTRY_KEYS, require_audit=own_audit or not group_audit)
+    return problems
+
+
+def _validate_block(problems: list[str], where: str, block, allowed: set, require_audit: bool) -> None:
+    """Validate one ledger entry or group; an entry without its own audit must inherit one from its group."""
+    if not isinstance(block, dict):
+        problems.append(f"{where} entry must be an object")
+        return
+    for key in sorted(set(block) - allowed):
+        problems.append(f"{where} unknown key {key!r}")
+    audit = block.get("audit")
+    if audit is None and not require_audit:
+        pass
+    elif not isinstance(audit, dict):
+        problems.append(f"{where} 'audit' object is required")
+    else:
+        for key in ("date", "basis", "source"):
+            if not isinstance(audit.get(key), str) or not audit[key].strip():
+                problems.append(f"{where} audit.{key} must be a non-empty string")
+        if isinstance(audit.get("date"), str):
             try:
-                _parse_date(item.get("review_by"), f"{where} monitor review_by")
+                _parse_date(audit["date"], f"{where} audit.date")
             except ValueError as exc:
                 problems.append(str(exc))
-    return problems
+    for key in LIST_KEYS:
+        items = block.get(key, [])
+        if not isinstance(items, list) or not all(isinstance(i, str) and i.strip() for i in items):
+            problems.append(f"{where} '{key}' must be a list of non-empty strings")
+    if "stored_name" in block and (not isinstance(block["stored_name"], str) or not block["stored_name"].strip()):
+        problems.append(f"{where} 'stored_name' must be a non-empty string")
+    monitor = block.get("monitor", [])
+    if not isinstance(monitor, list):
+        problems.append(f"{where} 'monitor' must be a list")
+        return
+    for item in monitor:
+        if not isinstance(item, dict) or not isinstance(item.get("item"), str) or not item["item"].strip():
+            problems.append(f"{where} each monitor entry needs an 'item' string")
+            continue
+        try:
+            _parse_date(item.get("review_by"), f"{where} monitor review_by")
+        except ValueError as exc:
+            problems.append(str(exc))
+
+
+def resolve_entry(ledger: dict, name: str):
+    """The ledger entry for a utility with its group's audit and lists folded in (None when absent).
+
+    The entry's own audit wins over the group's; excluded, source_blocked, deferred and monitor lists are the
+    group's followed by the entry's.
+    """
+    entry = ledger.get("utilities", {}).get(name)
+    if not isinstance(entry, dict):
+        return None
+    group = ledger.get("groups", {}).get(entry.get("group"))
+    if not isinstance(group, dict):
+        return entry
+    merged = dict(entry)
+    if "audit" not in merged and "audit" in group:
+        merged["audit"] = group["audit"]
+    for key in (*LIST_KEYS, "monitor"):
+        combined = [*group.get(key, []), *entry.get(key, [])] if all(
+            isinstance(x, list) for x in (group.get(key, []), entry.get(key, []))) else entry.get(key, [])
+        if combined:
+            merged[key] = combined
+    return merged
 
 
 def evaluate(registry: dict, rates: list[dict], ledger: dict, as_of: date,
@@ -143,11 +184,13 @@ def evaluate(registry: dict, rates: list[dict], ledger: dict, as_of: date,
     problems = validate_ledger(ledger)
     for problem in problems:
         global_findings.append({"level": "error", "code": "ledger_invalid", "message": problem})
-    entries = ledger.get("utilities", {}) if not problems or isinstance(ledger.get("utilities"), dict) else {}
+    raw_entries = ledger.get("utilities", {}) if isinstance(ledger.get("utilities"), dict) else {}
+    entries = {n: resolve_entry(ledger, n) for n in raw_entries if isinstance(raw_entries[n], dict)}
+    entries = {n: e for n, e in entries.items() if e is not None}
 
     active = active_utilities(registry)
     active_names = {u["name"] for u in active}
-    for name in sorted(set(entries) - active_names):
+    for name in sorted(set(raw_entries) - active_names):
         global_findings.append({"level": "error", "code": "ledger_orphan",
                                 "message": f"{name}: ledger entry for a utility that is not an active registry entry"})
 
@@ -213,7 +256,7 @@ def evaluate(registry: dict, rates: list[dict], ledger: dict, as_of: date,
         "live_utilities": sum(1 for u in active if live_by_utility.get(
             entries[u["name"]].get("stored_name", u["name"]) if isinstance(entries.get(u["name"]), dict)
             else u["name"])),
-        "audited_utilities": sum(1 for u in active if isinstance(entries.get(u["name"]), dict)),
+        "audited_utilities": sum(1 for u in active if isinstance((entries.get(u["name"]) or {}).get("audit"), dict)),
         "errors": dict(errors),
         "warnings": dict(warnings),
         "passed": not errors,

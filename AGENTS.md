@@ -184,7 +184,7 @@ shows them.
 | `.github/workflows/ontario-price-archive.yml` | At 06:00 UTC on the 1st and 15th: saves the Ontario Price archive first, then rebuilds and saves the Ontario market history (Market Pricing page) in a second save, even when the archive step failed; opens an issue naming the part that failed. |
 | `scripts/check_db_history.py` | The Monthly Scrape's safety check: the database is not damaged, and nothing old was lost or changed. |
 | `scripts/coverage_gate.py` | The "is coverage complete?" check (added October 30). For every active registered utility it asks: is there a live record in effect today, is there a recent dated audit in `data/sources/coverage_ledger.json`, and is anything still deferred or overdue for review? It prints what is missing. The Monthly Scrape runs it and posts a public "Coverage gate" note; it never stops the save. The README may say coverage is complete only when it passes. |
-| `data/sources/coverage_ledger.json` | The audit ledger the gate reads: one entry per utility with its audit date, exclusions, source-blocked items, deferred items (these fail the gate) and monitored items with a review date. It records decisions; it never changes a rate. The 20 utilities audited in batch 11 are in it; the other 58 are the backlog. |
+| `data/sources/coverage_ledger.json` | The audit ledger the gate reads: one entry per utility with its audit date, exclusions, source-blocked items, deferred items (these fail the gate) and monitored items with a review date. It records decisions; it never changes a rate. All 78 active utilities have an entry (the 47 Ontario distributors share one group with the standard Ontario exclusions); entries with something still undecided list it under "deferred", which keeps the gate failing until it is resolved. |
 | `scripts/pull_history_db.py` | Downloads the newest database from GitHub to your computer, checks it, and keeps your old copy. It never uploads anything. |
 | `scripts/build_ontario_market.py` | Builds the five-year Market Pricing history (runs inside the Ontario Price Archive workflow). |
 
@@ -693,7 +693,7 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 1,882 tests across 15 test modules (1,867 on October 16 plus 15 in `test_coverage_gate` for the coverage gate), including `test_phase5_hardening` for
+There are 1,885 tests across 15 test modules (1,867 on October 16 plus 18 in `test_coverage_gate` for the coverage gate), including `test_phase5_hardening` for
 provenance, storage and history, `test_ontario_price_archive` for the Ontario Price archive,
 `test_market_rolling` and `test_market_site` for the five-year market history and its page,
 `test_ci_history` for the database safety check and download script, `test_models_7c` for the
