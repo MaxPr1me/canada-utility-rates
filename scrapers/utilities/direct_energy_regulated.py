@@ -80,6 +80,7 @@ _SENTENCE = re.compile(
 
 SEED_RESIDENTIAL = {
     "effective_date": "2024-10-01",
+    # page removed (checked 2026-10-30); no archived copy shows these values
     "source_url": "https://www.directenergyregulatedservices.com/",
     "energy_rate": 0.1762,       # $/kWh -- typical monthly RRO rate
     "admin_fee_monthly": 5.95,   # $/month
@@ -87,6 +88,7 @@ SEED_RESIDENTIAL = {
 
 SEED_COMMERCIAL = {
     "effective_date": "2024-10-01",
+    # page removed (checked 2026-10-30); no archived copy shows these values
     "source_url": "https://www.directenergyregulatedservices.com/",
     "energy_rate": 0.1762,       # $/kWh -- same energy rate as residential
     "admin_fee_monthly": 7.95,   # $/month

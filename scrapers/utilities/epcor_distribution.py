@@ -44,6 +44,7 @@ from scrapers.utils.parsing import DocumentPage, extract_pdf_pages, parse_html
 logger = logging.getLogger(__name__)
 
 # Seed data for EPCOR Distribution rates.
+# Seed citation: page removed (checked 2026-10-30); no archived copy shows these values.
 SOURCE_URL = "https://www.epcor.com/products-services/power/rates-tariffs/Pages/default.aspx"
 EFFECTIVE_DATE = "2024-04-01"
 

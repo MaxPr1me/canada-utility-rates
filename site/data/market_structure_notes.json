@@ -44,7 +44,7 @@
       "pricing_components": {
         "pool_price": {
           "description": "Real-time wholesale price set hourly by AESO based on merit-order dispatch. Volatile — can spike during high demand or supply shortfalls.",
-          "source_url": "https://www.aeso.ca/market/market-and-system-reporting/current-supply-demand-report/"
+          "source_url": "http://ets.aeso.ca/ets_web/ip/Market/Reports/HistoricalPoolPriceReportServlet"
         },
         "RRO": {
           "full_name": "Regulated Rate Option",

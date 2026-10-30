@@ -61,6 +61,7 @@ logger = logging.getLogger(__name__)
 # 2026-10-30, so cite the ETS Historical Pool Price report that scrapers.utilities.aeso verifies each run.
 AESO_MARKET_URL = REPORT_URL
 
+# RRO seed citation: page removed (checked 2026-10-30); no archived copy shows these values.
 SOURCE_URL = (
     "https://www.epcor.com/products-services/power/rates-tariffs/"
     "Pages/regulated-rate-option.aspx"
