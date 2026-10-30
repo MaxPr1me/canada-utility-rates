@@ -21,11 +21,12 @@ Official source:
 from __future__ import annotations
 
 import copy
+import json
 import logging
 import re
 from datetime import date
-from typing import Optional
-from urllib.parse import urljoin
+from typing import Any, Iterator, Optional
+from urllib.parse import urljoin, urlsplit
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
 from scrapers.utils.parsing import (
@@ -61,10 +62,18 @@ RESIDENTIAL_SECTIONS = (
 # Joint YECL/YEC rate-schedule book (text PDF) published by ATCO Electric Yukon; it carries the
 # minimum bills, availability and general-service terms that Yukon Energy's own PDFs show only as images.
 JOINT_RATES_PAGE_URL = "https://www.atcoelectricyukon.com/en-ca/services-rates/understanding-rates.html"
+# AEM model JSON of that page; it carries the current book link as a relative href (checked 2026-10-30).
+JOINT_RATES_MODEL_URL = "https://www.atcoelectricyukon.com/en-ca/services-rates/understanding-rates.model.json"
+# Last known link, used only when neither the model JSON nor the page names a usable book.
 JOINT_SCHEDULE_URL = (
     "https://www.atcoelectricyukon.com/content/dam/aey-website/en-ca/assets/services-rates/"
     "yecl-yec-rate-schedules-10-2026.pdf"
 )
+_JOINT_BOOK_HOST = "www.atcoelectricyukon.com"
+_JOINT_BOOK_PATH = "/content/dam/aey-website/"
+# Monthly editions are named by month and year (yecl-yec-rate-schedules-10-2026.pdf = October 2026).
+_JOINT_BOOK_FILE = re.compile(r"yecl-yec-rate-schedules-(0[1-9]|1[0-2])-(\d{4})\.pdf", re.I)
+_PDF_LINK = re.compile(r"(?<![^\s\"'<>=])[^\s\"'<>=]+\.pdf\b", re.I)
 
 GENERAL_SERVICE_SCHEDULES = {
     "2160": ("Hydro, Non-Government", "hydro non-government"),
@@ -82,6 +91,35 @@ GENERAL_SERVICE_SCHEDULES = {
 }
 
 _KWH = r"\s?[^\d\s$]{1,2}/kW\.h"
+
+
+def _strings(node: Any) -> Iterator[str]:
+    """Yield every string value of a parsed JSON document."""
+    if isinstance(node, dict):
+        for value in node.values():
+            yield from _strings(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from _strings(value)
+    elif isinstance(node, str):
+        yield node
+
+
+def joint_schedule_editions(model: Any, base_url: str = JOINT_RATES_MODEL_URL) -> dict[str, str]:
+    """Return {absolute link: "YYYY-MM" edition} for joint-book PDFs named anywhere in the model JSON.
+
+    Only https links on www.atcoelectricyukon.com under /content/dam/aey-website/ whose file name is
+    yecl-yec-rate-schedules-MM-YYYY.pdf count; every other link is ignored.
+    """
+    editions: dict[str, str] = {}
+    for text in _strings(model):
+        for match in _PDF_LINK.finditer(text):
+            parts = urlsplit(urljoin(base_url, match.group(0)))
+            name = _JOINT_BOOK_FILE.fullmatch(parts.path.rsplit("/", 1)[-1])
+            if (name and parts.scheme == "https" and parts.netloc == _JOINT_BOOK_HOST
+                    and parts.path.startswith(_JOINT_BOOK_PATH)):
+                editions[parts.geturl()] = f"{name.group(2)}-{name.group(1)}"
+    return editions
 
 
 def parse_joint_schedules(pages: list[DocumentPage], today: str) -> dict[str, dict]:
@@ -237,18 +275,43 @@ class YukonEnergyScraper(BaseScraper):
             self.logger.exception("Error during Yukon Energy live scrape")
             return None
 
-    def _joint_schedule(self) -> Optional[tuple[str, list[DocumentPage]]]:
-        """Fetch the joint YECL/YEC rate-schedule book; None if unavailable or not the expected document."""
-        url = JOINT_SCHEDULE_URL
+    def _discover_joint_schedule(self) -> Optional[str]:
+        """Return the newest model-JSON book link not later than the current UTC month; None if unreadable or ambiguous."""
         try:
-            # The ATCO page is a JS shell that never settles for the shared networkidle renderer; static links only.
-            html = self.fetch_page(JOINT_RATES_PAGE_URL)
-            links = {urljoin(JOINT_RATES_PAGE_URL, a["href"]) for a in parse_html(html or "").find_all("a", href=True)
-                     if re.search(r"rate-schedules[^/]*\.pdf$", a["href"], re.I)}
-            if len(links) == 1:
-                url = links.pop()
+            editions = joint_schedule_editions(json.loads(self.fetch_page(JOINT_RATES_MODEL_URL)))
         except Exception as exc:
-            self.logger.info("Joint rate page link discovery failed (%s); using %s", exc, url)
+            self.logger.warning("ATCO Electric Yukon rates page model unavailable (%s): %s", JOINT_RATES_MODEL_URL, exc)
+            return None
+        month = self.now_iso()[:7]
+        for url in sorted(url for url, edition in editions.items() if edition > month):
+            self.logger.info("Joint YECL/YEC rate schedules %s are a future edition; ignored", url)
+        current = {url: edition for url, edition in editions.items() if edition <= month}
+        latest = max(current.values(), default=None)
+        newest = [url for url, edition in current.items() if edition == latest]
+        if len(newest) != 1:
+            self.logger.warning("No single current joint YECL/YEC rate schedules link in the rates page model (%d found)",
+                                len(newest))
+            return None
+        return newest[0]
+
+    def _joint_schedule(self) -> Optional[tuple[str, list[DocumentPage]]]:
+        """Fetch the joint YECL/YEC rate-schedule book; None if unavailable or not the expected document.
+
+        The link comes from the rates page model JSON, else a static page link, else the last known link.
+        """
+        url, origin = self._discover_joint_schedule(), "rates page model"
+        if not url:
+            url, origin = JOINT_SCHEDULE_URL, "last known link"
+            try:
+                # The ATCO page is a JS shell that never settles for the shared networkidle renderer; static links only.
+                html = self.fetch_page(JOINT_RATES_PAGE_URL)
+                links = {urljoin(JOINT_RATES_PAGE_URL, a["href"]) for a in parse_html(html or "").find_all("a", href=True)
+                         if re.search(r"rate-schedules[^/]*\.pdf$", a["href"], re.I)}
+                if len(links) == 1:
+                    url, origin = links.pop(), "rates page link"
+            except Exception as exc:
+                self.logger.info("Joint rate page link discovery failed (%s); using %s", exc, url)
+        self.logger.info("Joint YECL/YEC rate schedules (%s): %s", origin, url)
         try:
             pages = extract_pdf_pages(self.fetch_bytes(url))
         except Exception as exc:

@@ -1,0 +1,27 @@
+{
+  "source_url": "https://www.atcoelectricyukon.com/en-ca/services-rates/understanding-rates.model.json",
+  "landing_url": "https://www.atcoelectricyukon.com/en-ca/services-rates/understanding-rates.html",
+  "retrieved_on": "2026-10-30",
+  "description": "ATCO Electric Yukon Understanding Rates page AEM model JSON (82,179 bytes, Last-Modified 2026-10-30), pruned to the Current Rates & Rebates table of the Approved Rate Schedules, Riders, and Terms and Conditions section; original JSON paths kept, the node's textWithId and dataLayer copies of the same table omitted. The joint YECL/YEC book is the relative link to yecl-yec-rate-schedules-10-2026.pdf (October 2026 edition; HEAD 200 application/pdf, 562,553 bytes, Last-Modified 2026-10-01); the other four PDFs on the same path are not the book.",
+  "model_excerpt": {
+    ":items": {
+      "root": {
+        ":items": {
+          "responsivegrid": {
+            ":items": {
+              "section_tab_copy_cop": {
+                "title": "Approved Rate Schedules, Riders, and Terms and Conditions",
+                ":items": {
+                  "richtext_copy_414764424": {
+                    "title": "Current Rates & Rebates",
+                    "text": "<table cellpadding=\"1\" cellspacing=\"0\" border=\"1\"> \n <tbody>\n  <tr>\n   <th scope=\"col\">Name</th> \n   <th scope=\"col\">Description</th> \n   <th scope=\"col\">Effective</th> \n   <th scope=\"col\">View Document</th> \n  </tr>\n  <tr>\n   <td>YECL/YEC Rate Schedules</td> \n   <td>Standard electricity rates across Yukon for residential and commercial customers.</td> \n   <td>October 1, 2026</td> \n   <td><a rel=\"noopener noreferrer\" href=\"/content/dam/aey-website/en-ca/assets/services-rates/yecl-yec-rate-schedules-10-2026.pdf\" target=\"_blank\">YECL/YEC Rate Schedules</a></td> \n  </tr>\n  <tr>\n   <td>Secondary Sales Rates</td> \n   <td>Secondary energy sales rates.</td> \n   <td>July 1, 2026</td> \n   <td><a rel=\"noopener noreferrer\" href=\"/content/dam/aey-website/en-ca/assets/services-rates/secondary-sales-rate-july-1-2026.pdf\" target=\"_blank\">Secondary Sales Rates</a></td> \n  </tr>\n  <tr>\n   <td>Wholesale Secondary Rates</td> \n   <td>Wholesale secondary rates.</td> \n   <td>October 1, 2025</td> \n   <td><a rel=\"noopener noreferrer\" href=\"/content/dam/aey-website/en-ca/assets/services-rates/aey-yec-wholesale-rates.pdf\" target=\"_blank\">Wholesale Secondary Rates</a></td> \n  </tr>\n  <tr>\n   <td>Affordability Rate Relief Rebate</td> \n   <td>Government-funded rebate reducing electricity costs for residential customers.</td> \n   <td>October 1, 2026</td> \n   <td><a rel=\"noopener noreferrer\" href=\"/content/dam/aey-website/en-ca/assets/services-rates/aey-yec-affordability-rate-relief.pdf\" target=\"_blank\" style=\"background-color: rgb(255, 255, 255);\">Affordability Rate Relief Rebate</a></td> \n  </tr>\n  <tr>\n   <td>Winter Electricial Affordability Rebate</td> \n   <td>Government-funded rebate reducing winter electricity costs for residential customers.</td> \n   <td>April 1, 2026</td> \n   <td><a rel=\"noopener noreferrer\" href=\"/content/dam/aey-website/en-ca/assets/services-rates/aey-yec-winter-electrical-affordability-rebate.pdf\" target=\"_blank\">Winter Electrical Affordability Rebate</a></td> \n  </tr>\n </tbody>\n</table>"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
