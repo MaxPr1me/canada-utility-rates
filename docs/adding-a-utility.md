@@ -214,15 +214,17 @@ not modelled:
   wins, so put a utility-specific rule before its province's generic (`*`) rules and before the
   territory rules.
 - After exporting, run `python -m pipeline.representative_models --coverage` (it reads
-  `site/data/rates.json`); it must report 0 unmapped. Since October 16 (Phase 7C, method 7C-2) the
+  `site/data/rates.json`); it must report 0 unmapped. Since October 16 (Phase 7C; method 7C-3 since October 30) the
   models cover all ten provinces, so a new record in a modelled province can change a median:
   check `python -m pipeline.representative_models --build` (a summary; add `--output PATH` to
   write the JSON elsewhere) for the affected province.
 - **Block periods:** an energy block threshold printed in kWh without a period ("first 5,000 kWh")
   needs a reviewed entry in `data/models/block_periods.json` that quotes the tariff and records
-  its `threshold_period` (for example `month` or `two_months`). When the tariff never states the
-  period, record `null`: the record stays not computable (NB Power GS1, Maritime Electric). Never
-  assume a period.
+  its `threshold_period` (for example `month` or `two_months`). When neither the tariff nor the
+  utility's billing terms state the period, record `null`: the record stays not computable
+  (Maritime Electric's seasonal options). Since October 30 "per Billing Period" counts as per month
+  only where the utility's own billing pages confirm monthly billing (NB Power GS1, Maritime
+  Electric; user decision). Never assume a period.
 - **Alberta pairs:** the crosswalk's `pairs` section pairs each Alberta wires class with the Rate
   of Last Resort record for its area; each pair counts as one utility and the Rate of Last Resort
   applies only below 250,000 kWh a year. A new Alberta wires class needs a pairing (otherwise it
@@ -232,7 +234,11 @@ not modelled:
   a listed utility is not computable there, instead of showing the others alone (Newfoundland
   Power for the Newfoundland and Labrador residential model).
 - **Units:** only disclosed conversions are used ($/day x 30.4375; FortisBC $/two months / 2;
-  per-day energy blocks x 30.4375; kVA = kW / 0.9). Amperage/phase fixed-charge alternatives and
+  per-day energy blocks x 30.4375; kVA = kW / 0.9). Fixed charges published per phase or service
+  size are never summed: a `usage_levels.json` `fixed_charge_variants` rule prices exactly one
+  version per level (homes single-phase 200 A; under 50 kW single phase at 10 kW and three phase
+  at 25 kW), so name the variants as printed, e.g. "Basic Charge (Single Phase)". Unmatched
+  variants and
   any other unit needing an assumed conversion leave the record not computable, with the reason
   listed. A market-priced energy charge makes the model *market energy pending*; the 7E
   illustrative (synthetic-profile) estimate is never an input to medians, change detection or
@@ -255,7 +261,7 @@ not modelled:
 - **Preserve class boundaries** — a broken PDF or missing row must not mark an incomplete class live or downgrade an independent complete class. Never blanket-stamp returned mixed live/seed records.
 - **Preserve units** — kVA is not kW, and daily, monthly, seasonal and volume-tier charges must not be silently converted. Keep eligibility text when the schema has no matching unit-specific threshold field.
 - **Preserve billing multipliers** — for bulk-metered buildings, a daily charge or tier allowance can apply per approved dwelling/room multiplier, not per account. Retain units such as `$/multiplier/day` and `kWh/day/multiplier`, occupancy conditions and billing-period proration. Distinguish a default multiplier of one from a grandfathered exception; an exception does not close the whole tariff to new customers. Do not turn a variable demand allowance into a fixed threshold or add minimum bills as extra charges. Conditional voltage bands are alternatives, not cumulative rebates.
-- **Keep source configuration aligned** — update registry links and any URL constants the scraper actually fetches. When a page dies or moves, also add the old address to the denylist in `tests/test_source_urls.py` with the check date and HTTP status (and the replacement), so it cannot come back in a scraper constant or the registry.
+- **Keep source configuration aligned** — update registry links and any URL constants the scraper actually fetches. When a page dies or moves, also add the old address to the denylist in `tests/test_source_urls.py` with the check date and HTTP status (and the replacement), so it cannot come back in a scraper constant, the registry, the inventory or the market notes. A dead address that must stay (a seed citation whose page is gone and has no archived copy showing its values) goes into `KEPT_DEAD` in the same file, with the reason.
 - **Keep component periods and alternatives explicit** — a combined tariff starts when all required components apply; retain each component's own date. Phase/amperage alternatives must not look cumulative. A separately published optional adjustment needs its base-plan applicability and must not look like a complete energy price. Missing required evidence (including current carbon applicability) rejects live output, rather than silently omitting the charge.
 - **Validate authoritative exceptions** — do not substitute familiar TOU weekend rules for the printed schedule. Visually inspect unusual PDF wording or ambiguous columns, retain any explicit conditional/alternative basis, and test it. If full-document extraction stalls, select the needed sheets from reliable printed headings/footers before detailed extraction; do not replace source values with constants.
 
