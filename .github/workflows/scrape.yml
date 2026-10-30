@@ -168,6 +168,10 @@ jobs:
                   raise SystemExit(f"Refusing to publish empty {name}")
           PY
 
+      - name: Report live-rate coverage gate
+        continue-on-error: true
+        run: python scripts/coverage_gate.py --report-only 2>&1 | tee coverage_gate_output.txt
+
       - name: Check database history before upload
         id: verify
         env:

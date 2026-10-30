@@ -183,6 +183,8 @@ shows them.
 | `.github/workflows/source-health.yml` | Non-blocking dry run on the 15th; uploads logs without publishing. |
 | `.github/workflows/ontario-price-archive.yml` | At 06:00 UTC on the 1st and 15th: saves the Ontario Price archive first, then rebuilds and saves the Ontario market history (Market Pricing page) in a second save, even when the archive step failed; opens an issue naming the part that failed. |
 | `scripts/check_db_history.py` | The Monthly Scrape's safety check: the database is not damaged, and nothing old was lost or changed. |
+| `scripts/coverage_gate.py` | The "is coverage complete?" check (added October 30). For every active registered utility it asks: is there a live record in effect today, is there a recent dated audit in `data/sources/coverage_ledger.json`, and is anything still deferred or overdue for review? It prints what is missing. The Monthly Scrape runs it and posts a public "Coverage gate" note; it never stops the save. The README may say coverage is complete only when it passes. |
+| `data/sources/coverage_ledger.json` | The audit ledger the gate reads: one entry per utility with its audit date, exclusions, source-blocked items, deferred items (these fail the gate) and monitored items with a review date. It records decisions; it never changes a rate. The 20 utilities audited in batch 11 are in it; the other 58 are the backlog. |
 | `scripts/pull_history_db.py` | Downloads the newest database from GitHub to your computer, checks it, and keeps your old copy. It never uploads anything. |
 | `scripts/build_ontario_market.py` | Builds the five-year Market Pricing history (runs inside the Ontario Price Archive workflow). |
 
@@ -659,6 +661,7 @@ When choosing which URL to use for a utility, prefer:
 | **Illustrative estimate** | A number shown only to give a rough idea, not to be relied on. The Representative Models page has one for Ontario's two larger business sizes: their delivery charges plus market energy priced with the synthetic load profile (about 10.6-10.8 cents/kWh). It stays hidden until you tick "Show illustrative all-in estimate (synthetic load profile)", carries a warning and a SYNTHETIC badge, and is never used in medians, comparisons or change checks. It is representative only: not a forecast, a quote or a bill, and it needs further analysis. |
 | **Rolling window** | A period that moves forward as time passes. The Market Pricing page always shows the latest 60 complete months; when a new month is complete, the oldest one leaves the page (it stays in the monthly history file). |
 | **Release (`data-history`)** | A storage place on GitHub for files that belong to the project but are too big to keep with the code. The project's database (`rates.db`) and its dated backups live in the `data-history` release. Deleting the release deletes them all. |
+| **Coverage gate** | `scripts/coverage_gate.py`: the check that decides whether "nationwide live-rate coverage is complete" may be claimed. It reads `data/sources/coverage_ledger.json` (the audit ledger) and fails while any active utility has no live record, no recent audit, an open deferred item or an overdue review. A utility's name in the ledger is its registry name; `stored_name` covers the two whose stored name differs (Énergir is stored as "Energir", Liberty Utilities NB as "Liberty Utilities Gas NB"). |
 | **Median** | The middle value when numbers are sorted from lowest to highest. Unlike an average, one unusually high or low utility barely moves it. |
 | **Outlier** | In a representative model, a utility whose cost is far from the median (more than 30% away, or well outside the range of the middle half of the utilities). It is named with how far away it is; it is not left out. |
 | **LDC** | Local Distribution Company — the utility that delivers electricity to your home (common in Ontario). |
@@ -690,7 +693,7 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 1,867 tests across 14 test modules, including `test_phase5_hardening` for
+There are 1,882 tests across 15 test modules (1,867 on October 16 plus 15 in `test_coverage_gate` for the coverage gate), including `test_phase5_hardening` for
 provenance, storage and history, `test_ontario_price_archive` for the Ontario Price archive,
 `test_market_rolling` and `test_market_site` for the five-year market history and its page,
 `test_ci_history` for the database safety check and download script, `test_models_7c` for the

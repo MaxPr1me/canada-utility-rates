@@ -242,7 +242,7 @@ in-scope gas and building-catalogue gaps. Ontario and Alberta ran as separate bl
 | DB validation | 0 errors, 2 existing AESO warnings |
 | Newly added SaskPower live tariffs | 40 since the original residential-only parser |
 | Observation provenance | October 1 CI baseline plus later stored batches through October 9; utility source-check dates are listed in the matrix |
-| Deterministic suite | 1,867 passing across 14 test modules (October 16) |
+| Deterministic suite | 1,882 passing across 15 test modules (1,867 on October 16 plus 15 coverage-gate tests) |
 
 ## Recommended Next Steps
 

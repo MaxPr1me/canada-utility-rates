@@ -1,0 +1,112 @@
+{
+  "_description": "Audit ledger behind scripts/coverage_gate.py. One entry per active registry utility: when its published classes were last audited (class-level reconciliation), what is deliberately excluded, what is blocked by the source, what is deferred (an open item that fails the gate) and what is monitored (with a review_by date). Items quote the maintained tables in docs/phase5_completion_matrix.md. An entry never changes a rate: the registry and scrapers decide what is live.",
+  "schema_version": 1,
+  "utilities": {
+    "BC Hydro": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["RS1828 biomass contract", "RS1823 cancelled", "irrigation, lighting, EV, IPP, wholesale/reseller, standby"],
+      "source_blocked": ["RS1289 indexed cash settlement"],
+      "deferred": ["RS1892 (Mid-C index): Phase 6D value-less Variable component"]
+    },
+    "FortisBC Electric": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["RS37 standby", "RS96 EV", "RS91 financing"],
+      "source_blocked": ["RS95 (references BC Hydro RS3808 Tranche 1, not printed)"],
+      "deferred": ["RS38 (Mid-C index): Phase 6D value-less Variable component"]
+    },
+    "Hydro-Québec": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["F/FP unmetered", "GD backup", "BR EV", "LD/LP auxiliary/standby", "Load Retention, Additional Electricity, Economic Development (closed), Industrial Revitalization", "MA not in edition"]
+    },
+    "Manitoba Hydro": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["Lighting"],
+      "source_blocked": ["Curtailable and surplus programs", "net-billing credit (no start date)", "service charges (not in approved schedule; $150 reconnection undated)"]
+    },
+    "SaskPower": {
+      "audit": {"date": "2026-10-07", "basis": "Scoped building-schedule audit (October 1) and class-level reconciliation (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["Lighting, reseller (farm/oil-field retained as reference)"]
+    },
+    "NB Power": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["Lighting/charging retained as reference", "one-time fees (labelled $/month)"],
+      "source_blocked": ["Net metering ($ value)", "interruptible/surplus (unpublished hourly incremental cost)"]
+    },
+    "Nova Scotia Power": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["ELIADC, Load Retention, municipal wholesale, shore power, standby, generation replacement/load following"],
+      "source_blocked": ["Pilot participant restoration status"],
+      "deferred": ["One-part real-time pricing: Phase 6D value-less Variable component"]
+    },
+    "Maritime Electric": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["330/340 Summerside wholesale (reference)", "lighting, unmetered, short-term"]
+    },
+    "Newfoundland Power": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["Lighting"],
+      "source_blocked": ["Curtailable Option 2 (customer load-factor formula)", "GS/seasonal net-metering credits (class rate, no value)"]
+    },
+    "NL Hydro": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["CP commissioning", "UT wholesale", "Island Industrial Wheeling", "lighting"],
+      "source_blocked": ["Island thermal non-firm (fuel formula)"],
+      "deferred": ["5.1L and Island non-thermal non-firm (monthly market-indexed price): Phase 6D value-less Variable components"]
+    },
+    "SaskEnergy": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["SI delivery-only (not offered)", "TransGas firm delivery"],
+      "source_blocked": ["Municipal payments"]
+    },
+    "Centra Gas Manitoba": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["Special Contract", "Power Station", "MLI T-Service (identical to Mainline Firm T-Service)"],
+      "source_blocked": ["Fixed-term/private commodity"],
+      "monitor": [{"item": "MLI transcription: re-transcribe on a new Appendix A edition", "review_by": "2026-11-30"}]
+    },
+    "FortisBC Energy": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["Rates 6/6P/26, 3VRNG/5VRNG (vehicles)", "22A/22B", "11RNG", "11/14A/30/36/46/48", "1U-3U in Fort Nelson (not offered)"],
+      "source_blocked": ["Fort Nelson 4/5/7/22-27 tables", "RNG Blend Service percentage", "marketer prices"]
+    },
+    "Énergir": {
+      "stored_name": "Energir",
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "source_blocked": ["Fixed-price supply (supplier-specific)", "load-factor formula (uncomputed)", "inventory adjustments", "D5 make-up gas"]
+    },
+    "Heritage Gas": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["Rate Class 4 (negotiated)"]
+    },
+    "Liberty Utilities NB": {
+      "stored_name": "Liberty Utilities Gas NB",
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["CGS/ICGS process loads"],
+      "source_blocked": ["Marketer prices"]
+    },
+    "Yukon Energy": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["Lighting", "Rates 32/39/42/43"],
+      "source_blocked": ["Riders R1/S/E (published at zero)", "winter rebate (replaced by Affordability Rate Relief)"],
+      "monitor": [{"item": "Joint rate book file name changes monthly", "review_by": "2026-11-30"}]
+    },
+    "Yukon Electrical Company": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["Same 20 joint schedules as Yukon Energy: lighting; Rates 32/39/42/43"],
+      "source_blocked": ["Same as Yukon Energy: riders R1/S/E (published at zero); winter rebate (replaced)"],
+      "monitor": [{"item": "Joint rate book file name changes monthly", "review_by": "2026-11-30"}]
+    },
+    "Northwest Territories Power Corporation": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["Standby", "Naka wholesale", "Con Mine", "streetlighting", "Taltson wholesale heating"],
+      "source_blocked": ["Snare TPSP (does not reconcile)", "GS/government subsidy amounts"],
+      "monitor": [{"item": "Snare TPSP reconciliation", "review_by": "2026-11-30"}]
+    },
+    "Qulliq Energy Corporation": {
+      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "excluded": ["Streetlights", "standby"],
+      "source_blocked": ["Government/municipal commercial base charges", "fuel rider"],
+      "monitor": [{"item": "Final 2025/26 GRA instruction (rates are interim, medium confidence)", "review_by": "2026-11-30"}]
+    }
+  }
+}

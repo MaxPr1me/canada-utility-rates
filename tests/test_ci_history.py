@@ -446,7 +446,8 @@ def test_scrape_verifies_history_before_uploading_with_a_dated_backup():
     order = ["Check manual inputs", "Checkout repository", "Set up Python", "Install dependencies",
              "Install Playwright browser", "Restore database history", "Initialize database (first run only)",
              "Run deterministic tests before scraping", "Run scrapers", "Validate data", "Export JSON for site",
-             "Reject empty or corrupt exports", "Check database history before upload", "Save database history",
+             "Reject empty or corrupt exports", "Report live-rate coverage gate",
+             "Check database history before upload", "Save database history",
              "Generate diff report", "Commit updated data", "Prune old database backups",
              "Create issue on workflow errors"]
     assert [name for name, _ in steps] == order

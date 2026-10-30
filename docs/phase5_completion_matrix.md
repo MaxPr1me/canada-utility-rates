@@ -503,6 +503,19 @@ market-rate work). **No in-scope, priced, dated gap remains unimplemented.**
    provinces with the **7E illustrative sidecar** (`49a0daa`); exact float sums (`a89e436`); the
    first stored CI scrape (Monthly Scrape #11, scrape run 29); 1,867 tests across 14 modules.
 
+**Coverage-complete plan (October 30, user decisions).** Goal: the README may say live-rate coverage
+is complete. Scope: the 78 active registered utilities (not every Canadian utility); depth: live
+output for main building classes with every exclusion, source-blocked and deferred item written
+down; AESO (6C) and the four 6D products must be done first; representative-model gaps do not
+block. `python scripts/coverage_gate.py` is the measure, reading `data/sources/coverage_ledger.json`
+(workstream 0, done October 30; baseline 16 of 78 pass). Remaining workstreams, in order: (1)
+class-level audits and ledger entries for the 58 unaudited utilities (47 Ontario distributors, 7
+Alberta utilities, 3 gas, AESO), including Ontario rejected classes such as Oakville GS<50; (2)
+Manitoba Hydro block parser; (3) Phase 6D, four products; (4) Phase 6C, AESO; (5) Lane E yes/no
+items, each declined one becoming a dated exclusion; (6) re-verification after the November 1
+scheduled scrape, the November 15 runs and the December 31 Rate of Last Resort term end (the gate
+warns 30 days before records expire); (7) the README flip and a documentation review.
+
 Items 1-6 follow the order agreed on October 16. Independent work may proceed in parallel; shared
 registry, crosswalk, database, export and documentation changes are integrated serially in this
 order.
