@@ -121,8 +121,7 @@
     "ENMAX Power": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 5 live records (D100, D200, D300, D310, D410), equal to the batch 12 class inventory; exclusions and open decisions listed here", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
       "excluded": ["D500 streetlights", "D600 distributed generation"],
-      "source_blocked": ["D700 transmission-connected (only a service charge is printed; transmission is an ISO cost flow-through)"],
-      "deferred": ["D700 live partial record: yes/no decision (Lane E)"]
+      "source_blocked": ["D700 transmission-connected (only a service charge is printed; transmission is an ISO cost flow-through); no partial record (user decision 2026-10-30)"]
     },
     "ATCO Electric": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 5 live records (D11, D13, D21, D31, T31), equal to the batch 12 class inventory; rows reconcile to each printed TOTAL PRICE", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
@@ -131,8 +130,7 @@
     },
     "EPCOR Distribution": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 5 live records (DAS-R, DAS-SC, DAS-MC, DAS-TOU, DAS-TOUP) at medium confidence (2026 interim rates), equal to the batch 12 class inventory", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
-      "excluded": ["CS/CST (closed, customer-specific)", "DC (AESO flow-through)", "DGEN", "lighting"],
-      "deferred": ["Edmonton local access fee ($0.01388/kWh) as a conditional rider: yes/no decision (Lane E)"],
+      "excluded": ["CS/CST (closed, customer-specific)", "DC (AESO flow-through)", "DGEN", "lighting", "Edmonton local access fee ($0.01388/kWh) stays a note, not a conditional rider (user decision 2026-10-30)"],
       "monitor": [{"item": "Final 2026 rates after the interim approval", "review_by": "2026-11-30"}]
     },
     "FortisAlberta": {
@@ -142,7 +140,7 @@
     },
     "Direct Energy Regulated Services": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 2 live Rate of Last Resort records (residential, small business) at 12.02 cents/kWh, fixed to 2026-12-31 and matched to the UCA table", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
-      "deferred": ["Daily administration charge (website value undated; last dated schedule differs): yes/no decision (Lane E)"],
+      "excluded": ["Daily administration charge not emitted: the website value is undated and the last dated schedule differs (user decision 2026-10-30)"],
       "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}]
     },
     "ENMAX Energy Corporation": {
@@ -162,18 +160,16 @@
     },
     "ATCO Gas": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 10 live records (North and South Low, Mid, High, Ultra High Use and ATA), equal to the batch 12 class inventory", "source": "docs/phase5_completion_matrix.md, Natural Gas"},
-      "excluded": ["Irrigation", "producer receipt", "unmetered gas lights"],
-      "deferred": ["ATA commodity and DERS gas admin charge: yes/no decision (Lane E)"]
+      "excluded": ["Irrigation", "producer receipt", "unmetered gas lights", "ATA commodity and the DERS gas admin charge (user decision 2026-10-30)"]
     },
     "Enbridge Gas": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 20 live records (EGD, Union North and Union South rate zones), equal to the batch 12 class inventory", "source": "docs/phase5_completion_matrix.md, Natural Gas"},
-      "excluded": ["EGD 125/200/300/315/316/320/401 and Union M7/M9/T1-T3 (storage, transport-only, unbundled and wholesale service)"],
-      "deferred": ["Rate 135 inclusion: yes/no decision (Lane E)"]
+      "excluded": ["EGD 125/200/300/315/316/320/401 and Union M7/M9/T1-T3 (storage, transport-only, unbundled and wholesale service)", "Rate 135 (outside building-load scope; user decision 2026-10-30)"]
     },
     "EPCOR Natural Gas (Ontario)": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 10 live records (Aylmer Rates 1-5, Southern Bruce Rates 1, 6, 11), equal to the batch 12 class inventory; no seed", "source": "docs/phase5_completion_matrix.md, Natural Gas"},
       "excluded": ["Aylmer Rate 6 (single ethanol facility)", "Southern Bruce Rate 16 (direct purchase; rider basis unclear)"],
-      "deferred": ["Aylmer Rates 2/4/5 inclusion review: yes/no decision (Lane E)"]
+      "notes": "Aylmer Rates 2/4/5 inclusion review resolved 2026-10-30 (user decision): they stay live."
     },
     "Alectra Utilities": {"group": "ontario_electricity"},
     "Algoma Power Inc.": {"group": "ontario_electricity", "excluded": ["No General Service < 50 kW or demand-billed GS class is published (R2 is a delivery-only residential demand record)"]},
@@ -211,7 +207,7 @@
     "Northern Ontario Wires Inc.": {"group": "ontario_electricity"},
     "Oakville Hydro Electricity Distribution Inc.": {
       "group": "ontario_electricity",
-      "deferred": ["GS<50 rejected: the approved tariff prints its Prospective LRAM rider as $/kW 0.0010 on an energy-billed class (probably a unit misprint). Decision needed: keep it rejected as source-blocked, or accept it with a note"]
+      "source_blocked": ["GS<50 rejected (user decision 2026-10-30): the approved tariff prints its Prospective LRAM rider (effective to 2026-12-31) as $/kW 0.0010 on an energy-billed class, a probable unit misprint that is not guessed"]
     },
     "Orangeville Hydro Limited": {"group": "ontario_electricity"},
     "Oshawa PUC Networks Inc.": {"group": "ontario_electricity"},
