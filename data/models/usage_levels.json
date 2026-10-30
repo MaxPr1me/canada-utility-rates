@@ -2,7 +2,7 @@
   "version": 1,
   "phase": "7A",
   "updated": "2026-10-30",
-  "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list. A SYNTHETIC business-hours load profile ('synthetic_profiles') was added October 16, 2026 (user-approved) for the Phase 7E illustrative estimate only; it never changes a model's own numbers.",
+  "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list. A SYNTHETIC business-hours load profile ('synthetic_profiles') was added October 16, 2026 (user-approved) for the Phase 7E illustrative estimate only; it never changes a model's own numbers. Reference-customer rules for fixed charges published as phase or amperage variants ('fixed_charge_variants') added October 30, 2026 (user decision).",
   "days_per_month": 30.4375,
   "hours_per_month": 730.5,
   "power_factor_for_kva": 0.9,
@@ -191,6 +191,39 @@
         "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
         "note": "Applicability from each OEB-approved tariff: 'Standard Supply Service - Administrative Charge (if applicable)'. Prototype: condition_kind 'sss_admin'."
       }
+    }
+  ],
+  "fixed_charge_variants_basis": "A fixed charge published as variants of one charge by phase or service size (amperage), either as unconditional variants such as 'Basic Customer Charge (Single Phase)' / 'Basic Customer Charge (Three Phase)' or as alternatives marked 'Alternative: applies only to ...', is priced for the reference customer of the usage level (user decision, October 30, 2026): homes are single-phase service of 200 A; small businesses (commercial under 50 kW) are single-phase at the 10 kW level (s1) and three-phase at the 25 kW level (s2). For each such group, the rule of the model's fuel, sector and level selects the variant whose component name fully matches match.name_regex (Python re.fullmatch). Exactly one matching variant with a value per month is priced and itemized with reason 'fixed_charge_variant:<id>'; no match or more than one leaves the record not computable at that level with the existing reason. Other sectors and levels have no rule, so their variants stay not computable.",
+  "fixed_charge_variants": [
+    {
+      "id": "home-single-phase-200a",
+      "fuel": "electricity",
+      "sectors": ["residential"],
+      "levels": ["low", "typical", "high"],
+      "reference": "single-phase service of 200 A",
+      "match": {"name_regex": "^(?i:.*\\((?:not exceeding 200 amp(?:ere)?s?(?: service)?|single[- ]phase)\\))$"},
+      "decided": "user 2026-10-30",
+      "note": "Selects the variant whose range covers a 200 A single-phase home. Live variants on 2026-10-30: Newfoundland Power 1.1 and NL Hydro 1.1 'Basic Customer Charge (Not Exceeding 200 Amp Service)' (not '(Exceeding 200 Amp Service)')."
+    },
+    {
+      "id": "small-business-single-phase-10kw",
+      "fuel": "electricity",
+      "sectors": ["commercial_small"],
+      "levels": ["s1"],
+      "reference": "single-phase service at the 10 kW level (s1: 2,000 kWh at 10 kW)",
+      "match": {"name_regex": "^(?i:.*\\(single[- ]phase\\))$"},
+      "decided": "user 2026-10-30",
+      "note": "Live variants on 2026-10-30: 'Basic Customer Charge (Single Phase)' (Newfoundland Power 2.1; NL Hydro 2.1, 2.1L, 2.2L) and Manitoba Hydro General Service Small 'Basic Charge (single phase)'; '(Unmetered)' and '(Three Phase)' are not selected."
+    },
+    {
+      "id": "small-business-three-phase-25kw",
+      "fuel": "electricity",
+      "sectors": ["commercial_small"],
+      "levels": ["s2"],
+      "reference": "three-phase service at the 25 kW level (s2: 8,000 kWh at 25 kW)",
+      "match": {"name_regex": "^(?i:.*\\(three[- ]phase\\))$"},
+      "decided": "user 2026-10-30",
+      "note": "Live variants on 2026-10-30: 'Basic Customer Charge (Three Phase)' / '(Three phase)' (NL Hydro 2.1, 2.1L, 2.2L; Newfoundland Power 2.1) and Manitoba Hydro General Service Small 'Basic Charge (three phase)'."
     }
   ],
   "synthetic_profiles": {

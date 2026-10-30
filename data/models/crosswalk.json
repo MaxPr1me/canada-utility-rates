@@ -161,7 +161,7 @@
      "utilities": ["Newfoundland Power"],
      "reason": "The Newfoundland and Labrador residential model needs Newfoundland Power; without it the model would show NL Hydro's Labrador zone alone, which is not representative.",
      "decided": "user 2026-10-16",
-     "note": "Engine: at a usage level where a listed utility is not computable, the level is withheld (not computable, reason listed) instead of showing the other utilities alone. Newfoundland Power's amperage/phase fixed-charge alternatives stay not computable (user decision October 16, 2026)."}
+     "note": "Engine: at a usage level where a listed utility is not computable, the level is withheld (not computable, reason listed) instead of showing the other utilities alone. Since 2026-10-30 (user decision) its amperage variants are priced for the reference customer (single-phase 200 A, usage_levels.json fixed_charge_variants); the level is withheld only if Newfoundland Power becomes not computable again."}
   ],
   "usage_bounds": [
     {"id": "ns-power-10-annual-use", "utility": "Nova Scotia Power", "tariff_code_regex": "^10$", "min_annual_kwh": null, "max_annual_kwh": 32000,

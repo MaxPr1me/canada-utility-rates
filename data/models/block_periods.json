@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updated": "2026-10-16",
-  "status": "Reviewed per-tariff billing periods for energy block thresholds published as plain kWh (user decision 2026-10-16). Each entry quotes the official text; entries without a stated period have threshold_period null and stay not computable.",
+  "updated": "2026-10-30",
+  "status": "Reviewed per-tariff billing periods for energy block thresholds published as plain kWh (user decision 2026-10-16). Each entry quotes the official text; entries without a stated period have threshold_period null and stay not computable. User decision 2026-10-30: a block printed 'per Billing Period' counts as per month only where the utility's official billing terms confirm monthly billing (NB Power and Maritime Electric confirmed 2026-10-30; their seasonal options stay null).",
   "entries": [
     {
       "id": "bc-hydro-1101-two-month-step",
@@ -62,12 +62,12 @@
       "id": "nb-power-gs1",
       "utility": "NB Power",
       "match": {"tariff_code": "GS1"},
-      "threshold_period": null,
-      "quote": "for first 5000 kWh per Billing Period",
-      "source_url": "https://www.nbpower.com/en/accounts-billing/understanding-your-bill/rate-schedules-and-policies/n-rate-schedules-and-rate-application-guidelines/",
-      "location": "Rate Schedules and Policies effective April 14, 2026: N-2 General Service Rate Schedule, General Service I (printable version https://www.nbpower.com/media/1494118/2026-27-rate-schedules-and-policies-effective-2026-04-14.pdf, PDF page 51)",
-      "reviewed": "2026-10-16",
-      "note": "The block is per Billing Period, but 'Billing Period' is defined only as 'The period of time for which a Customer is billed for services provided by NB Power.' (B Definition of Terms, PDF page 7); its length is not stated. Indirect wording only (B: 'The monthly Service Charge ...' while GS I charges '$30.87 per Billing Period'; O-7: 'Meter will be read bi-monthly and billed monthly' for AMI opt-out customers). Needs a user decision before recording 'month'."
+      "threshold_period": "month",
+      "quote": "Customers with communicating smart meters are on a standardized billing cycle. Your bill will cover a consistent number of days each month—30 days in the winter (October – April) and 31 days in the summer (May – September).",
+      "source_url": "https://www.nbpower.com/en/accounts-billing/understanding-your-bill/reading-a-typical-bill/",
+      "location": "NB Power 'Reading a Typical Bill' (read 2026-10-30); block 'for first 5000 kWh per Billing Period' in Rate Schedules and Policies effective April 14, 2026: N-2 General Service Rate Schedule, General Service I (https://www.nbpower.com/en/accounts-billing/understanding-your-bill/rate-schedules-and-policies/n-rate-schedules-and-rate-application-guidelines/; printable version https://www.nbpower.com/media/1494118/2026-27-rate-schedules-and-policies-effective-2026-04-14.pdf, PDF page 51)",
+      "reviewed": "2026-10-30",
+      "note": "User decision 2026-10-30: per Billing Period = per month because NB Power's billing terms confirm monthly billing. Same page: 'For customers with non-communicating or legacy meters ... The typical range is 28 to 33 days in a billing period'; https://www.nbpower.com/en/accounts-billing/understanding-your-bill/standardized-billing/ (read 2026-10-30): 'Winter months (October to April), billing periods will be 30 days' / 'Summer months (May to September), billing periods will be 31 days' for homes and businesses with communicating smart meters. The approved rate book defines 'Billing Period' only as 'The period of time for which a Customer is billed for services provided by NB Power.' (B Definition of Terms, PDF page 7). Was null from 2026-10-16 to 2026-10-30."
     },
     {
       "id": "nl-hydro-2-1",
@@ -116,24 +116,35 @@
     {
       "id": "maritime-electric-residential",
       "utility": "Maritime Electric",
-      "match": {"tariff_code_regex": "^(?:110|130|131|133)$"},
-      "threshold_period": null,
-      "quote": "17.84¢ per kWh for first 2000 kWh per Billing Period",
-      "source_url": "https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/",
-      "location": "Rate Schedule and General Rules and Regulations effective August 1, 2026: Residential Service Rate Schedule, Rate Codes 110/130/131/133 (the N-28 Schedule of Adjusted Rates PDF prints 'for first 2,000 kWh' with no period)",
-      "reviewed": "2026-10-16",
-      "note": "The block is per Billing Period, but 'Billing Period' is defined only as 'The period of time for which a customer is billed for services provided by Maritime Electric.'; its length is not stated. Indirect wording only (Equalized Billing lists 'Monthly service charges'; the seasonal options say 'bills shall be rendered for May, June, July, August, September and October'). Needs a user decision before recording 'month'."
+      "match": {"tariff_code_regex": "^(?:110|130|131)$"},
+      "threshold_period": "month",
+      "quote": "We do our best to keep billing cycles within the range of 28 to 33 days, however inclement weather and holidays are examples of factors that can influence the exact dates we are able to read your meter.",
+      "source_url": "https://www.maritimeelectric.com/accounts-billing/your-bill/factors-impacting-your-bill/",
+      "location": "Maritime Electric 'Factors Impacting your Bill', Number of Billing Days (Your Billing Cycle) (read 2026-10-30); block '17.84¢ per kWh for first 2000 kWh per Billing Period' in Rate Schedule and General Rules and Regulations effective August 1, 2026 (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/): Residential Service Rate Schedule, Rate Codes 110/130/131 (the N-28 Schedule of Adjusted Rates PDF prints 'for first 2,000 kWh' with no period)",
+      "reviewed": "2026-10-30",
+      "note": "User decision 2026-10-30: per Billing Period = per month because Maritime Electric's billing terms confirm monthly billing. Also https://www.maritimeelectric.com/services/services/meter-reading/ (read 2026-10-30): 'monthly billing based on actual readings'; General Rules, Equalized Billing: 'Monthly bills are issued based on equalized billing payment amounts.' The General Rules define 'Billing Period' only as 'The period of time for which a customer is billed for services provided by Maritime Electric.' Seasonal option 133 moved to maritime-electric-seasonal-options. Was null from 2026-10-16 to 2026-10-30."
     },
     {
       "id": "maritime-electric-general-service",
       "utility": "Maritime Electric",
-      "match": {"tariff_code_regex": "^(?:232|233)$"},
+      "match": {"tariff_code": "232"},
+      "threshold_period": "month",
+      "quote": "We do our best to keep billing cycles within the range of 28 to 33 days, however inclement weather and holidays are examples of factors that can influence the exact dates we are able to read your meter.",
+      "source_url": "https://www.maritimeelectric.com/accounts-billing/your-bill/factors-impacting-your-bill/",
+      "location": "Maritime Electric 'Factors Impacting your Bill', Number of Billing Days (Your Billing Cycle) (read 2026-10-30); block '21.88¢ per kWh for first 5000 kWh per Billing Period' in Rate Schedule and General Rules and Regulations effective August 1, 2026 (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/): General Service Rate Schedule, Rate Code 232 (the N-28 Schedule of Adjusted Rates PDF prints 'for first 5,000 kWh' with no period)",
+      "reviewed": "2026-10-30",
+      "note": "User decision 2026-10-30, same sources as maritime-electric-residential. Seasonal operators option 233 moved to maritime-electric-seasonal-options. Was null from 2026-10-16 to 2026-10-30."
+    },
+    {
+      "id": "maritime-electric-seasonal-options",
+      "utility": "Maritime Electric",
+      "match": {"tariff_code_regex": "^(?:133|233)$"},
       "threshold_period": null,
-      "quote": "21.88¢ per kWh for first 5000 kWh per Billing Period",
+      "quote": "Meters shall be read or estimated and bills shall be rendered for May, June, July, August, September and October.",
       "source_url": "https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/",
-      "location": "Rate Schedule and General Rules and Regulations effective August 1, 2026: General Service Rate Schedules, Rate Codes 232/233 (the N-28 Schedule of Adjusted Rates PDF prints 'for first 5,000 kWh' with no period)",
-      "reviewed": "2026-10-16",
-      "note": "Same gap as the residential entry: 'Billing Period' has no stated length. Needs a user decision before recording 'month'."
+      "location": "Rate Schedule and General Rules and Regulations effective August 1, 2026: Residential Seasonal Option (Rate Code 133) and General Service Seasonal Operators Option (Rate Code 233)",
+      "reviewed": "2026-10-30",
+      "note": "Exception to monthly billing: https://www.maritimeelectric.com/accounts-billing/accounts-fees/seasonal-customers/ (read 2026-10-30) says 'Any consumption used during the winter months will appear on your May bill.', so one Billing Period is not always one month and no period is recorded. Both rates are excluded from the models (crosswalk seasonal_property)."
     },
     {
       "id": "hydro-quebec-g",

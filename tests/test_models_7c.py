@@ -239,7 +239,7 @@ def test_optional_time_of_use_and_peak_event_products_stay_out_of_the_medians():
 
 def test_province_labels_method_texts_and_states_are_generic():
     result = _build()
-    assert result["method_version"] == rm.METHOD_VERSION == "7C-2"
+    assert result["method_version"] == rm.METHOD_VERSION == "7C-3"
     assert result["input"]["fuels"] == ["electricity"] and result["input"]["provinces"] == sorted(PROVINCES)
     for model in result["models"]:
         province = model["key"]["province"]
@@ -323,7 +323,7 @@ def test_gas_and_territories_are_not_modelled():
 def test_ontario_engine_fixture_keeps_its_7b_numbers():
     fx = json.loads((FIXTURES / "rm_engine_sample.json").read_text(encoding="utf-8"))
     result = build_models(fx, fx["crosswalk"], fx["usage_levels"], fx["taxes"], as_of="2026-10-09")
-    assert result["version"] == 1 and result["method_version"] == "7C-2" and result["as_of"] == "2026-10-09"
+    assert result["version"] == 1 and result["method_version"] == "7C-3" and result["as_of"] == "2026-10-09"
     assert result["input"]["records_considered"] == 36 and result["input"]["rates_generated_at"] == "2026-10-08T15:23:54Z"
     assert all(m["state"] in STATES and m["provenance"] == "modeled" for m in result["models"])
     typical = _level(_model(result, "ON|electricity|residential|tou|-"), "typical")
@@ -349,7 +349,7 @@ def test_export_hook_writes_compact_all_province_models_and_keeps_the_previous_f
     written = json.loads(text)
     assert text == json.dumps(written, separators=(",", ":"), ensure_ascii=False) + "\n"
     assert written["input"]["provinces"] == sorted(PROVINCES) and written["input"]["fuels"] == ["electricity"]
-    assert written["method_version"] == "7C-2" and AB_RES in {m["id"] for m in result["models"]}
+    assert written["method_version"] == "7C-3" and AB_RES in {m["id"] for m in result["models"]}
     previous = out.read_bytes()
 
     def broken(*args, **kwargs):
@@ -474,7 +474,11 @@ def _nl_hydro(rid=9001, code="1.1L"):
 
 
 def test_nl_residential_is_withheld_while_newfoundland_power_is_not_computable():
-    nf_power = _by_id(50)
+    # Record 50's 200 A variant is priced since the 2026-10-30 user decision; renamed, no variant is selectable.
+    nf_power = copy.deepcopy(_by_id(50))
+    for comp in nf_power["components"]:
+        if comp["component_name"] == "Basic Customer Charge (Not Exceeding 200 Amp Service)":
+            comp["component_name"] = "Basic Customer Charge (Exceeding 400 Amp Service)"
     assert _cost(nf_power, 1000)["status"] == "not_computable"
     model = _model(_build([nf_power, _nl_hydro()], provinces=("NL",)), NL_RES)
     assert model["state"] == "not_computable" and model["coverage"]["contributing_utilities"] == []

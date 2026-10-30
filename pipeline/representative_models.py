@@ -264,7 +264,8 @@ def format_coverage(report: dict, limit: int = 25) -> str:
 
 # Phase 7B engine: per-record modeled monthly cost, per-utility aggregation, taxes and statistics.
 
-METHOD_VERSION = "7C-2"
+# 7C-3 (user decision 2026-10-30): phase/amperage fixed-charge variants priced for the reference customer.
+METHOD_VERSION = "7C-3"
 MODEL_FUELS = ("electricity",)
 ZONE_POLICIES = ("median_of_zones", "default_only")
 ZONE_POLICY_TEXT = {
@@ -321,6 +322,7 @@ EXCLUSION_TEXT = {
     "no_value": "no published value",
     "percentage_base_not_computable": "percentage adjustment whose base is not computable",
     "unsupported_unit": "unit not supported by the engine",
+    "variant_not_selected": "fixed-charge variant for another reference customer",
 }
 COMPONENT_RULES = (
     "Included: unconditional components in effect at the as-of date (fixed, energy, distribution, demand, "
@@ -330,6 +332,11 @@ COMPONENT_RULES = (
     "'reference_customer' entry lists for the province, fuel and sector (Ontario: Class B CBR, Standard Supply "
     "Service administration, non-wholesale-market-participant riders, and non-RPP Class B Global Adjustment riders "
     "at 50 kW and over), itemized with reason 'reference_customer:<id>'.",
+    "Included as reference-customer fixed-charge variants: a fixed charge published as variants of one charge by "
+    "phase or amperage (unconditional variants or alternatives) is priced with the one variant that the level's "
+    "usage_levels.json 'fixed_charge_variants' rule selects (user decision 2026-10-30: homes single-phase 200 A "
+    "service; commercial under 50 kW single phase at the 10 kW level and three phase at the 25 kW level), itemized "
+    "with reason 'fixed_charge_variant:<id>'.",
     "Excluded and counted: other conditional components (sub_component 'conditional'/'conditional_credit' or "
     "notes starting 'Conditional'), alternatives, optional components, components expired (end_date before the "
     "as-of date) or not yet effective, value-less market energy (model state market_energy_pending), value-less "
@@ -341,10 +348,10 @@ COMPONENT_RULES = (
     "first matching reviewed entry of data/models/block_periods.json: month as published, two months / 2, day x "
     "days per month; a null period or no entry is not computable).",
     "Not computable (record left out at that level, reason listed): a charge published only as conditional "
-    "alternatives, unconditional fixed charges published as variants of one charge (e.g. by amperage or phase) "
-    "without a selection rule, an unconditional component without value or in an unsupported unit (e.g. per "
-    "billing period), TOU periods without an official share, ambiguous tier thresholds, seasons that do not "
-    "cover the year, demand charges at a level without kW.",
+    "alternatives, fixed charges published as variants of one charge (e.g. by amperage or phase) when no "
+    "usage_levels.json 'fixed_charge_variants' rule of the level selects exactly one variant, an unconditional "
+    "component without value or in an unsupported unit (e.g. per billing period), TOU periods without an official "
+    "share, ambiguous tier thresholds, seasons that do not cover the year, demand charges at a level without kW.",
 )
 _PROVENANCE_PREFIX = re.compile(r"^\s*Provenance:\s*[\w-]+\.\s*")
 _PER_30_DAYS = re.compile(r"\bper 30 days\b", re.IGNORECASE)
@@ -360,6 +367,7 @@ _PERIOD_END_RE = re.compile(r"\bto\s+([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})")
 _TIER_UNITS = ("kwh/month", "kwh per month")
 REFERENCE_PREFIX = "reference_customer:"
 REFERENCE_MATCH_FIELDS = ("notes_regex", "name_regex")
+VARIANT_PREFIX = "fixed_charge_variant:"
 BLOCK_PERIOD_MATCH_FIELDS = ("tariff_code", "tariff_code_regex", "name_regex")
 BLOCK_PERIOD_WORDS = {"month": "per month", "two_months": "per two months, halved",
                       "day": "per day, x days per month"}
@@ -438,6 +446,15 @@ def reference_customer_match(component: dict, entries: Iterable[dict]) -> Option
                 _fullmatch(regex, fields[field]) for field, regex in match.items()):
             return entry["id"]
     return None
+
+
+def fixed_charge_variant_rules(usage_levels: Optional[dict], fuel: Any, sector: Any) -> list[dict]:
+    """usage_levels 'fixed_charge_variants' rules for a fuel (missing = any fuel) and sector; a rule without an id, a
+    levels list or a match of exactly name_regex never applies."""
+    return [rule for rule in (usage_levels or {}).get("fixed_charge_variants") or []
+            if isinstance(rule, dict) and rule.get("id") and rule.get("fuel", fuel) == fuel
+            and sector in (rule.get("sectors") or []) and isinstance(rule.get("levels"), list)
+            and isinstance(rule.get("match"), dict) and set(rule["match"]) == {"name_regex"}]
 
 
 def price_basis(component: dict, days_per_month: float = DEFAULT_DAYS_PER_MONTH,
@@ -576,7 +593,7 @@ def _context(province: Any, fuel: Any, structure: Any, sector: Any, usage_levels
     usage_levels document, the as-of date and the usable block_periods entries. Returns days per month and the kVA
     power factor (module defaults when the document has none), the TOU share set in force on the as-of date
     (find_tou_shares; shares_id None unless exactly one validly dated set is in force, so TOU energy is then not
-    computable), the reference-customer entries and the block periods.
+    computable), the reference-customer entries, the fixed-charge variant rules and the block periods.
     """
     usage_levels = usage_levels or {}
     shares_id, entry = find_tou_shares(usage_levels, province, fuel, structure, sector, as_of)
@@ -585,6 +602,7 @@ def _context(province: Any, fuel: Any, structure: Any, sector: Any, usage_levels
             "power_factor": float(usage_levels.get("power_factor_for_kva") or DEFAULT_POWER_FACTOR),
             "shares_id": shares_id, "shares": (entry or {}).get("shares"), "shares_entry": entry,
             "reference": reference_customer_entries(usage_levels, province, fuel, sector),
+            "variant_rules": fixed_charge_variant_rules(usage_levels, fuel, sector),
             "block_periods": [e for e in block_periods or [] if isinstance(e, dict)]}
 
 
@@ -823,6 +841,7 @@ def _period_and_tier_checks(priced: list[tuple[dict, dict]], ctx: dict, record: 
 
 
 _VARIANT_NAME = re.compile(r"^(.*\S)\s*\(([^()]*)\)\s*$")
+_VARIANTS_BLOCKER = "fixed charge published as variants without a selection rule: "
 _CAP_RE = re.compile(r"\bup to a maximum of\b|\bcapped at\b|\bmaximum of [\d,.]+\s*(?:kilowatt-hours|kwh)", re.IGNORECASE)
 
 
@@ -831,16 +850,21 @@ def _stem(name: str) -> str:
     return (match.group(1) if match else name or "").strip().lower()
 
 
-def _unmarked_fixed_variants(priced: list[tuple[dict, dict]]) -> list[str]:
-    """Unconditional fixed charges printed as variants of one charge, e.g. 'Basic Charge (single phase)' and
-    'Basic Charge (three phase)': the record gives no rule to pick one, so they are never added together."""
-    groups: dict[str, list[str]] = defaultdict(list)
-    for item, comp in priced:
+def _fixed_variant_groups(rows: list[tuple[dict, dict]]) -> dict[str, list[tuple[dict, dict]]]:
+    """Fixed-charge items named as variants of one charge ('Stem (qualifier)'), by stem; groups of two or more."""
+    groups: dict[str, list[tuple[dict, dict]]] = defaultdict(list)
+    for item, comp in rows:
         match = _VARIANT_NAME.match(item["component"]) if item["type"] == "fixed" else None
         if match:
-            groups[match.group(1).lower()].append(item["component"])
-    return ["fixed charge published as variants without a selection rule: " + "; ".join(names)
-            for names in groups.values() if len(names) > 1]
+            groups[match.group(1).lower()].append((item, comp))
+    return {stem: members for stem, members in groups.items() if len(members) > 1}
+
+
+def _unmarked_fixed_variants(priced: list[tuple[dict, dict]]) -> list[str]:
+    """Unconditional fixed charges printed as variants of one charge, e.g. 'Basic Charge (single phase)' and
+    'Basic Charge (three phase)': never added together; a fixed_charge_variants rule may select one per level."""
+    return [_VARIANTS_BLOCKER + "; ".join(item["component"] for item, _ in members)
+            for members in _fixed_variant_groups(priced).values()]
 
 
 def _prepare(record: dict, ctx: dict) -> dict:
@@ -849,6 +873,7 @@ def _prepare(record: dict, ctx: dict) -> dict:
     priced: list[tuple[dict, dict]] = []
     blockers: list[str] = []
     alternatives: dict[tuple, list[str]] = defaultdict(list)
+    alternative_rows: dict[tuple, list[tuple[dict, dict]]] = defaultdict(list)
     priced_slots: set[tuple] = set()
     covered_stems: set[tuple] = set()
     market: list[str] = []
@@ -882,6 +907,7 @@ def _prepare(record: dict, ctx: dict) -> dict:
             market_other.append(f"{name} ({comp.get('market_reference')})")
         elif reason == "alternative":
             alternatives[(ctype, comp.get("sub_component"))].append(name)
+            alternative_rows[(ctype, comp.get("sub_component"))].append((item, comp))
         elif reason in ("conditional", "optional"):
             covered_stems.add((ctype, _stem(name)))
         if reason:
@@ -901,11 +927,22 @@ def _prepare(record: dict, ctx: dict) -> dict:
         priced.append((item, comp))
         priced_slots.add((ctype, comp.get("sub_component")))
         covered_stems.add((ctype, _stem(name)))
+    variant_slots: dict[str, list[tuple[int, list[tuple[dict, dict]]]]] = defaultdict(list)
     for slot, names in sorted(alternatives.items(), key=str):
         if slot not in priced_slots and not all(
                 (slot[0], _stem(name)) in covered_stems for name in names):
+            stems = {_stem(name) for name in names}
+            if slot[0] == "fixed" and len(stems) == 1 and all(_VARIANT_NAME.match(name) for name in names):
+                variant_slots[stems.pop()].append((len(blockers), alternative_rows[slot]))
             blockers.append("charge published only as conditional alternatives: " + "; ".join(names))
-    blockers.extend(_unmarked_fixed_variants(priced))
+    # Each group keeps the indexes of its blockers: a fixed_charge_variants rule may resolve them per usage level.
+    variant_groups = [{"members": [row for _, rows in slots for row in rows], "blockers": [i for i, _ in slots]}
+                      for slots in variant_slots.values() if sum(len(rows) for _, rows in slots) > 1]
+    for members in _fixed_variant_groups(priced).values():
+        variant_groups.append({"members": members, "blockers": [len(blockers)]})
+        blockers.append(_VARIANTS_BLOCKER + "; ".join(item["component"] for item, _ in members))
+    grouped = {id(item) for group in variant_groups for item, _ in group["members"]}
+    priced = [pair for pair in priced if id(pair[0]) not in grouped]
     if (record.get("pair") or {}).get("blocker"):
         blockers.append(record["pair"]["blocker"])
     blockers.extend(_period_and_tier_checks(priced, ctx, record))
@@ -919,12 +956,46 @@ def _prepare(record: dict, ctx: dict) -> dict:
     else:
         energy_status = "absent"
     return {"items": items, "priced": priced, "blockers": blockers, "energy_status": energy_status,
-            "market_pending": market, "market_other": market_other, "power_factor": ctx["power_factor"]}
+            "market_pending": market, "market_other": market_other, "power_factor": ctx["power_factor"],
+            "variant_groups": variant_groups}
 
 
-def _price(prep: dict, kwh: float, kw: Optional[float]) -> dict:
-    """Monthly cost of a prepared record at one usage level; amounts align with prep['priced']."""
-    reasons = list(prep["blockers"])
+def _select_variants(prep: dict, ctx: dict, level_id: Any) -> tuple[list[dict], set[int]]:
+    """(chosen variants, indexes of the blockers they resolve) at one usage level.
+
+    A variant group is priced with its one member whose name fully matches a fixed_charge_variants rule of the level
+    and that has a value in a per-month unit; no match, several matches or an unpriceable member keep its blockers."""
+    rules = [rule for rule in ctx.get("variant_rules") or [] if level_id in rule["levels"]]
+    choices: list[dict] = []
+    resolved: set[int] = set()
+    for group in prep.get("variant_groups") or [] if rules else []:
+        hits = []
+        for item, comp in group["members"]:
+            rule = next((r for r in rules if _fullmatch(r["match"]["name_regex"], item["component"])), None)
+            if rule is not None:
+                hits.append((item, comp, rule))
+        if len(hits) != 1 or hits[0][1].get("charge_value") is None:
+            continue
+        item, comp, rule = hits[0]
+        basis = price_basis(comp, ctx["days_per_month"], ctx["power_factor"])
+        months, problem = season_months(comp, ctx["province"], ctx["usage_levels"])
+        if basis is None or basis[0] != "month" or problem:
+            continue
+        kind, factor, conversions = basis
+        chosen = {**item, "status": "included", "basis": kind, "factor": factor, "bucket": bucket_of(item["type"], kind),
+                  "months": months, "conversions": conversions, "reason": VARIANT_PREFIX + rule["id"]}
+        choices.append({"item": chosen, "source": item, "rule": rule["id"],
+                        "members": [id(member) for member, _ in group["members"]]})
+        resolved.update(group["blockers"])
+    return choices, resolved
+
+
+def _price(prep: dict, kwh: float, kw: Optional[float],
+           selection: Optional[tuple[list[dict], set[int]]] = None) -> dict:
+    """Monthly cost of a prepared record at one usage level; amounts align with prep['priced'] and the fixed-charge
+    variants chosen by ``selection`` (from _select_variants) are priced in 'variants'."""
+    choices, resolved = selection or ([], set())
+    reasons = [blocker for index, blocker in enumerate(prep["blockers"]) if index not in resolved]
     if kw is None and any(item["basis"] == "kw" for item, _ in prep["priced"]):
         reasons.append("demand charges present but the usage level has no kW")
     if kw is None:
@@ -932,7 +1003,7 @@ def _price(prep: dict, kwh: float, kw: Optional[float]) -> dict:
                        f"{item['component']}" for item, _ in prep["priced"] if item.get("tier_scale") in ("kw", "kva"))
     if reasons:
         return {"status": "not_computable", "cost": None, "energy_charge_subtotal": None, "reasons": reasons,
-                "amounts": []}
+                "amounts": [], "variants": []}
     amounts: list[float] = []
     for item, _ in prep["priced"]:
         if item["basis"] == "month":
@@ -951,10 +1022,15 @@ def _price(prep: dict, kwh: float, kw: Optional[float]) -> dict:
             quantity *= item.get("share", 1.0)
         weight = len(item["months"]) / 12 if item.get("months") else 1.0
         amounts.append(float(item["value"]) * item["factor"] * quantity * weight)
+    variants = []
+    for choice in choices:
+        item = choice["item"]
+        weight = len(item["months"]) / 12 if item.get("months") else 1.0
+        variants.append({**choice, "amount": float(item["value"]) * item["factor"] * weight})
     # math.fsum: built-in sum() of floats differs between Python 3.11 and 3.12, flipping cents
     per_kwh = math.fsum(a for (item, _), a in zip(prep["priced"], amounts) if item["basis"] == "kwh")
-    return {"status": "ok", "cost": math.fsum(amounts), "energy_charge_subtotal": per_kwh, "reasons": [],
-            "amounts": amounts}
+    return {"status": "ok", "cost": math.fsum(amounts + [v["amount"] for v in variants]),
+            "energy_charge_subtotal": per_kwh, "reasons": [], "amounts": amounts, "variants": variants}
 
 
 def _clean(value: Any) -> Any:
@@ -965,23 +1041,33 @@ def _clean(value: Any) -> Any:
 
 def record_monthly_cost(record: dict, kwh: float, kw: Optional[float] = None, *, sector: Optional[str] = None,
                         structure: Optional[str] = None, usage_levels: Optional[dict] = None,
-                        as_of: Union[date, str, None] = None, block_periods: Any = None) -> dict:
+                        as_of: Union[date, str, None] = None, block_periods: Any = None,
+                        level: Optional[str] = None) -> dict:
     """Modeled monthly cost of one record at (kWh/month, kW) with an itemized included/excluded component list.
 
     ``sector`` (residential or a commercial size band) also selects the usage_levels reference-customer entries;
-    ``block_periods`` is a block_periods document or entry list (default: none)."""
+    ``block_periods`` is a block_periods document or entry list (default: none); ``level`` (a usage level id such as
+    's1') applies that level's fixed_charge_variants rules (default: none, so fixed-charge variants stay not
+    computable)."""
     if sector is None:
         sector = "residential" if record.get("customer_class") == "residential" else None
     ctx = _context(record.get("province"), record.get("utility_type"), structure or record.get("rate_structure"),
                    sector, usage_levels, _as_of(as_of), block_periods_config(block_periods)["entries"])
     prep = _prepare(record, ctx)
-    priced = _price(prep, kwh, kw)
+    priced = _price(prep, kwh, kw, None if level is None else _select_variants(prep, ctx, level))
     amounts = {id(item): amount for (item, _), amount in zip(prep["priced"], priced["amounts"])}
+    chosen = {id(choice["source"]): choice for choice in priced["variants"]}
+    others = {member for choice in priced["variants"] for member in choice["members"]} - set(chosen)
     items = []
     for item in prep["items"]:
-        row = {k: _clean(v) for k, v in item.items()}
-        if id(item) in amounts:
+        choice = chosen.get(id(item))
+        row = {k: _clean(v) for k, v in (choice["item"] if choice else item).items()}
+        if choice:
+            row["amount"] = choice["amount"]
+        elif id(item) in amounts:
             row["amount"] = amounts[id(item)]
+        elif id(item) in others and row.get("status") == "included":
+            row.update(status="excluded", reason="variant_not_selected")
         items.append(row)
     return {"record_id": record.get("id"), "utility": record.get("utility_name"), "tariff_code": record.get("tariff_code"),
             "kwh": kwh, "kw": kw, "status": priced["status"], "cost": priced["cost"],
@@ -1146,10 +1232,11 @@ def _period_label(item: dict) -> Optional[str]:
     return " / ".join(str(p) for p in parts if p) or None
 
 
-def _record_buckets(prep: dict) -> dict[tuple, float]:
-    """Normalized rates per (bucket, unit, period): $/month, $/kWh, $/kW-month; seasonal non-energy annualized."""
+def _record_buckets(prep: dict, extra: Optional[list[dict]] = None) -> dict[tuple, float]:
+    """Normalized rates per (bucket, unit, period): $/month, $/kWh, $/kW-month; seasonal non-energy annualized.
+    ``extra``: chosen fixed-charge variant items (only when the same variant applies at every level)."""
     out: dict[tuple, float] = defaultdict(float)
-    for item, _ in prep["priced"]:
+    for item in [item for item, _ in prep["priced"]] + list(extra or []):
         period = _period_label(item)
         weight = len(item["months"]) / 12 if item.get("months") and not period else 1.0
         out[(item["bucket"], BASIS_UNITS[item["basis"]], period)] += float(item["value"]) * item["factor"] * weight
@@ -1314,6 +1401,13 @@ def _method_text(model: dict, key: tuple, levels: list[dict], component_counts: 
                      "reference_customer): " + "; ".join(
                          f"{entry['id']} {entry['components']} (e.g. {', '.join(entry['examples'])})"
                          for entry in model["reference_customer"]) + ".")
+    if model.get("fixed_charge_variants"):
+        parts.append("Fixed charges published as variants of one charge (by phase or amperage) are priced for the "
+                     "reference customer (usage_levels.json fixed_charge_variants): " + "; ".join(
+                         f"{entry['id']} ({entry['reference']}; decided {entry['decided']}) at "
+                         f"{', '.join(entry['levels'])}: {', '.join(entry['components'])} "
+                         f"({', '.join(entry['utilities'])})" for entry in model["fixed_charge_variants"])
+                     + "; component buckets include a variant only when the same one applies at every level.")
     if component_counts:
         parts.append("Excluded components: " + "; ".join(
             f"{reason.replace('_', ' ')} {count} (e.g. {', '.join(component_examples[reason])})"
@@ -1524,13 +1618,14 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
     contributing: dict[str, list[tuple[dict, dict]]] = defaultdict(list)
     zone_fallbacks: dict[str, list] = defaultdict(list)
     level_inputs: dict[Any, dict] = {}
+    variant_uses: list[tuple[Any, str, dict, dict]] = []
     level_out = []
     for level in levels:
         kwh = float(level.get("kwh") or 0.0)
         kw = None if level.get("kw") is None else float(level["kw"])
         applied, not_applied = tax_lines(taxes, province, fuel, level_sector, kwh, kw, as_of)
         costs, taxed, line_amounts, rows_out = {}, {}, defaultdict(list), []
-        level_used, level_fallbacks, zone_inputs = [], [], {}
+        level_used, level_fallbacks, zone_inputs, level_variants = [], [], {}, []
         for utility, rows in chosen.items():
             zone_rows, reasons = [], []
             for record, zone, rule_id in rows:
@@ -1538,12 +1633,13 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
                     reasons.append(f"{record.get('tariff_code')}: eligibility does not cover the level")
                     continue
                 prep = preps[id(record)]
-                priced = _price(prep, kwh, kw)
+                priced = _price(prep, kwh, kw, _select_variants(prep, ctx, level.get("id")))
                 if priced["status"] != "ok":
                     reasons.append(f"{record.get('tariff_code')}: " + "; ".join(priced["reasons"]))
                     continue
                 with_tax, amounts = apply_tax_lines(priced["cost"], priced["energy_charge_subtotal"], applied)
-                zone_rows.append((record, zone, priced["cost"], with_tax, amounts, priced["energy_charge_subtotal"]))
+                zone_rows.append((record, zone, priced["cost"], with_tax, amounts, priced["energy_charge_subtotal"],
+                                  priced["variants"]))
             if not zone_rows:
                 exclusions.append({"scope": "utility", "utility": utility, "level": level.get("id"),
                                    "reason": " | ".join(reasons) or "no record"})
@@ -1556,12 +1652,19 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
                 line_amounts[index].append(statistics.median([row[4][index] for row in zone_rows]))
             level_used.extend((utility, row[0]) for row in zone_rows)
             zone_inputs[utility] = [(row[2], row[5]) for row in zone_rows]
-            rows_out.append({"utility": utility, "cost_without_tax": round(costs[utility], 2),
-                             "cost_with_tax": round(taxed[utility], 2),
-                             "records": [row[0].get("id") for row in zone_rows],
-                             "zone_costs": [{"record_id": row[0].get("id"), "tariff_code": row[0].get("tariff_code"),
-                                             "zone": row[1], "cost_without_tax": round(row[2], 2)}
-                                            for row in zone_rows] if len(zone_rows) > 1 else None})
+            row_out = {"utility": utility, "cost_without_tax": round(costs[utility], 2),
+                       "cost_with_tax": round(taxed[utility], 2),
+                       "records": [row[0].get("id") for row in zone_rows],
+                       "zone_costs": [{"record_id": row[0].get("id"), "tariff_code": row[0].get("tariff_code"),
+                                       "zone": row[1], "cost_without_tax": round(row[2], 2)}
+                                      for row in zone_rows] if len(zone_rows) > 1 else None}
+            picks = [(row[0], choice) for row in zone_rows for choice in row[6]]
+            if picks:
+                row_out["fixed_charge_variants"] = [{"record_id": record.get("id"), "rule": choice["rule"],
+                                                     "component": choice["item"]["component"]}
+                                                    for record, choice in picks]
+                level_variants.extend((utility, record, choice) for record, choice in picks)
+            rows_out.append(row_out)
         missing = [name for name in required_names if name not in costs]
         withheld = None
         if missing and costs:
@@ -1581,6 +1684,7 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
                 if id(record) not in used_ids:
                     contributing[utility].append((preps[id(record)], record))
                 used_ids.add(id(record))
+            variant_uses.extend((level.get("id"), utility, record, choice) for utility, record, choice in level_variants)
         level_inputs[level.get("id")] = {"zone_rows": zone_inputs, "applied": applied, "not_applied": not_applied}
         stats = summary_stats(costs.values())
         closest = closest_to_median(costs, stats["median"])
@@ -1649,6 +1753,9 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
     statuses: Counter = Counter()
     pending: list[dict] = []
     market_other: list[dict] = []
+    chosen_sources = {id(choice["source"]) for _, _, _, choice in variant_uses}
+    for _, _, _, choice in variant_uses:
+        conversions.update(choice["item"].get("conversions") or [])
     for utility, pairs in sorted(contributing.items()):
         for prep, record in pairs:
             statuses[prep["energy_status"]] += 1
@@ -1657,9 +1764,13 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
             if prep["market_other"]:
                 market_other.append({"utility": utility, "record_id": record.get("id"),
                                      "components": prep["market_other"]})
+            members = {id(item) for group in prep["variant_groups"] for item, _ in group["members"]}
             for item in prep["items"]:
-                if item["status"] == "excluded":
-                    counts, examples, slot = component_counts, component_examples, item["reason"]
+                if id(item) in chosen_sources:
+                    continue
+                if item["status"] == "excluded" or id(item) in members:
+                    counts, examples = component_counts, component_examples
+                    slot = item["reason"] if item["status"] == "excluded" else "variant_not_selected"
                 else:
                     conversions.update(item.get("conversions") or [])
                     if item.get("block_period"):
@@ -1691,7 +1802,14 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
         energy = "market_pending" if statuses.get("market_pending") else "mixed"
     cost_basis = {"included": "delivery_and_energy", "market_pending": "delivery_only_market_energy_pending",
                   "absent": "delivery_only_no_energy_component"}.get(energy, energy)
-    bucket_rows = {utility: [_record_buckets(prep) for prep, _ in pairs] for utility, pairs in contributing.items()}
+    picks_by_record: dict[int, dict[Any, list[dict]]] = defaultdict(lambda: defaultdict(list))
+    for level_id, _, record, choice in variant_uses:
+        picks_by_record[id(record)][level_id].append(choice)
+    stable_variants = {key: [choice["item"] for choice in next(iter(by_level.values()))]
+                       for key, by_level in picks_by_record.items()
+                       if len({tuple(sorted(id(c["source"]) for c in picks)) for picks in by_level.values()}) == 1}
+    bucket_rows = {utility: [_record_buckets(prep, stable_variants.get(id(record))) for prep, record in pairs]
+                   for utility, pairs in contributing.items()}
     warnings = []
     entry = ctx.get("shares_entry") or {}
     period_end = _PERIOD_END_RE.search(entry.get("period") or "")
@@ -1744,6 +1862,19 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
         model["block_periods"] = [{k: e.get(k) for k in ("id", "utility", "threshold_period", "quote", "source_url",
                                                          "location")}
                                   for e in ctx["block_periods"] if e.get("id") in block_ids]
+    if variant_uses:
+        rules = {rule["id"]: rule for rule in ctx["variant_rules"]}
+        summary: dict[str, dict] = {}
+        for level_id, utility, record, choice in variant_uses:
+            rule = rules.get(choice["rule"]) or {}
+            row = summary.setdefault(choice["rule"], {"id": choice["rule"], "reference": rule.get("reference"),
+                                                      "decided": rule.get("decided"), "levels": [], "components": [],
+                                                      "utilities": []})
+            for field, value in (("levels", str(level_id)), ("components", choice["item"]["component"]),
+                                 ("utilities", utility)):
+                if value not in row[field]:
+                    row[field].append(value)
+        model["fixed_charge_variants"] = [summary[rule_id] for rule_id in sorted(summary)]
     if required:
         model["required_contributors"] = [
             {"id": e.get("id"), "utilities": list(e.get("utilities") or []), "reason": e.get("reason"),
@@ -1935,6 +2066,11 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
                                                               "source")}
                                    for entry in usage_levels.get("reference_customer") or []
                                    if isinstance(entry, dict) and (wanted is None or entry.get("province") in wanted)],
+            "fixed_charge_variants_basis": usage_levels.get("fixed_charge_variants_basis"),
+            "fixed_charge_variants": [{k: entry.get(k) for k in ("id", "fuel", "sectors", "levels", "reference", "match",
+                                                                 "decided")}
+                                      for entry in usage_levels.get("fixed_charge_variants") or []
+                                      if isinstance(entry, dict)],
             "buckets": dict(BUCKET_TEXT),
             "fuels": "Electricity only; gas models are Phase 7D (gas records are reported in the coverage report, "
                      "not modelled)." if wanted_fuels == {"electricity"} else None,
