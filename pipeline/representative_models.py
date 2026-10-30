@@ -512,19 +512,52 @@ def season_months(component: dict, province: Optional[str],
     return sorted({int(m) for m in months}), None
 
 
-def find_tou_shares(usage_levels: Optional[dict], province: Any, fuel: Any, structure: Any,
-                    sector: Any) -> tuple[Optional[str], Optional[dict]]:
-    """(id, entry) of the usage_levels tou_shares set whose applies_to matches; (None, None) when none does."""
+def _tou_share_in_force(entry: dict, as_of: date) -> Optional[bool]:
+    """Whether a tou_shares entry is in force on ``as_of``: effective_date <= as_of < end_date, both optional ISO
+    dates where a missing or null bound is open (the window rule of tax_lines()). None when a bound is given but is
+    not an ISO date, so a typo can never widen the window."""
+    bounds: list[Optional[date]] = []
+    for field in ("effective_date", "end_date"):
+        raw = entry.get(field)
+        parsed = _as_date(raw)
+        if raw is not None and parsed is None:
+            return None
+        bounds.append(parsed)
+    start, end = bounds
+    return (start is None or start <= as_of) and (end is None or as_of < end)
+
+
+def find_tou_shares(usage_levels: Optional[dict], province: Any, fuel: Any, structure: Any, sector: Any,
+                    as_of: Union[date, str, None] = None) -> tuple[Optional[str], Optional[dict]]:
+    """(id, entry) of the usage_levels 'tou_shares' set in force for a model key; (None, None) when there is none.
+
+    Inputs: the usage_levels document, the model's province, fuel, rate structure and sector (residential or a
+    commercial size band) and the as-of date (date or ISO string; None = today, UTC). An entry matches when its
+    'applies_to' holds (province; fuel, missing = any; structure, one name or a list; sectors) and the as-of date is
+    inside its optional effective_date/end_date window (see _tou_share_in_force); undated entries match every date.
+    An entry's 'shares' are fractions of monthly kWh keyed by component tou_period label.
+
+    Fails closed with (None, None), which leaves the model's TOU energy not computable ("no matching share set"),
+    when more than one entry is in force for the key or a matching entry has a malformed date.
+    """
+    when = _as_of(as_of)
+    in_force: list[tuple[str, dict]] = []
     for key, entry in ((usage_levels or {}).get("tou_shares") or {}).items():
         applies = entry.get("applies_to") if isinstance(entry, dict) else None
         if not isinstance(applies, dict):
             continue
         structures = applies.get("structure")
         structures = [structures] if isinstance(structures, str) else list(structures or [])
-        if (applies.get("province") == province and applies.get("fuel", fuel) == fuel and structure in structures
+        if not (applies.get("province") == province and applies.get("fuel", fuel) == fuel and structure in structures
                 and sector in (applies.get("sectors") or [])):
-            return key, entry
-    return None, None
+            continue
+        window = _tou_share_in_force(entry, when)
+        if window is None:
+            return None, None
+        if window:
+            in_force.append((key, entry))
+    # Two share sets in force at once is a data error, never settled by file order (fail-closed rule, 2026-10-30 plan).
+    return in_force[0] if len(in_force) == 1 else (None, None)
 
 
 def bucket_of(component_type: Any, basis: str) -> str:
@@ -537,8 +570,16 @@ def bucket_of(component_type: Any, basis: str) -> str:
 
 def _context(province: Any, fuel: Any, structure: Any, sector: Any, usage_levels: Optional[dict],
              as_of: date, block_periods: Optional[list] = None) -> dict:
+    """Pricing inputs shared by every record of one model key at the as-of date.
+
+    Inputs: the model's province, fuel, rate structure and sector (residential or a commercial size band), the
+    usage_levels document, the as-of date and the usable block_periods entries. Returns days per month and the kVA
+    power factor (module defaults when the document has none), the TOU share set in force on the as-of date
+    (find_tou_shares; shares_id None unless exactly one validly dated set is in force, so TOU energy is then not
+    computable), the reference-customer entries and the block periods.
+    """
     usage_levels = usage_levels or {}
-    shares_id, entry = find_tou_shares(usage_levels, province, fuel, structure, sector)
+    shares_id, entry = find_tou_shares(usage_levels, province, fuel, structure, sector, as_of)
     return {"as_of": as_of, "province": province, "fuel": fuel, "sector": sector, "usage_levels": usage_levels,
             "days_per_month": float(usage_levels.get("days_per_month") or DEFAULT_DAYS_PER_MONTH),
             "power_factor": float(usage_levels.get("power_factor_for_kva") or DEFAULT_POWER_FACTOR),
@@ -992,24 +1033,31 @@ def _threshold_problem(eligibility: dict, kw: Optional[float], annual_kwh: Optio
 
 def tax_lines(taxes: Optional[dict], province: Any, fuel: Any, sector: Any, kwh: Optional[float], kw: Optional[float],
               as_of: Union[date, str, None] = None) -> tuple[list[dict], list[dict]]:
-    """(applied, not_applied) tax/rebate lines for a level: sector, dates and thresholds (EITHER test when both)."""
+    """(applied, not_applied) tax/rebate lines for a level: sector, dates and thresholds (EITHER test when both).
+
+    A line left out only by its date window is not reported as "not applied" when another line of the same name is in
+    its window on the as-of date: that is the same tax or rebate at another rate period, not a separate exclusion.
+    """
     as_of = _as_of(as_of)
     group = "residential" if sector == "residential" else "commercial"
     lines = ((((taxes or {}).get("jurisdictions") or {}).get(province) or {}).get(fuel) or {}).get(group) or []
     annual = None if kwh is None else float(kwh) * 12
-    applied, skipped = [], []
+    applied, skipped, dated_out, in_window = [], [], [], set()
     for line in sorted((l for l in lines if isinstance(l, dict)), key=lambda l: l.get("order") or 0):
         eligibility = line.get("eligibility") or {}
         start, end = _as_date(line.get("effective_date")), _as_date(line.get("end_date"))
+        if (start is None or start <= as_of) and (end is None or as_of < end):
+            in_window.add(line.get("name"))
         reason = None
+        outside_window = False
         if line.get("kind") not in TAX_KINDS or line.get("base") not in TAX_BASES or line.get("rate") is None:
             reason = f"unsupported line (kind {line.get('kind')!r}, base {line.get('base')!r})"
         elif sector not in (eligibility.get("sectors") or []):
             reason = f"sector {sector} not eligible"
         elif start is not None and start > as_of:
-            reason = f"not in effect until {start.isoformat()}"
+            reason, outside_window = f"not in effect until {start.isoformat()}", True
         elif end is not None and as_of >= end:
-            reason = f"ended {end.isoformat()}"
+            reason, outside_window = f"ended {end.isoformat()}", True
         else:
             reason = _threshold_problem(eligibility, kw, annual)
         brief = {"name": line.get("name"), "kind": line.get("kind"), "rate": line.get("rate"), "base": line.get("base"),
@@ -1018,6 +1066,9 @@ def tax_lines(taxes: Optional[dict], province: Any, fuel: Any, sector: Any, kwh:
             applied.append(brief)
         else:
             skipped.append({"name": line.get("name"), "kind": line.get("kind"), "rate": line.get("rate"), "reason": reason})
+            dated_out.append(outside_window)
+    # e.g. the Ontario Electricity Rebate: 23.5% until 2026-11-01, then 15.7% (O. Reg. 328/26).
+    skipped = [item for item, dated in zip(skipped, dated_out) if not (dated and item["name"] in in_window)]
     return applied, skipped
 
 

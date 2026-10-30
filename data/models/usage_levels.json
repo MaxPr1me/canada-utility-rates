@@ -1,7 +1,7 @@
 {
   "version": 1,
   "phase": "7A",
-  "updated": "2026-10-16",
+  "updated": "2026-10-30",
   "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list. A SYNTHETIC business-hours load profile ('synthetic_profiles') was added October 16, 2026 (user-approved) for the Phase 7E illustrative estimate only; it never changes a model's own numbers.",
   "days_per_month": 30.4375,
   "hours_per_month": 730.5,
@@ -33,6 +33,7 @@
       "applies_to": {"province": "ON", "fuel": "electricity", "structure": "tou", "sectors": ["residential", "commercial_small"]},
       "shares": {"off-peak": 0.64, "mid-peak": 0.18, "on-peak": 0.18},
       "period": "November 1, 2025 to October 31, 2026",
+      "end_date": "2026-11-01",
       "source": {
         "title": "Ontario Energy Board, Regulated Price Plan Price Report, November 1, 2025 to October 31, 2026 (issued October 17, 2025)",
         "url": "https://www.oeb.ca/sites/default/files/rpp-price-report-20251017.pdf",
@@ -41,10 +42,25 @@
       },
       "note": "OEB load profile for all RPP TOU consumers (actual consumption over the previous four years); no separate small-business profile is published. One annual share set: the summer/winter swap of on-peak and mid-peak hours does not change the shares."
     },
+    "ON_RPP_TOU_2026": {
+      "applies_to": {"province": "ON", "fuel": "electricity", "structure": "tou", "sectors": ["residential", "commercial_small"]},
+      "shares": {"off-peak": 0.64, "mid-peak": 0.18, "on-peak": 0.18},
+      "period": "November 1, 2026 to October 31, 2027",
+      "effective_date": "2026-11-01",
+      "source": {
+        "title": "Ontario Energy Board, Regulated Price Plan Price Report, November 1, 2026 to October 31, 2027 (issued October 16, 2026)",
+        "url": "https://www.oeb.ca/sites/default/files/rpp-price-report-20261016.pdf",
+        "location": "Table 2-ES (page 6); Table 6 (page 24); section 3.1 (page 22). Printed page numbers equal PDF page numbers in this report.",
+        "quote": "The assumed TOU load profile for the current price setting period is 64% RPEM OFF, 18% RPEM MID and 18% RPEM ON.",
+        "retrieved": "2026-10-30"
+      },
+      "note": "Same shares as the November 1, 2025 report (64/18/18). OEB load profile for all RPP TOU consumers (actual Off-, Mid- and On-peak consumption over the previous five years); no separate small-business profile is published. One annual share set: the summer/winter swap of on-peak and mid-peak hours does not change the shares."
+    },
     "ON_RPP_ULO": {
       "applies_to": {"province": "ON", "fuel": "electricity", "structure": "ulo", "sectors": ["residential", "commercial_small"]},
       "shares": {"ultra-low-overnight": 0.40, "off-peak": 0.20, "mid-peak": 0.27, "on-peak": 0.13},
       "period": "November 1, 2025 to October 31, 2026",
+      "end_date": "2026-11-01",
       "source": {
         "title": "Ontario Energy Board, Regulated Price Plan Price Report, November 1, 2025 to October 31, 2026 (issued October 17, 2025)",
         "url": "https://www.oeb.ca/sites/default/files/rpp-price-report-20251017.pdf",
@@ -52,6 +68,20 @@
         "quote": "The assumed ULO load profile for the current price setting period is 40% ULO NIGHT, 20% ULO OFF, 27% ULO MID and 13% ULO ON."
       },
       "note": "'off-peak' is the ULO Weekend Off-Peak period (weekends and holidays 7 a.m.-11 p.m.). Based on ULO consumers' actual consumption over the previous two years; one annual share set."
+    },
+    "ON_RPP_ULO_2026": {
+      "applies_to": {"province": "ON", "fuel": "electricity", "structure": "ulo", "sectors": ["residential", "commercial_small"]},
+      "shares": {"ultra-low-overnight": 0.41, "off-peak": 0.20, "mid-peak": 0.26, "on-peak": 0.13},
+      "period": "November 1, 2026 to October 31, 2027",
+      "effective_date": "2026-11-01",
+      "source": {
+        "title": "Ontario Energy Board, Regulated Price Plan Price Report, November 1, 2026 to October 31, 2027 (issued October 16, 2026)",
+        "url": "https://www.oeb.ca/sites/default/files/rpp-price-report-20261016.pdf",
+        "location": "Table 2-ES (page 6); Table 6 (page 24); section 3.2 (page 23). Printed page numbers equal PDF page numbers in this report.",
+        "quote": "The assumed ULO load profile for the current price setting period is 41% ULO NIGHT, 20% ULO OFF, 26% ULO MID and 13% ULO ON.",
+        "retrieved": "2026-10-30"
+      },
+      "note": "'off-peak' is the ULO Weekend Off-Peak period (weekends and holidays 7 a.m.-11 p.m.). Based on ULO consumers' actual consumption over the previous two years; one annual share set. Changed from 40/20/27/13 in the November 1, 2025 report."
     },
     "BC_HYDRO_RS2101_TOD": {
       "applies_to": {"province": "BC", "fuel": "electricity", "structure": ["tou", "tiered_tou"], "sectors": ["residential"]},
@@ -84,12 +114,15 @@
         "non_residential_tier_threshold_kwh": 750
       },
       "method": "Compute each usage level's monthly cost once per season with that season's tier threshold (and TOU hours), then month-weight: cost = (6 x winter + 6 x summer) / 12.",
-      "tiered_profile_reference": {"tier_1": 0.64, "tier_2": 0.36, "note": "OEB assumed tiered load profile (Table 4); informational only - usage-level costs apply the published thresholds directly."},
+      "tiered_profile_reference": {"tier_1": 0.65, "tier_2": 0.35, "note": "OEB assumed tiered load profile of the November 1, 2026 report (Table 2-ES page 6, Table 6 page 24, section 3.3 page 23; the November 1, 2025 report's Table 4 gave 64%/36%); informational only - usage-level costs apply the published thresholds directly."},
       "source": {
-        "title": "Ontario Energy Board, Regulated Price Plan Price Report, November 1, 2025 to October 31, 2026",
-        "url": "https://www.oeb.ca/sites/default/files/rpp-price-report-20251017.pdf",
-        "location": "Executive summary, 'Regulated Price Plan - Tiered Pricing' (printed page 4, PDF page 5); TOU periods printed pages 3-4 and 23",
-        "cross_check": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates (current prices table, November 1, 2025: residential first 1,000 kWh/month winter, first 600 kWh/month summer; non-residential first 750 kWh/month)"
+        "title": "Ontario Energy Board, Regulated Price Plan Price Report, November 1, 2026 to October 31, 2027 (issued October 16, 2026)",
+        "url": "https://www.oeb.ca/sites/default/files/rpp-price-report-20261016.pdf",
+        "location": "Executive summary, 'Regulated Price Plan - Tiered Pricing' (page 6); TOU and ULO periods pages 5 and 22-23. Printed page numbers equal PDF page numbers in this report.",
+        "quote": "The threshold for residential consumers changes twice a year on a seasonal basis: to 600 kWh per month during the summer season (May 1 to October 31) and to 1,000 kWh per month during the winter season (November 1 to April 30). The threshold for non-residential RPP consumers remains constant at 750 kWh per month for the entire year.",
+        "retrieved": "2026-10-30",
+        "cross_check": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates (current prices table for November 1, 2026, read 2026-10-30: residential first 1,000 kWh/month winter, first 600 kWh/month summer; non-residential first 750 kWh/month; TOU and ULO hours as in the report)",
+        "note": "Seasons, tier thresholds and TOU/ULO hours are unchanged from the previous report, which this entry cited until 2026-10-30: Ontario Energy Board, Regulated Price Plan Price Report, November 1, 2025 to October 31, 2026, https://www.oeb.ca/sites/default/files/rpp-price-report-20251017.pdf (executive summary 'Regulated Price Plan - Tiered Pricing', printed page 4, PDF page 5; TOU periods printed pages 3-4 and 23)."
       }
     }
   },

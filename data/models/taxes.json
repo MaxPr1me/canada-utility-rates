@@ -1,7 +1,7 @@
 {
  "version": 1,
- "as_of": "2026-10-09",
- "notes": "Apply per modelled month: S = sum of the model's pre-tax rate components (before any tax or rebate). Use jurisdictions[province][fuel]['residential'] for sector 'residential', otherwise ['commercial']; keep a line only if the model sector is in eligibility.sectors, its thresholds pass (null = no limit; when max_demand_kw and max_annual_kwh are both set the line applies if EITHER is met, per O. Reg. 363/16 s.1.1(1)) and effective_date <= as-of date < end_date (when set). Line amount = rate x base: 'pre_tax_subtotal' = S; 'pre_rebate_subtotal' = S as well (same number; marks a tax charged on the bill before a rebate line is deducted); 'energy_charge_subtotal' = pre-tax sum of per-kWh consumption charges only (no fixed/service, demand or rental charges). Lines never compound: PST/RST/QST/ICE are computed on the price excluding GST/HST. With tax = S + sum(sales_tax amounts) - sum(rebate amounts); for eligible Ontario electricity accounts the 23.5% OER exceeds 13% HST, so 'with tax' is below 'without tax'. 'order' is the display/application order (GST/HST, provincial tax, rebates). Commercial results show tax as invoiced; GST/HST registrants can generally recover GST/HST through input tax credits (not modelled). Excluded: income-tested or application-based assistance (e.g. OESP, LEAP, Ontario and Northern Ontario energy tax credits, PEI Island Essentials Benefit, Alberta Energy Rebate, NS YERP claims by landlords, condominiums, mixed-use and commercial-rate accounts); municipal taxes and fees (City of Winnipeg gas and electricity tax, SaskPower/SaskEnergy municipal surcharges, Alberta franchise/access fees); carbon charges and territorial power subsidies (rate components elsewhere); First Nations and diplomatic exemptions; price-triggered per-GJ rebates (Alberta Natural Gas Rebate Program, $0 for October 2026); announced but not in force (NL Churchill River Electricity Rebate); expired (PEI Government Energy Rebate, ended 2026-06-30). Manitoba residential RST depends on heating use (defaults: electricity 7%, gas 1.4% - flagged for review). As of 2026-10-09; confidence per line.",
+ "as_of": "2026-10-30",
+ "notes": "Apply per modelled month: S = sum of the model's pre-tax rate components (before any tax or rebate). Use jurisdictions[province][fuel]['residential'] for sector 'residential', otherwise ['commercial']; keep a line only if the model sector is in eligibility.sectors, its thresholds pass (null = no limit; when max_demand_kw and max_annual_kwh are both set the line applies if EITHER is met, per O. Reg. 363/16 s.1.1(1)) and effective_date <= as-of date < end_date (when set). Line amount = rate x base: 'pre_tax_subtotal' = S; 'pre_rebate_subtotal' = S as well (same number; marks a tax charged on the bill before a rebate line is deducted); 'energy_charge_subtotal' = pre-tax sum of per-kWh consumption charges only (no fixed/service, demand or rental charges). Lines never compound: PST/RST/QST/ICE are computed on the price excluding GST/HST. With tax = S + sum(sales_tax amounts) - sum(rebate amounts); for eligible Ontario electricity accounts the OER (23.5% until 2026-10-31, 15.7% from 2026-11-01 under O. Reg. 328/26) exceeds the 13% HST, so 'with tax' is below 'without tax'. A rate change is two lines of the same name: the old line ends (end_date) the day the new one starts (effective_date); while one of them is in its date window, the other is not listed as not applied. 'order' is the display/application order (GST/HST, provincial tax, rebates). Commercial results show tax as invoiced; GST/HST registrants can generally recover GST/HST through input tax credits (not modelled). Excluded: income-tested or application-based assistance (e.g. OESP, LEAP, Ontario and Northern Ontario energy tax credits, PEI Island Essentials Benefit, Alberta Energy Rebate, NS YERP claims by landlords, condominiums, mixed-use and commercial-rate accounts); municipal taxes and fees (City of Winnipeg gas and electricity tax, SaskPower/SaskEnergy municipal surcharges, Alberta franchise/access fees); carbon charges and territorial power subsidies (rate components elsewhere); First Nations and diplomatic exemptions; price-triggered per-GJ rebates (Alberta Natural Gas Rebate Program, $0 for October 2026); announced but not in force (NL Churchill River Electricity Rebate); expired (PEI Government Energy Rebate, ended 2026-06-30). Manitoba residential RST depends on heating use (defaults: electricity 7%, gas 1.4% - flagged for review). As of 2026-10-09; confidence per line.",
  "sectors": [
   "residential",
   "commercial_small",
@@ -1060,9 +1060,29 @@
        "other": "Residential accounts qualify through s.1.1(1) (demand <= 50 kW or annual use <= 250,000 kWh). Bulk-metered MURB / retirement / mobile-home accounts above those thresholds need a notice (paras 4.1-6)."
       },
       "effective_date": "2025-11-01",
-      "end_date": null,
+      "end_date": "2026-11-01",
       "source_url": "https://www.ontario.ca/laws/regulation/160363",
-      "source_note": "O. Reg. 363/16 s.2 (e-Laws currency 2026-10-06): rebate = 23.5% of the 'base invoice amount' (s.2.1: commodity + OEB rate-order charges; excludes HST, specific/retail service charges, penalties, prior balances). 23.5% effective 2025-11-01 (OEB release 2025-10-17; ontario.ca 'Manage energy costs for your home', updated 2026-09-28: 'currently provides a 23.5% rebate ... on the subtotal of their electricity bill', automatic separate bill line; OEB BillData.xml Rebate=0.235 '% of subtotal'). The rate moved with the 2025-11-01 RPP change - recheck after the OEB's next RPP announcement.",
+      "source_note": "O. Reg. 363/16 s.2 (e-Laws currency 2026-10-06): rebate = 23.5% of the 'base invoice amount' (s.2.1: commodity + OEB rate-order charges; excludes HST, specific/retail service charges, penalties, prior balances). 23.5% effective 2025-11-01 (OEB release 2025-10-17; ontario.ca 'Manage energy costs for your home', updated 2026-09-28: 'currently provides a 23.5% rebate ... on the subtotal of their electricity bill', automatic separate bill line; OEB BillData.xml Rebate=0.235 '% of subtotal'). Ends 2026-10-31: O. Reg. 328/26 substitutes 15.7% in s.2 from 2026-11-01 (next line).",
+      "confidence": "high"
+     },
+     {
+      "name": "Ontario Electricity Rebate (OER)",
+      "kind": "rebate",
+      "rate": 0.157,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": "Residential accounts qualify through s.1.1(1) (demand <= 50 kW or annual use <= 250,000 kWh). Bulk-metered MURB / retirement / mobile-home accounts above those thresholds need a notice (paras 4.1-6)."
+      },
+      "effective_date": "2026-11-01",
+      "end_date": null,
+      "source_url": "https://www.ontario.ca/laws/regulation/R26328",
+      "source_note": "O. Reg. 363/16 s.2 as amended by O. Reg. 328/26 (made 2026-10-08, filed and published on e-Laws 2026-10-09, Ontario Gazette 2026-10-24; read 2026-10-30). s.1: 'Section 2 of Ontario Regulation 363/16 is amended by striking out \"23.5 per cent\" and substituting \"15.7 per cent\".' s.3: 'This Regulation comes into force on the later of November 1, 2026 and the day this Regulation is filed.' Consolidated O. Reg. 363/16 (https://www.ontario.ca/laws/regulation/160363, e-Laws currency 2026-10-27) carries the same note for November 1, 2026. Base unchanged: the 'base invoice amount' (s.2.1: commodity + OEB rate-order charges; excludes HST, specific/retail service charges, penalties, prior balances). Cross-check: OEB news release 2026-10-16 'Ontario Energy Board Announces Changes to Electricity Prices for Households, Small Businesses and Farms': 'effective November 1, 2026, the Ontario government's Ontario Electricity Rebate (OER) will change to 15.7%'. Recheck after the OEB's next RPP announcement.",
       "confidence": "high"
      }
     ],
@@ -1108,9 +1128,32 @@
        "other": "Eligible if EITHER demand <= 50 kW OR annual use <= 250,000 kWh (O. Reg. 363/16 s.1.1(1) paras 1-2; either test suffices). Also registered farms and long-term care homes. Accounts billed as GS >= 50 kW but under 250,000 kWh/yr may need to confirm eligibility with their distributor."
       },
       "effective_date": "2025-11-01",
-      "end_date": null,
+      "end_date": "2026-11-01",
       "source_url": "https://www.ontario.ca/laws/regulation/160363",
-      "source_note": "O. Reg. 363/16 s.2 (e-Laws currency 2026-10-06): rebate = 23.5% of the 'base invoice amount' (s.2.1: commodity + OEB rate-order charges; excludes HST, specific/retail service charges, penalties, prior balances). 23.5% effective 2025-11-01 (OEB release 2025-10-17; ontario.ca 'Manage energy costs for your home', updated 2026-09-28: 'currently provides a 23.5% rebate ... on the subtotal of their electricity bill', automatic separate bill line; OEB BillData.xml Rebate=0.235 '% of subtotal'). The rate moved with the 2025-11-01 RPP change - recheck after the OEB's next RPP announcement.",
+      "source_note": "O. Reg. 363/16 s.2 (e-Laws currency 2026-10-06): rebate = 23.5% of the 'base invoice amount' (s.2.1: commodity + OEB rate-order charges; excludes HST, specific/retail service charges, penalties, prior balances). 23.5% effective 2025-11-01 (OEB release 2025-10-17; ontario.ca 'Manage energy costs for your home', updated 2026-09-28: 'currently provides a 23.5% rebate ... on the subtotal of their electricity bill', automatic separate bill line; OEB BillData.xml Rebate=0.235 '% of subtotal'). Ends 2026-10-31: O. Reg. 328/26 substitutes 15.7% in s.2 from 2026-11-01 (next line).",
+      "confidence": "high"
+     },
+     {
+      "name": "Ontario Electricity Rebate (OER)",
+      "kind": "rebate",
+      "rate": 0.157,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": 50,
+       "max_annual_kwh": 250000,
+       "other": "Eligible if EITHER demand <= 50 kW OR annual use <= 250,000 kWh (O. Reg. 363/16 s.1.1(1) paras 1-2; either test suffices). Also registered farms and long-term care homes. Accounts billed as GS >= 50 kW but under 250,000 kWh/yr may need to confirm eligibility with their distributor."
+      },
+      "effective_date": "2026-11-01",
+      "end_date": null,
+      "source_url": "https://www.ontario.ca/laws/regulation/R26328",
+      "source_note": "O. Reg. 363/16 s.2 as amended by O. Reg. 328/26 (made 2026-10-08, filed and published on e-Laws 2026-10-09, Ontario Gazette 2026-10-24; read 2026-10-30). s.1: 'Section 2 of Ontario Regulation 363/16 is amended by striking out \"23.5 per cent\" and substituting \"15.7 per cent\".' s.3: 'This Regulation comes into force on the later of November 1, 2026 and the day this Regulation is filed.' Consolidated O. Reg. 363/16 (https://www.ontario.ca/laws/regulation/160363, e-Laws currency 2026-10-27) carries the same note for November 1, 2026. Base unchanged: the 'base invoice amount' (s.2.1: commodity + OEB rate-order charges; excludes HST, specific/retail service charges, penalties, prior balances). Cross-check: OEB news release 2026-10-16 'Ontario Energy Board Announces Changes to Electricity Prices for Households, Small Businesses and Farms': 'effective November 1, 2026, the Ontario government's Ontario Electricity Rebate (OER) will change to 15.7%'. Recheck after the OEB's next RPP announcement.",
       "confidence": "high"
      }
     ]
