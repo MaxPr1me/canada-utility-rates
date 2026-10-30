@@ -12,6 +12,12 @@ unit is unexpected, or a cross-check fails: computed monthly HOEP means against 
 report, that report's weighted averages against the cents-per-kWh table on the IESO HOEP page, and the $/MWh
 GA workbook against the cents-per-kWh GA workbook.
 
+Run by hand only. Since October 16, 2026 the website's Market Pricing file (site/data/market_pricing_ontario.json)
+is written by scripts/build_ontario_market.py (the rolling 60-month history), so this legacy surface is written by
+default to the git-ignored scratch file logs/market_pricing_legacy_2020_2024.json (user decision 2026-10-30); pass
+--output for another path. build_ontario_market.py and archive_ontario_price.py load this module for its shared
+IESO readers.
+
     python scripts/generate_market_pricing.py [--output PATH] [--start-year YYYY] [--end-year YYYY] [--cache-dir PATH]
 """
 import argparse
@@ -37,7 +43,8 @@ from bs4 import BeautifulSoup
 from openpyxl.utils.exceptions import InvalidFileException
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_OUTPUT = PROJECT_ROOT / "site" / "data" / "market_pricing_ontario.json"
+# Never the site file: a manual legacy run must not overwrite the rolling history (user decision 2026-10-30).
+DEFAULT_OUTPUT = PROJECT_ROOT / "logs" / "market_pricing_legacy_2020_2024.json"
 DEFAULT_START_YEAR = 2020
 DEFAULT_END_YEAR = 2024
 # The HOEP began on May 1, 2002 and retired on April 30, 2025, so 2003-2024 are its only full years.
@@ -868,6 +875,8 @@ def build_document(source: ReportSource, start_year: int = DEFAULT_START_YEAR, e
 
 
 def write_document(path: Path, document: dict) -> None:
+    """Write the JSON document atomically (temporary file, then os.replace), so a failed write never leaves a
+    partial file at path; missing parent directories are created (logs/ is git-ignored, absent in a fresh clone)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
     temporary.write_text(json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -877,7 +886,8 @@ def write_document(path: Path, document: dict) -> None:
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build the Ontario legacy HOEP + Class B GA history surface.")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT,
-                        help="output JSON path (default: site/data/market_pricing_ontario.json)")
+                        help="output JSON path (default: logs/market_pricing_legacy_2020_2024.json, a git-ignored "
+                             "scratch file; scripts/build_ontario_market.py builds the site's Market Pricing file)")
     parser.add_argument("--start-year", type=int, default=DEFAULT_START_YEAR,
                         help=f"first full calendar year (default {DEFAULT_START_YEAR})")
     parser.add_argument("--end-year", type=int, default=DEFAULT_END_YEAR,
