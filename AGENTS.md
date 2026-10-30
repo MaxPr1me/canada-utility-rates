@@ -158,9 +158,9 @@ shows them.
 | File | What it does |
 |---|---|
 | `data/models/crosswalk.json` | The sorting list. Its 246 rules are read from top to bottom, and the first rule that fits decides where each live tariff goes: into a model group (province, fuel, customer type, rate structure and size) or out, with a written reason. On October 16, 557 of the 910 live tariffs were used and 353 left out on purpose; none was left unsorted (the six rules added October 30 leave their new records out: AESO, BC Hydro 1892, FortisBC 38, NSPower real-time pricing, NL Hydro 5.1L and Island non-firm). It also lists the four Alberta "pairs" (a wires company plus the Rate of Last Resort provider for its area, counted as one) and the "required contributors": a model level is not shown when a utility it needs cannot be calculated (Newfoundland and Labrador homes need Newfoundland Power). Ontario and Alberta gas wait for Phase 7D, and the territories come later. |
-| `data/models/usage_levels.json` | The example customers, approved by the project owner: homes using 500, 1,000 or 2,000 kWh a month; small businesses (under 50 kW) using 2,000 kWh at 10 kW or 8,000 kWh at 25 kW; medium businesses (50-499 kW) using 40,000 kWh at 100 kW; large businesses (500-4,999 kW) using 500,000 kWh at 1,000 kW. It also holds the Ontario Energy Board's split of use between time-of-use periods, a short, reviewed list of "conditional" Ontario charges that a typical customer does pay, and the made-up (synthetic) business load profile used only for the illustrative estimate (see the glossary). |
+| `data/models/usage_levels.json` | The example customers, approved by the project owner: homes using 500, 1,000 or 2,000 kWh a month; small businesses (under 50 kW) using 2,000 kWh at 10 kW or 8,000 kWh at 25 kW; medium businesses (50-499 kW) using 40,000 kWh at 100 kW; large businesses (500-4,999 kW) using 500,000 kWh at 1,000 kW. It also holds the Ontario Energy Board's split of use between time-of-use periods (one dated set per OEB price year: the November 2025 set until October 31, 2026, then the November 2026 set: 64/18/18 for time-of-use, 41/20/26/13 for ultra-low overnight), a short, reviewed list of "conditional" Ontario charges that a typical customer does pay, and the made-up (synthetic) business load profile used only for the illustrative estimate (see the glossary). When the next OEB report comes out, add a new dated set and give the previous one an end date: two sets in force on the same day stop the time-of-use models instead of guessing. |
 | `data/models/block_periods.json` | Some tariffs print an energy block such as "first 5,000 kWh" without saying whether that is per month or per two months. Each of its 20 entries, reviewed with the project owner on October 16, quotes the tariff and says which period applies. When a tariff never says (NB Power GS1, Maritime Electric), that utility is left out of the model instead of guessed. |
-| `data/models/taxes.json` | Sales taxes (GST, HST, PST, QST, RST) and automatic bill rebates, such as the Ontario Electricity Rebate, for every province and territory: electricity and gas, homes and businesses. Municipal taxes and income-tested programs are left out. |
+| `data/models/taxes.json` | Sales taxes (GST, HST, PST, QST, RST) and automatic bill rebates, such as the Ontario Electricity Rebate, for every province and territory: electricity and gas, homes and businesses. Municipal taxes and income-tested programs are left out. A rate change is two lines with dates: the Ontario Electricity Rebate is 23.5% until October 31, 2026 and 15.7% from November 1, 2026 (O. Reg. 328/26). |
 | `pipeline/representative_models.py` | The calculator. For every utility it works out the monthly cost at each example level, then reports the median, the spread, the real utility closest to the median and any utility far from it (an "outlier"), without and with tax, plus a written explanation of how each number was made. Since October 16 it covers all ten provinces, treats each Alberta pair as one utility, and adds the clearly labelled illustrative estimate for Ontario's two larger business sizes. |
 | `site/data/representative_models.json` | The results. The export step rewrites this file every time; if the calculation fails, the export still finishes and the previous file is kept. The website's Representative Models page reads it. These are comparison aids, never rates anyone is billed. |
 
@@ -179,7 +179,7 @@ shows them.
 | File | What it does |
 |---|---|
 | `.github/workflows/scrape.yml` | Monthly tests, scrape, validation and export on the 1st. Since October 16 the only writer of the database: it gets the database from the `data-history` release, checks it, and saves it back with a dated backup. |
-| `.github/workflows/deploy.yml` | Separate GitHub Pages deployment on push or manual dispatch. |
+| `.github/workflows/deploy.yml` | Separate GitHub Pages deployment on push or manual dispatch, and by itself after each successful Monthly Scrape or Ontario Price Archive run. |
 | `.github/workflows/source-health.yml` | Non-blocking dry run on the 15th; uploads logs without publishing. |
 | `.github/workflows/ontario-price-archive.yml` | At 06:00 UTC on the 1st and 15th: saves the Ontario Price archive first, then rebuilds and saves the Ontario market history (Market Pricing page) in a second save, even when the archive step failed; opens an issue naming the part that failed. |
 | `scripts/check_db_history.py` | The Monthly Scrape's safety check: the database is not damaged, and nothing old was lost or changed. |
@@ -291,7 +291,8 @@ The file `.github/workflows/scrape.yml` tells GitHub Actions to:
    (`rates-YYYY-MM-DD.db.gz`; the newest 12 are kept), and save the updated site data to the
    repository (first catching up with any archive update saved the same day).
 9. Leave deployment to the separate **Deploy Site** workflow, which starts by itself after a
-   successful **Monthly Scrape** run and checks out `main`.
+   successful **Monthly Scrape** run (and, from batch 15, after a successful **Ontario Price
+   Archive** run) and checks out `main`.
 10. If any step fails, create a GitHub Issue; a failed check saves nothing to the release.
 
 **The rule since October 16 (user decision): only this workflow saves new data.** Your computer
@@ -387,7 +388,9 @@ See [docs/adding-a-utility.md](docs/adding-a-utility.md) for the full guide.
 
 **What to do:**
 1. Visit the URL in `data/sources/registry.json` for that utility.
-2. Has the page moved? Update the registry and any URL constant used by the scraper.
+2. Has the page moved? Update the registry and any URL constant used by the scraper, and add the
+   old address to the list of dead addresses in `tests/test_source_urls.py` (with the date and
+   the answer you got, such as "404" or "301"), so it can never come back by mistake.
 3. Has the page layout changed? The scraper's HTML parsing needs updating.
 4. Is the page down temporarily? Wait and try again.
 
@@ -422,9 +425,13 @@ left too long loses hours for good.
 1. Run `python scripts/archive_ontario_price.py --dry-run` on your computer; it names the month or
    file that failed and writes nothing.
 2. If it says "the IESO published this file empty", nothing is wrong with the project: start the
-   workflow again a day or two later. This happened on October 16 with the 2026 LFDA file. (Project
-   owner decision, October 16: wait for the IESO rather than save prices without their LFDA.)
-3. If the IESO changed its table or files, the script needs updating; if its website was down,
+   workflow again a day or two later. This happened on October 16 with the 2026 LFDA file; the IESO
+   published it again on October 30. (Project owner decision, October 16: wait for the IESO rather
+   than save prices without their LFDA.)
+3. If a month's LFDA differs from the IESO table by more than a cent, the table may still show a
+   preliminary value while the archive already holds the final one; wait for the IESO to update the
+   table, then start the workflow again (all three checks stay strict, project owner decision).
+4. If the IESO changed its table or files, the script needs updating; if its website was down,
    start the workflow again later.
 
 ### The database history check failed
@@ -570,8 +577,9 @@ command on your computer; add `--dry-run` to check everything without writing. T
 are never copied into a tariff: large customers' tariffs keep their "Variable" line.
 
 The older 2020-2024 version of the page (from October 9) can still be rebuilt with
-`python scripts/generate_market_pricing.py`, but the website no longer shows it. Always give it
-`--output` with another file name: by default it would overwrite the website's five-year file.
+`python scripts/generate_market_pricing.py`, but the website no longer shows it. By default it
+writes `logs/market_pricing_legacy_2020_2024.json`, a scratch file that is not saved in git
+(changed October 30, so it can no longer overwrite the website's five-year file by accident).
 Two GA details
 apply to both versions: April-June 2020 use the lower, capped GA (115 $/MWh) that the IESO
 published under a provincial emergency order, and the 2021 rates leave out a separate recovery
@@ -693,7 +701,7 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 1,993 tests across 21 test modules (1,867 on October 16 plus the October 30 additions: the coverage gate, AESO, Manitoba Hydro and the four market-indexed products), including `test_phase5_hardening` for
+There are 2,032 tests across 24 test modules (1,867 on October 16, 1,993 after the October 30 additions: the coverage gate, AESO, Manitoba Hydro and the four market-indexed products; then batch 15: `test_model_inputs_dated` for the dated Ontario usage shares and rebate, `test_source_urls` for the list of dead web addresses and `test_market_tooling` for the market scripts and the deploy trigger), including `test_phase5_hardening` for
 provenance, storage and history, `test_ontario_price_archive` for the Ontario Price archive,
 `test_market_rolling` and `test_market_site` for the five-year market history and its page,
 `test_ci_history` for the database safety check and download script, `test_models_7c` for the
