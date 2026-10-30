@@ -1,0 +1,15 @@
+{
+  "_description": "Source-derived excerpts of the AESO ETS Historical Pool Price report (CSV, fetched 2026-10-30) and its metadata PDF (http://ets.aeso.ca/Market/Reports/Manual/HelpText/historical-pool-price-metadata.pdf, document date D:20250528113723-06'00'). Prices are copied from the first rows of the October 2026 report; the cap row and the fall-back hour row follow the report's documented conventions (hour-ending, Alberta local time; repeated hour labelled 02*; unposted hours shown as -).",
+  "source_url": "http://ets.aeso.ca/ets_web/ip/Market/Reports/HistoricalPoolPriceReportServlet",
+  "metadata_url": "http://ets.aeso.ca/Market/Reports/Manual/HelpText/historical-pool-price-metadata.pdf",
+  "metadata_document_date": "D:20250528113723-06'00'",
+  "metadata_text": "Pool Price Metadata\nReport Category: Historical\nMETADATA\nData Description\nPool price represents the settlement price of one megawatt-hour of electric energy exchanged through the power pool. The\nElectric Utilities Act defines pool price as the price for each hour established and reported by the Independent System\nOperator (ISO), in accordance with the ISO rules, for electric energy exchanged through the power pool. Section 201.6 of\nthe ISO rules, subsection 5, specifies the ISO must set the pool price for each settlement interval as the time weighted\naverage of the one-minute system marginal price values for that settlement interval (i.e. an hour).\nData Attribute/Dimension\nPrice ($) Numeric Pool price for settlement period $ CAD\nAvailability\nHistorical data available from 2000 till date",
+  "csv_header": "Pool Price\n\n\"\"\n\nDate (HE),Price ($),30Ravg ($),AIL Demand (MW)\n",
+  "csv_rows_posted": [
+    ["10/25/2026 01", "29.80", "40.66", "10052.0"],
+    ["10/25/2026 02", "28.61", "40.60", "9950.0"]
+  ],
+  "csv_rows_unposted": [
+    ["10/30/2026 20", "-", "-", "-"]
+  ]
+}

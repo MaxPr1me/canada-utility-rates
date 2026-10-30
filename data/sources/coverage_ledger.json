@@ -13,16 +13,15 @@
   },
   "utilities": {
     "BC Hydro": {
-      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "audit": {"date": "2026-10-30", "basis": "Class-level reconciliation of every recorded published class (batch 11) plus RS1892 added October 30; dry run 18 live, 0 seed", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation; tests/test_ws3_bchydro.py"},
       "excluded": ["RS1828 biomass contract", "RS1823 cancelled", "irrigation, lighting, EV, IPP, wholesale/reseller, standby"],
-      "source_blocked": ["RS1289 indexed cash settlement"],
-      "deferred": ["RS1892 (Mid-C index): Phase 6D value-less Variable component"]
+      "source_blocked": ["RS1289 indexed cash settlement"]
     },
     "FortisBC Electric": {
-      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "audit": {"date": "2026-10-30", "basis": "Class-level reconciliation of every recorded published class (batch 11) plus RS38 added October 30; dry run 12 live, 0 seed", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation; tests/test_ws3_fortisbc.py"},
       "excluded": ["RS37 standby", "RS96 EV", "RS91 financing"],
       "source_blocked": ["RS95 (references BC Hydro RS3808 Tranche 1, not printed)"],
-      "deferred": ["RS38 (Mid-C index): Phase 6D value-less Variable component"]
+      "notes": "RS38 (interruptible pilot, Mid-C indexed energy value-less) is live at medium confidence while its sheets say Interim; its two customer charges are adopted by reference from RS30/RS31."
     },
     "Hydro-Québec": {
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
@@ -43,10 +42,10 @@
       "source_blocked": ["Net metering ($ value)", "interruptible/surplus (unpublished hourly incremental cost)"]
     },
     "Nova Scotia Power": {
-      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "audit": {"date": "2026-10-30", "basis": "Class-level reconciliation of every recorded published class (batch 11) plus One-Part Real Time Pricing (RTP-T, RTP-D) added October 30; dry run 20 live, 0 seed", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation; tests/test_ws3_nspower.py"},
       "excluded": ["ELIADC, Load Retention, municipal wholesale, shore power, standby, generation replacement/load following"],
       "source_blocked": ["Pilot participant restoration status"],
-      "deferred": ["One-part real-time pricing: Phase 6D value-less Variable component"]
+      "notes": "RTP adders and the transformer credit come from scanned tariff pages (OCR text layer, checked against the page images); approved by the user 2026-10-30 as live at medium confidence. The business web page's older RTP adders are not used. No FAM component is shown for RTP (applicability unclear)."
     },
     "Maritime Electric": {
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
@@ -58,10 +57,9 @@
       "source_blocked": ["Curtailable Option 2 (customer load-factor formula)", "GS/seasonal net-metering credits (class rate, no value)"]
     },
     "NL Hydro": {
-      "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
+      "audit": {"date": "2026-10-30", "basis": "Class-level reconciliation of every recorded published class (batch 11) plus Rate 5.1L and Island non-thermal non-firm (IND-NONFIRM) added October 30; dry run 23 live, 0 seed", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation; tests/test_ws3_nlhydro.py"},
       "excluded": ["CP commissioning", "UT wholesale", "Island Industrial Wheeling", "lighting"],
-      "source_blocked": ["Island thermal non-firm (fuel formula)"],
-      "deferred": ["5.1L and Island non-thermal non-firm (monthly market-indexed price): Phase 6D value-less Variable components"]
+      "source_blocked": ["Island thermal non-firm (fuel formula, no printed price; key IND-NONFIRM-THERMAL)"]
     },
     "SaskEnergy": {
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
@@ -155,8 +153,8 @@
       "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}]
     },
     "Alberta Electric System Operator": {
-      "audit": {"date": "2026-10-30", "basis": "AESO publishes no customer tariff; it is a market reference and has no live output today (seed estimate only)", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
-      "deferred": ["Phase 6C: dated official pool-price observations as live market-reference output (what counts as AESO live output is still to be decided)"]
+      "audit": {"date": "2026-10-30", "basis": "AESO publishes no customer tariff. Live since 2026-10-30: a value-less 'Variable' pool price market reference verified against the official ETS Historical Pool Price report (recent posted hourly prices, documented format, $0-$999.99 range) and its metadata PDF (pool price definition, document date); dry run 1 live, 0 seed. No price or average is stored", "source": "scrapers/utilities/aeso.py; tests/test_ws4_aeso.py"},
+      "excluded": ["Alberta Market Pricing view (Phase 6C hourly/monthly observations): AESO terms allow only non-commercial, unmodified use, so no derived data is published without AESO's written permission"]
     },
     "ATCO Gas": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 10 live records (North and South Low, Mid, High, Ultra High Use and ATA), equal to the batch 12 class inventory", "source": "docs/phase5_completion_matrix.md, Natural Gas"},

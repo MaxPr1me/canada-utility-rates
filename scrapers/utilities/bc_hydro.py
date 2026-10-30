@@ -16,6 +16,8 @@ Rate classes scraped:
   - Medium General Service (Rate 1500) — energy + demand charge
   - Large General Service (Rate 1600) — energy + demand charge (higher demand, lower energy)
   - Standard service charges (Terms and Conditions Section 11), as a separate record
+  - Transmission Service (RS 1830), conditional transmission pilots, generation credits and
+    Freshet Energy (RS 1892, Mid-C indexed: a value-less "Variable" energy component)
 
 Residential and General Service prices, dates and riders come from the approved
 Electric Tariff PDF; the product/business web pages are discovery references.
@@ -134,6 +136,10 @@ class BCHydroScraper(BaseScraper):
                     records.extend(self._parse_transmission_pilots(self._tariff_document()))
                 except Exception as exc:
                     self.logger.warning("Could not parse BC Hydro transmission pilots: %s", exc)
+                try:
+                    records.extend(self._parse_freshet_energy(self._tariff_document()))
+                except Exception as exc:
+                    self.logger.warning("Could not parse BC Hydro freshet energy: %s", exc)
                 try:
                     records.extend(self._parse_self_generation_tariff(self._tariff_document()))
                 except Exception as exc:
@@ -602,6 +608,88 @@ class BCHydroScraper(BaseScraper):
             except ValueError as exc:
                 self.logger.warning("Incomplete BC Hydro RS %s: %s", code, exc)
         return records
+
+    def _parse_freshet_energy(self, pages: list[DocumentPage]) -> list[TariffRecord]:
+        """RS 1892 Freshet Energy: a market-indexed (Mid-C) energy charge kept value-less; fails closed as one record."""
+        try:
+            text, effective, detail = self._numbered_section(pages, "1892", 5, 11)
+            required = [
+                "RATE SCHEDULE 1892 \u2013 TRANSMISSION SERVICE \u2013 FRESHET ENERGY",
+                "Customers supplied with Electricity under Rate Schedule 1830 (Transmission Service)",
+                "Rate Schedule 1828", "Rate Schedule 2801", "Rate Schedule 2802", "Rate Schedule 2821", "Rate Schedule 2822",
+                "that increase their Electricity usage during the Freshet Period",
+                "Applicable in Integrated Service Area excluding the Districts of Kingsgate-Yahk and Lardeau-Shutty Bench",
+                "1. Freshet Period May 1 to July 31 inclusive",
+                "High Load Hours (HLH) is the period of hours from 0600 to 2200, Monday to Saturday, except for Statutory Holidays",
+                "Low Load Hours (LLH) are all hours other than HLH",
+                "BC Hydro may refuse Service under this Rate Schedule",
+                "By March 1 of each year in which the Customer wishes to take Electricity under this Rate Schedule",
+                "converted from US dollars to Canadian dollars at the Bank of Canada daily exchange rate",
+                "exclusive of goods and services and provincial sales taxes",
+                "Electric Tariff Supplement Nos. 5, 6, 87 and 88",
+            ]
+            missing = [phrase for phrase in required if phrase not in text]
+            formula = re.search(
+                r"Energy Charge: The charge applied to energy supplied under this Rate Schedule 1892 during each HLH and LLH "
+                r"of the current Freshet Period is equal to: 1\. The greater of The Intercontinental Exchange \(ICE\) "
+                r"Mid-Columbia \(Mid-C\) Peak or Mid-C Off-Peak weighted average index price, as published by the ICE in the "
+                r"ICE Day Ahead Power Price Report, applicable to the hour, and \$0/kWh, plus 2\. A \$(\d+(?:\.\d+)?)/MWh adder\.",
+                text)
+            if missing or not formula or any(
+                    not re.search(rf"Rate Schedule {rider} applies to all charges payable under this Rate Schedule, before taxes and levies", text)
+                    for rider in ("1901", "1904")):
+                raise ValueError(f"Incomplete availability, index formula, definitions or riders: {missing}")
+            adder = formula.group(1)
+
+            riders: list[RateComponent] = []
+            for code, title in (("1901", "Deferral Account Rate Rider"), ("1904", "Trade Income Rate Rider")):
+                rider_text, rider_date, rider_detail = self._numbered_section(pages, code, 6, 1)
+                amount = re.search(r"charge equal to\s+(\(?-?\d+(?:\.\d+)?\)?)%", rider_text)
+                if not amount or "except for Rate Schedules 2101 and 3817" not in rider_text:
+                    raise ValueError(f"Incomplete RS {code} rider")
+                raw = amount.group(1)
+                percent = -float(raw[1:-1]) if raw.startswith("(") and raw.endswith(")") else float(raw)
+                riders.append(RateComponent(
+                    "rider", f"Rate Rider -- {title}", round(percent / 100, 6), "fraction",
+                    effective_date=rider_date, source_url=TARIFF_URL, source_detail=rider_detail,
+                    notes="RS 1892 states that this rider applies to all charges payable under it, before taxes and levies; it is a percentage of the indexed energy charge, not a stand-alone price.",
+                ))
+
+            market_reference = (
+                "ICE Mid-Columbia (Mid-C) Peak or Off-Peak weighted average index price (ICE Day Ahead Power Price Report, "
+                f"US dollars converted at the Bank of Canada daily rate), floored at $0/kWh, plus a ${adder}/MWh adder"
+            )
+            energy = RateComponent(
+                "energy", "Freshet Energy Charge (Mid-C index + adder)", None, "$/kWh",
+                tou_period="HLH and LLH of the Freshet Period",
+                tou_hours="HLH: 06:00-22:00 Monday-Saturday except statutory holidays; LLH: all other hours",
+                season="freshet", season_months="May 1 to July 31 inclusive",
+                market_reference=market_reference, market_source_url=TARIFF_URL,
+                effective_date=effective, source_url=TARIFF_URL, source_detail=detail,
+                notes=(f"Variable: the greater of the hourly-applicable ICE Mid-C Peak or Off-Peak weighted average index price and $0/kWh, plus a ${adder}/MWh adder. "
+                       "The adder is part of this formula and is not a separate charge. The index is published in US dollars and converted at the Bank of Canada daily rate. "
+                       "The tariff gives no ICE web address, so the tariff itself is the source link. No average or estimated price is stored."),
+            )
+            return [TariffRecord(
+                utility_name="BC Hydro", province="BC", utility_type="electricity",
+                tariff_name="Transmission Service - Freshet Energy (Rate 1892)", tariff_code="1892",
+                customer_class="industrial", sub_class="optional transmission freshet energy (market-indexed, conditional)",
+                rate_structure="market", pricing_method="market_based", market_reference=market_reference,
+                effective_date=max([effective] + [rider.effective_date for rider in riders]),
+                source_url=TARIFF_URL, source_page=detail,
+                eligibility=("Optional supply for customers taking Electricity under RS 1830, 1828, 2801, 2802, 2821 or 2822 (transmission service) that increase their "
+                             "Electricity usage during the Freshet Period (May 1 to July 31); Integrated Service Area excluding Kingsgate-Yahk and Lardeau-Shutty Bench. "
+                             "The customer must notify BC Hydro by March 1 with expected monthly MWh and planned operational or production changes; BC Hydro supplies it only "
+                             "if it has energy and capacity."),
+                notes=("Applies only to energy above the customer's approved HLH/LLH baselines in the Freshet Period, scaled by the HLH/LLH Net to Gross Ratio and determined after the "
+                       "period ends; all other energy stays on the base transmission schedule, with Billing Demand set by RS 1892's freshet rules. It is an add-on to the base schedule, "
+                       "not a stand-alone building tariff. Not available while taking RS 1880 or if EPA generator-turndown payments apply; the customer may cancel before July 31. "
+                       "Riders shown separately; taxes excluded."),
+                components=[energy] + riders,
+            )]
+        except ValueError as exc:
+            self.logger.warning("Incomplete BC Hydro RS 1892: %s", exc)
+            return []
 
     def _parse_self_generation_tariff(self, pages: list[DocumentPage]) -> list[TariffRecord]:
         try:

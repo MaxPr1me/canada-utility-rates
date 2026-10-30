@@ -14,9 +14,11 @@ Official sources:
   https://www.fortisbc.com/accounts-billing/billing-rates/electricity-rates/residential-rates
 
 Also parsed: RS 30 / RS 32 large commercial primary (500 kVA+), RS 31 / RS 33
-industrial transmission (5,000 kVA+) and the RS 85 Green Power rider. Not covered:
-RS 37 stand-by (RS 31 only), RS 38 interruptible pilot, net metering (RS 95), EV charging
-(RS 96), financing (RS 91) and the residential landing page (no static rate text).
+industrial transmission (5,000 kVA+) and the RS 85 Green Power rider. RS 38 interruptible
+pilot (ICE Day Ahead Mid-Columbia indexed) is read with a value-less market energy component
+("Variable"); no price is ever stored for it. Not covered: RS 37 stand-by (RS 31 only), net
+metering (RS 95), EV charging (RS 96), financing (RS 91) and the residential landing page
+(no static rate text).
 
 Regulated by: British Columbia Utilities Commission (BCUC)
 """
@@ -43,7 +45,7 @@ RESIDENTIAL_RATES_URL = "https://www.fortisbc.com/accounts-billing/billing-rates
 
 _CENT_GLYPHS = "¢ȼ"
 _TARIFF_PAGE_FOOTER = re.compile(r"(?:Revision of|Original) Page (R-\d+[A-Z]?\.\d+)")
-_TARIFF_PAGE_FILTER = re.compile(r"(?:Revision of|Original) Page R-(?:1|2A|20|21|22A|23A|30|31|32|33|85)\.\d+\b")
+_TARIFF_PAGE_FILTER = re.compile(r"(?:Revision of|Original) Page R-(?:1|2A|20|21|22A|23A|30|31|32|33|38|85)\.\d+\b")
 _EFFECTIVE_DATE = re.compile(r"Effective Date:\s*([A-Z][a-z]+ \d{1,2}, \d{4})")
 _CUSTOMER_CHARGE = re.compile(
     r"CUSTOMER\s+(?:A\s+)?CHARGE:\s*\$(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?) per (two Month period|Month)\b"
@@ -175,7 +177,7 @@ def _today() -> date:
 def _schedule_page(pages: list[DocumentPage], code: str, sheet_number: int = 1) -> DocumentPage:
     """Find a schedule sheet by heading and printed footer (R-<code>.<sheet>)."""
     code_pattern = re.escape(code[:-1]) + r"\s?" + code[-1] if code.endswith("A") else re.escape(code)
-    heading = re.compile(rf"(?:RATE )?SCHEDULE {code_pattern}\s+-\s")
+    heading = re.compile(rf"(?:RATE )?SCHEDULE {code_pattern}\s+[-–]\s")
     footer = f"R-{code}.{sheet_number}"
     for page in pages:
         flat = _flatten(page.text)
@@ -730,6 +732,154 @@ def _parse_green_power(pages: list[DocumentPage]) -> TariffRecord:
     )
 
 
+MID_C_MARKET_REFERENCE = (
+    "ICE Day Ahead Mid-Columbia (Mid-C) Peak Index (Peak Hours) / Off-Peak Index (Off-Peak Hours), "
+    "converted to CAD at the daily Bank of Canada rate (FortisBC Rate Schedule 38)"
+)
+_PILOT_END = re.compile(
+    r"available under this Rate Schedule on a pilot basis only until ([A-Z][a-z]+ \d{1,2}, \d{4})"
+)
+_HOURLY_ADDER = re.compile(r"Hourly Service Adder of \$(\d+(?:\.\d+)?) per kWh")
+_HOURLY_FORMULA = re.compile(r"\(applicable Mid-C Price \+ (\d+(?:\.\d+)?)\)")
+
+
+def _require_phrases(page: DocumentPage, phrases: list[str], description: str) -> None:
+    _require_ordered_text(page.text, phrases, description)
+
+
+def _adopted_customer_charge(
+    pages: list[DocumentPage], code: str, other_code: str, interim: bool
+) -> tuple[RateComponent, _PageSource]:
+    """The Rate Schedule 38 customer charge is, by reference, the one in effect on Rate Schedule 30 or 31."""
+    page = _schedule_page(pages, code)
+    source = _page_source(page, code)
+    charge = _customer_charge_component(source, _flatten(page.text))
+    if charge.charge_unit != "$/month":
+        raise ValueError(f"unexpected Rate {code} customer charge period")
+    charge.component_name = f"Customer Charge (as Rate Schedule {code})"
+    charge.sub_component = "alternative"
+    charge.confidence = "medium" if interim else "high"
+    charge.notes = (
+        f"Rate Schedule 38 sets the monthly Customer Charge equal to the Customer Charge in effect on Rate "
+        f"Schedule {code} (sheet R-{code}.1) for customers otherwise eligible for Rate Schedule {code}; "
+        f"alternative to the Rate Schedule {other_code} basis, never added to it. Zero ($0.00) when only part "
+        "of the load is served under Rate Schedule 38 and the firm part is billed on its own schedule."
+    )
+    return charge, source
+
+
+def _parse_interruptible(pages: list[DocumentPage]) -> TariffRecord:
+    """Rate Schedule 38 interruptible pilot: Mid-C indexed energy is a value-less market component."""
+    first_page = _schedule_page(pages, "38", 1)
+    second_page = _schedule_page(pages, "38", 2)
+    third_page = _schedule_page(pages, "38", 3)
+    first_source = _page_source(first_page, "38", 1)
+    second_source = _page_source(second_page, "38", 2)
+    third_source = _page_source(third_page, "38", 3)
+    flat_first, flat_second = _flatten(first_page.text), _flatten(second_page.text)
+
+    _require_phrases(first_page, [
+        "Interruptible Service is a non-firm, large commercial rate",
+        "would normally be eligible for service on Rate Schedule 30",
+        "or Rate Schedule 31",
+        "written agreement",
+        "sum of Hourly Energy Charges",
+    ], "Rate 38 nature and availability")
+    _require_phrases(first_page, [
+        "the Customer Charge per Month will be equal to the Customer Charge in effect in Rate Schedule 30 at the time",
+        "the Customer Charge per Month will be equal to the Customer Charge in effect in Rate Schedule 31 at the time",
+        "the Customer Charge billed under this Rate Schedule will be zero ($0.00)",
+    ], "Rate 38 customer charge reference")
+    pilot = _require(_PILOT_END.search(flat_first), "Rate 38 pilot end date")
+    try:
+        pilot_end = datetime.strptime(pilot.group(1), "%B %d, %Y").date()
+    except ValueError as exc:
+        raise ValueError(f"unparseable pilot end date {pilot.group(1)!r}") from exc
+    if pilot_end < _today():
+        raise ValueError(f"Rate Schedule 38 pilot ended {pilot_end.isoformat()}")
+
+    _require_phrases(second_page, [
+        "Intercontinental Exchange (ICE) Day Ahead Mid-Columbia Peak Index for the applicable day of flow in $/MWh",
+        "Day Ahead Mid-Columbia Off-Peak Index for the applicable day of flow in $/MWh",
+        "applicable Mid-C Price is negative, a value of $0.00/MWh will be used",
+        "exceeds the cap, if any, nominated by the Interruptible Customer",
+        "System losses as per Rate Schedule 109",
+        "Hourly Service Adder of $0.01000 per kWh",
+    ], "Rate 38 Mid-C energy charge")
+    adder = _require(_HOURLY_ADDER.search(flat_second), "Hourly Service Adder")
+    formula = _require(_HOURLY_FORMULA.search(flat_second), "Hourly Energy Charge formula")
+    if float(adder.group(1)) != float(formula.group(1)) or float(adder.group(1)) <= 0:
+        raise ValueError("Hourly Service Adder differs from the Hourly Energy Charge formula")
+    _require_phrases(third_page, [
+        "minimum of 12 Months after commencement of Service",
+        "applicable Mid-C Price will be converted to $CDN using the daily Bank of Canada rate and settled on a monthly basis",
+    ], "Rate 38 special provisions")
+
+    # The sheets are the interim pilot approval (Order G-136-23 (Interim)): medium confidence, like other interim rates.
+    interim = any("(Interim)" in _flatten(page.text) for page in (first_page, second_page, third_page))
+    confidence = "medium" if interim else "high"
+    rs30_charge, rs30_source = _adopted_customer_charge(pages, "30", "31", interim)
+    rs31_charge, rs31_source = _adopted_customer_charge(pages, "31", "30", interim)
+
+    market_energy = RateComponent(
+        component_type="energy",
+        component_name="Market Energy (ICE Day Ahead Mid-Columbia Index, hourly)",
+        charge_value=None,
+        charge_unit="$/kWh",
+        market_reference=MID_C_MARKET_REFERENCE,
+        market_source_url=TARIFF_URL,
+        effective_date=second_source.effective_date,
+        source_url=TARIFF_URL,
+        source_detail=second_source.detail,
+        confidence=confidence,
+        notes=(
+            "Market-indexed, no value stored. Each hour is billed (Energy Taken x (1 + loss rate %)) x (applicable "
+            "Mid-C Price + Hourly Service Adder), summed over the billing period. The applicable Mid-C Price is the "
+            "ICE Day Ahead Mid-Columbia Peak Index in Peak Hours and the Day Ahead Mid-Columbia Off-Peak Index in "
+            "Off-Peak Hours, in $/MWh, used as $0.00/MWh when negative and capped at the Mid-C Price Cap, if any, "
+            "nominated by the customer in its Service Agreement; converted to CAD at the daily Bank of Canada rate "
+            "and settled monthly. System losses follow Rate Schedule 109 (not stored here). Conditional: when "
+            "hourly use is below the customer's forecast load, Energy Taken is the forecast and the customer "
+            "receives a credit at the lower of the BC Hydro RS 3808 Tranche One Energy rate and the Mid-C "
+            "market-based rate (Special Provision 3(b); no value published)."
+        ),
+    )
+    service_adder = _component(
+        second_source, "energy", "Hourly Service Adder", float(adder.group(1)), "$/kWh", confidence=confidence,
+        notes="Added to the applicable Mid-C Price in every hour and multiplied with it by Energy Taken x (1 + loss rate %). "
+              "The printed formula adds "
+              "0.0100 to a Mid-C Price quoted in $/MWh without stating the unit conversion, so no combined "
+              "per-kWh price is calculated.",
+    )
+
+    record = _tariff(
+        "38", "Large Commercial Service - Interruptible (Rate 38)", "commercial", "market",
+        [first_source, second_source, third_source, rs30_source, rs31_source],
+        [rs30_charge, rs31_charge, market_energy, service_adder],
+        sub_class="large commercial interruptible (pilot)",
+        eligibility=(
+            "Non-firm, interruptible pilot service (available until " + pilot_end.strftime("%B %d, %Y").replace(" 0", " ") +
+            ") for customers whose entire load at one point of interconnection would normally be eligible for Rate "
+            "Schedule 30 (contract demand 500 kVA or more, primary voltage) or Rate Schedule 31 (industrial loads "
+            "of 5,000 kVA or more, transmission voltage); subject to FortisBC suitability review and written "
+            "agreement, a minimum 12-month term, and, for a part-load election, a served portion large enough to "
+            "qualify for Rate Schedule 30 or 31 itself"
+        ),
+        end_date=pilot_end.isoformat(),
+        market_reference=MID_C_MARKET_REFERENCE,
+        notes=(
+            "FortisBC Electric Rate Schedule 38 (pilot; Order G-136-23 (Interim), G-216-24). The energy price follows "
+            "the ICE Day Ahead Mid-Columbia index hour by hour, so no value is stored and the price is shown as "
+            "Variable; only the printed Hourly Service Adder and the customer charge adopted from Rate Schedule 30 "
+            "or 31 carry numbers. No demand charge is published on these sheets. Interruptible service is non-firm "
+            "and customers must provide five-year hourly load forecasts."
+        ),
+    )
+    record.pricing_method = "market_based"
+    record.confidence = confidence
+    return record
+
+
 _SCHEDULE_PARSERS: tuple[tuple[str, Callable[[list[DocumentPage]], TariffRecord]], ...] = (
     ("1", _parse_residential),
     ("2A", _parse_residential_tou),
@@ -741,6 +891,7 @@ _SCHEDULE_PARSERS: tuple[tuple[str, Callable[[list[DocumentPage]], TariffRecord]
     ("31", _parse_industrial_transmission),
     ("32", _parse_large_commercial_primary_tou),
     ("33", _parse_industrial_transmission_tou),
+    ("38", _parse_interruptible),
     ("85", _parse_green_power),
 )
 

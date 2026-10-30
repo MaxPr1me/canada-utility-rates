@@ -166,7 +166,7 @@ class TestManitobaHydroBuildingLive:
             "General Service Large (>100 kV)",
         } <= set(com)
         medium = com["General Service Medium"]
-        demand = [c for c in medium.components if c.component_type == "demand"][0]
+        demand = [c for c in medium.components if c.component_type == "demand" and c.charge_value][0]
         assert (demand.charge_value, demand.charge_unit, demand.demand_unit) == (12.39, "$/kVA", "kVA")
         assert "25% of contract demand" in medium.notes
         assert MBH_comp(com["General Service Seasonal (Single Phase)"], "Basic Annual Charge").charge_unit == "$/year"
@@ -5788,14 +5788,16 @@ def test_nlb10_fixture_pages_are_official_non_firm_and_wheeling_excerpts():
     assert pages[13].rstrip().endswith("IND-5")
 
 
-def test_nlb10_non_firm_is_source_blocked_formula_gap_without_records():
+def test_nlb10_thermal_non_firm_is_source_blocked_formula_gap_without_records():
     scraper, records = NLB10__parse(NLB10__document())
-    reason = scraper.unmodelled_published["IND-NONFIRM"]
+    reason = scraper.unmodelled_published["IND-NONFIRM-THERMAL"]
     assert reason.startswith("source-blocked")
-    for term in ("Rate 2.4L", "NYISO Zone A", "ISO-NE Mass Hub", "583/475/556 kWh/bbl", "C = 3.34%"):
+    for term in ("Thermal Generation Source", "583/475/556 kWh/bbl", "C = 3.34%"):
         assert term in reason
-    assert not any("non-firm" in record.tariff_name.lower() for record in records.values())
-    assert not any(code.startswith("IND-") and code != "IND-FIRM" for code in records)
+    assert "IND-NONFIRM" not in scraper.unmodelled_published
+    # Phase 6D: only the non-thermal, market-indexed part is a record, and it carries no number.
+    assert {code for code in records if code.startswith("IND-")} == {"IND-FIRM", "IND-NONFIRM"}
+    assert all(c.charge_value is None and c.market_reference for c in records["IND-NONFIRM"].components)
 
 
 def test_nlb10_wheeling_is_excluded_not_priced():
@@ -5813,30 +5815,38 @@ def test_nlb10_existing_classes_are_preserved():
     pages = [DocumentPage(**page) for page in document["pages"] + document["wp1_pages"]]
     baseline = {record.tariff_code: record for record in
                 scraper.parse_schedule_pages(pages, document["source_url"], today=NLB10_TODAY)}
-    assert len(with_new) == len(baseline) == 21
-    assert set(with_new) == set(baseline)
+    assert len(baseline) == 21 and len(with_new) == 22
+    assert set(with_new) == set(baseline) | {"IND-NONFIRM"}
     assert [(c.charge_value, c.charge_unit) for c in with_new["IND-FIRM"].components] ==\
         [(c.charge_value, c.charge_unit) for c in baseline["IND-FIRM"].components]
     assert "IND-NONFIRM" not in scraper.unmodelled_published
     assert scraper.excluded_published == {}
 
 
-def test_nlb10_printed_non_firm_price_or_missing_formula_flags_review():
+def test_nlb10_changed_non_thermal_text_rejects_the_market_record():
     for page_number, old, new in (
         (11, "Non-Thermal Generation Source (¢ per kWh)", "Non-Thermal Generation Source @ 9.999¢ per kWh"),
-        (12, "conversion factor of 583 kWh/bbl", "conversion factor of unknown"),
         (11, "NYISO Zone A", "another market"),
     ):
         scraper, records = NLB10__parse(NLB10__mutate(NLB10__document(), page_number, old, new))
-        assert "changed" in scraper.unmodelled_published["IND-NONFIRM"]
+        assert "IND-NONFIRM" not in records
+        assert scraper.unmodelled_published["IND-NONFIRM"].startswith("published but not live-verified")
         assert len(records) == 21
+
+
+def test_nlb10_changed_thermal_formula_flags_review():
+    document = NLB10__mutate(NLB10__document(), 12, "conversion factor of 583 kWh/bbl", "conversion factor of unknown")
+    scraper, records = NLB10__parse(document)
+    assert "changed" in scraper.unmodelled_published["IND-NONFIRM-THERMAL"]
+    assert len(records) == 22 and "IND-NONFIRM" in records
 
 
 def test_nlb10_missing_non_firm_continuation_is_isolated():
     document = NLB10__document()
     document["b10_industrial_pages"] = [p for p in document["b10_industrial_pages"] if p["page_number"] != 12]
     scraper, records = NLB10__parse(document)
-    assert "incomplete" in scraper.unmodelled_published["IND-NONFIRM"]
+    assert "incomplete" in scraper.unmodelled_published["IND-NONFIRM-THERMAL"]
+    assert "IND-NONFIRM" not in records
     assert "IND-WHEELING" in scraper.excluded_published
     assert len(records) == 21 and "IND-FIRM" in records
 
@@ -5846,7 +5856,7 @@ def test_nlb10_wheeling_scope_change_flags_review_not_exclusion():
     scraper, records = NLB10__parse(document)
     assert "IND-WHEELING" not in scraper.excluded_published
     assert "changed" in scraper.unmodelled_published["IND-WHEELING"]
-    assert len(records) == 21
+    assert len(records) == 22
 
 
 def test_nlb10_future_dated_industrial_pages_are_not_audited_as_current():
@@ -5854,8 +5864,9 @@ def test_nlb10_future_dated_industrial_pages_are_not_audited_as_current():
     for page in document["b10_industrial_pages"]:
         page["text"] = page["text"].replace("Effective July 1, 2026", "Effective July 1, 2027")
     scraper, records = NLB10__parse(document)
-    assert "incomplete" in scraper.unmodelled_published["IND-NONFIRM"]
+    assert "incomplete" in scraper.unmodelled_published["IND-NONFIRM-THERMAL"]
     assert "incomplete" in scraper.unmodelled_published["IND-WHEELING"]
+    assert "IND-NONFIRM" not in records
     assert scraper.excluded_published == {}
     assert len(records) == 21
 

@@ -445,7 +445,7 @@
           "is_primary": false
         }
       ],
-      "notes": "BCUC-regulated residential choices include tiered 1101, flat 1151, each with optional 2101 time-of-day, plus closed dual-fuel 1105. The live parser reads the approved PDF including dates, separate 1901/1904 riders and conditional transformer discounts; the riders exclude 2101 adjustments. Business Rates 1300/1500/1600 are rebuilt from approved tariff pages 97-107 with separate RS1901/1904 riders and conditional primary-voltage/transformation discounts, plus Terms and Conditions Section 11 standard service charges. Batch 9 adds Transmission Service RS1830 (PDF pages 138-140) and closed RS1289 net-metering generation credit as a conditional adjustment (pages 223-231); batch 10 adds transmission pilots 2801/2802/2821/2822 (pages 187-216, conditional enrollment alternatives to RS1830, ending March 31, 2030) and conditional generation credits RS2289/2290 (pages 234-248) for 17 live; RS1892 freshet energy is Mid-C index priced and deferred with market-rate work, RS1828 is excluded (biomass contract), and irrigation, lighting, EV, IPP and standby-only service are excluded. Batch 8 adds the Terms and Conditions section 7.2 power-factor surcharge (PDF pages 53-54) to each business record as ten conditional bands in the source unit 'fraction of Rate section charges' (lagging power factor below 90%; nil at 90% or more; no leading-power-factor charge); a missing or malformed clause rejects business records only."
+      "notes": "BCUC-regulated residential choices include tiered 1101, flat 1151, each with optional 2101 time-of-day, plus closed dual-fuel 1105. The live parser reads the approved PDF including dates, separate 1901/1904 riders and conditional transformer discounts; the riders exclude 2101 adjustments. Business Rates 1300/1500/1600 are rebuilt from approved tariff pages 97-107 with separate RS1901/1904 riders and conditional primary-voltage/transformation discounts, plus Terms and Conditions Section 11 standard service charges. Batch 9 adds Transmission Service RS1830 (PDF pages 138-140) and closed RS1289 net-metering generation credit as a conditional adjustment (pages 223-231); batch 10 adds transmission pilots 2801/2802/2821/2822 (pages 187-216, conditional enrollment alternatives to RS1830, ending March 31, 2030) and conditional generation credits RS2289/2290 (pages 234-248) for 17 live; RS1892 freshet energy (PDF pages 150-160; Mid-C index plus a $3/MWh adder, May 1-July 31, optional add-on for transmission customers) is a live record whose energy part is a value-less 'Variable' market component, with the two printed percentage riders as separate components; RS1828 is excluded (biomass contract), and irrigation, lighting, EV, IPP and standby-only service are excluded. Batch 8 adds the Terms and Conditions section 7.2 power-factor surcharge (PDF pages 53-54) to each business record as ten conditional bands in the source unit 'fraction of Rate section charges' (lagging power factor below 90%; nil at 90% or more; no leading-power-factor charge); a missing or malformed clause rejects business records only."
     },
     {
       "name": "FortisBC Electric",
@@ -474,7 +474,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Six live January 2026 building schedules: flat RS 1, closed residential TOU 2A, commercial 20/21 and TOU 22A/23A. Per-two-month and per-month charges remain native; RS21 kW/kVA components are alternative bases. Conditional voltage/transformation credits are negative rebates, not additive charges. Nine live schedules: large commercial primary RS30 and RS32 (500 kVA contract demand) and optional RS85 Green Power rider were added. Batch 9 adds industrial transmission RS31 and TOU RS33 (sheets R-31.1/R-33.1); RS37 standby-only is excluded and Mid-C-indexed RS38 is deferred to the Alberta/Ontario market-rate work; RS96 EV, RS95 net metering and RS91 financing have no building price. PDF extraction selects source sheets by printed footer to avoid table-of-contents extraction stalls."
+      "notes": "Six live January 2026 building schedules: flat RS 1, closed residential TOU 2A, commercial 20/21 and TOU 22A/23A. Per-two-month and per-month charges remain native; RS21 kW/kVA components are alternative bases. Conditional voltage/transformation credits are negative rebates, not additive charges. Nine live schedules: large commercial primary RS30 and RS32 (500 kVA contract demand) and optional RS85 Green Power rider were added. Batch 9 adds industrial transmission RS31 and TOU RS33 (sheets R-31.1/R-33.1); RS37 standby-only is excluded; Mid-C-indexed RS38 (an interruptible pilot to July 31, 2028) is live since October 30 with a value-less Mid-C energy line, a $0.01/kWh adder and its two customer charges adopted from RS30/RS31 (medium confidence while the sheets say Interim); RS96 EV, RS95 net metering and RS91 financing have no building price. PDF extraction selects source sheets by printed footer to avoid table-of-contents extraction stalls."
     },
     {
       "name": "Hydro-Québec",
@@ -657,7 +657,7 @@
         {
           "url": "https://www.nspower.ca/docs/default-source/regulatory/tariff-book-2026.pdf",
           "source_type": "pdf",
-          "description": "May 2026 domestic, business 10/11/12 and MURB89 tariffs, dated conditional pilots, FAM/DSM/storm and optional Solar Garden/Community Solar riders",
+          "description": "May 2026 domestic, business 10/11/12 and MURB89 tariffs, dated conditional pilots, industrial 21/22/23/25, One-Part Real Time Pricing (pages 89-94), FAM/DSM/storm and optional Solar Garden/Community Solar riders",
           "is_primary": false
         },
         {
@@ -667,7 +667,7 @@
           "is_primary": false
         }
       ],
-      "notes": "Ten live records include standard/TOD/conditional pilots, MURB house-meter TOU89, separate optional Solar Garden and Community Solar adjustments, and business 10/11/12 rebuilt from tariff book pages 16-17/25-26/38-39 with FAM/DSM/storm riders and conditional transformer discounts. MURB requires ten units, its own General/MURB rider rows and minimum-bill context; printed Note1 explicitly applies the peak price on weekends/holidays. Solar credits apply only to subscriber-attributed generation with base tariffs still separate. Pilot restoration status remains conditional; no early November/2027 prices. Business pilots 72/73/82/83 remain a gap; municipal wholesale is excluded. Batch 7 adds business pilots 72/73/82/83 (14 live total) as conditional records: October interim phase and November 1 pricing date-gated, closed to new applications, with restoration status not assumed. Batch 10 adds Small (21), Medium (22) and Large Industrial firm (23) and the Large Industrial Interruptible Rider (25) from book pages 40-49 with their own FAM/DSM/storm rows, conditional distribution-cost adder, transformer reduction and interruptible demand credit (18 live). ELIADC and Load Retention are contract-specific exclusions; one-part real-time pricing is market-indexed and deferred with market-rate work; municipal wholesale, shore power and standby are excluded."
+      "notes": "Ten live records include standard/TOD/conditional pilots, MURB house-meter TOU89, separate optional Solar Garden and Community Solar adjustments, and business 10/11/12 rebuilt from tariff book pages 16-17/25-26/38-39 with FAM/DSM/storm riders and conditional transformer discounts. MURB requires ten units, its own General/MURB rider rows and minimum-bill context; printed Note1 explicitly applies the peak price on weekends/holidays. Solar credits apply only to subscriber-attributed generation with base tariffs still separate. Pilot restoration status remains conditional; no early November/2027 prices. Business pilots 72/73/82/83 remain a gap; municipal wholesale is excluded. Batch 7 adds business pilots 72/73/82/83 (14 live total) as conditional records: October interim phase and November 1 pricing date-gated, closed to new applications, with restoration status not assumed. Batch 10 adds Small (21), Medium (22) and Large Industrial firm (23) and the Large Industrial Interruptible Rider (25) from book pages 40-49 with their own FAM/DSM/storm rows, conditional distribution-cost adder, transformer reduction and interruptible demand credit (18 live). ELIADC and Load Retention are contract-specific exclusions; municipal wholesale, shore power and standby are excluded. Phase 6D (October 30) adds the two One-Part Real Time Pricing tariffs (RTP-T Schedule B, transmission voltage 69 kV or higher; RTP-D Schedule C, distribution voltage below 69 kV; book pages 89-94; 20 live) as market-based records: the energy price (NSPI actual hourly marginal energy cost) is a value-less Variable component, shown with the printed on-peak/off-peak fixed cost adders (read from scanned pages' OCR text layer, medium confidence), the conditional customer-owned transformer credit and their own DSM and storm rider rows. No FAM rate is shown because the FAM table prints no row for this class. The business-rates web page still lists older EHV/HV/DV adders and is not used."
     },
     {
       "name": "Maritime Electric",
@@ -734,9 +734,15 @@
           "source_type": "pdf",
           "description": "July 2026 Schedule of Rates: Island/Labrador/diesel domestic and general-service, government distinctions, Burgeo school/library and two seasonal adjustment options",
           "is_primary": false
+        },
+        {
+          "url": "https://nlhydro.com/electicity-rates/non-firm-rates-customers/",
+          "source_type": "html",
+          "description": "Non-Firm Rates Customers page: where Hydro publishes each month's on-/off-peak non-firm energy price for Rate 5.1L and the Island Industrial Non-Firm non-thermal charge (market reference only; the numbers are never stored in a tariff)",
+          "is_primary": false
         }
       ],
-      "notes": "Eighteen current building-service and seasonal-option records are parsed from individually dated July 2026 pages. Phase/amperage basic charges are mutually exclusive alternatives. kW/kVA, monthly diesel blocks, government/non-government service, required minimum/maximum bills and optional adjustment conditions are retained. Seasonal options require their base schedule; no bill totals. Batch 9 adds Island Industrial Firm (pages 9-10), Labrador Industrial Firm (pages 62-65) and the conditional Net Metering Service Option credit (pages 67-70); 21 live. 5.1L is source-blocked (monthly futures pricing); CP is transmission commissioning; lighting/UT wholesale are outside scope. Batch 10 audits Island Industrial Non-Firm (pages 11-12: futures- and fuel-formula pricing with no printed price, source-blocked) and Island Industrial Wheeling (page 13: transmission wheeling under an Industrial Service Agreement, excluded)."
+      "notes": "Eighteen current building-service and seasonal-option records are parsed from individually dated July 2026 pages. Phase/amperage basic charges are mutually exclusive alternatives. kW/kVA, monthly diesel blocks, government/non-government service, required minimum/maximum bills and optional adjustment conditions are retained. Seasonal options require their base schedule; no bill totals. Batch 9 adds Island Industrial Firm (pages 9-10), Labrador Industrial Firm (pages 62-65) and the conditional Net Metering Service Option credit (pages 67-70); 21 live. CP is transmission commissioning; lighting/UT wholesale are outside scope. Batch 10 audits Island Industrial Wheeling (page 13: transmission wheeling under an Industrial Service Agreement, excluded). Phase 6D adds two market-indexed non-firm records (23 live): Rate 5.1L (pages 59-61: printed $85.25/month Basic Customer Charge plus value-less on-/off-peak energy) and Island Industrial Non-Firm, Non-Thermal Generation Source (pages 11-12: value-less on-/off-peak energy). The monthly price is the greater of the Rate 2.4L energy charge and a weighted NYISO Zone A / ISO-NE Mass Hub 5 MW calendar-month day-ahead futures price (CAD, adjusted for losses and fees); no number is stored. Island Industrial Non-Firm Thermal Generation Source (page 12, fuel-cost formula, no printed price) stays source-blocked."
     },
     {
       "name": "Yukon Energy",
@@ -2447,13 +2453,19 @@
       "status": "active",
       "sources": [
         {
-          "url": "https://www.aeso.ca/market/market-and-system-reporting/hourly-pool-price-report/",
-          "source_type": "html",
-          "description": "AESO hourly pool price report and market data",
+          "url": "http://ets.aeso.ca/ets_web/ip/Market/Reports/HistoricalPoolPriceReportServlet",
+          "source_type": "csv",
+          "description": "AESO ETS Historical Pool Price report (CSV, no login; plain http only): hourly pool price in $/MWh, hour-ending, history from 2000; the report's old aeso.ca page returns 404",
           "is_primary": true
+        },
+        {
+          "url": "http://ets.aeso.ca/Market/Reports/Manual/HelpText/historical-pool-price-metadata.pdf",
+          "source_type": "pdf",
+          "description": "Pool Price Metadata: defines pool price (time weighted average of the one-minute system marginal price, ISO rule 201.6); its document date is the record's effective date",
+          "is_primary": false
         }
       ],
-      "notes": "Market operator, not a utility. Provides reference pool price used by all Alberta RRO providers."
+      "notes": "Market operator, not a utility; it publishes no customer tariff. The live record (since October 30, 2026) is a value-less 'Variable' pool price market reference verified against the ETS report and its metadata; no price or average is stored, and it never counts as a retail rate. Replaces the old Regulated Rate Option reference (Rate of Last Resort prices are separate live records). Terms: AESO allows non-commercial, unmodified use only, so no derived data is published (Phase 6C market view needs written permission)."
     }
   ]
 }

@@ -282,13 +282,33 @@ def test_crosswalk_maps_alberta_wires_classes_and_marks_retail_records_as_pair_p
 
 
 def test_frozen_samples_together_leave_nothing_unmapped():
-    records = load_rates(FIXTURES / "rm_records_sample.json") + load_rates(FIXTURES / "rm_records_b12.json") + _records()
+    records = (load_rates(FIXTURES / "rm_records_sample.json") + load_rates(FIXTURES / "rm_records_b12.json")
+               + _records() + load_rates(FIXTURES / "rm_records_ws_6d.json"))
     report = coverage_report(records, load_crosswalk())
     assert report["unmapped"] == [] and report["unused_rules"] == []
     assert "province_not_modelled_yet_7c" not in report["exclusions"]
     assert report["exclusions"]["paired_retail_component"] == 8
     assert report["model_keys"][AB_RES]["utilities"] == ["ATCO Electric", "ENMAX Power", "EPCOR Distribution",
                                                          "FortisAlberta"]
+
+
+def test_market_indexed_and_aeso_records_are_excluded_by_their_own_rules():
+    from pipeline.representative_models import match_record
+
+    expected = {"POOL": ("ab-aeso-pool-price", "market_reference_only"),
+                "1892": ("bc-hydro-1892-freshet", "optional_product"),
+                "38": ("bc-fortisbc-38", "pilot"),
+                "RTP-T": ("ns-power-rtp", "industrial_use_only"),
+                "RTP-D": ("ns-power-rtp", "industrial_use_only"),
+                "5.1L": ("nl-hydro-5-1l", "industrial_use_only"),
+                "IND-NONFIRM": ("nl-hydro-ind-nonfirm", "industrial_use_only")}
+    crosswalk = load_crosswalk()
+    records = load_rates(FIXTURES / "rm_records_ws_6d.json")
+    assert {r["tariff_code"] for r in records} == set(expected)
+    for record in records:
+        outcome = match_record(record, crosswalk)
+        assert (outcome["rule_id"], outcome["exclude"]) == expected[record["tariff_code"]], record["tariff_code"]
+        assert any(c["charge_value"] is None and c["market_reference"] for c in record["components"]), record["name"]
 
 
 def test_gas_and_territories_are_not_modelled():

@@ -31,6 +31,11 @@ from scrapers.utils.parsing import (
 logger = logging.getLogger(__name__)
 
 NL_HYDRO_URL = "https://nlhydro.com/electicity-rates/current-rates/"
+# Hydro publishes each month's non-firm on-/off-peak price here; those numbers are never stored in a tariff.
+NL_NONFIRM_URL = "https://nlhydro.com/electicity-rates/non-firm-rates-customers/"
+NONFIRM_MARKET_REFERENCE = (
+    "NYISO Zone A and ISO New England Mass Hub 5 MW calendar-month day-ahead futures (CAD, adjusted for "
+    "losses and market fees)")
 
 # Known rate values — used as seed/fallback data.
 # NL Hydro serves rural areas directly; rates shown are for
@@ -202,9 +207,8 @@ _SPECS: tuple[_Spec, ...] = (
 _EXCLUDED_CODES = {"4.1", "4.1D", "4.1G", "4.1L", "4.11L", "4.12L"}   # street and area lighting
 
 # Published schedules that are real catalogue gaps, with the reason each is not a modelled building tariff.
-_GAP_RATES = {
-    "5.1L": "interruptible non-firm energy for 1.5 MW+ transmission customers; price is a NYISO/ISO-NE futures formula",
-}
+_GAP_RATES: dict[str, str] = {}
+_NONFIRM_CODES = {"5.1L"}   # modelled by _parse_labrador_nonfirm (value-less market-indexed energy)
 _GAP_SCHEDULES = {
     "UT": "Utility: wholesale supply to Newfoundland Power (a retailer)",
     "CP": "Commissioning Power non-firm rate",
@@ -267,6 +271,59 @@ def _landing_rates(text: str) -> dict[str, float]:
     if labrador:
         rates["1.1L"] = round(float(labrador.group(1)) / 100.0, 6)
     return rates
+
+
+_NONFIRM_NOTE = (
+    "The monthly on-peak and off-peak energy charges are market-indexed and stored without a number "
+    "('Variable'): for each calendar month Hydro takes the weighted average (by each market's share of the "
+    "previous month's kWh exports) of the NYISO Zone A and ISO New England Mass Hub 5 MW calendar-month "
+    "day-ahead futures settlement prices after trading ends on the 19th day of the previous month, converted "
+    "to Canadian dollars at that day's exchange rate and adjusted for losses and other market fees. The charge "
+    "is the greater of that rate and the energy charge of Rate No. 2.4L (General Service 1,000 kVA and Over); "
+    "that floor is not added to it. Hydro informs the customer on the first business day after the 21st of the "
+    f"preceding month and publishes the monthly on-/off-peak prices (cents/kWh) at {NL_NONFIRM_URL}. "
+    "HST is not included."
+)
+_NONFIRM_TERMS = (
+    "greater of", "Rate No. 2.4L", "weighted average",
+    "NYISO Zone A Day-Ahead Peak Calendar-Month 5 MW Futures",
+    "ISO New England Mass Hub 5 MW Peak Calendar-Month Day-Ahead LMP Futures",
+    "NYISO Zone A Day-Ahead Off-Peak Calendar-Month 5 MW Futures",
+    "ISO New England Mass Hub Day-Ahead Off-Peak Calendar-Month 5 MW Futures",
+    "nineteenth day of the previous month", "converted to Canadian dollars", "adjusted for losses and other market fees",
+    "percentage of kWh exports sold",
+    "winter on-peak period is 7 am to 10 pm, Monday to Friday, for the months of December to March",
+    "non-winter peak period is 8 am to 10 pm, Monday to Friday, for the period April to November",
+    "off-peak period will include all other hours",
+    "first business day following the 21st day of the month preceding the month",
+)
+
+
+def _verify_nonfirm_formula(text: str) -> None:
+    """Accept only a schedule that defines the monthly index and prints no price for it."""
+    flat = _flat(text)
+    for term in _NONFIRM_TERMS:
+        if term not in flat:
+            raise _Reject(f"non-firm index definition missing: {term}")
+    for term in _NONFIRM_TERMS[3:7]:
+        if flat.count(term) != 1:
+            raise _Reject(f"non-firm index source duplicated: {term}")
+    if re.search(r"\d+\.\d+\s*¢|¢\s*\d|\$\s*\d[\d.,]*\s*(?:/|per)\s*[kM]Wh", flat):
+        raise _Reject("a printed non-firm energy price appeared; review before storing")
+
+
+def _nonfirm_components() -> list[RateComponent]:
+    return [
+        RateComponent(
+            "energy", f"Non-Firm {label} Energy (Market-Indexed)", None, "$/kWh",
+            tou_period=period, tou_hours=hours,
+            market_reference=NONFIRM_MARKET_REFERENCE, market_source_url=NL_NONFIRM_URL,
+            notes=f"{label} period. " + _NONFIRM_NOTE)
+        for label, period, hours in (
+            ("On-Peak", "on-peak",
+             "Monday-Friday 7 am-10 pm (December-March); Monday-Friday 8 am-10 pm (April-November)"),
+            ("Off-Peak", "off-peak", "All other hours"))
+    ]
 
 
 def _basic_components(flat: str, spec: _Spec) -> list[RateComponent]:
@@ -605,7 +662,7 @@ class NLHydroScraper(BaseScraper):
         """
         today = today or date.today()
         landing = _landing_rates(landing_text) if landing_text else {}
-        modelled = {spec.code for spec in _SPECS} | _EXCLUDED_CODES
+        modelled = {spec.code for spec in _SPECS} | _EXCLUDED_CODES | _NONFIRM_CODES
         self.unmodelled_published = {}
         self.excluded_published = {}
         for page in pages:
@@ -639,11 +696,18 @@ class NLHydroScraper(BaseScraper):
                 self.logger.warning("NL Hydro Rate %s not live-verified: %s", spec.code, exc)
         for code, parser in (("IND-FIRM", self._parse_island_industrial),
                              ("LAB-IND", self._parse_labrador_industrial),
-                             ("NM", self._parse_net_metering)):
+                             ("NM", self._parse_net_metering),
+                             ("IND-NONFIRM", self._parse_island_nonfirm),
+                             ("5.1L", self._parse_labrador_nonfirm)):
             try:
                 records.append(parser(pages, source_url, today))
             except _Reject as exc:
                 self.logger.warning("NL Hydro %s not live-verified: %s", code, exc)
+                published = (re.search(r"\d{4} IND-[34]\b", " ".join(page.text for page in pages))
+                             if code == "IND-NONFIRM" else
+                             any(re.search(r"^RATE NO\. 5\.1L\s*$", page.text, re.M) for page in pages))
+                if published:
+                    self.unmodelled_published[code] = f"published but not live-verified: {exc}"
         return records
 
     def _published_sections(
@@ -711,33 +775,103 @@ class NLHydroScraper(BaseScraper):
             "the named annual charges apply only to their respective customers, not to every account.",
             components, [firm, conditions], source_url, "mixed")
 
+    def _nonfirm_record(
+        self, code: str, name: str, sub_class: str, eligibility: str, notes: str,
+        components: list[RateComponent], pages: list[DocumentPage], source_url: str,
+        structure: str, demand_min_kw: Optional[float] = None,
+    ) -> TariffRecord:
+        for component in components:
+            component.effective_date = "2026-07-01"
+        record = TariffRecord(
+            utility_name=self.utility_name, province=self.province, utility_type="electricity",
+            tariff_name=name, tariff_code=code, customer_class="industrial", sub_class=sub_class,
+            eligibility=eligibility, demand_min_kw=demand_min_kw, rate_structure=structure,
+            pricing_method="market_based", market_reference=NONFIRM_MARKET_REFERENCE,
+            effective_date="2026-07-01", confidence="high", notes=notes, components=components,
+        )
+        return self.mark_live_parsed(
+            [record], source_url=source_url,
+            detail="PDF pages " + ", ".join(str(page.page_number) for page in pages))[0]
+
+    def _parse_island_nonfirm(
+        self, pages: list[DocumentPage], source_url: str, today: date,
+    ) -> TariffRecord:
+        sections = self._published_sections(pages, "IND", 2, today, 3)
+        first, second = (_flat(page.text) for page in sections)
+        marker, thermal = "Non-Firm Energy Charge: Non-Thermal Generation Source", \
+            "Non-Firm Energy Charge: Thermal Generation Source"
+        if "INDUSTRIAL – NON-FIRM" not in first or marker not in first or thermal not in second:
+            raise _Reject("non-firm heading or non-thermal/thermal sections missing")
+        for term in ("other than a retailer", "Interconnected Island bulk transmission grid",
+                     "66 kV or greater", "contract with Hydro for the purchase of firm power and energy"):
+            if term not in first:
+                raise _Reject(f"non-firm availability term missing: {term}")
+        _verify_nonfirm_formula(first[first.find(marker):] + " " + second[:second.find(thermal)])
+        return self._nonfirm_record(
+            "IND-NONFIRM", "Island Industrial Non-Firm - Non-Thermal Generation Source", "industrial non-firm",
+            "Island Interconnected bulk transmission grid at 66 kV or greater (primary side of the transformation "
+            "equipment directly supplying the customer), other than a retailer, with a contract with Hydro for "
+            "firm power and energy; non-firm energy only.",
+            "Only the Non-Thermal Generation Source energy charge is modelled; the Thermal Generation Source "
+            "charge is a fuel-cost formula with no printed price and is not included. " + _NONFIRM_NOTE,
+            _nonfirm_components(), sections, source_url, "market")
+
+    def _parse_labrador_nonfirm(
+        self, pages: list[DocumentPage], source_url: str, today: date,
+    ) -> TariffRecord:
+        sections = self._published_sections(pages, "LAB", 3, today, 9)
+        text = " ".join(_flat(page.text) for page in sections)
+        for term in ("RATE NO. 5.1L", "Labrador Interconnected System", "minimum of 1.5 MW load",
+                     "provide their own transformer", "subject to interruption/curtailment",
+                     "interconnect at transmission system voltages of 46 kV or higher"):
+            if term not in text:
+                raise _Reject(f"Rate 5.1L availability term missing: {term}")
+        basic = re.findall(rf"Basic Customer Charge{_LEADER}{_MONEY} per month", text)
+        if len(basic) != 1:
+            raise _Reject("Rate 5.1L Basic Customer Charge missing or duplicated")
+        charge = _num(basic[0])
+        if charge <= 0:
+            raise _Reject("non-positive Basic Customer Charge")
+        _verify_nonfirm_formula(text[text.find("Energy Charges"):])
+        components = [RateComponent(
+            "fixed", "Basic Customer Charge", charge, "$/month")] + _nonfirm_components()
+        return self._nonfirm_record(
+            "5.1L", "Labrador Non-Firm Energy Rate (Rate 5.1L)", "labrador non-firm",
+            "Labrador Interconnected System customers purchasing a minimum of 1.5 MW load, providing their own "
+            "transformer, delivered power at transmission voltage (46 kV or higher) and subject to "
+            "interruption/curtailment; no standby generation is used to supply non-firm energy.",
+            "Basic Customer Charge is a printed monthly price. " + _NONFIRM_NOTE,
+            components, sections, source_url, "mixed", demand_min_kw=1500.0)
+
     def _audit_island_industrial_other(self, pages: list[DocumentPage], today: date) -> None:
-        """Classify IND-3/4 non-firm (formula-priced gap) and IND-5 wheeling (excluded); never priced."""
+        """Classify IND-4 thermal non-firm (formula gap) and IND-5 wheeling (excluded); never priced.
+
+        The non-thermal part of IND-3/IND-4 is modelled by `_parse_island_nonfirm`.
+        """
         try:
             first, second = (_flat(page.text) for page in self._published_sections(pages, "IND", 2, today, 3))
         except _Reject as exc:
             if any(re.search(r"\d{4} IND-[34]\b", page.text) for page in pages):
-                self.unmodelled_published["IND-NONFIRM"] = f"Island Industrial Non-Firm pages incomplete: {exc}"
+                self.unmodelled_published["IND-NONFIRM-THERMAL"] = (
+                    f"Island Industrial Non-Firm pages incomplete: {exc}")
         else:
-            factors = re.findall(r"conversion factor of (\d+) kWh/bbl", second)
-            losses = re.search(r"ending in 2016 \((\d+\.\d+)%\)", second)
-            required = all(term in first for term in (
-                "INDUSTRIAL – NON-FIRM", "other than a retailer", "66 kV or greater", "greater of",
-                "Rate No. 2.4L", "NYISO Zone A", "ISO New England Mass Hub", "21st day of the month")) and \
-                "{(A ÷ B) x (1 ÷ (1 – C))} x 100" in second and "monthly average cost of fuel" in second
-            printed = re.search(r"\d+\.\d+\s*¢|¢\s*\d", first + " " + second)
+            heading = "Non-Firm Energy Charge: Thermal Generation Source"
+            thermal = second[second.find(heading):] if heading in second else ""
+            factors = re.findall(r"conversion factor of (\d+) kWh/bbl", thermal)
+            losses = re.search(r"ending in 2016 \((\d+\.\d+)%\)", thermal)
+            required = "INDUSTRIAL – NON-FIRM" in first and bool(thermal) and \
+                "{(A ÷ B) x (1 ÷ (1 – C))} x 100" in thermal and "monthly average cost of fuel" in thermal
+            printed = re.search(r"\d+\.\d+\s*¢|¢\s*\d", thermal)
             if not required or len(factors) != 3 or not losses or printed:
-                self.unmodelled_published["IND-NONFIRM"] = (
-                    "Island Industrial Non-Firm page changed (formula terms missing or a printed price "
-                    "appeared); review the schedule before modelling")
+                self.unmodelled_published["IND-NONFIRM-THERMAL"] = (
+                    "Island Industrial Non-Firm thermal page changed (formula terms missing or a printed "
+                    "price appeared); review the schedule before modelling")
             else:
-                self.unmodelled_published["IND-NONFIRM"] = (
-                    "source-blocked: Island Industrial Non-Firm (IND-3/IND-4, 66 kV+ interruptible energy) "
-                    "prints no price. Non-thermal: greater of the Rate 2.4L energy charge and an on-/off-peak "
-                    "rate from NYISO Zone A and ISO-NE Mass Hub 5 MW month-ahead futures (CAD, loss/fee "
-                    "adjusted), set monthly by customer notice. Thermal: {(A / B) x (1 / (1 - C))} x 100 "
-                    f"cents/kWh, A = monthly fuel cost per barrel, B = {'/'.join(factors)} kWh/bbl "
-                    f"(Holyrood/gas turbines/diesels), C = {losses.group(1)}% losses")
+                self.unmodelled_published["IND-NONFIRM-THERMAL"] = (
+                    "source-blocked: Island Industrial Non-Firm Thermal Generation Source (IND-4) prints no "
+                    "price: {(A / B) x (1 / (1 - C))} x 100 cents/kWh, A = monthly average cost of fuel per "
+                    f"barrel, B = {'/'.join(factors)} kWh/bbl (Holyrood/gas turbines/diesels), "
+                    f"C = {losses.group(1)}% losses")
         try:
             (wheeling,) = (_flat(page.text) for page in self._published_sections(pages, "IND", 1, today, 5))
         except _Reject as exc:

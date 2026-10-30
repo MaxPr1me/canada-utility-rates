@@ -121,29 +121,39 @@ def _mb_number(line: str) -> Optional[tuple[str, float, str]]:
 
 def _mb_component(label: str, value: str) -> Optional[RateComponent]:
     """Build a RateComponent from a label line and the value line that follows it."""
+    low = label.lower()
+    free = re.fullmatch(r"first ([\d,]+) kva of monthly (?:measured|billing) demand", low)
+    if free and value.strip().lower() == "no charge":
+        # Zero-priced first demand block, stored like SaskPower's so the engine bills only the balance.
+        return RateComponent(
+            component_type="demand", component_name=label, charge_value=0.0, charge_unit="$/kVA",
+            demand_unit="kVA", tier_number=1, tier_threshold=float(free.group(1).replace(",", "")),
+            tier_unit="kVA", notes="No charge for the first block of monthly demand",
+        )
     parsed = _mb_number(value)
     if parsed is None:
         return None
     _, number, _ = parsed
-    low = label.lower()
 
     if low.startswith("basic"):
-        variant = (
-            " (single phase)" if "single phase" in low
-            else " (three phase)" if "three phase" in low
-            else ""
-        )
+        phase = "single phase" if "single phase" in low else "three phase" if "three phase" in low else None
+        variant = f" ({phase})" if phase else ""
+        # The page prints one row per phase with no selection rule; the approved schedule bills one per service.
+        note = (f"Alternative: applies only to {phase} service. Mutually exclusive with the other Basic Charge "
+                "row; one row is billed per service, never both added together.") if phase else None
         if "annual" in low:
             return RateComponent(
                 component_type="fixed", component_name="Basic Annual Charge" + variant,
-                charge_value=number, charge_unit="$/year",
+                charge_value=number, charge_unit="$/year", sub_component=phase, notes=note,
             )
         return RateComponent(
             component_type="fixed", component_name="Basic Charge" + variant,
-            charge_value=number, charge_unit="$/month",
+            charge_value=number, charge_unit="$/month", sub_component=phase, notes=note,
         )
 
     if "kwh" in low and low.startswith(("first", "next", "balance")):
+        # tier_number is the block kind here (1 first, 2 next, 3 balance) and tier_threshold the printed block
+        # width; _mb_assign_blocks renumbers 1..n and turns the widths into cumulative upper bounds.
         tier = 1 if low.startswith("first") else 2 if low.startswith("next") else 3
         m = re.search(r"(?:first|next)\s+([\d,]+)\s*kwh", low)
         threshold = float(m.group(1).replace(",", "")) if m else None
@@ -166,9 +176,52 @@ def _mb_component(label: str, value: str) -> Optional[RateComponent]:
             component_name="Demand Charge" if low.startswith("demand") else label,
             charge_value=number, charge_unit="$/kVA", demand_unit="kVA",
             notes=None if low.startswith("demand") else "Applied to billing demand above the first 50 kVA",
+            tier_number=None if low.startswith("demand") else 2,
         )
 
     return None
+
+
+def _mb_assign_blocks(components: list[RateComponent]) -> bool:
+    """Turn the parsed energy block rows into 1..n tiers with cumulative upper bounds (kWh).
+
+    Accepts only 'First N' + 'Balance' or 'First N' + 'Next N' + 'Balance' in page order; anything else
+    returns False so the class is rejected rather than guessed. The last tier carries no bound.
+    """
+    blocks = [c for c in components if c.component_type == "energy" and c.tier_number is not None]
+    if not blocks:
+        return True
+    kinds = [c.tier_number for c in blocks]
+    if kinds not in ([1, 3], [1, 2, 3]):
+        return False
+    widths = [c.tier_threshold for c in blocks[:-1]]
+    if any(w is None or w <= 0 for w in widths) or blocks[-1].tier_threshold is not None:
+        return False
+    bound = 0.0
+    for number, (block, width) in enumerate(zip(blocks, widths + [None]), 1):
+        block.tier_number = number
+        if width is None:
+            block.tier_threshold = None
+            block.tier_unit = None
+            block.notes = f"Applies to all kWh above {bound:,.0f} kWh"
+            continue
+        lower, bound = bound, bound + width
+        block.tier_threshold, block.tier_unit = bound, "kWh"
+        block.notes = (f"First {width:,.0f} kWh" if lower == 0 else
+                       f"Block of {width:,.0f} kWh from {lower:,.0f} to {bound:,.0f} kWh") \
+            + f"; tier_threshold is the cumulative upper bound ({bound:,.0f} kWh)"
+    return True
+
+
+def _mb_assign_demand_blocks(components: list[RateComponent]) -> bool:
+    """Pair the zero-priced first kVA block with its balance row (both carry the same kVA bound); else reject."""
+    blocks = [c for c in components if c.component_type == "demand" and c.tier_number is not None]
+    if not blocks:
+        return True
+    if [c.tier_number for c in blocks] != [1, 2] or not blocks[0].tier_threshold or blocks[0].charge_value != 0.0:
+        return False
+    blocks[1].tier_threshold, blocks[1].tier_unit = blocks[0].tier_threshold, blocks[0].tier_unit
+    return True
 
 
 def _mb_lines(html: str) -> list[str]:
@@ -264,9 +317,9 @@ _MB_DIESEL_COMMERCIAL = [
 # Per-class component counts (type -> count) that must all be present for a general-service class to be accepted.
 _MB_COMMERCIAL_SHAPE = {
     0: {"fixed": 2, "energy": 2},
-    1: {"fixed": 2, "energy": 3, "demand": 1},
+    1: {"fixed": 2, "energy": 3, "demand": 2},
     2: {"fixed": 1, "energy": 2},
-    3: {"fixed": 1, "energy": 2, "demand": 1},
+    3: {"fixed": 1, "energy": 2, "demand": 2},
     4: {"energy": 1, "demand": 1},
     5: {"energy": 1, "demand": 1},
     6: {"energy": 1, "demand": 1},
@@ -492,6 +545,14 @@ class ManitobaHydroScraper(BaseScraper):
             if counts != _MB_COMMERCIAL_SHAPE[idx]:
                 self.logger.warning("Manitoba Hydro %s rejected: unexpected components %s", name, counts)
                 continue
+            if not (_mb_assign_blocks(components) and _mb_assign_demand_blocks(components)):
+                self.logger.warning("Manitoba Hydro %s rejected: energy or demand blocks drifted", name)
+                continue
+            if idx == 1:
+                footnote = next((n for n in section_notes.get(idx, []) if n.lower().startswith("for accounts where")), None)
+                last_block = [c for c in components if c.component_type == "energy" and c.tier_number][-1]
+                if footnote:
+                    last_block.notes = f"{last_block.notes}. Source footnote: {footnote}"
             extra = " ".join(dict.fromkeys(section_notes.get(idx, [])))
             records.append(_mb_stamp(TariffRecord(
                 utility_name="Manitoba Hydro", province="MB", utility_type="electricity",

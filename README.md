@@ -27,9 +27,15 @@ Scope decided October 30 (user): "complete" means the 78 active registered utili
 output for their main building classes, with every exclusion, source-blocked item and deferred item
 written down, and with AESO and the four market-indexed products (Phases 6C and 6D) done first.
 `python scripts/coverage_gate.py` checks this against `data/sources/coverage_ledger.json`; the
-README line changes only when it passes (baseline October 30: 66 of 78 pass; AESO has no live
-output and 12 deferred or undecided items are open). The Monthly Scrape
-reports the result in a public notice and never blocks on it.
+README line changes only when it passes. **Status October 30:** every gate item is now implemented
+or decided: AESO's pool price market reference, the four market-indexed products (BC Hydro RS1892,
+FortisBC Electric RS38, NSPower one-part real-time pricing, NL Hydro 5.1L and Island non-thermal
+non-firm; all value-less "Variable" energy lines), the Manitoba Hydro block fix and seven
+exclusion decisions. The gate reads the committed export, which does not hold the new records yet,
+so it reads 77 of 78 (AESO) until the Monthly Scrape stores them (the November 1 run, or a manual
+run); a test run with the new records included reads 78 of 78. The README line will be changed
+after that scrape is checked. The Monthly Scrape reports the result in a public notice and never
+blocks on it.
 The tariff export was regenerated on **2026-10-09** after batch 12 (scrape run 27: Alberta electricity
 plus all 47 Ontario distributors re-stored with PUC Distribution and Phase 6B; scrape run 28:
 Ontario/Alberta gas). History was preserved. October 15 added CI fixes, the Representative
@@ -51,13 +57,13 @@ unverified fallback records remain estimates regardless of the export date.
 | Ontario electricity | **490 latest live records across all 47 active distributors** from OEB-approved tariff sheets (PUC Distribution configured October 9) |
 | Alberta electricity (batch 12) | **28 latest live records**: ENMAX Power, ATCO Electric, EPCOR Distribution and FortisAlberta wires (5 each) plus 8 Rate of Last Resort records from three providers |
 | Ontario/Alberta gas (batch 12) | **40 latest live records**: Enbridge Gas 20, ATCO Gas 10, EPCOR Natural Gas (Ontario) 10 |
-| Active utilities without live output | **1**: AESO, a market reference; every other active utility has live output, with recorded gaps |
+| Active utilities without live output | **1 in the committed export**: AESO. Its live market-reference record (October 30) and the four 6D records (BC Hydro RS1892, FortisBC RS38, NSPower RTP-T/RTP-D, NL Hydro 5.1L/IND-NONFIRM) are implemented and tested but not stored yet: the next Monthly Scrape stores them (live latest then 917, utilities with live output 78). Every other active utility has live output, with recorded gaps |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
 | Historical snapshots | **4,572**; CI scrape run 29 (October 16) appended 956 without changing the 3,616 earlier snapshots |
 | DB validation | **0 errors, 2 existing AESO warnings** |
 | Representative models | **55** across the ten provinces (October 16, method 7C-2): 16 modeled, 20 single-source, 6 *market energy pending*, 13 not computable; comparison indicators, never live coverage |
-| Deterministic tests | **1,885 passing** (1,867 on October 16 plus 18 coverage-gate tests) across 15 modules |
+| Deterministic tests | **1,993 passing** across 21 modules (October 30, Python 3.11) |
 
 Live output currently includes BC Hydro (17), FortisBC Electric (11), Manitoba Hydro (18), NB Power (10),
 Nova Scotia Power (18), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
@@ -118,9 +124,11 @@ a public live/seed notice. Batch 14 (October 16; commits `a919684`, `b070725`, `
    file empty; once the IESO republishes it, start the workflow again by hand (otherwise November
    1) and check the archive and market history commits. Open question: should Deploy Site also
    run after the archive workflow, so the 15th's market update is published?
-2. **Manitoba Hydro block parser fix:** its stored energy blocks are malformed (tier numbers 1 and
-   3; "Next 8,500 kWh" stored as a cumulative bound; single- and three-phase basic charge
-   variants), so three Manitoba commercial models are not computable.
+2. **Manitoba Hydro block parser fix: done October 30** (tier numbers 1..n, cumulative bounds,
+   phase variants stored as alternatives, "First 50 kVA no charge" as a $0 block). GS Medium is now
+   computable; the two small classes stay not computable until a reference customer (single or
+   three phase) is chosen. The next Monthly Scrape stores new tariff versions for the two Manitoba
+   demand classes.
 3. **Decisions:** the length of NB Power's and Maritime Electric's "Billing Period" (their block
    thresholds state no period); a reference customer for amperage/phase fixed-charge alternatives
    (Newfoundland Power, NL Hydro); 30-day versus 30.4375-day months (Hydro-Quebec and Manitoba
@@ -128,11 +136,12 @@ a public live/seed notice. Batch 14 (October 16; commits `a919684`, `b070725`, `
 4. **7E further analysis:** compare the synthetic profile with real commercial load profiles, test
    other business hours, use an Ontario Price-era hourly shape once 12 archived months exist, and
    look at Class A and loss factors.
-5. **Remaining lanes:** C (Phase 6D: BC Hydro RS1892, FortisBC Electric RS38, NSPower one-part
-   real-time pricing and NL Hydro monthly non-firm prices as value-less "Variable" components),
-   E (optional items, each after a yes/no decision; listed in the matrix queue), D (Phase 6C,
-   Alberta market), 7D gas, Phase 8 (automatic model refresh; must ignore illustrative values) and
-   Phase 9 (product follow-up, including the Across-Canada comparison).
+5. **Remaining lanes:** Phase 6D and the AESO market reference (6C, live record only) are done
+   (October 30); the Alberta Market Pricing view (hourly or monthly pool price) waits for AESO's
+   written permission, because its terms allow only non-commercial, unmodified use. Lane E is
+   decided (all excluded or kept; see the ledger). Still planned: 7D gas, Phase 8 (automatic model
+   refresh; must ignore illustrative values) and Phase 9 (product follow-up, including the
+   Across-Canada comparison).
 6. **Calendar:** November 1, new OEB RPP prices and the next RPP Price Report's TOU/ULO shares
    (update `data/models/usage_levels.json` by hand); November 15, Ontario Price Archive and Source
    Health.
@@ -346,7 +355,7 @@ canada-utility-costs/
 │   ├── coverage_gate.py           ← Live-rate coverage gate: live output, audit ledger, deferred and monitored items (Monthly Scrape reports it)
 │   └── pull_history_db.py         ← Downloads the CI history database into a read-only local mirror
 │
-├── tests/                    ← 1,885 deterministic tests across 15 test modules
+├── tests/                    ← 1,993 deterministic tests across 21 test modules
 │   ├── fixtures/             ← Source-derived fixtures and frozen export samples; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
@@ -734,8 +743,8 @@ copied into a tariff.
 |---|---|---|---|
 | 6A: Ontario market observations | Replace the fixed generator inputs of the Ontario market model with reproducible official IESO observations (hourly energy prices and actual Class B Global Adjustment) and freshness checks; correct the market-model metadata and UI disclosure | - | **Done.** October 9 (legacy history): the IESO keeps only about 90 days of hourly day-ahead zonal price files, so the user chose observed legacy HOEP hourly prices for 2020-2024 plus actual monthly Class B Global Adjustment rates (`scripts/generate_market_pricing.py`: all 60 monthly averages cross-checked; fails closed). October 15: hourly Ontario Price archive (from July 11, 2026). **October 16: rolling five-year history** (`scripts/build_ontario_market.py`): the latest 60 complete months (legacy HOEP to April 2025, then the Ontario Price) plus Class B GA, a permanent monthly CSV since January 2020 and a heatmap from observed hours only (the gap May 1, 2025-July 10, 2026 disclosed), rebuilt twice a month by the Ontario Price Archive workflow; a month enters the window only once its energy and GA values are published and validated |
 | 6B: Ontario demand-class energy | Attach modeled market energy (wholesale price plus Class B GA) to GS 50-4,999 kW and Large Use delivery-only records as labelled components; Class A noted as conditional | 6A for observed averages | **Implemented October 9 (batch 12) as value-less components:** non-RPP demand classes (including Hydro One UGd/GSd/AUGd/AGSd and ST) carry "Market Energy (Ontario Electricity Market Price + Class B Global Adjustment)" with a market reference and the IESO source URL; Class A and RPP eligibility are conditional notes; Algoma R2 (residential dwellings stay RPP-eligible) has none |
-| 6C: Alberta market | AESO pool price observations; default retail (RoLR) energy from 5F; optional Alberta region in the Market Pricing dashboard if its variation warrants it (Alberta-specific values, sources, periods and methodology, never Ontario's market-price-plus-GA assumptions; wholesale, retail and wires kept distinct) | 5F | Planned. RoLR fixed prices are live from 5F; EPCOR Distribution's operating reserve charge (a percentage of the pool price) is stored value-less |
-| 6D: Deferred market-indexed products | FortisBC Electric RS38 (Mid-C), BC Hydro RS1892, NSPower one-part real-time pricing, NL Hydro monthly non-firm (5.1L, Island non-thermal) | 6A methods | Planned |
+| 6C: Alberta market | AESO pool price observations; default retail (RoLR) energy from 5F; optional Alberta region in the Market Pricing dashboard if its variation warrants it (Alberta-specific values, sources, periods and methodology, never Ontario's market-price-plus-GA assumptions; wholesale, retail and wires kept distinct) | 5F | **Market reference done October 30** (option A): AESO is a live value-less "Variable" pool price record verified against the official ETS Historical Pool Price report and its metadata (no number stored; the old aeso.ca page 404s). The Alberta Market Pricing view is not built: AESO's terms allow only non-commercial, unmodified use, so publishing derived data needs written permission; the ETS report is hour-ending in Alberta local time with DST (23/25-hour days) and only annual published statistics exist to cross-check. RoLR fixed prices are live from 5F; EPCOR Distribution's operating reserve charge is stored value-less |
+| 6D: Deferred market-indexed products | FortisBC Electric RS38 (Mid-C), BC Hydro RS1892, NSPower one-part real-time pricing, NL Hydro monthly non-firm (5.1L, Island non-thermal) | 6A methods | **Done October 30:** all four are live records with value-less "Variable" market energy lines (BC Hydro RS1892, FortisBC RS38 pilot, NSPower RTP-T/RTP-D from scanned pages at medium confidence, NL Hydro 5.1L and IND-NONFIRM); each is excluded from the models by a crosswalk rule. NL Hydro's Island thermal non-firm (fuel formula) stays source-blocked. Stored by the next Monthly Scrape |
 | 6E: Gas commodity cadence | Quarterly QRAM (Ontario) and monthly default supply (Alberta GCFR) as dated commodity components with their refresh cadence | ON/AB gas parsers | Partly started: the batch 12 parsers store the current Enbridge and EPCOR QRAM gas supply prices and Direct Energy Regulated Services' monthly default rate as dated commodity components; cadence and freshness checks remain |
 
 ### Phase 7: Representative Models (in progress)
@@ -842,7 +851,7 @@ analysis needed: comparison with real commercial load profiles, sensitivity to t
 hours, an Ontario Price-era hourly shape once 12 archived months exist, Class A and loss factors.
 
 **Inputs (`data/models/`):**
-- `crosswalk.json`: 240 ordered rules (first match wins) map every latest live record to a model
+- `crosswalk.json`: 246 ordered rules (first match wins) map every latest live record to a model
   key (province, fuel, sector, structure, size band) or to an exclusion with its reason (15
   intentional rule overrides are reported). A `pairs` section defines the Alberta wires + Rate of
   Last Resort units (the eight Rate of Last Resort records are excluded as

@@ -123,7 +123,7 @@ an exact percentage. Preserve history and do not stage unrelated work.
 | `scrapers/utilities/enmax_energy.py` | ENMAX Energy Rate of Last Resort price and daily administration charge (Calgary area, Alberta). |
 | `scrapers/utilities/epcor_energy_alberta.py` | EPCOR Energy Alberta Rate of Last Resort price and administration charge (EPCOR Distribution and FortisAlberta areas). EPCOR moved these pages; the new addresses went into the registry and this file on October 16. |
 | `scrapers/utils/alberta_rolr.py` | Shared Rate of Last Resort helper: checks each provider's price against the Utilities Consumer Advocate table and stops treating it as live once the fixed term ends. |
-| `scrapers/utilities/aeso.py` | AESO market reference price (Alberta wholesale); still an estimate until the Alberta market work (Phase 6C). |
+| `scrapers/utilities/aeso.py` | AESO pool price market reference (Alberta wholesale). Since October 30 it is a live record with no number ("Variable"): it counts as live only when the ETS pool price report posts current hourly prices and its metadata still defines the pool price; otherwise a labelled estimate is used. AESO publishes no customer tariff. |
 | `scrapers/utilities/nl_hydro.py` | NL Hydro electricity rates (Newfoundland — residential + commercial). |
 | `scrapers/registry.py` | Reads the list of all utilities and their scraper info. |
 | `scrapers/utils/parsing.py` | HTML/PDF parsing helpers, including PDF URL resolution and strict `verify_tariff_values()` checks that prove fallback values still appear in an official schedule. |
@@ -157,7 +157,7 @@ shows them.
 
 | File | What it does |
 |---|---|
-| `data/models/crosswalk.json` | The sorting list. Its 240 rules are read from top to bottom, and the first rule that fits decides where each live tariff goes: into a model group (province, fuel, customer type, rate structure and size) or out, with a written reason. Today 557 of the 910 live tariffs are used and 353 are left out on purpose; none is left unsorted. It also lists the four Alberta "pairs" (a wires company plus the Rate of Last Resort provider for its area, counted as one) and the "required contributors": a model level is not shown when a utility it needs cannot be calculated (Newfoundland and Labrador homes need Newfoundland Power). Ontario and Alberta gas wait for Phase 7D, and the territories come later. |
+| `data/models/crosswalk.json` | The sorting list. Its 246 rules are read from top to bottom, and the first rule that fits decides where each live tariff goes: into a model group (province, fuel, customer type, rate structure and size) or out, with a written reason. On October 16, 557 of the 910 live tariffs were used and 353 left out on purpose; none was left unsorted (the six rules added October 30 leave their new records out: AESO, BC Hydro 1892, FortisBC 38, NSPower real-time pricing, NL Hydro 5.1L and Island non-firm). It also lists the four Alberta "pairs" (a wires company plus the Rate of Last Resort provider for its area, counted as one) and the "required contributors": a model level is not shown when a utility it needs cannot be calculated (Newfoundland and Labrador homes need Newfoundland Power). Ontario and Alberta gas wait for Phase 7D, and the territories come later. |
 | `data/models/usage_levels.json` | The example customers, approved by the project owner: homes using 500, 1,000 or 2,000 kWh a month; small businesses (under 50 kW) using 2,000 kWh at 10 kW or 8,000 kWh at 25 kW; medium businesses (50-499 kW) using 40,000 kWh at 100 kW; large businesses (500-4,999 kW) using 500,000 kWh at 1,000 kW. It also holds the Ontario Energy Board's split of use between time-of-use periods, a short, reviewed list of "conditional" Ontario charges that a typical customer does pay, and the made-up (synthetic) business load profile used only for the illustrative estimate (see the glossary). |
 | `data/models/block_periods.json` | Some tariffs print an energy block such as "first 5,000 kWh" without saying whether that is per month or per two months. Each of its 20 entries, reviewed with the project owner on October 16, quotes the tariff and says which period applies. When a tariff never says (NB Power GS1, Maritime Electric), that utility is left out of the model instead of guessed. |
 | `data/models/taxes.json` | Sales taxes (GST, HST, PST, QST, RST) and automatic bill rebates, such as the Ontario Electricity Rebate, for every province and territory: electricity and gas, homes and businesses. Municipal taxes and income-tested programs are left out. |
@@ -610,7 +610,7 @@ Alberta is the only province where retail electricity is fully deregulated. This
 - **Distribution companies** (ATCO Electric, FortisAlberta, EPCOR Distribution, ENMAX Power) own the wires and charge regulated delivery rates. Since October 9 their main home and business rates are read live from their approved schedules. Delivery is split into **distribution** and **transmission** lines, and temporary riders are listed separately with their own dates.
 - **EPCOR Distribution's 2026 rates are interim** (approved only temporarily), so they are shown at medium confidence with a note.
 - **Retail energy** is sold separately from wires service. Customers without a retail contract pay the **Rate of Last Resort** (RoLR), which replaced the Regulated Rate Option (RRO) on January 1, 2025. Its price is fixed until December 31, 2026: 12.02 cents/kWh from Direct Energy Regulated Services (ATCO Electric area), 12.06 from ENMAX Energy (Calgary) and 12.01 from EPCOR Energy Alberta (Edmonton and FortisAlberta areas). Each price must match the Government of Alberta's Utilities Consumer Advocate table. After December 31, 2026 these records stop counting as live until the next price is published. Old RRO estimates stay in history.
-- **AESO** (the wholesale market) is still only a reference estimate; Alberta market prices are future work (Phase 6C).
+- **AESO** (the wholesale market) has a live "Variable" pool price market reference since October 30 (no number stored; AESO publishes no customer tariff). An Alberta market-price view (Phase 6C) is not built: AESO's terms allow only non-commercial, unmodified use, so it needs AESO's written permission.
 - The code models these pieces separately and never adds them into one price.
 - Only the representative models (since October 16) put a wires company and the Rate of Last
   Resort provider for its area together, as one "pair", to show a typical monthly cost; each
@@ -693,7 +693,7 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 1,885 tests across 15 test modules (1,867 on October 16 plus 18 in `test_coverage_gate` for the coverage gate), including `test_phase5_hardening` for
+There are 1,993 tests across 21 test modules (1,867 on October 16 plus the October 30 additions: the coverage gate, AESO, Manitoba Hydro and the four market-indexed products), including `test_phase5_hardening` for
 provenance, storage and history, `test_ontario_price_archive` for the Ontario Price archive,
 `test_market_rolling` and `test_market_site` for the five-year market history and its page,
 `test_ci_history` for the database safety check and download script, `test_models_7c` for the
@@ -782,7 +782,7 @@ These rules came out of the live-source work (Phase 5). They still apply to ever
 ### Market prices
 
 - A price that follows a market (for example the energy price of Ontario's large customers) is stored without a number and shown as "Variable", never as a made-up value.
-- Four market-indexed products wait for Phase 6D, which will add them as "Variable" lines: BC Hydro RS1892, FortisBC Electric RS38, NSPower one-part real-time pricing and NL Hydro monthly non-firm prices.
+- Four market-indexed products are live as "Variable" lines (October 30): BC Hydro RS1892, FortisBC Electric RS38, NSPower one-part real-time pricing and NL Hydro monthly non-firm prices (5.1L, Island non-thermal). Their fixed parts are real numbers; the market energy line never gets a number. NL Hydro's Island thermal non-firm stays source-blocked (fuel formula). NSPower's real-time adders come from scanned pages (OCR text layer checked against the page images; user-approved October 30, medium confidence).
 
 ### Ontario electricity
 

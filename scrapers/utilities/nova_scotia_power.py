@@ -5,6 +5,8 @@ Nova Scotia Power Inc. (NSPI) is the primary electricity provider in
 Nova Scotia, an investor-owned utility (Emera subsidiary). Residential
 coverage includes standard, equipment-based TOD and conditional pilot phases.
 Base energy and mandatory riders are parsed separately from the tariff book.
+The two One-Part Real Time Pricing tariffs keep their hourly energy price as a
+value-less market component next to the printed fixed cost adders and riders.
 
 Official source (landing page — no rate values):
   https://www.nspower.ca/products-services/rate-information
@@ -53,6 +55,31 @@ RESIDENTIAL_PRODUCTS = {
     "cpp": RESIDENTIAL_URL.rsplit("/", 1)[0] + "/critical-peak",
 }
 TARIFF_URL = "https://www.nspower.ca/docs/default-source/regulatory/tariff-book-2026.pdf"
+
+RTP_MARKET_REFERENCE = (
+    "NSPI actual hourly marginal energy cost (hourly price final twenty minutes before each hour; "
+    "forecasts supplied to the customer) plus fixed on-peak/off-peak cost adders"
+)
+RTP_TARIFFS = {
+    "transmission": {
+        "title": "One-Part Transmission Real Time Pricing",
+        "code": "RTP-T",
+        "schedule": "Schedule B",
+        "header": r"ONE PART TRANSMISSION REAL TIME PRICING TARIFF",
+        "sub_class": "large real time pricing transmission voltage",
+        "availability": "served at transmission voltage of 69 kV or higher",
+        "voltage": "served at transmission voltage of 69 kV or higher",
+    },
+    "distribution": {
+        "title": "One-Part Distribution Voltage Real Time Pricing",
+        "code": "RTP-D",
+        "schedule": "Schedule C",
+        "header": r"ONE PART DISTRIBUTION VOLTAGE REAL TIME PRICING TARIFF",
+        "sub_class": "large real time pricing distribution voltage",
+        "availability": "served at voltage less than 69 kV",
+        "voltage": "served at voltage less than 69 kV",
+    },
+}
 
 # Known rate values — used as seed/fallback data.
 SEED_RESIDENTIAL = {
@@ -712,6 +739,7 @@ class NovaScotiaPowerScraper(BaseScraper):
         pages, products, source_url = book
         records = self._parse_business_tariffs(pages, products, source_url)
         records.extend(self._parse_industrial_tariffs(pages, products, source_url))
+        records.extend(self._parse_rtp_tariffs(pages, products, source_url))
         try:
             business_html = self.fetch_page(BUSINESS_URL)
         except Exception as exc:
@@ -1152,6 +1180,173 @@ class NovaScotiaPowerScraper(BaseScraper):
                 records.append(self._parse_industrial_tariff(pages, code, context, source_url))
             except (ValueError, IndexError) as exc:
                 self.logger.warning("NSPower industrial Rate %s incomplete: %s", code, exc)
+        return records
+
+    # ── One-part real-time pricing (market-indexed energy), Schedules B and C ──
+
+    def _parse_rtp_tariff(
+        self, pages: list[DocumentPage], key: str, context: tuple[int, str, str, str], source_url: str,
+    ) -> TariffRecord:
+        """Parse one One-Part Real Time Pricing tariff; the hourly energy price stays value-less."""
+        year, effective, today, year_end = context
+        spec = RTP_TARIFFS[key]
+        found: list[tuple[int, int, DocumentPage]] = []
+        for page in pages:
+            text = re.sub(r"\s+", " ", page.text)
+            match = re.search(spec["header"] + r" Page ([\dl]) of (\d)", text[:250])
+            if match:
+                found.append((int(match.group(1).replace("l", "1")), int(match.group(2)), page))
+        found.sort(key=lambda item: item[0])
+        if len(found) != 3 or [item[0] for item in found] != [1, 2, 3] or {item[1] for item in found} != {3}:
+            raise ValueError(f"Incomplete {spec['title']} continuation")
+        selected = [item[2] for item in found]
+        numbers = [page.page_number for page in selected]
+        if numbers != list(range(numbers[0], numbers[0] + 3)):
+            raise ValueError(f"Non-consecutive {spec['title']} pages")
+        first, second = (re.sub(r"\s+", " ", page.text).replace("\u2019", "'") for page in selected[:2])
+        detail = f"{spec['title']} ({spec['schedule']}); PDF pages " + ", ".join(str(n) for n in numbers)
+
+        adders_date = self._footer_effective_date(selected)
+        if not (adders_date[:4] == str(year) and adders_date <= today):
+            raise ValueError(f"{spec['title']} is not effective in the supported {year} tariff year")
+
+        # Page 1 of each schedule is a scan with an OCR text layer: every structural phrase must be present and
+        # the unit letter may be misread (c, cent sign or e), but no number is ever inferred.
+        energy = re.search(
+            r"DEMAND CHARGE Nil\. ENERGY CHARGE NSPI's actual hourly marginal energy costs, plus the following fixed cost "
+            r"adders for on-peak and off-?\s?peak usage: On-peak \(7:00\s?am\s*[^\s\d]{1,3}\s*11:00\s?pm, non-holiday weekdays\): "
+            r"(\d+\.\d+) [c\u00a2e]/kWh Off-peak \(11:00\s?pm\s*[^\s\d]{1,3}\s*7:00\s?am, non-holiday weekdays\): (\d+\.\d+) "
+            r"[c\u00a2e]/kWh Weekend and holiday fixed cost adders are set at the off-peak price during all hours of the day\. "
+            r"These adders shall be developed annually based on budgeted costs and submitted to the Nova Scotia Energy Board for "
+            r"approval\. A credit equal to (\d+) cents per peak kilovolt-ampere of monthly peak demand will be applied where the "
+            r"transformer is owned by the customer\. AVAILABILITY (.*?) SPECIAL CONDITIONS", first)
+        if not energy:
+            raise ValueError(f"Missing or changed {spec['title']} energy charge or availability")
+        on_peak, off_peak, credit_cents, availability = energy.groups()
+        if credit_cents != "32" or not 0 < float(off_peak) < float(on_peak) < 50:
+            raise ValueError(f"Implausible {spec['title']} adders or credit")
+        if "Customers must make a written request to take service under this tariff" not in availability \
+                or spec["availability"] not in availability or not re.search(
+                    r"have loads of 2,000 KVA or 1,800 kW, and over", availability):
+            raise ValueError(f"Missing or changed {spec['title']} eligibility")
+        required = (
+            "hourly price forecasts for each hour of the next five days",
+            "The actual price charged for each hour will be final twenty minutes prior to the commencement of that hour",
+        )
+        if not all(phrase in first for phrase in required):
+            raise ValueError(f"Missing {spec['title']} hourly price publication terms")
+        terms = ("Energy is supplied at the low side of the transformer", "decreased by 1.1%",
+                 "minimum of twelve months", "This is a firm service tariff", "not less than 90% lagging")
+        if not all(phrase in second for phrase in terms):
+            raise ValueError(f"Missing or changed {spec['title']} special conditions")
+
+        riders = self._rtp_rider_components(pages, year, effective, year_end, source_url)
+        components = [
+            RateComponent(
+                "energy", "Energy Charge - NSPI actual hourly marginal energy cost", None, "$/kWh",
+                market_reference=RTP_MARKET_REFERENCE, market_source_url=source_url,
+                source_url=source_url, source_detail=detail, effective_date=adders_date,
+                notes=("Variable: NSPI's actual hourly marginal energy cost, plus the fixed cost adders listed separately. The price for each "
+                       "hour is final twenty minutes before that hour; NSPI sends the customer hourly price forecasts for the next five days "
+                       "by midnight each business day and notifies major changes. The tariff publishes no price series, so no average or "
+                       "estimated price is stored."),
+            ),
+            RateComponent(
+                "rider", "Fixed Cost Adder - On-Peak", round(float(on_peak) / 100, 6), "$/kWh",
+                tou_period="on-peak", tou_hours="7:00 am-11:00 pm, non-holiday weekdays",
+                source_url=source_url, source_detail=detail, effective_date=adders_date, confidence="medium",
+                notes=("Added to the hourly marginal energy cost; not a stand-alone energy price. Developed annually from budgeted costs and "
+                       "submitted to the Nova Scotia Energy Board for approval. Read from a scanned page's OCR text layer."),
+            ),
+            RateComponent(
+                "rider", "Fixed Cost Adder - Off-Peak", round(float(off_peak) / 100, 6), "$/kWh",
+                tou_period="off-peak", tou_hours="11:00 pm-7:00 am non-holiday weekdays; all hours on weekends and holidays",
+                source_url=source_url, source_detail=detail, effective_date=adders_date, confidence="medium",
+                notes=("Added to the hourly marginal energy cost; not a stand-alone energy price. Weekend and holiday adders are set at this "
+                       "off-peak price during all hours of the day. Read from a scanned page's OCR text layer."),
+            ),
+            RateComponent(
+                "rebate", "Customer-Owned Transformer Credit", -0.32, "$/kVA/month", demand_unit="kVA", sub_component="conditional",
+                source_url=source_url, source_detail=detail, effective_date=adders_date, confidence="medium",
+                notes=("Credit of 32 cents per peak kilovolt-ampere of monthly peak demand, applied only where the transformer is owned by the "
+                       "customer. Read from a scanned page's OCR text layer."),
+            ),
+        ] + riders
+        eligibility = re.sub(r"\s+", " ", availability).strip()
+        return TariffRecord(
+            utility_name="Nova Scotia Power", province="NS", utility_type="electricity",
+            tariff_name=spec["title"], tariff_code=spec["code"], customer_class="industrial", sub_class=spec["sub_class"],
+            rate_structure="market", pricing_method="market_based", market_reference=RTP_MARKET_REFERENCE,
+            demand_min_kw=1800.0, eligibility=eligibility,
+            effective_date=max(adders_date, effective, *(c.effective_date for c in riders)), end_date=year_end,
+            source_url=source_url, source_page=detail, confidence="medium",
+            notes=(
+                f"NS Power {spec['title']} ({spec['schedule']} of the approved April 1, 2026 tariff book): optional firm service for loads of "
+                "2,000 kVA or 1,800 kW and over, " + spec["voltage"] + ". Demand charge: nil. The energy price is NSPI's actual hourly marginal "
+                "energy cost (value-less 'Variable' line; nothing is estimated) plus fixed on-peak and off-peak cost adders and the DSM and storm "
+                "riders, each shown separately; no bill total is calculated. No FAM rate is shown: the approved FAM tariff's rate table has no "
+                "One-Part Real Time Pricing row and its applicability clause exempts only older-named Real Time Pricing tariffs, so applicability "
+                "is not assumed. Conditions: written request required; minimum service term of twelve months with automatic renewal (30 days' "
+                "notice before term end); customers served under the Large Industrial Interruptible Rider may switch only as the tariff allows; "
+                "meter readings reduce by 1.1% where primary metering is used; billed consumption is adjusted for average power factor below "
+                "90% lagging; a separate service agreement may be required. The business-rates web page still lists older extra-high/high/"
+                "distribution-voltage adders and is not used. The adder page is a scan; its OCR text was checked against the page image."
+            ),
+            components=components,
+        )
+
+    def _rtp_rider_components(
+        self, pages: list[DocumentPage], year: int, effective: str, year_end: str, source_url: str,
+    ) -> list[RateComponent]:
+        """DSM and storm rows for One-Part Real Time Pricing; FAM is deliberately not read (no printed row)."""
+        def number(token: str) -> float:
+            return -float(token[1:-1]) if token.startswith("(") else float(token)
+
+        N = r"(\(?\d+\.\d+\)?)"
+        fam_text, _ = self._joined_rider_text(pages, "FUEL ADJUSTMENT MECHANISM (FAM) TARIFF")
+        if "mandatory rider to all electric rate schedules, except the following tariffs" not in fam_text \
+                or re.search(r"One[ -]Part Real Time", fam_text):
+            raise ValueError("FAM applicability changed for One-Part Real Time Pricing")
+
+        text, dsm_detail = self._joined_rider_text(pages, "DEMAND SIDE MANAGEMENT COST RECOVERY RIDER")
+        row = re.search(rf"One Part Real Time Pricing {N} {N} {N} Shore Power", text)
+        if not row or f"January 1, {year} to December 31, {year}" not in text or "cents per kWh" not in text:
+            raise ValueError("Missing DSM row for One Part Real Time Pricing")
+        program, balance, dsm = number(row.group(1)), number(row.group(2)), number(row.group(3))
+        if abs(program + balance - dsm) > 0.0011:
+            raise ValueError("Changed DSM breakdown for One Part Real Time Pricing")
+
+        text, storm_detail = self._joined_rider_text(pages, "STORM COST RECOVERY RIDER")
+        row = re.search(rf"One-Part Real Time Pricing {N} Shore Power", text)
+        if not row or f"SCRR RATES FOR {year}" not in text or "cents per kWh" not in text:
+            raise ValueError("Missing storm row for One-Part Real Time Pricing")
+        storm = number(row.group(1))
+
+        note = "Published row: One Part Real Time Pricing. Mandatory rider, separate from base energy."
+        riders = [
+            RateComponent("rider", "DSM Cost Recovery Rider", round(dsm / 100, 6), "$/kWh",
+                          source_detail=dsm_detail, effective_date=date(year, 1, 1).isoformat(), end_date=year_end,
+                          notes=f"Combined PCR {program} and BA {balance} cents/kWh; do not add the subcomponents again. {note}"),
+            RateComponent("rider", "Storm Cost Recovery Rider", round(storm / 100, 6), "$/kWh",
+                          source_detail=storm_detail, effective_date=effective, end_date=year_end, notes=note),
+        ]
+        for component in riders:
+            component.source_url = source_url
+        return riders
+
+    def _parse_rtp_tariffs(
+        self, pages: list[DocumentPage], products: dict[str, str], source_url: str,
+    ) -> list[TariffRecord]:
+        """Parse both One-Part Real Time Pricing tariffs independently; a failed one is logged and omitted."""
+        context = self._order_context(pages, {kind: parse_html(html).get_text(" ", strip=True) for kind, html in products.items()})
+        if not context:
+            return []
+        records: list[TariffRecord] = []
+        for key in RTP_TARIFFS:
+            try:
+                records.append(self._parse_rtp_tariff(pages, key, context, source_url))
+            except (ValueError, IndexError) as exc:
+                self.logger.warning("NSPower One-Part Real Time Pricing %s incomplete: %s", key, exc)
         return records
 
     # ── Business time-varying pilots 72/73/82/83 ──
