@@ -277,11 +277,17 @@
         {
           "url": "https://www.hydro.mb.ca/docs/billing/schedule-of-sales-and-transportation-services-and-rates-v0826.pdf",
           "source_type": "pdf",
-          "description": "PUB-approved Schedule of Sales and Transportation Services and Rates (November 1, 2025, Order 138/25); required class eligibility, billing-demand, T-service and alternate-supply conditions",
+          "description": "PUB-approved Schedule of Sales and Transportation Services and Rates (November 1, 2025, Order 138/25); required class eligibility, billing-demand, T-service and alternate-supply conditions; edition for rates effective August 1, 2026 (Appendix A Board Order 111/26, scanned)",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.hydro.mb.ca/docs/billing/schedule-of-sales-and-transportation-services-and-rates-v1126.pdf",
+          "source_type": "pdf",
+          "description": "PUB-approved Schedule of Sales and Transportation Services and Rates, edition for rates effective November 1, 2026 (Appendix A Board Order 150/26, text layer); used once the commercial page shows rates effective November 1, 2026: same class conditions as v0826 (general pages November 1, 2025, Order 138/25) and Mainline Interruptible Sales prices read from text Appendix A page 4 of 4 (PDF page 82) at high confidence",
           "is_primary": false
         }
       ],
-      "notes": "Twelve current residential/commercial Sales, T-service and marketer-supply variants. Source cents/m3 are normalized to dollars/m3, without heat-content conversion; native volumetric demand units and component dates are preserved. Delivery/demand totals are checked against their parts, not added twice. Private marketer commodity is excluded and explicit carbon evidence is mandatory. Batch 8 requires the PUB-approved schedule (Order 138/25) for class annual-volume boundaries, one-year elections/contracts, Mainline pressure, winter-month billing demand, T-service 200 GJ/day nomination and interruptible alternate-supply pass-through conditions; missing schedule context rejects only the affected classes. Fixed-term commodity contracts are noted as a separate optional product, not priced. Batch 10 audits the schedule class list (PDF p.17) and commercial options on each run: Special Contract (single negotiated customer) and Power Station (generation fuel) are excluded with schedule evidence (p.20); Mainline Interruptible Sales (firm delivery) is built in batch 11 from a reviewed transcription of scanned Appendix A page 82 (page 80 also checked), live at medium confidence only while both page-image SHA-256 hashes, the Board Order/date headers and text cross-checks match (13 live); no T-Service variant because Mainline customers may only take firm transportation. No full catalogue-completion claim."
+      "notes": "Twelve current residential/commercial Sales, T-service and marketer-supply variants. Source cents/m3 are normalized to dollars/m3, without heat-content conversion; native volumetric demand units and component dates are preserved. Delivery/demand totals are checked against their parts, not added twice. Private marketer commodity is excluded and explicit carbon evidence is mandatory. Batch 8 requires the PUB-approved schedule (Order 138/25) for class annual-volume boundaries, one-year elections/contracts, Mainline pressure, winter-month billing demand, T-service 200 GJ/day nomination and interruptible alternate-supply pass-through conditions; missing schedule context rejects only the affected classes. Fixed-term commodity contracts are noted as a separate optional product, not priced. Batch 10 audits the schedule class list (PDF p.17) and commercial options on each run: Special Contract (single negotiated customer) and Power Station (generation fuel) are excluded with schedule evidence (p.20); Mainline Interruptible Sales (firm delivery) is built in batch 11 from a reviewed transcription of scanned Appendix A page 82 (page 80 also checked), live at medium confidence only while both page-image SHA-256 hashes, the Board Order/date headers and text cross-checks match (13 live); no T-Service variant because Mainline customers may only take firm transportation. Batch 16 (2026-10-30): the schedule edition follows the commercial page's 'Rates effective' date (August 1, 2026 = v0826 with the hash-gated transcription, medium; November 1, 2026 = v1126, whose Appendix A is text, read at high confidence per the user decision of 2026-10-30); any other date or a header mismatch skips only the MLI record. No full catalogue-completion claim."
     },
     {
       "name": "SaskEnergy",
@@ -789,13 +795,19 @@
           "is_primary": false
         },
         {
+          "url": "https://www.atcoelectricyukon.com/en-ca/services-rates/understanding-rates.model.json",
+          "source_type": "json",
+          "description": "Rates page model used to discover the current joint YECL/YEC rate-schedule book link each run (newest yecl-yec-rate-schedules-MM-YYYY.pdf not later than the current month)",
+          "is_primary": false
+        },
+        {
           "url": "https://www.atcoelectricyukon.com/content/dam/aey-website/en-ca/assets/services-rates/yecl-yec-rate-schedules-10-2026.pdf",
           "source_type": "pdf",
           "description": "Joint YECL/YEC rate schedules (text; Board Order 2011-06 base rates): residential 1160-1480 and general service 2160-2480 terms, minimum bills, billing demand and Rider A; file name changes monthly",
           "is_primary": false
         }
       ],
-      "notes": "Yukon Energy Corporation is regulated by the Yukon Utilities Board. Rate 1160 parses base rates, R/J/J1 percentages, current fuel Rider F and dated residential relief separately. Yukon Energy's own detailed base PDFs are image-only; batch 10 uses ATCO's text joint YECL/YEC rate-schedule book, cross-checked against Yukon Energy's April 2026 R/J cross-reference, for 8 residential (1160-1480) and 12 general-service (2160-2480) building classes (20 live). Without the book only 1160 is published live. Riders R1/S/E (currently zero), the unpriced winter rebate and Rider B are not modelled; lighting and Rates 32/39/42/43 are excluded."
+      "notes": "Yukon Energy Corporation is regulated by the Yukon Utilities Board. Rate 1160 parses base rates, R/J/J1 percentages, current fuel Rider F and dated residential relief separately. Yukon Energy's own detailed base PDFs are image-only; batch 10 uses ATCO's text joint YECL/YEC rate-schedule book, cross-checked against Yukon Energy's April 2026 R/J cross-reference, for 8 residential (1160-1480) and 12 general-service (2160-2480) building classes (20 live). Without the book only 1160 is published live. Batch 16: the book link is read each run from the ATCO page model JSON (newest edition not later than the current month), then a static page link, then the last known link. Riders R1/S/E (currently zero), the unpriced winter rebate and Rider B are not modelled; lighting and Rates 32/39/42/43 are excluded."
     },
     {
       "name": "Yukon Electrical Company",
@@ -812,13 +824,19 @@
           "is_primary": true
         },
         {
+          "url": "https://www.atcoelectricyukon.com/en-ca/services-rates/understanding-rates.model.json",
+          "source_type": "json",
+          "description": "Rates page model used to discover the current joint YECL/YEC rate-schedule book link each run (newest yecl-yec-rate-schedules-MM-YYYY.pdf not later than the current month)",
+          "is_primary": false
+        },
+        {
           "url": "https://www.atcoelectricyukon.com/content/dam/aey-website/en-ca/assets/services-rates/yecl-yec-rate-schedules-10-2026.pdf",
           "source_type": "pdf",
           "description": "Joint YECL/YEC rate schedules (text); same 20 residential/general-service building classes as Yukon Energy; file name changes monthly",
           "is_primary": false
         }
       ],
-      "notes": "Yukon Electrical Company (now operating as ATCO Electric Yukon) is the distribution utility in Yukon. Regulated by the Yukon Utilities Board (YUB). Batch 10 reuses the Yukon Energy joint-schedule parser for the same 20 YUB-approved tariffs in ATCO service areas, with Yukon Energy's cross-reference, J1, Rider F and relief evidence; they are the same schedules, not 20 additional classes. The old rates.html URL returns 404 and the shared renderer stalls on ATCO's page, so the book URL is static and output falls back to 1160 only if it is renamed."
+      "notes": "Yukon Electrical Company (now operating as ATCO Electric Yukon) is the distribution utility in Yukon. Regulated by the Yukon Utilities Board (YUB). Batch 10 reuses the Yukon Energy joint-schedule parser for the same 20 YUB-approved tariffs in ATCO service areas, with Yukon Energy's cross-reference, J1, Rider F and relief evidence; they are the same schedules, not 20 additional classes. The old rates.html URL returns 404 and the shared renderer stalls on ATCO's page, so the book link is discovered each run from the page's model JSON, then a static page link, then the last known link; output falls back to 1160 only if none of them yields the book."
     },
     {
       "name": "Northwest Territories Power Corporation",
