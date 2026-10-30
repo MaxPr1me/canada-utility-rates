@@ -70,7 +70,8 @@
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
       "excluded": ["Special Contract", "Power Station", "MLI T-Service (identical to Mainline Firm T-Service)"],
       "source_blocked": ["Fixed-term/private commodity"],
-      "monitor": [{"item": "MLI transcription: re-transcribe on a new Appendix A edition", "review_by": "2026-11-30"}]
+      "monitor": [{"item": "MLI transcription: re-transcribe on a new Appendix A edition", "review_by": "2026-11-30"}],
+      "notes": "Checked 2026-10-30: new edition. PUB Order 150/26 (October 28) supersedes 111/26 from 2026-11-01; schedule v1126 (posted October 29) prints Appendix A pages 2 and 4 of 4 (PDF pages 80, 82) as text, not scans. Dry run 13 live, 0 seed, because the rate pages still show August 1 rates; MLI fails closed from the November 1 rates until the scraper reads the new edition."
     },
     "FortisBC Energy": {
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
@@ -96,25 +97,29 @@
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
       "excluded": ["Lighting", "Rates 32/39/42/43"],
       "source_blocked": ["Riders R1/S/E (published at zero)", "winter rebate (replaced by Affordability Rate Relief)"],
-      "monitor": [{"item": "Joint rate book file name changes monthly", "review_by": "2026-11-30"}]
+      "monitor": [{"item": "Joint rate book file name changes monthly", "review_by": "2026-11-30"}],
+      "notes": "Checked 2026-10-30: the October book (yecl-yec-rate-schedules-10-2026.pdf, dated October 1) is still served; dry run 20 live, 0 seed. The static ATCO page has no PDF links, so only the hard-coded URL finds it, and replaced books are deleted (the 08-2026 and 09-2026 files return 404). The page model understanding-rates.model.json lists the current book."
     },
     "Yukon Electrical Company": {
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
       "excluded": ["Same 20 joint schedules as Yukon Energy: lighting; Rates 32/39/42/43"],
       "source_blocked": ["Same as Yukon Energy: riders R1/S/E (published at zero); winter rebate (replaced)"],
-      "monitor": [{"item": "Joint rate book file name changes monthly", "review_by": "2026-11-30"}]
+      "monitor": [{"item": "Joint rate book file name changes monthly", "review_by": "2026-11-30"}],
+      "notes": "Checked 2026-10-30: same joint book and finding as Yukon Energy (10-2026 still served, found only through the hard-coded URL; 08-2026 and 09-2026 return 404); dry run 20 live, 0 seed."
     },
     "Northwest Territories Power Corporation": {
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
       "excluded": ["Standby", "Naka wholesale", "Con Mine", "streetlighting", "Taltson wholesale heating"],
       "source_blocked": ["Snare TPSP (does not reconcile)", "GS/government subsidy amounts"],
-      "monitor": [{"item": "Snare TPSP reconciliation", "review_by": "2026-11-30"}]
+      "monitor": [{"item": "Snare TPSP reconciliation", "review_by": "2026-12-15"}],
+      "notes": "Checked 2026-10-30: still does not reconcile. The residential page (effective September 1, 2026) states a $41.22 Behchoko/Dettah saving at 1,000 kWh; its prices give $31.80 ((39.68 - 36.50 cents) x 1,000 kWh). The June 1, 2026 schedule is still the newest. Dry run 63 live, 0 seed."
     },
     "Qulliq Energy Corporation": {
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
       "excluded": ["Streetlights", "standby"],
       "source_blocked": ["Government/municipal commercial base charges", "fuel rider"],
-      "monitor": [{"item": "Final 2025/26 GRA instruction (rates are interim, medium confidence)", "review_by": "2026-11-30"}]
+      "monitor": [{"item": "Final 2025/26 GRA instruction (rates are interim, medium confidence)", "review_by": "2026-12-15"}],
+      "notes": "Checked 2026-10-30: still interim. QEC's notice still says 'The interim rates will remain in place until final rates are approved' and its GRA page names only the April 1, 2025 application; URRC lists no new report or notice (newest: 2025 annual report, February 6, 2026). Dry run 6 live, 0 seed."
     },
     "ENMAX Power": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 5 live records (D100, D200, D300, D310, D410), equal to the batch 12 class inventory; exclusions and open decisions listed here", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
@@ -129,7 +134,8 @@
     "EPCOR Distribution": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 5 live records (DAS-R, DAS-SC, DAS-MC, DAS-TOU, DAS-TOUP) at medium confidence (2026 interim rates), equal to the batch 12 class inventory", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
       "excluded": ["CS/CST (closed, customer-specific)", "DC (AESO flow-through)", "DGEN", "lighting", "Edmonton local access fee ($0.01388/kWh) stays a note, not a conditional rider (user decision 2026-10-30)"],
-      "monitor": [{"item": "Final 2026 rates after the interim approval", "review_by": "2026-11-30"}]
+      "monitor": [{"item": "Final 2026 rates after the interim approval", "review_by": "2026-12-15"}],
+      "notes": "Checked 2026-10-30: still interim. The tariffs page lists the January 2026 DAS and SAS editions as the newest, every price schedule stamped '(2026 INTERIM RATE)'; dry run 5 live, 0 seed, medium confidence. The January 2025 editions were also interim and never reissued as final, so the January 2027 editions are the next likely change."
     },
     "FortisAlberta": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 5 live records (Rates 11, 41, 61, 63, 65), equal to the batch 12 class inventory", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
@@ -139,18 +145,21 @@
     "Direct Energy Regulated Services": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 2 live Rate of Last Resort records (residential, small business) at 12.02 cents/kWh, fixed to 2026-12-31 and matched to the UCA table", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
       "excluded": ["Daily administration charge not emitted: the website value is undated and the last dated schedule differs (user decision 2026-10-30)"],
-      "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}]
+      "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}],
+      "notes": "Checked 2026-10-30: no next term yet. The UCA table still shows only January 1, 2025 - December 31, 2026 ('The RoLR will be in place until December 31, 2026'; ATCO Electric area 12.02); the provider page states 12.02 cents/kWh to December 31, 2026. Dry run 2 live, 0 seed."
     },
     "ENMAX Energy Corporation": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 2 live Rate of Last Resort records (D100, D200) with daily administration charges, matched to the UCA table", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
       "excluded": ["D300/D310/D410 (not covered)"],
       "source_blocked": ["Municipally set Rate of Last Resort areas (Red Deer, Cardston, Ponoka) not covered"],
-      "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}]
+      "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}],
+      "notes": "Checked 2026-10-30: no next term yet. The UCA table shows only the 2025-2026 term (ENMAX Power area 12.06); ENMAX's page: fixed 'beginning January 1, 2025, and is expected to remain unchanged until December 31, 2026'. Dry run 2 live, 0 seed."
     },
     "EPCOR Energy Alberta": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 4 live Rate of Last Resort records (residential and small business for the EPCOR Distribution and FortisAlberta areas), matched to the UCA table", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
       "source_blocked": ["REA price schedule not covered"],
-      "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}]
+      "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}],
+      "notes": "Checked 2026-10-30: no next term yet. The UCA table shows only the 2025-2026 term (12.01 in the EPCOR Distribution and FortisAlberta areas); both EPCOR pages: 'set at a fixed rate from January 1, 2025 to December 31, 2026'. Dry run 4 live, 0 seed."
     },
     "Alberta Electric System Operator": {
       "audit": {"date": "2026-10-30", "basis": "AESO publishes no customer tariff. Live since 2026-10-30: a value-less 'Variable' pool price market reference verified against the official ETS Historical Pool Price report (recent posted hourly prices, documented format, $0-$999.99 range) and its metadata PDF (pool price definition, document date); dry run 1 live, 0 seed. No price or average is stored", "source": "scrapers/utilities/aeso.py; tests/test_ws4_aeso.py"},
