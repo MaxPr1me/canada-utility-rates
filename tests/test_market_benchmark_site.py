@@ -47,6 +47,7 @@ def test_benchmark_display_and_unavailable_reason(open_site, payload, available,
         if province == "AB":
             expect(block).to_contain_text("2 wires utilities")
         expect(block.locator('a[href="https://example.test/price"]')).to_have_count(1)
+        expect(block.locator("details.rm-details summary")).to_have_text("Sources (1)")
     else:
         expect(block).to_contain_text("Missing observed history")
         assert "$6,780" not in block.inner_text()

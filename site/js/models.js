@@ -533,7 +533,11 @@
                 item.append(link);
                 sources.append(item);
             });
-            section.append(sources);
+            if (sources.childElementCount) {
+                const details = el("details", "rm-details");
+                details.append(el("summary", null, `Sources (${sources.childElementCount})`), sources);
+                section.append(details);
+            }
         } else {
             const reason = (costs && costs.reason) || info.reason || "No valid benchmark for this usage level.";
             section.append(el("p", "rm-text", `Historical market benchmark unavailable: ${reason}`));
