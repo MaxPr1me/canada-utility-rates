@@ -1,0 +1,23 @@
+#view-across-canada select {
+    margin: 0.5rem;
+    padding: 0.5rem;
+}
+
+.across-table {
+    min-width: 760px;
+}
+
+.across-table details {
+    min-width: 14rem;
+    max-width: 32rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.across-table summary {
+    cursor: pointer;
+}
+
+.across-table .across-incomplete {
+    color: #665320;
+}

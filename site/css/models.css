@@ -24,3 +24,9 @@
   .rm-illus-grid { grid-template-columns: minmax(0, 1fr); gap: 0 0; }
   .rm-illus-grid .meta-label { margin-top: 0.5rem; }
 }
+.rm-fixed-assumptions {
+    border-left: 4px solid #536b8a;
+    padding: 0.25rem 1rem;
+    margin: 1rem 0;
+    overflow-wrap: anywhere;
+}

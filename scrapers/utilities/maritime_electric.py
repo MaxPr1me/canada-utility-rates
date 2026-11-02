@@ -98,7 +98,7 @@ def _extract_pages(pdf_bytes: bytes) -> list[DocumentPage]:
 
 # Expected (component_type, tier_number, tier_threshold) per rate code.
 _RES = [("fixed", None, None), ("energy", 1, 2000.0), ("energy", 2, None)]
-_GS = [("fixed", None, None), ("demand", 2, None),
+_GS = [("fixed", None, None), ("demand", 1, 20.0), ("demand", 2, None),
        ("energy", 1, 5000.0), ("energy", 2, None)]
 EXPECTED_SHAPES: dict[str, list[tuple]] = {
     "110": _RES, "130": _RES, "131": _RES, "133": _RES,
@@ -314,7 +314,16 @@ class MaritimeElectricScraper(BaseScraper):
         for raw in block.splitlines()[1:]:
             line = raw.strip()
             if _ZERO_DEMAND_LINE.search(line):
+                if zero_demand_seen:
+                    self.logger.warning("Maritime Electric Rate %s: duplicate free demand block", code)
+                    return None
                 zero_demand_seen = True
+                components.append(RateComponent(
+                    component_type="demand",
+                    component_name="Demand Charge - per kW for first 20 kW",
+                    charge_value=0.0, charge_unit="$/kW", demand_unit="kW",
+                    tier_number=1, tier_threshold=20.0, tier_unit="kW",
+                ))
                 continue
             component = self._parse_component_line(line)
             if component:

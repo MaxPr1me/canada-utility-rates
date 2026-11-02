@@ -1,4 +1,4 @@
-"""Centra Gas schedule edition selection and the November 1, 2026 (v1126) text Appendix A (batch 16)."""
+"""Centra quarterly PDF authority, signed transport and fail-closed source evidence."""
 import json
 import logging
 from datetime import date
@@ -15,6 +15,7 @@ AUGUST_TODAY = date(2026, 10, 30)
 NOVEMBER_TODAY = date(2026, 11, 2)
 TEXT_CLASSES = {"SGS", "SGS-MKT", "COM-SGS", "COM-SGS-MKT", "COM-LGS", "COM-LGS-MKT",
                 "COM-HVF-S", "COM-HVF-T", "COM-MFS-S", "COM-MFS-T", "COM-IS-S", "COM-IS-T"}
+FIRM_CLASSES = TEXT_CLASSES - {"COM-IS-S", "COM-IS-T"}
 
 # Synthetic: Centra's November 1, 2026 rate pages are not published yet (checked 2026-10-30). The three tables the
 # Mainline Interruptible record is cross-checked against are restated with v1126 page 4 of 4 values in cents.
@@ -90,13 +91,12 @@ def test_fixture_excerpt_matches_the_edition_table():
     assert centra_gas.SCHEDULE_EDITIONS[date(2026, 8, 1)] == {"url": PAGE_URLS["schedule"], "appendix": "transcription"}
 
 
-def test_edition_follows_the_commercial_rates_in_force():
+def test_edition_follows_the_current_supported_quarter_not_stale_html():
     scraper = CentraGasScraper()
-    november = november_pages()["commercial"]
-    assert scraper._edition(FIXTURE["pages"]["commercial"]["text"], AUGUST_TODAY)["url"] == PAGE_URLS["schedule"]
-    assert scraper._edition(november, NOVEMBER_TODAY)["url"] == V1126["source_url"]
-    assert scraper._edition(november, AUGUST_TODAY) is None
-    assert scraper._edition("", NOVEMBER_TODAY) is None
+    assert scraper._edition(AUGUST_TODAY)["url"] == PAGE_URLS["schedule"]
+    assert scraper._edition(NOVEMBER_TODAY)["url"] == V1126["source_url"]
+    assert scraper._edition(date(2027, 1, 31))["url"] == V1126["source_url"]
+    assert scraper._edition(date(2027, 2, 1)) is None
 
 
 def test_november_pages_read_the_v1126_text_at_high_confidence():
@@ -151,32 +151,32 @@ def test_august_pages_never_read_the_text_appendix():
 
 def test_november_pages_never_use_the_transcription():
     scraper, records = parse(november_pages(transcription_appendix()))
-    assert set(records) == TEXT_CLASSES and scraper.unmodelled_classes == [MLI_ROW]
+    assert not records and scraper.unmodelled_classes == [MLI_ROW]
 
 
-@pytest.mark.parametrize(("old", "new"), [
-    ("Approved by Board Order: 150/26", "Approved by Board Order: 151/26"),
-    ("Effective from: November 1, 2026", "Effective from: February 1, 2027"),
-    ("Page 4 of 4", "Page 4 of 5"),
-    ("(BASE RATES ONLY - NO RIDERS)", "(BASE RATES)"),
+@pytest.mark.parametrize(("old", "new", "expected"), [
+    ("Approved by Board Order: 150/26", "Approved by Board Order: 151/26", set()),
+    ("Approved by Board Order: 150/26", "Approved by Board Order: 150/260", set()),
+    ("Effective from: November 1, 2026", "Effective from: February 1, 2027", set()),
+    ("Page 4 of 4", "Page 4 of 5", FIRM_CLASSES),
+    ("(BASE RATES ONLY - NO RIDERS)", "(BASE RATES)", FIRM_CLASSES),
 ])
-def test_header_mismatch_omits_only_mainline_interruptible(old, new, caplog):
+def test_header_mismatch_rejects_the_affected_pdf_tables(old, new, expected, caplog):
     appendix = text_appendix()
     assert old in appendix
     with caplog.at_level(logging.WARNING):
         scraper, records = parse(november_pages(appendix.replace(old, new)))
-    assert set(records) == TEXT_CLASSES and scraper.unmodelled_classes == [MLI_ROW]
+    assert set(records) == expected and scraper.unmodelled_classes == [MLI_ROW]
     assert "header lacks" in caplog.text
 
 
-def test_unknown_edition_date_skips_mainline_interruptible(monkeypatch, caplog):
+def test_unknown_quarter_never_reuses_old_prices_or_html(monkeypatch, caplog):
     monkeypatch.setattr(centra_gas, "SCHEDULE_EDITIONS", {
         date(2026, 8, 1): centra_gas.SCHEDULE_EDITIONS[date(2026, 8, 1)]})
     with caplog.at_level(logging.WARNING):
         scraper, records = parse(november_pages())
-    assert set(records) == TEXT_CLASSES and scraper.unmodelled_classes == [MLI_ROW]
-    assert "no known schedule edition for commercial rates effective 2026-11-01" in caplog.text
-    assert PAGE_URLS["schedule"] in records["COM-HVF-T"].notes
+    assert not records
+    assert "no supported approved schedule for the current quarterly period" in caplog.text
 
 
 @pytest.mark.parametrize(("old", "new"), [
@@ -188,7 +188,7 @@ def test_missing_or_unreadable_row_fails_closed(old, new):
     appendix = text_appendix()
     assert old in appendix
     scraper, records = parse(november_pages(appendix.replace(old, new)))
-    assert set(records) == TEXT_CLASSES and scraper.unmodelled_classes == [MLI_ROW]
+    assert set(records) == FIRM_CLASSES and scraper.unmodelled_classes == [MLI_ROW]
 
 
 def test_repeated_table_fails_closed():
@@ -197,7 +197,7 @@ def test_repeated_table_fails_closed():
     end = page.index("Delivery - Mainline Interruptible Class $0.0036") + len("Delivery - Mainline Interruptible Class $0.0036")
     table = page[start:end]
     _, records = parse(november_pages(text_appendix().replace(table, table + " " + table)))
-    assert set(records) == TEXT_CLASSES
+    assert set(records) == FIRM_CLASSES
 
 
 @pytest.mark.parametrize(("old", "new"), [
@@ -210,7 +210,7 @@ def test_inconsistent_appendix_arithmetic_fails_closed(old, new):
     appendix = text_appendix()
     assert old in appendix
     scraper, records = parse(november_pages(appendix.replace(old, new, 1)))
-    assert set(records) == TEXT_CLASSES and scraper.unmodelled_classes == [MLI_ROW]
+    assert set(records) == FIRM_CLASSES and scraper.unmodelled_classes == [MLI_ROW]
 
 
 @pytest.mark.parametrize(("old", "new", "code"), [
@@ -218,21 +218,23 @@ def test_inconsistent_appendix_arithmetic_fails_closed(old, new):
     ("Delivery 1.09¢/m 3", "Delivery 1.19¢/m 3", "COM-IS-T"),
     ("Alternate supply service 1.41¢/m 3 Delivery is", "Alternate supply service 1.43¢/m 3 Delivery is", "COM-IS-S"),
 ])
-def test_commercial_counterpart_mismatch_fails_closed(old, new, code):
+def test_commercial_counterpart_mismatch_is_reported_without_overriding_pdf(old, new, code, caplog):
     pages = november_pages()
     assert pages["commercial"].count(old) == 1
     pages["commercial"] = pages["commercial"].replace(old, new)
     _, records = parse(pages)
-    assert MLI_CODE not in records and code in records
+    assert set(records) == TEXT_CLASSES | {MLI_CODE}
+    assert code + " HTML prices differ" in caplog.text
+    assert "Source discrepancies:" in records[code].notes
 
 
-def test_commercial_totals_allow_one_rounding_unit_only():
+def test_pdf_totals_allow_one_rounding_unit_only():
     _, records = parse(november_pages())
     parts = components(records["COM-IS-S"])
     assert (parts["Demand Transportation Charge"].charge_value, parts["Demand Distribution Charge"].charge_value) == (
         0.0694, 0.2539)
     pages = november_pages()
-    pages["commercial"] = pages["commercial"].replace("Demand 32.34¢", "Demand 32.35¢")
+    pages["appendix_a"] = pages["appendix_a"].replace("$0.0694 $0.2539 $0.3234", "$0.0694 $0.2539 $0.3235")
     _, records = parse(pages)
     assert "COM-IS-S" not in records and MLI_CODE not in records
 
@@ -251,4 +253,92 @@ def test_appendix_text_reads_text_pages_without_line_numbers():
     text = CentraGasScraper._appendix_text(document, centra_gas.SCHEDULE_EDITIONS[date(2026, 11, 1)])
     assert CentraGasScraper._norm(text) == (
         "PDF page 19 Mainline election PDF page 50 VI. Terms PDF page 80 Basic Monthly Charge: ($/month) Monthly "
-        "PDF page 82 x")
+        "PDF page 81 PDF page 82 x")
+
+
+def test_stale_august_html_cannot_date_november_prices_august(caplog):
+    _, records = parse(august_pages(text_appendix()))
+    assert set(records) == TEXT_CLASSES | {MLI_CODE}
+    assert {record.effective_date for record in records.values()} == {"2026-11-01"}
+    for record in records.values():
+        assert record.source_url == V1126["source_url"]
+        assert record.confidence == "high"
+        for component in record.components:
+            if component.component_type != "carbon":
+                assert component.source_url == V1126["source_url"]
+                assert component.effective_date == "2026-11-01"
+                assert "quarterly rate table" not in component.source_detail
+    assert "commercial HTML headline missing or differs" in caplog.text
+    assert "gas supply HTML quarterly table missing or differs" in caplog.text
+    parts = components(records["COM-HVF-S"])
+    assert parts["Transportation to Centra"].charge_value == -0.0018
+    assert parts["Gas Commodity"].charge_value == 0.0588
+    assert parts["Distribution Charge"].charge_value == 0.023
+    assert parts["Demand Transportation Charge"].charge_value == 0.2916
+    assert parts["Demand Distribution Charge"].charge_value == 0.2985
+    assert components(records["COM-HVF-T"])["Distribution Charge"].charge_value == 0.0119
+    assert components(records["SGS"])["Distribution Charge"].charge_value == 0.1249
+    assert components(records["COM-LGS"])["Distribution Charge"].charge_value == 0.0759
+    assert not any("-MKT" in record.tariff_code and any(c.component_type == "commodity" for c in record.components)
+                   for record in records.values())
+
+
+@pytest.mark.parametrize(("old", "new", "missing"), [
+    ("High Volume Firm (HVF) $0.0588 -$0.0018 $0.0230 $0.0212 $0.0119", "", {"COM-HVF-S", "COM-HVF-T"}),
+    ("$0.0588 -$0.0018 $0.0230 $0.0212", "$0.0588 -$0.0018 $0.0230 $0.0214", {"COM-HVF-S", "COM-HVF-T"}),
+    ("$0.2916 $0.2985 $0.5901", "$0.2916 $0.2985 $0.5903", {"COM-HVF-S", "COM-HVF-T"}),
+    ("$0.0588 $0.0322 $0.1249", "$0.0588 $0.0322 -$0.1249", {"SGS", "SGS-MKT", "COM-SGS", "COM-SGS-MKT"}),
+    ("N/A N/A $85.00 N/A N/A", "N/A N/A $85.00 N/A $85.00", {"COM-LGS", "COM-LGS-MKT"}),
+])
+def test_firm_row_errors_reject_only_affected_classes(old, new, missing):
+    pages = november_pages()
+    assert old in pages["appendix_a"]
+    pages["appendix_a"] = pages["appendix_a"].replace(old, new)
+    _, records = parse(pages)
+    assert set(records) == (TEXT_CLASSES | {MLI_CODE}) - missing
+
+
+def test_missing_carbon_still_rejects_all_current_pdf_prices():
+    pages = november_pages()
+    pages["carbon"] = ""
+    assert parse(pages)[1] == {}
+
+
+def test_missing_marketer_evidence_omits_only_marketer_variants():
+    pages = november_pages()
+    pages["supply"] = ""
+    _, records = parse(pages)
+    assert set(records) == (TEXT_CLASSES | {MLI_CODE}) - {"SGS-MKT", "COM-SGS-MKT", "COM-LGS-MKT"}
+
+
+def test_missing_eligibility_rejects_hvf_but_keeps_other_classes():
+    pages = november_pages()
+    pages["schedule"] = pages["schedule"].replace("binding agreement", "agreement")
+    _, records = parse(pages)
+    assert set(records) == (TEXT_CLASSES | {MLI_CODE}) - {"COM-HVF-S", "COM-HVF-T"}
+
+
+def test_missing_or_duplicate_firm_page_never_uses_html_prices():
+    pages = november_pages()
+    page = "PDF page 81 " + V1126["pages"]["81"]["text"]
+    for appendix in (pages["appendix_a"].replace(page, ""), pages["appendix_a"] + " " + page):
+        _, records = parse(november_pages(appendix))
+        assert set(records) == {"COM-IS-S", "COM-IS-T"}
+
+
+def test_future_text_prices_are_never_used_early():
+    _, records = parse(november_pages(), AUGUST_TODAY)
+    assert records == {}
+
+
+@pytest.mark.parametrize(("old", "new"), [
+    ("Commodity Volumetric Charge: ($/m3)", "Commodity Volumetric Charge: (cents/m3)"),
+    ("Gas Commodity Centra to Customer Delivery", "Gas Commodity Customer to Centra Delivery"),
+])
+def test_firm_units_and_column_identity_are_required(old, new):
+    pages = november_pages()
+    page = V1126["pages"]["81"]["text"]
+    assert old in page
+    pages["appendix_a"] = pages["appendix_a"].replace(page, page.replace(old, new))
+    _, records = parse(pages)
+    assert set(records) == {"COM-IS-S", "COM-IS-T"}

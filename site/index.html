@@ -6,6 +6,7 @@
     <title>Canada Utility Rates</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/models.css">
+    <link rel="stylesheet" href="css/across-canada.css">
 </head>
 <body>
     <header>
@@ -15,6 +16,7 @@
             <button class="nav-tab active" data-view="rates">Rate Browser</button>
             <button class="nav-tab" data-view="market">Market Pricing</button>
             <button class="nav-tab" data-view="models">Representative Models</button>
+            <button class="nav-tab" data-view="across-canada">Across-Canada</button>
             <button class="nav-tab" data-view="compare">Compare <span id="compare-count">0/2</span></button>
         </nav>
     </header>
@@ -250,6 +252,24 @@
 
         </div><!-- /view-models -->
 
+        <div id="view-across-canada" class="view-panel hidden">
+            <section class="market-header">
+                <h2>Across-Canada Residential Electricity</h2>
+                <p>Representative monthly costs in CAD, not billed tariffs or quotes.
+                    Different rate structures and reference-customer assumptions are not interchangeable.
+                    Synthetic estimates are never included.</p>
+                <label for="across-usage">Monthly electricity use</label>
+                <select id="across-usage">
+                    <option value="500">500 kWh</option>
+                    <option value="1000" selected>1,000 kWh</option>
+                    <option value="2000">2,000 kWh</option>
+                </select>
+                <p id="across-asof"></p>
+            </section>
+            <p id="across-status" role="status" aria-live="polite"></p>
+            <div id="across-content" class="rm-table-wrap"></div>
+        </div>
+
         <div id="view-compare" class="view-panel hidden">
             <section class="market-header">
                 <h2>Side-by-Side Tariff Comparison</h2>
@@ -285,5 +305,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="js/app.js"></script>
     <script src="js/models.js"></script>
+    <script src="js/across-canada.js"></script>
 </body>
 </html>

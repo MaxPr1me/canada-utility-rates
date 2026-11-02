@@ -2,7 +2,7 @@
 import importlib.util
 import json
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -180,8 +180,9 @@ def test_the_committed_ledger_is_well_formed_and_only_names_active_registry_util
     assert gate.validate_ledger(ledger) == []
     active = {u["name"] for u in gate.active_utilities(registry)}
     assert set(ledger["utilities"]) <= active
+    today = datetime.now(timezone.utc).date()
     for name in ledger["utilities"]:
-        assert gate.resolve_entry(ledger, name)["audit"]["date"] <= "2026-10-30", name
+        assert date.fromisoformat(gate.resolve_entry(ledger, name)["audit"]["date"]) <= today, name
 
 
 def test_committed_ledger_covers_every_active_utility_with_a_dated_audit():

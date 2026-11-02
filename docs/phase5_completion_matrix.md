@@ -1,5 +1,70 @@
 # Phase 5 Completion Matrix
 
+## Current checkpoint - November 2, 2026
+
+The November 1 automation succeeded:
+[Monthly Scrape](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41317063703),
+[Ontario Price Archive](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41308759280)
+and both follow-on deployments (41318171963 / 41308851987). Pulled bot commits `f9d68d3`,
+`81e099c`, `20c73d4`; refreshed the digest-verified read-only mirror. Run 30: **917 live,
+45 seed, 0 invalid, 78 utilities**, no failures/seed-only utilities; **5,534 snapshots**,
+with all 4,572 previous rows unchanged; 1,803 tariff versions / 20,430 components /
+1,323 historical live versions / 480 retained estimates. Latest-live regional count: 249,
+territories 109, Ontario electricity 490, Alberta wires/RoLR 28, ON/AB gas 40, AESO 1.
+
+Strict gate **78/78** on November 1 and 2, crosswalk **0 unmapped**. All substantive
+model fields, including illustrative values, match CI after normalizing only generation
+timestamps and equivalent input paths. Published method 7C-3: 55 models, **18 modeled /
+26 single-source / 6 pending / 5 not computable**. These are not live tariff counts.
+
+### Implemented and verified, not yet stored by CI
+
+- **Centra:** the passing run stored 13 August-priced records because current HTML mixed
+  old headings with new prices. Owner-approved source policy: the supported current quarterly
+  PDF is authoritative. All 13 November records now parse live at high confidence, including
+  HVF -$0.0018 and MLI -$0.0017/m3 transport. Exact PDF/fixture hash and pages 80/81/82 verified;
+  headers, columns, units, totals, eligibility, carbon and marketer evidence stay strict.
+  Stale commercial/supply headings and the HTML Interruptible total discrepancy are reported.
+  Generic negative-transmission warnings remain visible; 0 invalid records.
+- **Maritime:** corrected a parser bug, not a missing source: N-28 prints the first 20 kW
+  free for 232/233. Dry run 10 live / 0 seed / 0 invalid. Parser-to-model tests produce
+  pre-tax 232 costs 462.17 / 1,617.12 / 7,225.97 / 85,460.97 at s1/s2/m1/l1. Seasonal
+  exclusions remain. No model engine, method-version or schema change.
+- **Site:** existing fixed-charge assumptions now visible for all supplied levels and
+  selected contributor components. Separate Across-Canada residential electricity view:
+  500/1,000/2,000 kWh, default 1,000, separate structures, 13 jurisdictions and explicit
+  missing/pending/withheld states; no synthetic values. Existing Compare remains two tariffs.
+- **Verification:** 2,124 regression tests / 28 modules passed; actual served site checked
+  at 1280 and 390 px, all five views, correct model totals, no page errors/overflow.
+  New source/ledger integration additionally checked with the URL and coverage-gate suites.
+
+### Exact remaining queue / publication gate
+
+1. Owner closes #3 with the `math.fsum` fix (`a89e436`) and successful November 1 tests;
+   closes #4 with the successful archive/market build and `f9d68d3` / `81e099c`.
+   Authenticated GitHub writes are unavailable here; the owner chose manual actions.
+2. After the implementation push, owner dispatches **Monthly Scrape**, branch `main`,
+   `utility = Centra Gas Manitoba`, empty `province`; wait for success and deployment.
+   Then dispatch `utility = Maritime Electric`, also with empty `province`.
+3. Check provenance, unchanged old snapshots, backups, bot commits, corrected Centra
+   dates/values and Maritime free tier/model costs. Fast-forward bot commits, refresh the
+   read-only DB, rerun strict gate/crosswalk and full model parity at the new export date.
+4. **Only then** publish the scoped coverage-complete README status. A green gate cannot
+   dismiss the known Centra contradiction; local dry runs are not publication.
+5. Centra monitor stays due **November 30**, including HTML discrepancy review. Yukon still
+   advertises October's book; run 30 stored 20 records for each utility, not a newer edition.
+   Both December 15 monitors remain open; no speculative discovery change was made.
+6. Manitoba Small (Non-Demand) is calculable from stored corrected data; Small (Demand)
+   remains unavailable without phase and qualifying demand-history assumptions.
+7. Gas usage/unit and Phase 8 monitoring proposals were delivered for review only. Gas:
+   separate native m3/GJ tracks, source-backed residential examples; commercial demand
+   needs explicit annual/history inputs. Phase 8: one existing rebuild, always publish
+   valid fresh models, exclude synthetic changes from alerts, explicit failure/expiry
+   evidence, visible nonblocking errors; 2% and issue policy remain unapproved.
+   Synthetic sensitivity and the AESO market view remain queued (the latter needs permission).
+
+## Historical checkpoints through October 30
+
 **Updated:** 2026-10-30 (batches 15 and 16, pushed October 30 before the November 1 Monthly Scrape. Batch 16: Yukon rate-book discovery through the page data, Centra's November 1 schedule edition read from text, dead-link clean-up and the model decisions of method 7C-3. Batch 15: dated November 1 model inputs (ULO shares 41/20/26/13, Ontario Electricity Rebate 15.7%), moved Manitoba Hydro and Alberta source addresses with a dead-address guard test, the legacy market generator's scratch default, Deploy Site after successful Ontario Price Archive runs, and early monitor checks that found a new Centra Appendix A edition and a Yukon book-discovery risk). Before that, 2026-10-16 (batch 14: EPCOR Energy Alberta's moved pages, CI as the only writer of the history database, the rolling five-year Ontario market history, Phase 7C for all ten provinces and the 7E illustrative estimate; the first Monthly Scrape on GitHub as the only database writer (scrape run 29) found no changed rates, so the tariff counts below are batch 12's from October 9). Scope: all 87 registered utilities (8 Ontario entries
 `merged`, 1 mis-registered Alberta gas entry `retired`), not every utility in the broader Canadian
 inventory. The export has 1,396 stored tariff versions / 14,179 components / **916 stored live
@@ -88,9 +153,9 @@ more than 12 backups and the market history build in CI. Deploy Site follows onl
 and pushes made by a workflow start no other workflow, so a market update from the 15th reaches
 the site with the next deployment.
 
-The queue below follows the order agreed on October 16: the Ontario Price Archive re-run, the
-Manitoba Hydro parser fix, three user decisions and the 7E analysis, then the remaining lanes
-(C, E, D), later phases and monitoring; the calendar after it lists dated checks.
+The historical queue below records the October 30 checkpoint. It is superseded by the
+November 2 queue above, including the corrected finding that Maritime's demand threshold
+was published but discarded by the parser.
 
 A successful scrape or one live residential class does not establish complete
 building coverage; counts include optional adjustments and reference records.
@@ -119,18 +184,17 @@ building coverage; counts include optional adjustments and reference records.
 - **October 15-16 (done):** scheduled Source Health run #5 and dispatched run #6 passed (October
   15); batch 14 was pushed and Monthly Scrape run #11 stored scrape run 29 (October 16); the first
   Ontario Price Archive run failed closed on an empty IESO LFDA file (October 16).
-- **November 1:** scheduled Ontario Price Archive with its market history build (06:00 UTC) and the
-  first scheduled Monthly Scrape (08:00 UTC); new OEB RPP prices. The new RPP Price Report's
-  shares (TOU 64/18/18, ULO 41/20/26/13) and the 15.7% Ontario Electricity Rebate are dated inputs
-  in batch 15, which is pushed after this run is checked (then start Monthly Scrape by hand).
+- **November 1 (done):** scheduled archive/market build, Monthly Scrape and both deployments
+  succeeded with the batch 15/16 code already pushed October 30. Stored models use the new
+  OEB shares and 15.7% rebate. The pull, mirror and parity check are complete.
 - **November 15:** Ontario Price Archive (with the market history build) and Source Health. Risk:
   the IESO table's October LFDA may still be preliminary while the archive holds final values (all
   three monthly checks are strict).
-- **November 30:** monitor reviews for Centra (new Appendix A edition) and the Yukon joint book
-  (fix discovery before December 1).
+- **November 30:** Centra stored November correction and HTML-discrepancy review; the original
+  deadline is retained, not silently postponed. Unresolved afterward means `monitor_overdue`.
 - **December 1:** Monthly Scrape; the coverage gate warns `live_expiring` for the eight Alberta
   Rate of Last Resort records.
-- **December 15:** monitor reviews for Qulliq, NTPC Snare, EPCOR Distribution and the next Rate of
+- **December 15:** monitor reviews for both Yukon utilities, Qulliq, NTPC Snare, EPCOR Distribution and the next Rate of
   Last Resort term.
 - **December 31, 2026:** the Alberta Rate of Last Resort fixed term ends; its records fail closed
   until the 2027-2028 term is published and appears in the UCA table.

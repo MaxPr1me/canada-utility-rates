@@ -9,7 +9,7 @@ eligibility, not an assumption that NECB 2025 defines tariff classes. Do not exp
 farm/oil-field processes, irrigation, standalone lighting, wholesale or other non-building
 services merely to complete a catalogue. Existing implementations remain reference data.
 
-Every active registered utility except AESO (a market reference) now has live output: the
+Every active registered utility, including AESO (a market reference stored November 1), now has live output: the
 16 campaign utilities in BC/QC/MB/SK/NB/NS/PE/NL, the four territorial utilities, all 47 active
 Ontario distributors and, since batch 12 (October 9), Alberta electricity and Ontario/Alberta gas.
 Batch 12 also registered one new utility, EPCOR Natural Gas (Ontario), to replace a mis-registered
@@ -24,6 +24,16 @@ requiring a page summary to agree with that document before accepting live outpu
 patterns (separate transmission and dated riders, interim rates, value-less market components,
 independent cross-check sources) are listed at the end of this guide. They are reusable
 patterns, not proof that every class at those utilities is complete.
+
+November 2 source lessons:
+- Preserve published zero-priced tiers. Maritime Electric's first 20 kW free is a demand
+  component, not a row to discard; require its threshold and reject ambiguous duplicates.
+- A current approved PDF can take priority over stale HTML only under an explicit reviewed
+  source policy. Centra now requires the supported quarterly PDF's exact date, order, columns,
+  units and totals; HTML discrepancies remain warnings and record notes. Required eligibility,
+  carbon and marketer evidence are not waived. Only volumetric transport may be signed.
+- Test the parser-to-model result as well as record counts. Local fixes/dry runs do not
+  change published data: only Monthly Scrape stores them.
 
 ## 1. Research the utility
 

@@ -3540,8 +3540,9 @@ class TestMaritimeElectricBuildingLive:
             assert _ME_comp(r, "energy", 1).charge_value == 0.2188
             assert _ME_comp(r, "energy", 1).tier_threshold == 5000.0
             assert _ME_comp(r, "energy", 2).charge_value == 0.1438
-            # First 20 kW is published as "$ -" and is not emitted as a charge.
-            assert len([c for c in r.components if c.component_type == "demand"]) == 1
+            free = _ME_comp(r, "demand", 1)
+            assert (free.charge_value, free.tier_threshold, free.tier_unit) == (0.0, 20.0, "kW")
+            assert len([c for c in r.components if c.component_type == "demand"]) == 2
             assert r.customer_class == "commercial"
 
     def test_industrial_retained_with_native_threshold_unit(self):
@@ -3594,6 +3595,12 @@ class TestMaritimeElectricBuildingLive:
     def test_missing_zero_first_block_demand_rejects_general_service_only(self):
         text = ME_PAGE1.replace("Demand Charge - per kW for first 20 kW $ -\n", "", 1)
         recs = _ME_parse(text)
+        assert "232" not in recs
+        assert "233" in recs and "110" in recs
+
+    def test_duplicate_zero_demand_block_rejects_only_affected_class(self):
+        row = "Demand Charge - per kW for first 20 kW $ -\n"
+        recs = _ME_parse(ME_PAGE1.replace(row, row + row, 1))
         assert "232" not in recs
         assert "233" in recs and "110" in recs
 

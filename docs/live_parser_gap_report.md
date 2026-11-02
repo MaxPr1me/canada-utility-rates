@@ -1,5 +1,13 @@
 # Live Parser Gap Report
 
+**Current update, November 2:** all 78 active utilities have stored live output (917 latest
+tariffs) and the strict gate passes; final coverage completion still waits for corrected
+Centra prices to be stored by CI. The November 1 scrape kept all history. Current local
+corrections: Centra's approved quarterly PDF is authoritative (13 live November records),
+and Maritime's printed first 20 kW free is preserved (10 live records). Full regression:
+2,124 tests / 28 modules. See the [current matrix checkpoint](phase5_completion_matrix.md).
+The older counts and queues below are historical evidence, not the current publication state.
+
 **Updated:** 2026-10-30 (batches 15 and 16, pushed October 30. Batch 16: Yukon rate-book discovery through the page data, Centra's v1126 text Appendix A, kept dead seed citations and the October 30 model decisions. Batch 15: Manitoba Hydro's moved rate pages, the Alberta Rate of Last Resort seed citations and a dead-address guard test; early monitor checks for Centra, Yukon, NTPC, Qulliq, EPCOR Distribution and the Rate of Last Resort term). Before that, 2026-10-16 (batch 14: EPCOR Energy Alberta's moved Rate of Last Resort pages fixed (Lane F); representative-model blockers recorded under Manitoba Hydro, NB Power, Newfoundland Power and Maritime Electric; CI and market-history changes noted; tariff evidence below is from batch 12, October 9)
 **Scope:** Building-energy parser coverage, including single-family homes and building-related industrial general facility service defined by size, voltage or interruptibility. Process-specific farm, oil-field, irrigation, NGV fuelling, EV charging, lighting, wholesale/reseller and standby-only service is excluded; completed non-building schedules remain reference.
 
@@ -178,6 +186,16 @@ in-scope gas and building-catalogue gaps. Ontario and Alberta ran as separate bl
 - RS21 kW/kVA demand charges are alternatives, not additive; voltage/transformation credits are negative and conditional. RS30/32 primary service uses 500 kVA contract demand; RS85 Green Power is optional. Jan 1, 2026 RS31 transmission (R-31.1, PDF p65) has $4,077.97/month, $6.29/kVA wires, $4.39/kVA power supply and $0.06851/kWh; RS33 TOU (R-33.1, p67) has $3,785.34/month and six seasonal TOU prices. Twelve live records. **RS38 (October 30, 6D):** live as `38`, an interruptible pilot to July 31, 2028 (sheets R-38.1 to R-38.5, PDF pp74-78) for loads eligible for RS30 or RS31: the energy is the ICE Day Ahead Mid-Columbia hourly index (negative prices floored at $0, optional customer price cap, losses per Rate Schedule 109, converted at the Bank of Canada rate) plus an Hourly Service Adder of $0.01/kWh, so the Mid-C line is a value-less "Variable" component; the two customer charges ($1,252.43 RS30 and $4,077.97 RS31) are adopted by reference from those schedules and stored as dated alternatives. Medium confidence while the sheets say Interim; excluded from the models (`pilot`). RS95 source-blocked by unpublished-in-this-tariff BC Hydro RS3808 Tranche 1 price. RS37 standby-only and RS96 EV charging excluded.
 
 ### SaskEnergy and Centra Gas
+
+**Centra policy update (November 2, supersedes the older transition notes below):** the
+supported in-effect quarterly PDF supplies all 13 scoped prices, independent of stale HTML
+headings. v1126 p81/p82 are authoritative at high confidence; base p80 is checked, not added.
+Strict order/date/column/unit/total checks and required eligibility/carbon/marketer context
+remain. Signed volumetric transport is supported; other negative charges are rejected.
+HTML disagreements are logged and recorded, never hidden. Unknown quarters or missing
+tables cannot reuse old prices as live current data. Dry run 13 live / 0 seed / 0 invalid;
+publication and the November 30 monitor remain pending. August's reviewed transcription
+continues only under its existing hash gates.
 - SaskEnergy's full-service and delivery-only variants require separately dated zero-carbon evidence; the assembled date uses the latest required component while retaining each component date. Do not infer private retailer commodity prices, heat conversions or small-industrial eligibility from a label. Fees without a published effective date remain unpriced. Small Industrial (660,001-970,000 m3/yr, closed since September 8, 2022) is full service only, with monthly delivery blocks; its zero carbon uses the general April 1, 2025 Part I schedule row because the zero-charge statement names only residential and commercial classes (accepted by decision). Batch 11 adds service fees as record T&C-C from Terms and Conditions Appendix C (effective March 1, 2018, cross-checked against the fees page): one-time fees in per-event units, after-hours fees as conditional alternatives, late-payment interest as a fraction per month; deposits, variable charges and municipal payments stay unpriced.
 - Centra reconciles separate delivery and volumetric demand components to published totals without adding those totals again. Require the approved PUB schedule for volume boundaries, contract/election terms, Mainline pressure, winter billing demand, T-service nominations and alternate supply; missing context rejects only affected classes. Fixed-term/private commodity prices remain unpriced. Every run audits the schedule class list (p17) and commercial options: Special Contract and Power Station are excluded with p20 evidence. Batch 11 builds Mainline Interruptible Sales (firm delivery) from a user-approved, visually reviewed transcription of scanned Appendix A page 82 (page 80 also checked): live at medium confidence only while both page-image SHA-256 hashes, the Board Order 111/26 / August 1, 2026 headers, delivery = transportation + distribution and the text-published Interruptible/Mainline Firm cross-checks all hold. Any new Appendix A edition drops only this record until re-transcribed. No T-Service variant: Mainline customers may take only firm transportation, identical to Mainline Firm T-Service. Recorded Appendix A anomalies (p79 MLC/HVF value echo, p81 HVF wording, T-Service footnote) are notes, not corrections. Checked 2026-10-30 (batch 15): the v1126 schedule (PUB Order 150/26, effective November 1, 2026) prints Appendix A pages 80/82 as text, not scans; the hash gate still matched the v0826 pages (13 live), but the Mainline Interruptible records fail closed once the rate pages switch to the November 1 edition. Follow-up done in batch 16 (October 30): `SCHEDULE_EDITIONS` selects the edition from the commercial page's "Rates effective" date. August 1, 2026 keeps v0826 and the transcription; November 1, 2026 uses v1126 and parses Mainline Interruptible Sales from the text layer (page 80/82 headers with Order 150/26 and "Effective from: November 1, 2026", the exact table once, delivery = transportation + distribution within one 0.0001 unit, equal basic charges and the commercial-page cross-checks) at high confidence (user decision); any other date or mismatch drops only this record. The commercial-page totals check allows one 0.01-cent rounding unit (v1126 prints Interruptible demand 0.0694 + 0.2539 = 0.3234; user decision). Open: v1126 page 81 prints High Volume Firm transport as -$0.0018, which the commercial-page parser rejects, so that class fails closed if the November page shows it.
 
@@ -190,6 +208,11 @@ in-scope gas and building-catalogue gaps. Ontario and Alberta ran as separate bl
 - Liberty requires current-month utility gas and applicable CRA evidence. MGS/LGS customer charges are alternatives by peak monthly usage; LGS excess volume is seasonal. Off-Peak Service is April-November eligible, with winter overrun retained as a note; CGS/ICGS process loads remain excluded.
 
 ### Maritime Electric and the Territories
+
+**Maritime correction (November 2):** contrary to the earlier model-blocker note, N-28
+does print the first 20 kW free for 232/233. The parser discarded it. Both records now retain
+a zero-priced tier with threshold 20 kW, and 232 business costs are verified end-to-end.
+The corrected stored records/models await Monthly Scrape; seasonal exclusions stay unchanged.
 
 - **Maritime Electric:** ten supported classes parsed from one IRAC schedule plus the Section N rates page, whose date must match N-28. Small Industrial 320 and Large Industrial 310 are audited complete (billing-demand rules as conditions; 310 losses and transformation charges conditional; no curtailable credit published). 330/340 are the Wholesale Rate Schedule for the City of Summerside and are retained as reference only. Representative models: the residential and general-service energy blocks are per "Billing Period", whose length the rules do not state; since October 30 (user decision) they count as per month because Maritime Electric's billing pages confirm monthly billing (seasonal options 133/233 stay null). The residential model is computable (single source); the three business models stay not computable because the general-service "balance of kW" demand block has no stored threshold.
 - **FortisAlberta:** moved to the Alberta Electricity section below (five live rates since batch 12).
@@ -248,7 +271,11 @@ in-scope gas and building-catalogue gaps. Ontario and Alberta ran as separate bl
 
 ## Recommended Next Steps
 
-The order agreed on October 16 (it replaces the October 9/15 lane order; Lane B, Lane F, the Ontario market continuation, Lane A (7C) and the 7E illustrative sidecar are done).
+Current: follow the November 2 matrix queue: owner-targeted Centra and Maritime CI scrapes,
+publication/history/model checks, then scoped README completion and issue closure. Do not
+repeat the already successful November 1 archive/baseline work. Keep monitor deadlines.
+
+The following is the **historical October 16-30 queue**, retained for decisions and context.
 
 1. **Ontario Price Archive re-run (owner):** the Monthly Scrape, now the only writer of the history database, passed every step on October 16 (run #11: scrape run 29 with "Live 910, seed 46, invalid 0; ... seed only: Alberta Electric System Operator", including EPCOR Energy Alberta's 4 Rate of Last Resort records; dated backup and `rates.db` uploaded; Deploy Site through `workflow_run`). The first Ontario Price Archive run failed closed because the IESO published its 2026 LFDA files empty (issue #4). Once the file is republished, start it again by hand (otherwise November 1); its market history build, which now also runs when the archive step fails, has not run in CI yet.
 2. **Manitoba Hydro block parser fix: done October 30** (see the Manitoba Hydro section); GS Medium is computable and GS Small (Non-Demand) follows the October 30 reference-customer decision.

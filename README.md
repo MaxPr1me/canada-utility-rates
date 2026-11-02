@@ -20,54 +20,54 @@ but further expansion of those classes is deferred. Shared general-service tarif
 still be relevant to buildings even when the utility also offers them to other users.
 Inventory counts below include reference-only records, not just building tariffs.
 
-## Current Status (2026-10-30)
+## Current Status (2026-11-02)
 
-The framework and website are implemented; **nationwide live-rate coverage is not complete**.
-Scope decided October 30 (user): "complete" means the 78 active registered utilities have live
-output for their main building classes, with every exclusion, source-blocked item and deferred item
-written down, and with AESO and the four market-indexed products (Phases 6C and 6D) done first.
-`python scripts/coverage_gate.py` checks this against `data/sources/coverage_ledger.json`; the
-README line changes only when it passes. **Status October 30:** every gate item is now implemented
-or decided: AESO's pool price market reference, the four market-indexed products (BC Hydro RS1892,
-FortisBC Electric RS38, NSPower one-part real-time pricing, NL Hydro 5.1L and Island non-thermal
-non-firm; all value-less "Variable" energy lines), the Manitoba Hydro block fix and seven
-exclusion decisions. The gate reads the committed export, which does not hold the new records yet,
-so it reads 77 of 78 (AESO) until the Monthly Scrape stores them (the November 1 run, or a manual
-run); a test run with the new records included reads 78 of 78. The README line will be changed
-after that scrape is checked. The Monthly Scrape reports the result in a public notice and never
-blocks on it.
-The tariff export was regenerated on **2026-10-09** after batch 12 (scrape run 27: Alberta electricity
-plus all 47 Ontario distributors re-stored with PUC Distribution and Phase 6B; scrape run 28:
-Ontario/Alberta gas). History was preserved. October 15 added CI fixes, the Representative
-Models tab and the Ontario Price archive. October 16 (batch 14) fixed EPCOR Energy Alberta's moved
-pages, made CI the only writer of the history database, turned the Market Pricing page into a
-rolling five-year history and built representative models for all ten provinces (7C) plus a
-clearly labelled illustrative estimate (7E). The same day the Monthly Scrape on GitHub stored its
-first run (scrape run 29); it found no changed rates, so the tariff counts below are still batch
-12's and only the snapshot history grew.
+**The November 1 coverage gate passes for all 78 active registered utilities. The final
+nationwide live-rate coverage-complete claim is pending corrected Centra publication.**
+"Complete" is limited to these utilities' agreed building classes with documented exclusions
+and source-blocked items, not every utility in Canada or every possible customer tariff.
+The gate (`python scripts/coverage_gate.py`) passed strictly at November 1 and November 2,
+with zero unmapped crosswalk records. AESO and all four market-indexed products are now stored.
+
+The November 1 Monthly Scrape, Ontario Price Archive and both follow-on deployments succeeded.
+All three bot commits were pulled, the database mirror was digest-checked, all 4,572 previous
+snapshots were verified unchanged, and the complete local model rebuild matched CI after
+normalizing only generation timestamps and equivalent input-path labels.
+
+The follow-up found that Centra's commercial/supply HTML still advertised August while its
+approved November PDF was current. Run 30 therefore stored 13 August-priced records. The
+user-approved PDF-authoritative correction now produces 13 live November records locally,
+including signed transport, but **only a targeted Monthly Scrape may store them**. Maritime
+Electric's printed first-20-kW-free demand block was also being discarded; its parser is fixed
+and tested, with corrected PEI business models awaiting the same CI publishing process.
+Do not treat a green gate or a local dry run as proof these corrections are published.
+
+The site now includes a separate residential **Across-Canada** view and displays existing
+fixed-charge model assumptions. Gas models and Phase 8 monitoring remain design proposals,
+not implementations. Issues #3 and #4 await owner closure; source-monitor deadlines are unchanged.
 A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
 
 | Measure | Exported state |
 |---|---|
 | Registered utilities | 87: 77 electricity and 10 gas, across all 13 provinces/territories (8 absorbed Ontario entries marked `merged`; the mis-registered Alberta "EPCOR Natural Gas" entry marked `retired`) |
-| Stored tariff versions / components | 1,396 / 14,179, including history and older estimates |
-| Live-sourced tariffs | **910 latest tariffs across 77 utilities**; 916 stored live versions |
-| Active regional campaign | **243 latest live records across all 16 provincial target utilities**; 109 across the four territorial utilities |
+| Stored tariff versions / components | 1,803 / 20,430, including history and older estimates |
+| Live-sourced tariffs | **917 latest tariffs across all 78 active utilities**; 1,323 stored live versions (Centra correction pending) |
+| Active regional campaign | **249 latest live records across all 16 provincial target utilities**; 109 across the four territorial utilities |
 | Ontario electricity | **490 latest live records across all 47 active distributors** from OEB-approved tariff sheets (PUC Distribution configured October 9) |
 | Alberta electricity (batch 12) | **28 latest live records**: ENMAX Power, ATCO Electric, EPCOR Distribution and FortisAlberta wires (5 each) plus 8 Rate of Last Resort records from three providers |
 | Ontario/Alberta gas (batch 12) | **40 latest live records**: Enbridge Gas 20, ATCO Gas 10, EPCOR Natural Gas (Ontario) 10 |
-| Active utilities without live output | **1 in the committed export**: AESO. Its live market-reference record (October 30) and the four 6D records (BC Hydro RS1892, FortisBC RS38, NSPower RTP-T/RTP-D, NL Hydro 5.1L/IND-NONFIRM) are implemented and tested but not stored yet: the next Monthly Scrape stores them (live latest then 917, utilities with live output 78). Every other active utility has live output, with recorded gaps |
+| Active utilities without live output | **0**; AESO has one value-less market-reference record, not a customer tariff |
 | Seed/fallback tariffs | **480**, hidden by default |
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
-| Historical snapshots | **4,572**; CI scrape run 29 (October 16) appended 956 without changing the 3,616 earlier snapshots |
-| DB validation | **0 errors, 2 existing AESO warnings** |
-| Representative models | **55** across the ten provinces (October 16, method 7C-2): 16 modeled, 20 single-source, 6 *market energy pending*, 13 not computable; with the October 30 decisions (method 7C-3, pushed October 30; the November 1 export applies them) 18, 24, 6 and 7; comparison indicators, never live coverage |
-| Deterministic tests | **2,090 passing** across 27 modules (October 30, batch 16, Python 3.11) |
+| Historical snapshots | **5,534**; CI scrape run 30 appended 962 without changing the 4,572 earlier snapshots |
+| November 1 scrape validation | **917 live, 45 estimates, 0 invalid**; no failed or seed-only utilities |
+| Representative models | **55** across ten provinces, method 7C-3: 18 modeled, 26 single-source, 6 *market energy pending*, 5 not computable; comparison indicators, never live coverage |
+| Regression tests | **2,124 passing** across 28 modules (Python 3.11), including offline desktop/mobile browser tests |
 
-Live output currently includes BC Hydro (17), FortisBC Electric (11), Manitoba Hydro (18), NB Power (10),
-Nova Scotia Power (18), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
-NL Hydro (21), SaskPower (41), SaskEnergy (8), Centra Gas Manitoba (13), FortisBC Energy (27),
+Live output currently includes BC Hydro (18), FortisBC Electric (12), Manitoba Hydro (18), NB Power (10),
+Nova Scotia Power (20), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
+NL Hydro (23), SaskPower (41), SaskEnergy (8), Centra Gas Manitoba (13), FortisBC Energy (27),
 Energir (5), Heritage/Eastward (3), Liberty NB (4), NTPC (63), Qulliq Energy (6), Yukon Energy (20),
 ATCO Electric Yukon (20); in Alberta ENMAX Power (5), ATCO Electric (5), EPCOR Distribution (5),
 FortisAlberta (5), Direct Energy Regulated Services (2), ENMAX Energy (2) and EPCOR Energy
@@ -83,7 +83,7 @@ records. Ontario non-RPP demand classes list their delivery charges plus a marke
 no stored number (shown as "Variable"; the observed market history from Phase 6A stays in the Market
 Pricing view and is never copied into a tariff). Alberta wires records
 keep distribution and transmission separate; Rate of Last Resort energy is a separate retail
-record. AESO is the only active registered utility without live output.
+record. AESO's one live market reference stores no price number.
 
 **Where we stand (October 16):** the 20-utility regional campaign is closed out (batch 11), all 47
 active Ontario distributors are live, and batch 12 added Alberta electricity (four wires
@@ -163,20 +163,18 @@ Scrape, user decision):**
   and issues from GitHub's public API, then check the coverage gate and preview the models on the
   pulled export.
 
-**Next (in order, October 30):**
+**Next (in order, November 2):**
 
-1. **November 1 Monthly Scrape (scheduled; do not start one earlier):** it runs the batch 15 and
-   16 code, so the models use the 15.7% rebate, the new shares and the 7C-3 decisions. Check it with
-   the batch 16 kit (the coverage gate should read 78 of 78; 917 live records, or 916 if Centra's
-   rate pages have switched and its High Volume Firm class is rejected), mirror the database and
-   pull the bot's commits. The Ontario Price Archive should pass on November 1; then close issues
-   #3 and #4. Then change the README coverage line.
-2. **After Centra's pages switch:** confirm the text Appendix A path and decide how to read High
-   Volume Firm's negative transport rider; confirm a stored Yukon run uses a newer monthly book.
-3. **Model follow-ups:** Maritime Electric's business rate 232 prints no demand block thresholds,
-   so the PEI business models stay not computable; Manitoba Hydro's GS Small (Non-Demand) becomes
-   computable once the next Monthly Scrape stores the October 30 Manitoba records; the website does
-   not show the reference-customer details yet.
+1. **Owner action:** run Monthly Scrape for `Centra Gas Manitoba`, then for `Maritime Electric`,
+   separately, after this code is pushed. Check tests, provenance, history preservation, bot
+   commits and follow-on deployments; pull those commits and refresh the read-only mirror.
+2. Verify all 13 Centra records use November PDF prices and Maritime 232/233 retain the free
+   demand tier. Recheck gate/crosswalk/models, then publish the scoped coverage-complete wording.
+   Close #3 and #4 with the successful November 1 evidence.
+3. Keep Centra's November 30 monitor open until stored corrections and HTML discrepancies are
+   reviewed. Yukon still advertises October's book; both December 15 monitors remain open.
+   Manitoba Small (Non-Demand) is now calculable; Small (Demand) remains unavailable rather
+   than assuming phase or qualifying demand history. Fixed-charge assumptions are now visible.
 4. **7E further analysis:** compare the synthetic profile with real commercial load profiles, test
    other business hours, use an Ontario Price-era hourly shape once 12 archived months exist, and
    look at Class A and loss factors.
@@ -184,11 +182,11 @@ Scrape, user decision):**
    (October 30); the Alberta Market Pricing view (hourly or monthly pool price) waits for AESO's
    written permission, because its terms allow only non-commercial, unmodified use. Lane E is
    decided (all excluded or kept; see the ledger). Still planned: 7D gas, Phase 8 (automatic model
-   refresh; must ignore illustrative values) and Phase 9 (product follow-up, including the
-   Across-Canada comparison).
+   monitoring; must ignore illustrative values) and broader Phase 9 product follow-up. Gas
+   usage/unit choices and monitoring thresholds/issue policy have proposals only, not approval.
 6. **Calendar:** November 15, Ontario Price Archive (the IESO's monthly table may still show a
    preliminary October LFDA; all three checks are strict) and Source Health; December 1, gate
-   warnings for the Centra monitor and the Alberta Rate of Last Resort records ending
+   an overdue Centra monitor if not resolved and expiry warnings for the eight Alberta Rate of Last Resort records ending
    December 31; December 15, the Yukon, NTPC, Qulliq, EPCOR Distribution and Rate of Last Resort
    reviews.
 
@@ -377,11 +375,13 @@ canada-utility-costs/
 │   └── inventory/            ← Full utility inventory
 │
 ├── site/                     ← Static website (deployed to GitHub Pages)
-│   ├── index.html            ← Main page: Rate Browser, Market Pricing, Representative Models and Compare tabs
+│   ├── index.html            ← Five views, including separate Across-Canada and two-tariff Compare
 │   ├── css/style.css         ← Styles inc. multi-select filters, heatmap, confidence
 │   ├── css/models.css        ← Representative Models styles, incl. the illustrative (synthetic) block
+│   ├── css/across-canada.css ← Residential national comparison table
 │   ├── js/app.js             ← SPA logic: filters, cards, modal, market viz
-│   ├── js/models.js          ← Representative Models tab (loads its JSON on first open)
+│   ├── js/models.js          ← Representative Models, assumptions and shared lazy data loader
+│   ├── js/across-canada.js   ← Residential comparisons using published model totals only
 │   └── data/                 ← Six pipeline exports plus separately maintained market/audit data
 │       ├── rates.json        ← All tariff/component data
 │       ├── utilities.json    ← Utility metadata
@@ -401,7 +401,7 @@ canada-utility-costs/
 │   ├── coverage_gate.py           ← Live-rate coverage gate: live output, audit ledger, deferred and monitored items (Monthly Scrape reports it)
 │   └── pull_history_db.py         ← Downloads the CI history database into a read-only local mirror
 │
-├── tests/                    ← 2,090 deterministic tests across 27 test modules
+├── tests/                  ← 2,124 regression tests across 28 test modules
 │   ├── fixtures/             ← Source-derived fixtures and frozen export samples; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
@@ -867,10 +867,10 @@ Phase 6C), like Ontario's three demand-class models.
   single phase at 10 kW and three phase at 25 kW; exactly one matching version, otherwise not
   computable). The Newfoundland and Labrador residential model is withheld whenever Newfoundland
   Power is not computable (it would otherwise show NL Hydro's Labrador zone alone).
-- **Known blockers:** Manitoba Hydro's stored energy blocks stay malformed until the next Monthly
-  Scrape stores the October 30 parser fix; Hydro-Quebec and Manitoba Hydro define a month as 30
-  days while the engine uses 30.4375 (kept everywhere, user decision October 30); Maritime
-  Electric's business rate 232 prints no demand block thresholds.
+- **Known blockers:** Manitoba's corrected blocks were stored November 1; Small (Demand)
+  remains unavailable without phase and qualifying demand-history assumptions. Hydro-Quebec
+  and Manitoba define a 30-day month while the engine retains 30.4375 (user decision).
+  Maritime 232 does publish the first 20 kW free: the parser correction awaits CI storage.
 
 Ontario results are unchanged by 7C. Ontario medians, $/month:
 
@@ -1015,8 +1015,8 @@ hours, an Ontario Price-era hourly shape once 12 archived months exist, Class A 
 |---|---|---|---|
 | 7A: Taxonomy and crosswalk | Model keys and size bands; reviewed crosswalk for every live utility; exclusion reasons; tests for unmapped/ambiguous records | Current live data | **Done October 9:** crosswalk, usage levels and tax table in `data/models/` (see Inputs above); 0 unmapped records |
 | 7B: Engine (delivery + regulated energy) | Bucket normalization, median/spread, cost at each common usage level without and with tax, closest utility, outlier notes, TOU hour surfaces, tier curves, demand bands, method text and provenance; synthetic and fixture tests; Ontario first (promote the scratch prototype) | 7A | **Done for Ontario October 9:** `pipeline/representative_models.py` (method version 7B-2; 7C-2 since October 16; 7C-3 since October 30), run by every export; Ontario's province-wide RPP periods and tiers are used as published; demand-class models are *market energy pending* |
-| 7C: Electricity, all provinces | Residential and commercial models for every province with live data, including Alberta all-in models that combine wires and Rate of Last Resort records; single-source labelling; coverage report (territories planned separately) | 7B | **Done October 16 (method 7C-2):** 55 models across the ten provinces (16 modeled, 20 single-source, 6 *market energy pending*, 13 not computable); four Alberta wires + Rate of Last Resort pairs; reviewed block periods; Newfoundland and Labrador residential withheld while Newfoundland Power is not computable. October 30 (method 7C-3): the billing-period and reference-customer decisions give 18 modeled, 24 single-source, 6 pending and 7 not computable at the same data (NB, NL and PE). Open: the Manitoba Hydro records from the October 30 parser fix (next Monthly Scrape) and Maritime Electric 232's missing demand block thresholds |
-| 7D: Gas | Residential and commercial gas models (commodity, delivery, carbon kept as buckets) | 7B; ON/AB gas parsers | Planned |
+| 7C: Electricity, all provinces | Residential and commercial models, Alberta wires + RoLR pairs, single-source labels and coverage | 7B | **Implemented; November 1 export:** 55 models, method 7C-3 (18 modeled, 26 single-source, 6 pending, 5 not computable). Manitoba's corrected blocks are stored. Maritime's free-demand-block fix awaits CI storage; Manitoba Small (Demand) remains unavailable without additional assumptions |
+| 7D: Gas | Native-unit residential and commercial gas models | 7B; ON/AB gas parsers | **Proposal only (November 2):** separate m3/GJ tracks and source-backed reference-usage choices; no gas calculations or approved new inputs |
 | 7E: All-in market energy | Market-priced energy from Phase 6 with period basis; *pending* state where Phase 6 data is missing | Phase 6 (6A, 6C) | **Illustrative only (October 16):** the two Ontario demand-class models carry a synthetic-profile all-in estimate, hidden by default and never used in medians or comparisons; their state stays *market energy pending*. A source-backed all-in value needs further analysis (Ontario) and 6C (Alberta) |
 | 7F: Site view | Representative Models tab, charts, method/coverage disclosure, accessible table, desktop/mobile checks | 7C | **Done October 15** (before 7C; the view handles any province): province, fuel, sector and structure selectors, default Ontario residential TOU at 1,000 kWh, a table with medians without and with tax, middle half, range bars, closest utility and outliers, tax lines, the method, coverage and expandable contributing utilities and exclusions. User decision: no new charts (the TOU strip, tier-step chart and demand ladder above were not built). October 16: all ten provinces, contributor wording such as "wires + Rate of Last Resort pairs", a note on excluded market-indexed charges and the opt-in 7E block (`site/css/models.css`). Gas usage levels (7D) need a label update |
 
@@ -1034,27 +1034,22 @@ hours, an Ontario Price-era hourly shape once 12 archived months exist, Class A 
 
 ### Phase 8: Representative Model Refresh Automation (planned)
 
-GitHub Actions keep `site/data/representative_models.json` current when the live data
-underneath changes considerably, without noise commits for trivial drift.
+**Design reviewed November 2; not implemented.** Reuse the model build already performed by
+the Monthly Scrape export, rather than rebuilding twice. Always publish valid fresh models:
+an alert threshold must not retain stale taxes, assumptions or prices.
 
-- **Trigger:** after a successful Monthly Scrape (validation and export passed), plus manual
-  dispatch with a force-rebuild option and a dry-run mode that publishes nothing.
-- **Change detection:** each model keeps an input fingerprint (contributing record ids, snapshot
-  hashes and effective dates). The workflow rebuilds candidate models and compares them with
-  the published file.
-- **Considerable change (proposed, to confirm):** the median cost at any usage level (without
-  tax) moves by 2% or more; a utility joins or leaves a model or its crosswalk mapping changes; a
-  structure appears or disappears in a province; a tax rate changes; or the method version
-  changes. Below the threshold nothing is committed and the job summary lists the drift.
-- **Publishing:** write the new models file and append an entry to
-  `site/data/representative_models_changelog.json` (model key, old/new value per usage level,
-  percent change, utilities driving it, effective dates, scrape run); commit explicit paths;
-  the existing Deploy Site trigger publishes it. The site shows when each model last changed.
-- **Safeguards:** models use live records only. If a contributing utility drops out because its
-  scraper failed or fell back to estimates (not because its tariff changed), keep the previous
-  model, mark the input stale and open or update a GitHub issue instead of publishing. History is
-  never overwritten. Illustrative values (the 7E synthetic-profile estimate) are never inputs:
-  change detection reads only the source-backed model values.
+- Compare states, contributors, usage levels, ordinary costs, taxes, substantive inputs and
+  method changes. Exclude synthetic sidecars and synthetic-only metadata from alerts.
+- The proposed **2% threshold is not approved**; it would control cost notifications only.
+  Structural/state/tax/input changes need separate reporting, with explicit handling of zero,
+  missing and negative baselines.
+- Freshness uses explicit expiry, failed/missing refreshes and ledger findings, not an old
+  effective date alone. An export error currently retains the prior model file; identical files
+  cannot prove a successful refresh, so future monitoring needs an explicit generation outcome.
+- Report and notification failures must be visible but nonblocking for the verified database
+  save. A `continue-on-error` step needs its own outcome check, not just `if: failure()`.
+- Deduplicated issues, recovery policy, changelog format and threshold basis require approval.
+  No comparator, new workflow, issue automation or changelog file has been added.
 
 | Phase | Work and completion gate | Depends on |
 |---|---|---|
@@ -1063,13 +1058,23 @@ underneath changes considerably, without noise commits for trivial drift.
 | 8C: Workflow | Refresh step or workflow after Monthly Scrape; stale-input issues; dry run | 8A, 5H |
 | 8D: CI verification | First real run observed end to end (rebuild, commit, deploy, no-change and stale cases) | 8C |
 
-### Phase 9: Product Follow-up (planned)
+### Phase 9: Product Follow-up (first residential comparison implemented)
 
 1. Add historical rate charts and AI-ready exports after coverage is dependable.
 2. Scope a bill calculator and optional API separately; the current comparison never calculates a total.
-3. **Across-Canada comparison view:** expand the Compare tab with a separate national view alongside the existing two-tariff comparison. Compare common customer classes and rate structures across provinces, using the Phase 7 representative models as the provincial values (electricity first, gas after 7D, all-in only once 7E is more than illustrative). 7F (the Representative Models view, October 15) and 7C (all ten provinces, October 16) are done, so this national view can start; it never uses the illustrative (synthetic-profile) values.
+3. **Across-Canada (November 2):** a separate fifth view, not a replacement for two-tariff Compare.
+   Residential electricity at 500/1,000/2,000 kWh, default 1,000; separate rows for each rate
+   structure; before/after-tax medians and contributor counts, method/assumptions/sources.
+   All 13 jurisdictions stay visible; territorial models are not yet available (their live
+   tariffs are separate). Missing models, pending energy and withheld levels never become
+   zero or a comparable full cost. The view shares the existing lazy loader and never uses
+   illustrative synthetic values. Commercial/gas comparisons and visualizations remain planned.
 
-#### Across-Canada Comparison: Design Direction
+#### Across-Canada Comparison: Remaining Design Direction
+
+The broader ideas below are proposals, not features of the initial residential table.
+Aggregate medians cannot supply an invented fixed/energy/demand breakdown. A missing model
+means "No representative model", not "Not offered" without official eligibility evidence.
 
 - **National comparison matrix:** provinces as rows (territories once they have models), common customer-class/rate-structure categories as columns or selectable views. Keep every region visible, including where a category is **Not offered**, **Not yet verified**, or **Not comparable**; these are different states, never zero prices. The category crosswalk is the Phase 7 crosswalk.
 - **Residential profiles:** start with flat, tiered and time-of-use plans, with separate views for other nationally recurring structures. Show energy prices, monthly fixed charges, tier allowances, TOU hours/seasons and mandatory adjustments. Show monthly-equivalent fixed charges only with a disclosed day/billing-period basis and the original units. Do not manufacture a flat rate by averaging a tiered or TOU plan; distinguish ordinary household service from bulk-metered, off-grid, pilot and other conditional products.

@@ -91,6 +91,29 @@ def _b14(record_id):
     return next(r for r in load_rates(FIXTURES / "rm_records_b14.json") if r["id"] == record_id)
 
 
+@pytest.mark.parametrize(("kwh", "kw", "level", "sector", "expected"), [
+    (2000, 10, "s1", "commercial_small", 462.17),
+    (2000, 20, "s1", "commercial_small", 462.17),
+    (2000, 25, "s2", "commercial_small", 529.32),
+    (8000, 25, "s2", "commercial_small", 1617.12),
+    (40000, 100, "m1", "commercial_medium", 7225.97),
+    (500000, 1000, "l1", "commercial_large", 85460.97),
+])
+def test_maritime_published_free_demand_block_prices_only_balance(kwh, kw, level, sector, expected):
+    from scrapers.utilities.maritime_electric import MaritimeElectricScraper
+    from scrapers.utils.parsing import DocumentPage
+
+    fixture = json.loads((FIXTURES / "maritime_electric.json").read_text(encoding="utf-8"))
+    pages = [DocumentPage(p["page_number"], p["text"]) for p in fixture["pages"]]
+    records = MaritimeElectricScraper()._parse_pages(pages, fixture["url"])
+    tariff = next(r for r in records if r.tariff_code == "232")
+    record = _rec([asdict(c) for c in tariff.components], utility="Maritime Electric",
+                  code="232", province="PE")
+    result = _cost(record, kwh, kw, level=level, sector=sector, block_periods=load_block_periods())
+    assert result["status"] == "ok"
+    assert result["cost"] == pytest.approx(expected)
+
+
 @pytest.mark.parametrize("fixed, unchosen", [(PHASES, "variant_not_selected"), (PHASE_ALTERNATIVES, "alternative")])
 def test_small_business_levels_pick_single_phase_at_10_kw_and_three_phase_at_25_kw(fixed, unchosen):
     record = _rec(fixed + [ENERGY])

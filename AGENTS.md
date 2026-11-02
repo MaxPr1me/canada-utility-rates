@@ -16,6 +16,14 @@ It works in three stages:
 2. **Store** — That information gets organized into a database (a structured file on your computer).
 3. **Display** — A simple website reads the database and shows the rates in a browsable format.
 
+**November 2 checkpoint:** the scheduled November 1 scrape, market archive and both website
+deployments succeeded. All 78 active utilities have stored live output, but the final
+"coverage complete" statement must wait: Centra's website had mixed old headings and new
+prices, so its stored records were still August's. The parser now reads the approved November
+PDF and produces all 13 current records; Maritime Electric's free first 20 kW is also fixed.
+The owner must run Monthly Scrape for each utility to save these corrections. A passing
+coverage gate does not override this known problem. See the [current queue](docs/phase5_completion_matrix.md).
+
 GitHub Actions (GitHub's cloud computers) runs a monthly scrape on the 1st, a "source
 health" test scrape, which publishes nothing, on the 15th, and an Ontario Price archive and
 market history update on the 1st and 15th. Since October 16 the monthly scrape is the **only**
@@ -31,16 +39,16 @@ Ontario Price archive, also started by hand on October 16, stopped safely and sa
 because the IESO had published its 2026 LFDA file empty (see "The Ontario Price Archive opened
 an issue" below). See "How the Monthly Updates Work" below and
 [README.md](README.md).
-The latest export (October 16, scrape run 29 on GitHub) has 910 latest live tariffs and 480
-estimates; stored history contains 916 live versions and 4,572 snapshots. That scrape found no
-changed rates, so only the snapshot count grew (956 more, one per record). Registry coverage is not the same as
-live coverage. The active campaign covers 16 provincial utilities (243 latest live records) and,
+The latest export (November 1, scrape run 30 on GitHub) has 917 latest live tariffs and 480
+retained estimates; stored history contains 1,323 live versions and 5,534 snapshots. That run
+added 962 snapshots and kept all 4,572 earlier ones unchanged. Registry coverage is not the same as
+live coverage. The active campaign covers 16 provincial utilities (249 latest live records) and,
 from October 7, the four territorial utilities (109 latest live records). All 20 have live output.
 All 47 active Ontario distributors are live (490 records); PUC Distribution was added on
 October 9 even though its tariff prints no connection rate. Batch 12 also added Alberta
 electricity (28 records: four wires companies and three Rate of Last Resort providers) and
 Ontario/Alberta gas (40 records: Enbridge Gas, ATCO Gas and EPCOR Natural Gas (Ontario)).
-Only AESO, a market reference, has no live output.
+AESO now has one live market reference with no price number; all 78 active utilities have live output.
 Since October 16 the export writes electricity "representative models" (typical monthly costs;
 see the glossary) for all ten provinces, and the website's Representative Models page shows them
 (Ontario's since October 15). Also since October 16 the website's Market Pricing page shows the
@@ -168,11 +176,17 @@ shows them.
 
 | File | What it does |
 |---|---|
-| `site/index.html` | The main web page. **Rate Browser**, **Market Pricing**, **Representative Models** and the existing two-tariff **Compare** view. The new Across-Canada comparison is planned for Phase 9, not implemented. |
+| `site/index.html` | The five views: **Rate Browser**, **Market Pricing**, **Representative Models**, **Across-Canada** and the existing two-tariff **Compare**. |
 | `site/css/style.css` | How the page looks — includes styles for multi-select filters, heatmap, confidence indicators, source attribution, and market callouts. |
 | `site/js/app.js` | The application logic: loads 5 JSON data files, deduplicates rates by effective_date, manages multi-select checkbox filter state (using JavaScript `Set`s), cascades province selection into the utility filter, renders rate cards with confidence dots, shows detail modals with source attribution and market callouts, and powers the Market Pricing page (headline, monthly chart, 60-month table, heatmap with hour counts, method). |
 | `site/js/models.js` | The Representative Models page. It reads `representative_models.json` the first time the page is opened and offers four drop-down lists (province, fuel, sector, rate structure). It shows a table of typical monthly costs without and with tax, then the taxes, the method and the contributing utilities. A checkbox, off by default, shows the illustrative estimate (synthetic load profile) with a warning and a SYNTHETIC badge. If the file is missing or broken, it shows a "not available" notice and the other pages keep working. |
 | `site/css/models.css` | How the Representative Models page looks, including the warning style of the illustrative estimate. |
+| `site/js/across-canada.js` | Residential electricity comparisons at 500, 1,000 or 2,000 kWh, default 1,000. It reads the same model file through the shared loader in `models.js`, never recalculates bills or uses synthetic estimates, and keeps missing territorial models clearly separate from live tariff coverage. |
+| `site/css/across-canada.css` | The scrollable national table for desktop and phone screens. |
+
+Since November 2 the Representative Models page also displays the existing phase/service-size
+assumptions and the fixed charge selected for contributors. These describe the example customer,
+not the visitor's actual service or eligibility.
 
 ### Where the automation lives
 
@@ -310,8 +324,9 @@ and **Deploy Site** then started by itself and published the website. Every scra
 short public note on its GitHub run page with its totals (live, estimated and invalid records, and
 any utility that failed or returned only estimates) and the database check; the full log still
 needs a GitHub sign-in. A failing command stops its step instead of being hidden by the copy
-written to the log. Not yet seen on GitHub: a scheduled run (the first is November 1), the removal
-of old backups (there is only one so far) and the Ontario market history build. GitHub Pages must
+written to the log. The November 1 scheduled scrape and market-history build have now succeeded,
+as have both follow-on deployments. Removing old backups beyond the retention limit remains
+unexercised. GitHub Pages must
 use **GitHub Actions** as its source; the automatic trigger (`workflow_run`) only fires from the
 default branch.
 
@@ -703,7 +718,9 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 2,090 tests across 27 test modules (1,867 on October 16, 1,993 after the October 30 additions: the coverage gate, AESO, Manitoba Hydro and the four market-indexed products; then batch 15: `test_model_inputs_dated` for the dated Ontario usage shares and rebate, `test_source_urls` for the list of dead web addresses and `test_market_tooling` for the market scripts and the deploy trigger; then batch 16: `test_yukon_discovery` for finding Yukon's rate book, `test_centra_v1126` for Centra's November 1 schedule and `test_model_decisions` for the billing-period and phase/amperage decisions), including `test_phase5_hardening` for
+There are 2,124 tests across 28 test modules (November 2), including offline browser tests in
+`test_across_canada`, the current Centra PDF authority checks and Maritime's demand-block/model
+regressions. Earlier additions include `test_phase5_hardening` for
 provenance, storage and history, `test_ontario_price_archive` for the Ontario Price archive,
 `test_market_rolling` and `test_market_site` for the five-year market history and its page,
 `test_ci_history` for the database safety check and download script, `test_models_7c` for the
@@ -822,7 +839,8 @@ See also "Alberta's Deregulated Market" above.
 - **Manitoba Hydro:** a failure on the residential page or the commercial page affects only that page's records.
 - **SaskPower:** maintain the audited building scope (standard, bulk-metered and diesel residential service and R23/R24 renewable access). Standard E01/E03 keeps its identity only when both published columns agree. Bulk fixed charges are per unit, not per account.
 - **SaskEnergy:** delivery-only service leaves out private (retailer) commodity prices.
-- **Centra Gas:** published delivery and demand parts stay separate, with no guessed heat conversion and no private marketer commodity price. Classes need the approved PUB schedule's volume, contract and billing-demand conditions. Mainline Interruptible prices were only on scanned pages in the August 2026 schedule, so they were typed in once by hand, checked visually and are shown at medium confidence; the scraper drops them automatically if those scanned pages ever change. The November 1, 2026 schedule prints them as text, so once Centra's rate pages show November 1 rates the scraper reads them itself and shows them at high confidence (project owner decision, October 30). Do not use the typed-in approach for any other scanned document without asking.
+- **Centra Gas:** delivery and demand parts stay separate, without guessed heat conversion or private commodity prices. Since November 2 the approved current quarterly PDF is the price authority (owner decision), not stale website headings. November's text tables give all 13 records at high confidence, including negative transport credits; date, order, columns, units, totals, eligibility, carbon and marketer evidence are checked. Website disagreements are explained, not hidden. An unknown quarterly edition fails closed. August's narrow, hash-checked Mainline Interruptible transcription remains historical support only; never extend transcription to another scanned document without asking.
+- **Maritime Electric:** preserve the printed first 20 kW free for 232/233 as a real zero-priced demand tier. Never discard it or charge the balance price on all demand. Seasonal-model exclusions remain unchanged.
 - **NL Hydro:** phase/amperage fixed charges are alternatives, not added together; seasonal options need their matching base schedules.
 - **NSPower:** the mandatory FAM, DSM and storm riders are separate from base energy; Green Power blocks are opt-in, not a standard charge. Residential service includes standard service, storage-heating time-of-day service and closed-enrollment TOU and critical-peak pilots. The pilots are conditional, and their records separate the tariff's conditional interim phase from its dated November pricing; do not assume an existing customer's system-restoration status from an advertising page. MURB has its own rider rows and a minimum-bill condition, and the approved book applies its peak price on weekends and holidays. Solar Garden and Community Solar records are subscriber adjustments to another tariff, not replacement household energy prices. Dates past the supported tariff/rider year fail closed.
 - **Energir:** follows the current document link and fails closed on an edition/month mismatch. D3/D4 minimum daily obligation bands are per m³/day of **subscribed volume**; above-subscribed-volume withdrawal, average load-balancing and renewable-gas charges are conditional. Inventory adjustments depend on each customer's storage use and have no published price, so they are explained, never given a number.

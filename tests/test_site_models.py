@@ -202,7 +202,7 @@ def _index():
 def test_rm7f_index_html_wires_the_tab_panel_and_script():
     text, tags = _index()
     views = [attrs["data-view"] for tag, attrs in tags if "nav-tab" in attrs.get("class", "").split()]
-    assert views == ["rates", "market", "models", "compare"]
+    assert views == ["rates", "market", "models", "across-canada", "compare"]
     panel = next(attrs for tag, attrs in tags if attrs.get("id") == "view-models")
     assert set(panel["class"].split()) == {"view-panel", "hidden"}
     ids = {attrs.get("id"): (tag, attrs) for tag, attrs in tags if attrs.get("id")}

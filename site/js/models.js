@@ -74,6 +74,7 @@
         minimumFractionDigits: 1, maximumFractionDigits: 2, signDisplay: "exceptZero",
     });
 
+    let dataLoading = null;
     let loading = null;
     let data = null;
     let models = [];
@@ -182,10 +183,9 @@
             && ["province", "fuel", "sector", "structure"].every(f => typeof model.key[f] === "string" && model.key[f]));
     }
 
-    function load() {
-        if (loading) return loading;
-        setHidden("models-loading", false);
-        loading = fetch(DATA_URL)
+    function loadData() {
+        if (dataLoading) return dataLoading;
+        dataLoading = fetch(DATA_URL)
             .then(response => {
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return response.json();
@@ -193,8 +193,22 @@
             .then(json => {
                 const usable = usableModels(json);
                 if (usable.length === 0) throw new Error("missing method_version or models");
+                return json;
+            })
+            .catch(error => {
+                dataLoading = null;
+                throw error;
+            });
+        return dataLoading;
+    }
+
+    function load() {
+        if (loading) return loading;
+        setHidden("models-loading", false);
+        loading = loadData()
+            .then(json => {
                 data = json;
-                models = usable;
+                models = usableModels(json);
                 setHidden("models-notice", true);
                 setHidden("models-content", false);
                 renderBanner();
@@ -442,6 +456,8 @@
     function renderNotes(model, level) {
         const box = byId("models-notes");
         box.replaceChildren(...[marketIndexedNote(model), illustrativeControls(model)].filter(Boolean));
+        const assumptions = fixedChargeAssumptions(model);
+        if (assumptions) box.append(assumptions);
         if (level) box.append(...taxBlock(level));
         box.append(el("h3", null, "Method"),
             el("p", "methodology-summary rm-text", model.method || "No method text was published for this model."));
@@ -452,6 +468,31 @@
             box.append(ul);
         }
         box.append(factsGrid(model), contributorsDetails(model, level), exclusionsDetails(model));
+    }
+
+    function fixedChargeAssumptions(model) {
+        const variants = list(model.fixed_charge_variants).filter(item => item && typeof item.reference === "string");
+        if (!variants.length) return null;
+        const section = el("section", "rm-fixed-assumptions");
+        section.append(el("h3", null, "Fixed-charge model assumptions"),
+            el("p", "rm-text", "These reference services are modeling assumptions, not eligibility rules "
+                + "or a description of your actual service."));
+        const entries = el("ul", "rm-lines rm-text");
+        variants.forEach(variant => {
+            const levels = list(variant.levels).map(id => {
+                const level = list(model.levels).find(item => item.id === id);
+                return level ? usageText(level) : String(id);
+            });
+            entries.append(el("li", null, [
+                variant.reference,
+                levels.length ? `Usage: ${levels.join("; ")}` : "",
+                list(variant.utilities).length ? `Utilities: ${variant.utilities.join(", ")}` : "",
+                list(variant.components).length ? `Selected charge: ${variant.components.join("; ")}` : "",
+                variant.decided ? `Decision: ${variant.decided}` : "",
+            ].filter(Boolean).join(". ")));
+        });
+        section.append(entries);
+        return section;
     }
 
     function taxBlock(level) {
@@ -542,7 +583,10 @@
         const table = el("table", "rm-table rm-table-compact");
         table.append(el("caption", null, `Modeled monthly cost for ${usageText(level)}`));
         const headRow = el("tr");
-        [sentenceCase(noun.singular), "Without tax", "With tax"].forEach(text => {
+        const hasVariants = [...rows.values()].some(row => list(row.fixed_charge_variants).length);
+        const headings = [sentenceCase(noun.singular), "Without tax", "With tax"];
+        if (hasVariants) headings.push("Selected fixed charge (model assumption)");
+        headings.forEach(text => {
             const th = el("th", null, text);
             th.scope = "col";
             headRow.append(th);
@@ -556,6 +600,10 @@
             const th = el("th", null, name);
             th.scope = "row";
             tr.append(th, cell(money(row.cost_without_tax), "rm-num"), cell(money(row.cost_with_tax), "rm-num"));
+            if (hasVariants) {
+                const chosen = list(row.fixed_charge_variants).map(item => item.component).filter(Boolean);
+                tr.append(cell(chosen.join("; ") || DASH));
+            }
             tbody.append(tr);
         });
         table.append(thead, tbody);
@@ -738,6 +786,15 @@
     }
 
     // ── Event listeners ───────────────────────────────────────
+
+    window.CanadaUtilityModels = Object.freeze({
+        load: loadData,
+        money,
+        formatDate,
+        sourceLink,
+        provinceNames: Object.freeze(PROVINCE_NAMES),
+        structureLabels: Object.freeze(STRUCTURE_LABELS),
+    });
 
     document.querySelectorAll('[data-view="models"]').forEach(button => button.addEventListener("click", load));
     FIELDS.forEach((field, depth) => {

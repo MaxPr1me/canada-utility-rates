@@ -253,8 +253,8 @@
         {
           "url": "https://www.hydro.mb.ca/account/rates/residential/",
           "source_type": "html",
-          "description": "Current residential Centra gas basic, commodity and delivery components",
-          "is_primary": true
+          "description": "Residential gas table cross-check; current prices come from the approved in-effect quarterly PDF",
+          "is_primary": false
         },
         {
           "url": "https://www.hydro.mb.ca/account/rates/commercial/",
@@ -265,7 +265,7 @@
         {
           "url": "https://www.hydro.mb.ca/account/rates/natural-gas/",
           "source_type": "html",
-          "description": "Default quarterly commodity rate and marketer-supply applicability",
+          "description": "Default quarterly commodity cross-check and required marketer-supply applicability; stale price headings never override the approved PDF",
           "is_primary": false
         },
         {
@@ -283,11 +283,11 @@
         {
           "url": "https://www.hydro.mb.ca/docs/billing/schedule-of-sales-and-transportation-services-and-rates-v1126.pdf",
           "source_type": "pdf",
-          "description": "PUB-approved Schedule of Sales and Transportation Services and Rates, edition for rates effective November 1, 2026 (Appendix A Board Order 150/26, text layer); used once the commercial page shows rates effective November 1, 2026: same class conditions as v0826 (general pages November 1, 2025, Order 138/25) and Mainline Interruptible Sales prices read from text Appendix A page 4 of 4 (PDF page 82) at high confidence",
-          "is_primary": false
+          "description": "Current price authority from November 1, 2026: Appendix A Board Order 150/26, text layer, firm prices PDF page 81 and interruptible prices page 82 (base page 80 checked, not added). All 13 scoped records use this supported quarterly edition, independent of stale HTML headings. General class conditions remain November 1, 2025, Order 138/25",
+          "is_primary": true
         }
       ],
-      "notes": "Twelve current residential/commercial Sales, T-service and marketer-supply variants. Source cents/m3 are normalized to dollars/m3, without heat-content conversion; native volumetric demand units and component dates are preserved. Delivery/demand totals are checked against their parts, not added twice. Private marketer commodity is excluded and explicit carbon evidence is mandatory. Batch 8 requires the PUB-approved schedule (Order 138/25) for class annual-volume boundaries, one-year elections/contracts, Mainline pressure, winter-month billing demand, T-service 200 GJ/day nomination and interruptible alternate-supply pass-through conditions; missing schedule context rejects only the affected classes. Fixed-term commodity contracts are noted as a separate optional product, not priced. Batch 10 audits the schedule class list (PDF p.17) and commercial options on each run: Special Contract (single negotiated customer) and Power Station (generation fuel) are excluded with schedule evidence (p.20); Mainline Interruptible Sales (firm delivery) is built in batch 11 from a reviewed transcription of scanned Appendix A page 82 (page 80 also checked), live at medium confidence only while both page-image SHA-256 hashes, the Board Order/date headers and text cross-checks match (13 live); no T-Service variant because Mainline customers may only take firm transportation. Batch 16 (2026-10-30): the schedule edition follows the commercial page's 'Rates effective' date (August 1, 2026 = v0826 with the hash-gated transcription, medium; November 1, 2026 = v1126, whose Appendix A is text, read at high confidence per the user decision of 2026-10-30); any other date or a header mismatch skips only the MLI record. No full catalogue-completion claim."
+      "notes": "Thirteen scoped residential/commercial Sales, T-service and marketer-supply records, including Mainline Interruptible Sales with firm delivery. From November 2 (user-approved source policy), current prices come from the supported in-effect quarterly PDF, with exact edition/order/date/column/unit checks and delivery/demand arithmetic within one printed rounding unit. Only volumetric transportation may be signed (v1126 HVF -$0.0018/m3 and MLI -$0.0017/m3). No heat-content conversion, private marketer commodity or double-counted totals. HTML discrepancies are warnings and record notes, never silently relabelled as matching evidence. Missing carbon rejects all records; missing class eligibility rejects affected records; marketer variants still require supply-context evidence. Unknown quarters or missing current price tables fail closed, never reuse August prices as current. General schedule conditions preserve annual-volume boundaries, one-year contracts, Mainline pressure, winter billing demand, T-service 200 GJ/day nomination and alternate supply. Special Contract and Power Station remain excluded with source evidence; MLI has no separate T-Service record. Historical August v0826 behavior and its narrowly approved hash-gated MLI transcription remain supported. November 2 dry run: 13 live, 0 seed, 0 invalid; corrected publication still requires Monthly Scrape."
     },
     {
       "name": "SaskEnergy",
