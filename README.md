@@ -91,6 +91,14 @@ fails, a recovery artifact is kept for 90 days and an issue is opened: download 
 repair the failure promptly. This protects future captures, but cannot recover the old
 hourly gap or guarantee collection while GitHub/source failures remain unresolved.
 
+**Verified publication:** [Ontario Price Archive run 41506258594](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41506258594)
+passed the new preservation, validation and export steps. CI saved archive commit `2eda534`
+and combined-price commit `633cf2e`: 2,736 to 2,784 archived hours, no earlier DA-OZP values
+lost, and 96 LFDA/status updates. All 94 raw captures remain intact. The published CSVs
+reproduce exactly from retained inputs; the 2020-2025 file is unchanged. Follow-on
+[deployment 41506631351](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41506631351)
+succeeded after the market/model refresh. Full local regression: **2,237 tests passed**.
+
 ### Market benchmarks and comparison charts (November 2)
 
 - **Market Pricing now has Ontario and Alberta regions.** Alberta's builder

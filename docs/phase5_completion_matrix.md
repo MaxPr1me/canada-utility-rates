@@ -56,6 +56,13 @@ failures, and failed Git saves get a recovery artifact and an issue. Focused reg
 52,608 historical rows was independently checked for units, formula and gap labels.
 No database or local validated-archive writes.
 
+Published implementation `9ea26f5`; [Ontario Price Archive 41506258594](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41506258594)
+passed and saved `2eda534` (archive) and `633cf2e` (totals/market/models). All 2,736 prior
+DA-OZP hours remain; 48 new hours and 96 LFDA/status updates were saved, with all 94 raw
+objects intact. Follow-on Market Benchmarks saved `0c941b9`; deployment `41506631351`
+succeeded. Pulled those bot commits and proved total CSV/metadata parity; no change to the
+verified 2020-2025 extract. The source-correction queue below is independent.
+
 The additional November 2 market/chart implementation adds method 7C-4, separate Ontario/
 Alberta historical benchmarks, an Alberta dashboard/history builder, grouped province-color
 comparison bars and CI model refreshes. AESO owner-confirmed permission covers raw and derived
