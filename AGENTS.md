@@ -30,7 +30,9 @@ reports, not Ontario prices with a different label. Representative Models shows 
 historical energy benchmark for larger Ontario/Alberta businesses; it is not a bill or a
 forecast and does not replace the delivery-only table. Across-Canada now has bars grouped
 by province, with related shades for different rate structures and a with/without-tax
-choice (with tax by default). Missing models never become zero bars.
+choice (with tax by default). Missing models never become zero bars. The first Market
+Benchmarks run published the 60-month Alberta history and refreshed models successfully;
+the follow-on website deployment also passed. Desktop and phone-sized live views were checked.
 
 GitHub Actions (GitHub's cloud computers) runs a monthly scrape on the 1st, a "source
 health" test scrape, which publishes nothing, on the 15th, and an Ontario Price archive and

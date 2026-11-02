@@ -53,7 +53,7 @@ unverified fallback records remain estimates regardless of the export date.
 - **Market Pricing now has Ontario and Alberta regions.** Alberta's builder
   (`scripts/build_alberta_market.py`) reads official AESO hourly pool prices and checks
   every monthly arithmetic average against the **Pool Monthly Summary**, within $0.01/MWh.
-  The verified preview covers November 2021-October 2026: **60 months, 43,824 observed
+  The published history covers November 2021-October 2026: **60 months, 43,824 observed
   hours and 576 heatmap bins**; largest cross-check difference $0.00485215/MWh.
   Published AESO hour-ending labels retain the skipped spring hour and repeated autumn
   `02*`; they are not Ontario EST timestamps. Missing hours never become zero.
@@ -75,6 +75,9 @@ unverified fallback records remain estimates regardless of the export date.
   serialized, and generated models are never rebased over newer inputs. Only Monthly
   Scrape writes the database. Deploy Site follows successful market-benchmark runs.
   Generated Alberta files and refreshed models are published by CI, not a local export.
+  The first [Market Benchmarks run](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41488097739)
+  passed and committed `6cbb988`; the [follow-on deployment](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41488260353)
+  succeeded. Live data/JavaScript match the committed files; desktop/mobile checks passed.
 - The owner confirmed AESO permission for public raw hourly archives and derived
   charts/benchmarks; the grant itself was not independently inspected. Real commercial
   load profiles are **not qualified yet**. Toronto Hydro's public example is illustrative;
@@ -100,7 +103,7 @@ than guessing a correction deadline. To check without publishing:
 | SaskPower live tariffs | **41**, including reference-only records; scoped building schedules implemented |
 | Historical snapshots | **5,534**; CI scrape run 30 appended 962 without changing the 4,572 earlier snapshots |
 | November 1 scrape validation | **917 live, 45 estimates, 0 invalid**; no failed or seed-only utilities |
-| Representative models | **55** across ten provinces, method 7C-3: 18 modeled, 26 single-source, 6 *market energy pending*, 5 not computable; comparison indicators, never live coverage |
+| Representative models | **55** across ten provinces, method 7C-4: 18 modeled, 26 single-source, 6 *market energy pending*, 5 not computable; four medium/large demand models also have separate historical benchmarks; never live coverage |
 | Regression tests | **2,186 passing** across 33 modules (Python 3.11), including offline desktop/mobile browser tests |
 
 Live output currently includes BC Hydro (18), FortisBC Electric (12), Manitoba Hydro (18), NB Power (10),
@@ -1089,7 +1092,9 @@ an alert threshold must not retain stale taxes, assumptions or prices.
 - Report and notification failures must be visible but nonblocking for the verified database
   save. A `continue-on-error` step needs its own outcome check, not just `if: failure()`.
 - Deduplicated issues, recovery policy, changelog format and threshold basis require approval.
-  No comparator, new workflow, issue automation or changelog file has been added.
+  No Phase 8 comparator, threshold/stale-input issue monitor or changelog file has been added.
+  Routine model rebuilds now run with the source workflows and Market Benchmarks; they are
+  not the proposed change-monitoring system.
 
 | Phase | Work and completion gate | Depends on |
 |---|---|---|

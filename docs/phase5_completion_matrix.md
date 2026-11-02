@@ -53,8 +53,14 @@ error $0.00485215/MWh). Ontario benchmark 10.4199167 cents/kWh; Alberta 8.990570
 These are equal-month historical energy means, not customer-weighted bills.
 Release validation: **2,186 tests / 33 modules passed**; actual 1280/390 px previews
 rendered Chart.js, both benchmarks and grouped national bars with no page errors or overflow.
-Generated Alberta files and refreshed models still require the new Market Benchmarks CI run
-and follow-on deployment; local previews do not publish them. Current source-correction
+Implementation `d194efe` was pushed. [Market Benchmarks](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41488097739)
+passed its Python 3.12 tests, source checks and model build, publishing `6cbb988`;
+[Deploy Site](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41488260353) succeeded.
+The bot commit was pulled; live JSON and JS match canonical Git blobs. Real desktop/mobile
+checks passed with Chart.js, 60 Alberta rows, 13 comparison groups and both benchmarks.
+Published method 7C-4 retains the 55 base states above; four demand models now have benchmarks.
+Post-pull: 141 focused tests passed, strict gate 78/78 (Centra monitor due soon), crosswalk
+557 mapped / 360 excluded / 0 unmapped. No database writes. Current source-correction
 actions below remain independent.
 
 1. Owner closes #3 with the `math.fsum` fix (`a89e436`) and successful November 1 tests;
