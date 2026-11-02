@@ -44,9 +44,52 @@ Do not treat a green gate or a local dry run as proof these corrections are publ
 
 The site now includes a separate residential **Across-Canada** view and displays existing
 fixed-charge model assumptions. Gas models and Phase 8 monitoring remain design proposals,
-not implementations. Issues #3 and #4 await owner closure; source-monitor deadlines are unchanged.
+not implementations. Issues #3 and #4 are closed (verified November 2); source-monitor deadlines are unchanged.
 A successful source check and an export timestamp are different facts;
 unverified fallback records remain estimates regardless of the export date.
+
+### Combined Ontario energy prices and retained source reports (November 2)
+
+Use these files directly; no need to join energy and Class B Global Adjustment yourself:
+
+| File | Contents |
+|---|---|
+| [2020-2025 hourly totals](data/market/ontario_total_hourly_2020_2025.csv) | All **52,608** hourly slots, in **CAD cents/kWh**, IESO hour-ending 1-24 EST |
+| [Permanent hourly totals](data/market/ontario_total_hourly.csv) | January 2020 onward; extended with the archive |
+| [Permanent monthly totals](data/market/ontario_total_monthly.csv) | Published arithmetic energy + Class B GA averages, in cents/kWh |
+| [Method, sources and coverage](data/market/ontario_total_metadata.json) | Formula, source fingerprints, status definitions and caveats |
+
+`total_cents_per_kwh = (hourly energy $/MWh + monthly Class B GA $/MWh) / 10`.
+These are **energy-plus-GA totals, not complete bills**: delivery, losses, other fees and
+taxes are excluded. The original component files remain as source evidence.
+
+The 2020-2025 file contains **46,728 numeric hourly totals and 5,880 missing hours**
+(May-December 2025). Missing totals stay blank. The separate
+`monthly_average_total_cents_per_kwh` column is a **monthly reference**, never an hourly
+observation. April 2025's 720 official HOEP hours are included only in these exports,
+flagged `observed_monthly_mismatch`: their mean is 39.181 $/MWh, while IESO's monthly
+report says 39.22. The original
+[2025 IESO report](data/market/PUB_PriceHOEPPredispOR_2025_v119.csv) is preserved byte-for-byte.
+The existing site heatmap, model calculations and strict validation are unchanged.
+The project's GA choices remain: capped April-June 2020 GA and no separate 2021 recovery charge.
+
+Rebuild offline with `python scripts/export_ontario_totals.py` (`--dry-run` writes nothing).
+The Ontario Price Archive workflow also refreshes these files after its monthly-data build.
+
+**Protecting future hourly data:** the November 1 scheduled archive actually saved
+`f9d68d3`. From this change, the workflow **first commits raw official DA-OZP/LFDA reports**
+under [data/market/ieso_raw/](data/market/ieso_raw/), before validating prices. Original
+bytes are compressed, SHA-256 checked, and retained by content hash; new revisions and
+even malformed responses never overwrite older captures. Raw files are **unverified**,
+not prices to use in calculations. `scripts/archive_ontario_price.py --raw-dir
+data/market/ieso_raw --no-site-api` can recover retained daily reports after IESO removes
+them, while LFDA and monthly checks still require live sources.
+
+The schedule stays **06:00 UTC on the 1st and 15th**, as requested; relevant code pushes
+also run it. A failed validation does not undo the raw commit. If saving to GitHub itself
+fails, a recovery artifact is kept for 90 days and an issue is opened: download it and
+repair the failure promptly. This protects future captures, but cannot recover the old
+hourly gap or guarantee collection while GitHub/source failures remain unresolved.
 
 ### Market benchmarks and comparison charts (November 2)
 
@@ -104,7 +147,7 @@ than guessing a correction deadline. To check without publishing:
 | Historical snapshots | **5,534**; CI scrape run 30 appended 962 without changing the 4,572 earlier snapshots |
 | November 1 scrape validation | **917 live, 45 estimates, 0 invalid**; no failed or seed-only utilities |
 | Representative models | **55** across ten provinces, method 7C-4: 18 modeled, 26 single-source, 6 *market energy pending*, 5 not computable; four medium/large demand models also have separate historical benchmarks; never live coverage |
-| Regression tests | **2,186 passing** across 33 modules (Python 3.11), including offline desktop/mobile browser tests |
+| Regression tests | **2,237 passing** across 35 modules (Python 3.11), including offline desktop/mobile browser and raw-report recovery tests |
 
 Live output currently includes BC Hydro (18), FortisBC Electric (12), Manitoba Hydro (18), NB Power (10),
 Nova Scotia Power (20), Hydro-Quebec (26), Maritime Electric (10), Newfoundland Power (11),
@@ -211,7 +254,7 @@ Scrape, user decision):**
    commits and follow-on deployments; pull those commits and refresh the read-only mirror.
 2. Verify all 13 Centra records use November PDF prices and Maritime 232/233 retain the free
    demand tier. Recheck gate/crosswalk/models, then publish the scoped coverage-complete wording.
-   Close #3 and #4 with the successful November 1 evidence.
+   Issues #3 and #4 are already closed (verified November 2).
 3. Keep Centra's November 30 monitor open until stored corrections and HTML discrepancies are
    reviewed. Yukon still advertises October's book; both December 15 monitors remain open.
    Manitoba Small (Non-Demand) is now calculable; Small (Demand) remains unavailable rather
@@ -406,6 +449,11 @@ canada-utility-costs/
 │   ├── excel/                ← Audit reference files (not system of record, git-ignored)
 │   ├── market/               ← Ontario market history kept in git (outside the database)
 │   │   ├── ontario_price_hourly.csv   ← Hourly Ontario Price archive (DA-OZP + LFDA) since July 11, 2026
+│   │   ├── ontario_total_hourly.csv   ← Combined hourly energy + Class B GA, cents/kWh, with explicit gaps
+│   │   ├── ontario_total_hourly_2020_2025.csv ← Requested fixed historical window
+│   │   ├── ontario_total_monthly.csv ← Combined monthly reference prices, cents/kWh
+│   │   ├── ontario_total_metadata.json ← Method, warnings and source fingerprints
+│   │   ├── ieso_raw/                ← Permanent unverified official report captures and SHA-256 index
 │   │   ├── ontario_market_monthly.csv ← Permanent monthly energy + Class B GA history since January 2020
 │   │   └── hoep_hourly.csv   ← Legacy hourly HOEP, January 2020-March 2025 (imported once)
 │   ├── models/               ← Phase 7 representative model inputs
@@ -438,12 +486,14 @@ canada-utility-costs/
 ├── scripts/                  ← Market data builders and database history tools
 │   ├── build_ontario_market.py    ← Rolling five-year Ontario market history (Ontario Price Archive workflow)
 │   ├── archive_ontario_price.py   ← Extends the hourly Ontario Price archive (Ontario Price Archive workflow)
+│   ├── preserve_ieso_reports.py  ← Saves raw IESO reports before any price-validation failure
+│   ├── export_ontario_totals.py  ← Combines hourly/monthly energy + Class B GA without filling gaps
 │   ├── generate_market_pricing.py ← Legacy 6A HOEP 2020-2024 surface (manual; its readers are reused by the builder)
 │   ├── check_db_history.py        ← Monthly Scrape check: database integrity, history only grows
 │   ├── coverage_gate.py           ← Live-rate coverage gate: live output, audit ledger, deferred and monitored items (Monthly Scrape reports it)
 │   └── pull_history_db.py         ← Downloads the CI history database into a read-only local mirror
 │
-├── tests/                  ← 2,186 regression tests across 33 test modules
+├── tests/                  ← 2,237 regression tests across 35 test modules
 │   ├── fixtures/             ← Source-derived fixtures and frozen export samples; other tests also use inline text
 ├── docs/                     ← Guides and reference
 ├── .github/workflows/        ← GitHub Actions automation
@@ -476,6 +526,8 @@ use `--dry-run` and get the history with `python scripts/pull_history_db.py`.
 | Rebuild the rolling Ontario market history (downloads IESO files) | `python scripts/build_ontario_market.py` |
 | Rebuild the legacy 2020-2024 market surface (Phase 6A, manual; writes `logs/market_pricing_legacy_2020_2024.json` by default) | `python scripts/generate_market_pricing.py [--output PATH]` |
 | Extend the hourly Ontario Price archive (downloads IESO files) | `python scripts/archive_ontario_price.py` |
+| Rebuild combined Ontario cents/kWh CSVs from retained data | `python scripts/export_ontario_totals.py` |
+| Check raw IESO preservation without writing | `python scripts/preserve_ieso_reports.py --dry-run` |
 | Record database statistics (the Monthly Scrape history check) | `python scripts/check_db_history.py stats --db data/db/rates.db --out stats.json` |
 | Run tests | `pytest` |
 | Serve the website locally | `python -m http.server --directory site 8000` |
@@ -683,8 +735,10 @@ still published: `data/market/ontario_price_hourly.csv` holds one row per hour f
 (Final or Preliminary). A blank LFDA hour stays blank, never zero (the IESO's published monthly
 LFDA averages leave blanks out). Every complete month must match the IESO's monthly Ontario Price
 table within 0.01 $/MWh for DA-OZP, LFDA and OEMP (user decision: all three strict); otherwise
-nothing is written and the workflow opens an issue. Fix such an issue before the oldest
-unarchived daily files disappear.
+the validated CSV is unchanged and the workflow opens an issue. Since November 2, a separate
+raw-report commit precedes validation, so downloaded source bytes survive failed checks.
+See the combined-price/retention section above. Repair failed raw downloads or Git saves
+before the oldest unarchived daily files disappear.
 
 **Old and new market compared (October 15):** what a market-billed Class B customer pays, energy
 plus Class B GA, stayed similar after the change, while energy alone did not. The HOEP years

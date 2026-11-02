@@ -20,7 +20,10 @@ arithmetic average DA-OZP, LFDA or Ontario Price by more than 0.01 $/MWh. Incomp
 without new data leaves the file byte-identical.
 
     python scripts/archive_ontario_price.py [--output PATH] [--cache-dir DIR] [--api-cache-dir DIR] [--no-site-api]
-                                            [--dry-run]
+                                            [--raw-dir DIR] [--dry-run]
+
+An optional --raw-dir replays integrity-checked, backed-up daily reports even after the IESO removes them.
+It never substitutes captured LFDA or monthly tables for live requests; all price checks still apply.
 """
 import argparse
 import csv
@@ -304,11 +307,12 @@ def parse_da_report(content: bytes, day: date, label: str) -> dict[int, Decimal]
 def report_files(source: ReportSource) -> tuple[dict[date, tuple[int, str]], list[date]]:
     """Highest versioned report file per delivery day (listing and cache), and days listed only without a version."""
     listed = gmp.parse_listing(source.get(DA_DIR, immutable=False).decode("utf-8", "replace"), DA_FILE_RE)
-    if not listed:
+    archived = source.archived(DA_DIR, DA_FILE_RE)
+    if not listed and not (getattr(source, "has_raw_da", False) and archived):
         raise MarketDataError(f"{DA_DIR}: no daily report files listed")
     files: dict[date, tuple[int, str]] = {}
     unversioned = []
-    for key, (version, name) in gmp._best_versions(source.archived(DA_DIR, DA_FILE_RE), listed).items():
+    for key, (version, name) in gmp._best_versions(archived, listed).items():
         try:
             day = datetime.strptime(key, "%Y%m%d").date()
         except ValueError:
@@ -684,6 +688,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
                         help="archive CSV (default: data/market/ontario_price_hourly.csv)")
     parser.add_argument("--cache-dir", type=Path, default=None,
                         help="optional cache of IESO files (versioned reports are kept forever)")
+    parser.add_argument("--raw-dir", type=Path, default=None,
+                        help="preserved raw IESO directory; replay DA reports only, with live LFDA/monthly checks")
     parser.add_argument("--api-cache-dir", type=Path, default=None,
                         help="optional cache of raw site API responses (one folder per run date)")
     parser.add_argument("--no-site-api", action="store_true",
@@ -699,6 +705,15 @@ def main(argv: list[str] | None = None, *, fetch=None, api_fetch=None, run_date:
     api = None if args.no_site_api else SiteApiSource(args.api_cache_dir, today, fetch=api_fetch or api_get)
     previous = args.output.read_bytes() if args.output.is_file() else None
     try:
+        if args.raw_dir is not None:
+            path = Path(__file__).with_name("preserve_ieso_reports.py")
+            spec = importlib.util.spec_from_file_location("preserve_ieso_reports", path)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"cannot load {path}")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            source = module.RawReportSource(args.raw_dir, today, cache_dir=args.cache_dir,
+                                            fetch=fetch or gmp.http_get)
         existing = load_archive(previous, str(args.output)) if previous is not None else {}
         result = update_archive(source, existing, api)
     except MarketDataError as exc:

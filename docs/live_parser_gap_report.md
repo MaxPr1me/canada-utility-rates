@@ -5,7 +5,8 @@ tariffs) and the strict gate passes; final coverage completion still waits for c
 Centra prices to be stored by CI. The November 1 scrape kept all history. Current local
 corrections: Centra's approved quarterly PDF is authoritative (13 live November records),
 and Maritime's printed first 20 kW free is preserved (10 live records). Full regression:
-2,186 tests / 33 modules after the market/chart work, which changes no live coverage counts.
+2,237 tests / 35 modules after the market/chart and combined-price/raw-retention work,
+which changes no live coverage counts.
 See the [current matrix checkpoint](phase5_completion_matrix.md).
 The older counts and queues below are historical evidence, not the current publication state.
 

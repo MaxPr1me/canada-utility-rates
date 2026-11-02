@@ -162,6 +162,11 @@ an exact percentage. Preserve history and do not stage unrelated work.
 | `data/market/ontario_market_monthly.csv` | The permanent monthly market history since January 2020 (80 months on October 16): energy, Class B Global Adjustment and total for each month. It is never shortened. |
 | `data/market/hoep_hourly.csv` | The old hourly HOEP prices, January 2020-March 2025, saved once so GitHub never has to download them again. |
 | `data/market/ontario_price_hourly.csv` | The project's own permanent hourly archive of the Ontario Price since July 11, 2026, extended by `scripts/archive_ontario_price.py` (see "Ontario Market Pricing" below). |
+| `data/market/ontario_total_hourly.csv` | The ready-to-use hourly total: energy plus Class B Global Adjustment, in cents/kWh, since January 2020. A missing total is blank, not zero. |
+| `data/market/ontario_total_hourly_2020_2025.csv` | The same totals, limited to 2020-2025: 52,608 hourly slots. There are 5,880 missing hourly prices in May-December 2025. |
+| `data/market/ontario_total_monthly.csv` | Energy plus Class B GA averaged by month, in cents/kWh. These are monthly references, not actual prices for missing hours. |
+| `data/market/ontario_total_metadata.json` | Explains the totals, missing hours, April 2025 warning and source-file fingerprints. |
+| `data/market/ieso_raw/` | Permanent compressed copies of the original IESO reports, with a fingerprint index. Saved before price checks; they are unverified source evidence, not rates. Old captures are never replaced. |
 | `site/data/market_structure_notes.json` | Research notes on market structure for every Canadian province/territory. |
 | `site/data/missing_classes_report.json` | Audit report showing which utilities are missing customer classes. |
 | `site/data/source_review_report.json` | Source URL audit — compares Excel reference URLs against registry. |
@@ -205,12 +210,14 @@ not the visitor's actual service or eligibility.
 | `.github/workflows/scrape.yml` | Monthly tests, scrape, validation and export on the 1st. Since October 16 the only writer of the database: it gets the database from the `data-history` release, checks it, and saves it back with a dated backup. |
 | `.github/workflows/deploy.yml` | Separate GitHub Pages deployment on push or manual dispatch, and by itself after each successful Monthly Scrape, Ontario Price Archive or Market Benchmarks run. |
 | `.github/workflows/source-health.yml` | Non-blocking dry run on the 15th; uploads logs without publishing. |
-| `.github/workflows/ontario-price-archive.yml` | At 06:00 UTC on the 1st and 15th: saves the Ontario Price archive first, then rebuilds and saves the Ontario market history and representative models in a second save, even when the archive step failed; opens an issue naming the part that failed. |
+| `.github/workflows/ontario-price-archive.yml` | At 06:00 UTC on the 1st and 15th, and on relevant code pushes: saves raw IESO reports first, then the validated Ontario Price archive, then market history, combined price files and models. Market history can still rebuild when archive validation fails. Failures open an issue; a failed raw save also leaves a temporary recovery artifact. |
 | `scripts/check_db_history.py` | The Monthly Scrape's safety check: the database is not damaged, and nothing old was lost or changed. |
 | `scripts/coverage_gate.py` | The "is coverage complete?" check (added October 30). For every active registered utility it asks: is there a live record in effect today, is there a recent dated audit in `data/sources/coverage_ledger.json`, and is anything still deferred or overdue for review? It prints what is missing. The Monthly Scrape runs it and posts a public "Coverage gate" note; it never stops the save. The README may say coverage is complete only when it passes. |
 | `data/sources/coverage_ledger.json` | The audit ledger the gate reads: one entry per utility with its audit date, exclusions, source-blocked items, deferred items (these fail the gate) and monitored items with a review date. It records decisions; it never changes a rate. All 78 active utilities have an entry (the 47 Ontario distributors share one group with the standard Ontario exclusions); entries with something still undecided list it under "deferred", which keeps the gate failing until it is resolved. |
 | `scripts/pull_history_db.py` | Downloads the newest database from GitHub to your computer, checks it, and keeps your old copy. It never uploads anything. |
 | `scripts/build_ontario_market.py` | Builds the five-year Market Pricing history (runs inside the Ontario Price Archive workflow). |
+| `scripts/preserve_ieso_reports.py` | Downloads original daily DA-OZP and yearly LFDA reports and saves each distinct copy before validation. A broken response cannot erase a previous good copy. |
+| `scripts/export_ontario_totals.py` | Creates the combined hourly and monthly energy-plus-GA files from saved data. No network request or database write. |
 | `scripts/build_alberta_market.py` | Builds 60 complete months of AESO pool energy, checked against every official monthly summary. Keeps raw hours (including clock changes), permanent monthly history and 576 observed-hour heatmap cells. `--dry-run` saves no outputs. |
 | `.github/workflows/market-benchmarks.yml` | Runs after the source workflows and relevant code/model-input pushes. Publishes Alberta history and refreshes the models without touching the database; a successful run triggers deployment. All three data workflows take turns publishing. |
 | `site/data/market_pricing_alberta.json` | Alberta's market dashboard and benchmark input, published by CI. Raw history is `data/market/alberta_pool_hourly.csv`; permanent monthly history is `data/market/alberta_market_monthly.csv`. |
@@ -453,17 +460,24 @@ records live again; the Monthly Scrape on GitHub stored them the same day (scrap
 ### The Ontario Price Archive opened an issue
 
 **What happened:** a month in the archive did not match the IESO's own monthly Ontario Price
-table, or an official IESO file could not be read. Nothing was written, so the archive is safe.
-The market history build still runs, using the archive already saved.
+table, or an official IESO file could not be read. The validated archive was not changed.
+Since November 2, original reports are saved separately before these checks, so a failed
+check does not throw away new daily reports. The market history build still runs, using
+the validated archive already saved.
 
 **What to do (soon):** the IESO deletes each daily price file after about 90 days, so a problem
 left too long loses hours for good.
-1. Run `python scripts/archive_ontario_price.py --dry-run` on your computer; it names the month or
-   file that failed and writes nothing.
+1. Pull the saved reports, then run `python scripts/archive_ontario_price.py --no-site-api
+   --raw-dir data/market/ieso_raw --dry-run`; it names the month or file that failed and writes
+   nothing. The retained daily reports can be read even after IESO removes them.
 2. If it says "the IESO published this file empty", nothing is wrong with the project: start the
    workflow again a day or two later. This happened on October 16 with the 2026 LFDA file; the IESO
    published it again on October 30. (Project owner decision, October 16: wait for the IESO rather
    than save prices without their LFDA.)
+   If the issue instead says **raw report preservation failed**, check whether the raw commit
+   succeeded. A failed Git save leaves an `ieso-raw-recovery` artifact on the run page for
+   90 days: download it promptly and repair the save. Raw files must never be treated as
+   validated prices just because they were backed up.
 3. If a month's LFDA differs from the IESO table by more than a cent, the table may still show a
    preliminary value while the archive already holds the final one; wait for the IESO to update the
    table, then start the workflow again (all three checks stay strict, project owner decision).
@@ -596,6 +610,14 @@ the page and never filled with made-up hours. As the archive grows, more Ontario
 enter the heatmap.
 
 **Where the numbers live:**
+- **For ready-to-use totals:** `data/market/ontario_total_hourly.csv` or the fixed
+  `ontario_total_hourly_2020_2025.csv`, plus `ontario_total_monthly.csv`. All use cents/kWh.
+  The formula is (hourly energy + that month's Class B GA), divided by 10 when the inputs
+  are in dollars/MWh. Missing hourly totals stay blank; a separate monthly-average column
+  provides a labelled reference. April 2025 includes the official hourly observations
+  with a warning because their mean does not match the IESO monthly report. These files
+  do not change the stricter website heatmap or model calculations. Rebuild them with
+  `python scripts/export_ontario_totals.py`; their metadata explains the GA caveats.
 - `data/market/ontario_market_monthly.csv`: one line per month since January 2020 (80 months on
   October 16). It is never shortened; a month can only be corrected within 6 months of its end.
 - `data/market/hoep_hourly.csv`: the old hourly HOEP prices (January 2020-March 2025), saved once
@@ -604,12 +626,15 @@ enter the heatmap.
 - `site/data/market_pricing_ontario.json`: what the website reads (the 60 months and the heatmap).
 
 **How it is updated:** automatically. The **Ontario Price Archive** workflow (1st and 15th, 06:00
-UTC) first saves the archive, then runs `python scripts/build_ontario_market.py` (also when the
+UTC) first saves raw source reports, then the validated archive, then runs
+`python scripts/build_ontario_market.py` (also when the
 archive step failed: the build then uses the archive already saved). That script
 downloads only the IESO's monthly price table and Global Adjustment files (18 files), checks every
 number, and only then rewrites the files. If anything is missing or a check fails, it writes
-nothing and GitHub opens an issue (see "What to Do When Something Breaks"). You can run the same
-command on your computer; add `--dry-run` to check everything without writing. These averages
+no validated market files and GitHub opens an issue; the earlier raw-report save remains.
+After a successful market build it runs `python scripts/export_ontario_totals.py` and refreshes
+the models. You can run either data-building command on your computer; add `--dry-run` to check
+everything without writing. These averages
 are never copied into a tariff: large customers' tariffs keep their "Variable" line.
 
 The older 2020-2024 version of the page (from October 9) can still be rebuilt with
@@ -632,7 +657,7 @@ reaches back only about 10 days). Each row holds the date, the hour, the day-ahe
 the LFDA is final. The **Ontario Price Archive** workflow runs it on the 1st and 15th of each
 month and saves the file; the market history build above then uses it. Before writing, every
 complete month must match the IESO's own monthly
-table to the cent for all three numbers; if anything disagrees, nothing is written and GitHub
+table to the cent for all three numbers; if anything disagrees, the validated archive is not changed and GitHub
 opens an issue. Fix such an issue quickly: the IESO deletes each daily file after about 90 days.
 An hour without a published LFDA stays blank; it is never treated as zero.
 
@@ -739,7 +764,8 @@ Tests check that the code works correctly. Run them with:
 pytest
 ```
 
-There are 2,186 tests across 33 test modules (November 2), including offline browser tests in
+There are 2,237 tests across 35 test modules (November 2), including combined-price and raw-report
+recovery tests (`test_ontario_totals`, `test_ieso_raw_reports`) and offline browser tests in
 `test_across_canada`, the current Centra PDF authority checks and Maritime's demand-block/model
 regressions. Earlier additions include `test_phase5_hardening` for
 provenance, storage and history, `test_ontario_price_archive` for the Ontario Price archive,

@@ -496,9 +496,12 @@ def test_scrape_inputs_utility_or_province_pass_through_env():
 
 def test_archive_workflow_commits_the_archive_before_building_the_market_history():
     steps = _steps(ARCHIVE_WORKFLOW)
-    order = ["Checkout repository", "Set up Python", "Install dependencies", "Update the Ontario Price archive",
+    order = ["Checkout repository", "Set up Python", "Install dependencies", "Synchronize source inputs",
+             "Test archive and combined totals", "Preserve raw IESO reports", "Commit raw reports before validation",
+             "Update the Ontario Price archive",
              "Commit updated archive", "Synchronize model inputs", "Build the Ontario market history",
-             "Refresh representative models", "Commit updated market history",
+             "Export combined Ontario prices", "Refresh representative models", "Commit updated market history",
+             "Keep raw reports for recovery after failure",
              "Create issue on failure"]
     assert [name for name, _ in steps] == order
     archive_commit = _run(_step(steps, "Commit updated archive"))
@@ -508,7 +511,9 @@ def test_archive_workflow_commits_the_archive_before_building_the_market_history
     market_commit = _run(_step(steps, "Commit updated market history"))
     assert re.findall(r"git add [^\n]+", market_commit) == [
         "git add site/data/market_pricing_ontario.json data/market/ontario_market_monthly.csv",
-        "git add site/data/representative_models.json"]
+        "git add site/data/representative_models.json",
+        "git add data/market/ontario_total_hourly.csv data/market/ontario_total_hourly_2020_2025.csv",
+        "git add data/market/ontario_total_monthly.csv data/market/ontario_total_metadata.json"]
     assert 'git commit -m "data: Ontario market history update $(date +%Y-%m-%d)"' in market_commit
     assert market_commit.index("git diff --staged --quiet") < market_commit.index("git commit")
     assert "git pull --rebase" not in market_commit
@@ -522,14 +527,16 @@ def test_archive_workflow_builds_the_market_history_even_when_the_archive_step_f
     for name, step_id in (("Install dependencies", "install"), ("Update the Ontario Price archive", "archive"),
                           ("Commit updated archive", "archive_commit")):
         assert f"\n        id: {step_id}\n" in _step(steps, name)
-    assert "\n        if:" not in _step(steps, "Commit updated archive")
+    assert "if: ${{ !cancelled() && steps.archive.outcome == 'success' }}" in _step(steps, "Commit updated archive")
     sync = _step(steps, "Synchronize model inputs")
     assert ("if: ${{ !cancelled() && steps.install.outcome == 'success' "
-            "&& steps.archive_commit.outcome != 'failure' }}") in sync
+            "&& steps.raw_commit.outcome == 'success' && steps.archive_commit.outcome != 'failure' }}") in sync
     market = _step(steps, "Build the Ontario market history")
     assert "if: ${{ !cancelled() && steps.sync.outcome == 'success' }}" in market
     models = _step(steps, "Refresh representative models")
-    assert "if: ${{ !cancelled() && steps.market.outcome == 'success' }}" in models
+    totals = _step(steps, "Export combined Ontario prices")
+    assert "if: ${{ !cancelled() && steps.market.outcome == 'success' }}" in totals
+    assert "if: ${{ !cancelled() && steps.totals.outcome == 'success' }}" in models
     assert "--build --output site/data/representative_models.json" in _run(models)
     market_commit = _step(steps, "Commit updated market history")
     assert "if: ${{ !cancelled() && steps.models.outcome == 'success' }}" in market_commit

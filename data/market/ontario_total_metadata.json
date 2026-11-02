@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "unit": "CAD cents/kWh",
+  "formula": "(hourly HOEP or Ontario Price in $/MWh + that month's Class B GA in $/MWh) / 10",
+  "hour_convention": "IESO hour-ending 1-24, Eastern Standard Time (UTC-05:00); no daylight-saving shift.",
+  "hourly_start": "2020-01-01",
+  "hourly_end": "2026-11-01",
+  "monthly_end": "2026-09",
+  "hourly_rows": 59928,
+  "historical_2020_2025_rows": 52608,
+  "status_counts": {
+    "missing_hourly_energy": 10464,
+    "observed": 47976,
+    "observed_monthly_mismatch": 720,
+    "pending_class_b_ga": 432,
+    "pending_lfda_and_class_b_ga": 336
+  },
+  "historical_status_counts": {
+    "missing_hourly_energy": 5880,
+    "observed": 46008,
+    "observed_monthly_mismatch": 720
+  },
+  "status_definitions": {
+    "observed": "Observed hourly energy plus the month's published Class B GA.",
+    "observed_monthly_mismatch": "Observed hourly HOEP plus Class B GA; April 2025's hourly mean does not match the published monthly energy average. Not monthly-validated.",
+    "observed_preliminary_lfda": "Observed DA-OZP plus a published non-final LFDA and monthly Class B GA; the LFDA may be revised.",
+    "missing_hourly_energy": "No hourly energy observation is archived; total left blank.",
+    "pending_lfda": "DA-OZP is archived, but LFDA is absent; total left blank.",
+    "pending_class_b_ga": "Hourly energy is archived, but no validated monthly Class B GA is available.",
+    "pending_lfda_and_class_b_ga": "Both LFDA and validated monthly Class B GA are absent; total left blank."
+  },
+  "monthly_reconciliation_warnings": [
+    {
+      "month": "2025-04",
+      "hourly_mean_per_mwh": "39.181",
+      "published_monthly_per_mwh": "39.22",
+      "difference_per_mwh": "-0.039",
+      "status": "observed_monthly_mismatch"
+    }
+  ],
+  "notes": [
+    "The total is market energy plus Class B GA, not a complete customer bill: excludes delivery, losses, regulatory/retail charges and taxes. Class A is not covered.",
+    "Monthly-average reference values are separate from hourly totals and never fill missing hours.",
+    "HOEP retired April 30, 2025; Ontario Price = DA-OZP + LFDA from May 1, 2025.",
+    "April-June 2020 use the project's published capped Class B GA of 115 $/MWh.",
+    "2021 GA excludes the separately billed Class B non-RPP recovery charge.",
+    "April 2025's original hourly file is used only by these exports, with a warning; the validated site heatmap, representative models and tariffs are unchanged.",
+    "Original component archives are retained for audit and future revisions."
+  ],
+  "supplement_source_url": "https://reports-public.ieso.ca/public/PriceHOEPPredispOR/PUB_PriceHOEPPredispOR_2025_v119.csv",
+  "inputs": [
+    {
+      "file": "hoep_hourly.csv",
+      "sha256": "50d463d282231e55d2d0e5b7bf912f8a500fc889036530a5871d2e29720e5296",
+      "hash_basis": "lf_normalized_bytes"
+    },
+    {
+      "file": "ontario_market_monthly.csv",
+      "sha256": "65f8020568eeeba0b5b0ed17d3d94d829e42ecaea36badeba175c8c95aafa54f",
+      "hash_basis": "lf_normalized_bytes"
+    },
+    {
+      "file": "ontario_price_hourly.csv",
+      "sha256": "2517bebbd9bf8bb5cee41d499a88f257d56266301bdd601dea8630f8fd0bf30e",
+      "hash_basis": "lf_normalized_bytes"
+    },
+    {
+      "file": "PUB_PriceHOEPPredispOR_2025_v119.csv",
+      "sha256": "27004c1feff18e169643d69898b4460d8cea97937611530d82e8e0d0694681cb",
+      "hash_basis": "original_bytes"
+    }
+  ]
+}

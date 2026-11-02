@@ -122,3 +122,34 @@ def test_market_workflow_rebuilds_after_sources_and_model_input_changes():
     condition = workflow["jobs"]["market"]["if"]
     assert "head_repository.full_name == github.repository" in condition
     assert "name == 'Ontario Price Archive'" in condition
+
+
+def test_ontario_raw_reports_are_saved_before_validation_even_after_partial_capture_failure():
+    yaml = pytest.importorskip("yaml")
+    workflow = yaml.safe_load(ARCHIVE_WORKFLOW.read_text(encoding="utf-8"))
+    triggers = workflow.get("on", workflow.get(True))
+    assert triggers["schedule"] == [{"cron": "0 6 1,15 * *"}]
+    assert triggers["push"]["branches"] == ["main"]
+    assert "scripts/export_ontario_totals.py" in triggers["push"]["paths"]
+    assert not any("ieso_raw" in path or "ontario_total" in path for path in triggers["push"]["paths"]
+                   if not path.startswith("scripts/"))
+    assert workflow["concurrency"]["group"] == "utility-data-updates"
+    steps = workflow["jobs"]["archive"]["steps"]
+    by_id = {step["id"]: step for step in steps if "id" in step}
+    assert steps[0]["with"]["ref"] == "main"
+    assert steps.index(by_id["raw_commit"]) < steps.index(by_id["archive"])
+    condition = by_id["raw_commit"]["if"]
+    assert "!cancelled()" in condition and "steps.raw.outcome != 'skipped'" in condition
+    assert "steps.raw.outcome == 'success'" not in condition
+    assert "git add data/market/ieso_raw" in by_id["raw_commit"]["run"]
+    assert "index.json" in by_id["raw_commit"]["run"] and "exit 1" in by_id["raw_commit"]["run"]
+    assert "--raw-dir data/market/ieso_raw" in by_id["archive"]["run"]
+    assert "steps.raw_commit.outcome == 'success'" in by_id["archive"]["if"]
+    assert "--no-site-api" in by_id["archive"]["run"]
+    assert "scripts/export_ontario_totals.py" in by_id["totals"]["run"]
+    assert "steps.totals.outcome == 'success'" in by_id["models"]["if"]
+    (artifact,) = [step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@")]
+    assert "failure()" in artifact["if"]
+    assert "data/market/ieso_raw" in artifact["with"]["path"]
+    assert artifact["with"]["retention-days"] == 90
+    assert "git pull --rebase" not in ARCHIVE_WORKFLOW.read_text(encoding="utf-8")

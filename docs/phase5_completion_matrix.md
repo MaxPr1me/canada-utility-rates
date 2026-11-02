@@ -44,6 +44,18 @@ succeeded. This publishes the code and website, not the corrected Centra/Maritim
 
 ### Exact remaining queue / publication gate
 
+The subsequent November 2 Ontario totals/retention work adds permanent combined hourly
+and monthly cents/kWh CSVs plus the requested 2020-2025 extract (52,608 slots: 46,728
+totals, 5,880 explicit gaps). April's official hourly observations are included with a
+monthly-discrepancy warning, without changing the existing heatmap/models. Original
+sources remain. Raw IESO reports are now captured separately before price validation:
+94 initial original reports saved; SHA-256-checked replay passes the strict archive dry
+run. The schedule remains the 1st and 15th by user choice; raw saves survive validation
+failures, and failed Git saves get a recovery artifact and an issue. Focused regression:
+168 tests passed; full regression **2,237 tests / 35 modules passed**. Every one of the
+52,608 historical rows was independently checked for units, formula and gap labels.
+No database or local validated-archive writes.
+
 The additional November 2 market/chart implementation adds method 7C-4, separate Ontario/
 Alberta historical benchmarks, an Alberta dashboard/history builder, grouped province-color
 comparison bars and CI model refreshes. AESO owner-confirmed permission covers raw and derived
@@ -63,9 +75,8 @@ Post-pull: 141 focused tests passed, strict gate 78/78 (Centra monitor due soon)
 557 mapped / 360 excluded / 0 unmapped. No database writes. Current source-correction
 actions below remain independent.
 
-1. Owner closes #3 with the `math.fsum` fix (`a89e436`) and successful November 1 tests;
-   closes #4 with the successful archive/market build and `f9d68d3` / `81e099c`.
-   Authenticated GitHub writes are unavailable here; the owner chose manual actions.
+1. Issues #3 and #4 are closed (verified against GitHub November 2). The evidence remains
+   the `math.fsum` fix (`a89e436`), successful November 1 tests/archive and `f9d68d3` / `81e099c`.
 2. After the implementation push, owner dispatches **Monthly Scrape**, branch `main`,
    `utility = Centra Gas Manitoba`, empty `province`; wait for success and deployment.
    Then dispatch `utility = Maritime Electric`, also with empty `province`.

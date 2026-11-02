@@ -6,15 +6,15 @@
 #
 # What it does:
 #   1. Installs Python and dependencies
-#   2. Adds new official IESO data to the archive (official reports only, no
-#      website API); the script fails closed and writes nothing on any doubt
-#   3. Commits the archive CSV if it changed (before anything else can fail)
+#   2. Preserves raw official DA-OZP/LFDA reports first, even if price validation
+#      later fails. Raw bytes are not verified prices.
+#   3. Updates and commits the strictly validated archive CSV (no website API).
 #   4. Rebuilds the Ontario market history (site/data/market_pricing_ontario.json
 #      and data/market/ontario_market_monthly.csv; fails closed, writes nothing
-#      on failure), refreshes representative models and commits changed outputs. This also runs
-#      when step 2 fails: it only needs the IESO monthly table, the GA files and
+#      on failure), exports combined totals, refreshes models and commits changed outputs.
+#      The market build also runs when archive validation fails: it needs the monthly table, GA and
 #      the archive already in the repository
-#   5. Creates a GitHub Issue if the run fails
+#   5. Keeps a recovery artifact and creates a GitHub Issue if the run fails.
 
 name: Ontario Price Archive
 
@@ -25,6 +25,17 @@ on:
 
   # Allow manual runs from the GitHub Actions UI
   workflow_dispatch:
+
+  push:
+    branches: [main]
+    paths:
+      - "scripts/preserve_ieso_reports.py"
+      - "scripts/archive_ontario_price.py"
+      - "scripts/export_ontario_totals.py"
+      - "scripts/build_ontario_market.py"
+      - "scripts/generate_market_pricing.py"
+      - "data/market/PUB_PriceHOEPPredispOR_2025_v119.csv"
+      - ".github/workflows/ontario-price-archive.yml"
 
 # Serialize shared data publication with the scrape and Alberta benchmark workflows.
 concurrency:
@@ -46,6 +57,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -59,12 +72,42 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
 
+      - name: Synchronize source inputs
+        run: git pull --ff-only origin main
+
+      - name: Test archive and combined totals
+        run: python -m pytest -q tests/test_ieso_raw_reports.py tests/test_ontario_price_archive.py tests/test_ontario_totals.py tests/test_market_tooling.py
+
+      - name: Preserve raw IESO reports
+        id: raw
+        run: python scripts/preserve_ieso_reports.py 2>&1 | tee raw_output.txt
+
+      - name: Commit raw reports before validation
+        id: raw_commit
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.raw.outcome != 'skipped' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ ! -f data/market/ieso_raw/index.json ]; then
+            echo "::error::Raw report index is missing; nothing has been safely preserved."
+            exit 1
+          fi
+          git add data/market/ieso_raw
+          if git diff --staged --quiet; then
+            echo "No raw report changes to commit."
+          else
+            git commit -m "data: preserve raw IESO reports $(date +%Y-%m-%d)"
+            git push
+          fi
+
       - name: Update the Ontario Price archive
         id: archive
-        run: python scripts/archive_ontario_price.py --no-site-api 2>&1 | tee archive_output.txt
+        if: ${{ !cancelled() && steps.raw_commit.outcome == 'success' }}
+        run: python scripts/archive_ontario_price.py --no-site-api --raw-dir data/market/ieso_raw 2>&1 | tee archive_output.txt
 
       - name: Commit updated archive
         id: archive_commit
+        if: ${{ !cancelled() && steps.archive.outcome == 'success' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -73,7 +116,6 @@ jobs:
             echo "No archive changes to commit."
           else
             git commit -m "data: Ontario Price archive update $(date +%Y-%m-%d)"
-            git pull --rebase origin main
             git push
           fi
 
@@ -81,7 +123,7 @@ jobs:
       # not after a failed install or a failed archive commit.
       - name: Synchronize model inputs
         id: sync
-        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.archive_commit.outcome != 'failure' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.raw_commit.outcome == 'success' && steps.archive_commit.outcome != 'failure' }}
         run: git pull --ff-only origin main
 
       - name: Build the Ontario market history
@@ -89,9 +131,14 @@ jobs:
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: python scripts/build_ontario_market.py 2>&1 | tee market_output.txt
 
+      - name: Export combined Ontario prices
+        id: totals
+        if: ${{ !cancelled() && steps.market.outcome == 'success' }}
+        run: python scripts/export_ontario_totals.py 2>&1 | tee totals_output.txt
+
       - name: Refresh representative models
         id: models
-        if: ${{ !cancelled() && steps.market.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.totals.outcome == 'success' }}
         run: python -m pipeline.representative_models --build --output site/data/representative_models.json 2>&1 | tee model_output.txt
 
       - name: Commit updated market history
@@ -102,6 +149,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add site/data/market_pricing_ontario.json data/market/ontario_market_monthly.csv
           git add site/data/representative_models.json
+          git add data/market/ontario_total_hourly.csv data/market/ontario_total_hourly_2020_2025.csv
+          git add data/market/ontario_total_monthly.csv data/market/ontario_total_metadata.json
           if git diff --staged --quiet; then
             echo "No market history changes to commit."
           else
@@ -109,16 +158,38 @@ jobs:
             git push
           fi
 
+      - name: Keep raw reports for recovery after failure
+        if: ${{ failure() && steps.raw.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ieso-raw-recovery-${{ github.run_id }}
+          path: |
+            data/market/ieso_raw
+            raw_output.txt
+            archive_output.txt
+            market_output.txt
+            totals_output.txt
+          retention-days: 90
+          if-no-files-found: warn
+
       - name: Create issue on failure
         if: failure()
         uses: actions/github-script@v8
         env:
+          RAW_FAILED: ${{ steps.raw.outcome != 'success' || steps.raw_commit.outcome != 'success' }}
+          RAW_SAVED: ${{ steps.raw_commit.outcome == 'success' }}
           ARCHIVE_FAILED: ${{ steps.archive.outcome != 'success' || steps.archive_commit.outcome == 'failure' }}
-          MARKET_FAILED: ${{ steps.sync.outcome == 'failure' || steps.market.outcome == 'failure' || steps.models.outcome == 'failure' || steps.market_commit.outcome == 'failure' }}
+          MARKET_FAILED: ${{ steps.sync.outcome == 'failure' || steps.market.outcome == 'failure' || steps.totals.outcome == 'failure' || steps.models.outcome == 'failure' || steps.market_commit.outcome == 'failure' }}
           MARKET_SAVED: ${{ steps.market_commit.outcome == 'success' }}
         with:
           script: |
             const fs = require('fs');
+            const rawOutput = fs.existsSync('raw_output.txt')
+              ? fs.readFileSync('raw_output.txt', 'utf8')
+              : 'No raw capture output available.';
+            const totalsOutput = fs.existsSync('totals_output.txt')
+              ? fs.readFileSync('totals_output.txt', 'utf8')
+              : 'No combined price export output available.';
             const output = fs.existsSync('archive_output.txt')
               ? fs.readFileSync('archive_output.txt', 'utf8')
               : 'No archive output available.';
@@ -131,12 +202,22 @@ jobs:
             const archiveFailed = process.env.ARCHIVE_FAILED === 'true';
             const marketFailed = process.env.MARKET_FAILED === 'true';
             const day = new Date().toISOString().split('T')[0];
-            const title = archiveFailed && marketFailed
+            const title = process.env.RAW_FAILED === 'true'
+              ? `Ontario raw report preservation failed on ${day}`
+              : archiveFailed && marketFailed
               ? `Ontario Price archive and market history update failed on ${day}`
               : marketFailed
                 ? `Ontario market history update failed on ${day}`
                 : `Ontario Price archive failed on ${day}`;
             const notes = [];
+            if (process.env.RAW_SAVED === 'true') {
+              notes.push('Successfully captured raw IESO reports were committed before validation. They are not verified prices.');
+            } else {
+              notes.push('Raw reports were not confirmed committed. Download the ieso-raw-recovery run artifact promptly (90-day retention) and restore the reports before they expire.');
+            }
+            if (process.env.RAW_FAILED === 'true') {
+              notes.push('One or more raw downloads or the raw commit failed: inspect Raw Capture Output and retry. Existing preserved reports were not deleted.');
+            }
             if (archiveFailed) {
               notes.push('The archive was not updated. The IESO keeps its daily DA-OZP reports online for only about 90 days: fix this before the oldest missing days disappear.');
             } else {
@@ -153,6 +234,6 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title,
-              body: `## Archive Output\n\n\`\`\`\n${output.slice(-3000)}\n\`\`\`\n\n## Market History Output\n\n\`\`\`\n${marketOutput.slice(-3000)}\n\`\`\`\n\n## Model Output\n\n\`\`\`\n${modelOutput.slice(-3000)}\n\`\`\`\n\n${note}\n\nThis issue was created automatically by the Ontario Price Archive workflow.`,
+              body: `## Raw Capture Output\n\n\`\`\`\n${rawOutput.slice(-3000)}\n\`\`\`\n\n## Archive Output\n\n\`\`\`\n${output.slice(-3000)}\n\`\`\`\n\n## Market History Output\n\n\`\`\`\n${marketOutput.slice(-3000)}\n\`\`\`\n\n## Combined Price Output\n\n\`\`\`\n${totalsOutput.slice(-3000)}\n\`\`\`\n\n## Model Output\n\n\`\`\`\n${modelOutput.slice(-3000)}\n\`\`\`\n\n${note}\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nThis issue was created automatically by the Ontario Price Archive workflow.`,
               labels: ['scrape-issue', 'automated'],
             });
