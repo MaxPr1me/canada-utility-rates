@@ -11,7 +11,7 @@
 #   3. Commits the archive CSV if it changed (before anything else can fail)
 #   4. Rebuilds the Ontario market history (site/data/market_pricing_ontario.json
 #      and data/market/ontario_market_monthly.csv; fails closed, writes nothing
-#      on failure) and commits those two files if they changed. This also runs
+#      on failure), refreshes representative models and commits changed outputs. This also runs
 #      when step 2 fails: it only needs the IESO monthly table, the GA files and
 #      the archive already in the repository
 #   5. Creates a GitHub Issue if the run fails
@@ -26,9 +26,9 @@ on:
   # Allow manual runs from the GitHub Actions UI
   workflow_dispatch:
 
-# Only one archive update at a time
+# Serialize shared data publication with the scrape and Alberta benchmark workflows.
 concurrency:
-  group: ontario-price-archive
+  group: utility-data-updates
   cancel-in-progress: false
 
 permissions:
@@ -79,23 +79,33 @@ jobs:
 
       # Runs even when the archive step failed (the committed archive is used), but
       # not after a failed install or a failed archive commit.
+      - name: Synchronize model inputs
+        id: sync
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.archive_commit.outcome != 'failure' }}
+        run: git pull --ff-only origin main
+
       - name: Build the Ontario market history
         id: market
-        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.archive_commit.outcome != 'failure' }}
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: python scripts/build_ontario_market.py 2>&1 | tee market_output.txt
+
+      - name: Refresh representative models
+        id: models
+        if: ${{ !cancelled() && steps.market.outcome == 'success' }}
+        run: python -m pipeline.representative_models --build --output site/data/representative_models.json 2>&1 | tee model_output.txt
 
       - name: Commit updated market history
         id: market_commit
-        if: ${{ !cancelled() && steps.market.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.models.outcome == 'success' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add site/data/market_pricing_ontario.json data/market/ontario_market_monthly.csv
+          git add site/data/representative_models.json
           if git diff --staged --quiet; then
             echo "No market history changes to commit."
           else
             git commit -m "data: Ontario market history update $(date +%Y-%m-%d)"
-            git pull --rebase origin main
             git push
           fi
 
@@ -104,7 +114,7 @@ jobs:
         uses: actions/github-script@v8
         env:
           ARCHIVE_FAILED: ${{ steps.archive.outcome != 'success' || steps.archive_commit.outcome == 'failure' }}
-          MARKET_FAILED: ${{ steps.market.outcome == 'failure' || steps.market_commit.outcome == 'failure' }}
+          MARKET_FAILED: ${{ steps.sync.outcome == 'failure' || steps.market.outcome == 'failure' || steps.models.outcome == 'failure' || steps.market_commit.outcome == 'failure' }}
           MARKET_SAVED: ${{ steps.market_commit.outcome == 'success' }}
         with:
           script: |
@@ -115,6 +125,9 @@ jobs:
             const marketOutput = fs.existsSync('market_output.txt')
               ? fs.readFileSync('market_output.txt', 'utf8')
               : 'No market history output available.';
+            const modelOutput = fs.existsSync('model_output.txt')
+              ? fs.readFileSync('model_output.txt', 'utf8')
+              : 'No representative model output available.';
             const archiveFailed = process.env.ARCHIVE_FAILED === 'true';
             const marketFailed = process.env.MARKET_FAILED === 'true';
             const day = new Date().toISOString().split('T')[0];
@@ -140,6 +153,6 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title,
-              body: `## Archive Output\n\n\`\`\`\n${output.slice(-3000)}\n\`\`\`\n\n## Market History Output\n\n\`\`\`\n${marketOutput.slice(-3000)}\n\`\`\`\n\n${note}\n\nThis issue was created automatically by the Ontario Price Archive workflow.`,
+              body: `## Archive Output\n\n\`\`\`\n${output.slice(-3000)}\n\`\`\`\n\n## Market History Output\n\n\`\`\`\n${marketOutput.slice(-3000)}\n\`\`\`\n\n## Model Output\n\n\`\`\`\n${modelOutput.slice(-3000)}\n\`\`\`\n\n${note}\n\nThis issue was created automatically by the Ontario Price Archive workflow.`,
               labels: ['scrape-issue', 'automated'],
             });

@@ -11,11 +11,14 @@ import re
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 DEPLOY_WORKFLOW = WORKFLOWS / "deploy.yml"
 SCRAPE_WORKFLOW = WORKFLOWS / "scrape.yml"
 ARCHIVE_WORKFLOW = WORKFLOWS / "ontario-price-archive.yml"
+BENCHMARK_WORKFLOW = WORKFLOWS / "market-benchmarks.yml"
 SITE_MARKET_FILE = ROOT / "site" / "data" / "market_pricing_ontario.json"
 LEGACY_SCRATCH_FILE = ROOT / "logs" / "market_pricing_legacy_2020_2024.json"
 SUCCESS_ONLY = "github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'"
@@ -84,12 +87,38 @@ def test_rolling_builder_still_writes_the_site_file_that_the_archive_workflow_co
 
 def test_deploy_follows_the_monthly_scrape_and_the_ontario_price_archive_by_name():
     sources = _workflow_run_sources(DEPLOY_WORKFLOW.read_text(encoding="utf-8"))
-    assert sorted(sources) == ["Monthly Scrape", "Ontario Price Archive"]
+    assert sorted(sources) == ["Market Benchmarks", "Monthly Scrape", "Ontario Price Archive"]
     # A renamed workflow would silently stop triggering deploys.
-    assert {_workflow_name(SCRAPE_WORKFLOW), _workflow_name(ARCHIVE_WORKFLOW)} == set(sources)
+    assert {_workflow_name(path) for path in (SCRAPE_WORKFLOW, ARCHIVE_WORKFLOW, BENCHMARK_WORKFLOW)} == set(sources)
 
 
 def test_deploy_runs_only_after_successful_runs_and_checks_out_main():
     text = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
     assert f"\n  deploy:\n    if: {SUCCESS_ONLY}\n" in text
     assert f"\n          {MAIN_CHECKOUT}\n" in text
+
+
+def test_market_writers_serialize_and_never_rebase_generated_models():
+    for path in (SCRAPE_WORKFLOW, ARCHIVE_WORKFLOW, BENCHMARK_WORKFLOW):
+        text = path.read_text(encoding="utf-8")
+        assert "group: utility-data-updates" in text
+        assert "cancel-in-progress: false" in text
+    text = BENCHMARK_WORKFLOW.read_text(encoding="utf-8")
+    assert text.index("git pull --ff-only origin main") < text.index("python scripts/build_alberta_market.py")
+    assert text.index("python scripts/build_alberta_market.py") < text.index("pipeline.representative_models --build")
+    assert "git pull --rebase" not in text and "rates.db" not in text
+    assert "if: failure()" in text and "github.rest.issues.create" in text
+    assert "site/data/representative_models.json" in text
+
+
+def test_market_workflow_rebuilds_after_sources_and_model_input_changes():
+    yaml = pytest.importorskip("yaml")
+    workflow = yaml.safe_load(BENCHMARK_WORKFLOW.read_text(encoding="utf-8"))
+    triggers = workflow.get("on", workflow.get(True))
+    assert triggers["workflow_run"]["workflows"] == ["Monthly Scrape", "Ontario Price Archive"]
+    assert "data/models/**" in triggers["push"]["paths"]
+    assert triggers["push"]["branches"] == ["main"]
+    assert "workflow_dispatch" in triggers
+    condition = workflow["jobs"]["market"]["if"]
+    assert "head_repository.full_name == github.repository" in condition
+    assert "name == 'Ontario Price Archive'" in condition

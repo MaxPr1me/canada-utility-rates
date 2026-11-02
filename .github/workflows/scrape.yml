@@ -40,9 +40,9 @@ on:
         required: false
         default: ""
 
-# Only one scrape at a time
+# Serialize shared data publication with both market workflows.
 concurrency:
-  group: scrape
+  group: utility-data-updates
   cancel-in-progress: false
 
 permissions:

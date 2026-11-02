@@ -1,10 +1,11 @@
 # Deploy to GitHub Pages
 #
 # Runs on pushes to main, on manual dispatch, and after each successful run of
-# the two workflows that commit site data:
+# the workflows that commit site data:
 #   - Monthly Scrape (scrape.yml, 1st of the month): the site/data/ exports
 #   - Ontario Price Archive (ontario-price-archive.yml, 1st and 15th): the
 #     Market Pricing history site/data/market_pricing_ontario.json
+#   - Market Benchmarks: Alberta market history and refreshed representative models
 # They push with the default GITHUB_TOKEN, and such pushes trigger no
 # workflows: without workflow_run, a market update committed on the 15th
 # would wait for the next deploy (user decision 2026-10-30: also follow the
@@ -22,7 +23,7 @@ on:
 
   # Each name must equal the name: line of that workflow file.
   workflow_run:
-    workflows: ["Monthly Scrape", "Ontario Price Archive"]
+    workflows: ["Monthly Scrape", "Ontario Price Archive", "Market Benchmarks"]
     types: [completed]
 
   # Also allow manual deploys

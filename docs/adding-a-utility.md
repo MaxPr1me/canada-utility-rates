@@ -34,6 +34,10 @@ November 2 source lessons:
   carbon and marketer evidence are not waived. Only volumetric transport may be signed.
 - Test the parser-to-model result as well as record counts. Local fixes/dry runs do not
   change published data: only Monthly Scrape stores them.
+- Historical market readers must not apply an undated current price cap to all past years.
+  AESO history reuses its CSV parser without current bounds only alongside exact hourly
+  coverage and independent monthly-summary checks. This does not relax the live scraper's
+  current bounds or turn a historical mean into a tariff component.
 
 ## 1. Research the utility
 

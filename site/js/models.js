@@ -455,7 +455,8 @@
 
     function renderNotes(model, level) {
         const box = byId("models-notes");
-        box.replaceChildren(...[marketIndexedNote(model), illustrativeControls(model)].filter(Boolean));
+        box.replaceChildren(...[marketIndexedNote(model), benchmarkBlock(model, level),
+            illustrativeControls(model)].filter(Boolean));
         const assumptions = fixedChargeAssumptions(model);
         if (assumptions) box.append(assumptions);
         if (level) box.append(...taxBlock(level));
@@ -492,6 +493,60 @@
             ].filter(Boolean).join(". ")));
         });
         section.append(entries);
+        return section;
+    }
+
+    function benchmarkBlock(model, level) {
+        const info = model.market_benchmark;
+        if (!info || typeof info !== "object") return null;
+        const section = el("section", "rm-benchmark");
+        section.append(el("h3", null, "Historical market benchmark - not a bill"));
+        section.append(el("p", "rm-text", "The main table remains delivery-only. This separate scenario combines "
+            + "current modeled delivery with historical market energy. It is not a forecast or customer quote."));
+        const costs = level && level.market_benchmark;
+        const usable = info.available === true && costs && costs.available === true
+            && model.state === "market_energy_pending"
+            && model.cost_basis === "delivery_only_market_energy_pending"
+            && info.province === model.key.province
+            && [costs.market_energy_per_kwh, costs.market_energy_cost,
+                (costs.without_tax || {}).median, (costs.with_tax || {}).median].every(isNum)
+            && (costs.without_tax || {}).n > 0;
+        if (usable) {
+            const noun = info.province === "AB"
+                ? { singular: "wires utility", plural: "wires utilities" } : nounOf(model);
+            section.append(el("h4", null, usageText(level)));
+            const grid = el("div", "methodology-grid rm-text");
+            [
+                ["Historical energy", marketPriceText(costs, info.window)],
+                ["Energy amount", money(costs.market_energy_cost) + " a month"],
+                ["Benchmark without tax", statsText(costs.without_tax, noun)],
+                ["Benchmark with tax", statsText(costs.with_tax, noun)],
+            ].forEach(([name, text]) => grid.append(el("span", "meta-label", name), el("span", null, text)));
+            section.append(grid);
+            if (typeof info.method === "string") section.append(el("p", "rm-text", info.method));
+            const sources = el("ul", "rm-lines rm-text");
+            list(info.sources).forEach(source => {
+                const link = sourceLink(source.url);
+                if (!link) return;
+                link.textContent = source.name || "Official source";
+                const item = el("li");
+                item.append(link);
+                sources.append(item);
+            });
+            section.append(sources);
+        } else {
+            const reason = (costs && costs.reason) || info.reason || "No valid benchmark for this usage level.";
+            section.append(el("p", "rm-text", `Historical market benchmark unavailable: ${reason}`));
+        }
+        const exclusions = list(info.exclusions);
+        if (exclusions.length) {
+            const listNode = el("ul", "rm-lines rm-text");
+            exclusions.forEach(text => listNode.append(el("li", null, String(text))));
+            section.append(el("h4", null, "Not priced in this benchmark"), listNode);
+        }
+        const profile = info.profile_backed || {};
+        section.append(el("p", "rm-text", "Real customer-profile cost unavailable: "
+            + (profile.reason || "No qualified observed profile has been supplied.")));
         return section;
     }
 

@@ -20,6 +20,7 @@
     let missingData = [];
     let sourceReviewData = [];
     let marketPricingON = {};
+    let marketPricingAB = {};
     let sourceLookup = {};
     let marketChart = null;
     let currentView = "rates";
@@ -61,12 +62,13 @@
 
     async function loadData() {
         try {
-            const [ratesRes, summaryRes, missingRes, sourceRes, marketRes] = await Promise.allSettled([
+            const [ratesRes, summaryRes, missingRes, sourceRes, marketRes, albertaRes] = await Promise.allSettled([
                 fetch("data/rates.json").then(r => r.ok ? r.json() : []),
                 fetch("data/summary.json").then(r => r.ok ? r.json() : {}),
                 fetch("data/missing.json").then(r => r.ok ? r.json() : []),
                 fetch("data/source_review_report.json").then(r => r.ok ? r.json() : []),
                 fetch("data/market_pricing_ontario.json").then(r => r.ok ? r.json() : {}),
+                fetch("data/market_pricing_alberta.json").then(r => r.ok ? r.json() : {}),
             ]);
 
             allRates = ratesRes.status === "fulfilled" ? ratesRes.value : [];
@@ -74,6 +76,8 @@
             missingData = missingRes.status === "fulfilled" ? missingRes.value : [];
             sourceReviewData = sourceRes.status === "fulfilled" ? sourceRes.value : [];
             marketPricingON = marketRes.status === "fulfilled" ? marketRes.value : {};
+            marketPricingAB = albertaRes.status === "fulfilled" ? albertaRes.value : {};
+            if (currentView === "market") renderMarketPricing();
 
             // Deduplicate: keep only the most recent effective_date per utility+tariff
             allRates = deduplicateRates(allRates);
@@ -732,7 +736,8 @@
     let marketRenderedFor = null;
 
     function marketDoc() {
-        return marketPricingON && typeof marketPricingON === "object" ? marketPricingON : {};
+        const doc = document.getElementById("market-region").value === "alberta" ? marketPricingAB : marketPricingON;
+        return doc && typeof doc === "object" ? doc : {};
     }
 
     // String children become text nodes, never HTML.
@@ -791,6 +796,9 @@
 
     // "legacy" (HOEP 2020-2024 bins), "rolling" (schema 2) or null when the file cannot be shown.
     function marketSchema() {
+        if (document.getElementById("market-region").value === "alberta") {
+            return hasAlbertaMarketData() ? "alberta" : null;
+        }
         const method = String((marketDoc().metadata || {}).derivation_method || "");
         if (!OBSERVED_MARKET_METHOD.test(method)) return null;
         if (method.startsWith(ROLLING_MARKET_PREFIX)) return hasRollingMarketData() ? "rolling" : null;
@@ -802,6 +810,7 @@
         const meta = marketDoc().metadata || {};
         const surface = marketDoc().hourly_surface;
         return OBSERVED_MARKET_METHOD.test(meta.derivation_method || "")
+            && meta.province === "ON"
             && Array.isArray(meta.years) && meta.years.length > 0
             && Array.isArray(surface) && surface.length === 576
             && surface.every(b => b && b.hours_count > 0 && Number.isFinite(b.avg_energy_price)
@@ -824,7 +833,7 @@
         const win = meta.window || {};
         const gap = meta.gap || {};
         const surface = doc.hourly_surface;
-        if (meta.schema_version !== 2 || meta.change_date !== ONTARIO_PRICE_START) return false;
+        if (meta.province !== "ON" || meta.schema_version !== 2 || meta.change_date !== ONTARIO_PRICE_START) return false;
         if (!ISO_DAY.test(gap.from || "") || !ISO_DAY.test(gap.to || "") || gap.from > gap.to) return false;
         if (!MONTH_KEY.test(win.start_month || "") || !MONTH_KEY.test(win.end_month || "")) return false;
         if (!Array.isArray(doc.monthly) || !Number.isInteger(win.months) || win.months < 1
@@ -858,6 +867,96 @@
         return observed > 0;
     }
 
+    function hasAlbertaMarketData() {
+        const doc = marketDoc(), meta = doc.metadata || {}, win = meta.window || {};
+        if (meta.schema_version !== 2 || meta.province !== "AB" || meta.unit !== "$/kWh (CAD)"
+            || meta.derivation_method !== "observed_rolling_60m_aeso_pool" || win.months !== 60
+            || !MONTH_KEY.test(win.start_month || "") || !MONTH_KEY.test(win.end_month || "")
+            || !ISO_DAY.test(meta.as_of || "") || win.end_month >= meta.as_of.slice(0, 7)
+            || !Array.isArray(doc.monthly) || doc.monthly.length !== 60
+            || !Array.isArray(doc.hourly_surface) || doc.hourly_surface.length !== 576
+            || typeof meta.method !== "string" || typeof meta.time_basis !== "string"
+            || !Array.isArray(meta.sources) || !meta.sources.length
+            || !meta.sources.every(s => s && /^https?:\/\//i.test(String(s.url || "")))) return false;
+        const checks = meta.cross_check || {};
+        if (!Number.isInteger(checks.months_checked) || checks.months_checked < 60
+            || checks.tolerance_per_mwh !== 0.01 || !Number.isFinite(checks.max_abs_difference_per_mwh)
+            || checks.max_abs_difference_per_mwh < 0 || checks.max_abs_difference_per_mwh > 0.01000001) return false;
+        let expected = win.start_month, observed = 0;
+        for (const row of doc.monthly) {
+            if (!row || row.month !== expected || "ga_class_b" in row
+                || !Number.isFinite(row.energy_arithmetic) || row.total_arithmetic !== row.energy_arithmetic
+                || !Number.isInteger(row.observed_hours) || row.observed_hours < 1
+                || !/^https?:\/\//i.test(String(row.source_url || ""))) return false;
+            observed += row.observed_hours;
+            expected = nextMonthKey(expected);
+        }
+        if (expected !== nextMonthKey(win.end_month)) return false;
+        const seen = new Set();
+        let binned = 0;
+        for (const bin of doc.hourly_surface) {
+            if (!bin || !Number.isInteger(bin.month) || bin.month < 1 || bin.month > 12
+                || !Number.isInteger(bin.hour) || bin.hour < 0 || bin.hour > 23
+                || !["weekday", "weekend"].includes(bin.day_type)
+                || !Number.isInteger(bin.hours_count) || bin.hours_count < 1
+                || !Number.isFinite(bin.avg_energy_price) || bin.combined !== bin.avg_energy_price
+                || "avg_ga_class_b" in bin) return false;
+            const key = `${bin.month}|${bin.day_type}|${bin.hour}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            binned += bin.hours_count;
+        }
+        const coverage = meta.coverage || {};
+        return binned === observed && coverage.observed_hours === observed
+            && coverage.calendar_hours === observed && coverage.unobserved_hours === 0;
+    }
+
+    function renderAlbertaMarket() {
+        const doc = marketDoc(), meta = doc.metadata, months = doc.monthly;
+        const mean = months.reduce((sum, row) => sum + row.energy_arithmetic, 0) / months.length;
+        document.getElementById("market-intro").textContent =
+            "Observed Alberta wholesale pool energy for the latest 60 complete months. "
+            + "No customer load weighting, retail fees, losses, delivery or taxes. Not a tariff, a bill or a forecast.";
+        document.getElementById("market-window").textContent =
+            `Window: ${rollingWindowLabel()} (60 complete months), as of ${formatMarketDay(meta.as_of)}; `
+            + `generated ${formatGeneratedAt(meta.generated_at)}.`;
+        document.getElementById("market-headline-body").replaceChildren(
+            marketEl("p", "market-headline-figure",
+                marketEl("span", "market-headline-value", centsText(mean)),
+                marketEl("span", "market-headline-unit", "\u00a2/kWh")),
+            marketEl("p", "market-headline-desc",
+                "Equal-weight mean of 60 monthly arithmetic pool prices. Every month counts once; "
+                + "each month's energy price includes every observed hour, including clock changes."));
+        renderRollingChart();
+        const body = document.createElement("tbody");
+        [...months].reverse().forEach(row => {
+            const heading = marketEl("th", null, formatMonthKey(row.month, true));
+            heading.scope = "row";
+            body.append(marketEl("tr", null, heading,
+                marketEl("td", "market-num", centsText(row.energy_arithmetic)),
+                marketEl("td", "market-num", formatCount(row.observed_hours)),
+                marketEl("td", null, marketSourceLink(row.source_url, "AESO monthly summary"))));
+        });
+        document.getElementById("market-table-container").replaceChildren(
+            marketEl("table", "market-monthly-table",
+                marketEl("caption", null, "Alberta pool energy in cents/kWh, newest first (60 months)."),
+                marketEl("thead", null, headerRow(["Month", "Pool energy", "Observed hours", "Source"],
+                    ["Pool energy", "Observed hours"])), body));
+        document.getElementById("market-heatmap-basis").textContent =
+            `Observed hours only: ${formatCount(meta.coverage.observed_hours)} hours; none invented. ${meta.time_basis}`;
+        document.getElementById("methodology-container").replaceChildren(
+            methodologyGrid([
+                ["Market", "Alberta Electric System Operator (AESO) wholesale pool energy"],
+                ["Method", meta.method], ["Time basis", meta.time_basis], ["Day types", meta.day_type_rule || ""],
+                ["Cross-checks", `${meta.cross_check.months_checked} monthly means match official AESO summaries `
+                    + `within $0.01/MWh; largest difference $${meta.cross_check.max_abs_difference_per_mwh}/MWh.`],
+                ["Historical corrections", meta.revisions || ""],
+                ["Publication permission", meta.permission || ""],
+                ["Not complete yet", (meta.incomplete_months || []).map(m => `${m.month}: ${m.reason}`).join(" ") || "None."],
+            ]),
+            sourcesTitle(), marketSourcesList(meta.sources));
+    }
+
     function renderMarketPricing() {
         const schema = marketSchema();
         const notice = document.getElementById("market-notice");
@@ -865,9 +964,23 @@
         notice.classList.toggle("hidden", Boolean(schema));
         applyMarketSchema(schema);
         if (!schema) {
+            resetMarketChart();
+            marketRenderedFor = null;
             document.getElementById("market-window").textContent = "";
-            notice.textContent = "Observed Ontario market price and Global Adjustment averages are not available. "
-                + "This view only shows values built from official IESO observations.";
+            const alberta = document.getElementById("market-region").value === "alberta";
+            notice.textContent = alberta
+                ? "Observed Alberta pool-price history is not available. This view requires 60 complete months "
+                    + "of official AESO observations and independently checked monthly averages."
+                : "Observed Ontario market price and Global Adjustment averages are not available. "
+                    + "This view only shows values built from official IESO observations.";
+            return;
+        }
+        if (schema === "alberta") {
+            if (marketRenderedFor !== marketPricingAB) {
+                renderAlbertaMarket();
+                marketRenderedFor = marketPricingAB;
+            }
+            renderMarketHeatmap(schema);
             return;
         }
         if (schema === "rolling") {
@@ -891,13 +1004,38 @@
     }
 
     function applyMarketSchema(schema) {
+        const alberta = document.getElementById("market-region").value === "alberta";
         document.querySelectorAll("#view-market [data-market-schema]").forEach(el => {
-            el.classList.toggle("hidden", el.dataset.marketSchema !== schema);
+            el.classList.toggle("hidden", el.dataset.marketSchema !== (schema === "alberta" ? "rolling" : schema));
         });
+        document.getElementById("market-note-ontario").classList.toggle("hidden", alberta);
+        document.getElementById("market-note-alberta").classList.toggle("hidden", !alberta);
+        document.getElementById("market-headline-title").textContent = alberta
+            ? "Average Wholesale Pool Energy" : "Average Full Cost (Energy + Class B GA)";
+        document.getElementById("market-monthly-title").textContent = alberta
+            ? "Monthly Pool Energy" : "Monthly Energy, Class B GA and Total";
+        document.getElementById("market-monthly-description").textContent = alberta
+            ? "Arithmetic monthly pool prices in cents/kWh. The Monthly Summary table lists the same values."
+            : "Monthly averages in cents/kWh. The dark vertical line marks May 2025, the first Ontario Price month; "
+                + "earlier months use the legacy HOEP, which retired on April 30, 2025.";
+        document.getElementById("market-monthly-canvas").setAttribute("aria-label", alberta
+            ? "Monthly Alberta pool prices in cents per kWh. The Monthly Summary table lists the same values."
+            : "Monthly Ontario energy, Class B GA and total in cents per kWh. The Monthly Summary table lists the same values.");
+        document.getElementById("market-heatmap-description").textContent = alberta
+            ? "Rows = calendar months; columns = AESO hour-ending labels (HE1-24). Hover for observed hours. "
+                + "Repeated autumn HE02 observations share one bin; the skipped spring hour is never invented."
+            : "Rows = calendar months; columns = hour beginning (EST). Hover for the value and observed hours.";
+        if (!schema) document.getElementById("market-intro").textContent = alberta
+            ? "Observed Alberta wholesale pool energy: not a tariff, a bill or a forecast."
+            : "Observed Ontario energy plus Class B Global Adjustment: not a tariff, a bill or a forecast.";
         const labels = MARKET_DISPLAY_OPTIONS[schema] || MARKET_DISPLAY_OPTIONS.legacy;
         document.querySelectorAll("#market-display option").forEach(option => {
-            if (labels[option.value]) option.textContent = labels[option.value];
+            option.hidden = alberta && option.value !== "avg_energy_price";
+            option.disabled = option.hidden;
+            if (alberta) option.textContent = "Pool energy";
+            else if (labels[option.value]) option.textContent = labels[option.value];
         });
+        if (alberta) document.getElementById("market-display").value = "avg_energy_price";
         document.getElementById("market-note-scope").textContent = MARKET_NOTE_SCOPE[schema] || "";
     }
 
@@ -958,7 +1096,7 @@
     }
 
     function getFilteredSurface(dayType) {
-        return (marketPricingON.hourly_surface || []).filter(b => b.day_type === dayType);
+        return (marketDoc().hourly_surface || []).filter(b => b.day_type === dayType);
     }
 
     // ── Heatmap ───────────────────────────────────────────────
@@ -968,6 +1106,7 @@
         const { dayType, field } = getMarketControls();
         const bins = getFilteredSurface(dayType);
         const rolling = schema === "rolling";
+        const alberta = schema === "alberta";
         if (rolling) renderHeatmapBasis();
 
         // Value range for color normalization; bins without observed hours stay grey (rolling files only).
@@ -982,16 +1121,17 @@
         // Build grid: rows = calendar months, cols = hours of day
         const grid = marketEl("div", "heatmap-grid", marketEl("div", "heatmap-corner"));
         for (let h = 0; h < 24; h++) {
-            grid.append(marketEl("div", "heatmap-hour-label", h));
+            grid.append(marketEl("div", "heatmap-hour-label", alberta ? h + 1 : h));
         }
 
-        const period = rolling ? "" : marketWindowLabel();
+        const period = rolling || alberta ? "" : marketWindowLabel();
         marketMonths().forEach(entry => {
             grid.append(marketEl("div", "heatmap-month-label", monthLabel(entry)));
             for (let h = 0; h < 24; h++) {
                 const bin = bins.find(b => b.month === entry.month && b.hour === h);
                 const val = bin && bin.hours_count > 0 ? bin[field] : NaN;
-                const where = `${monthLabel(entry)} ${hourLabel(h)} EST`;
+                const where = alberta ? `${monthLabel(entry)} HE${h + 1} (AESO labels)`
+                    : `${monthLabel(entry)} ${hourLabel(h)} EST`;
                 const cell = marketEl("div", "heatmap-cell");
                 if (!Number.isFinite(val)) {
                     cell.style.background = "#e5e7eb";
@@ -1000,7 +1140,9 @@
                     const pct = maxVal > minVal ? (val - minVal) / (maxVal - minVal) : 0.5;
                     const cents = (val * 100).toFixed(2);
                     cell.style.background = heatmapColor(pct);
-                    cell.title = rolling
+                    cell.title = alberta
+                        ? `${where} \u2014 ${cents} \u00a2/kWh, average of ${formatCount(bin.hours_count)} observed hours`
+                        : rolling
                         ? `${where} \u2014 ${cents} \u00a2/kWh, average of ${formatCount(bin.hours_count)} observed hours: `
                             + `${formatCount(bin.hours_hoep)} legacy HOEP, ${formatCount(bin.hours_oemp)} Ontario Price`
                         : `${where} \u2014 ${cents} \u00a2/kWh (${bin.hours_count} hours, ${period})`;
@@ -1043,14 +1185,18 @@
         }
     }
 
-    // Returns the canvas when Chart.js loaded; otherwise replaces it with a text notice.
+    // Keep the canvas mounted so region switches still work when the CDN is unavailable.
     function marketChartCanvas(id, fallback) {
         const canvas = document.getElementById(id);
         if (!canvas) return null;
+        const notice = canvas.parentElement.querySelector(".market-chart-notice");
         if (typeof Chart === "undefined") {
-            canvas.parentElement.replaceChildren(marketEl("p", null, fallback));
+            canvas.classList.add("hidden");
+            if (!notice) canvas.parentElement.append(marketEl("p", "market-chart-notice", fallback));
             return null;
         }
+        canvas.classList.remove("hidden");
+        if (notice) notice.remove();
         return canvas;
     }
 
@@ -1265,7 +1411,7 @@
     }
 
     function rollingWindowLabel(short) {
-        const win = marketPricingON.metadata.window;
+        const win = marketDoc().metadata.window;
         return `${formatMonthKey(win.start_month, short)} \u2013 ${formatMonthKey(win.end_month, short)}`;
     }
 
@@ -1390,6 +1536,7 @@
         if (!canvas) return;
 
         const months = sortedMonthly();
+        const alberta = marketDoc().metadata.province === "AB";
         const changeIndex = months.findIndex(m => m.era === "oemp");
         const series = (label, key, color, width) => ({
             label,
@@ -1405,7 +1552,7 @@
             type: "line",
             data: {
                 labels: months.map(m => formatMonthKey(m.month, true)),
-                datasets: [
+                datasets: alberta ? [series("Alberta pool energy", "energy_arithmetic", "#1f77b4", 2.5)] : [
                     series("Energy (legacy HOEP, then Ontario Price)", "energy_arithmetic", "#1f77b4", 1.5),
                     series("Class B GA (actual)", "ga_class_b", "#2ca02c", 1.5),
                     series("Total (energy + Class B GA)", "total_arithmetic", "#d62728", 2.5),
@@ -1422,7 +1569,8 @@
                         callbacks: {
                             title: items => {
                                 const month = items.length ? months[items[0].dataIndex] : null;
-                                return month ? `${formatMonthKey(month.month)} (${ERA_NAMES[month.era]} era)` : "";
+                                return month ? `${formatMonthKey(month.month)}`
+                                    + (alberta ? " (AESO pool)" : ` (${ERA_NAMES[month.era]} era)`) : "";
                             },
                             label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} \u00a2/kWh`,
                         },
@@ -1702,6 +1850,12 @@
 
     // Market pricing controls
     document.getElementById("market-day-type").addEventListener("change", renderMarketPricing);
+    document.getElementById("market-region").addEventListener("change", () => {
+        marketRenderedFor = null;
+        document.getElementById("market-display").value =
+            document.getElementById("market-region").value === "alberta" ? "avg_energy_price" : "combined";
+        renderMarketPricing();
+    });
     document.getElementById("market-display").addEventListener("change", renderMarketPricing);
 
     // ── Initialize ────────────────────────────────────────────

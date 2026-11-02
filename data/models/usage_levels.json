@@ -1,11 +1,15 @@
 {
   "version": 1,
   "phase": "7A",
-  "updated": "2026-10-30",
-  "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list. A SYNTHETIC business-hours load profile ('synthetic_profiles') was added October 16, 2026 (user-approved) for the Phase 7E illustrative estimate only; it never changes a model's own numbers. Reference-customer rules for fixed charges published as phase or amperage variants ('fixed_charge_variants') added October 30, 2026 (user decision).",
+  "updated": "2026-11-02",
+  "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list. A SYNTHETIC business-hours load profile ('synthetic_profiles') was added October 16, 2026 (user-approved) for the Phase 7E illustrative estimate only; it never changes a model's own numbers.   Reference-customer rules for fixed charges published as phase or amperage variants ('fixed_charge_variants') added October 30, 2026 (user decision). Historical market benchmarks ('market_benchmarks') approved November 2, 2026: 60 equal-weight monthly arithmetic prices, Ontario with Class B GA and Alberta pool energy only, maximum window lag four months. These are separate from base medians and synthetic estimates, not customer-weighted bills.",
   "days_per_month": 30.4375,
   "hours_per_month": 730.5,
   "power_factor_for_kva": 0.9,
+  "market_benchmarks": {
+    "ON": {"max_window_lag_months": 4, "basis": "historical_monthly_mean_energy_and_class_b_ga"},
+    "AB": {"max_window_lag_months": 4, "basis": "historical_monthly_mean_pool_energy"}
+  },
   "electricity": {
     "residential": [
       {"id": "low", "kwh": 500},

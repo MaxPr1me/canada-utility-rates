@@ -30,3 +30,15 @@
     margin: 1rem 0;
     overflow-wrap: anywhere;
 }
+.rm-benchmark {
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 2px solid #335c81;
+    border-radius: var(--radius);
+    background: #f0f7fc;
+    color: #18354f;
+    overflow-wrap: anywhere;
+}
+.rm-benchmark h4 { margin-top: 0.75rem; }
+.rm-benchmark p { margin: 0.5rem 0; }
+.rm-benchmark .methodology-grid { margin: 0.75rem 0; }

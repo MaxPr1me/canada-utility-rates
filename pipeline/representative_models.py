@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import math
 import os
 import re
@@ -14,6 +15,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable, Optional, Union
 
+logger = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[1]
 CROSSWALK_PATH = ROOT / "data" / "models" / "crosswalk.json"
 USAGE_LEVELS_PATH = ROOT / "data" / "models" / "usage_levels.json"
@@ -265,7 +267,7 @@ def format_coverage(report: dict, limit: int = 25) -> str:
 # Phase 7B engine: per-record modeled monthly cost, per-utility aggregation, taxes and statistics.
 
 # 7C-3 (user decision 2026-10-30): phase/amperage fixed-charge variants priced for the reference customer.
-METHOD_VERSION = "7C-3"
+METHOD_VERSION = "7C-4"
 MODEL_FUELS = ("electricity",)
 ZONE_POLICIES = ("median_of_zones", "default_only")
 ZONE_POLICY_TEXT = {
@@ -1483,27 +1485,76 @@ def _hours_text(hours: list[int]) -> str:
     return ", ".join(map(str, hours))
 
 
-def _illustrative_level(level: dict, priced: dict, inputs: dict, profile_id: Optional[str], label: str) -> dict:
-    """Per-utility delivery cost + synthetic-profile market energy, the level's tax lines, then the same statistics."""
-    price = float(priced["price_per_kwh"])
+def _market_energy_level(level: dict, price: float, inputs: dict) -> dict:
+    """Add market energy before taxes and zone/utility aggregation, never to a rounded median."""
     energy_cost = price * level["kwh"]
     applied = inputs["applied"]
-    without, taxed, line_amounts = [], [], defaultdict(list)
-    for rows in inputs["zone_rows"].values():
+    without, taxed, line_amounts = {}, {}, defaultdict(list)
+    for utility, rows in inputs["zone_rows"].items():
         totals = [apply_tax_lines(cost + energy_cost, energy + energy_cost, applied) for cost, energy in rows]
-        without.append(statistics.median([cost + energy_cost for cost, _ in rows]))
-        taxed.append(statistics.median([total for total, _ in totals]))
+        without[utility] = statistics.median([cost + energy_cost for cost, _ in rows])
+        taxed[utility] = statistics.median([total for total, _ in totals])
         for index in range(len(applied)):
             line_amounts[index].append(statistics.median([amounts[index] for _, amounts in totals]))
-    return {"synthetic_profile": True, "illustrative_only": True, "label": label, "profile_id": profile_id,
-            "market_energy_per_kwh": price, "market_energy_cost": round(energy_cost, 2),
-            "profile": priced["profile"], "shape_factors": priced["shape_factors"], "months": priced["months"],
-            "without_tax": _money(summary_stats(without)),
-            "with_tax": {**_money(summary_stats(taxed)),
+    stats = summary_stats(without.values())
+    return {"market_energy_per_kwh": price, "market_energy_cost": round(energy_cost, 2),
+            "without_tax": _money(stats),
+            "closest_utility": closest_to_median(without, stats["median"]),
+            "outliers": [{**row, "cost": round(row["cost"], 2)} for row in find_outliers(without, stats)],
+            "utilities": [{"utility": name, "cost_without_tax": round(cost, 2),
+                           "cost_with_tax": round(taxed[name], 2)} for name, cost in without.items()],
+            "with_tax": {**_money(summary_stats(taxed.values())),
                          "lines": [{**line, "median_amount": round(statistics.median(line_amounts[i]), 2)
                                     if line_amounts[i] else None} for i, line in enumerate(applied)],
                          "not_applied": inputs["not_applied"]}}
 
+
+def _illustrative_level(level: dict, priced: dict, inputs: dict, profile_id: Optional[str], label: str) -> dict:
+    result = _market_energy_level(level, float(priced["price_per_kwh"]), inputs)
+    for key in ("utilities", "closest_utility", "outliers"):
+        result.pop(key)
+    return {**result, "synthetic_profile": True, "illustrative_only": True, "label": label,
+            "profile_id": profile_id, "profile": priced["profile"],
+            "shape_factors": priced["shape_factors"], "months": priced["months"]}
+
+
+def _benchmark(model: dict, market: dict, level_inputs: dict, config: dict, as_of: date) -> dict:
+    from scrapers.utils.market_pricing import BENCHMARK_LABEL, historical_market_price
+
+    info = {"available": False, "reason": None, "label": BENCHMARK_LABEL,
+            "profile_backed": {"available": False, "reason": "No suitable observed customer-class load profile "
+                               "has been verified; geographic and assigned settlement profiles are not substitutes."},
+            "exclusions": ["Customer-specific distribution losses and retail procurement/administration fees.",
+                           ("Class A Global Adjustment and conditional or unpriced tariff components."
+                            if model["key"]["province"] == "ON" else "Conditional or unpriced tariff components."),
+                           "Market-indexed non-energy charges remain excluded, including operating reserve."]}
+    try:
+        if not isinstance(config, dict):
+            raise ValueError("benchmark configuration is invalid")
+        if market.get("document") is None:
+            raise ValueError(market.get("problem") or "market history is unavailable")
+        priced = historical_market_price(market["document"], province=model["key"]["province"],
+                                         as_of=as_of, max_lag_months=config.get("max_window_lag_months"))
+    except ValueError as exc:
+        info["reason"] = str(exc)
+        logger.warning("Market benchmark %s unavailable: %s", model["id"], exc)
+    else:
+        info.update(priced)
+        for level in model["levels"]:
+            inputs = level_inputs[level["id"]]
+            if level.get("withheld") or not inputs.get("zone_rows") or not inputs.get("market_eligible"):
+                continue
+            level["market_benchmark"] = {
+                "available": True, "reason": None,
+                **_market_energy_level(level, priced["price_per_kwh"], inputs)}
+            info["available"] = True
+        if not info["available"]:
+            info["reason"] = "No eligible market-only usage level with complete required delivery contributors."
+    for level in model["levels"]:
+        if "market_benchmark" not in level:
+            level["market_benchmark"] = {"available": False, "reason": info["reason"] or
+                                         "Level withheld, not computable, or already includes priced energy."}
+    return info
 
 def _illustrative_method(profile_id: Optional[str], profile: dict, done: list[tuple[dict, dict]], document: dict,
                          market_file: Optional[dict], noun: str) -> str:
@@ -1587,7 +1638,8 @@ def _illustrative(model: dict, profile_id: Optional[str], profile: dict, market:
 
 def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, crosswalk: dict, usage_levels: dict,
                  taxes: dict, as_of: date, zone_policy: str, province_utilities: set[str], input_label: str,
-                 block_periods: Optional[list] = None, market: Optional[dict] = None) -> dict:
+                 block_periods: Optional[list] = None, market: Optional[dict] = None,
+                 benchmark_market: Optional[dict] = None) -> dict:
     """One model: per-utility costs at each usage level, statistics, buckets, energy blocks and method text."""
     province, fuel, sector, structure, band = key
     level_sector = band if sector == "commercial" and band else sector
@@ -1685,7 +1737,10 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
                     contributing[utility].append((preps[id(record)], record))
                 used_ids.add(id(record))
             variant_uses.extend((level.get("id"), utility, record, choice) for utility, record, choice in level_variants)
-        level_inputs[level.get("id")] = {"zone_rows": zone_inputs, "applied": applied, "not_applied": not_applied}
+        level_inputs[level.get("id")] = {
+            "zone_rows": zone_inputs, "applied": applied, "not_applied": not_applied,
+            "market_eligible": bool(zone_inputs) and all(
+                preps[id(record)]["energy_status"] == "market_pending" for _, record in level_used)}
         stats = summary_stats(costs.values())
         closest = closest_to_median(costs, stats["median"])
         closest_rows = [row for row in rows_out if row["utility"] == closest]
@@ -1887,6 +1942,10 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
     profile_id, profile = find_synthetic_profile(usage_levels, province, fuel, sector, level_sector)
     if profile is not None:
         model["illustrative"] = _illustrative(model, profile_id, profile, market or {}, level_inputs, as_of)
+    configs = usage_levels.get("market_benchmarks") or {}
+    if (province in ("ON", "AB") and fuel == "electricity" and sector == "commercial"
+            and model["state"] == "market_energy_pending" and province in configs):
+        model["market_benchmark"] = _benchmark(model, benchmark_market or {}, level_inputs, configs[province], as_of)
     return model
 
 
@@ -1996,13 +2055,15 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
                  provinces: Optional[Iterable[str]] = ("ON",), as_of: Union[date, str, None] = None,
                  zone_policy: str = "median_of_zones", input_label: str = "site/data/rates.json",
                  fuels: Optional[Iterable[str]] = MODEL_FUELS, block_periods: Any = _DEFAULT,
-                 market_document: Any = _DEFAULT) -> dict:
+                 market_document: Any = _DEFAULT, market_documents: Any = _DEFAULT) -> dict:
     """Representative models for every crosswalk model key of the given provinces and fuels (Phases 7B/7C).
 
     ``block_periods``: a block_periods document or entry list (default data/models/block_periods.json; a missing file
     means no entries). ``market_document``: observed Ontario market history for the Phase 7E illustrative sidecar
     (default site/data/market_pricing_ontario.json, read only when a model matches a synthetic profile; None or an
-    unusable document makes the sidecar unavailable, never the build)."""
+    unusable document makes the sidecar unavailable, never the build). ``market_documents`` optionally
+    supplies province-keyed observed histories for benchmarks (and Ontario's synthetic sidecar).
+    Explicit None values disable that province's history without reading a live file."""
     if zone_policy not in ZONE_POLICIES:
         raise ValueError(f"zone_policy must be one of {ZONE_POLICIES}")
     as_of_date = _as_of(as_of)
@@ -2026,11 +2087,34 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
                 groups[key].append((row, outcome.get("zone") or "default", outcome.get("rule_id")))
     profiled = [key for key in groups if find_synthetic_profile(
         usage_levels, key[0], key[1], key[2], key[4] if key[2] == "commercial" and key[4] else key[2])[1] is not None]
-    market = _market_context(market_document) if profiled else None
+    if market_documents is not _DEFAULT and not isinstance(market_documents, dict):
+        raise ValueError("market_documents must map province codes to market documents or None")
+    ontario = market_document if market_documents is _DEFAULT else market_documents.get("ON")
+    market = _market_context(ontario) if profiled else None
+    benchmarks = {}
+    for province in ("ON", "AB"):
+        if wanted is not None and province not in wanted:
+            continue
+        if market_documents is not _DEFAULT:
+            benchmarks[province] = _market_context(market_documents.get(province))
+        elif province == "ON":
+            benchmarks[province] = market or _market_context(market_document)
+        elif market_document is not _DEFAULT:
+            benchmarks[province] = _market_context(None)
+        else:
+            path = MARKET_PATH.with_name("market_pricing_alberta.json")
+            try:
+                document = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                logger.warning("Alberta benchmark history unavailable: %s", exc)
+                benchmarks[province] = {"document": None, "problem":
+                                       f"Alberta market history file is missing or unreadable ({type(exc).__name__})."}
+            else:
+                benchmarks[province] = _market_context(document)
     models = [_build_model(key, groups[key], crosswalk=crosswalk, usage_levels=usage_levels, taxes=taxes,
                            as_of=as_of_date, zone_policy=zone_policy,
                            province_utilities=province_utilities[(key[0], key[1])], input_label=input_label,
-                           block_periods=periods["entries"], market=market)
+                           block_periods=periods["entries"], market=market, benchmark_market=benchmarks.get(key[0]))
               for key in sorted(groups, key=lambda k: _model_order(k, crosswalk))]
     created = [str(r["created_at"]) for r in live if r.get("created_at")]
     shares = {k: {"applies_to": v.get("applies_to"), "shares": v.get("shares"), "period": v.get("period"),

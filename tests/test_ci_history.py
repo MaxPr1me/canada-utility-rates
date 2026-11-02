@@ -497,7 +497,8 @@ def test_scrape_inputs_utility_or_province_pass_through_env():
 def test_archive_workflow_commits_the_archive_before_building_the_market_history():
     steps = _steps(ARCHIVE_WORKFLOW)
     order = ["Checkout repository", "Set up Python", "Install dependencies", "Update the Ontario Price archive",
-             "Commit updated archive", "Build the Ontario market history", "Commit updated market history",
+             "Commit updated archive", "Synchronize model inputs", "Build the Ontario market history",
+             "Refresh representative models", "Commit updated market history",
              "Create issue on failure"]
     assert [name for name, _ in steps] == order
     archive_commit = _run(_step(steps, "Commit updated archive"))
@@ -506,10 +507,12 @@ def test_archive_workflow_commits_the_archive_before_building_the_market_history
     assert "run: python scripts/build_ontario_market.py 2>&1 | tee market_output.txt" in market
     market_commit = _run(_step(steps, "Commit updated market history"))
     assert re.findall(r"git add [^\n]+", market_commit) == [
-        "git add site/data/market_pricing_ontario.json data/market/ontario_market_monthly.csv"]
+        "git add site/data/market_pricing_ontario.json data/market/ontario_market_monthly.csv",
+        "git add site/data/representative_models.json"]
     assert 'git commit -m "data: Ontario market history update $(date +%Y-%m-%d)"' in market_commit
     assert market_commit.index("git diff --staged --quiet") < market_commit.index("git commit")
-    assert market_commit.index("git pull --rebase origin main") < market_commit.index("git push")
+    assert "git pull --rebase" not in market_commit
+    assert "git pull --ff-only origin main" in _run(_step(steps, "Synchronize model inputs"))
     issue = _step(steps, "Create issue on failure")
     assert "'market_output.txt'" in issue and "'archive_output.txt'" in issue
 
@@ -520,11 +523,16 @@ def test_archive_workflow_builds_the_market_history_even_when_the_archive_step_f
                           ("Commit updated archive", "archive_commit")):
         assert f"\n        id: {step_id}\n" in _step(steps, name)
     assert "\n        if:" not in _step(steps, "Commit updated archive")
-    market = _step(steps, "Build the Ontario market history")
+    sync = _step(steps, "Synchronize model inputs")
     assert ("if: ${{ !cancelled() && steps.install.outcome == 'success' "
-            "&& steps.archive_commit.outcome != 'failure' }}") in market
+            "&& steps.archive_commit.outcome != 'failure' }}") in sync
+    market = _step(steps, "Build the Ontario market history")
+    assert "if: ${{ !cancelled() && steps.sync.outcome == 'success' }}" in market
+    models = _step(steps, "Refresh representative models")
+    assert "if: ${{ !cancelled() && steps.market.outcome == 'success' }}" in models
+    assert "--build --output site/data/representative_models.json" in _run(models)
     market_commit = _step(steps, "Commit updated market history")
-    assert "if: ${{ !cancelled() && steps.market.outcome == 'success' }}" in market_commit
+    assert "if: ${{ !cancelled() && steps.models.outcome == 'success' }}" in market_commit
     # The archive commit step (which also sets the git identity) is skipped when the archive fails.
     assert _run(market_commit).index('git config user.name "github-actions[bot]"') < _run(market_commit).index(
         "git commit")

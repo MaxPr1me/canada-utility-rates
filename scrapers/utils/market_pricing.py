@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 MARKET_DATA_PATH = PROJECT_ROOT / "site" / "data" / "market_pricing_ontario.json"
 ROLLING_METHOD = "observed_rolling_60m_hoep_oemp_ga"
+ALBERTA_METHOD = "observed_rolling_60m_aeso_pool"
+BENCHMARK_LABEL = "HISTORICAL MARKET BENCHMARK - NOT A BILL"
 OBSERVED_METHOD_RE = re.compile(r"^(?:observed_legacy_hoep_\d{4}_\d{4}_average|observed_rolling_60m_hoep_oemp_ga)$")
 PRICE_FIELDS = ("avg_energy_price", "avg_ga_class_b", "combined")
 DAY_TYPES = ("weekday", "weekend")
@@ -107,6 +109,66 @@ def get_market_tariff_metadata() -> dict:
             "Price) with Class B Global Adjustment for context only; it is not a tariff value."
         ),
     }
+
+
+def historical_market_price(document: dict, *, province: str, as_of=None, max_lag_months: int = 4) -> dict:
+    """Equal-month historical energy benchmark; not customer-load weighted or a tariff."""
+    methods = {"ON": ROLLING_METHOD, "AB": ALBERTA_METHOD}
+    if province not in methods:
+        raise ValueError(f"unsupported benchmark province {province!r}")
+    if not isinstance(max_lag_months, int) or isinstance(max_lag_months, bool) or max_lag_months < 1:
+        raise ValueError("max_lag_months must be a positive integer")
+    meta = document.get("metadata") if isinstance(document, dict) else None
+    if not isinstance(meta, dict):
+        raise ValueError("market metadata is missing")
+    if (meta.get("schema_version") != 2 or meta.get("province") != province
+            or meta.get("derivation_method") != methods[province] or meta.get("unit") != "$/kWh (CAD)"):
+        raise ValueError("market province, schema, observed method or CAD/kWh units do not match")
+    today = _as_date(as_of)
+    if not isinstance(meta.get("as_of"), str) or date.fromisoformat(meta["as_of"]) > today:
+        raise ValueError("market as-of date is missing or in the future")
+    window = meta.get("window")
+    if not isinstance(window, dict) or window.get("months") != WINDOW_MONTHS:
+        raise ValueError("market window must contain 60 complete months")
+    indices = []
+    for field in ("start_month", "end_month"):
+        key = window.get(field)
+        if not isinstance(key, str) or not re.fullmatch(r"\d{4}-\d{2}", key):
+            raise ValueError(f"invalid window {field}")
+        date.fromisoformat(key + "-01")
+        indices.append(_month_index(key))
+    start, end = indices
+    current = today.year * 12 + today.month - 1
+    if end >= current or current - end > max_lag_months:
+        raise ValueError("market window is incomplete, future or stale")
+    expected = [_month_key(index) for index in range(start, end + 1)]
+    monthly = document.get("monthly")
+    if (len(expected) != WINDOW_MONTHS or not isinstance(monthly, list)
+            or [row.get("month") if isinstance(row, dict) else None for row in monthly] != expected):
+        raise ValueError("market history must have exactly 60 ordered consecutive monthly rows")
+    totals = []
+    for row in monthly:
+        energy, total = row.get("energy_arithmetic"), row.get("total_arithmetic")
+        ga = row.get("ga_class_b") if province == "ON" else 0
+        if province == "AB" and "ga_class_b" in row:
+            raise ValueError("Alberta pool prices must not contain Ontario Global Adjustment")
+        if not all(_number(value) for value in (energy, ga, total)):
+            raise ValueError(f"missing/nonfinite market price for {row['month']}")
+        if not math.isclose(energy + ga, total, rel_tol=0, abs_tol=1e-8):
+            raise ValueError(f"market total disagrees with energy components for {row['month']}")
+        totals.append(total)
+    sources = meta.get("sources")
+    if not isinstance(sources, list) or not sources or not all(
+            isinstance(source, dict) and isinstance(source.get("url"), str)
+            and source["url"].startswith(("https://", "http://")) for source in sources):
+        raise ValueError("market source citations are missing or invalid")
+    return {"province": province, "label": BENCHMARK_LABEL,
+            "window": {key: window[key] for key in ("start_month", "end_month", "months")},
+            "price_per_kwh": math.fsum(totals) / WINDOW_MONTHS, "sources": sources,
+            "method": "Equal-weight mean of 60 complete monthly arithmetic energy prices"
+                      + (" plus actual Class B Global Adjustment." if province == "ON" else ".")
+                      + " The same example kWh is used each month; no customer load weighting."
+                      + " Current delivery charges plus historical energy are a benchmark, not a forecast or bill."}
 
 
 # -- Phase 7E illustrative estimate (synthetic load profile) -----------------------------------------

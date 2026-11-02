@@ -46,7 +46,7 @@ def payload(model_template):
 def open_site(browser):
     contexts = []
 
-    def open_page(payload, failures=(), width=1280):
+    def open_page(payload, failures=(), width=1280, markets=None, chart_stub=None):
         context = browser.new_context(viewport={"width": width, "height": 900})
         contexts.append(context)
         requests, errors = [], []
@@ -68,10 +68,12 @@ def open_site(browser):
                     request.fulfill(json=payload)
             elif path == "data/rates.json":
                 request.fulfill(json=rates)
+            elif markets is not None and path in markets:
+                request.fulfill(json=markets[path])
             elif path.startswith("data/"):
                 request.fulfill(json=[] if path in ("data/missing.json", "data/source_review_report.json") else {})
             elif urlparse(request.request.url).hostname != "utility.test":
-                request.fulfill(content_type="application/javascript", body="")
+                request.fulfill(content_type="application/javascript", body=chart_stub or "")
             else:
                 file = SITE / (path or "index.html")
                 if file.is_file():

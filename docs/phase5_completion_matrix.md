@@ -44,6 +44,19 @@ succeeded. This publishes the code and website, not the corrected Centra/Maritim
 
 ### Exact remaining queue / publication gate
 
+The additional November 2 market/chart implementation adds method 7C-4, separate Ontario/
+Alberta historical benchmarks, an Alberta dashboard/history builder, grouped province-color
+comparison bars and CI model refreshes. AESO owner-confirmed permission covers raw and derived
+publication (grant not independently inspected). Live validation: November 2021-October 2026,
+43,824 hours, 576 bins, all 60 monthly means within $0.01/MWh of official summaries (largest
+error $0.00485215/MWh). Ontario benchmark 10.4199167 cents/kWh; Alberta 8.990570347 cents/kWh.
+These are equal-month historical energy means, not customer-weighted bills.
+Release validation: **2,186 tests / 33 modules passed**; actual 1280/390 px previews
+rendered Chart.js, both benchmarks and grouped national bars with no page errors or overflow.
+Generated Alberta files and refreshed models still require the new Market Benchmarks CI run
+and follow-on deployment; local previews do not publish them. Current source-correction
+actions below remain independent.
+
 1. Owner closes #3 with the `math.fsum` fix (`a89e436`) and successful November 1 tests;
    closes #4 with the successful archive/market build and `f9d68d3` / `81e099c`.
    Authenticated GitHub writes are unavailable here; the owner chose manual actions.
@@ -65,7 +78,11 @@ succeeded. This publishes the code and website, not the corrected Centra/Maritim
    needs explicit annual/history inputs. Phase 8: one existing rebuild, always publish
    valid fresh models, exclude synthetic changes from alerts, explicit failure/expiry
    evidence, visible nonblocking errors; 2% and issue policy remain unapproved.
-   Synthetic sensitivity and the AESO market view remain queued (the latter needs permission).
+   Synthetic sensitivity remains queued. Historical Alberta market work is implemented above;
+   real-profile weighting remains unavailable. Toronto Hydro's published numeric example is
+   illustrative; FortisAlberta settlement profiles are assigned shapes, not verified observed
+   commercial loads. Exact datasets and reuse terms still need qualification; geographic
+   proxies remain a separate option.
 
 ## Historical checkpoints through October 30
 

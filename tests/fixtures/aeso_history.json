@@ -1,0 +1,23 @@
+{
+  "source": "http://ets.aeso.ca/ets_web/ip/Market/Reports/HistoricalPoolPriceReportServlet",
+  "query_basis": "http://ets.aeso.ca/ets_web/docroot/JavaScript/reportsNavigation.js",
+  "checked": "2026-11-02",
+  "spring_query": "?beginDate=03102024&endDate=03102024&contentType=csv",
+  "autumn_query": "?beginDate=11032024&endDate=11032024&contentType=csv",
+  "end_date_check": "?beginDate=03102024&endDate=03122024&contentType=csv returned 47 rows, March 10 HE01 through March 11 HE24. The end date is exclusive; equal-date queries are a server special case.",
+  "spring": [
+    ["01",21.98],["03",23.14],["04",20.25],["05",19.85],["06",18.90],["07",18.69],
+    ["08",23.36],["09",23.58],["10",22.24],["11",22.60],["12",26.76],["13",28.10],
+    ["14",33.04],["15",26.23],["16",22.07],["17",22.17],["18",31.15],["19",55.88],
+    ["20",59.16],["21",53.68],["22",39.13],["23",28.46],["24",23.11]
+  ],
+  "autumn": [
+    ["01",49.35],["02",37.35],["02*",21.47],["03",21.96],["04",19.76],["05",18.58],
+    ["06",19.51],["07",35.77],["08",99.50],["09",279.39],["10",231.08],["11",80.77],
+    ["12",18.84],["13",18.34],["14",16.45],["15",15.35],["16",11.52],["17",42.24],
+    ["18",132.50],["19",80.86],["20",58.03],["21",27.46],["22",19.72],["23",17.40],["24",16.67]
+  ],
+  "summary_url": "http://ets.aeso.ca/Market/Reports/Manual/PoolMonthlySummary/PMS_03012024_files/sheet001.html",
+  "summary_excerpt": "<html><body><h1>Alberta Electric System Operator</h1><h2>Pool Monthly Summary for March 2024</h2><p>The average pool price for the month of March was $63.13/MWh.</p><p>10-Mar-24: average $28.85/MWh.</p></body></html>",
+  "february_2023_wrapper": "<html><frameset><frame src=\"PMS_01022023_files/sheet001.html\" name=\"frSheet\"></frameset></html>"
+}

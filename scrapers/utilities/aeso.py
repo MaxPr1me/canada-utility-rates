@@ -26,6 +26,7 @@ from __future__ import annotations
 import csv
 import io
 import logging
+import math
 import re
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
@@ -69,11 +70,14 @@ def report_csv_url(begin: date, end: date) -> str:
     return f"{REPORT_URL}?beginDate={begin:%m%d%Y}&endDate={end:%m%d%Y}&contentType=csv"
 
 
-def parse_pool_price_csv(text: str) -> list[tuple[date, str, float]]:
+def parse_pool_price_csv(
+    text: str, *, price_bounds: tuple[float, float] | None = (PRICE_FLOOR, PRICE_CAP),
+) -> list[tuple[date, str, float]]:
     """Posted hourly prices as (date, hour-ending label, $/MWh).
 
     Hours not yet posted ("-") are skipped. A changed header, an unreadable row or a price outside the published
-    range rejects the whole file.
+    range rejects the whole file. Historical callers can omit today's bounds, but
+    must independently verify completeness and published aggregate prices.
     """
     rows = list(csv.reader(io.StringIO(text)))
     header_at = next((i for i, row in enumerate(rows) if [c.strip() for c in row] == CSV_HEADER), None)
@@ -96,8 +100,10 @@ def parse_pool_price_csv(text: str) -> list[tuple[date, str, float]]:
             hour_date = date(int(match.group(3)), int(match.group(1)), int(match.group(2)))
         except ValueError as exc:
             raise AESOVerificationError(f"unreadable pool price row: {row!r}") from exc
-        if not PRICE_FLOOR <= price <= PRICE_CAP:
-            raise AESOVerificationError(f"pool price {price} outside {PRICE_FLOOR}-{PRICE_CAP} $/MWh on {row[0]!r}")
+        if not math.isfinite(price):
+            raise AESOVerificationError(f"nonfinite pool price {price} on {row[0]!r}")
+        if price_bounds is not None and not price_bounds[0] <= price <= price_bounds[1]:
+            raise AESOVerificationError(f"pool price {price} outside {price_bounds[0]}-{price_bounds[1]} $/MWh on {row[0]!r}")
         out.append((hour_date, match.group(4) + match.group(5), price))
     return out
 

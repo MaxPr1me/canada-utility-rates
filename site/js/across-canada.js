@@ -8,6 +8,9 @@
     const list = value => Array.isArray(value) ? value.filter(item => item != null) : [];
     const finite = value => typeof value === "number" && Number.isFinite(value);
     const byId = id => document.getElementById(id);
+    const HUES = { AB: 28, BC: 208, MB: 155, NB: 350, NL: 185, NS: 275, ON: 235,
+        PE: 8, QC: 305, SK: 85, NT: 60, NU: 120, YT: 325 };
+    const SHADES = { flat: 38, tiered: 49, tou: 30, ulo: 60 };
     let data = null;
     let loading = null;
 
@@ -47,14 +50,10 @@
         return details;
     }
 
-    function row(province, model, kwh) {
-        const tr = el("tr");
-        tr.dataset.province = province;
-        const heading = el("th", shared.provinceNames[province]);
-        heading.scope = "row";
-        tr.append(heading);
+    function rowData(province, model, kwh) {
         const key = model && model.key;
-        tr.append(el("td", key ? (shared.structureLabels[key.structure] || key.structure) : "\u2014"));
+        const structure = key ? key.structure : "";
+        const label = key ? (shared.structureLabels[structure] || structure) : "\u2014";
         const level = model && list(model.levels).find(item => item.kwh === kwh);
         const before = level && level.without_tax;
         const after = level && level.with_tax;
@@ -69,6 +68,16 @@
                 : model.state === "market_energy_pending" ? "Market energy pending - not a full cost"
                     : "Not computable at this usage - not a full cost";
         }
+        return { province, model, structure, label, complete: Boolean(complete), state, before, after };
+    }
+
+    function row(item) {
+        const { province, model, label, complete, state, before, after } = item;
+        const tr = el("tr");
+        tr.dataset.province = province;
+        const heading = el("th", shared.provinceNames[province]);
+        heading.scope = "row";
+        tr.append(heading, el("td", label));
         tr.append(el("td", complete ? shared.money(before.median) : "\u2014"),
             el("td", complete ? shared.money(after.median) : "\u2014"),
             el("td", finite((before || {}).n) ? String(before.n) : "\u2014"));
@@ -79,6 +88,61 @@
         if (model) notes.append(context(model));
         tr.append(notes);
         return tr;
+    }
+
+    function renderChart(rows, kwh) {
+        const taxed = byId("across-tax").value === "with_tax";
+        const basis = taxed ? "after tax" : "before tax";
+        const value = item => (taxed ? item.after : item.before).median;
+        const values = rows.filter(item => item.complete).map(value);
+        const lower = Math.floor(Math.min(0, ...values) / 50) * 50;
+        const upper = Math.max(50, Math.ceil(Math.max(0, ...values) / 50) * 50);
+        const span = upper - lower;
+        const title = el("h3", `Monthly cost ${basis} at ${kwh.toLocaleString("en-CA")} kWh`);
+        title.id = "across-chart-title";
+        const note = el("p", "CAD per month. All provinces use the same dollar scale. "
+            + "Shades distinguish rate structures; labels give their exact costs. Details and both tax amounts are below.");
+        const axis = el("div");
+        axis.className = "across-axis";
+        axis.append(el("span", shared.money(lower)), el("span", shared.money(upper)));
+        const groups = [];
+        for (const province of [...new Set(rows.map(item => item.province))]) {
+            const group = el("section");
+            group.className = "across-group";
+            group.dataset.province = province;
+            group.style.setProperty("--province-color", `hsl(${HUES[province]}, 60%, 38%)`);
+            group.append(el("h4", shared.provinceNames[province]));
+            for (const item of rows.filter(item => item.province === province)) {
+                const line = el("div");
+                line.className = "across-chart-row";
+                line.dataset.structure = item.structure;
+                line.append(el("span", item.label));
+                if (!item.complete) {
+                    const unavailable = el("span", item.state);
+                    unavailable.className = "across-chart-unavailable";
+                    line.append(unavailable);
+                } else {
+                    const amount = value(item);
+                    const track = el("div");
+                    track.className = "across-track";
+                    track.setAttribute("aria-hidden", "true");
+                    track.style.setProperty("--zero", `${-lower / span * 100}%`);
+                    const bar = el("div");
+                    bar.className = "across-bar";
+                    bar.dataset.value = String(amount);
+                    bar.style.left = `${(Math.min(0, amount) - lower) / span * 100}%`;
+                    bar.style.width = `${Math.abs(amount) / span * 100}%`;
+                    bar.style.backgroundColor = `hsl(${HUES[province]}, 60%, ${SHADES[item.structure] ?? 45}%)`;
+                    track.append(bar);
+                    const cost = el("span", shared.money(amount));
+                    cost.className = "across-chart-value";
+                    line.append(track, cost);
+                }
+                group.append(line);
+            }
+            groups.push(group);
+        }
+        byId("across-chart").replaceChildren(title, note, axis, ...groups);
     }
 
     function render() {
@@ -97,17 +161,20 @@
             });
         thead.append(headers);
         const tbody = el("tbody");
+        const rows = [];
         const models = list(data.models).filter(model => model.key && model.key.fuel === "electricity"
             && model.key.sector === "residential" && typeof model.key.structure === "string");
         Object.keys(shared.provinceNames).sort((a, b) =>
             shared.provinceNames[a].localeCompare(shared.provinceNames[b], "en-CA")).forEach(province => {
             const matches = models.filter(model => model.key.province === province)
                 .sort((a, b) => a.key.structure.localeCompare(b.key.structure, "en-CA"));
-            if (matches.length) matches.forEach(model => tbody.append(row(province, model, kwh)));
-            else tbody.append(row(province, null, kwh));
+            if (matches.length) matches.forEach(model => rows.push(rowData(province, model, kwh)));
+            else rows.push(rowData(province, null, kwh));
         });
+        rows.forEach(item => tbody.append(row(item)));
         table.append(thead, tbody);
         byId("across-content").replaceChildren(table);
+        renderChart(rows, kwh);
         byId("across-asof").textContent = `Data as of ${shared.formatDate(data.as_of)}; `
             + `method version ${data.method_version}.`;
     }
@@ -124,6 +191,7 @@
             data = null;
             console.warn("Across-Canada models unavailable:", error);
             byId("across-content").replaceChildren();
+            byId("across-chart").replaceChildren();
             byId("across-status").textContent = "Across-Canada comparisons are not available: the model file "
                 + "could not be read. Reopen this tab to retry. Other views are not affected.";
         }).finally(() => { loading = null; });
@@ -132,4 +200,5 @@
 
     document.querySelectorAll('[data-view="across-canada"]').forEach(button => button.addEventListener("click", load));
     byId("across-usage").addEventListener("change", () => { if (data) render(); });
+    byId("across-tax").addEventListener("change", () => { if (data) render(); });
 })();

@@ -147,7 +147,7 @@ def test_market_site_builds_dom_without_html_strings_and_links_only_http_urls():
 def test_market_site_reuses_one_chart_instance():
     assert SECTION.count("new Chart(") == 2
     assert SECTION.count("marketChart = new Chart(") == 2
-    assert SECTION.count("resetMarketChart();") == 2
+    assert SECTION.count("resetMarketChart();") == 3  # Both chart renderers and an unavailable region.
     assert "marketChart.destroy();" in SECTION
 
 

@@ -5,7 +5,8 @@ tariffs) and the strict gate passes; final coverage completion still waits for c
 Centra prices to be stored by CI. The November 1 scrape kept all history. Current local
 corrections: Centra's approved quarterly PDF is authoritative (13 live November records),
 and Maritime's printed first 20 kW free is preserved (10 live records). Full regression:
-2,124 tests / 28 modules. See the [current matrix checkpoint](phase5_completion_matrix.md).
+2,186 tests / 33 modules after the market/chart work, which changes no live coverage counts.
+See the [current matrix checkpoint](phase5_completion_matrix.md).
 The older counts and queues below are historical evidence, not the current publication state.
 
 **Updated:** 2026-10-30 (batches 15 and 16, pushed October 30. Batch 16: Yukon rate-book discovery through the page data, Centra's v1126 text Appendix A, kept dead seed citations and the October 30 model decisions. Batch 15: Manitoba Hydro's moved rate pages, the Alberta Rate of Last Resort seed citations and a dead-address guard test; early monitor checks for Centra, Yukon, NTPC, Qulliq, EPCOR Distribution and the Rate of Last Resort term). Before that, 2026-10-16 (batch 14: EPCOR Energy Alberta's moved Rate of Last Resort pages fixed (Lane F); representative-model blockers recorded under Manitoba Hydro, NB Power, Newfoundland Power and Maritime Electric; CI and market-history changes noted; tariff evidence below is from batch 12, October 9)
