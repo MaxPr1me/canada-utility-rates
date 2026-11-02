@@ -4,16 +4,16 @@
   "formula": "(hourly HOEP or Ontario Price in $/MWh + that month's Class B GA in $/MWh) / 10",
   "hour_convention": "IESO hour-ending 1-24, Eastern Standard Time (UTC-05:00); no daylight-saving shift.",
   "hourly_start": "2020-01-01",
-  "hourly_end": "2026-11-01",
+  "hourly_end": "2026-11-03",
   "monthly_end": "2026-09",
-  "hourly_rows": 59928,
+  "hourly_rows": 59976,
   "historical_2020_2025_rows": 52608,
   "status_counts": {
     "missing_hourly_energy": 10464,
     "observed": 47976,
     "observed_monthly_mismatch": 720,
-    "pending_class_b_ga": 432,
-    "pending_lfda_and_class_b_ga": 336
+    "pending_class_b_ga": 456,
+    "pending_lfda_and_class_b_ga": 360
   },
   "historical_status_counts": {
     "missing_hourly_energy": 5880,
@@ -61,7 +61,7 @@
     },
     {
       "file": "ontario_price_hourly.csv",
-      "sha256": "2517bebbd9bf8bb5cee41d499a88f257d56266301bdd601dea8630f8fd0bf30e",
+      "sha256": "86497ae47d4d6bc252f4b4745013deb76bc239e0ffa5af0b68755252b0ff282d",
       "hash_basis": "lf_normalized_bytes"
     },
     {
