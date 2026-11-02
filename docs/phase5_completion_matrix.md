@@ -17,7 +17,11 @@ model fields, including illustrative values, match CI after normalizing only gen
 timestamps and equivalent input paths. Published method 7C-3: 55 models, **18 modeled /
 26 single-source / 6 pending / 5 not computable**. These are not live tariff counts.
 
-### Implemented and verified, not yet stored by CI
+Implementation commit `b2bb72d` was pushed to `main`; its
+[Deploy Site run](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41468505293)
+succeeded. This publishes the code and website, not the corrected Centra/Maritime rate data.
+
+### Implemented and verified; corrected rates await CI
 
 - **Centra:** the passing run stored 13 August-priced records because current HTML mixed
   old headings with new prices. Owner-approved source policy: the supported current quarterly
