@@ -1,0 +1,17 @@
+# graphify: optional developer tool (not needed to scrape, test or publish rates;
+# CI never installs it). It builds the code knowledge graph in graphify-out/ that
+# agents query, and powers the post-commit hook in scripts/graphify_hook.py.
+#
+# This is the only place the graphify version is pinned. The hook helper refuses
+# to run any other version, because a different release can rewrite the whole
+# committed graph. To upgrade: change the pin, reinstall, run
+#   python scripts/graphify_hook.py build
+#   python -m pytest tests/test_graphify_hook.py
+# and commit the result.
+#
+# Needs Python 3.10 or newer. Recommended: an isolated tool install with uv
+# (keeps about 30 parser packages out of the project's virtual environment):
+#   uv tool install graphifyy -c requirements-graphify.txt
+# Alternative, inside the project's virtual environment:
+#   pip install -r requirements-graphify.txt
+graphifyy==0.9.101

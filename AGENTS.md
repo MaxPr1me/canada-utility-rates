@@ -1,8 +1,87 @@
 # AGENTS.md — Plain-Language Guide for Maintaining This Project
 
-**This guide is for someone with zero coding experience.**
+**This guide is for someone with zero coding experience.** It explains what this project does,
+the rules that protect its data, how to keep it running and what to do when something breaks;
+AI assistants read it before every task.
 
-It explains, step by step, what this project does, how everything connects, and how to keep it running. If something breaks, this guide tells you what to check and how to fix it.
+---
+
+## Required reading and maintenance
+
+Before making task decisions or changes, read this file and
+[.github/copilot-instructions.md](.github/copilot-instructions.md). Both apply: this file owns the
+project safeguards and the plain-language guide; the Copilot instructions own the development
+workflow (asking questions, exploring the code, checking changes, comments, commits and teamwork).
+
+Also read the area file for what you are changing. VS Code loads these files automatically when
+matching files are edited, but other tools may not, so open them yourself:
+
+| Area | File | What it covers |
+|---|---|---|
+| Scrapers | [scrapers.instructions.md](.github/instructions/scrapers.instructions.md) | All scrapers, the utility registry and inventory, test fixtures |
+| Ontario electricity | [ontario-electricity.instructions.md](.github/instructions/ontario-electricity.instructions.md) | Ontario distributors and OEB tariff sheets |
+| Alberta electricity | [alberta-electricity.instructions.md](.github/instructions/alberta-electricity.instructions.md) | Alberta wires companies, the Rate of Last Resort, AESO |
+| Other provinces and territories | [regional-utilities.instructions.md](.github/instructions/regional-utilities.instructions.md) | Electricity in the other provinces and the territories |
+| Natural gas | [gas-utilities.instructions.md](.github/instructions/gas-utilities.instructions.md) | Natural gas utilities |
+| Market data | [market-data.instructions.md](.github/instructions/market-data.instructions.md) | Ontario and Alberta market history, the Ontario Price archive, raw IESO reports, combined totals |
+| Representative models | [representative-models.instructions.md](.github/instructions/representative-models.instructions.md) | Representative models and the Across-Canada comparison |
+| Automation and data history | [ci-data-history.instructions.md](.github/instructions/ci-data-history.instructions.md) | GitHub Actions, the database history, the coverage gate, the pipeline |
+| Website | [website.instructions.md](.github/instructions/website.instructions.md) | The website (`site/`) |
+| graphify | [graphify.instructions.md](.github/instructions/graphify.instructions.md) | graphify and the commit hook |
+
+- If a file is unavailable, report it rather than assume what it says.
+- If requirements conflict, report the conflict and resolve it before doing the affected work.
+- At completion, check whether the changed behaviour requires documentation updates (see
+  "Documentation Review Rule") and make them in the same change. Keep each rule in one place and
+  link to it instead of copying it.
+- If instructions change during a task, re-read them before continuing.
+
+---
+
+## Project safeguards
+
+These rules apply to every change. They matter more than any single feature.
+
+1. **Never show "default" numbers as if they were real.** Some rates in the code are *seed
+   values* — hand-entered fallback numbers used only when the live official website can't be
+   read. These are estimates, not live data. The website must never present them as current
+   rates. They are labelled **"Estimated"**, hidden by default, and only appear if the visitor
+   ticks **"Show estimated (not live-verified) rates."** Only numbers pulled from (or checked
+   against) a live official source are shown by default. If you add or change a scraper, make
+   sure real live data is marked live and fallbacks stay marked as estimates — never dress up a
+   default value as the real thing.
+2. **When unsure, ask — don't assume.** If a task is unclear, or there is more than one sensible
+   way to do it, stop and ask which path to take before making changes. Give concrete options,
+   their trade-offs and your recommendation. Guessing wastes effort and can hide problems; a
+   short question is always better than an assumption. An unanswered question is not approval.
+3. **Focus on building energy costs.** Prioritize residential (including single-family homes),
+   commercial, institutional and building-related industrial general facility service defined
+   by size, voltage or interruptibility. NECB 2025 (the National Energy Code of Canada for
+   Buildings) is a use-case reference, not a utility-rate eligibility rule or a compliance
+   claim. Process-specific farm, oil-field, irrigation, NGV (natural gas vehicle) fuelling, EV
+   charging, lighting, wholesale/reseller and standby-only services are excluded. Completed work
+   and history for those classes remain as reference; do not delete them.
+4. **Only the Monthly Scrape on GitHub writes the database.** The real database lives in the
+   `data-history` release on GitHub; copies on other computers are read-only mirrors. Never save
+   scrapes into a local copy, never upload a database by hand, and never delete the
+   `data-history` release: that deletes the database and all its backups.
+5. **The registry is the system of record.** Official sources are listed in
+   `data/sources/registry.json`. The Excel file `data/excel/old_urls.xlsm` is for audits only; no
+   scraper reads it.
+6. **Fail closed.** A doubtful source is rejected, never guessed. A price that follows a market
+   (for example Ontario's hourly market price) is stored without a number and shown as
+   "Variable", never as a made-up average.
+7. **Never delete history.** Every stored scrape adds snapshots; earlier snapshots and tariff
+   versions are never deleted or changed. Merged and retired utilities are skipped by monthly
+   runs but keep their history.
+8. **Models are comparison aids, not bills.** Representative models and market benchmarks are
+   never a bill and never count as live coverage. Illustrative (synthetic) values never enter
+   medians, comparisons or change checks.
+9. **Claim complete coverage only when it is true.** Do not say nationwide live-rate coverage is
+   complete unless the coverage gate passes and no known source problem is open. A passing gate
+   does not override a known problem.
+10. **Preserve unrelated work.** Do not change, delete or undo files or changes that are not part
+    of your task (for example `tests/_pending/` and the `.claude/worktrees/` folders).
 
 ---
 
@@ -13,60 +92,17 @@ This project answers one question: **"How much do electricity and natural gas co
 It works in three stages:
 
 1. **Scrape** — Python scripts visit official utility websites and download rate information.
-2. **Store** — That information gets organized into a database (a structured file on your computer).
+2. **Store** — That information gets organized into a database (a structured file, kept safely on GitHub).
 3. **Display** — A simple website reads the database and shows the rates in a browsable format.
 
-**November 2 checkpoint:** the scheduled November 1 scrape, market archive and both website
-deployments succeeded. All 78 active utilities have stored live output, but the final
-"coverage complete" statement must wait: Centra's website had mixed old headings and new
-prices, so its stored records were still August's. The parser now reads the approved November
-PDF and produces all 13 current records; Maritime Electric's free first 20 kW is also fixed.
-The owner must run Monthly Scrape for each utility to save these corrections. A passing
-coverage gate does not override this known problem. See the [current queue](docs/phase5_completion_matrix.md).
+The website also shows real market prices for Ontario and Alberta, and "representative models":
+typical monthly costs for comparison (see the glossary). GitHub Actions (GitHub's cloud
+computers) runs the updates on a schedule (see "How the Monthly Updates Work").
 
-**Market and chart update (November 2):** Market Pricing now lets you choose Ontario or
-Alberta. The Alberta prices are real hourly AESO observations, checked against its monthly
-reports, not Ontario prices with a different label. Representative Models shows a separate
-historical energy benchmark for larger Ontario/Alberta businesses; it is not a bill or a
-forecast and does not replace the delivery-only table. Across-Canada now has bars grouped
-by province, with related shades for different rate structures and a with/without-tax
-choice (with tax by default). Missing models never become zero bars. The first Market
-Benchmarks run published the 60-month Alberta history and refreshed models successfully;
-the follow-on website deployment also passed. Desktop and phone-sized live views were checked.
-
-GitHub Actions (GitHub's cloud computers) runs a monthly scrape on the 1st, a "source
-health" test scrape, which publishes nothing, on the 15th, and an Ontario Price archive and
-market history update on the 1st and 15th. Since October 16 the monthly scrape is the **only**
-thing that saves new data into the project's database; computers like yours keep a read-only
-copy. On October 15 a hand-started source health run passed and posted a public note with its
-totals: 909 live and 46 estimated records, no failures, and AESO the only utility with estimates
-only. The one missing live record (an EPCOR Energy Alberta page that had moved) was fixed on
-October 16, and the same day the project owner started the monthly scrape by hand. Its first try
-stopped at the tests and saved nothing (fixed the same day). The second run (scrape run 29) got
-the database from GitHub, checked it, stored 910 live and 46 estimated records, saved the
-database with its first dated backup, and the website was then published automatically. The
-Ontario Price archive, also started by hand on October 16, stopped safely and saved nothing
-because the IESO had published its 2026 LFDA file empty (see "The Ontario Price Archive opened
-an issue" below). See "How the Monthly Updates Work" below and
-[README.md](README.md).
-The latest export (November 1, scrape run 30 on GitHub) has 917 latest live tariffs and 480
-retained estimates; stored history contains 1,323 live versions and 5,534 snapshots. That run
-added 962 snapshots and kept all 4,572 earlier ones unchanged. Registry coverage is not the same as
-live coverage. The active campaign covers 16 provincial utilities (249 latest live records) and,
-from October 7, the four territorial utilities (109 latest live records). All 20 have live output.
-All 47 active Ontario distributors are live (490 records); PUC Distribution was added on
-October 9 even though its tariff prints no connection rate. Batch 12 also added Alberta
-electricity (28 records: four wires companies and three Rate of Last Resort providers) and
-Ontario/Alberta gas (40 records: Enbridge Gas, ATCO Gas and EPCOR Natural Gas (Ontario)).
-AESO now has one live market reference with no price number; all 78 active utilities have live output.
-Since October 16 the export writes electricity "representative models" (typical monthly costs;
-see the glossary) for all ten provinces, and the website's Representative Models page shows them
-(Ontario's since October 15). Also since October 16 the website's Market Pricing page shows the
-real Ontario market prices of the latest five years (60 months): the old HOEP price until April
-2025 and the new Ontario Price after it (see "Ontario Market Pricing" below).
-These counts include conditional products and reference-only services, not that many
-fully audited building classes. SaskPower's scoped building schedules are audited;
-remaining utility gaps are listed in the [coverage matrix](docs/phase5_completion_matrix.md).
+Having a utility in the registry is not the same as having live rates for it, and a count of live
+records does not prove that every building class is covered. Current figures are in the
+[README](README.md); known gaps and the work queue are in the
+[coverage matrix](docs/phase5_completion_matrix.md).
 
 ---
 
@@ -90,33 +126,6 @@ remaining utility gaps are listed in the [coverage matrix](docs/phase5_completio
 
 ---
 
-## Working Rules (Read First)
-
-Two rules govern every change to this project. They matter more than any single feature.
-
-**1. Never show "default" numbers as if they were real.**
-Some rates in the code are *seed values* — hand-entered fallback numbers used only when the live official website can't be read. These are estimates, not live data. The website must never present them as current rates. They are labelled **"Estimated"**, hidden by default, and only appear if the visitor ticks **"Show estimated (not live-verified) rates."** Only numbers pulled from (or checked against) a live official source are shown by default. If you add or change a scraper, make sure real live data is marked live and fallbacks stay marked as estimates — never dress up a default value as the real thing.
-
-**2. When unsure, ask — don't assume.**
-If a task is unclear, or there is more than one sensible way to do it, stop and ask which path to take before making changes. Guessing wastes effort and can hide problems. A short question is always better than an assumption.
-
-**Current focus: building energy costs.** Prioritize residential (including single-family
-homes), commercial, institutional and, from October 6, building-related industrial
-general facility service defined by size, voltage or interruptibility. NECB 2025
-is a use-case reference, not a utility-rate eligibility rule or a compliance claim.
-Process-specific farm, oil-field, irrigation, NGV fuelling, EV charging, lighting,
-wholesale/reseller and standby-only services are excluded. Completed work and history
-for those classes remain as reference; do not delete them.
-
-**Context checkpoint rule:** when approaching the context/token limit (target: about
-90%), stop opening new work. Leave room to finish the bounded batch, run its checks,
-record completed work, test results, remaining gaps and the exact next step in the
-coverage matrix/handoff, then commit and push the verified changes before stopping.
-If an exact context meter is unavailable, checkpoint conservatively rather than claim
-an exact percentage. Preserve history and do not stage unrelated work.
-
----
-
 ## Important Files and What They Do
 
 ### Where the scrapers live
@@ -124,109 +133,84 @@ an exact percentage. Preserve history and do not stage unrelated work.
 | File | What it does |
 |---|---|
 | `scrapers/base.py` | The "template" that all scrapers follow. You don't change this unless you're adding a new feature that applies to ALL scrapers. |
-| `scrapers/utilities/bc_hydro.py` | Scrapes BC Hydro electricity rates. |
-| `scrapers/utilities/hydro_quebec.py` | Scrapes Hydro-Quebec electricity rates. |
-| `scrapers/utilities/ontario_ldc.py` | **Data-driven scraper for every Ontario LDC.** One class handles every Ontario local distribution company. All 47 active distributors are configured (`OEB_TARIFF_DOCUMENTS`) and read from their OEB-approved tariff PDF; if a tariff cannot be downloaded, labelled estimates are used where they exist. Large demand classes also get a "Market Energy" line with no number (shown as "Variable"). |
-| `scrapers/utils/oeb_tariff.py` | Reads OEB "Tariff of Rates and Charges" PDFs: classes, rate zones, riders and their end dates, conditional charges, and fail-closed rejections. Per-document settings handle unusual PDFs (`"extract": {"y_tolerance": N}`) and PUC Distribution's tariff, which prints no connection rate (`"connection_rate": "not_printed"`). |
+| `scrapers/utilities/` | One scraper file per utility, named after it (for example `bc_hydro.py` or `centra_gas.py`). |
+| `scrapers/utilities/ontario_ldc.py` | **One data-driven scraper for every Ontario LDC** (local distribution company). Each is read from its OEB-approved tariff PDF, using `scrapers/utils/oeb_tariff.py`. |
 | `scrapers/utilities/toronto_hydro.py` | Toronto Hydro (legacy scraper, separate from the LDC scraper). |
-| `scrapers/utilities/enbridge_gas.py` | Enbridge Gas (Ontario) from the OEB-approved Rate Handbook PDF: 20 system-gas records in the EGD, Union North and Union South rate zones, including the quarterly gas supply (QRAM) price. |
-| `scrapers/utilities/epcor_gas_ontario.py` | EPCOR Natural Gas (Ontario): Aylmer and Southern Bruce rate zones from EPCOR's rate pages, checked against the OEB rate order and QRAM notice. It has no estimates: if the sources fail it returns nothing. |
-| `scrapers/utilities/epcor_gas.py` | The old Alberta "EPCOR Natural Gas" entry, retired October 9 because EPCOR does not distribute gas in Alberta. Monthly runs skip it; its history stays. |
-| `scrapers/utilities/atco_gas.py` | ATCO Gas (Alberta) North and South delivery rates from the rate schedule PDFs, plus Direct Energy Regulated Services' monthly default gas price. |
-| `scrapers/utilities/atco_electric.py` | ATCO Electric distribution and transmission charges (Alberta) from the 2026 price schedules; each class must add up to the printed total. |
-| `scrapers/utilities/fortisalberta.py` | FortisAlberta distribution and transmission charges (Alberta) from the newest Rates, Options and Riders PDF. |
-| `scrapers/utilities/epcor_distribution.py` | EPCOR Distribution charges (Edmonton, Alberta); the 2026 rates are interim, so they are medium confidence. |
-| `scrapers/utilities/enmax_power.py` | ENMAX Power distribution and transmission charges (Calgary, Alberta). |
-| `scrapers/utilities/direct_energy_regulated.py` | Direct Energy Regulated Services Rate of Last Resort energy price (ATCO Electric area, Alberta). |
-| `scrapers/utilities/enmax_energy.py` | ENMAX Energy Rate of Last Resort price and daily administration charge (Calgary area, Alberta). |
-| `scrapers/utilities/epcor_energy_alberta.py` | EPCOR Energy Alberta Rate of Last Resort price and administration charge (EPCOR Distribution and FortisAlberta areas). EPCOR moved these pages; the new addresses went into the registry and this file on October 16. |
-| `scrapers/utils/alberta_rolr.py` | Shared Rate of Last Resort helper: checks each provider's price against the Utilities Consumer Advocate table and stops treating it as live once the fixed term ends. |
-| `scrapers/utilities/aeso.py` | AESO pool price market reference (Alberta wholesale). Since October 30 it is a live record with no number ("Variable"): it counts as live only when the ETS pool price report posts current hourly prices and its metadata still defines the pool price; otherwise a labelled estimate is used. AESO publishes no customer tariff. |
-| `scrapers/utilities/nl_hydro.py` | NL Hydro electricity rates (Newfoundland — residential + commercial). |
+| `atco_electric.py`, `fortisalberta.py`, `epcor_distribution.py`, `enmax_power.py` | The Alberta wires companies (distribution and transmission charges). |
+| `direct_energy_regulated.py`, `enmax_energy.py`, `epcor_energy_alberta.py` | The Alberta Rate of Last Resort providers; `scrapers/utils/alberta_rolr.py` checks their prices against the Utilities Consumer Advocate table. |
+| `scrapers/utilities/aeso.py` | The AESO pool price reference: a live record with no number ("Variable"), because AESO publishes no customer tariff. |
+| `enbridge_gas.py`, `epcor_gas_ontario.py`, `atco_gas.py` | Natural gas in Ontario and Alberta. |
+| `scrapers/utilities/epcor_gas.py` | A retired Alberta entry (EPCOR does not distribute gas in Alberta). Monthly runs skip it; its history stays. |
 | `scrapers/registry.py` | Reads the list of all utilities and their scraper info. |
-| `scrapers/utils/parsing.py` | HTML/PDF parsing helpers, including PDF URL resolution and strict `verify_tariff_values()` checks that prove fallback values still appear in an official schedule. |
-| `scrapers/utils/change_detection.py` | Compares live-parsed rates against seed data. Flags changes by severity (info/warning/critical). If critical drift is detected, the scraper rejects live data and falls back to seed. |
-| `scrapers/utils/market_pricing.py` | Reads the Ontario market history file (since October 16 the rolling five years; the older 2020-2024 file is still accepted) and works out the illustrative market price for the models (see "Illustrative estimate" in the glossary). It refuses a file that was not built from real observed prices. |
+| `scrapers/utils/parsing.py` | HTML/PDF reading helpers, including strict checks that a value really appears in an official schedule. |
+| `scrapers/utils/change_detection.py` | Compares live-parsed rates against seed data and flags changes by severity (info/warning/critical). If critical drift is detected, the scraper rejects live data and falls back to seed. |
+| `scrapers/utils/market_pricing.py` | Reads the Ontario market history for the illustrative estimate (see the glossary). It refuses a file that was not built from real observed prices. |
 | `scrapers/utils/validation.py` | Data quality checks run after every scrape. |
 
 ### Where the data lives
 
 | File | What it does |
 |---|---|
-| `data/sources/registry.json` | **The master list (system of record).** 87 registered utilities use 33 scraper modules; a 34th, legacy Toronto module is unregistered. Eight absorbed Ontario distributors have `status: "merged"` and a `merged_into` successor; the mistaken Alberta "EPCOR Natural Gas" entry has `status: "retired"`. Monthly runs skip both kinds but keep their history. Some scrapers also contain source URL constants that must stay synchronized. |
+| `data/sources/registry.json` | **The master list (system of record):** every registered utility, its official source URLs and its scraper. Merged and retired entries are skipped by monthly runs but keep their history. |
 | `data/inventory/utilities.json` | The full inventory of ALL Canadian utilities — even ones we don't scrape yet. This is the reference list. |
-| `data/db/rates.db` | The SQLite database where scraped rates are stored. Since October 16 only the Monthly Scrape on GitHub writes it; the real copy lives in the `data-history` release on GitHub, next to dated backups. Your copy is read-only: get it with `python scripts/pull_history_db.py` (older copies move to `data/db/backups/`). |
-| `data/excel/old_urls.xlsm` | **Audit reference only.** An Excel file with historical URLs and rate data. NO scraper reads this file. It is git-ignored. |
-| `site/data/rates.json` | The JSON file the website reads. Created by running the export script. |
-| `site/data/market_pricing_ontario.json` | What the Market Pricing page reads: the latest 60 complete months (energy, Class B Global Adjustment and their total) and 576 heatmap averages built only from real observed hours. Rebuilt twice a month by `scripts/build_ontario_market.py` (see "Ontario Market Pricing" below). |
-| `data/market/ontario_market_monthly.csv` | The permanent monthly market history since January 2020 (80 months on October 16): energy, Class B Global Adjustment and total for each month. It is never shortened. |
-| `data/market/hoep_hourly.csv` | The old hourly HOEP prices, January 2020-March 2025, saved once so GitHub never has to download them again. |
-| `data/market/ontario_price_hourly.csv` | The project's own permanent hourly archive of the Ontario Price since July 11, 2026, extended by `scripts/archive_ontario_price.py` (see "Ontario Market Pricing" below). |
-| `data/market/ontario_total_hourly.csv` | The ready-to-use hourly total: energy plus Class B Global Adjustment, in cents/kWh, since January 2020. A missing total is blank, not zero. |
-| `data/market/ontario_total_hourly_2020_2025.csv` | The same totals, limited to 2020-2025: 52,608 hourly slots. There are 5,880 missing hourly prices in May-December 2025. |
-| `data/market/ontario_total_monthly.csv` | Energy plus Class B GA averaged by month, in cents/kWh. These are monthly references, not actual prices for missing hours. |
-| `data/market/ontario_total_metadata.json` | Explains the totals, missing hours, April 2025 warning and source-file fingerprints. |
-| `data/market/ieso_raw/` | Permanent compressed copies of the original IESO reports, with a fingerprint index. Saved before price checks; they are unverified source evidence, not rates. Old captures are never replaced. |
-| `site/data/market_structure_notes.json` | Research notes on market structure for every Canadian province/territory. |
-| `site/data/missing_classes_report.json` | Audit report showing which utilities are missing customer classes. |
-| `site/data/source_review_report.json` | Source URL audit — compares Excel reference URLs against registry. |
+| `data/db/rates.db` | The SQLite database. The real copy lives on GitHub and only the Monthly Scrape writes it; your copy is a read-only mirror from `python scripts/pull_history_db.py` (older copies move to `data/db/backups/`). |
+| `data/excel/old_urls.xlsm` | **Audit reference only:** historical URLs and rate data. NO scraper reads this file. It is git-ignored. |
+| `site/data/rates.json` | The rates the website reads, created by the export script. |
+| `site/data/market_pricing_ontario.json`, `market_pricing_alberta.json` | What the Market Pricing page reads: the latest 60 complete months and a heatmap built only from real observed hours. |
+| `data/market/` | Permanent market history for Ontario and Alberta, the project's own hourly Ontario Price archive, and ready-to-use Ontario totals (`ontario_total_*`: energy plus Class B GA in cents/kWh; a missing hour stays blank, never zero, and monthly averages never stand in for it). |
+| `data/market/ieso_raw/` | Saved copies of the original IESO reports, kept before any price check. They are unverified evidence, not rates; old copies are never replaced. |
+| Other files in `site/data/` | Research notes on each province's market structure, and audit reports of missing customer classes and source URLs. |
 
 ### Where the representative models live
 
 A *representative model* is a "typical" monthly cost for a province, worked out from the middle
-value (the median) of its utilities' live rates. Since October 16 all ten provinces have
-electricity models (gas and the territories come later); the website's Representative Models page
-shows them.
+value (the median) of its utilities' live rates. Electricity models exist for the ten provinces;
+gas and the territories come later.
 
 | File | What it does |
 |---|---|
-| `data/models/crosswalk.json` | The sorting list. Its 246 rules are read from top to bottom, and the first rule that fits decides where each live tariff goes: into a model group (province, fuel, customer type, rate structure and size) or out, with a written reason. On October 16, 557 of the 910 live tariffs were used and 353 left out on purpose; none was left unsorted (the six rules added October 30 leave their new records out: AESO, BC Hydro 1892, FortisBC 38, NSPower real-time pricing, NL Hydro 5.1L and Island non-firm). It also lists the four Alberta "pairs" (a wires company plus the Rate of Last Resort provider for its area, counted as one) and the "required contributors": a model level is not shown when a utility it needs cannot be calculated (Newfoundland and Labrador homes need Newfoundland Power). Ontario and Alberta gas wait for Phase 7D, and the territories come later. |
-| `data/models/usage_levels.json` | The example customers, approved by the project owner: homes using 500, 1,000 or 2,000 kWh a month; small businesses (under 50 kW) using 2,000 kWh at 10 kW or 8,000 kWh at 25 kW; medium businesses (50-499 kW) using 40,000 kWh at 100 kW; large businesses (500-4,999 kW) using 500,000 kWh at 1,000 kW. It also holds the Ontario Energy Board's split of use between time-of-use periods (one dated set per OEB price year: the November 2025 set until October 31, 2026, then the November 2026 set: 64/18/18 for time-of-use, 41/20/26/13 for ultra-low overnight), a short, reviewed list of "conditional" Ontario charges that a typical customer does pay, and the made-up (synthetic) business load profile used only for the illustrative estimate (see the glossary). When the next OEB report comes out, add a new dated set and give the previous one an end date: two sets in force on the same day stop the time-of-use models instead of guessing. Since October 30 it also says which version of a fixed charge to use when a utility prints one per phase or service size: a home has single-phase 200 A service, and a small business is single-phase at 10 kW and three-phase at 25 kW (project owner decision). If no version, or more than one, matches, that utility is left out at that level. |
-| `data/models/block_periods.json` | Some tariffs print an energy block such as "first 5,000 kWh" without saying whether that is per month or per two months. Each of its 21 entries, reviewed with the project owner (October 16 and 30), quotes the tariff or the utility's billing page and says which period applies. NB Power GS1 and Maritime Electric say "per Billing Period"; since October 30 that counts as one month, because both utilities' billing pages say they bill monthly (project owner decision). When nothing says (Maritime Electric's seasonal options, Manitoba Hydro's seasonal general service), that tariff is left out of the model instead of guessed. |
-| `data/models/taxes.json` | Sales taxes (GST, HST, PST, QST, RST) and automatic bill rebates, such as the Ontario Electricity Rebate, for every province and territory: electricity and gas, homes and businesses. Municipal taxes and income-tested programs are left out. A rate change is two lines with dates: the Ontario Electricity Rebate is 23.5% until October 31, 2026 and 15.7% from November 1, 2026 (O. Reg. 328/26). |
-| `pipeline/representative_models.py` | The calculator. For every utility it works out the monthly cost at each example level, then reports the median, the spread, the real utility closest to the median and any utility far from it (an "outlier"), without and with tax, plus a written explanation of how each number was made. Since October 16 it covers all ten provinces, treats each Alberta pair as one utility, and adds the clearly labelled illustrative estimate for Ontario's two larger business sizes. |
-| `site/data/representative_models.json` | The results. The export step rewrites this file every time; if the calculation fails, the export still finishes and the previous file is kept. The website's Representative Models page reads it. These are comparison aids, never rates anyone is billed. |
+| `data/models/crosswalk.json` | The sorting list. Its rules are read from top to bottom; the first rule that fits puts each live tariff into a model group (province, fuel, customer type, rate structure and size) or leaves it out with a written reason. No live tariff may be left unsorted. |
+| `data/models/usage_levels.json` | The example customers, approved by the project owner: homes using 500, 1,000 or 2,000 kWh a month; small businesses (under 50 kW) using 2,000 kWh at 10 kW or 8,000 kWh at 25 kW; medium businesses (50-499 kW) using 40,000 kWh at 100 kW; large businesses (500-4,999 kW) using 500,000 kWh at 1,000 kW. Also the average month (30.4375 days, for turning daily charges into monthly ones), Ontario's dated time-of-use split and the synthetic business load profile. |
+| `data/models/block_periods.json` | Reviewed notes saying whether an energy block such as "first 5,000 kWh" is per month or per two months, quoting the source. When nothing says, the tariff is left out of the model instead of guessed. |
+| `data/models/taxes.json` | Sales taxes and automatic bill rebates for every province and territory, as dated lines: for example the Ontario Electricity Rebate is 23.5% until October 31, 2026 and 15.7% from November 1, 2026 (O. Reg. 328/26). Municipal taxes and income-tested programs are left out. |
+| `pipeline/representative_models.py` | The calculator: each utility's monthly cost at each level, then the median, the spread, the utility closest to the median and any far from it (outliers), without and with tax, with a written explanation of how each number was made. |
+| `site/data/representative_models.json` | The results, rewritten by every export (if the calculation fails, the previous file is kept). These are comparison aids, never rates anyone is billed. |
 
 ### Where the website lives
 
 | File | What it does |
 |---|---|
-| `site/index.html` | The five views: **Rate Browser**, **Market Pricing**, **Representative Models**, **Across-Canada** and the existing two-tariff **Compare**. |
-| `site/css/style.css` | How the page looks — includes styles for multi-select filters, heatmap, confidence indicators, source attribution, and market callouts. |
-| `site/js/app.js` | The application logic: loads 6 JSON data files, deduplicates rates by effective_date, manages multi-select checkbox filter state (using JavaScript `Set`s), cascades province selection into the utility filter, renders rate cards with confidence dots, shows detail modals with source attribution and market callouts, and powers the Market Pricing page (headline, monthly chart, 60-month table, heatmap with hour counts, method). |
-| `site/js/models.js` | The Representative Models page. It reads `representative_models.json` the first time the page is opened and offers four drop-down lists (province, fuel, sector, rate structure). It shows a table of typical monthly costs without and with tax, then the taxes, the method and the contributing utilities. A checkbox, off by default, shows the illustrative estimate (synthetic load profile) with a warning and a SYNTHETIC badge. If the file is missing or broken, it shows a "not available" notice and the other pages keep working. |
-| `site/css/models.css` | How the Representative Models page looks, including the warning style of the illustrative estimate. |
-| `site/js/across-canada.js` | Residential electricity comparisons at 500, 1,000 or 2,000 kWh, default 1,000. It reads the same model file through the shared loader in `models.js`, never recalculates bills or uses synthetic estimates, and keeps missing territorial models clearly separate from live tariff coverage. |
-| `site/css/across-canada.css` | The scrollable national table and grouped province-colored bar chart for desktop and phone screens. |
-
-Since November 2 the Representative Models page also displays the existing phase/service-size
-assumptions and the fixed charge selected for contributors. These describe the example customer,
-not the visitor's actual service or eligibility.
+| `site/index.html` | The page and its views: **Rate Browser**, **Market Pricing**, **Representative Models**, **Across-Canada** and **Compare** (two tariffs side by side, never a bill total). |
+| `site/js/app.js` | The main logic: loads the data, shows the newest version of each tariff, and runs the filters, rate cards, detail windows and the Market Pricing page (Ontario or Alberta). |
+| `site/js/models.js` | The Representative Models page: typical monthly costs without and with tax, the method, the contributing utilities and the example customer's assumptions; a separate historical market benchmark for larger Ontario and Alberta businesses; and, only behind a checkbox, the illustrative estimate with a warning and a SYNTHETIC badge. |
+| `site/js/across-canada.js` | Residential electricity across Canada at 500, 1,000 or 2,000 kWh (default 1,000), with tax by default. It reuses the model file, never recalculates bills or uses synthetic estimates, and never turns a missing model into a zero bar. |
+| `site/css/` | How the pages look (`style.css`, `models.css`, `across-canada.css`). |
 
 ### Where the automation lives
 
 | File | What it does |
 |---|---|
-| `.github/workflows/scrape.yml` | Monthly tests, scrape, validation and export on the 1st. Since October 16 the only writer of the database: it gets the database from the `data-history` release, checks it, and saves it back with a dated backup. |
-| `.github/workflows/deploy.yml` | Separate GitHub Pages deployment on push or manual dispatch, and by itself after each successful Monthly Scrape, Ontario Price Archive or Market Benchmarks run. |
-| `.github/workflows/source-health.yml` | Non-blocking dry run on the 15th; uploads logs without publishing. |
-| `.github/workflows/ontario-price-archive.yml` | At 06:00 UTC on the 1st and 15th, and on relevant code pushes: saves raw IESO reports first, then the validated Ontario Price archive, then market history, combined price files and models. Market history can still rebuild when archive validation fails. Failures open an issue; a failed raw save also leaves a temporary recovery artifact. |
+| `.github/workflows/scrape.yml` | **Monthly Scrape** (the 1st): the only writer of the database (see "How the Monthly Updates Work"). |
+| `.github/workflows/source-health.yml` | **Source Health** (the 15th): a test scrape that publishes nothing. |
+| `.github/workflows/ontario-price-archive.yml` | **Ontario Price Archive** (06:00 UTC on the 1st and 15th): saves the original IESO reports, then the checked Ontario Price archive, the market history, the combined totals and the models. |
+| `.github/workflows/market-benchmarks.yml` | **Market Benchmarks**: publishes the Alberta market history and refreshes the models, without touching the database. |
+| `.github/workflows/deploy.yml` | **Deploy Site**: publishes the website on push, by hand, and by itself after each successful Monthly Scrape, Ontario Price Archive or Market Benchmarks run. |
 | `scripts/check_db_history.py` | The Monthly Scrape's safety check: the database is not damaged, and nothing old was lost or changed. |
-| `scripts/coverage_gate.py` | The "is coverage complete?" check (added October 30). For every active registered utility it asks: is there a live record in effect today, is there a recent dated audit in `data/sources/coverage_ledger.json`, and is anything still deferred or overdue for review? It prints what is missing. The Monthly Scrape runs it and posts a public "Coverage gate" note; it never stops the save. The README may say coverage is complete only when it passes. |
-| `data/sources/coverage_ledger.json` | The audit ledger the gate reads: one entry per utility with its audit date, exclusions, source-blocked items, deferred items (these fail the gate) and monitored items with a review date. It records decisions; it never changes a rate. All 78 active utilities have an entry (the 47 Ontario distributors share one group with the standard Ontario exclusions); entries with something still undecided list it under "deferred", which keeps the gate failing until it is resolved. |
-| `scripts/pull_history_db.py` | Downloads the newest database from GitHub to your computer, checks it, and keeps your old copy. It never uploads anything. |
-| `scripts/build_ontario_market.py` | Builds the five-year Market Pricing history (runs inside the Ontario Price Archive workflow). |
-| `scripts/preserve_ieso_reports.py` | Downloads original daily DA-OZP and yearly LFDA reports and saves each distinct copy before validation. A broken response cannot erase a previous good copy. |
-| `scripts/export_ontario_totals.py` | Creates the combined hourly and monthly energy-plus-GA files from saved data. No network request or database write. |
-| `scripts/build_alberta_market.py` | Builds 60 complete months of AESO pool energy, checked against every official monthly summary. Keeps raw hours (including clock changes), permanent monthly history and 576 observed-hour heatmap cells. `--dry-run` saves no outputs. |
-| `.github/workflows/market-benchmarks.yml` | Runs after the source workflows and relevant code/model-input pushes. Publishes Alberta history and refreshes the models without touching the database; a successful run triggers deployment. All three data workflows take turns publishing. |
-| `site/data/market_pricing_alberta.json` | Alberta's market dashboard and benchmark input, published by CI. Raw history is `data/market/alberta_pool_hourly.csv`; permanent monthly history is `data/market/alberta_market_monthly.csv`. |
+| `scripts/coverage_gate.py`, `data/sources/coverage_ledger.json` | The coverage gate (see the glossary) and the audit ledger it reads: audit dates, exclusions, and deferred and monitored items for each utility. The ledger records decisions; it never changes a rate. |
+| `scripts/pull_history_db.py` | Downloads the newest database to your computer, checks it, and keeps your old copy. It never uploads anything. |
+| `scripts/build_ontario_market.py`, `archive_ontario_price.py`, `preserve_ieso_reports.py`, `export_ontario_totals.py` | Build the Ontario market history, extend the hourly Ontario Price archive, save the original IESO reports, and create the combined energy-plus-GA files. |
+| `scripts/build_alberta_market.py` | Builds the Alberta market history, checked against every official AESO monthly summary. |
 
-If **Market Benchmarks** fails, read its failure issue. A missing hour, changed source
-format or disagreement with the official monthly price stops publication. A changed
-already-archived price also stops it for review: do not guess a revision deadline or
-overwrite old evidence. Ontario and Alberta history stay separate. The Ontario archive
-workflow also refreshes representative models after its own successful market build.
+### Where the AI assistant instructions and code map live
+
+| File | What it does |
+|---|---|
+| `.github/copilot-instructions.md` | The development workflow for AI assistants. Read it together with this file. |
+| `.github/instructions/` | Rules for each area of the project, read by AI assistants (see "Required reading and maintenance"). |
+| `requirements-graphify.txt` | The one place where the graphify version is pinned (graphify is optional; see "Graphify and the Commit Hook" below). |
+| `.graphifyignore` | What graphify leaves out of its code map (tests, data, the database schema, workflows), with the reason for each. |
+| `scripts/graphify_hook.py` | Installs and runs the commit hook that updates the code map; `python scripts/graphify_hook.py status` checks the setup. |
+| `graphify-out/` | The generated code map ("knowledge graph") that AI assistants search to find code quickly. Never edit it by hand. |
 
 ---
 
@@ -260,9 +244,9 @@ You only need to do this once (or again if someone adds new tools).
 python scripts/pull_history_db.py
 ```
 This downloads the project's database (`data/db/rates.db`) from GitHub, checks that the download
-is complete and unchanged, and moves any older copy on your computer to `data/db/backups/`. Since
-October 16 only the Monthly Scrape on GitHub saves new data; your copy is for reading. Run this
-again whenever you want the newest data. (For an empty practice database instead, run
+is complete and unchanged, and moves any older copy on your computer to `data/db/backups/`. Only
+the Monthly Scrape on GitHub saves new data; your copy is for reading. Run this again whenever
+you want the newest data. (For an empty practice database instead, run
 `python -m pipeline.run_scrape --init-db`.)
 
 **4. Try the scraper (nothing is saved):**
@@ -313,48 +297,33 @@ of the database, and never upload a database by hand.
 
 The file `.github/workflows/scrape.yml` tells GitHub Actions to:
 
-1. **On the 1st of every month** (or when started by hand), start a computer in the cloud.
-2. Install Python, the project tools and Playwright Chromium.
-3. **Get the database** from the `data-history` GitHub Release. If the release exists, the
+1. **On the 1st of every month** (or when started by hand), start a computer in the cloud and
+   install Python, the project tools and Playwright Chromium.
+2. **Get the database** from the `data-history` GitHub Release. If the release exists, the
    download must work and its fingerprint (SHA-256) must match the one GitHub shows; otherwise
    the run stops. Only when there is no release at all does it start a new, empty database.
-   (Before October 16 a failed download quietly started an empty database, which could then
-   have replaced the real history.)
-4. Run the tests, then `python -m pipeline.run_scrape` (all utilities, or the one utility or
-   province typed in when it was started by hand).
-5. Run `python -m pipeline.validate` to check data quality.
-6. Run `python -m pipeline.export_json` to update the website data.
-7. **Check the database** with `scripts/check_db_history.py`: it must not be damaged, it must
+3. Run the tests, then the scrape (all utilities, or the one utility or province typed in when it
+   was started by hand), the data quality checks (`python -m pipeline.validate`) and the export
+   for the website (`python -m pipeline.export_json`).
+4. **Check the database** with `scripts/check_db_history.py`: it must not be damaged, it must
    have at least as many snapshots, tariff versions and scrape runs as before, and every older
    snapshot must be unchanged. A public "Database history" note on the run page gives the result.
-8. Only then **save the database** back to the release, together with a dated backup copy
+5. Only then **save the database** back to the release, together with a dated backup copy
    (`rates-YYYY-MM-DD.db.gz`; the newest 12 are kept), and save the updated site data to the
-   repository (first catching up with any archive update saved the same day).
-9. Leave deployment to the separate **Deploy Site** workflow, which starts by itself after a
-   successful **Monthly Scrape** run (and, from batch 15, after a successful **Ontario Price
-   Archive** run) and checks out `main`.
-10. If any step fails, create a GitHub Issue; a failed check saves nothing to the release.
+   repository.
+6. Leave publishing to the separate **Deploy Site** workflow, which starts by itself afterwards.
+7. If any step fails, create a GitHub Issue; a failed check saves nothing to the release.
 
-**The rule since October 16 (user decision): only this workflow saves new data.** Your computer
-keeps a read-only copy (`python scripts/pull_history_db.py`). To store new data, push the code
-and start Monthly Scrape (for everything, one utility or one province), or wait for the 1st.
-Never upload a database by hand. **Careful:** deleting the `data-history` release on GitHub
-deletes the database and all its backups.
+**The rule (project owner decision): only this workflow saves new data.** Your computer keeps a
+read-only copy (`python scripts/pull_history_db.py`). To store new data, push the code and start
+Monthly Scrape (for everything, one utility or one province), or wait for the 1st. Never upload a
+database by hand. **Careful:** deleting the `data-history` release on GitHub deletes the database
+and all its backups.
 
-**Known limitations:** most of this has now run on GitHub. On October 16 the project owner started
-Monthly Scrape by hand. The first try (run #10) stopped at the tests and opened an issue by
-itself, as designed; nothing was saved. After the fix, run #11 did every step: it got the database
-and checked its fingerprint, stored scrape run 29, checked the history ("3,616 earlier snapshots
-unchanged"), saved `rates.db` and `rates-2026-10-16.db.gz` to the release, saved the website data,
-and **Deploy Site** then started by itself and published the website. Every scrape run posts a
-short public note on its GitHub run page with its totals (live, estimated and invalid records, and
-any utility that failed or returned only estimates) and the database check; the full log still
-needs a GitHub sign-in. A failing command stops its step instead of being hidden by the copy
-written to the log. The November 1 scheduled scrape and market-history build have now succeeded,
-as have both follow-on deployments. Removing old backups beyond the retention limit remains
-unexercised. GitHub Pages must
-use **GitHub Actions** as its source; the automatic trigger (`workflow_run`) only fires from the
-default branch.
+Every scrape run posts a short public note on its GitHub run page with its totals (live,
+estimated and invalid records, and any utility that failed or returned only estimates); the full
+log needs a GitHub sign-in. GitHub Pages must use **GitHub Actions** as its source, and the
+automatic trigger (`workflow_run`) only fires from the default branch.
 
 **To run it early (not waiting for the 1st of the month):**
 1. Go to the repository on GitHub.
@@ -363,11 +332,9 @@ default branch.
 4. Click the **"Run workflow"** button on the right. You may type one utility name or one
    two-letter province code (not both); leave both empty for everything.
 
-The **Ontario Price Archive** workflow can be started the same way. This computer has no GitHub
-command-line tool, so start workflows from the website.
-
-After a successful data update, **Deploy Site** can still be run manually if the
-automatic handoff has not yet been verified.
+The **Ontario Price Archive** workflow can be started the same way. The owner's computer has no
+GitHub command-line tool, so start workflows from the website. **Deploy Site** can also be run by
+hand if it did not start by itself after a successful data update.
 
 ---
 
@@ -396,6 +363,20 @@ This is the complete reference list of ALL Canadian utilities — including ones
 
 ---
 
+## Source URL Management
+
+- **The Excel file is NOT a data source.** `data/excel/old_urls.xlsm` contains historical
+  reference URLs and rate data. **No scraper reads this file.** It exists only for manual audit
+  and comparison, and it is git-ignored.
+- **The registry IS the system of record.** When source URLs change, update
+  `data/sources/registry.json` — not the Excel file. Some scrapers also contain the same URLs as
+  constants; keep them synchronized with the registry.
+- **Source prioritization.** When choosing which URL to use for a utility, prefer: (1) the
+  utility's own rate schedule page, (2) regulator rate orders or decisions, (3) third-party
+  aggregators (last resort).
+
+---
+
 ## How to Check If a Rate Is Still Correct
 
 1. Open `site/data/rates.json` in a text editor (or look at the website).
@@ -408,7 +389,8 @@ This is the complete reference list of ALL Canadian utilities — including ones
 
 ## How to Add a New Utility
 
-See [docs/adding-a-utility.md](docs/adding-a-utility.md) for the full guide.
+See [docs/adding-a-utility.md](docs/adding-a-utility.md) for the full guide, and the
+[scrapers rules](.github/instructions/scrapers.instructions.md) that every scraper follows.
 
 **The short version:**
 
@@ -431,17 +413,13 @@ See [docs/adding-a-utility.md](docs/adding-a-utility.md) for the full guide.
 1. Visit the URL in `data/sources/registry.json` for that utility.
 2. Has the page moved? Update the registry and any URL constant used by the scraper, and add the
    old address to the list of dead addresses in `tests/test_source_urls.py` (with the date and
-   the answer you got, such as "404" or "301"), so it can never come back by mistake. A dead address that
-   must stay (an estimate whose page is gone and has no archived copy showing its values) goes into the
-   `KEPT_DEAD` list in the same file, with the reason.
+   the answer you got, such as "404" or "301"), so it can never come back by mistake. A dead
+   address that must stay (an estimate whose page is gone and has no archived copy showing its
+   values) goes into the `KEPT_DEAD` list in the same file, with the reason.
 3. Has the page layout changed? The scraper's HTML parsing needs updating.
 4. Is the page down temporarily? Wait and try again.
-
-Example (October 15-16): EPCOR Energy Alberta moved its Rate of Last Resort pages, and the page
-for homes in the FortisAlberta area answered "not found" (404). The scraper skipped that one
-record instead of guessing, so its October 9 version stayed the latest stored. On October 16 the
-new addresses went into the registry, the scraper and its test file, and a test run gave all 4
-records live again; the Monthly Scrape on GitHub stored them the same day (scrape run 29).
+5. Test a fix with a dry run for that utility (see "How to Scrape Just One Utility"); the Monthly
+   Scrape on GitHub then stores it.
 
 ### The monthly automation fails
 
@@ -461,9 +439,9 @@ records live again; the Monthly Scrape on GitHub stored them the same day (scrap
 
 **What happened:** a month in the archive did not match the IESO's own monthly Ontario Price
 table, or an official IESO file could not be read. The validated archive was not changed.
-Since November 2, original reports are saved separately before these checks, so a failed
-check does not throw away new daily reports. The market history build still runs, using
-the validated archive already saved.
+Original reports are saved separately before these checks, so a failed check does not throw away
+new daily reports. The market history build still runs, using the validated archive already
+saved.
 
 **What to do (soon):** the IESO deletes each daily price file after about 90 days, so a problem
 left too long loses hours for good.
@@ -471,9 +449,8 @@ left too long loses hours for good.
    --raw-dir data/market/ieso_raw --dry-run`; it names the month or file that failed and writes
    nothing. The retained daily reports can be read even after IESO removes them.
 2. If it says "the IESO published this file empty", nothing is wrong with the project: start the
-   workflow again a day or two later. This happened on October 16 with the 2026 LFDA file; the IESO
-   published it again on October 30. (Project owner decision, October 16: wait for the IESO rather
-   than save prices without their LFDA.)
+   workflow again a day or two later, once the IESO has published the file again. (Project owner
+   decision: wait for the IESO rather than save prices without their LFDA.)
    If the issue instead says **raw report preservation failed**, check whether the raw commit
    succeeded. A failed Git save leaves an `ieso-raw-recovery` artifact on the run page for
    90 days: download it promptly and repair the save. Raw files must never be treated as
@@ -513,6 +490,16 @@ disagrees with the IESO's own tables or a file cannot be read.
 2. If the IESO changed a table or file, the script needs updating; if its website was down,
    start the workflow again later.
 
+### The Market Benchmarks workflow failed
+
+**What happened:** a missing hour, a changed source format or a disagreement with the official
+monthly price stopped publication. A changed price for a month that is already archived also
+stops it, for review.
+
+**What to do:** read its failure issue. Do not guess a revision deadline or overwrite old
+evidence; Ontario and Alberta history stay separate. To check the Alberta history on your
+computer without saving anything, run `python scripts/build_alberta_market.py --dry-run`.
+
 ### The website shows no data
 
 **What happened:** The JSON data files are missing or empty.
@@ -539,6 +526,11 @@ older or empty environment does not make the dependencies available.
 3. The value might be in the `SEED_*` data at the top of the file.
 4. Correct the value and re-run the scraper.
 
+### graphify is not found or the commit hook reports a problem
+
+graphify is optional: scraping, testing and publishing work without it. The fixes are in
+"Graphify and the Commit Hook (Optional)" below.
+
 ---
 
 ## Understanding the Database
@@ -560,8 +552,8 @@ The database (`data/db/rates.db`) has these main tables:
 **The key relationship:** A utility has many tariffs. A tariff has many rate components. This structure lets us capture the full complexity of utility bills instead of flattening everything into one number.
 
 **Where the real database lives:** on GitHub, as the file `rates.db` in the `data-history`
-release, next to up to 12 dated backups. Only the Monthly Scrape writes it (since October 16);
-your computer keeps a read-only copy (see "How the Monthly Updates Work").
+release, next to up to 12 dated backups. Only the Monthly Scrape writes it; your computer keeps a
+read-only copy (see "How the Monthly Updates Work").
 
 ---
 
@@ -570,105 +562,32 @@ your computer keeps a read-only copy (see "How the Monthly Updates Work").
 Ontario is special. Most Canadian provinces set electricity rates directly — a regulator publishes a price and that's what you pay. Ontario is different:
 
 - **Small customers** (residential, GS < 50 kW) pay OEB-regulated TOU or Tiered rates — simple, published prices.
-- **Large customers** (GS >= 50 kW) pay market-based energy prices that change every hour, plus a monthly "Global Adjustment" (GA) that covers long-term generation contracts.
+- **Large customers** (GS >= 50 kW) pay market-based energy prices that change every hour, plus a monthly "Global Adjustment" (GA) that covers long-term generation contracts. "Class B" GA is the version most customers pay.
 
-Since May 1, 2025 that hourly market price is the **Ontario Price** (Ontario Electricity Market
-Price, OEMP): the Day-Ahead Ontario Zonal Price plus a small Load Forecast Deviation Adjustment.
-The older Hourly Ontario Energy Price (HOEP) was retired on April 30, 2025. Since October 9 the
-large customers' tariffs show a "Market Energy" line with no number, labelled "Variable",
-because the price changes every hour; no made-up average is stored in a tariff.
+The hourly market price was the **HOEP** until April 30, 2025. Since May 1, 2025 it is the
+**Ontario Price** (OEMP): the day-ahead price (DA-OZP) plus a small adjustment (LFDA). Because the
+price changes every hour, large customers' tariffs show a "Market Energy" line with no number,
+labelled "Variable"; market averages are never copied into a tariff.
 
-The website's **Market Pricing** page shows what this market really cost over the **latest five
-years** (since October 16): **real (observed) prices**, not estimates. In plain words:
+The **Market Pricing** page shows what the market really cost (energy, GA and their total, the
+"full cost" a large customer roughly pays per kWh) over the latest 60 complete months, using only
+**real (observed) prices**. A month counts as complete only when it is over, its energy price
+matches the IESO's own published monthly value, and its Class B GA rate is published. The
+heatmap averages each month, weekday or weekend, and hour, using only hours with a real recorded
+price. The hourly Ontario Price from May 1, 2025 to July 10, 2026 can no longer be downloaded, so
+that gap is explained on the page and never filled with made-up hours.
 
-- The **HOEP** was Ontario's wholesale electricity price, set every hour, until April 30, 2025.
-  Since May 1, 2025 the hourly price is the **Ontario Price**.
-- The **Global Adjustment (GA)** is charged per kWh and changes once a month. "Class B" is the
-  version most customers pay; the page uses its actual monthly rates.
-- A large customer buying at market prices pays roughly the energy price + GA for each kWh (the
-  "full cost").
+**Did the new market change what customers pay?** For a large customer who pays the market price
+plus the Class B GA, hardly. The energy price alone is much higher now, but the GA fell by almost
+as much, because the GA pays generators the difference between their contracts and what the
+market pays them. That is why the page shows the old and new markets as one continuous total.
 
-The page uses a **rolling window** (see the glossary): the latest 60 complete months. On October 16
-that is September 2021 to August 2026: 44 months of the HOEP and 16 of the Ontario Price
-(September 2026 is not in the IESO's monthly table yet). On average the full cost was 10.40
-cents/kWh (energy 4.49 + GA 5.92): 10.13 in the HOEP months and 11.16 in the Ontario Price
-months. The page shows that average, a monthly chart of energy, GA and total with May 2025
-marked, a table of all 60 months (which market each month used and where its numbers came from),
-a heatmap and an explanation of the method.
-
-A month counts as **complete** only when it is over, its energy price matches the IESO's own
-published monthly value, and its Class B GA rate is published. April 2025 uses the IESO's monthly
-report value only, because the IESO's hourly file for that month does not add up to the report.
-
-**The heatmap** shows averages for each month, weekday or weekend, and hour (576 boxes; a
-statutory holiday counts as the weekday it falls on; hours are Eastern Standard Time). It uses
-**only hours with a real recorded price**: 32,640 of the window's 43,824 hours (31,392 HOEP hours
-and 1,248 Ontario Price hours). Each box shows how many hours it averages (63-89 for weekdays,
-25-37 for weekends). The hourly Ontario Price from May 1, 2025 to July 10, 2026 can no longer be
-downloaded (the IESO deletes its daily files after about 90 days), so that gap is explained on
-the page and never filled with made-up hours. As the archive grows, more Ontario Price hours
-enter the heatmap.
-
-**Where the numbers live:**
-- **For ready-to-use totals:** `data/market/ontario_total_hourly.csv` or the fixed
-  `ontario_total_hourly_2020_2025.csv`, plus `ontario_total_monthly.csv`. All use cents/kWh.
-  The formula is (hourly energy + that month's Class B GA), divided by 10 when the inputs
-  are in dollars/MWh. Missing hourly totals stay blank; a separate monthly-average column
-  provides a labelled reference. April 2025 includes the official hourly observations
-  with a warning because their mean does not match the IESO monthly report. These files
-  do not change the stricter website heatmap or model calculations. Rebuild them with
-  `python scripts/export_ontario_totals.py`; their metadata explains the GA caveats.
-- `data/market/ontario_market_monthly.csv`: one line per month since January 2020 (80 months on
-  October 16). It is never shortened; a month can only be corrected within 6 months of its end.
-- `data/market/hoep_hourly.csv`: the old hourly HOEP prices (January 2020-March 2025), saved once
-  so GitHub never has to download them again.
-- `data/market/ontario_price_hourly.csv`: the project's own hourly Ontario Price archive (below).
-- `site/data/market_pricing_ontario.json`: what the website reads (the 60 months and the heatmap).
-
-**How it is updated:** automatically. The **Ontario Price Archive** workflow (1st and 15th, 06:00
-UTC) first saves raw source reports, then the validated archive, then runs
-`python scripts/build_ontario_market.py` (also when the
-archive step failed: the build then uses the archive already saved). That script
-downloads only the IESO's monthly price table and Global Adjustment files (18 files), checks every
-number, and only then rewrites the files. If anything is missing or a check fails, it writes
-no validated market files and GitHub opens an issue; the earlier raw-report save remains.
-After a successful market build it runs `python scripts/export_ontario_totals.py` and refreshes
-the models. You can run either data-building command on your computer; add `--dry-run` to check
-everything without writing. These averages
-are never copied into a tariff: large customers' tariffs keep their "Variable" line.
-
-The older 2020-2024 version of the page (from October 9) can still be rebuilt with
-`python scripts/generate_market_pricing.py`, but the website no longer shows it. By default it
-writes `logs/market_pricing_legacy_2020_2024.json`, a scratch file that is not saved in git
-(changed October 30, so it can no longer overwrite the website's five-year file by accident).
-Two GA details
-apply to both versions: April-June 2020 use the lower, capped GA (115 $/MWh) that the IESO
-published under a provincial emergency order, and the 2021 rates leave out a separate recovery
-charge billed that year to Class B customers who were not on the Regulated Price Plan. These
-choices, and counting holidays as weekdays, are defaults the project owner can change. If the
-file was not built from real prices, the website hides the dashboard and shows a "not available"
-notice instead.
-
-**The Ontario Price archive (since October 15):** `scripts/archive_ontario_price.py` saves every
-hour of the Ontario Price that the IESO still publishes into `data/market/ontario_price_hourly.csv`,
-starting July 11, 2026 (earlier hours are no longer online, and the IESO website's own chart data
-reaches back only about 10 days). Each row holds the date, the hour, the day-ahead price
-(DA-OZP), the small adjustment (LFDA, see the glossary), their sum (the Ontario Price) and whether
-the LFDA is final. The **Ontario Price Archive** workflow runs it on the 1st and 15th of each
-month and saves the file; the market history build above then uses it. Before writing, every
-complete month must match the IESO's own monthly
-table to the cent for all three numbers; if anything disagrees, the validated archive is not changed and GitHub
-opens an issue. Fix such an issue quickly: the IESO deletes each daily file after about 90 days.
-An hour without a published LFDA stays blank; it is never treated as zero.
-
-**Did the new market change what customers pay?** For a large customer who pays the market
-price plus the Class B GA, hardly. From 2020 to 2024 the two together averaged 10.6 cents/kWh;
-the first 12 months of the Ontario Price averaged 10.8 and the latest 12 months 11.1, and most
-months fell inside the range seen in the same month in 2020-2024. The energy price alone is much
-higher now (about 7.0 cents/kWh against 2.9), but the GA fell by almost as much, because the GA
-pays generators the difference between their contracts and what the market pays them. That is
-why, since October 16, the Market Pricing page shows the old and new markets as one continuous
-total.
+The IESO deletes its daily price files after about 90 days, so the project keeps its own hourly
+Ontario Price archive (from July 11, 2026) and copies of the original reports. An hour without a
+published LFDA stays blank; it is never treated as zero. Every number is checked against the
+IESO's own tables, and nothing is written when a check fails (see "What to Do When Something
+Breaks"). A few choices (some 2020-2021 GA values, holidays counted as weekdays) are defaults the
+project owner can change. Technical rules: [market data rules](.github/instructions/market-data.instructions.md).
 
 ---
 
@@ -676,36 +595,56 @@ total.
 
 Alberta is the only province where retail electricity is fully deregulated. This means:
 
-- **Distribution companies** (ATCO Electric, FortisAlberta, EPCOR Distribution, ENMAX Power) own the wires and charge regulated delivery rates. Since October 9 their main home and business rates are read live from their approved schedules. Delivery is split into **distribution** and **transmission** lines, and temporary riders are listed separately with their own dates.
-- **EPCOR Distribution's 2026 rates are interim** (approved only temporarily), so they are shown at medium confidence with a note.
-- **Retail energy** is sold separately from wires service. Customers without a retail contract pay the **Rate of Last Resort** (RoLR), which replaced the Regulated Rate Option (RRO) on January 1, 2025. Its price is fixed until December 31, 2026: 12.02 cents/kWh from Direct Energy Regulated Services (ATCO Electric area), 12.06 from ENMAX Energy (Calgary) and 12.01 from EPCOR Energy Alberta (Edmonton and FortisAlberta areas). Each price must match the Government of Alberta's Utilities Consumer Advocate table. After December 31, 2026 these records stop counting as live until the next price is published. Old RRO estimates stay in history.
-- **AESO** (the wholesale market) keeps a live "Variable" reference with no tariff price. Since November 2 there is also a separate historical market dashboard and model benchmark. The owner confirmed permission for public raw archives and derived charts/benchmarks; the project has not independently inspected that grant.
-- The code models these pieces separately and never adds them into one price.
-- Only the representative models (since October 16) put a wires company and the Rate of Last
-  Resort provider for its area together, as one "pair", to show a typical monthly cost; each
-  charge keeps its own source. The Rate of Last Resort is only for sites using less than 250,000
-  kWh a year. Larger business models keep their delivery-only table and add a separate
-  historical pool-energy benchmark, never a promised retail price. Retailer fees, losses
-  and unpriced conditional charges are still excluded; no real customer profile is assumed.
+- **Wires companies** (ATCO Electric, FortisAlberta, EPCOR Distribution, ENMAX Power) own the
+  wires and charge regulated delivery rates: separate **distribution** and **transmission**
+  lines, plus temporary riders with their own dates. Rates approved only temporarily ("interim")
+  are shown at medium confidence with a note.
+- **Retail energy** is sold separately from wires service. Customers without a retail contract
+  pay the **Rate of Last Resort** (RoLR), which replaced the Regulated Rate Option (RRO) on
+  January 1, 2025. Each provider's price is fixed for a two-year term and must match the
+  Government of Alberta's Utilities Consumer Advocate table; when the term ends, the records stop
+  counting as live until the next price is published. Old RRO estimates stay in history.
+- **AESO** runs the wholesale market and publishes no customer tariff: the project keeps a live
+  "Variable" reference with no price, plus a history of real hourly pool prices for the Market
+  Pricing page and the model benchmarks.
+- The code models these pieces separately and never adds them into one price. Only the
+  representative models put a wires company and the Rate of Last Resort provider for its area
+  together, as one "pair", to show a typical monthly cost; each charge keeps its own source. The
+  Rate of Last Resort is only for sites using less than 250,000 kWh a year, so larger business
+  models show delivery charges plus a separate historical pool-energy benchmark, never a promised
+  retail price.
+
+The technical rules are in the [Alberta electricity rules](.github/instructions/alberta-electricity.instructions.md).
 
 ---
 
-## Source URL Management
+## Rules for Each Utility
 
-### The Excel file is NOT a data source
+Every utility publishes its rates differently, so each has its own detailed rules. The same ideas
+apply to all of them:
 
-There is an Excel file at `data/excel/old_urls.xlsm` that contains historical reference URLs and rate data. **No scraper reads this file.** It exists only for manual audit and comparison. It is git-ignored.
+- **"Live" means read from the official source.** A record is live only when its scraper read the
+  current official document and rebuilt the tariff from it, or proved every charge in it
+  (finding the same number somewhere is not enough). If reading fails or a schedule changes
+  shape, the records become labelled estimates; never raise their confidence by hand. A mixed
+  list of live and estimated records is never labelled entirely live.
+- **Keep every charge as published.** Each charge stays a separate line with its own label, unit
+  and date. Conditional, optional and source-blocked prices are not charges that every customer
+  pays. Different kinds of sources (Alberta wires, Alberta default retail, AESO, gas and northern
+  utilities) stay separate.
+- **"Complete" means checked.** Completing a utility means auditing its building-related standard
+  published classes, not just replacing old estimates. Some products are left out on purpose;
+  exclusions and remaining gaps are listed in the [parser gap report](docs/live_parser_gap_report.md)
+  and the [coverage matrix](docs/phase5_completion_matrix.md).
+- **"Structural drift"** in the logs names charges that could not be verified. Open the registry
+  URL, find the current approved schedule, update that utility's reading and its test fixture,
+  then run its dry run.
 
-### The registry IS the system of record
-
-`data/sources/registry.json` lists every utility's official source URLs and scraper configuration. When source URLs change, update the registry — not the Excel file.
-
-### Source prioritization
-
-When choosing which URL to use for a utility, prefer:
-1. The utility's own rate schedule page
-2. Regulator rate orders or decisions
-3. Third-party aggregators (last resort)
+The detailed rules are in the area files: [all scrapers](.github/instructions/scrapers.instructions.md),
+[Ontario electricity](.github/instructions/ontario-electricity.instructions.md),
+[Alberta electricity](.github/instructions/alberta-electricity.instructions.md),
+[other provinces and territories](.github/instructions/regional-utilities.instructions.md) and
+[natural gas](.github/instructions/gas-utilities.instructions.md).
 
 ---
 
@@ -714,11 +653,16 @@ When choosing which URL to use for a utility, prefer:
 | Term | What it means |
 |---|---|
 | **Scraper** | A program that visits a website and extracts data from it automatically. |
+| **Dry run** | A trial scrape that reads the official sources but saves nothing. |
+| **Seed value (estimate)** | A hand-entered fallback rate, used only when the official source cannot be read. It is labelled "Estimated" and hidden on the website by default. |
+| **Fail closed** | When a source is doubtful, reject it instead of guessing. |
+| **Fixture** | A small saved excerpt of an official page or file that the tests read instead of going online. |
 | **Database** | A structured file that stores information in tables (like a spreadsheet, but more organized). |
 | **SQLite** | The specific database format we use. It's a single file — no server needed. |
 | **JSON** | A text format for data that web browsers can read easily. |
 | **GitHub Actions** | A service that runs code automatically on a schedule (like a cron job in the cloud). |
 | **GitHub Pages** | A free service that hosts a static website from a GitHub repository. |
+| **Release (`data-history`)** | A storage place on GitHub for files too big to keep with the code. The project's database (`rates.db`) and its dated backups live there; deleting the release deletes them all. |
 | **Tariff** | A rate plan or schedule published by a utility (e.g., "Residential Time-of-Use"). |
 | **Rate component** | One individual charge within a tariff (e.g., "Tier 1 energy charge: $0.095/kWh"). |
 | **TOU** | Time-of-Use pricing — rates that change based on time of day. |
@@ -726,30 +670,29 @@ When choosing which URL to use for a utility, prefer:
 | **Multiplier** | A tariff-defined factor based on eligible dwellings or rooms. Some bulk-metered buildings multiply daily charges and energy allowances by this factor; it is not automatically one. |
 | **Demand charge** | A charge based on the peak power (kW) a customer draws, common for commercial and industrial accounts. |
 | **Rider** | A temporary adjustment to rates — can be a surcharge or a credit. |
-| **Representative model** | A "typical" monthly cost for a province (Phase 7), built from the median of its utilities' live tariffs at set example usage levels, shown without and with tax, with a note explaining exactly how it was made. Built for Ontario electricity since October 9 and for all ten provinces since October 16 (`site/data/representative_models.json`), and shown on the website's Representative Models page. In Alberta, one "utility" in a model is a pair: a wires company plus the Rate of Last Resort provider for its area. Gas and the territories come later. It is a comparison aid, never a rate anyone is billed, and it never counts as live coverage. |
-| **Synthetic load profile** | A made-up pattern of when a business uses electricity, not taken from any real customer. The project's one (approved by the project owner on October 16) assumes a business uses its full power on weekdays from 7 a.m. to 7 p.m. (Eastern Standard Time) and a smaller, steady amount at all other hours. It is used only for the illustrative estimate. |
-| **Illustrative estimate** | A number shown only to give a rough idea, not to be relied on. The Representative Models page has one for Ontario's two larger business sizes: their delivery charges plus market energy priced with the synthetic load profile (about 10.6-10.8 cents/kWh). It stays hidden until you tick "Show illustrative all-in estimate (synthetic load profile)", carries a warning and a SYNTHETIC badge, and is never used in medians, comparisons or change checks. It is representative only: not a forecast, a quote or a bill, and it needs further analysis. |
-| **Rolling window** | A period that moves forward as time passes. The Market Pricing page always shows the latest 60 complete months; when a new month is complete, the oldest one leaves the page (it stays in the monthly history file). |
-| **Release (`data-history`)** | A storage place on GitHub for files that belong to the project but are too big to keep with the code. The project's database (`rates.db`) and its dated backups live in the `data-history` release. Deleting the release deletes them all. |
-| **Coverage gate** | `scripts/coverage_gate.py`: the check that decides whether "nationwide live-rate coverage is complete" may be claimed. It reads `data/sources/coverage_ledger.json` (the audit ledger) and fails while any active utility has no live record, no recent audit, an open deferred item or an overdue review. A utility's name in the ledger is its registry name; `stored_name` covers the two whose stored name differs (Énergir is stored as "Energir", Liberty Utilities NB as "Liberty Utilities Gas NB"). |
+| **Variable (market) charge** | A charge that follows a market price that changes over time (for example the Ontario Price). It is stored with a link to the market but no number, and the website shows "Variable". |
+| **Representative model** | A "typical" monthly cost for a province, built from the median of its utilities' live tariffs at set example usage levels, shown without and with tax, with a note explaining how it was made. In Alberta, one "utility" in a model is a pair: a wires company plus the Rate of Last Resort provider for its area. It is a comparison aid, never a rate anyone is billed, and it never counts as live coverage. |
 | **Median** | The middle value when numbers are sorted from lowest to highest. Unlike an average, one unusually high or low utility barely moves it. |
-| **Historical market benchmark** | A comparison using the average of 60 complete monthly energy prices plus today's modeled delivery charges. Ontario includes actual Class B GA; Alberta uses pool energy alone. It is not a forecast, retail quote or customer-profile-weighted bill, and does not replace the base model. |
 | **Outlier** | In a representative model, a utility whose cost is far from the median (more than 30% away, or well outside the range of the middle half of the utilities). It is named with how far away it is; it is not left out. |
+| **Synthetic load profile** | A made-up pattern of when a business uses electricity, not taken from any real customer. The project's one (approved by the project owner) assumes full power on weekdays from 7 a.m. to 7 p.m. (Eastern Standard Time) and a smaller, steady amount at all other hours. It is used only for the illustrative estimate. |
+| **Illustrative estimate** | A number shown only to give a rough idea, not to be relied on: for Ontario's two larger business sizes, their delivery charges plus market energy priced with the synthetic load profile. It stays hidden until you tick "Show illustrative all-in estimate (synthetic load profile)", carries a warning and a SYNTHETIC badge, and is never used in medians, comparisons or change checks. It is not a forecast, a quote or a bill, and it needs further analysis. |
+| **Historical market benchmark** | A comparison using the average of 60 complete monthly energy prices plus today's modeled delivery charges. Ontario includes actual Class B GA; Alberta uses pool energy alone. It is not a forecast, retail quote or customer-profile-weighted bill, and does not replace the base model. |
+| **Rolling window** | A period that moves forward as time passes. The Market Pricing page always shows the latest 60 complete months; when a new month is complete, the oldest one leaves the page (it stays in the monthly history file). |
+| **Coverage gate** | `scripts/coverage_gate.py`: the check that must pass before anyone may say nationwide live-rate coverage is complete. It fails while any active utility has no live record, no recent audit, an open deferred item or an overdue review. |
 | **LDC** | Local Distribution Company — the utility that delivers electricity to your home (common in Ontario). |
 | **OEB** | Ontario Energy Board — the regulator that sets many Ontario utility rates. |
 | **QRAM** | Quarterly Rate Adjustment Mechanism — the Ontario Energy Board process that resets Ontario natural gas supply prices every three months. |
 | **IESO** | Independent Electricity System Operator — operates Ontario's wholesale electricity market. |
-| **HOEP** | Hourly Ontario Energy Price — Ontario's former real-time wholesale electricity price. **Retired April 30, 2025** and replaced by the Ontario Price (OEMP). The Market Pricing page shows its real prices up to April 2025 as part of the rolling five-year history. |
+| **HOEP** | Hourly Ontario Energy Price — Ontario's former real-time wholesale electricity price. **Retired April 30, 2025** and replaced by the Ontario Price (OEMP). |
 | **Ontario Price (OEMP)** | Ontario Electricity Market Price — Ontario's hourly wholesale electricity price since May 1, 2025: the Day-Ahead Ontario Zonal Price plus a Load Forecast Deviation Adjustment. Large customers who are not on the Regulated Price Plan pay it plus the Global Adjustment. |
 | **DA-OZP** | Day-Ahead Ontario Zonal Price — the hourly price for the Ontario zone set a day ahead in the IESO market; the main part of the Ontario Price. The IESO keeps only about 90 days of the hourly files online. |
 | **LFDA** | Load Forecast Deviation Adjustment — a small hourly adjustment added to the DA-OZP to make the Ontario Price. The IESO publishes it first as preliminary, then as final; some hours have none. |
-| **Variable (market) charge** | A charge that follows a market price that changes over time (for example the Ontario Price). It is stored with a link to the market but no number, and the website shows "Variable". |
-| **GA** | Global Adjustment — monthly charge in Ontario covering contracted/regulated generation costs. The Market Pricing page shows the actual monthly Class B rates for the latest 60 months. |
+| **GA** | Global Adjustment — monthly charge in Ontario covering contracted/regulated generation costs. |
+| **Class A/B** | Ontario GA allocation categories. Class A (> 1 MW) pays based on coincident peak demand. Class B (everyone else) pays a flat per-kWh charge. |
 | **AESO** | Alberta Electric System Operator — operates Alberta's wholesale electricity market. |
 | **RRO** | Regulated Rate Option — Alberta's former default retail electricity rate. **Replaced by the Rate of Last Resort on January 1, 2025**; old RRO estimates stay in history. |
-| **RoLR** | Rate of Last Resort — Alberta's default retail electricity rate since January 1, 2025, for customers without a retail contract. Each provider's price is fixed for a two-year term (currently January 1, 2025 to December 31, 2026). |
+| **RoLR** | Rate of Last Resort — Alberta's default retail electricity rate since January 1, 2025, for customers without a retail contract. Each provider's price is fixed for a two-year term. |
 | **UCA** | Utilities Consumer Advocate — Government of Alberta office whose default-rates table is used to double-check Alberta default electricity and gas prices. |
-| **Class A/B** | Ontario GA allocation categories. Class A (> 1 MW) pays based on coincident peak demand. Class B (everyone else) pays a flat per-kWh charge. |
 | **kWh** | Kilowatt-hour — the standard unit for measuring electricity consumption. |
 | **GJ** | Gigajoule — a unit for measuring natural gas energy content. |
 | **m³** | Cubic metre — a unit for measuring natural gas volume. |
@@ -761,40 +704,50 @@ When choosing which URL to use for a utility, prefer:
 Tests check that the code works correctly. Run them with:
 
 ```
-pytest
+pytest tests
 ```
 
-There are 2,237 tests across 35 test modules (November 2), including combined-price and raw-report
-recovery tests (`test_ontario_totals`, `test_ieso_raw_reports`) and offline browser tests in
-`test_across_canada`, the current Centra PDF authority checks and Maritime's demand-block/model
-regressions. Earlier additions include `test_phase5_hardening` for
-provenance, storage and history, `test_ontario_price_archive` for the Ontario Price archive,
-`test_market_rolling` and `test_market_site` for the five-year market history and its page,
-`test_ci_history` for the database safety check and download script, `test_models_7c` for the
-all-province models and the illustrative estimate, and `test_site_models` for the
-Representative Models page. Normal tests block unmocked network access.
-The BC Hydro, FortisBC Electric, Hydro-Quebec, NL Hydro, Manitoba Hydro, NB Power,
-Newfoundland Power, Maritime Electric, NSPower, SaskPower, SaskEnergy, Centra Gas,
-FortisBC Energy, Energir, Heritage Gas (Eastward), Liberty NB, Yukon Energy, NTPC,
-Qulliq, Ontario OEB tariff (including PUC Distribution), ENMAX Power, ATCO Electric, EPCOR
-Distribution, FortisAlberta, Alberta Rate of Last Resort, Enbridge Gas, ATCO Gas and EPCOR
-Natural Gas (Ontario) fixtures in `tests/fixtures/` hold official
-HTML/PDF-text excerpts, source URLs and page/section details for repeatable parser
-tests. Batch 10 expands source-derived coverage for eleven utilities including the
-territories, and batch 12 adds the Alberta, Ontario/Alberta gas and PUC Distribution fixtures;
-a fixture covers only the saved classes and conditions and does not prove
-the entire utility catalogue is complete. The representative model tests use frozen copies of
-exported records (`rm_records_sample.json`, `rm_engine_sample.json`, `rm_records_b12.json` and
-`rm_records_b14.json`), so the tests that run before each monthly scrape never depend on that
-month's data. The Ontario market history tests use `ieso_market.json` and
-`ieso_market_rolling.json` and the archive tests `ieso_ontario_price.json`,
-small saved excerpts of the official IESO files, so they never download anything.
+Always add `tests`: a bare `pytest` also collects old copies of tests left in the git-ignored
+`logs/` folder. To run one test file, use for example `python -m pytest tests/test_coverage_gate.py`.
+
+The tests never go online: any attempt to reach a website that a test has not replaced with a
+stand-in is blocked. Instead they read **fixtures** in `tests/fixtures/` (small saved excerpts of
+official pages, PDFs and market files, with their source addresses) and frozen copies of exported
+records, so the tests that run before each Monthly Scrape never depend on that month's data. A
+fixture covers only what was saved in it; passing tests do not prove that a utility's whole
+catalogue is complete. To check a scraper against the real website, use a dry run.
 
 If the test run seems to freeze, check the size of `logs/scrape.log`. PDF libraries
-can write huge debug logs; `setup_logging()` now keeps them quiet and caps the file at
+can write huge debug logs; `setup_logging()` keeps them quiet and caps the file at
 10 MB (three older copies kept). The log is only a debug diary: deleting it is safe.
 
 If everything passes, you'll see green output. If something fails, it will show you exactly what went wrong and where.
+
+---
+
+## Graphify and the Commit Hook (Optional)
+
+graphify draws a "map" of the code in the `graphify-out/` folder so AI assistants can find
+things quickly. You do not need it to scrape or publish rates.
+
+**To set it up on a new computer:** install Python 3.10 or newer, Git and
+[uv](https://docs.astral.sh/uv/), then run `uv tool install graphifyy -c requirements-graphify.txt`
+and restart VS Code. Then, in the project folder, run `python scripts/graphify_hook.py install`
+once. Details are in the README section "Graphify (optional developer tool)".
+
+**What happens after that:** each time you commit code, the map is updated and saved in a
+second, automatic commit called "chore(graphify): refresh code graph for ...". This makes those
+commits slower (up to about a minute). Commits that change only documents are not slowed
+down. Nothing is ever pushed to GitHub automatically.
+
+**If something goes wrong:**
+- "graphify was not found": install it (above), then restart VS Code.
+- "is not the pinned ...": a different graphify version is installed. Run
+  `uv tool install --reinstall graphifyy -c requirements-graphify.txt`.
+- "did not commit it: uncommitted changes": commit or stash your other changes; the next
+  commit saves the map.
+- To check everything at once: `python scripts/graphify_hook.py status`.
+- Never edit files in `graphify-out/` by hand, and never amend a "chore(graphify)" commit.
 
 ---
 
@@ -804,13 +757,18 @@ If everything passes, you'll see green output. If something fails, it will show 
 
 | File | When to update |
 |---|---|
-| `README.md` | Roadmap changes, new phases completed, tech stack additions, project structure changes |
-| `AGENTS.md` | New files added, glossary terms needed, troubleshooting patterns discovered |
-| `CLAUDE.md` | Architecture changes, new conventions, test count changes, key pattern additions |
+| `README.md` | Roadmap changes, new phases completed, tech stack additions, project structure changes, the quick start or the short current status |
+| `AGENTS.md` | New files added, project safeguards changed, glossary terms needed, troubleshooting patterns discovered |
+| `.github/copilot-instructions.md` | The development workflow changed |
+| `.github/instructions/*.instructions.md` | That area's technical rules changed |
 | `docs/adding-a-utility.md` | Scraper patterns or helper functions changed |
 | `docs/live_parser_gap_report.md` | Live parser status changed (new parsers, fixed gaps) |
+| `docs/phase5_completion_matrix.md` | The work queue or coverage status changed |
 
-If the task doesn't warrant a change to any of these, no update needed — but the check should happen.
+Figures that change often (test totals, record counts, run IDs) belong only in the README's short
+status. Dated history goes to the local, git-ignored `.local/HISTORY.md`, not into these files.
+If the task doesn't warrant a change to any of these files, no update is needed — but the check
+should happen.
 
 ---
 
@@ -825,76 +783,3 @@ If the task doesn't warrant a change to any of these, no update needed — but t
 - **`.js`** — JavaScript file. Makes the web page interactive.
 - **`.yml`** — YAML file. Used for GitHub Actions configuration.
 - **`.md`** — Markdown file. Human-readable documentation (like this file).
-
----
-
-## Phase 5: Live Sources and Fallbacks - Rules That Still Apply
-
-These rules came out of the live-source work (Phase 5). They still apply to every change.
-
-### Labels and checks
-
-- **Live parsed** means the scraper read the current official page or document and rebuilt the tariff from it.
-- **Officially verified** means the project already knows the tariff's structure and proved every component, with its tariff, label and unit, in a current official document. Finding the same number somewhere is not enough.
-- **Estimate (fallback):** if fetching fails or a schedule changes shape, `mark_fallback()` labels every tariff and component `unverified` and adds `Provenance: seed_fallback` to the notes. Never raise this confidence by hand.
-- **"Structural drift"** in the logs names components that could not be verified. Open the registry URL, find the current approved schedule, update that utility's interpretation and test fixture, then run its targeted dry run.
-- A class that was read completely can stay live when another class of the same utility fails, but a mixed list of live and estimated records is never labelled entirely live.
-- "Fails closed" means a doubtful source is rejected instead of guessed. A missing carbon-charge source cannot be hidden under a live label. When a tariff is built from parts with different dates, the tariff takes the latest required part's date and each part keeps its own date.
-- Conditional, optional and source-blocked prices are not charges that every customer pays.
-- Source-check dates, live-record counts and catalogue completion are different facts. **Completing a utility** means auditing its building-relevant standard published classes, not just replacing existing estimates or completing every unrelated service.
-- Different kinds of sources (Alberta wires, Alberta default retail, AESO, gas and northern utilities) stay separate and keep their published classes, communities, tiers and units.
-- Some products are left out on purpose (for example BC Hydro RS1828, Hydro-Quebec Rate F/FP and FortisBC Energy 11RNG). Exclusions and remaining gaps are listed in the [parser gap report](docs/live_parser_gap_report.md) and the [coverage matrix](docs/phase5_completion_matrix.md).
-
-### History, testing and teamwork
-
-- Every successful stored scrape adds a copy of each tariff to `historical_snapshots`. The snapshot fingerprint ignores the order of components but changes when values, units, tiers, dates or structure change. Old effective-date versions are never deleted; the website shows the latest version of each tariff.
-- Since October 16 only the Monthly Scrape on GitHub stores scrapes. Computers run tests and dry runs and keep a read-only copy of the database; nobody uploads a database by hand.
-- Merged and retired registry entries are skipped by monthly runs but keep their history.
-- To test the Compare view locally, run `python -m http.server --directory site 8000`, add two cards, open **Compare**, remove or replace either one, and check the sideways-scrolling table on a phone-sized screen. It never calculates a bill total.
-- Parallel workers may each own separate utility files, but database, export, registry and test integration and publishing are done one at a time. Preserve all earlier snapshots.
-
-### Market prices
-
-- A price that follows a market (for example the energy price of Ontario's large customers) is stored without a number and shown as "Variable", never as a made-up value.
-- Four market-indexed products are live as "Variable" lines (October 30): BC Hydro RS1892, FortisBC Electric RS38, NSPower one-part real-time pricing and NL Hydro monthly non-firm prices (5.1L, Island non-thermal). Their fixed parts are real numbers; the market energy line never gets a number. NL Hydro's Island thermal non-firm stays source-blocked (fuel formula). NSPower's real-time adders come from scanned pages (OCR text layer checked against the page images; user-approved October 30, medium confidence).
-
-### Ontario electricity
-
-- Updates start with the OEB common-rate page, then each distributor's OEB-approved Tariff of Rates and Charges PDF. The OEB bill-data XML is only a cross-check, never a source of values. Each rate zone gets its own records.
-- Homes and small businesses (GS<50) get the live provincial Regulated Price Plan (RPP) energy price plus the distributor's delivery charges. Larger demand classes get delivery charges plus a "Market Energy" line with no number ("Variable").
-- Algoma's R1 is split into year-round dwellings (fully fixed) and O. Reg. 445/07 customers. Its R2 (50 kW and over, billed per kW) is delivery-only and has no "Market Energy" line, because accounts for homes stay eligible for the Regulated Price Plan.
-- A class that cannot be read cleanly is rejected, not guessed, and no new estimate is made for it; older estimates stay in history, labelled. A configured distributor that rejects a class, or publishes no such class, does not re-send old estimates for it. Estimates are still used if the tariff cannot be downloaded or read at all.
-- Some PDFs print values slightly above their labels; the fix is a per-document text-reading setting (`"extract": {"y_tolerance": N}`), never a guessed value.
-- PUC Distribution's approved tariff prints no transmission connection rate, so each of its records carries a note saying so.
-- Merged distributors keep their history; their successors (Enova Power and GrandBridge Energy) now publish the rates. The successors have no estimates, so they return nothing if their tariff cannot be read.
-
-### Alberta
-
-See also "Alberta's Deregulated Market" above.
-
-- The wires companies list distribution and transmission as separate lines and keep each current rider as its own dated line; an expired rider is left out by its date. Wires charges and energy prices are never added into one price.
-- ATCO Electric's lines must add up to the total printed in its schedule.
-- EPCOR Distribution's 2026 rates are interim, so they are shown at medium confidence with a note.
-- Each Rate of Last Resort price, and ATCO Gas's monthly default gas price, must match the Utilities Consumer Advocate table. After the fixed term ends (December 31, 2026), the Rate of Last Resort records stop counting as live until the next price is published.
-
-### Other utilities
-
-- **BC Hydro:** the power-factor surcharge is a conditional percentage of the business rate charges for poor (lagging) power factor, not an extra charge for every customer.
-- **FortisBC Electric:** the current residential price is flat; the older tiered version stays in history. Rate 21's kW and kVA charges are alternatives, and voltage/transformation discounts are conditional negative credits.
-- **FortisBC Energy:** Rates 1-3 have **daily** basic charges. The Rate 5 basic charge (written contract, about 5,000 GJ or more a year) is **monthly** as printed in the tariff, even though the business page says daily, so Rate 5 is not interchangeable with Rates 1-3. Rate 4 is seasonal (April 1-November 1). Revelstoke business rates are live only when the approved tariff index says the class is offered in Revelstoke. Fort Nelson Rates 4/5 have no published price table (a gap).
-- **Hydro-Quebec:** DM (grandfathered) and DN charges and energy allowances depend on the approved multiplier. DP has summer and winter demand charges. DN applies north of the 53rd parallel except Schefferville and normally uses multiplier one; its older DM-eligibility exception does not restrict every DN customer. Supply-voltage credits are conditional and do not apply to everyone. Minimum bills, demand allowances and transformation-loss rules stay conditions, not extra charges or calculated totals. A missing continuation page rejects only the affected class. DT switches price with the outdoor temperature, not the clock. Flex D uses notified events. Winter Credit is a closed, conditional adjustment to Rate D that keeps the published reference-energy rules.
-- **Manitoba Hydro:** a failure on the residential page or the commercial page affects only that page's records.
-- **SaskPower:** maintain the audited building scope (standard, bulk-metered and diesel residential service and R23/R24 renewable access). Standard E01/E03 keeps its identity only when both published columns agree. Bulk fixed charges are per unit, not per account.
-- **SaskEnergy:** delivery-only service leaves out private (retailer) commodity prices.
-- **Centra Gas:** delivery and demand parts stay separate, without guessed heat conversion or private commodity prices. Since November 2 the approved current quarterly PDF is the price authority (owner decision), not stale website headings. November's text tables give all 13 records at high confidence, including negative transport credits; date, order, columns, units, totals, eligibility, carbon and marketer evidence are checked. Website disagreements are explained, not hidden. An unknown quarterly edition fails closed. August's narrow, hash-checked Mainline Interruptible transcription remains historical support only; never extend transcription to another scanned document without asking.
-- **Maritime Electric:** preserve the printed first 20 kW free for 232/233 as a real zero-priced demand tier. Never discard it or charge the balance price on all demand. Seasonal-model exclusions remain unchanged.
-- **NL Hydro:** phase/amperage fixed charges are alternatives, not added together; seasonal options need their matching base schedules.
-- **NSPower:** the mandatory FAM, DSM and storm riders are separate from base energy; Green Power blocks are opt-in, not a standard charge. Residential service includes standard service, storage-heating time-of-day service and closed-enrollment TOU and critical-peak pilots. The pilots are conditional, and their records separate the tariff's conditional interim phase from its dated November pricing; do not assume an existing customer's system-restoration status from an advertising page. MURB has its own rider rows and a minimum-bill condition, and the approved book applies its peak price on weekends and holidays. Solar Garden and Community Solar records are subscriber adjustments to another tariff, not replacement household energy prices. Dates past the supported tariff/rider year fail closed.
-- **Energir:** follows the current document link and fails closed on an edition/month mismatch. D3/D4 minimum daily obligation bands are per m³/day of **subscribed volume**; above-subscribed-volume withdrawal, average load-balancing and renewable-gas charges are conditional. Inventory adjustments depend on each customer's storage use and have no published price, so they are explained, never given a number.
-- **Eastward (Heritage Gas):** follows the current document link and fails closed on an edition/month mismatch. Municipal riders apply to a limited charge base. Rate Class 3's demand charge is per GJ of Billing Demand per month (the greater of 225 GJ, contract demand or maximum 24-hour use), a unit taken from the approved tariff PDF rather than the rate table. Rate Class 4 is negotiated per site and not published, so it is an exclusion, not a parser gap.
-- **Liberty NB:** the MGS/LGS customer charges are alternatives. Off-Peak Service eligibility is April-November only; the December-March overrun is a note.
-- **Territories:** government subsidies stay separate and conditional; never fold them into base prices. NTPC's Taltson interruptible heating is conditional. Qulliq's rates are interim (medium confidence) until a final decision is published.
-- **Yukon Energy:** Rate 1160 lists base rates, the R/J/J1 percentage riders, fuel Rider F and dated residential relief separately; never add riders to a price that already includes them. The other residential and general-service classes come from ATCO's text joint rate book, checked against Yukon Energy's cross-reference. Yukon Energy's own schedule PDFs are image-only and are never read into live values. The joint rate book gets a new address every month; since October 30 the scraper finds it in ATCO Electric Yukon's page data on each run.
-
-**History:** batch-by-batch history (dates, counts and decisions) is in the History section of
-[docs/phase5_completion_matrix.md](docs/phase5_completion_matrix.md) and in git history.

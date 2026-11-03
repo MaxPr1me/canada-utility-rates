@@ -108,17 +108,6 @@ actions below remain independent.
    commercial loads. Exact datasets and reuse terms still need qualification; geographic
    proxies remain a separate option.
 
-## Historical checkpoints through October 30
-
-**Updated:** 2026-10-30 (batches 15 and 16, pushed October 30 before the November 1 Monthly Scrape. Batch 16: Yukon rate-book discovery through the page data, Centra's November 1 schedule edition read from text, dead-link clean-up and the model decisions of method 7C-3. Batch 15: dated November 1 model inputs (ULO shares 41/20/26/13, Ontario Electricity Rebate 15.7%), moved Manitoba Hydro and Alberta source addresses with a dead-address guard test, the legacy market generator's scratch default, Deploy Site after successful Ontario Price Archive runs, and early monitor checks that found a new Centra Appendix A edition and a Yukon book-discovery risk). Before that, 2026-10-16 (batch 14: EPCOR Energy Alberta's moved pages, CI as the only writer of the history database, the rolling five-year Ontario market history, Phase 7C for all ten provinces and the 7E illustrative estimate; the first Monthly Scrape on GitHub as the only database writer (scrape run 29) found no changed rates, so the tariff counts below are batch 12's from October 9). Scope: all 87 registered utilities (8 Ontario entries
-`merged`, 1 mis-registered Alberta gas entry `retired`), not every utility in the broader Canadian
-inventory. The export has 1,396 stored tariff versions / 14,179 components / **916 stored live
-versions / 480 seed**. Latest-per-name coverage is **910 live tariffs across 77 utilities** (490 at
-47 Ontario distributors, 28 Alberta electricity, 40 Ontario/Alberta gas); older versions remain in
-history. History: 4,572 snapshots (CI scrape run 29 appended 956 on October 16; the 3,616 earlier
-snapshots unchanged). Every active registered utility has live output except AESO, a market reference.
-Counts include retained non-building reference records, not only building tariffs.
-
 ## Active Regional Campaign (2026-10-09)
 
 Implementation batches through batch 11 cover the 16 registered utilities in BC, QC, MB, SK,
@@ -694,7 +683,7 @@ Every lane milestone needs the acceptance checks at the end of this section wher
 live records also need crosswalk rules: after export,
 `python -m pipeline.representative_models --coverage` must report 0 unmapped.
 
-7. **Phase 6: Market Integration** ([README](../README.md#phase-6-market-integration-in-progress)):
+7. **Phase 6: Market Integration** ([README](../README.md#roadmap)):
     6B (Ontario demand-class energy) is implemented as value-less components (batch 12). **6A is
     done.** October 9: `scripts/generate_market_pricing.py` replaced the fixed model inputs with
     observed legacy HOEP hourly history for 2020-2024 plus actual monthly Class B Global Adjustment
@@ -712,7 +701,7 @@ live records also need crosswalk rules: after export,
     products (6D, Lane C) and the rest of gas commodity cadence (6E; current QRAM and
     default-supply prices are already dated commodity components). Every market price needs an
     official source, period and freshness date.
-8. **Phase 7: Representative Models** ([README](../README.md#phase-7-representative-models-in-progress);
+8. **Phase 7: Representative Models** ([README](../README.md#roadmap);
     sub-phases 7A-7F). One modeled tariff per province, sector and offered rate structure: median
     across utilities, single-source where only one utility exists, all-in energy from Phase 6, its
     own site view and generated method statements. Decided: prices without and with tax; a model per
@@ -733,12 +722,12 @@ live records also need crosswalk rules: after export,
     7E is only an illustrative synthetic-profile sidecar on the two Ontario demand
     models (hidden by default; never in medians or comparisons). Next: 7D gas; a source-backed 7E
     needs further analysis (Ontario) and 6C (Alberta).
-9. **Phase 8: Representative Model Refresh Automation** ([README](../README.md#phase-8-representative-model-refresh-automation-planned)):
+9. **Phase 8: Representative Model Refresh Automation** ([README](../README.md#roadmap)):
     GitHub Actions rebuild models after the Monthly Scrape and publish only on considerable change
     (proposed: 2% or more at any usage level, or membership/structure/tax/method change), with a
     changelog and stale-input issues; illustrative values are never inputs. Depends on 7B/7C and
     the first stored CI scrape (October 16; item 1 covers the archive re-run).
-10. **Phase 9: Product Follow-up** ([README](../README.md#phase-9-product-follow-up-planned)):
+10. **Phase 9: Product Follow-up** ([README](../README.md#roadmap)):
     historical charts and AI exports, calculator/API scoping, and the Across-Canada comparison
     view built on the Phase 7 models (it can start now that 7C is done; it never uses illustrative
     values). Roadmap items, not implemented features.
@@ -758,17 +747,6 @@ database or invent rates to make completion metrics look better.
 
 ## History
 
-Detailed checkpoints are kept in the maintainer's local tracker; earlier published
-checkpoints are in git history (commits `0e43ca6` through `08531d2`). Batch 9 was
-stored and exported October 6. Ontario batch 1 was stored and pushed October 7 (`1f3ae6c`);
-the log cap and recorded decisions followed in `91c15cc`. Ontario batch 2 was pushed October 8
-(`bb6f46f`); batch 12 (October 9, `9087f30`) is described above, followed the same day by the
-per-run live/seed summary (`32e0782`), Phase 7A/7B (`453d949`) and Phase 6A (`a52afc2`). October
-15: CI fixes (`1b10d9a`), the Ontario Price archive (`8561352`), then the 7F site view (`1df06df`)
-and a documentation update (`5d0d8c3`). October 16 (batch 14): Lane F (`a919684`), CI as the only
-database writer plus the rolling Ontario market history (`b070725`) and Phase 7C with the 7E
-illustrative sidecar (`49a0daa`), then a documentation update. October 30: the coverage gate and
-ledger (`74a3611`, `375fc83`, `3dd99fd`) and workstreams 2-5 (`e1aaff3`), then batch 15 (four
-parallel lanes) and batch 16 (five parallel lanes: Yukon book discovery, Centra v1126, dead links,
-check kit, model decisions 7C-3) with their documentation updates, pushed on October 30 (user)
-before the November 1 Monthly Scrape. Use the current queue above for next work.
+Dated checkpoints and batch history are kept in the maintainer's local, git-ignored history
+file. Earlier published versions of this matrix, including its former history sections,
+remain in git history.

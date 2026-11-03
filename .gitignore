@@ -49,3 +49,19 @@ logs/
 # Temporary scrape artifacts
 scrapers/temp/
 *.tmp
+
+# Graphify code graph (owner decision 2026-11-03): commit only the generated views
+# and their small config/label files. Caches, manifests, build state, absolute-path
+# markers and temporary files stay local. scripts/graphify_hook.py commits exactly
+# what this block allows.
+graphify-out/*
+!graphify-out/graph.json
+!graphify-out/GRAPH_REPORT.md
+!graphify-out/graph.html
+!graphify-out/GRAPH_TREE.html
+!graphify-out/GRAPH_CALLFLOW.html
+!graphify-out/wiki/
+!graphify-out/.graphify_build.json
+!graphify-out/.graphify_labels.json
+!graphify-out/.graphify_labels.json.sig
+!graphify-out/.graphify_labels.pending.json

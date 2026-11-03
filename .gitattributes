@@ -1,2 +1,3 @@
 data/market/PUB_PriceHOEPPredispOR_2025_v119.csv -text
 data/market/ontario_total_* text eol=lf
+graphify-out/** linguist-generated=true text eol=lf

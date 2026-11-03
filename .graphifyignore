@@ -1,0 +1,21 @@
+# Paths graphify leaves out of the code graph in graphify-out/. Same syntax as
+# .gitignore; everything .gitignore excludes is also left out. Owner decisions,
+# 2026-11-03: the graph covers application code only.
+
+# Tests made up more than half of all nodes and pushed graph.html into its
+# unreadable aggregated view. Find tests with ordinary search instead.
+tests/
+
+# Data folders and the database schema add no nodes (graphify has no extractor
+# for them here), but the 28 MB site/data/rates.json and the .sql file were retried
+# on every run, which turned every refresh into a full rebuild.
+data/
+site/data/
+schema/
+
+# Workflow YAML became 172 nodes of bare keys ("run", "steps") with no links to
+# any code. Read .github/workflows/ directly instead.
+.github/
+
+# Agent worktrees are complete duplicate checkouts of this repository.
+.claude/
