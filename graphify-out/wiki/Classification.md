@@ -1,40 +1,34 @@
 # Classification
 
-> 21 nodes
+> 20 nodes
 
 ## Key Concepts
 
-- **Classification** (20 connections) — `scrapers/utils/oeb_tariff.py`
 - **TariffCharge** (9 connections) — `scrapers/utils/oeb_tariff.py`
-- **_validate()** (8 connections) — `scrapers/utils/oeb_tariff.py`
+- **close_class()** (8 connections) — `scrapers/utils/oeb_tariff.py`
 - **_add_footnote_credits()** (5 connections) — `scrapers/utils/oeb_tariff.py`
-- **_allowance_applies()** (5 connections) — `scrapers/utils/oeb_tariff.py`
 - **_alternatives()** (5 connections) — `scrapers/utils/oeb_tariff.py`
 - **_connection_pair()** (5 connections) — `scrapers/utils/oeb_tariff.py`
-- **connection_printed()** (5 connections) — `scrapers/utils/oeb_tariff.py`
+- **_connection_part()** (5 connections) — `scrapers/utils/oeb_tariff.py`
 - **_promote_interval_transmission()** (5 connections) — `scrapers/utils/oeb_tariff.py`
-- **_st_load_path()** (4 connections) — `scrapers/utils/oeb_tariff.py`
-- **_validate_st()** (4 connections) — `scrapers/utils/oeb_tariff.py`
+- **_separate_connection_pair()** (5 connections) — `scrapers/utils/oeb_tariff.py`
+- **_single_connection_standard()** (5 connections) — `scrapers/utils/oeb_tariff.py`
+- **_deinterleave_heading()** (3 connections) — `scrapers/utils/oeb_tariff.py`
 - **_size_range()** (3 connections) — `scrapers/utils/oeb_tariff.py`
-- **_validate_common()** (3 connections) — `scrapers/utils/oeb_tariff.py`
 - **.find()** (2 connections) — `scrapers/utils/oeb_tariff.py`
-- **Whether the class prints any Retail Transmission Connection line (standard or…** (1 connections) — `scrapers/utils/oeb_tariff.py`
-- **The ST "Load which: ..." eligibility path, without the embedded-LDC supply path.** (1 connections) — `scrapers/utils/oeb_tariff.py`
 - **Published alternatives that together replace one standard line (meter type or…** (1 connections) — `scrapers/utils/oeb_tariff.py`
 - **A separate Line + Transformation Connection pair (both charged) in place of one…** (1 connections) — `scrapers/utils/oeb_tariff.py`
 - **One published ``<label> <unit> <value>`` line.** (1 connections) — `scrapers/utils/oeb_tariff.py`
+- **ENWIN Large Use: separate Line and Transformation Connection rates are both…** (1 connections) — `scrapers/utils/oeb_tariff.py`
+- **Note 7 alternatives come in Line + Transformation pairs; a lone Transformation…** (1 connections) — `scrapers/utils/oeb_tariff.py`
+- **Undo "CLASSIFICATION" overprinted on "This classification applies ..."…** (1 connections) — `scrapers/utils/oeb_tariff.py`
 - **An interval-metered transmission rate is the class rate when no plain rate is…** (1 connections) — `scrapers/utils/oeb_tariff.py`
 - **Hydro One R2: the RRRP credit is printed only in a footnote; keep it as a…** (1 connections) — `scrapers/utils/oeb_tariff.py`
 
 ## Relationships
 
-- [oeb_tariff.py](oeb_tariff.py.md) (15 shared connections)
-- [build_demand_records](build_demand_records.md) (9 shared connections)
-- [close_class](close_class.md) (6 shared connections)
-- [parse_tariff_pages](parse_tariff_pages.md) (1 shared connections)
-- [TariffSheet](TariffSheet.md) (1 shared connections)
-- [class_loss_factors](class_loss_factors.md) (1 shared connections)
-- [_dedupe_classifications](_dedupe_classifications.md) (1 shared connections)
+- [oeb_tariff.py](oeb_tariff.py.md) (21 shared connections)
+- [parse_tariff_pages](parse_tariff_pages.md) (3 shared connections)
 
 ## Source Files
 
@@ -42,7 +36,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 62 (100%)
+- EXTRACTED: 46 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

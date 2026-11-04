@@ -1,6 +1,6 @@
 # parse_html()
 
-> God node · 73 connections · `scrapers/utils/parsing.py`
+> God node · 84 connections · `scrapers/utils/parsing.py`
 
 **Community:** [BaseScraper](BaseScraper.md)
 
@@ -23,11 +23,11 @@
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
 - page_effective_date() `EXTRACTED`
 - ._joint_schedule() `EXTRACTED`
 - discover_documents() `EXTRACTED`
-- ._uca_rate() `EXTRACTED`
-- *…and 23 more `calls` connection(s) not listed (lowest-degree first to go)*
+- *…and 29 more `calls` connection(s) not listed (lowest-degree first to go)*
 
 ### contains
 - parsing.py `EXTRACTED`
@@ -36,24 +36,24 @@
 - base.py `EXTRACTED`
 - [enmax_power.py](enmax_power.py.md) `EXTRACTED`
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
-- ontario_ldc.py `EXTRACTED`
+- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
 - epcor_gas_ontario.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- atco_gas.py `EXTRACTED`
+- [atco_gas.py](atco_gas.py.md) `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - alberta_rolr.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - maritime_electric.py `EXTRACTED`
 - hydro_quebec.py `EXTRACTED`
+- [new_westminster.py](new_westminster.py.md) `EXTRACTED`
+- summerland.py `EXTRACTED`
 - nova_scotia_power.py `EXTRACTED`
-- newfoundland_power.py `EXTRACTED`
-- saskpower.py `EXTRACTED`
-- *…and 7 more `imports` connection(s) not listed (lowest-degree first to go)*
+- *…and 12 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### rationale_for
 - Parse HTML into a BeautifulSoup tree using the fast lxml parser. `EXTRACTED`

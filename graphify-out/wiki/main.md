@@ -1,36 +1,34 @@
 # main
 
-> 10 nodes
+> 9 nodes
 
 ## Key Concepts
 
-- **main()** (10 connections) — `scripts/build_ontario_market.py`
-- **render_document()** (6 connections) — `scripts/build_ontario_market.py`
-- **write_outputs()** (5 connections) — `scripts/build_ontario_market.py`
-- **parse_args()** (4 connections) — `scripts/build_ontario_market.py`
-- **_read()** (3 connections) — `scripts/build_ontario_market.py`
-- **Path** (3 connections)
-- **copy** (3 connections)
+- **main()** (9 connections) — `scripts/archive_ontario_price.py`
+- **serialize()** (6 connections) — `scripts/archive_ontario_price.py`
+- **SiteApiSource** (5 connections) — `scripts/archive_ontario_price.py`
+- **parse_args()** (4 connections) — `scripts/archive_ontario_price.py`
+- **write_archive()** (4 connections) — `scripts/archive_ontario_price.py`
+- **._cache_path()** (2 connections) — `scripts/archive_ontario_price.py`
+- **Path** (2 connections)
 - **Namespace** (1 connections)
-- **The JSON bytes to write, or None when only generated_at would change.** (1 connections) — `scripts/build_ontario_market.py`
-- **Write every file to a temporary sibling first, then move them all into place.** (1 connections) — `scripts/build_ontario_market.py`
+- **ReportSource for the IESO website's chart API: one cached JSON body per request…** (1 connections) — `scripts/archive_ontario_price.py`
 
 ## Relationships
 
-- [build_ontario_market.py](build_ontario_market.py.md) (9 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (11 shared connections)
 - [io](io.md) (2 shared connections)
-- [argparse](argparse.md) (1 shared connections)
-- [json](json.md) (1 shared connections)
+- [export_json.py](export_json.py.md) (1 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
 - [os](os.md) (1 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
 
-- `scripts/build_ontario_market.py`
+- `scripts/archive_ontario_price.py`
 
 ## Audit Trail
 
-- EXTRACTED: 26 (100%)
+- EXTRACTED: 25 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

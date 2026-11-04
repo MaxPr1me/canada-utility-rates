@@ -8,7 +8,6 @@
 - **MarketDataError** (27 connections) — `scripts/generate_market_pricing.py`
 - **build_document()** (24 connections) — `scripts/generate_market_pricing.py`
 - **math** (20 connections)
-- **ReportSource** (19 connections) — `scripts/generate_market_pricing.py`
 - **month_key()** (13 connections) — `scripts/generate_market_pricing.py`
 - **_actual_rates()** (10 connections) — `scripts/generate_market_pricing.py`
 - **parse_ga_deferral()** (10 connections) — `scripts/generate_market_pricing.py`
@@ -29,30 +28,32 @@
 - **_month_columns()** (6 connections) — `scripts/generate_market_pricing.py`
 - **month_dates()** (6 connections) — `scripts/generate_market_pricing.py`
 - **parse_listing()** (6 connections) — `scripts/generate_market_pricing.py`
+- **read_workbook()** (6 connections) — `scripts/generate_market_pricing.py`
 - *... and 63 more nodes in this community*
 
 ## Relationships
 
-- [archive_ontario_price.py](archive_ontario_price.py.md) (11 shared connections)
-- [io](io.md) (7 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (12 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (7 shared connections)
 - [re](re.md) (6 shared connections)
+- [os](os.md) (5 shared connections)
 - [market_pricing.py](market_pricing.py.md) (5 shared connections)
-- [os](os.md) (4 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
-- [argparse](argparse.md) (2 shared connections)
+- [export_json.py](export_json.py.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (4 shared connections)
+- [io](io.md) (3 shared connections)
 - [json](json.md) (2 shared connections)
-- [export_json.py](export_json.py.md) (2 shared connections)
 - [representative_models.py](representative_models.py.md) (2 shared connections)
-- [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
+- [export_ontario_totals.py](export_ontario_totals.py.md) (1 shared connections)
+- [Any](Any.md) (1 shared connections)
 
 ## Source Files
 
+- `scripts/archive_ontario_price.py`
 - `scripts/generate_market_pricing.py`
 
 ## Audit Trail
 
-- EXTRACTED: 268 (98%)
+- EXTRACTED: 262 (98%)
 - INFERRED: 6 (2%)
 - AMBIGUOUS: 0 (0%)
 

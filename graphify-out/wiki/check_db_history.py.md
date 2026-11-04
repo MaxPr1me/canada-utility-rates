@@ -1,6 +1,6 @@
 # check_db_history.py
 
-> 27 nodes
+> 28 nodes
 
 ## Key Concepts
 
@@ -22,21 +22,20 @@
 - **format_notice()** (3 connections) — `scripts/check_db_history.py`
 - **format_verified()** (3 connections) — `scripts/check_db_history.py`
 - **_quote()** (3 connections) — `scripts/check_db_history.py`
+- **contextlib** (3 connections)
 - **_blob()** (2 connections) — `scripts/check_db_history.py`
 - **_on_github()** (2 connections) — `scripts/check_db_history.py`
 - **Exception** (1 connections)
 - **Check that the SQLite history database only grows before CI uploads it. The…** (1 connections) — `scripts/check_db_history.py`
 - **Current statistics (digest over the earlier id range) and the list of failed…** (1 connections) — `scripts/check_db_history.py`
 - **One line: counts with their growth, the file size and SHA-256.** (1 connections) — `scripts/check_db_history.py`
-- **The database, or the statistics recorded before the run, fail a check.** (1 connections) — `scripts/check_db_history.py`
-- *... and 2 more nodes in this community*
+- *... and 3 more nodes in this community*
 
 ## Relationships
 
-- [export_json.py](export_json.py.md) (5 shared connections)
+- [export_json.py](export_json.py.md) (7 shared connections)
+- [json](json.md) (5 shared connections)
 - [os](os.md) (4 shared connections)
-- [json](json.md) (4 shared connections)
-- [argparse](argparse.md) (2 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
@@ -45,7 +44,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 72 (97%)
+- EXTRACTED: 74 (97%)
 - INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,6 +1,6 @@
 # FortisBCEnergyScraper
 
-> 45 nodes
+> 40 nodes
 
 ## Key Concepts
 
@@ -15,7 +15,6 @@
 - **._rate4()** (9 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._rate5()** (9 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._norm()** (9 connections) — `scrapers/utilities/fortisbc_energy.py`
-- **.fetch_rendered_page()** (8 connections) — `scrapers/base.py`
 - **._require()** (8 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._build()** (6 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._long_date()** (6 connections) — `scrapers/utilities/fortisbc_energy.py`
@@ -25,32 +24,32 @@
 - **._footer_after()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._money()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._rate_section()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._discover_documents()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._document_text()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
+- **._seed_data()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **AreaClassSpec** (3 connections) — `scrapers/utilities/fortisbc_energy.py`
-- **._page_text()** (3 connections) — `scrapers/utilities/fortisbc_energy.py`
-- *... and 20 more nodes in this community*
+- *... and 15 more nodes in this community*
 
 ## Relationships
 
-- [BCHydroScraper](BCHydroScraper.md) (13 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (12 shared connections)
-- [BaseScraper](BaseScraper.md) (7 shared connections)
-- [.fetch_page](fetch_page.md) (4 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (13 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (11 shared connections)
+- [BaseScraper](BaseScraper.md) (6 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [CentraGasScraper](CentraGasScraper.md) (1 shared connections)
-- [._discover_schedule_url](_discover_schedule_url.md) (1 shared connections)
-- [fortisalberta.py](fortisalberta.py.md) (1 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
+- [ENMAXPowerScraper](ENMAXPowerScraper.md) (1 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
 
 ## Source Files
 
-- `scrapers/base.py`
 - `scrapers/utilities/fortisbc_energy.py`
 
 ## Audit Trail
 
-- EXTRACTED: 135 (99%)
-- INFERRED: 2 (1%)
+- EXTRACTED: 128 (98%)
+- INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

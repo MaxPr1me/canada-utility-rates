@@ -1,6 +1,6 @@
 # os
 
-> 22 nodes
+> 23 nodes
 
 ## Key Concepts
 
@@ -15,6 +15,7 @@
 - **digest()** (4 connections) — `scripts/graphify_hook.py`
 - **file_sha256()** (4 connections) — `scripts/pull_history_db.py`
 - **Path** (4 connections)
+- **shutil** (4 connections)
 - **tempfile** (4 connections)
 - **backup_path()** (3 connections) — `scripts/pull_history_db.py`
 - **content_hash()** (3 connections) — `scrapers/utils/parsing.py`
@@ -29,18 +30,18 @@
 
 ## Relationships
 
-- [graphify_hook.py](graphify_hook.py.md) (8 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (7 shared connections)
 - [BaseScraper](BaseScraper.md) (6 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (6 shared connections)
+- [export_json.py](export_json.py.md) (5 shared connections)
 - [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (5 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (5 shared connections)
 - [check_db_history.py](check_db_history.py.md) (4 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (4 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (4 shared connections)
-- [export_json.py](export_json.py.md) (3 shared connections)
+- [Path](Path.md) (3 shared connections)
 - [run_scrape.py](run_scrape.py.md) (3 shared connections)
-- [Path](Path.md) (2 shared connections)
-- [argparse](argparse.md) (2 shared connections)
 - [re](re.md) (2 shared connections)
+- [export_ontario_totals.py](export_ontario_totals.py.md) (2 shared connections)
+- [json](json.md) (2 shared connections)
 
 ## Source Files
 
@@ -50,7 +51,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 97 (100%)
+- EXTRACTED: 99 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

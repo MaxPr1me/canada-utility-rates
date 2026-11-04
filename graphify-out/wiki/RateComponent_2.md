@@ -1,8 +1,8 @@
 # RateComponent
 
-> God node · 257 connections · `scrapers/base.py`
+> God node · 276 connections · `scrapers/base.py`
 
-**Community:** [BCHydroScraper](BCHydroScraper.md)
+**Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
 
 ## Connections by Relation
 
@@ -13,21 +13,21 @@
 - ._parse_building_extras() `EXTRACTED`
 - parse_sources() `EXTRACTED`
 - parse_sources() `EXTRACTED`
+- parse_manual() `EXTRACTED`
 - ._parse_residential_pdfs() `EXTRACTED`
 - _parse_interruptible() `EXTRACTED`
+- parse_schedule() `EXTRACTED`
 - ._build() `EXTRACTED`
 - _component() `EXTRACTED`
 - energy_component() `EXTRACTED`
+- parse_schedule() `EXTRACTED`
 - ._parse_optional_domestic_rates() `EXTRACTED`
 - ._parse_labrador_nonfirm() `EXTRACTED`
 - make() `EXTRACTED`
 - _base_rider() `EXTRACTED`
 - _charge() `EXTRACTED`
 - ._transport() `EXTRACTED`
-- ._variant() `EXTRACTED`
-- ._parse_large_power_rates() `EXTRACTED`
-- ._parse_residential_tariffs() `EXTRACTED`
-- *…and 132 more `calls` connection(s) not listed (lowest-degree first to go)*
+- *…and 144 more `calls` connection(s) not listed (lowest-degree first to go)*
 
 ### contains
 - base.py `EXTRACTED`
@@ -38,14 +38,14 @@
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
 - [fortisbc_electric.py](fortisbc_electric.py.md) `EXTRACTED`
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
-- ontario_ldc.py `EXTRACTED`
+- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
 - epcor_gas_ontario.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- atco_gas.py `EXTRACTED`
+- [atco_gas.py](atco_gas.py.md) `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - alberta_rolr.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
@@ -53,7 +53,7 @@
 - yukon_energy.py `EXTRACTED`
 - aeso.py `EXTRACTED`
 - maritime_electric.py `EXTRACTED`
-- *…and 17 more `imports` connection(s) not listed (lowest-degree first to go)*
+- *…and 24 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### rationale_for
 - One individual charge line within a tariff. `EXTRACTED`
@@ -87,7 +87,7 @@
 - [BCHydroScraper](BCHydroScraper.md) `INFERRED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `INFERRED`
 - [NBPowerScraper](NBPowerScraper.md) `INFERRED`
-- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `INFERRED`
+- NewfoundlandPowerScraper `INFERRED`
 - [ATCOGasScraper](ATCOGasScraper.md) `INFERRED`
 - [EnergirScraper](EnergirScraper.md) `INFERRED`
 - HydroQuebecScraper `INFERRED`

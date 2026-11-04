@@ -24,12 +24,12 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (10 shared connections)
+- [ontario_ldc.py](ontario_ldc.py.md) (10 shared connections)
 - [OntarioLDCScraper](OntarioLDCScraper.md) (5 shared connections)
-- [._tariff_demand_records](_tariff_demand_records.md) (2 shared connections)
+- [._energy_entries](_energy_entries.md) (2 shared connections)
 - [re](re.md) (1 shared connections)
 - [generate_market_pricing.py](generate_market_pricing.py.md) (1 shared connections)
-- [._energy_entries](_energy_entries.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
 
