@@ -1,6 +1,32 @@
 # Phase 5 Completion Matrix
 
-## Current checkpoint - November 2, 2026
+## Current checkpoint - November 4, 2026
+
+The owner's targeted Monthly Scrapes stored both corrections.
+- **Centra:** run [41867595672](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41867595672),
+  scrape run 31, bot commit `b51710a`. It stored 13 November records from the v1126 PDF, including HVF
+  -$0.0018 and MLI -$0.0017/m3 transport.
+- **Maritime:** run 41867644701, scrape run 32, was queued behind Centra by the shared
+  `utility-data-updates` concurrency group, so the runs never overlapped and its database update was
+  stored and verified. But it built `site/data` on its dispatch-time checkout (`848ef28`), and its final
+  `git pull --rebase` conflicted with `b51710a` (issue #5, closed). The re-dispatch
+  ([41873587254](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41873587254), scrape run 33,
+  `ad656bc`; Market Benchmarks `b5502524`) published both corrections.
+
+Verified on the pulled mirror and export:
+- History: 10 snapshots added, 5,557 earlier unchanged (33 runs, 5,567 snapshots, sha256 `0d2a9531…`).
+- Maritime: rates 232/233 carry the first 20 kW free; PE 232 pre-tax costs are 462.17 / 1,617.12 /
+  7,225.97 / 85,460.97 at s1/s2/m1/l1.
+- Strict gate 78/78; crosswalk 557 / 360 / 0 unmapped.
+- Full model parity after normalizing only timestamps and input paths.
+
+Remaining:
+- The owner's approval of the scoped coverage-complete README wording.
+- The `scrape.yml` stale-checkout fix (`git pull --ff-only` before exporting, as the market workflows
+  do), an open owner decision.
+- The Centra HTML-difference monitor (November 30).
+
+## Checkpoint - November 2, 2026
 
 The November 1 automation succeeded:
 [Monthly Scrape](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41317063703),

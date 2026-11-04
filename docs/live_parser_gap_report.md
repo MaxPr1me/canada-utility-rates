@@ -1,12 +1,10 @@
 # Live Parser Gap Report
 
-**Current update, November 2:** all 78 active utilities have stored live output (917 latest
-tariffs) and the strict gate passes; final coverage completion still waits for corrected
-Centra prices to be stored by CI. The November 1 scrape kept all history. Current local
-corrections: Centra's approved quarterly PDF is authoritative (13 live November records),
-and Maritime's printed first 20 kW free is preserved (10 live records). Full regression:
-2,237 tests / 35 modules after the market/chart and combined-price/raw-retention work,
-which changes no live coverage counts.
+**Current update, November 4:** all 78 active utilities have stored live output (917 latest
+tariffs) and the strict gate passes 78 of 78. The targeted Monthly Scrapes stored the two
+corrections: Centra's 13 November records from the approved quarterly PDF (scrape run 31) and
+Maritime's printed first 20 kW free for rates 232/233 (scrape runs 32-33). History and model
+parity were verified. The scoped coverage-complete claim awaits the owner's approval.
 See the [current matrix checkpoint](phase5_completion_matrix.md).
 The older counts and queues below are historical evidence, not the current publication state.
 
@@ -273,9 +271,9 @@ The corrected stored records/models await Monthly Scrape; seasonal exclusions st
 
 ## Recommended Next Steps
 
-Current: follow the November 2 matrix queue: owner-targeted Centra and Maritime CI scrapes,
-publication/history/model checks, then scoped README completion and issue closure. Do not
-repeat the already successful November 1 archive/baseline work. Keep monitor deadlines.
+Current: the owner-targeted Centra and Maritime CI scrapes and the publication, history and model
+checks are done (November 4; see the matrix checkpoint). The scoped README completion awaits the
+owner's approval. Keep monitor deadlines.
 
 The following is the **historical October 16-30 queue**, retained for decisions and context.
 

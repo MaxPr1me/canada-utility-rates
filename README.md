@@ -91,13 +91,14 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
 ## Current Status
 
 - **Live output:** all 78 active registered utilities have stored live output.
-- **Latest export (November 1, scrape run 30):** 917 latest live tariffs and 480 retained
-  estimates; 1,323 stored live versions and 5,534 history snapshots. Counts include
+- **Latest export (November 4, scrape run 33):** 917 latest live tariffs and 480 retained
+  estimates; 1,336 stored live versions and 5,567 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
-- **"Coverage complete" is not claimed yet.** It stays blocked until the owner runs targeted
-  Monthly Scrapes for **Centra Gas Manitoba** and **Maritime Electric**: their corrected
-  parsers pass dry runs, but the corrected rates are not stored yet. A passing coverage gate
-  does not override this.
+- **Corrections stored (verified November 4):** the targeted Monthly Scrapes stored Centra Gas
+  Manitoba's 13 November records and Maritime Electric's first-20-kW-free demand tier; history
+  checks, the strict coverage gate (78 of 78), the crosswalk (0 unmapped) and model parity pass.
+- **"Coverage complete" is not claimed yet:** the scoped wording (78 active registered
+  utilities) awaits the owner's approval.
 - **Tests:** 2,252 tests across 38 test modules (run with `pytest tests`).
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
@@ -685,7 +686,7 @@ One line per phase; sub-phase detail and the work queue are in the
 [coverage matrix](docs/phase5_completion_matrix.md).
 
 - **Earlier phases (foundations)** — done: scraper framework, granular schema, registry, validation, history snapshots, JSON export and the website.
-- **Phase 5: Live Parser Completion** — in progress: every active registered utility has live output (see Current Status); the coverage-complete claim waits for the stored Centra and Maritime corrections, and remaining building-catalogue gaps are tracked in the coverage matrix.
+- **Phase 5: Live Parser Completion** — in progress: every active registered utility has live output (see Current Status); the Centra and Maritime corrections are stored and verified (November 4), the scoped coverage-complete claim awaits owner approval, and remaining building-catalogue gaps are tracked in the coverage matrix.
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas commodity cadence started).
 - **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D gas is a proposal only).
 - **Phase 8: Representative Model Refresh Automation** — planned (design reviewed, not implemented; the proposed 2% change threshold is not approved).
