@@ -154,6 +154,12 @@ jobs:
         id: validate
         run: python -m pipeline.validate 2>&1 | tee validate_output.txt
 
+      # A queued dispatch checks out the commit that was current when it was dispatched, so an earlier
+      # writer's bot commit may be missing here. Generate site/data on the latest main and never rebase
+      # generated files onto newer inputs (issue #5; owner decision 2026-11-04, as the market workflows do).
+      - name: Synchronize inputs before exporting
+        run: git pull --ff-only origin main
+
       - name: Export JSON for site
         run: python -m pipeline.export_json
 
@@ -219,7 +225,8 @@ jobs:
             echo "No data changes to commit."
           else
             git commit -m "data: monthly scrape update $(date +%Y-%m-%d)"
-            git pull --rebase origin main
+            # Plain push: the export ran on the latest main. If main moved since then, fail visibly
+            # (the database is already saved) instead of rebasing generated files.
             git push
           fi
 

@@ -167,9 +167,8 @@ them: [website.instructions.md](website.instructions.md).
   model-input pushes and on dispatch. It tests, builds the Alberta history and refreshes the models
   without writing the database; a failure opens an issue and the site keeps its published files.
 - The three data writers (Monthly Scrape, Ontario Price Archive, Market Benchmarks) take turns through
-  the `utility-data-updates` concurrency group. The Ontario Price Archive and Market Benchmarks
-  synchronize with `git pull --ff-only` before calculating and never rebase generated models onto
-  newer inputs. The Monthly Scrape differs: it runs `git pull --rebase` just before pushing its
-  `site/data/` commit (see [ci-data-history.instructions.md](ci-data-history.instructions.md)).
-  Aligning the two is an open owner question; ask before changing either. Deployment chaining is
-  also described there.
+  the `utility-data-updates` concurrency group. All three synchronize with `git pull --ff-only`
+  before calculating or exporting and never rebase generated files onto newer inputs (the Monthly
+  Scrape since issue #5; owner decision 2026-11-04; see
+  [ci-data-history.instructions.md](ci-data-history.instructions.md), which also describes
+  deployment chaining).

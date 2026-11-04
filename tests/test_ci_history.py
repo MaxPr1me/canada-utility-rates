@@ -445,7 +445,8 @@ def test_scrape_verifies_history_before_uploading_with_a_dated_backup():
     steps = _steps(SCRAPE_WORKFLOW)
     order = ["Check manual inputs", "Checkout repository", "Set up Python", "Install dependencies",
              "Install Playwright browser", "Restore database history", "Initialize database (first run only)",
-             "Run deterministic tests before scraping", "Run scrapers", "Validate data", "Export JSON for site",
+             "Run deterministic tests before scraping", "Run scrapers", "Validate data",
+             "Synchronize inputs before exporting", "Export JSON for site",
              "Reject empty or corrupt exports", "Report live-rate coverage gate",
              "Check database history before upload", "Save database history",
              "Generate diff report", "Commit updated data", "Prune old database backups",
@@ -466,6 +467,19 @@ def test_scrape_verifies_history_before_uploading_with_a_dated_backup():
     issue = _step(steps, "Create issue on workflow errors")
     assert "'verify_output.txt'" in issue and "## Database History" in issue
     assert "if: failure() && steps.inputs.outcome != 'failure'" in issue
+
+
+def test_scrape_exports_on_the_latest_main_and_never_rebases_generated_files():
+    # Issue #5: a queued dispatch built site/data on its stale dispatch-time checkout and its
+    # `git pull --rebase` then conflicted with the previous writer's bot commit.
+    steps = _steps(SCRAPE_WORKFLOW)
+    sync = _run(_step(steps, "Synchronize inputs before exporting"))
+    assert "git pull --ff-only origin main" in sync
+    assert _index(steps, "Run scrapers") < _index(steps, "Synchronize inputs before exporting") < _index(
+        steps, "Export JSON for site")
+    commit = _run(_step(steps, "Commit updated data"))
+    assert "git pull --rebase" not in SCRAPE_WORKFLOW.read_text(encoding="utf-8")
+    assert "git push" in commit and "--force" not in commit
 
 
 def test_scrape_prunes_dated_backups_to_the_newest_twelve():

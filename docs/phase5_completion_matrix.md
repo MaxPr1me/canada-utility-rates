@@ -22,9 +22,10 @@ Verified on the pulled mirror and export:
 
 Remaining:
 - The owner's approval of the scoped coverage-complete README wording.
-- The `scrape.yml` stale-checkout fix (`git pull --ff-only` before exporting, as the market workflows
-  do), an open owner decision.
 - The Centra HTML-difference monitor (November 30).
+
+Done since: the `scrape.yml` stale-checkout fix. The Monthly Scrape now runs `git pull --ff-only`
+before exporting and pushes without rebasing, as the market workflows do (owner decision, November 4).
 
 ## Checkpoint - November 2, 2026
 

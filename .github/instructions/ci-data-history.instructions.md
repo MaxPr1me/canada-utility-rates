@@ -36,12 +36,13 @@ snapshot rules: [scrapers.instructions.md](scrapers.instructions.md). Model expo
 - Runs at 08:00 UTC on the 1st and on manual dispatch with an optional `utility` or `province` input
   (not both; the province must match `^[A-Za-z]{2}$`). Inputs reach the shell only through `env`.
 - Order: check inputs; restore and digest-check the database (initialize only a new one); run the
-  deterministic tests; scrape; `pipeline.validate`; `pipeline.export_json`; reject empty exports;
-  report the coverage gate; verify the history; upload; diff report; commit `site/data/` (with
-  `git pull --rebase` onto `main` just before pushing, to catch up with an archive update saved the
-  same day; the market workflows instead pull `--ff-only` before calculating and never rebase
-  generated models; aligning them is an open owner question, so ask before changing either);
-  prune backups.
+  deterministic tests; scrape; `pipeline.validate`; synchronize with `git pull --ff-only origin main`;
+  `pipeline.export_json`; reject empty exports; report the coverage gate; verify the history; upload;
+  diff report; commit `site/data/` with a plain `git push`; prune backups. A queued dispatch checks
+  out its dispatch-time commit, so the sync makes the export see the previous writer's bot commit;
+  generated files are never rebased onto newer inputs, like the market workflows (issue #5; owner
+  decision 2026-11-04). A push rejected because `main` moved after the export fails the run after
+  the database is saved; start a new dispatch rather than re-running the failed job.
 - A failure after the input check opens an issue that includes a Database History section.
   Deployment is separate.
 
