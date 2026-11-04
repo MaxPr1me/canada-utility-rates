@@ -27,7 +27,7 @@
 - [close_class](close_class.md) (1 shared connections)
 - [_dedupe_classifications](_dedupe_classifications.md) (1 shared connections)
 - [Classification](Classification.md) (1 shared connections)
-- [parse_bill_data](parse_bill_data.md) (1 shared connections)
+- [OntarioLDCScraper](OntarioLDCScraper.md) (1 shared connections)
 
 ## Source Files
 

@@ -1,23 +1,23 @@
 # models.js
 
-> 59 nodes
+> 60 nodes
 
 ## Key Concepts
 
-- **models.js** (58 connections) — `site/js/models.js`
+- **models.js** (59 connections) — `site/js/models.js`
 - **isNum()** (20 connections) — `site/js/models.js`
 - **el()** (18 connections) — `site/js/models.js`
 - **renderNotes()** (12 connections) — `site/js/models.js`
 - **levelRow()** (11 connections) — `site/js/models.js`
 - **benchmarkBlock()** (10 connections) — `site/js/models.js`
 - **byId()** (10 connections) — `site/js/models.js`
-- **illustrativeLevel()** (9 connections) — `site/js/models.js`
+- **illustrativeLevel()** (10 connections) — `site/js/models.js`
 - **money()** (9 connections) — `site/js/models.js`
+- **taxBlock()** (9 connections) — `site/js/models.js`
 - **contributorsDetails()** (8 connections) — `site/js/models.js`
 - **factsGrid()** (8 connections) — `site/js/models.js`
 - **load()** (8 connections) — `site/js/models.js`
 - **renderModel()** (8 connections) — `site/js/models.js`
-- **taxBlock()** (8 connections) — `site/js/models.js`
 - **usageText()** (8 connections) — `site/js/models.js`
 - **humanize()** (7 connections) — `site/js/models.js`
 - **nounOf()** (7 connections) — `site/js/models.js`
@@ -29,7 +29,7 @@
 - **stateText()** (6 connections) — `site/js/models.js`
 - **coverageText()** (5 connections) — `site/js/models.js`
 - **exclusionText()** (5 connections) — `site/js/models.js`
-- *... and 34 more nodes in this community*
+- *... and 35 more nodes in this community*
 
 ## Relationships
 
@@ -41,8 +41,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 191 (96%)
-- INFERRED: 7 (4%)
+- EXTRACTED: 194 (97%)
+- INFERRED: 7 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

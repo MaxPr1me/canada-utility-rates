@@ -12,11 +12,11 @@
 ### imports
 - [enmax_power.py](enmax_power.py.md) `EXTRACTED`
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
-- fortisbc_electric.py `EXTRACTED`
+- [fortisbc_electric.py](fortisbc_electric.py.md) `EXTRACTED`
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
-- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
+- ontario_ldc.py `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- [nl_hydro.py](nl_hydro.py.md) `EXTRACTED`
+- nl_hydro.py `EXTRACTED`
 - epcor_gas_ontario.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
@@ -28,7 +28,7 @@
 - nb_power.py `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - aeso.py `EXTRACTED`
-- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
+- maritime_electric.py `EXTRACTED`
 - direct_energy_regulated.py `EXTRACTED`
 - *…and 15 more `imports` connection(s) not listed (lowest-degree first to go)*
 
@@ -41,7 +41,7 @@
 - [BCHydroScraper](BCHydroScraper.md) `EXTRACTED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `EXTRACTED`
 - [NBPowerScraper](NBPowerScraper.md) `EXTRACTED`
-- NewfoundlandPowerScraper `EXTRACTED`
+- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `EXTRACTED`
 - [ATCOGasScraper](ATCOGasScraper.md) `EXTRACTED`
 - [EnergirScraper](EnergirScraper.md) `EXTRACTED`
 - HydroQuebecScraper `EXTRACTED`

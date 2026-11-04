@@ -1,9 +1,10 @@
 # EPCOROntarioGasScraper
 
-> 51 nodes
+> 59 nodes
 
 ## Key Concepts
 
+- **epcor_gas_ontario.py** (38 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **EPCOROntarioGasScraper** (25 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._build()** (21 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._zone_context()** (13 connections) — `scrapers/utilities/epcor_gas_ontario.py`
@@ -28,18 +29,19 @@
 - **._fetch_text()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._require_effective()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._seasons()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
-- **notice_case()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
-- *... and 26 more nodes in this community*
+- *... and 34 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (23 shared connections)
-- [re](re.md) (11 shared connections)
-- [TariffRecord](TariffRecord.md) (4 shared connections)
-- [RateComponent](RateComponent.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (12 shared connections)
+- [re](re.md) (9 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (5 shared connections)
 - [.fetch_page](fetch_page.md) (4 shared connections)
-- [DocumentPage](DocumentPage.md) (2 shared connections)
+- [DocumentPage](DocumentPage.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -47,8 +49,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 154 (97%)
-- INFERRED: 4 (3%)
+- EXTRACTED: 179 (98%)
+- INFERRED: 4 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

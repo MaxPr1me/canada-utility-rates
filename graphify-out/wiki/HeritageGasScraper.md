@@ -1,6 +1,6 @@
 # HeritageGasScraper
 
-> 19 nodes
+> 17 nodes
 
 ## Key Concepts
 
@@ -11,10 +11,8 @@
 - **._long_date()** (5 connections) — `scrapers/utilities/heritage_gas.py`
 - **._money()** (5 connections) — `scrapers/utilities/heritage_gas.py`
 - **._rc3()** (5 connections) — `scrapers/utilities/heritage_gas.py`
-- **.scrape()** (5 connections) — `scrapers/utilities/heritage_gas.py`
 - **._summary()** (5 connections) — `scrapers/utilities/heritage_gas.py`
 - **._build()** (4 connections) — `scrapers/utilities/heritage_gas.py`
-- **._seed_data()** (4 connections) — `scrapers/utilities/heritage_gas.py`
 - **date** (4 connections)
 - **._row()** (3 connections) — `scrapers/utilities/heritage_gas.py`
 - **comp()** (2 connections) — `scrapers/utilities/heritage_gas.py`
@@ -26,10 +24,10 @@
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (7 shared connections)
-- [RateComponent](RateComponent.md) (5 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (6 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (4 shared connections)
 - [BaseScraper](BaseScraper.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
@@ -38,7 +36,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 52 (96%)
+- EXTRACTED: 46 (96%)
 - INFERRED: 2 (4%)
 - AMBIGUOUS: 0 (0%)
 

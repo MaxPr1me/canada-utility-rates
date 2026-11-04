@@ -9,7 +9,7 @@
 ### calls
 - [re](re.md) `EXTRACTED`
 - [DocumentPage](DocumentPage.md) `EXTRACTED`
-- io `EXTRACTED`
+- [io](io.md) `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
@@ -36,9 +36,9 @@
 - base.py `EXTRACTED`
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
-- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
+- ontario_ldc.py `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- [nl_hydro.py](nl_hydro.py.md) `EXTRACTED`
+- nl_hydro.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
 - atco_gas.py `EXTRACTED`

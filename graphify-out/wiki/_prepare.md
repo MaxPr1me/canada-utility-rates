@@ -13,6 +13,7 @@
 - **_fixed_variant_groups()** (4 connections) — `pipeline/representative_models.py`
 - **_unmarked_fixed_variants()** (3 connections) — `pipeline/representative_models.py`
 - **_stem()** (2 connections) — `pipeline/representative_models.py`
+- **(chosen variants, indexes of the blockers they resolve) at one usage level. A…** (1 connections) — `pipeline/representative_models.py`
 - **(basis 'month'|'kwh'|'kw'|'percent', factor to $/month, $/kWh or $/kW-month,…** (1 connections) — `pipeline/representative_models.py`
 - **Months named by a season text ('12,1,2', 'Sep-Apr', 'November 1 - April 30');…** (1 connections) — `pipeline/representative_models.py`
 - **Months a seasonal component applies in (None = all year) and a problem text…** (1 connections) — `pipeline/representative_models.py`
@@ -20,7 +21,6 @@
 - **Fixed-charge items named as variants of one charge ('Stem (qualifier)'), by…** (1 connections) — `pipeline/representative_models.py`
 - **Unconditional fixed charges printed as variants of one charge, e.g. 'Basic…** (1 connections) — `pipeline/representative_models.py`
 - **Classify a record's components once (level-independent): items, priced items,…** (1 connections) — `pipeline/representative_models.py`
-- **(chosen variants, indexes of the blockers they resolve) at one usage level. A…** (1 connections) — `pipeline/representative_models.py`
 
 ## Relationships
 

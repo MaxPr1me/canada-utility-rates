@@ -13,10 +13,9 @@
 
 ## Relationships
 
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
-- [TariffRecord](TariffRecord.md) (1 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
 - [DocumentPage](DocumentPage.md) (1 shared connections)
 
 ## Source Files

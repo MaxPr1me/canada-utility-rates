@@ -33,14 +33,15 @@
 
 ## Relationships
 
-- [re](re.md) (13 shared connections)
-- [BaseScraper](BaseScraper.md) (12 shared connections)
-- [TariffRecord](TariffRecord.md) (10 shared connections)
-- [RateComponent](RateComponent.md) (7 shared connections)
+- [re](re.md) (12 shared connections)
+- [BaseScraper](BaseScraper.md) (11 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (9 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (8 shared connections)
 - [DocumentPage](DocumentPage.md) (6 shared connections)
 - [.fetch_page](fetch_page.md) (4 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [.now_iso](now_iso.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (1 shared connections)
 
 ## Source Files
 

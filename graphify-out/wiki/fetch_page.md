@@ -1,6 +1,6 @@
 # .fetch_page
 
-> 61 nodes
+> 81 nodes
 
 ## Key Concepts
 
@@ -8,64 +8,64 @@
 - **.mark_live_parsed()** (37 connections) — `scrapers/base.py`
 - **.fetch_bytes()** (30 connections) — `scrapers/base.py`
 - **YukonEnergyScraper** (20 connections) — `scrapers/utilities/yukon_energy.py`
-- **find_pdf_links()** (20 connections) — `scrapers/utils/parsing.py`
-- **._try_live_scrape()** (17 connections) — `scrapers/utilities/saskpower.py`
 - **._parse_residential_pdfs()** (15 connections) — `scrapers/utilities/yukon_energy.py`
-- **._try_live_scrape()** (14 connections) — `scrapers/utilities/newfoundland_power.py`
+- **ATCOElectricScraper** (13 connections) — `scrapers/utilities/atco_electric.py`
+- **ENMAXEnergyScraper** (12 connections) — `scrapers/utilities/enmax_energy.py`
+- **EPCOREnergyAlbertaScraper** (12 connections) — `scrapers/utilities/epcor_energy_alberta.py`
+- **._try_live_scrape()** (12 connections) — `scrapers/utilities/epcor_energy_alberta.py`
 - **._try_live_scrape()** (12 connections) — `scrapers/utilities/maritime_electric.py`
 - **.live_records()** (12 connections) — `scrapers/utilities/yukon_energy.py`
 - **._try_live_scrape()** (11 connections) — `scrapers/utilities/enbridge_gas.py`
+- **._try_live_scrape()** (11 connections) — `scrapers/utilities/enmax_energy.py`
 - **YukonElectricalScraper** (10 connections) — `scrapers/utilities/yukon_electrical.py`
-- **.verify_official_records()** (10 connections) — `scrapers/base.py`
 - **._try_live_scrape()** (10 connections) — `scrapers/utilities/energir.py`
 - **._try_live_scrape()** (10 connections) — `scrapers/utilities/enmax_power.py`
 - **._try_live_scrape()** (10 connections) — `scrapers/utilities/heritage_gas.py`
-- **._try_live_scrape()** (10 connections) — `scrapers/utilities/nl_hydro.py`
+- **._try_live_scrape()** (9 connections) — `scrapers/utilities/atco_electric.py`
+- **._try_live_scrape()** (9 connections) — `scrapers/utilities/atco_gas.py`
 - **._joint_schedule()** (9 connections) — `scrapers/utilities/yukon_energy.py`
-- **.fetch_rendered_page()** (8 connections) — `scrapers/base.py`
-- **._try_live_residential()** (8 connections) — `scrapers/utilities/nova_scotia_power.py`
+- **._try_live_scrape()** (8 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._try_live_scrape()** (8 connections) — `scrapers/utilities/yukon_electrical.py`
 - **._general_service_records()** (7 connections) — `scrapers/utilities/yukon_energy.py`
-- **._discover_schedule_url()** (6 connections) — `scrapers/utilities/enmax_power.py`
-- **.scrape()** (6 connections) — `scrapers/utilities/yukon_electrical.py`
-- **._seed_data()** (6 connections) — `scrapers/utilities/yukon_electrical.py`
-- *... and 36 more nodes in this community*
+- **._try_live_scrape()** (7 connections) — `scrapers/utilities/yukon_energy.py`
+- **.scrape()** (6 connections) — `scrapers/utilities/atco_electric.py`
+- *... and 56 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (49 shared connections)
-- [TariffRecord](TariffRecord.md) (36 shared connections)
-- [DocumentPage](DocumentPage.md) (12 shared connections)
-- [.now_iso](now_iso.md) (9 shared connections)
-- [RateComponent](RateComponent.md) (8 shared connections)
-- [re](re.md) (6 shared connections)
-- [nl_hydro.py](nl_hydro.py.md) (6 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (41 shared connections)
+- [BaseScraper](BaseScraper.md) (37 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (22 shared connections)
+- [DocumentPage](DocumentPage.md) (14 shared connections)
+- [RateComponent](RateComponent.md) (10 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (9 shared connections)
+- [re](re.md) (8 shared connections)
 - [.__init__](__init__.md) (5 shared connections)
-- [EnbridgeGasScraper](EnbridgeGasScraper.md) (5 shared connections)
+- [MaritimeElectricScraper](MaritimeElectricScraper.md) (5 shared connections)
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (4 shared connections)
-- [fortisalberta.py](fortisalberta.py.md) (4 shared connections)
 - [FortisBCEnergyScraper](FortisBCEnergyScraper.md) (4 shared connections)
+- [ntpc.py](ntpc.py.md) (4 shared connections)
 
 ## Source Files
 
 - `scrapers/base.py`
+- `scrapers/utilities/atco_electric.py`
+- `scrapers/utilities/atco_gas.py`
 - `scrapers/utilities/enbridge_gas.py`
 - `scrapers/utilities/energir.py`
+- `scrapers/utilities/enmax_energy.py`
 - `scrapers/utilities/enmax_power.py`
+- `scrapers/utilities/epcor_energy_alberta.py`
 - `scrapers/utilities/heritage_gas.py`
+- `scrapers/utilities/liberty_gas_nb.py`
 - `scrapers/utilities/maritime_electric.py`
-- `scrapers/utilities/newfoundland_power.py`
-- `scrapers/utilities/nl_hydro.py`
-- `scrapers/utilities/nova_scotia_power.py`
-- `scrapers/utilities/saskpower.py`
 - `scrapers/utilities/yukon_electrical.py`
 - `scrapers/utilities/yukon_energy.py`
-- `scrapers/utils/parsing.py`
 
 ## Audit Trail
 
-- EXTRACTED: 294 (97%)
-- INFERRED: 9 (3%)
+- EXTRACTED: 324 (95%)
+- INFERRED: 18 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

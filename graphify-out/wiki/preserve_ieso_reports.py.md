@@ -34,7 +34,8 @@
 ## Relationships
 
 - [os](os.md) (5 shared connections)
-- [run_scrape.py](run_scrape.py.md) (4 shared connections)
+- [argparse](argparse.md) (2 shared connections)
+- [export_json.py](export_json.py.md) (2 shared connections)
 - [generate_market_pricing.py](generate_market_pricing.py.md) (1 shared connections)
 - [json](json.md) (1 shared connections)
 - [re](re.md) (1 shared connections)

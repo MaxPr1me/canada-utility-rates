@@ -20,7 +20,7 @@
 - [oeb_tariff.py](oeb_tariff.py.md) (5 shared connections)
 - [build_demand_records](build_demand_records.md) (2 shared connections)
 - [parse_tariff_pages](parse_tariff_pages.md) (2 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
 - [TariffSheet](TariffSheet.md) (1 shared connections)
 
 ## Source Files

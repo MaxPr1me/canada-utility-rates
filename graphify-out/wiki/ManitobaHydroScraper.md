@@ -1,10 +1,11 @@
 # ManitobaHydroScraper
 
-> 35 nodes
+> 36 nodes
 
 ## Key Concepts
 
 - **ManitobaHydroScraper** (15 connections) — `scrapers/utilities/manitoba_hydro.py`
+- **._try_live_scrape()** (15 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **._parse_commercial()** (11 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **._parse_lubd()** (9 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **._parse_residential()** (8 connections) — `scrapers/utilities/manitoba_hydro.py`
@@ -16,7 +17,6 @@
 - **_mb_pairs()** (6 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **_mb_schedule_effective()** (6 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **_mb_effective()** (5 connections) — `scrapers/utilities/manitoba_hydro.py`
-- **_mb_lines()** (5 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **_mb_number()** (5 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **._lubd_record()** (4 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **_mb_assign_blocks()** (4 connections) — `scrapers/utilities/manitoba_hydro.py`
@@ -29,15 +29,18 @@
 - **Turn the parsed energy block rows into 1..n tiers with cumulative upper bounds…** (1 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **Pair the zero-priced first kVA block with its balance row (both carry the same…** (1 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **First 'Rates effective <date>' line ahead of the electricity tables -> (iso,…** (1 connections) — `scrapers/utilities/manitoba_hydro.py`
-- *... and 10 more nodes in this community*
+- *... and 11 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (18 shared connections)
-- [TariffRecord](TariffRecord.md) (10 shared connections)
-- [RateComponent](RateComponent.md) (7 shared connections)
-- [re](re.md) (6 shared connections)
+- [BaseScraper](BaseScraper.md) (16 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (10 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (7 shared connections)
+- [re](re.md) (5 shared connections)
 - [DocumentPage](DocumentPage.md) (3 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (3 shared connections)
+- [RateComponent](RateComponent.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
@@ -46,8 +49,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 83 (92%)
-- INFERRED: 7 (8%)
+- EXTRACTED: 91 (93%)
+- INFERRED: 7 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

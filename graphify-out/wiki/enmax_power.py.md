@@ -1,6 +1,6 @@
 # enmax_power.py
 
-> 49 nodes
+> 42 nodes
 
 ## Key Concepts
 
@@ -14,7 +14,6 @@
 - **parse_schedule_pages()** (12 connections) — `scrapers/utilities/enmax_power.py`
 - **_date()** (11 connections) — `scrapers/utilities/enmax_power.py`
 - **_rider_page()** (9 connections) — `scrapers/utilities/enmax_power.py`
-- **extract_schedule_pages()** (8 connections) — `scrapers/utilities/enmax_power.py`
 - **_parse_riders()** (8 connections) — `scrapers/utilities/enmax_power.py`
 - **_class_pages()** (7 connections) — `scrapers/utilities/enmax_power.py`
 - **_class_values()** (7 connections) — `scrapers/utilities/enmax_power.py`
@@ -29,20 +28,23 @@
 - **_split_footer()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_Riders** (4 connections) — `scrapers/utilities/enmax_power.py`
 - **_component()** (4 connections) — `scrapers/utilities/enmax_power.py`
-- *... and 24 more nodes in this community*
+- **_require()** (4 connections) — `scrapers/utilities/enmax_power.py`
+- *... and 17 more nodes in this community*
 
 ## Relationships
 
-- [re](re.md) (18 shared connections)
-- [DocumentPage](DocumentPage.md) (15 shared connections)
+- [re](re.md) (16 shared connections)
+- [DocumentPage](DocumentPage.md) (14 shared connections)
 - [BaseScraper](BaseScraper.md) (8 shared connections)
-- [RateComponent](RateComponent.md) (3 shared connections)
-- [TariffRecord](TariffRecord.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
+- [extract_schedule_pages](extract_schedule_pages.md) (4 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (3 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
+- [.fetch_page](fetch_page.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
 - [os](os.md) (1 shared connections)
-- [export_ontario_totals.py](export_ontario_totals.py.md) (1 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
+- [._discover_schedule_url](_discover_schedule_url.md) (1 shared connections)
 
 ## Source Files
 
@@ -50,8 +52,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 163 (92%)
-- INFERRED: 15 (8%)
+- EXTRACTED: 153 (91%)
+- INFERRED: 15 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

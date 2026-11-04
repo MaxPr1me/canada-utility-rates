@@ -2,7 +2,7 @@
 
 > God node · 257 connections · `scrapers/base.py`
 
-**Community:** [RateComponent](RateComponent.md)
+**Community:** [BCHydroScraper](BCHydroScraper.md)
 
 ## Connections by Relation
 
@@ -36,11 +36,11 @@
 - [oeb_tariff.py](oeb_tariff.py.md) `EXTRACTED`
 - [enmax_power.py](enmax_power.py.md) `EXTRACTED`
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
-- fortisbc_electric.py `EXTRACTED`
+- [fortisbc_electric.py](fortisbc_electric.py.md) `EXTRACTED`
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
-- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
+- ontario_ldc.py `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- [nl_hydro.py](nl_hydro.py.md) `EXTRACTED`
+- nl_hydro.py `EXTRACTED`
 - epcor_gas_ontario.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
@@ -52,7 +52,7 @@
 - nb_power.py `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - aeso.py `EXTRACTED`
-- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
+- maritime_electric.py `EXTRACTED`
 - *…and 17 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### rationale_for
@@ -87,7 +87,7 @@
 - [BCHydroScraper](BCHydroScraper.md) `INFERRED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `INFERRED`
 - [NBPowerScraper](NBPowerScraper.md) `INFERRED`
-- NewfoundlandPowerScraper `INFERRED`
+- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `INFERRED`
 - [ATCOGasScraper](ATCOGasScraper.md) `INFERRED`
 - [EnergirScraper](EnergirScraper.md) `INFERRED`
 - HydroQuebecScraper `INFERRED`
