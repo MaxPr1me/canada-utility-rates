@@ -164,13 +164,14 @@ records does not prove that every building class is covered. Current figures are
 ### Where the representative models live
 
 A *representative model* is a "typical" monthly cost for a province, worked out from the middle
-value (the median) of its utilities' live rates. Electricity models exist for the ten provinces;
-gas and the territories come later.
+value (the median) of its utilities' live rates. Electricity models exist for the ten provinces.
+Natural gas models exist for homes only, in the unit each utility bills (cubic metres or gigajoules,
+never converted); business gas and the territories come later.
 
 | File | What it does |
 |---|---|
 | `data/models/crosswalk.json` | The sorting list. Its rules are read from top to bottom; the first rule that fits puts each live tariff into a model group (province, fuel, customer type, rate structure and size) or leaves it out with a written reason. No live tariff may be left unsorted. |
-| `data/models/usage_levels.json` | The example customers, approved by the project owner: homes using 500, 1,000 or 2,000 kWh a month; small businesses (under 50 kW) using 2,000 kWh at 10 kW or 8,000 kWh at 25 kW; medium businesses (50-499 kW) using 40,000 kWh at 100 kW; large businesses (500-4,999 kW) using 500,000 kWh at 1,000 kW. Also the average month (30.4375 days, for turning daily charges into monthly ones), Ontario's dated time-of-use split and the synthetic business load profile. |
+| `data/models/usage_levels.json` | The example customers, approved by the project owner: homes using 500, 1,000 or 2,000 kWh a month; small businesses (under 50 kW) using 2,000 kWh at 10 kW or 8,000 kWh at 25 kW; medium businesses (50-499 kW) using 40,000 kWh at 100 kW; large businesses (500-4,999 kW) using 500,000 kWh at 1,000 kW. For gas, homes using 100, 200 or 400 cubic metres a month, or 4, 8 or 16 GJ where gas is billed in GJ (200 m³ and 8 GJ are the reference levels; the others show the range). Also the average month (30.4375 days, for turning daily charges into monthly ones), Ontario's dated time-of-use split and the synthetic business load profile. |
 | `data/models/block_periods.json` | Reviewed notes saying whether an energy block such as "first 5,000 kWh" is per month or per two months, quoting the source. When nothing says, the tariff is left out of the model instead of guessed. |
 | `data/models/taxes.json` | Sales taxes and automatic bill rebates for every province and territory, as dated lines: for example the Ontario Electricity Rebate is 23.5% until October 31, 2026 and 15.7% from November 1, 2026 (O. Reg. 328/26). Municipal taxes and income-tested programs are left out. |
 | `pipeline/representative_models.py` | The calculator: each utility's monthly cost at each level, then the median, the spread, the utility closest to the median and any far from it (outliers), without and with tax, with a written explanation of how each number was made. |

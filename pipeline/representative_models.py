@@ -267,8 +267,19 @@ def format_coverage(report: dict, limit: int = 25) -> str:
 # Phase 7B engine: per-record modeled monthly cost, per-utility aggregation, taxes and statistics.
 
 # 7C-3 (user decision 2026-10-30): phase/amperage fixed-charge variants priced for the reference customer.
-METHOD_VERSION = "7C-4"
-MODEL_FUELS = ("electricity",)
+# 7D-1 (owner decision 2026-11-04): residential default-supply gas in each utility's native volume unit.
+METHOD_VERSION = "7D-1"
+MODEL_FUELS = ("electricity", "gas")
+# Gas is priced in its native billing unit and never converted between m3 and GJ (owner decision 2026-11-04;
+# a future cross-unit comparison converts toward m3, with its heating-value source chosen then).
+GAS_VOLUME_PRICES = {"m3": ("$/m³", "$/m3"), "GJ": ("$/gj",)}
+GAS_BLOCK_UNITS = {"m3": ("m³/month", "m3/month"), "GJ": ("gj/month",)}
+VOLUME_LABELS = {"kwh": "kWh", "m3": "m³", "GJ": "GJ"}
+# Gas commodity/supply components play the role electricity energy components play.
+ENERGY_TYPES = ("energy", "commodity")
+# First 7D slice: residential default supply only; commercial, contract and interruptible gas stay withheld until
+# their usage scenarios are approved (owner decision 2026-11-04).
+GAS_MODEL_SECTORS = ("residential",)
 ZONE_POLICIES = ("median_of_zones", "default_only")
 ZONE_POLICY_TEXT = {
     "median_of_zones": "the median of each utility's standard rate-zone records covering the level",
@@ -460,8 +471,13 @@ def fixed_charge_variant_rules(usage_levels: Optional[dict], fuel: Any, sector: 
 
 
 def price_basis(component: dict, days_per_month: float = DEFAULT_DAYS_PER_MONTH,
-                power_factor: float = DEFAULT_POWER_FACTOR) -> Optional[tuple[str, float, list[str]]]:
-    """(basis 'month'|'kwh'|'kw'|'percent', factor to $/month, $/kWh or $/kW-month, conversions); None if unknown."""
+                power_factor: float = DEFAULT_POWER_FACTOR, volume_unit: str = "kwh"
+                ) -> Optional[tuple[str, float, list[str]]]:
+    """(basis 'month'|'kwh'|'kw'|'percent', factor to $/month, $/kWh or $/kW-month, conversions); None if unknown.
+
+    Basis 'kwh' means "per unit of the level's monthly volume": kWh for electricity, or the gas model's native
+    ``volume_unit`` ('m3' or 'GJ'); a gas model accepts only its own unit, so a $/GJ charge in an m3 model (or any
+    $/kWh charge) is unsupported and fails closed."""
     unit = re.sub(r"\s+", " ", (component.get("charge_unit") or "").strip().lower())
     dpm = f"{days_per_month:g}"
     if unit.startswith("%") or unit.startswith("fraction"):
@@ -471,6 +487,8 @@ def price_basis(component: dict, days_per_month: float = DEFAULT_DAYS_PER_MONTH,
              "$/two months": (0.5, ["$/two months / 2"])}
     if unit in fixed:
         return ("month",) + fixed[unit]
+    if volume_unit != "kwh":
+        return ("kwh", 1.0, []) if unit in GAS_VOLUME_PRICES.get(volume_unit, ()) else None
     if unit == "$/kwh":
         return "kwh", 1.0, []
     if unit == "$/mwh":
@@ -583,12 +601,23 @@ def bucket_of(component_type: Any, basis: str) -> str:
     """Bucket of a priced component; distribution/delivery charges split by unit basis."""
     if component_type in ("distribution", "delivery"):
         return {"kwh": "distribution_volumetric", "kw": "demand"}.get(basis, "fixed")
-    return {"fixed": "fixed", "energy": "energy", "demand": "demand", "transmission": "transmission",
-            "regulatory": "regulatory", "rider": "riders", "carbon": "carbon"}.get(component_type, "other")
+    return {"fixed": "fixed", "energy": "energy", "commodity": "energy", "demand": "demand",
+            "transmission": "transmission", "regulatory": "regulatory", "rider": "riders",
+            "carbon": "carbon"}.get(component_type, "other")
+
+
+def gas_volume_unit(records: Iterable[dict]) -> Optional[str]:
+    """The single native volume unit ('m3' or 'GJ') that a gas model's records price; None if mixed or absent."""
+    found: set[str] = set()
+    for record in records:
+        for comp in record.get("components") or []:
+            unit = re.sub(r"\s+", " ", (comp.get("charge_unit") or "").strip().lower())
+            found.update(track for track, units in GAS_VOLUME_PRICES.items() if unit in units)
+    return found.pop() if len(found) == 1 else None
 
 
 def _context(province: Any, fuel: Any, structure: Any, sector: Any, usage_levels: Optional[dict],
-             as_of: date, block_periods: Optional[list] = None) -> dict:
+             as_of: date, block_periods: Optional[list] = None, volume_unit: str = "kwh") -> dict:
     """Pricing inputs shared by every record of one model key at the as-of date.
 
     Inputs: the model's province, fuel, rate structure and sector (residential or a commercial size band), the
@@ -605,7 +634,7 @@ def _context(province: Any, fuel: Any, structure: Any, sector: Any, usage_levels
             "shares_id": shares_id, "shares": (entry or {}).get("shares"), "shares_entry": entry,
             "reference": reference_customer_entries(usage_levels, province, fuel, sector),
             "variant_rules": fixed_charge_variant_rules(usage_levels, fuel, sector),
-            "block_periods": [e for e in block_periods or [] if isinstance(e, dict)]}
+            "block_periods": [e for e in block_periods or [] if isinstance(e, dict)], "volume_unit": volume_unit}
 
 
 def _block_period_problem(entry: Any) -> Optional[str]:
@@ -679,6 +708,13 @@ def _energy_tier_scale(unit: Any, record: dict, ctx: dict, components: list[dict
     threshold unit; a bare 'kWh' threshold needs a reviewed data/models/block_periods.json entry."""
     text = re.sub(r"\s+", " ", (unit or "").strip().lower())
     dpm = ctx["days_per_month"]
+    volume = ctx.get("volume_unit", "kwh")
+    if volume != "kwh":
+        # Gas blocks: only monthly volume thresholds in the model's own unit (no daily/annual scaling yet).
+        if text in GAS_BLOCK_UNITS.get(volume, ()):
+            return "month", 1.0, [], None, None
+        return None, 1.0, [], (f"tier threshold unit {unit!r} not supported for {VOLUME_LABELS.get(volume, volume)} "
+                               "gas blocks"), None
     if text in _TIER_UNITS:
         return "month", 1.0, [], None, None
     if text in ("kwh/day", "kwh per day"):
@@ -750,7 +786,9 @@ def _tier_windows(group: list[tuple[dict, dict]], ctx: dict, record: dict) -> li
     if len(units) > 1:
         return [f"tier threshold units differ {sorted(map(str, units))}: {names}"]
     scale, factor, conversions, problem, entry_id = _energy_tier_scale(
-        next(iter(units), "kWh/month"), record, ctx, [comp for _, comp in rows if comp.get("tier_threshold") is not None])
+        next(iter(units), "kWh/month" if ctx.get("volume_unit", "kwh") == "kwh"
+             else GAS_BLOCK_UNITS.get(ctx["volume_unit"], ("",))[0]),
+        record, ctx, [comp for _, comp in rows if comp.get("tier_threshold") is not None])
     if problem:
         return [f"{problem}: {names}"]
     if scale in ("kw", "kva") and any(_CAP_RE.search((comp.get("component_name") or "") + " " + _note_body(comp))
@@ -821,14 +859,14 @@ def _period_and_tier_checks(priced: list[tuple[dict, dict]], ctx: dict, record: 
                 blockers.append(f"no official kWh share for TOU period '{period}' ({source}): {item['component']}")
             else:
                 item["share"] = float(share)
-            if item["type"] == "energy":
+            if item["type"] in ENERGY_TYPES:
                 energy_periods.add(period)
         if tier is not None:
             if period:
                 blockers.append(f"tiered time-of-use price not computable: {item['component']}")
             else:
                 tier_groups[(item["type"], item.get("season"))].append((item, comp))
-        if item["type"] == "energy" and item.get("months"):
+        if item["type"] in ENERGY_TYPES and item.get("months"):
             seasons.setdefault(str(item.get("season")), item["months"])
     if energy_periods and shares and energy_periods != set(shares):
         blockers.append(f"TOU periods {sorted(energy_periods)} do not match the official share set {sorted(shares)}")
@@ -884,7 +922,7 @@ def _prepare(record: dict, ctx: dict) -> dict:
     for comp in record.get("components") or []:
         name = comp.get("component_name") or ""
         ctype = comp.get("component_type")
-        energy_seen = energy_seen or ctype == "energy"
+        energy_seen = energy_seen or ctype in ENERGY_TYPES
         item = {"component": name, "type": ctype, "sub_component": comp.get("sub_component"),
                 "value": comp.get("charge_value"), "unit": comp.get("charge_unit")}
         for field in ("tou_period", "season", "tier_number", "effective_date", "end_date"):
@@ -898,7 +936,7 @@ def _prepare(record: dict, ctx: dict) -> dict:
             reason = None
         basis = None
         if reason is None:
-            basis = price_basis(comp, ctx["days_per_month"], ctx["power_factor"])
+            basis = price_basis(comp, ctx["days_per_month"], ctx["power_factor"], ctx.get("volume_unit", "kwh"))
             reason = "unsupported_unit" if basis is None else "percentage_base_not_computable" if basis[0] == "percent" else None
         if reason in ("unsupported_unit", "no_value"):
             blockers.append(f"{EXCLUSION_TEXT[reason]}: {name} ({item['unit']})")
@@ -950,7 +988,7 @@ def _prepare(record: dict, ctx: dict) -> dict:
     blockers.extend(_period_and_tier_checks(priced, ctx, record))
     if market_energy:
         energy_status = "market_pending"
-    elif any(item["type"] == "energy" for item, _ in priced):
+    elif any(item["type"] in ENERGY_TYPES for item, _ in priced):
         energy_status = "included"
     elif energy_seen:
         energy_status = "excluded"
@@ -959,7 +997,7 @@ def _prepare(record: dict, ctx: dict) -> dict:
         energy_status = "absent"
     return {"items": items, "priced": priced, "blockers": blockers, "energy_status": energy_status,
             "market_pending": market, "market_other": market_other, "power_factor": ctx["power_factor"],
-            "variant_groups": variant_groups}
+            "variant_groups": variant_groups, "volume_unit": ctx.get("volume_unit", "kwh")}
 
 
 def _select_variants(prep: dict, ctx: dict, level_id: Any) -> tuple[list[dict], set[int]]:
@@ -1238,10 +1276,12 @@ def _record_buckets(prep: dict, extra: Optional[list[dict]] = None) -> dict[tupl
     """Normalized rates per (bucket, unit, period): $/month, $/kWh, $/kW-month; seasonal non-energy annualized.
     ``extra``: chosen fixed-charge variant items (only when the same variant applies at every level)."""
     out: dict[tuple, float] = defaultdict(float)
+    volume = prep.get("volume_unit", "kwh")
+    units = BASIS_UNITS if volume == "kwh" else {**BASIS_UNITS, "kwh": f"$/{VOLUME_LABELS.get(volume, volume)}"}
     for item in [item for item, _ in prep["priced"]] + list(extra or []):
         period = _period_label(item)
         weight = len(item["months"]) / 12 if item.get("months") and not period else 1.0
-        out[(item["bucket"], BASIS_UNITS[item["basis"]], period)] += float(item["value"]) * item["factor"] * weight
+        out[(item["bucket"], units[item["basis"]], period)] += float(item["value"]) * item["factor"] * weight
     return out
 
 
@@ -1373,7 +1413,9 @@ def _method_text(model: dict, key: tuple, levels: list[dict], component_counts: 
                      f"published ({windows}); each month uses its season's tiers and the year is month-weighted.")
     if levels:
         parts.append("Usage levels: " + "; ".join(
-            f"{lv['id']} {lv['kwh']:,.0f} kWh" + ("" if lv.get("kw") is None else f" at {lv['kw']:g} kW") + "/month"
+            (f"{lv['id']} {float(lv['quantity']):,.0f} {VOLUME_LABELS.get(lv.get('unit'), lv.get('unit'))}"
+             if "quantity" in lv else
+             f"{lv['id']} {lv['kwh']:,.0f} kWh" + ("" if lv.get("kw") is None else f" at {lv['kw']:g} kW")) + "/month"
             for lv in levels) + ".")
     else:
         parts.append("No usage level is defined for this size band yet; only component buckets are reported.")
@@ -1645,13 +1687,21 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
     level_sector = band if sector == "commercial" and band else sector
     raw_levels = (usage_levels.get(fuel) or {}).get(level_sector) if isinstance(usage_levels.get(fuel), dict) else None
     levels = [lv for lv in raw_levels if isinstance(lv, dict)] if isinstance(raw_levels, list) else []
-    ctx = _context(province, fuel, structure, level_sector, usage_levels, as_of, block_periods)
+    volume = "kwh"
+    if fuel == "gas":
+        # Each gas model is evaluated only at the levels of its records' native volume unit (m3 or GJ).
+        volume = gas_volume_unit(record for record, _, _ in entries) or "none"
+        levels = [lv for lv in levels if lv.get("unit") == volume]
+    ctx = _context(province, fuel, structure, level_sector, usage_levels, as_of, block_periods, volume)
     required = required_contributors(crosswalk, key)
     required_names = sorted({name for entry in required for name in entry.get("utilities") or []})
     by_utility: dict[str, list[tuple[dict, str, Optional[str]]]] = defaultdict(list)
     for record, zone, rule_id in entries:
         by_utility[record.get("utility_name") or ""].append((record, zone, rule_id))
     exclusions: list[dict] = []
+    if volume == "none":
+        exclusions.append({"scope": "model", "reason": "gas records do not price one native volume unit (m3 or GJ); "
+                                                      "no usage level is evaluated"})
     chosen: dict[str, list[tuple[dict, str, Optional[str]]]] = {}
     for utility, rows in sorted(by_utility.items()):
         rows.sort(key=lambda row: (row[1] != "default", row[0].get("tariff_code") or "", str(row[0].get("id"))))
@@ -1673,9 +1723,15 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
     variant_uses: list[tuple[Any, str, dict, dict]] = []
     level_out = []
     for level in levels:
-        kwh = float(level.get("kwh") or 0.0)
-        kw = None if level.get("kw") is None else float(level["kw"])
-        applied, not_applied = tax_lines(taxes, province, fuel, level_sector, kwh, kw, as_of)
+        if fuel == "gas":
+            kwh, kw = float(level.get("quantity") or 0.0), None
+            usage = {"kwh": None, "kw": None, "quantity": kwh, "unit": volume, "role": level.get("role")}
+        else:
+            kwh = float(level.get("kwh") or 0.0)
+            kw = None if level.get("kw") is None else float(level["kw"])
+            usage = {"kwh": kwh, "kw": kw}
+        # Tax eligibility thresholds are in kWh; gas volumes never satisfy or fail a kWh test.
+        applied, not_applied = tax_lines(taxes, province, fuel, level_sector, None if fuel == "gas" else kwh, kw, as_of)
         costs, taxed, line_amounts, rows_out = {}, {}, defaultdict(list), []
         level_used, level_fallbacks, zone_inputs, level_variants = [], [], {}, []
         for utility, rows in chosen.items():
@@ -1745,7 +1801,7 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
         closest = closest_to_median(costs, stats["median"])
         closest_rows = [row for row in rows_out if row["utility"] == closest]
         level_out.append({
-            "id": level.get("id"), "kwh": kwh, "kw": kw,
+            "id": level.get("id"), **usage,
             "without_tax": _money(stats),
             "with_tax": {**_money(summary_stats(taxed.values())),
                          "lines": [{**line, "median_amount": round(statistics.median(line_amounts[i]), 2)
@@ -2076,6 +2132,7 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
             and (wanted_fuels is None or r.get("utility_type") in wanted_fuels)]
     variants, wires_units, retail_utilities = compose_pairs(live, crosswalk)
     groups: dict[tuple, list] = defaultdict(list)
+    withheld_gas: set[tuple] = set()
     province_utilities: dict[tuple, set[str]] = defaultdict(set)
     for record in live:
         name = record.get("utility_name") or ""
@@ -2083,6 +2140,9 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
             province_utilities[(record.get("province"), record.get("utility_type"))].add(wires_units.get(name, name))
         outcome = match_record(record, crosswalk)
         for key in model_keys(outcome):
+            if key[1] == "gas" and key[2] not in GAS_MODEL_SECTORS:
+                withheld_gas.add(key)
+                continue
             for row in variants.get(id(record), [record]):
                 groups[key].append((row, outcome.get("zone") or "default", outcome.get("rule_id")))
     profiled = [key for key in groups if find_synthetic_profile(
@@ -2129,7 +2189,11 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
                   "provinces": sorted(wanted) if wanted is not None else None,
                   "fuels": sorted(wanted_fuels) if wanted_fuels is not None else None,
                   "rates_generated_at": rates.get("generated_at") if isinstance(rates, dict) else None,
-                  "latest_record_created_at": max(created) if created else None},
+                  "latest_record_created_at": max(created) if created else None,
+                  "withheld_gas_models": {
+                      "models": sorted(key_label(k) for k in withheld_gas),
+                      "reason": "Phase 7D first slice (owner decision 2026-11-04): residential default supply only; "
+                                "commercial, contract and interruptible gas scenarios are not approved yet."}},
         "assumptions": {
             "usage_levels": {fuel: usage_levels.get(fuel) for fuel in ("electricity", "gas") if fuel in usage_levels},
             "usage_levels_basis": usage_levels.get("basis"),
@@ -2156,8 +2220,11 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
                                       for entry in usage_levels.get("fixed_charge_variants") or []
                                       if isinstance(entry, dict)],
             "buckets": dict(BUCKET_TEXT),
-            "fuels": "Electricity only; gas models are Phase 7D (gas records are reported in the coverage report, "
-                     "not modelled)." if wanted_fuels == {"electricity"} else None,
+            "fuels": ("Electricity and residential natural gas. Gas (Phase 7D first slice, owner decision 2026-11-04) is "
+                      "residential default utility supply priced in each utility's native unit (m3 or GJ, never "
+                      "converted); commercial, contract and interruptible gas are withheld (input.withheld_gas_models).")
+            if wanted_fuels is None or "gas" in wanted_fuels else
+            "Electricity only in this build; residential gas models are Phase 7D.",
             "pairs": {k: pair_config(crosswalk).get(k) for k in ("basis", "province", "fuel", "retail_below_annual_kwh",
                                                                  "retail_rule", "market_energy", "units")}
             if pair_config(crosswalk) and (wanted is None or pair_config(crosswalk).get("province") in wanted) else None,

@@ -13,7 +13,8 @@ def test_chart_costs_colors_and_scale(open_site, payload, basis):
     page.select_option("#across-tax", basis)
     expect(page.locator(".across-group")).to_have_count(13)
     colors = {}
-    models = [m for m in payload["models"] if m["key"]["sector"] == "residential"]
+    # Across-Canada charts residential electricity only; Phase 7D gas models are never charted there.
+    models = [m for m in payload["models"] if m["key"]["sector"] == "residential" and m["key"]["fuel"] == "electricity"]
     for kwh in (500, 1000, 2000):
         page.select_option("#across-usage", str(kwh))
         widths = []
@@ -40,7 +41,7 @@ def test_chart_costs_colors_and_scale(open_site, payload, basis):
 
 
 def test_missing_cost_is_not_zero_and_real_zero_is_visible(open_site, payload):
-    model = next(m for m in payload["models"] if m["key"]["sector"] == "residential")
+    model = next(m for m in payload["models"] if m["key"]["sector"] == "residential" and m["key"]["fuel"] == "electricity")
     province, structure = model["key"]["province"], model["key"]["structure"]
     level = next(lv for lv in model["levels"] if lv["kwh"] == 1000)
     level["with_tax"]["median"] = 0

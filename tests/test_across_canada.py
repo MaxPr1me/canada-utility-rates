@@ -26,7 +26,7 @@ def model_template():
     data = _builds()["export_like"]
     # The crosswalk fixture omits component values; use explicit synthetic display totals.
     for model in data["models"]:
-        if model["key"]["sector"] != "residential":
+        if model["key"]["sector"] != "residential" or model["key"]["fuel"] != "electricity":
             continue
         model["state"] = "modeled"
         model["cost_basis"] = "delivery_and_energy"
@@ -105,7 +105,9 @@ def test_shared_load_and_separate_structures(open_site, payload, first):
     provinces = page.locator(".across-table tbody tr").evaluate_all(
         "rows => [...new Set(rows.map(row => row.dataset.province))]")
     assert len(provinces) == 13
-    on = [m for m in payload["models"] if m["key"]["province"] == "ON" and m["key"]["sector"] == "residential"]
+    # Across-Canada compares residential electricity only; Phase 7D gas models never appear in it.
+    on = [m for m in payload["models"] if m["key"]["province"] == "ON" and m["key"]["sector"] == "residential"
+          and m["key"]["fuel"] == "electricity"]
     expect(page.locator('tr[data-province="ON"]')).to_have_count(len(on))
     for kwh in (500, 1000, 2000):
         page.select_option("#across-usage", str(kwh))

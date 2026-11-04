@@ -12,7 +12,7 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 
 - Every export carries `method_version` from `METHOD_VERSION`. Each owner-approved method change has
   received a new version (7C-3: decisions of 2026-10-30; 7C-4: market benchmark sidecars,
-  2026-11-02); update the tests that assert it.
+  2026-11-02; 7D-1: residential gas models, 2026-11-04); update the tests that assert it.
 - `export_json.export_all()` calls `export_representative_models()` after the other exports
   (`MODEL_PROVINCES` = ON, AB, BC, MB, NB, NL, NS, PE, QC, SK; `zone_policy="median_of_zones"`). The
   hook imports lazily and writes `site/data/representative_models.json` through a temporary file and
@@ -22,11 +22,31 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 - Sum floats with `math.fsum` in the engine and market code: Python 3.12's built-in `sum()` differs
   from 3.11 and once moved a median by a cent.
 - Tests use frozen record fixtures (`tests/fixtures/rm_records_sample.json`, `rm_engine_sample.json`,
-  `rm_records_b12.json`, `rm_records_b14.json`, `rm_records_ws_6d.json`), so the pre-scrape CI tests
-  never depend on the live export.
-- Gas models (Phase 7D; the usage text will need gas units) and Phase 8 refresh automation exist only
-  as proposals; the proposed 2% Phase 8 change threshold is unapproved; there is no synthetic
-  sensitivity tool.
+  `rm_records_b12.json`, `rm_records_b14.json`, `rm_records_ws_6d.json`, `rm_records_7d_gas.json`),
+  so the pre-scrape CI tests never depend on the live export.
+- Phase 8 refresh automation exists only as a proposal; the proposed 2% Phase 8 change threshold is
+  unapproved; there is no synthetic sensitivity tool.
+
+## Gas models (Phase 7D first slice, method 7D-1, owner decision 2026-11-04)
+
+- `MODEL_FUELS` = electricity and gas, but gas models are built only for `GAS_MODEL_SECTORS`
+  (residential). Commercial, contract and interruptible gas keys are withheld and listed in
+  `input.withheld_gas_models` until their scenarios are approved.
+- Residential default utility supply only. Propane, optional RNG, Customer Choice/marketer and
+  delivery-only products are crosswalk exclusions; an optional utility supply (Liberty NB) is not
+  included, so that model is not computable rather than assumed.
+- Native units, never converted or merged: a gas model's records must price exactly one volume unit
+  (`gas_volume_unit`: `$/m³` -> m3, `$/GJ` -> GJ); mixed or missing units leave the model with no
+  level. m3 utilities are evaluated at `gas.residential` levels 100/200/400 m3 and GJ utilities at
+  4/8/16 GJ (reference levels sourced; the others are labelled sensitivity levels). Level output
+  carries `quantity`, `unit` and `role`, with `kwh`/`kw` null. A future cross-unit comparison converts
+  toward m3 at 100/200/400 m3, with its heating-value source decided then.
+- `price_basis(..., volume_unit=...)` accepts only the model's own volume unit; gas tier thresholds
+  must be monthly volumes in that unit (`m³/month`). Daily or annual gas thresholds, per-metering-device
+  fees and `$/m³/month` demand charges are unsupported (fail closed, e.g. Energir D1). `commodity`
+  components count as energy. Tax thresholds in kWh never apply to gas.
+- The Representative Models page shows gas levels in m³ or GJ with Reference/Sensitivity tags;
+  Across-Canada stays residential electricity only.
 
 ## Inputs and crosswalk (`data/models/crosswalk.json`)
 
@@ -34,7 +54,8 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 - Rules are ordered and the first match wins: each record maps to {province, fuel, sector, structure,
   size band} or to an exclusion reason. Require 0 unmapped (`--coverage`); the coverage report lists
   the intentional rule overrides.
-- Exclusion reasons include `gas_models_phase_7d` (ON/AB gas), `territory_planned_later`,
+- Exclusion reasons include `gas_models_phase_7d` (ON/AB gas records outside the residential
+  first slice), `territory_planned_later`,
   `paired_retail_component` (Alberta RoLR records) and, for AESO and the market-indexed products,
   `market_reference_only`, `optional_product`, `pilot` and `industrial_use_only`.
 - Out of medians (owner decision 2026-10-16): optional TOU/peak-event products and pilots outside

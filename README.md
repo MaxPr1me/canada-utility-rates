@@ -99,7 +99,7 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   checks, the strict coverage gate (78 of 78), the crosswalk (0 unmapped) and model parity pass.
 - **"Coverage complete" is not claimed yet:** the scoped wording (78 active registered
   utilities) awaits the owner's approval.
-- **Tests:** 2,252 tests across 38 test modules (run with `pytest tests`).
+- **Tests:** 2,271 tests across 39 test modules (run with `pytest tests`).
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.
@@ -112,7 +112,7 @@ The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; th
 2. **Stores** everything in a normalized SQLite database that preserves every rate detail — not just a single "cost per kWh" number.
 3. **Tracks history** — each stored scrape appends snapshots. Only the Monthly Scrape workflow stores scrapes: it keeps `data/db/rates.db` in the `data-history` GitHub release with dated backups and checks that history only grows; local copies are read-only mirrors (`python scripts/pull_history_db.py`).
 4. **Exports** the data as JSON for the GitHub Pages static site.
-5. **Serves** a browsable web interface with five views: **Rate Browser** (multi-select filters, confidence indicators and source attribution), **Market Pricing** (observed Ontario and Alberta market history with a monthly chart, table and heatmap), **Representative Models** (typical monthly electricity costs for the ten provinces, without and with tax), **Across-Canada** (residential electricity compared by province) and **Compare** (two tariffs side by side, never a bill total).
+5. **Serves** a browsable web interface with five views: **Rate Browser** (multi-select filters, confidence indicators and source attribution), **Market Pricing** (observed Ontario and Alberta market history with a monthly chart, table and heatmap), **Representative Models** (typical monthly electricity costs for the ten provinces and residential natural gas costs in each utility's m³ or GJ, without and with tax), **Across-Canada** (residential electricity compared by province) and **Compare** (two tariffs side by side, never a bill total).
 6. **Provides automation** through monthly scraping, separate Pages deployment, non-blocking source-health runs, a twice-monthly Ontario Price archive and market history update, and Alberta market history and model refreshes.
 
 **Scope: building energy costs.** The work supports building energy-cost analysis, including
@@ -688,7 +688,7 @@ One line per phase; sub-phase detail and the work queue are in the
 - **Earlier phases (foundations)** — done: scraper framework, granular schema, registry, validation, history snapshots, JSON export and the website.
 - **Phase 5: Live Parser Completion** — in progress: every active registered utility has live output (see Current Status); the Centra and Maritime corrections are stored and verified (November 4), the scoped coverage-complete claim awaits owner approval, and remaining building-catalogue gaps are tracked in the coverage matrix.
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas commodity cadence started).
-- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D gas is a proposal only).
+- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D residential gas done as method 7D-1, in each utility's native m³ or GJ, with business gas withheld until its usage scenarios are approved).
 - **Phase 8: Representative Model Refresh Automation** — planned (design reviewed, not implemented; the proposed 2% change threshold is not approved).
 - **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done; historical charts, AI-ready exports, a bill calculator or API and commercial/gas comparisons are planned).
 

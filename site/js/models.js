@@ -27,6 +27,8 @@
         NT: "Northwest Territories", NU: "Nunavut",
     };
     const FUEL_LABELS = { electricity: "Electricity", gas: "Natural gas" };
+    // Phase 7D gas levels are in each utility's native billing unit (never converted between m³ and GJ).
+    const UNIT_LABELS = { m3: "m³", GJ: "GJ" };
     // Fallbacks for model labels that do not read "<province fuel> - <sector> - <structure>".
     const SEGMENT_LABELS = {
         residential: "Residential",
@@ -168,7 +170,14 @@
         const parts = [];
         if (isNum(level.kwh)) parts.push(`${numberFormat.format(level.kwh)} kWh`);
         if (isNum(level.kw)) parts.push(`${numberFormat.format(level.kw)} kW`);
+        if (isNum(level.quantity)) parts.push(`${numberFormat.format(level.quantity)} ${UNIT_LABELS[level.unit] || level.unit || ""}`.trim());
         return parts.length ? parts.join(" at ") : `Level ${level.id || "?"}`;
+    }
+
+    // " (typical)" for the electricity default level, " (reference)" for a gas reference level.
+    function levelSuffix(level) {
+        if (level.id === DEFAULT_LEVEL_ID) return " (typical)";
+        return level.role === "reference" ? " (reference)" : "";
     }
 
     // ── Loading ───────────────────────────────────────────────
@@ -310,7 +319,7 @@
         const model = models.find(m => FIELDS.every(f => valueOf(m, f) === selection[f]));
         if (!model) throw new Error("no model matches the selection");
         const levels = list(model.levels).filter(level => typeof level === "object");
-        const typical = levels.findIndex(level => level.id === DEFAULT_LEVEL_ID);
+        const typical = levels.findIndex(level => level.id === DEFAULT_LEVEL_ID || level.role === "reference");
         const highlight = typical >= 0 ? typical : Math.floor((levels.length - 1) / 2);
         byId("models-title").textContent = model.label || model.id || "Representative model";
         renderBadge(model, levels);
@@ -401,6 +410,8 @@
         const usage = el("th", null, usageText(level));
         usage.scope = "row";
         if (level.id === DEFAULT_LEVEL_ID) usage.append(" ", el("span", "rm-tag", "Typical"));
+        else if (level.role === "reference") usage.append(" ", el("span", "rm-tag", "Reference"));
+        else if (level.role === "sensitivity") usage.append(" ", el("span", "rm-tag", "Sensitivity"));
         const range = cell(moneyRange(without.min, without.max), "rm-num");
         const bar = rangeBar(without);
         if (bar) range.append(bar);
@@ -559,7 +570,7 @@
         const lines = list(withTax.lines);
         const skipped = list(withTax.not_applied);
         if (lines.length === 0 && skipped.length === 0) return [];
-        const title = `Taxes and rebates for ${usageText(level)}${level.id === DEFAULT_LEVEL_ID ? " (typical)" : ""}`;
+        const title = `Taxes and rebates for ${usageText(level)}${levelSuffix(level)}`;
         const ul = el("ul", "rm-lines rm-text");
         lines.forEach(line => {
             const li = el("li", null, taxLineText(line));
@@ -796,7 +807,7 @@
         add("Synthetic load profile", profileText(all.profile));
         add("Illustrative median without tax", statsText(all.without_tax, noun));
         add("Illustrative median with tax", statsText(all.with_tax, noun));
-        return [el("h4", null, `${usageText(level)}${level.id === DEFAULT_LEVEL_ID ? " (typical)" : ""}`), grid];
+        return [el("h4", null, `${usageText(level)}${levelSuffix(level)}`), grid];
     }
 
     function marketPriceText(all, span) {

@@ -62,6 +62,9 @@ reading `site/data/`. Model data rules, including Across-Canada's:
   with cascading selectors, without/with-tax columns, a table and CSS range bars (no new charts), then
   contributors and outliers, taxes, method, coverage and exclusions. Keep the contributor nouns and the
   excluded-market-charge notes.
+- Gas models (7D-1) show levels in each utility's native unit (`quantity` + `unit`: m³ or GJ, never
+  converted) with Reference/Sensitivity tags; the reference level is highlighted like the electricity
+  typical level. Across-Canada keeps filtering to residential electricity.
 - The synthetic 7E block is opt-in ("Show illustrative all-in estimate (synthetic load profile)"): off
   by default and reset when the model changes, with its warning, SYNTHETIC badge and fixed caveat.
 - Render `fixed_charge_variants` as always-visible reference assumptions for every supplied level,

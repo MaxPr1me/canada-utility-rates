@@ -29,7 +29,15 @@
     "commercial_xlarge": []
   },
   "gas": {
-    "note": "Phase 7D: gas usage levels and annual-volume bands will be defined from published class thresholds; no gas levels yet."
+    "note": "Phase 7D (owner decision 2026-11-04): residential default utility supply only, priced in each utility's native billing unit. The m3 and GJ tracks are never converted or merged; a future cross-unit comparison converts toward m3 at 100/200/400 m3, with its heating-value source chosen then. The 100/400 m3 and 4/16 GJ levels are labelled sensitivity levels, not utility-published typical values; none is a Canada-wide average or an observed winter month. Commercial, contract and interruptible gas stay withheld until their scenarios are approved.",
+    "residential": [
+      {"id": "m3_low", "quantity": 100, "unit": "m3", "role": "sensitivity"},
+      {"id": "m3_reference", "quantity": 200, "unit": "m3", "role": "reference", "basis": "OEB Enbridge Gas QRAM backgrounder, October 2026, p. 1: residential example of 2,400 m3 a year in the EGD rate zone; 2,400 / 12 = 200 m3 a month", "source_url": "https://www.oeb.ca/sites/default/files/ENBRIDGE-QRAM%20BG-OCTOBER%202026_FINAL.pdf"},
+      {"id": "m3_high", "quantity": 400, "unit": "m3", "role": "sensitivity"},
+      {"id": "gj_low", "quantity": 4, "unit": "GJ", "role": "sensitivity"},
+      {"id": "gj_reference", "quantity": 8, "unit": "GJ", "role": "reference", "basis": "FortisBC residential bill example: 8 GJ a month (Mainland and Vancouver Island; Fort Nelson's example is 10 GJ)", "source_url": "https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/residential-rates"},
+      {"id": "gj_high", "quantity": 16, "unit": "GJ", "role": "sensitivity"}
+    ]
   },
   "tou_shares": {
     "basis": "Share of monthly kWh in each time-of-use period, keyed by the component tou_period labels. Only officially published shares are used; null means no official share exists and none is assumed.",
