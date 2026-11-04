@@ -136,12 +136,18 @@ def extract_pdf_text(pdf_bytes: bytes) -> str:
     return "\n\n".join(text_parts)
 
 
-def extract_pdf_pages(pdf_bytes: bytes, minimum_characters: int = 20) -> list[DocumentPage]:
+def extract_pdf_pages(pdf_bytes: bytes, minimum_characters: int = 20,
+                      drop_repeated_lines: bool = True) -> list[DocumentPage]:
     """Extract usable PDF pages and fail closed on empty/corrupt documents.
 
     Page boundaries are deliberately retained so a component can cite an exact
     location. Repeated whitespace is normalized, while minus signs and
     parentheses (which commonly identify credits) are preserved.
+
+    ``drop_repeated_lines=False`` keeps lines printed more than twice on a page:
+    bylaw schedules repeat identical price lines across classes (for example
+    Summerland's "All electrical energy used $ 0.1514 per kWh"), which the
+    header/footer heuristic would otherwise remove.
     """
     try:
         import pdfplumber
@@ -154,7 +160,7 @@ def extract_pdf_pages(pdf_bytes: bytes, minimum_characters: int = 20) -> list[Do
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
             for number, page in enumerate(pdf.pages, 1):
                 raw = page.extract_text(x_tolerance=2, y_tolerance=3) or ""
-                text = normalize_document_text(raw)
+                text = normalize_document_text(raw, drop_repeated_lines=drop_repeated_lines)
                 if len(re.sub(r"\W", "", text)) >= minimum_characters:
                     pages.append(DocumentPage(number, text))
     except Exception as exc:
@@ -163,10 +169,15 @@ def extract_pdf_pages(pdf_bytes: bytes, minimum_characters: int = 20) -> list[Do
     return pages
 
 
-def normalize_document_text(text: str) -> str:
-    """Normalize extracted document text and reconstruct wrapped rows."""
+def normalize_document_text(text: str, drop_repeated_lines: bool = True) -> str:
+    """Normalize extracted document text and reconstruct wrapped rows.
+
+    By default a line printed more than twice on the page is treated as a
+    running header or footer and removed; pass ``drop_repeated_lines=False``
+    for documents whose repeated lines are real content.
+    """
     lines = [re.sub(r"\s+", " ", line).strip() for line in text.splitlines()]
-    repeated = {line for line in lines if line and lines.count(line) > 2}
+    repeated = {line for line in lines if line and lines.count(line) > 2} if drop_repeated_lines else set()
     output: list[str] = []
     for line in lines:
         if not line or line in repeated:

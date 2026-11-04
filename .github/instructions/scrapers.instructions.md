@@ -58,7 +58,9 @@ historical checkpoint instructions it retains. To add a utility, follow
   parsing bug) rejects the live data and falls back to the seed.
 - Missing known classes keep their labelled seed fallbacks. Record newly discovered unsupported
   classes as gaps; never invent fallback rates for them.
-- A utility without seed data returns no records when its sources fail.
+- A utility without seed data returns no records when its sources fail. Utilities registered in batch 18
+  (2026-11-04) have no seed data on purpose (provisional owner decision), so a failure shows up as a failed
+  utility rather than as estimates.
 - `scrapers/utils/validation.py` checks data quality after every scrape (`python -m pipeline.validate`).
 
 ## Components and dates
@@ -112,6 +114,9 @@ historical checkpoint instructions it retains. To add a utility, follow
   and contextual verification, plus `find_text_near_label()`, `extract_rate_from_text()`,
   `detect_js_rendered()`, query-safe and relative-aware `find_pdf_links()` and strict
   `verify_tariff_values()` (proves fallback values still appear in an official schedule).
+- `extract_pdf_pages()` drops a line printed more than twice on a page as a running header or footer.
+  Pass `drop_repeated_lines=False` for schedules that repeat identical price lines (bylaw rate schedules);
+  otherwise those prices disappear silently.
 
 ## History
 

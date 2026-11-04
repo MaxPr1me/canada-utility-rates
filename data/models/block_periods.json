@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-30",
+  "updated": "2026-11-04",
   "status": "Reviewed per-tariff billing periods for energy block thresholds published as plain kWh (user decision 2026-10-16). Each entry quotes the official text; entries without a stated period have threshold_period null and stay not computable. User decision 2026-10-30: a block printed 'per Billing Period' counts as per month only where the utility's official billing terms confirm monthly billing (NB Power and Maritime Electric confirmed 2026-10-30; their seasonal options stay null).",
   "entries": [
     {
@@ -228,6 +228,50 @@
       "location": "Farm Rates, Standard Rate E34 (effective February 1, 2026), PDF page 1",
       "reviewed": "2026-10-16",
       "note": "Farm service is outside the building scope and excluded by the crosswalk; recorded for completeness."
+    },
+    {
+      "id": "bc-grand-forks-g2-two-month-block",
+      "utility": "City of Grand Forks",
+      "match": {"tariff_code_regex": "^G-2$"},
+      "threshold_period": "two_months",
+      "quote": "Electrical usage charge for the first 200,000 KWh used in a two-month billing period, per kWh $0.15134 plus usage in excess of 200,000 kWh in a two-month billing period, per kWh $0.11231",
+      "source_url": "https://www.grandforks.ca/wp-content/uploads/By1958Fees-and-Charges-CONSOLIDATED-through-A20.pdf",
+      "location": "Fees & Charges Bylaw No. 1958 (consolidated through A20), Schedule G item 2 Commercial/Industrial/Institutional Service (Bylaw 1958-A19, effective April 15, 2026), PDF page 12",
+      "reviewed": "2026-11-04",
+      "note": "The basic minimum service charge is printed per month while the energy block is per two-month billing period; the stored records carry the 200,000 kWh two-month threshold (halved to 100,000 kWh a month by the model). Quote checked against the saved official excerpt tests/fixtures/grand_forks_fees_consolidated_a20.json."
+    },
+    {
+      "id": "pe-summerside-residential",
+      "utility": "Summerside Electric",
+      "match": {"tariff_code_regex": "^(?:RES-URBAN|RES-RURAL)$"},
+      "threshold_period": "month",
+      "quote": "The schedule for meter reading is subjected to various circumstances. As such the billing period cannot be exacted to a 30 or 31 day month.",
+      "source_url": "https://summersideca.hosted.civiclive.com/UserFiles/Servers/Server_19514871/File/2026%20-%20Electric%20Rates%20Schedule%20and%20Policy%20Manual%20August%201%202026%20v2.pdf",
+      "location": "Electric Rates, Schedule & Policy Manual (rates effective August 1, 2026, v2), The Bill (PDF page 15); Section N Residential Urban and Rural 'per Billing Period' blocks (PDF page 37)",
+      "reviewed": "2026-11-04",
+      "note": "Owner decision 2026-10-30 pattern (blocks printed 'per Billing Period' count per month where the billing terms confirm monthly billing), applied in batch 18: the manual's billing period is about one month and its Heat For Less Now schedules print the same service charge per month. Quote checked against tests/fixtures/summerside_electric_manual_2026-08-01.json."
+    },
+    {
+      "id": "pe-summerside-general-service",
+      "utility": "Summerside Electric",
+      "match": {"tariff_code_regex": "^GS1$"},
+      "threshold_period": "month",
+      "quote": "The schedule for meter reading is subjected to various circumstances. As such the billing period cannot be exacted to a 30 or 31 day month.",
+      "source_url": "https://summersideca.hosted.civiclive.com/UserFiles/Servers/Server_19514871/File/2026%20-%20Electric%20Rates%20Schedule%20and%20Policy%20Manual%20August%201%202026%20v2.pdf",
+      "location": "Electric Rates, Schedule & Policy Manual (rates effective August 1, 2026, v2), The Bill (PDF page 15); Section N General Service I 'per Billing Period' blocks (PDF page 39)",
+      "reviewed": "2026-11-04",
+      "note": "As pe-summerside-residential. Quote checked against tests/fixtures/summerside_electric_manual_2026-08-01.json."
+    },
+    {
+      "id": "pe-summerside-seasonal",
+      "utility": "Summerside Electric",
+      "match": {"tariff_code_regex": "^(?:RES-SEASONAL|RES-SEASONAL-OPTION|GS1-SEASONAL)$"},
+      "threshold_period": null,
+      "quote": "Meters shall be read or estimated, and bills shall be rendered for May, June, July, August, September and October.",
+      "source_url": "https://summersideca.hosted.civiclive.com/UserFiles/Servers/Server_19514871/File/2026%20-%20Electric%20Rates%20Schedule%20and%20Policy%20Manual%20August%201%202026%20v2.pdf",
+      "location": "Electric Rates, Schedule & Policy Manual (rates effective August 1, 2026, v2), Section N Residential Seasonal Option and General Service I - Seasonal (PDF pages 38-39)",
+      "reviewed": "2026-11-04",
+      "note": "Seasonal billing periods are not confirmed as monthly (as for Maritime Electric's seasonal options); these schedules are excluded from the models (seasonal_property)."
     }
   ]
 }

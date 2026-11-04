@@ -1,5 +1,40 @@
 # Phase 5 Completion Matrix
 
+## Batch 18 - new utilities (November 4, 2026)
+
+Owner decision (November 4): add the easy and medium electricity utilities to the inventory and register
+each one once its parser is live and audited; they join their province's model medians.
+
+Registered with live parsers (status `partial`), not stored yet:
+
+| Utility | Prov. | Dry run | Classes | Held back or excluded |
+|---|---|---|---|---|
+| Saint John Energy | NB | 8 live | 001, 006, 002, 202, 004, 008, 009, 010 | Municipal Related rates, rentals, lighting, EV, fees |
+| Nelson Hydro | BC | 4 live (interim) | A1, A3, B1, B4 | C1/C4 source-blocked (">25 kVA" wording); E1, EV1, F1/F2, G-3, M1/M2 |
+| City of New Westminster | BC | 10 live | 101-103, 131, 134, 201, 202, 210-212 | 203/213, 241 pilot, lighting, net metering |
+| City of Penticton | BC | 5 live | 10, 20, 25, 30, 35 | 45 City accounts, 55 lighting/unmetered |
+| City of Grand Forks | BC | 3 live | Schedule G items 1-3 | Unmetered service |
+| District of Summerland | BC | 5 live | E01-E08, E10, E15, E17, 19 | E12/E14, E20, E22, E25, E26, lighting |
+| Summerside Electric | PE | 8 live | Residential urban/rural/seasonal/option, GS I and seasonal, SI, LI | GS II (closed), HFLN, unmetered, lighting, EV; ECAM source-blocked |
+
+Model preview with the parsed fixtures (as of November 4): crosswalk 584 mapped / 376 excluded / 0
+unmapped; 69 models instead of 64. BC residential grows from 2 to 7 utilities (1,000 kWh median
+$157.21 to $168.74 before tax); NB and PE residential and commercial models gain a second utility;
+five new BC/NB commercial groups appear. Published numbers change only after the dispatch.
+
+Provisional decisions (owner unavailable November 4; conservative choices, open for review): no seed
+fallback for new utilities; Saint John's manual found through headless Chromium (incomplete TLS chain)
+with a labelled last-known fallback; municipal-account rates excluded; Penticton's year column dated
+January 1; Nelson C1/C4 held back; Red Deer's RoLR administration charge from Schedule D ($0.3035/day,
+March 1, 2026); Medicine Hat 4.1/5.1 left out (energy unpublished); percentage riders stay out of model
+totals.
+
+Remaining:
+- The owner's Monthly Scrape dispatch for NB, BC and PE (or per utility), then verification (history only
+  grew, strict gate, crosswalk 0 unmapped, model parity).
+- Naka Power (NT) and the Alberta cities Lethbridge, Red Deer and Medicine Hat: sources found and in the
+  inventory; parsers and the Alberta city pairing are the next batch 18 step.
+
 ## Current checkpoint - November 4, 2026
 
 The owner's targeted Monthly Scrapes stored both corrections.

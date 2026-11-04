@@ -286,7 +286,8 @@ def test_crosswalk_maps_alberta_wires_classes_and_marks_retail_records_as_pair_p
 
 def test_frozen_samples_together_leave_nothing_unmapped():
     records = (load_rates(FIXTURES / "rm_records_sample.json") + load_rates(FIXTURES / "rm_records_b12.json")
-               + _records() + load_rates(FIXTURES / "rm_records_ws_6d.json"))
+               + _records() + load_rates(FIXTURES / "rm_records_ws_6d.json")
+               + load_rates(FIXTURES / "rm_records_b18.json"))
     report = coverage_report(records, load_crosswalk())
     assert report["unmapped"] == [] and report["unused_rules"] == []
     assert "province_not_modelled_yet_7c" not in report["exclusions"]

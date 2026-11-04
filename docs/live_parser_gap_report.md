@@ -79,6 +79,13 @@ other live utilities still have catalogue, component or verification gaps.
 | **Yukon Energy / ATCO Electric Yukon** | YT | Joint YECL/YEC text rate book + R/J cross-reference + rider PDFs | 20 live records each (same joint schedules) | 1160-1480 hydro/diesel, government and non-government | 2160-2480 general service | High when book and cross-reference agree |
 | **NTPC** | NT | Schedule index → PUB schedule PDF + residential/TPSP/rider pages + T&C Schedule D | 63 live records | Zones (Snare, Thermal, Norman Wells, Taltson split), government per community | General service by zone; government per community; conditional Taltson retail interruptible heating | High; subsidies conditional |
 | **Qulliq Energy** | NU | Customer-rates, interim-notice and rate-application HTML | 6 live records | Non-government, government, municipal | Same three customer types | Medium (interim rates) |
+| **Saint John Energy** (batch 18) | NB | Rates page (headless Chromium; incomplete TLS chain) → Customer Policy and Rates Manual PDF | 8 records (dry run 8 live) | 001; 006 central electric heating | 002, 202 (closed), 004 non-demand; Industrial 008, 009 (closed), 010 | High; base + rider = total checked |
+| **Nelson Hydro** (batch 18) | BC | Electrical Rates page + Hydro Services Bylaw 3608 (CivicWeb PDF) | 4 records | A1 urban, A3 rural (demand above 20 kW conditional) | B1/B4 small commercial; C1/C4 source-blocked (">25 kVA" wording) | Medium (interim 2026/2027 rates) |
+| **City of New Westminster** (batch 18) | BC | Bylaw index → Electrical Utility Bylaw 6502 Schedule A PDF | 10 records | 101, 102, 103; multi-residential 131, 134 | 201, 202; 210, 211, 212 (220/230/240 discounts conditional) | High; 2.5% rider and 3.5% levy are percentage riders |
+| **City of Penticton** (batch 18) | BC | Bylaw directory → Fees and Charges Bylaw 2014-07 Appendix 7 PDF + accounts page | 5 records | Rate Code 10 | 20, 25, 30, 35 (demand above 45 kVA) | High; dated January 1 of the column year |
+| **City of Grand Forks** (batch 18) | BC | Media search → Fees & Charges Bylaw 1958 (consolidated) + amending bylaw 1958-A19 | 3 records | Schedule G item 1 | Item 2 (two-month 200,000 kWh block), item 3 seasonal | High; amendment prices must match |
+| **District of Summerland** (batch 18) | BC | Bylaws page → Fees and Charges Bylaw 98-001 Schedule A PDF | 5 records | E01-E08 | E10 (demand above 40 kVA), primary E15/E17/19 | High |
+| **Summerside Electric** (batch 18) | PE | My Utilities page → Electric Rates, Schedule & Policy Manual PDF | 8 records | Urban, rural, seasonal, seasonal option | General Service I and seasonal (first 20 kW free); Small/Large Industrial | High; ECAM adjustment not printed (source-blocked) |
 
 ## Group A: HTML Parsing for Supported Classes
 

@@ -104,10 +104,17 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   stated period: the record is left out instead of guessed (Maritime Electric seasonal 133/233,
   Manitoba GS seasonal).
 - NB Power GS1 and Maritime Electric 110/130/131/232 "per Billing Period" blocks count as per month
-  because both utilities' billing pages confirm monthly billing (owner decision 2026-10-30).
-- Only these conversions are allowed: $/day x 30.4375; $/30 days x 30.4375/30; FortisBC "$/two
-  months" / 2; per-day energy blocks x 30.4375 (Hydro-Quebec Rate D 40 kWh/day); kVA at PF 0.9. Never
-  assume any other conversion.
+  because both utilities' billing pages confirm monthly billing (owner decision 2026-10-30). Summerside
+  Electric's residential and General Service I blocks follow the same rule (batch 18, its manual's
+  billing period is about one month); its seasonal schedules stay `null`. Grand Forks' commercial block
+  is per two-month billing period (`two_months`, like BC Hydro 1101).
+- Only these conversions are allowed: $/day x 30.4375; $/30 days x 30.4375/30; "$/two months" / 2 for
+  charges printed per two-month billing period (FortisBC; batch 18: Nelson Hydro and New Westminster
+  bi-monthly basic charges); per-day energy blocks x 30.4375 (Hydro-Quebec Rate D 40 kWh/day); kVA at
+  PF 0.9. Never assume any other conversion.
+- Municipal utilities registered in batch 18 join their province's medians like any registered utility
+  (owner decision 2026-11-04); their percentage riders of the billed amount (New Westminster) are
+  disclosed but not applied, like every percentage adjustment.
 
 ## Costing rules
 

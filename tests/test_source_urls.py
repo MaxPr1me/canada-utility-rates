@@ -64,6 +64,39 @@ DENYLIST: dict[str, str] = {
     # 2026-10-30: HTTP 301 to https://www.directenergy.ca/en/regulated.
     "https://www.directenergyregulatedservices.com/regulated-rates":
         "https://www.directenergy.ca/en/regulated/residential-electricity-rates",
+    # Batch 18 inventory refresh (2026-11-04). HTTP 404.
+    "https://www.nelson.ca/220/Nelson-Hydro":
+        "https://www.nelson.ca/3137/Electric-Nelson-Hydro",
+    # 2026-11-04: HTTP 301 to /221/Services-Standards (no rates).
+    "https://www.nelson.ca/221/Rates":
+        "https://www.nelson.ca/231/Electrical-Rates",
+    # 2026-11-04: HTTP 404.
+    "https://www.newwestcity.ca/electricity":
+        "https://www.newwestcity.ca/services/electrical-utility",
+    # 2026-11-04: HTTP 404.
+    "https://www.newwestcity.ca/electricity/rates-and-charges":
+        "Electrical Utility Bylaw No. 6502 via https://www.newwestcity.ca/city_hall/bylaws/main/131/site_bylaws.php?sw=e",
+    # 2026-11-04: HTTP 404.
+    "https://www.penticton.ca/our-services/electric-utility":
+        "https://www.penticton.ca/city-services/utility-electrical-services",
+    # 2026-11-04: HTTP 404.
+    "https://www.penticton.ca/our-services/electric-utility/rates":
+        "Fees and Charges Bylaw No. 2014-07 via https://www.penticton.ca/city-hall/bylaw-directory",
+    # 2026-11-04: HTTP 301 to the District home page.
+    "https://www.summerland.ca/city-services/electrical":
+        "https://www.summerland.ca/city-services/utilities/electrical",
+    # 2026-11-04: HTTP 301 to https://sjenergy.ca/ (domain moved).
+    "https://www.sjenergy.com":
+        "https://sjenergy.ca",
+    # 2026-11-04: HTTP 301 to https://sjenergy.ca/residential/rates/ (rates now at /about/our-rates).
+    "https://www.sjenergy.com/residential/rates/":
+        "https://sjenergy.ca/about/our-rates",
+    # 2026-11-04: HTTP 301 to https://www.nakapower.com/en-ca.html (Northland Utilities is now Naka Power).
+    "https://www.northlandutilities.com":
+        "https://www.nakapower.com/en-ca.html",
+    # 2026-11-04: HTTP 301 to .../rates-tariffs.html, then 404.
+    "https://www.northlandutilities.com/about/rates-tariffs":
+        "https://www.nakapower.com/en-ca/customer-billing-rates/rates-regulations.html",
 }
 
 # Kept dead seed citations (see the docstring); each comment gives the check date, HTTP status and archive result.

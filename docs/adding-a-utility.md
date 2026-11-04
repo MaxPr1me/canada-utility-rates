@@ -13,8 +13,9 @@ Every active registered utility, including AESO (a market reference stored Novem
 16 campaign utilities in BC/QC/MB/SK/NB/NS/PE/NL, the four territorial utilities, all 47 active
 Ontario distributors and, since batch 12 (October 9), Alberta electricity and Ontario/Alberta gas.
 Batch 12 also registered one new utility, EPCOR Natural Gas (Ontario), to replace a mis-registered
-Alberta entry that is now `status: "retired"`; other inventory utilities are not being onboarded
-without a decision. Use this guide to fill missing classes in the owning utility module, and
+Alberta entry that is now `status: "retired"`. Batch 18 (owner decision 2026-11-04) onboards the easy and
+medium inventory utilities: seven municipal utilities in NB, BC and PE are registered; Naka Power (NT) and
+the Alberta cities are still to come. Other inventory utilities are not onboarded without a decision. Use this guide to fill missing classes in the owning utility module, and
 consult the [current coverage matrix](phase5_completion_matrix.md) before choosing work.
 Current examples include page-aware domestic options, NL Hydro service alternatives,
 and SaskEnergy/Centra gas variants with separately dated required components. The
@@ -350,3 +351,26 @@ work (October 9). Utility details are in the [gap report](live_parser_gap_report
 - **Use independent cross-check sources.** Where an official second source exists, require it and fail closed on a mismatch: the Utilities Consumer Advocate default-rates table for Alberta Rate of Last Resort and default gas prices; the OEB Decision and Rate Order Appendix A and the QRAM notice for Ontario gas; the CRA fuel-charge page for zero federal carbon. A fixed-term product (Alberta Rate of Last Resort, to December 31, 2026) stops being live after its term until the next term is published. For Alberta Rate of Last Resort-type sources, reuse the shared helper `scrapers/utils/alberta_rolr.py`: it reads the UCA table, accepts only cents/kWh prices, requires a published term that covers the run date and fails closed on any provider/UCA difference.
 - **Per-document OEB exceptions need evidence.** `OEB_TARIFF_DOCUMENTS` entries may carry `"extract": {"y_tolerance": N}` for PDFs whose values print above their labels; only PUC Distribution carries `"connection_rate": "not_printed"`, because its approved tariff prints no Retail Transmission Connection rate (each record notes it). Every other document stays strict.
 - **No seed, no output.** A newly registered utility without seed data (EPCOR Natural Gas (Ontario); the Ontario successors Enova and GrandBridge) returns no records when its sources fail. Do not invent a seed just to keep output.
+
+## Batch 18 patterns: municipal bylaw schedules
+
+From the November 4, 2026 onboarding of Saint John Energy, Nelson Hydro, New Westminster, Penticton,
+Grand Forks, Summerland and Summerside Electric. Utility rules are in the
+[regional instructions](../.github/instructions/regional-utilities.instructions.md).
+
+- **Follow the current document, keep a labelled fallback.** Read the link on the official page each run
+  (bylaw index, rates page, WordPress media search). Only when discovery fails, read a last-known document
+  and say so in the records' notes.
+- **Keep repeated lines.** Bylaw schedules print identical price lines for several classes; use
+  `extract_pdf_pages(pdf, drop_repeated_lines=False)` or those prices vanish.
+- **Bound every class to its own section.** Search each class between its heading and the next one, so a
+  missing price fails closed instead of borrowing the next class's block (a Summerside test caught this).
+- **Take dates from the instrument.** Use the schedule's own effective date, the amending bylaw's date
+  (Grand Forks), a year label checked against the rates page (Nelson) or the current year's column dated
+  January 1 (Penticton). Fail closed on a future date or a missing current-year column.
+- **Reconcile what the source prints.** Base + rider must equal the printed total (Saint John Energy);
+  values on a rates page must equal the bylaw (Nelson); an amending bylaw must match its consolidation.
+- **Billing periods are evidence, not assumptions.** Store `$/two months` for bi-monthly charges and put
+  per-period block thresholds in `data/models/block_periods.json` with a quote.
+- **Never weaken TLS.** A site with an incomplete certificate chain (sjenergy.ca) is read through headless
+  Chromium for discovery; documents come from hosts with valid chains.

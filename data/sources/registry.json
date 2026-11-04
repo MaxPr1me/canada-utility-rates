@@ -1,6 +1,6 @@
 {
   "_description": "Source registry for Canadian utility rate scrapers. Each entry maps a utility to its data sources and scraper implementation.",
-  "_last_updated": "2026-04-15",
+  "_last_updated": "2026-11-04",
   "utilities": [
     {
       "name": "Enbridge Gas",
@@ -2484,6 +2484,173 @@
         }
       ],
       "notes": "Market operator, not a utility; it publishes no customer tariff. The live record (since October 30, 2026) is a value-less 'Variable' pool price market reference verified against the ETS report and its metadata; no price or average is stored, and it never counts as a retail rate. Replaces the old Regulated Rate Option reference (Rate of Last Resort prices are separate live records). Terms: AESO allows non-commercial, unmodified use only, so no derived data is published (Phase 6C market view needs written permission)."
+    },
+    {
+      "name": "Saint John Energy",
+      "province": "NB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.saint_john_energy",
+      "scraper_class": "SaintJohnEnergyScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://sjenergy.ca/about/our-rates",
+          "source_type": "html",
+          "description": "Our Rates page (links the current Customer Policy and Rates Manual; served with an incomplete certificate chain, so the link is discovered with headless Chromium)",
+          "is_primary": true
+        },
+        {
+          "url": "https://sje-cms.s3.ca-central-1.amazonaws.com/Customer_Policy_and_Rates_Manual_as_of_September_1_2026_ddbf7bea17.pdf",
+          "source_type": "pdf",
+          "description": "Customer Policy and Rates Manual revised as of September 1, 2026, Section 9 Rate Schedules (last known edition)",
+          "is_primary": false
+        }
+      ],
+      "notes": "Saint John Energy is the City of Saint John's municipal electric utility (New Brunswick). Added in batch 18 (2026-11-04). Building schedules 001, 006, 002, 202 (closed), 004, 008, 009 (closed) and 010 are parsed from the rates manual with Base Rate + Rate Rider = Total Charge checks; the rider is a separate component. Municipal Related rates (restricted to City operations), rentals, lighting, EV charging and miscellaneous fees are excluded. No seed fallback."
+    },
+    {
+      "name": "Nelson Hydro",
+      "province": "BC",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.nelson_hydro",
+      "scraper_class": "NelsonHydroScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.nelson.ca/231/Electrical-Rates",
+          "source_type": "html",
+          "description": "Electrical Rates page (effective date and A1/A3/B1/B4 cross-check values; links the Hydro Services Bylaw)",
+          "is_primary": true
+        },
+        {
+          "url": "https://nelson.civicweb.net/document/108411",
+          "source_type": "pdf",
+          "description": "Hydro Services Bylaw No. 3608 (consolidated), Schedules B (urban) and C (rural), year-labelled 2026 and 2027 rates",
+          "is_primary": false
+        }
+      ],
+      "notes": "Nelson Hydro is the City of Nelson's electric utility; rural rates are BCUC-regulated and the 2026/2027 rates are interim (medium confidence). Added in batch 18 (2026-11-04): A1/A3 residential and B1/B4 small commercial, urban and rural, billed bi-monthly. C1/C4 large commercial are held back until the '>25 kVA' demand wording is confirmed; City accounts (E1), EV charging, flat service, lighting and meter-reading fees are excluded. No seed fallback."
+    },
+    {
+      "name": "City of New Westminster",
+      "province": "BC",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.new_westminster",
+      "scraper_class": "NewWestminsterScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.newwestcity.ca/city_hall/bylaws/main/131/site_bylaws.php?sw=e",
+          "source_type": "html",
+          "description": "Bylaw index (links the consolidated Electrical Utility Bylaw No. 6502)",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.newwestcity.ca/database/files/library/Consolidated_Bylaw_6502__1998_Electrical_Utility__2025_12_15_consolidation_.pdf",
+          "source_type": "pdf",
+          "description": "Electrical Utility Bylaw No. 6502 consolidated December 15, 2025, Schedule A Schedule of Rates effective January 1, 2026",
+          "is_primary": false
+        }
+      ],
+      "notes": "New Westminster Electric is the City's municipal utility. Added in batch 18 (2026-11-04): residential 101/102/103, multi-residential 131/134, general service under 35 kW 201/202 and 35 kW and over 210/211/212 (220/230/240 discounts as conditional credits). The 2.5% rate rider and 3.5% climate action levy are percentage riders of the billed amount. Temporary service, the Rate 241 pilot, lighting and net metering are excluded. No seed fallback."
+    },
+    {
+      "name": "City of Penticton",
+      "province": "BC",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.penticton",
+      "scraper_class": "PentictonScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.penticton.ca/city-hall/bylaw-directory",
+          "source_type": "html",
+          "description": "Bylaw directory (links the consolidated Fees and Charges Bylaw No. 2014-07)",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.penticton.ca/sites/default/files/uploads/bylaws/2014-07%20Fees%20and%20Charges%20Bylaw%20-%20CONSOLIDATED%20PACKAGE%20-%20October%202026_1.pdf",
+          "source_type": "pdf",
+          "description": "Fees and Charges Bylaw No. 2014-07 consolidated October 2026, Schedule A Appendix 7 Electric (2025 and 2026 columns)",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.penticton.ca/city-services/utility-electrical-services/electric-water-accounts",
+          "source_type": "html",
+          "description": "Electric & Water Accounts page ('City Utility bills are mailed monthly'; makes 'per billing' prices monthly)",
+          "is_primary": false
+        }
+      ],
+      "notes": "Penticton Electric Utility is the City's municipal utility. Added in batch 18 (2026-11-04): Rate Code 10 residential and general service 20/25/30/35 (demand above 45 kVA). The bylaw column prints only the year, so records are dated January 1 of that year. Rate Code 45 City accounts, Rate Code 55 lighting/unmetered and net metering are excluded. No seed fallback."
+    },
+    {
+      "name": "City of Grand Forks",
+      "province": "BC",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.grand_forks",
+      "scraper_class": "GrandForksScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.grandforks.ca/wp-content/uploads/By1958Fees-and-Charges-CONSOLIDATED-through-A20.pdf",
+          "source_type": "pdf",
+          "description": "Fees & Charges Bylaw No. 1958 consolidated through A20, Schedule G Electrical Utility Fees and Charges (found through the site's media search)",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.grandforks.ca/wp-content/uploads/Bylaw1958-A19City-of-Grand-Forks-Fees-and-Charges-Amendment-Bylaw-1.pdf",
+          "source_type": "pdf",
+          "description": "Amendment Bylaw No. 1958-A19 (Schedule G effective April 15, 2026)",
+          "is_primary": false
+        }
+      ],
+      "notes": "The City of Grand Forks electrical utility. Added in batch 18 (2026-11-04): Schedule G residential, commercial/industrial/institutional (first 200,000 kWh per two-month billing period) and seasonal loads, dated by the amending bylaw. Unmetered service and service charges are excluded. No seed fallback."
+    },
+    {
+      "name": "District of Summerland",
+      "province": "BC",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.summerland",
+      "scraper_class": "SummerlandScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.summerland.ca/your-city-hall/bylaws-policies/bylaws",
+          "source_type": "html",
+          "description": "District bylaws page (links the consolidated Fees and Charges Bylaw No. 98-001)",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.summerland.ca/docs/default-source/your-city-hall/bylaws---policies/district-bylaws/fees-and-charges-no-98-001-consolidated-to-feb-10-20269da7a85cf68d6e33909cff00007e7f94.pdf?sfvrsn=942ac6fb_2",
+          "source_type": "pdf",
+          "description": "Fees and Charges Bylaw No. 98-001 consolidated to February 10, 2026, Schedule A Electric Fees and Charges",
+          "is_primary": false
+        }
+      ],
+      "notes": "The District of Summerland electrical utility. Added in batch 18 (2026-11-04): residential E01-E08, general commercial E10 (demand above 40 kVA) and primary power E15/E17/19. E12/E14 tax-exempt variants, irrigation, unmetered, municipal energy (E25), flat-rate power and lighting are excluded. No seed fallback."
+    },
+    {
+      "name": "Summerside Electric",
+      "province": "PE",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.summerside_electric",
+      "scraper_class": "SummersideElectricScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.summerside.ca/my_services/my_utilities",
+          "source_type": "html",
+          "description": "My Utilities page (links the Electric Rates, Schedule & Policy Manual)",
+          "is_primary": true
+        },
+        {
+          "url": "https://summersideca.hosted.civiclive.com/UserFiles/Servers/Server_19514871/File/2026%20-%20Electric%20Rates%20Schedule%20and%20Policy%20Manual%20August%201%202026%20v2.pdf",
+          "source_type": "pdf",
+          "description": "Electric Rates, Schedule & Policy Manual, rates effective August 1, 2026 (v2), Section N",
+          "is_primary": false
+        }
+      ],
+      "notes": "Summerside Electric is the City of Summerside's municipal utility (Prince Edward Island). Added in batch 18 (2026-11-04): residential urban/rural/seasonal/seasonal option, General Service I and seasonal (first 20 kW free), small and large industrial. The ECAM adjustment is not printed, so it is not shown. General Service II (closed 2016), Heat For Less Now equipment schedules, unmetered, lighting and EV charging are excluded. Maritime Electric's wholesale rates 330/340 to the City remain reference records. No seed fallback."
     }
   ]
 }

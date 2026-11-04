@@ -90,16 +90,22 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
 
 ## Current Status
 
-- **Live output:** all 78 active registered utilities have stored live output.
+- **Live output:** all 78 previously active registered utilities have stored live output.
+- **New utilities (registered November 4, not stored yet):** Saint John Energy (NB), Nelson Hydro,
+  New Westminster, Penticton, Grand Forks and Summerland (BC), and Summerside Electric (PE) now
+  have live parsers and are registered (85 active utilities). They have no stored output until the
+  owner runs the Monthly Scrape for them, so the strict coverage gate reports them until then.
+  Naka Power (NT) and the Alberta cities Lethbridge, Red Deer and Medicine Hat are in the
+  inventory but not registered yet.
 - **Latest export (November 4, scrape run 33):** 917 latest live tariffs and 480 retained
   estimates; 1,336 stored live versions and 5,567 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
 - **Corrections stored (verified November 4):** the targeted Monthly Scrapes stored Centra Gas
   Manitoba's 13 November records and Maritime Electric's first-20-kW-free demand tier; history
   checks, the strict coverage gate (78 of 78), the crosswalk (0 unmapped) and model parity pass.
-- **"Coverage complete" is not claimed yet:** the scoped wording (78 active registered
-  utilities) awaits the owner's approval.
-- **Tests:** 2,271 tests across 39 test modules (run with `pytest tests`).
+- **"Coverage complete" is not claimed yet:** the scoped wording awaits the owner's approval and
+  now needs the new utilities stored first.
+- **Tests:** 2,331 tests across 47 test modules (run with `pytest tests`).
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.
@@ -173,6 +179,10 @@ canada-utility-costs/
 │       ├── epcor_energy_alberta.py ← EPCOR Energy Alberta Rate of Last Resort (AB)
 │       ├── aeso.py           ← AESO market reference (AB)
 │       ├── nl_hydro.py       ← NL Hydro (electricity, NL)
+│       ├── saint_john_energy.py ← Saint John Energy (municipal, NB; batch 18)
+│       ├── nelson_hydro.py, new_westminster.py, penticton.py, grand_forks.py, summerland.py
+│       │                     ← BC municipal utilities (council bylaw schedules; batch 18)
+│       ├── summerside_electric.py ← Summerside Electric (municipal, PE; batch 18)
 │       └── ...               ← Other provincial utilities
 │
 ├── pipeline/                 ← Scripts that run the whole process

@@ -179,6 +179,43 @@
       "excluded": ["Aylmer Rate 6 (single ethanol facility)", "Southern Bruce Rate 16 (direct purchase; rider basis unclear)"],
       "notes": "Aylmer Rates 2/4/5 inclusion review resolved 2026-10-30 (user decision): they stay live."
     },
+    "Saint John Energy": {
+      "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: rates manual (revised as of September 1, 2026) Section 9 schedules 001, 006, 002, 202, 004, 008, 009 and 010 parsed with base + rider = total checks; parser fixture tests", "source": "docs/phase5_completion_matrix.md; tests/test_saint_john_energy.py"},
+      "excluded": ["Municipal Related 101/102/104/106/112/M (City of Saint John operations only)", "water-heater and heat-pump rentals", "lighting and pole attachments", "EV charging and miscellaneous fees"],
+      "notes": "Registered 2026-11-04 (batch 18). sjenergy.ca serves an incomplete certificate chain; the manual link is discovered with headless Chromium, falling back to the last known manual with a note. Not stored until the owner's Monthly Scrape dispatch."
+    },
+    "Nelson Hydro": {
+      "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Electrical Rates page (effective January 1, 2026) cross-checked against Hydro Services Bylaw No. 3608 Schedules B/C (2026); A1, A3, B1, B4 interim rates", "source": "docs/phase5_completion_matrix.md; tests/test_nelson_hydro.py"},
+      "excluded": ["E1 City of Nelson accounts", "EV1 charging", "F1/F2 flat commercial service under 400 kWh per period", "G-3 lighting", "M1/M2 manual meter reading"],
+      "source_blocked": ["C1/C4 large commercial: '>25 kVA: $10.33 per kVA' does not say whether the first 25 kVA are free; held back until Nelson Hydro confirms (batch 18 provisional decision 2026-11-04)"],
+      "notes": "Registered 2026-11-04 (batch 18). Interim 2026/2027 rates (medium confidence); a page year other than the current year fails closed. Not stored until the owner's Monthly Scrape dispatch."
+    },
+    "City of New Westminster": {
+      "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Electrical Utility Bylaw No. 6502 Schedule A (effective January 1, 2026); rates 101-103, 131, 134, 201, 202, 210-212 with the 2.5% rider and 3.5% climate action levy", "source": "docs/phase5_completion_matrix.md; tests/test_new_westminster.py"},
+      "excluded": ["203/213 temporary service", "Rate 241 MURB thermal pilot", "lighting (302 onward)", "Rate 500 net metering", "standard charges"],
+      "notes": "Registered 2026-11-04 (batch 18). Percentage riders of the billed amount are disclosed but not applied by the representative models (engine rule kept). Not stored until the owner's Monthly Scrape dispatch."
+    },
+    "City of Penticton": {
+      "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Fees and Charges Bylaw No. 2014-07 Appendix 7 Electric (2026 column, Bylaw 2025-22); rate codes 10, 20, 25, 30 and 35; monthly billing confirmed on the accounts page", "source": "docs/phase5_completion_matrix.md; tests/test_penticton.py"},
+      "excluded": ["Rate Code 45 City accounts", "Rate Code 55 lighting and unmetered loads", "net metering and service fees"],
+      "notes": "Registered 2026-11-04 (batch 18). The bylaw prints only 'Effective 2026', so records are dated January 1 (batch 18 provisional decision). A year without its own column fails closed. Not stored until the owner's Monthly Scrape dispatch."
+    },
+    "City of Grand Forks": {
+      "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Fees & Charges Bylaw No. 1958 Schedule G (consolidated through A20) dated by Amendment Bylaw 1958-A19 (effective April 15, 2026) with matching prices", "source": "docs/phase5_completion_matrix.md; tests/test_grand_forks.py"},
+      "excluded": ["4. Unmetered Service (priced by agreement)", "service and meter charges"],
+      "notes": "Registered 2026-11-04 (batch 18). The commercial block is per two-month billing period (data/models/block_periods.json). Not stored until the owner's Monthly Scrape dispatch."
+    },
+    "District of Summerland": {
+      "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Fees and Charges Bylaw No. 98-001 Schedule A (replaced effective February 10, 2026 by Bylaw 2026-004); E01-E08, E10, E15, E17, 19", "source": "docs/phase5_completion_matrix.md; tests/test_summerland.py"},
+      "excluded": ["E12/E14 GST/PST-exempt variants of E10", "E20 irrigation", "E22 unmetered cable amplifiers", "E25 municipal energy", "E26 flat-rate power", "E31-E44 and E50 lighting", "distributed generation credits"],
+      "notes": "Registered 2026-11-04 (batch 18). Not stored until the owner's Monthly Scrape dispatch."
+    },
+    "Summerside Electric": {
+      "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Electric Rates, Schedule & Policy Manual (rates effective August 1, 2026, v2) Section N residential, General Service I and industrial schedules", "source": "docs/phase5_completion_matrix.md; tests/test_summerside_electric.py"},
+      "excluded": ["General Service II (closed March 1, 2016)", "Heat For Less Now equipment schedules", "unmetered and short-term unmetered service", "miscellaneous, lighting and rental facilities", "EV charging"],
+      "source_blocked": ["ECAM bill adjustment: the current value is not printed in the manual"],
+      "notes": "Registered 2026-11-04 (batch 18). 'Per Billing Period' prices stored as monthly (the manual's billing period is about one month). Not stored until the owner's Monthly Scrape dispatch."
+    },
     "Alectra Utilities": {"group": "ontario_electricity"},
     "Algoma Power Inc.": {"group": "ontario_electricity", "excluded": ["No General Service < 50 kW or demand-billed GS class is published (R2 is a delivery-only residential demand record)"]},
     "Atikokan Hydro Inc.": {"group": "ontario_electricity"},

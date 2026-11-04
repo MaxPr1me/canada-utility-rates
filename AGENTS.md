@@ -141,6 +141,7 @@ records does not prove that every building class is covered. Current figures are
 | `scrapers/utilities/aeso.py` | The AESO pool price reference: a live record with no number ("Variable"), because AESO publishes no customer tariff. |
 | `enbridge_gas.py`, `epcor_gas_ontario.py`, `atco_gas.py` | Natural gas in Ontario and Alberta. |
 | `scrapers/utilities/epcor_gas.py` | A retired Alberta entry (EPCOR does not distribute gas in Alberta). Monthly runs skip it; its history stays. |
+| `saint_john_energy.py`, `nelson_hydro.py`, `new_westminster.py`, `penticton.py`, `grand_forks.py`, `summerland.py`, `summerside_electric.py` | Municipal utilities registered in batch 18 (November 4, 2026): Saint John (NB), five BC cities and Summerside (PE). They read council bylaw schedules or rate manuals and have no seed fallback, so a failed source returns no records. |
 | `scrapers/registry.py` | Reads the list of all utilities and their scraper info. |
 | `scrapers/utils/parsing.py` | HTML/PDF reading helpers, including strict checks that a value really appears in an official schedule. |
 | `scrapers/utils/change_detection.py` | Compares live-parsed rates against seed data and flags changes by severity (info/warning/critical). If critical drift is detected, the scraper rejects live data and falls back to seed. |
