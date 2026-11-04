@@ -98,7 +98,7 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   Monthly Scrapes for **Centra Gas Manitoba** and **Maritime Electric**: their corrected
   parsers pass dry runs, but the corrected rates are not stored yet. A passing coverage gate
   does not override this.
-- **Tests:** 2,246 tests across 36 test modules (run with `pytest tests`).
+- **Tests:** 2,252 tests across 38 test modules (run with `pytest tests`).
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.

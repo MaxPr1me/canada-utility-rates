@@ -95,6 +95,19 @@ actions below remain independent.
 5. Centra monitor stays due **November 30**, including HTML discrepancy review. Yukon still
    advertises October's book; run 30 stored 20 records for each utility, not a newer edition.
    Both December 15 monitors remain open; no speculative discovery change was made.
+   **November 4 sweep** (ledger notes): no newer Yukon book (11- and 12-2026 return 404);
+   NTPC Snare, Qulliq (interim) and EPCOR Distribution (interim) unchanged; no next RoLR term
+   on the UCA or provider pages. Centra's residential and commercial pages now show November 1
+   headings; the HVF composition sentence and Interruptible Sales HTML prices still differ
+   from the authoritative PDF. Dry runs: Yukon 20/20, NTPC 63, Qulliq 6, EPCOR Distribution 5,
+   Centra 13 live, all 0 seed / 0 invalid. New `tests/test_rolr_next_term.py` pins the
+   January 1 switch and the fail-closed cases. **January readiness (November 4 audit):** unless
+   the OEB relabels its BillData feeds (all rows `YEAR=2026` on November 4) before 08:00 UTC on
+   January 1, that run rejects every Ontario residential and GS<50 row (stored versions stay
+   latest; owner decision pending, recommended: a targeted Ontario scrape after the relabel).
+   January-rate-year Ontario tariffs need `OEB_TARIFF_DOCUMENTS` updates on or after January 1,
+   or the 2026 sheets stay accepted until their 500-day cutoff. Centra needs its February 1
+   `SCHEDULE_EDITIONS` entry. Pinned by `tests/test_edition_rollover.py`.
 6. Manitoba Small (Non-Demand) is calculable from stored corrected data; Small (Demand)
    remains unavailable without phase and qualifying demand-history assumptions.
 7. Gas usage/unit and Phase 8 monitoring proposals were delivered for review only. Gas:

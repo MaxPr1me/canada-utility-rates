@@ -18,6 +18,13 @@ Market history: [market-data.instructions.md](market-data.instructions.md).
   source of values.
 - `parse_rpp_page()` rejects a missing, future-dated or stale RPP effective date, so an Ontario run
   fails before the date the page announces.
+- `parse_bill_data()` requires each BillData row's `YEAR` to equal the scrape's calendar year. Until
+  the OEB relabels the feed in January, a run rejects every residential and GS<50 row (the stored
+  versions stay the latest); relaxing this is an owner decision (`tests/test_edition_rollover.py`).
+- A configured tariff sheet is rejected while its effective or implementation date is in the future
+  and is treated as superseded 500 days after its effective date (`_TARIFF_STALE_DAYS`). A new rate
+  year's sheet is not discovered: add its URL and case number to `OEB_TARIFF_DOCUMENTS` on or after
+  its effective date, then dry-run the distributor.
 - Each rate zone gets its own records: the legacy codes (`TOU-R`, `GS-TOU-S`, ...) in the default
   zone and "[zone]" names elsewhere.
 
