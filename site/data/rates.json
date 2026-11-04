@@ -620416,7 +620416,7 @@
   {
     "id": 44,
     "utility_id": 40,
-    "scrape_run_id": 30,
+    "scrape_run_id": 33,
     "name": "General Service (Rate 232)",
     "tariff_code": "232",
     "utility_type": "electricity",
@@ -620443,9 +620443,38 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48333,
+        "id": 57805,
         "tariff_id": 44,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
+        "component_type": "demand",
+        "component_name": "Demand Charge - per kW for first 20 kW",
+        "sub_component": null,
+        "charge_value": 0.0,
+        "charge_unit": "$/kW",
+        "charge_currency": "CAD",
+        "tier_number": 1,
+        "tier_threshold": 20.0,
+        "tier_unit": "kW",
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": "kW",
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": "2026-08-01",
+        "end_date": null,
+        "source_url": "https://www.maritimeelectric.com/media/q1fcy52a/602000-section-n-28-effective-august-1-2026.pdf",
+        "source_detail": "PDF page 1, Rate 232 General Service",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-11-04 17:05:16"
+      },
+      {
+        "id": 57806,
+        "tariff_id": 44,
+        "scrape_run_id": 33,
         "component_type": "demand",
         "component_name": "Demand Charge - per kW for balance of kW",
         "sub_component": null,
@@ -620469,12 +620498,12 @@
         "source_detail": "PDF page 1, Rate 232 General Service",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48334,
+        "id": 57807,
         "tariff_id": 44,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for first 5,000 kWh",
         "sub_component": null,
@@ -620498,12 +620527,12 @@
         "source_detail": "PDF page 1, Rate 232 General Service",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48335,
+        "id": 57808,
         "tariff_id": 44,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for balance of kWh",
         "sub_component": null,
@@ -620527,12 +620556,12 @@
         "source_detail": "PDF page 1, Rate 232 General Service",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48332,
+        "id": 57804,
         "tariff_id": 44,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "fixed",
         "component_name": "Service Charge",
         "sub_component": null,
@@ -620556,14 +620585,14 @@
         "source_detail": "PDF page 1, Rate 232 General Service",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       }
     ]
   },
   {
     "id": 45,
     "utility_id": 40,
-    "scrape_run_id": 30,
+    "scrape_run_id": 33,
     "name": "General Service - Seasonal Operators Option (Rate 233)",
     "tariff_code": "233",
     "utility_type": "electricity",
@@ -620590,9 +620619,38 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48337,
+        "id": 57810,
         "tariff_id": 45,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
+        "component_type": "demand",
+        "component_name": "Demand Charge - per kW for first 20 kW",
+        "sub_component": null,
+        "charge_value": 0.0,
+        "charge_unit": "$/kW",
+        "charge_currency": "CAD",
+        "tier_number": 1,
+        "tier_threshold": 20.0,
+        "tier_unit": "kW",
+        "tou_period": null,
+        "tou_hours": null,
+        "season": null,
+        "season_months": null,
+        "demand_threshold_kw": null,
+        "demand_unit": "kW",
+        "market_reference": null,
+        "market_source_url": null,
+        "effective_date": "2026-08-01",
+        "end_date": null,
+        "source_url": "https://www.maritimeelectric.com/media/q1fcy52a/602000-section-n-28-effective-august-1-2026.pdf",
+        "source_detail": "PDF page 1, Rate 233 General Service - Seasonal Operators Option",
+        "confidence": "high",
+        "notes": "Provenance: live_parsed. ",
+        "created_at": "2026-11-04 17:05:16"
+      },
+      {
+        "id": 57811,
+        "tariff_id": 45,
+        "scrape_run_id": 33,
         "component_type": "demand",
         "component_name": "Demand Charge - per kW for balance of kW",
         "sub_component": null,
@@ -620616,12 +620674,12 @@
         "source_detail": "PDF page 1, Rate 233 General Service - Seasonal Operators Option",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48338,
+        "id": 57812,
         "tariff_id": 45,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for first 5,000 kWh",
         "sub_component": null,
@@ -620645,12 +620703,12 @@
         "source_detail": "PDF page 1, Rate 233 General Service - Seasonal Operators Option",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48339,
+        "id": 57813,
         "tariff_id": 45,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for balance of kWh",
         "sub_component": null,
@@ -620674,12 +620732,12 @@
         "source_detail": "PDF page 1, Rate 233 General Service - Seasonal Operators Option",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48336,
+        "id": 57809,
         "tariff_id": 45,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "fixed",
         "component_name": "Service Charge",
         "sub_component": null,
@@ -620703,14 +620761,14 @@
         "source_detail": "PDF page 1, Rate 233 General Service - Seasonal Operators Option",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       }
     ]
   },
   {
     "id": 47,
     "utility_id": 40,
-    "scrape_run_id": 30,
+    "scrape_run_id": 33,
     "name": "Large Industrial (Rate 310)",
     "tariff_code": "310",
     "utility_type": "electricity",
@@ -620737,9 +620795,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48345,
+        "id": 57819,
         "tariff_id": 47,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "adjustment",
         "component_name": "Conditional Losses Adjustment - 69 kV to Primary Distribution Voltage",
         "sub_component": "conditional",
@@ -620763,12 +620821,12 @@
         "source_detail": "Rates and General Rules and Regulations, Section N Large Industrial Rate Schedule, Losses Charge (69 kV to primary distribution voltage)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Conditional: only when Maritime Electric, at its discretion, supplies at a primary distribution voltage between 4 kV and 25 kV. Increases billed demand and energy by 1 1/2%; not a separate price.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48346,
+        "id": 57820,
         "tariff_id": 47,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "adjustment",
         "component_name": "Conditional Losses Adjustment - Primary to Utilization Voltage",
         "sub_component": "conditional",
@@ -620792,12 +620850,12 @@
         "source_detail": "Rates and General Rules and Regulations, Section N Large Industrial Rate Schedule, Losses Charge (primary distribution to utilization voltage)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Conditional: only when Maritime Electric, at its discretion, supplies at the customer's utilization voltage. Applies in addition to the 69 kV-to-primary losses adjustment.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48343,
+        "id": 57817,
         "tariff_id": 47,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "demand",
         "component_name": "Demand Charge per kW",
         "sub_component": null,
@@ -620821,12 +620879,12 @@
         "source_detail": "PDF page 1, Rate 310 Large Industrial; terms cross-checked against Section N Large Industrial Rate Schedule (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Per kW of billing demand per month. Billing demand is the greatest of: monthly maximum kW demand; 90% of maximum kVA demand; 90% of the contract firm amount (non-curtailable) or 100% of the total contracted amount (curtailable); 90% of the current calendar year's maximum demand excluding April-November; or 90% of the lesser of the previous calendar year's average demand or that average excluding April-November. These are ratchet conditions, not separate charges; no curtailable credit is published.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48347,
+        "id": 57821,
         "tariff_id": 47,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "demand",
         "component_name": "Conditional Transformation Charge (equivalent kVA rental)",
         "sub_component": "conditional",
@@ -620850,12 +620908,12 @@
         "source_detail": "Rates and General Rules and Regulations, Section N Large Industrial Rate Schedule, Transformation Charge (69 kV to primary distribution voltage)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Conditional: only when served at a primary distribution voltage between 4 kV and 25 kV. Per kVA of the customer's kVA demand per month (published as an equivalent kVA rental of 1 5/6% per month of equivalent substation cost).",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48344,
+        "id": 57818,
         "tariff_id": 47,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh",
         "sub_component": null,
@@ -620879,14 +620937,14 @@
         "source_detail": "PDF page 1, Rate 310 Large Industrial; terms cross-checked against Section N Large Industrial Rate Schedule (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. All kWh per month.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       }
     ]
   },
   {
     "id": 46,
     "utility_id": 40,
-    "scrape_run_id": 30,
+    "scrape_run_id": 33,
     "name": "Small Industrial (Rate 320)",
     "tariff_code": "320",
     "utility_type": "electricity",
@@ -620913,9 +620971,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48340,
+        "id": 57814,
         "tariff_id": 46,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "demand",
         "component_name": "Demand Charge - per kW",
         "sub_component": null,
@@ -620939,12 +620997,12 @@
         "source_detail": "PDF page 1, Rate 320 Small Industrial; terms cross-checked against Section N Small Industrial Rate Schedule (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Per kW of billing demand per month. Billing demand is the greatest of the monthly maximum kW demand, 90% of the monthly maximum kVA demand, or 5 kW; installed metering may make the kW/kVA tests inapplicable. The kVA test sets billing demand only; it is not a separate charge.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48341,
+        "id": 57815,
         "tariff_id": 46,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for first 100 kWh per kW billing demand",
         "sub_component": null,
@@ -620968,12 +621026,12 @@
         "source_detail": "PDF page 1, Rate 320 Small Industrial; terms cross-checked against Section N Small Industrial Rate Schedule (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. First 100 kWh per kW of billing demand per month.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48342,
+        "id": 57816,
         "tariff_id": 46,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for balance of kWh",
         "sub_component": null,
@@ -620997,14 +621055,14 @@
         "source_detail": "PDF page 1, Rate 320 Small Industrial; terms cross-checked against Section N Small Industrial Rate Schedule (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Balance of kWh per month.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       }
     ]
   },
   {
     "id": 48,
     "utility_id": 40,
-    "scrape_run_id": 30,
+    "scrape_run_id": 33,
     "name": "Long Term Contract (Rate 340)",
     "tariff_code": "340",
     "utility_type": "electricity",
@@ -621031,9 +621089,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48348,
+        "id": 57822,
         "tariff_id": 48,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "demand",
         "component_name": "Demand Charge per kW",
         "sub_component": null,
@@ -621057,12 +621115,12 @@
         "source_detail": "PDF page 1, Rate 340 Long Term Contract; terms cross-checked against Section N Wholesale Rate Schedule (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48349,
+        "id": 57823,
         "tariff_id": 48,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh",
         "sub_component": null,
@@ -621086,14 +621144,14 @@
         "source_detail": "PDF page 1, Rate 340 Long Term Contract; terms cross-checked against Section N Wholesale Rate Schedule (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       }
     ]
   },
   {
     "id": 49,
     "utility_id": 40,
-    "scrape_run_id": 30,
+    "scrape_run_id": 33,
     "name": "Short Term Contract (Rate 330)",
     "tariff_code": "330",
     "utility_type": "electricity",
@@ -621120,9 +621178,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48350,
+        "id": 57824,
         "tariff_id": 49,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "demand",
         "component_name": "Demand Charge - per kW",
         "sub_component": null,
@@ -621146,12 +621204,12 @@
         "source_detail": "PDF page 1, Rate 330 Short Term Contract; terms cross-checked against Section N Wholesale Rate Schedule (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48351,
+        "id": 57825,
         "tariff_id": 49,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for all kWh in the first block",
         "sub_component": null,
@@ -621175,12 +621233,12 @@
         "source_detail": "PDF page 1, Rate 330 Short Term Contract; terms cross-checked against Section N Wholesale Rate Schedule (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. First energy block, set each 1 April from the minimum monthly energy purchases for the previous 1 April-31 March with normalized customer generation; no fixed kWh size is published.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48352,
+        "id": 57826,
         "tariff_id": 49,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for balance of kWh in the month",
         "sub_component": null,
@@ -621204,14 +621262,14 @@
         "source_detail": "PDF page 1, Rate 330 Short Term Contract; terms cross-checked against Section N Wholesale Rate Schedule (https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       }
     ]
   },
   {
     "id": 41,
     "utility_id": 40,
-    "scrape_run_id": 30,
+    "scrape_run_id": 33,
     "name": "Residential Rural (Rate 130)",
     "tariff_code": "130",
     "utility_type": "electricity",
@@ -621238,9 +621296,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48324,
+        "id": 57796,
         "tariff_id": 41,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for first 2,000 kWh",
         "sub_component": null,
@@ -621264,12 +621322,12 @@
         "source_detail": "PDF page 1, Rate 130 Residential Rural",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48325,
+        "id": 57797,
         "tariff_id": 41,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for balance kWh",
         "sub_component": null,
@@ -621293,12 +621351,12 @@
         "source_detail": "PDF page 1, Rate 130 Residential Rural",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48323,
+        "id": 57795,
         "tariff_id": 41,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "fixed",
         "component_name": "Service Charge",
         "sub_component": null,
@@ -621322,14 +621380,14 @@
         "source_detail": "PDF page 1, Rate 130 Residential Rural",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       }
     ]
   },
   {
     "id": 42,
     "utility_id": 40,
-    "scrape_run_id": 30,
+    "scrape_run_id": 33,
     "name": "Residential Seasonal (Rate 131)",
     "tariff_code": "131",
     "utility_type": "electricity",
@@ -621356,9 +621414,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48327,
+        "id": 57799,
         "tariff_id": 42,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for first 2,000 kWh",
         "sub_component": null,
@@ -621382,12 +621440,12 @@
         "source_detail": "PDF page 1, Rate 131 Residential Seasonal",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48328,
+        "id": 57800,
         "tariff_id": 42,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for balance of kWh",
         "sub_component": null,
@@ -621411,12 +621469,12 @@
         "source_detail": "PDF page 1, Rate 131 Residential Seasonal",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48326,
+        "id": 57798,
         "tariff_id": 42,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "fixed",
         "component_name": "Service Charge",
         "sub_component": null,
@@ -621440,14 +621498,14 @@
         "source_detail": "PDF page 1, Rate 131 Residential Seasonal",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       }
     ]
   },
   {
     "id": 43,
     "utility_id": 40,
-    "scrape_run_id": 30,
+    "scrape_run_id": 33,
     "name": "Residential Seasonal Option (Rate 133)",
     "tariff_code": "133",
     "utility_type": "electricity",
@@ -621474,9 +621532,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48330,
+        "id": 57802,
         "tariff_id": 43,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for first 2,000 kWh",
         "sub_component": null,
@@ -621500,12 +621558,12 @@
         "source_detail": "PDF page 1, Rate 133 Residential Seasonal Option",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48331,
+        "id": 57803,
         "tariff_id": 43,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for balance of kWh",
         "sub_component": null,
@@ -621529,12 +621587,12 @@
         "source_detail": "PDF page 1, Rate 133 Residential Seasonal Option",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48329,
+        "id": 57801,
         "tariff_id": 43,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "fixed",
         "component_name": "Service Charge",
         "sub_component": null,
@@ -621558,14 +621616,14 @@
         "source_detail": "PDF page 1, Rate 133 Residential Seasonal Option",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       }
     ]
   },
   {
     "id": 40,
     "utility_id": 40,
-    "scrape_run_id": 30,
+    "scrape_run_id": 33,
     "name": "Residential Urban (Rate 110)",
     "tariff_code": "110",
     "utility_type": "electricity",
@@ -621592,9 +621650,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48321,
+        "id": 57793,
         "tariff_id": 40,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for first 2,000 kWh",
         "sub_component": null,
@@ -621618,12 +621676,12 @@
         "source_detail": "PDF page 1, Rate 110 Residential Urban",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48322,
+        "id": 57794,
         "tariff_id": 40,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "energy",
         "component_name": "Energy Charge per kWh for balance kWh",
         "sub_component": null,
@@ -621647,12 +621705,12 @@
         "source_detail": "PDF page 1, Rate 110 Residential Urban",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       },
       {
-        "id": 48320,
+        "id": 57792,
         "tariff_id": 40,
-        "scrape_run_id": 30,
+        "scrape_run_id": 33,
         "component_type": "fixed",
         "component_name": "Service Charge",
         "sub_component": null,
@@ -621676,7 +621734,7 @@
         "source_detail": "PDF page 1, Rate 110 Residential Urban",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-04 17:05:16"
       }
     ]
   },
