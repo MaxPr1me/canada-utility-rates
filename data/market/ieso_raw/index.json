@@ -460,10 +460,75 @@
       "size": 6085,
       "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261103_v1.xml"
     },
+    "PUB_DAHourlyOntarioZonalPrice_20261104_v1.xml.37930b0dff5e51a36d4ee72a528237f42796b8280755599db3fbf475b4763f7f.gz": {
+      "sha256": "37930b0dff5e51a36d4ee72a528237f42796b8280755599db3fbf475b4763f7f",
+      "size": 6093,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261104_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261105_v1.xml.2939425088cf29688e42affa621cefc24051833bc0e914990f9e7256f73eda67.gz": {
+      "sha256": "2939425088cf29688e42affa621cefc24051833bc0e914990f9e7256f73eda67",
+      "size": 6096,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261105_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261106_v1.xml.e8dccfb79c6c1fdcdd8ba2937aa3e1715a227cdca4010cba3623e7a8f38662e2.gz": {
+      "sha256": "e8dccfb79c6c1fdcdd8ba2937aa3e1715a227cdca4010cba3623e7a8f38662e2",
+      "size": 6082,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261106_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261107_v1.xml.4c4ba449a3ddf0a8a0a435b2caa1e3d423a4a12efe6ade01ce997bb98af52956.gz": {
+      "sha256": "4c4ba449a3ddf0a8a0a435b2caa1e3d423a4a12efe6ade01ce997bb98af52956",
+      "size": 6064,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261107_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261108_v1.xml.ec18d710fea5cc347c6ffba2861aa1692587bbd12db6aeaec8d5e2e1e4de43f5.gz": {
+      "sha256": "ec18d710fea5cc347c6ffba2861aa1692587bbd12db6aeaec8d5e2e1e4de43f5",
+      "size": 6067,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261108_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261109_v1.xml.2152a9a100fe046789dffebe4159f101a20259eb6e56cf63385bda6cf1c2479b.gz": {
+      "sha256": "2152a9a100fe046789dffebe4159f101a20259eb6e56cf63385bda6cf1c2479b",
+      "size": 6073,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261109_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261110_v1.xml.c477af0b46bff0e71689315b1eac269fff971e24d665b9ef29a7f97ef5554b98.gz": {
+      "sha256": "c477af0b46bff0e71689315b1eac269fff971e24d665b9ef29a7f97ef5554b98",
+      "size": 6079,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261110_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261111_v1.xml.3aff7207d59fab7d72e11b1af6c75450cb63f9d2872a59fd3a423aa93d831aca.gz": {
+      "sha256": "3aff7207d59fab7d72e11b1af6c75450cb63f9d2872a59fd3a423aa93d831aca",
+      "size": 6033,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261111_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261112_v1.xml.1d54367ea5b83af2e1d37ce9716525cf0d52154d0232b5c0979b8b5483b40298.gz": {
+      "sha256": "1d54367ea5b83af2e1d37ce9716525cf0d52154d0232b5c0979b8b5483b40298",
+      "size": 6079,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261112_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261113_v1.xml.aa41c23a91798ed1c42f9f0c7ac0fbc3dc92aaa7b4197f7539c25c3268dd22d2.gz": {
+      "sha256": "aa41c23a91798ed1c42f9f0c7ac0fbc3dc92aaa7b4197f7539c25c3268dd22d2",
+      "size": 6050,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261113_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261114_v1.xml.cca06a6b320b2ae9e123a00801c115aaf94675365690ebd72ed8534bc7d7ac99.gz": {
+      "sha256": "cca06a6b320b2ae9e123a00801c115aaf94675365690ebd72ed8534bc7d7ac99",
+      "size": 6024,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261114_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261115_v1.xml.674391f2ce0524fe3b5fa8047404f1cb8358905bfa8eb538cc2cdf1bf76a503a.gz": {
+      "sha256": "674391f2ce0524fe3b5fa8047404f1cb8358905bfa8eb538cc2cdf1bf76a503a",
+      "size": 6078,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261115_v1.xml"
+    },
     "PUB_HourlyLFDA_2025_v1.csv.2454e4689c6eb7536f0e845ae3ea778ef9e0936ae5099c663b44611a329a6747.gz": {
       "sha256": "2454e4689c6eb7536f0e845ae3ea778ef9e0936ae5099c663b44611a329a6747",
       "size": 145471,
       "source_url": "https://reports-public.ieso.ca/public/HourlyLFDA/PUB_HourlyLFDA_2025_v1.csv"
+    },
+    "PUB_HourlyLFDA_2026_v1.csv.7f2c52391996d5dc31acb2a20b3f49254e6e528abb2600d007ae390ffb626172.gz": {
+      "sha256": "7f2c52391996d5dc31acb2a20b3f49254e6e528abb2600d007ae390ffb626172",
+      "size": 188762,
+      "source_url": "https://reports-public.ieso.ca/public/HourlyLFDA/PUB_HourlyLFDA_2026_v1.csv"
     },
     "PUB_HourlyLFDA_2026_v1.csv.a4bc59b83b9477f13cb0730488ec25e15caa6a36036c56a56b0048c1e9eacf89.gz": {
       "sha256": "a4bc59b83b9477f13cb0730488ec25e15caa6a36036c56a56b0048c1e9eacf89",
