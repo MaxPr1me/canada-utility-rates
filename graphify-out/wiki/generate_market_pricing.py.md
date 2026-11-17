@@ -1,50 +1,50 @@
 # generate_market_pricing.py
 
-> 88 nodes
+> 31 nodes
 
 ## Key Concepts
 
 - **generate_market_pricing.py** (71 connections) — `scripts/generate_market_pricing.py`
-- **MarketDataError** (27 connections) — `scripts/generate_market_pricing.py`
 - **build_document()** (24 connections) — `scripts/generate_market_pricing.py`
-- **math** (20 connections)
-- **ReportSource** (19 connections) — `scripts/generate_market_pricing.py`
 - **month_key()** (13 connections) — `scripts/generate_market_pricing.py`
-- **_actual_rates()** (10 connections) — `scripts/generate_market_pricing.py`
-- **parse_ga_deferral()** (10 connections) — `scripts/generate_market_pricing.py`
-- **parse_ga_recovery()** (10 connections) — `scripts/generate_market_pricing.py`
-- **_yearly_files()** (10 connections) — `scripts/generate_market_pricing.py`
-- **parse_hoep_csv()** (9 connections) — `scripts/generate_market_pricing.py`
-- **ga_adjustments()** (8 connections) — `scripts/generate_market_pricing.py`
-- **load_hoep()** (8 connections) — `scripts/generate_market_pricing.py`
 - **parse_hoep_averages()** (8 connections) — `scripts/generate_market_pricing.py`
 - **build_surface()** (7 connections) — `scripts/generate_market_pricing.py`
-- **_cell_number()** (7 connections) — `scripts/generate_market_pricing.py`
-- **_number()** (7 connections) — `scripts/generate_market_pricing.py`
-- **parse_hoep_page()** (7 connections) — `scripts/generate_market_pricing.py`
-- **_cell()** (6 connections) — `scripts/generate_market_pricing.py`
 - **check_complete()** (6 connections) — `scripts/generate_market_pricing.py`
 - **load_hoep_averages()** (6 connections) — `scripts/generate_market_pricing.py`
-- **main()** (6 connections) — `scripts/generate_market_pricing.py`
-- **_month_columns()** (6 connections) — `scripts/generate_market_pricing.py`
 - **month_dates()** (6 connections) — `scripts/generate_market_pricing.py`
-- **parse_listing()** (6 connections) — `scripts/generate_market_pricing.py`
-- *... and 63 more nodes in this community*
+- **read_workbook()** (6 connections) — `scripts/generate_market_pricing.py`
+- **_parse_xml()** (5 connections) — `scripts/generate_market_pricing.py`
+- **cross_check_hoep()** (5 connections) — `scripts/generate_market_pricing.py`
+- **describe_months()** (5 connections) — `scripts/generate_market_pricing.py`
+- **monthly_hoep_mean()** (5 connections) — `scripts/generate_market_pricing.py`
+- **check_ga_units()** (4 connections) — `scripts/generate_market_pricing.py`
+- **check_hoep_unit()** (4 connections) — `scripts/generate_market_pricing.py`
+- **day_type()** (4 connections) — `scripts/generate_market_pricing.py`
+- **validate_document()** (4 connections) — `scripts/generate_market_pricing.py`
+- **xml_etree_elementtree** (4 connections)
+- **_find_text()** (3 connections) — `scripts/generate_market_pricing.py`
+- **coverage()** (2 connections) — `scripts/generate_market_pricing.py`
+- **_ranges()** (2 connections) — `scripts/generate_market_pricing.py`
+- **window_months()** (2 connections) — `scripts/generate_market_pricing.py`
+- **Element** (2 connections)
+- **datetime** (2 connections)
+- **openpyxl** (2 connections)
+- *... and 6 more nodes in this community*
 
 ## Relationships
 
-- [archive_ontario_price.py](archive_ontario_price.py.md) (9 shared connections)
-- [re](re.md) (9 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (7 shared connections)
-- [market_pricing.py](market_pricing.py.md) (5 shared connections)
-- [os](os.md) (4 shared connections)
-- [BaseScraper](BaseScraper.md) (4 shared connections)
-- [argparse](argparse.md) (2 shared connections)
-- [json](json.md) (2 shared connections)
-- [export_json.py](export_json.py.md) (2 shared connections)
-- [representative_models.py](representative_models.py.md) (2 shared connections)
-- [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
-- [Any](Any.md) (1 shared connections)
+- [MarketDataError](MarketDataError.md) (25 shared connections)
+- [_actual_rates](_actual_rates.md) (20 shared connections)
+- [_yearly_files](_yearly_files.md) (7 shared connections)
+- [main](main.md) (6 shared connections)
+- [market_pricing.py](market_pricing.py.md) (4 shared connections)
+- [ReportSource](ReportSource.md) (3 shared connections)
+- [io](io.md) (3 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
+- [os](os.md) (2 shared connections)
+- [re](re.md) (2 shared connections)
+- [run_scrape.py](run_scrape.py.md) (2 shared connections)
+- [parsing.py](parsing.py.md) (2 shared connections)
 
 ## Source Files
 
@@ -52,8 +52,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 268 (98%)
-- INFERRED: 6 (2%)
+- EXTRACTED: 143 (99%)
+- INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

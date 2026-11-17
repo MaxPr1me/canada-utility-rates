@@ -1,6 +1,6 @@
 # build_ontario_market.py
 
-> 66 nodes
+> 63 nodes
 
 ## Key Concepts
 
@@ -18,7 +18,6 @@
 - **_cents()** (6 connections) — `scripts/build_ontario_market.py`
 - **build_bins()** (6 connections) — `scripts/build_ontario_market.py`
 - **load_ga()** (6 connections) — `scripts/build_ontario_market.py`
-- **render_document()** (6 connections) — `scripts/build_ontario_market.py`
 - **_span()** (6 connections) — `scripts/build_ontario_market.py`
 - **_ym()** (6 connections) — `scripts/build_ontario_market.py`
 - **Decimal** (6 connections)
@@ -29,18 +28,19 @@
 - **_revisable()** (5 connections) — `scripts/build_ontario_market.py`
 - **serialize_monthly()** (5 connections) — `scripts/build_ontario_market.py`
 - **_shift()** (5 connections) — `scripts/build_ontario_market.py`
-- *... and 41 more nodes in this community*
+- **write_outputs()** (5 connections) — `scripts/build_ontario_market.py`
+- *... and 38 more nodes in this community*
 
 ## Relationships
 
-- [re](re.md) (8 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (6 shared connections)
+- [io](io.md) (11 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (5 shared connections)
+- [re](re.md) (3 shared connections)
 - [argparse](argparse.md) (2 shared connections)
-- [json](json.md) (2 shared connections)
 - [os](os.md) (2 shared connections)
-- [export_json.py](export_json.py.md) (2 shared connections)
-- [BaseScraper](BaseScraper.md) (2 shared connections)
-- [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
+- [run_scrape.py](run_scrape.py.md) (2 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +48,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 177 (99%)
+- EXTRACTED: 173 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

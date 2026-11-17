@@ -1,11 +1,12 @@
 # market_pricing.py
 
-> 23 nodes
+> 24 nodes
 
 ## Key Concepts
 
+- **math** (24 connections)
 - **market_pricing.py** (18 connections) — `scrapers/utils/market_pricing.py`
-- **historical_market_price()** (10 connections) — `scrapers/utils/market_pricing.py`
+- **historical_market_price()** (12 connections) — `scrapers/utils/market_pricing.py`
 - **synthetic_profile_price()** (10 connections) — `scrapers/utils/market_pricing.py`
 - **load_ontario_market_pricing()** (9 connections) — `scrapers/utils/market_pricing.py`
 - **get_monthly_average()** (5 connections) — `scrapers/utils/market_pricing.py`
@@ -30,12 +31,18 @@
 
 ## Relationships
 
-- [generate_market_pricing.py](generate_market_pricing.py.md) (5 shared connections)
-- [representative_models.py](representative_models.py.md) (5 shared connections)
-- [json](json.md) (3 shared connections)
+- [representative_models.py](representative_models.py.md) (7 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (6 shared connections)
+- [BaseScraper](BaseScraper.md) (4 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (4 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (4 shared connections)
 - [re](re.md) (2 shared connections)
-- [BaseScraper](BaseScraper.md) (2 shared connections)
-- [export_json.py](export_json.py.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
+- [build_models](build_models.md) (1 shared connections)
+- [run_scrape.py](run_scrape.py.md) (1 shared connections)
+- [_prepare](_prepare.md) (1 shared connections)
+- [_actual_rates](_actual_rates.md) (1 shared connections)
+- [MarketDataError](MarketDataError.md) (1 shared connections)
 
 ## Source Files
 
@@ -43,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 54 (100%)
+- EXTRACTED: 75 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

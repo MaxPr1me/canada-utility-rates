@@ -1,6 +1,6 @@
 # .mark_live_parsed
 
-> 54 nodes
+> 53 nodes
 
 ## Key Concepts
 
@@ -23,23 +23,25 @@
 - **._new_record()** (8 connections) — `scrapers/utilities/nl_hydro.py`
 - **_demand_components()** (8 connections) — `scrapers/utilities/nl_hydro.py`
 - **_diesel_energy()** (8 connections) — `scrapers/utilities/nl_hydro.py`
-- **._nonfirm_record()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_basic_components()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_billing_conditions()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **._audit_island_industrial_other()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_option_components()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_verify_nonfirm_formula()** (7 connections) — `scrapers/utilities/nl_hydro.py`
-- *... and 29 more nodes in this community*
+- **_energy_rows()** (6 connections) — `scrapers/utilities/nl_hydro.py`
+- *... and 28 more nodes in this community*
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (16 shared connections)
 - [re](re.md) (15 shared connections)
-- [BaseScraper](BaseScraper.md) (14 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (14 shared connections)
-- [DocumentPage](DocumentPage.md) (13 shared connections)
-- [.fetch_page](fetch_page.md) (5 shared connections)
+- [RateComponent](RateComponent.md) (14 shared connections)
+- [BaseScraper](BaseScraper.md) (13 shared connections)
+- [TariffRecord](TariffRecord.md) (13 shared connections)
+- [DocumentPage](DocumentPage.md) (12 shared connections)
+- [.fetch_page](fetch_page.md) (6 shared connections)
+- [.mark_fallback](mark_fallback.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [parsing.py](parsing.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -47,7 +49,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 219 (99%)
+- EXTRACTED: 215 (99%)
 - INFERRED: 3 (1%)
 - AMBIGUOUS: 0 (0%)
 

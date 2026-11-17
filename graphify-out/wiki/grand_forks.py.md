@@ -1,6 +1,6 @@
 # grand_forks.py
 
-> 18 nodes
+> 19 nodes
 
 ## Key Concepts
 
@@ -10,6 +10,7 @@
 - **schedule_g()** (6 connections) — `scrapers/utilities/grand_forks.py`
 - **amendment_pattern()** (5 connections) — `scrapers/utilities/grand_forks.py`
 - **amendment_effective()** (5 connections) — `scrapers/utilities/grand_forks.py`
+- **._media()** (5 connections) — `scrapers/utilities/grand_forks.py`
 - **newest_media_url()** (5 connections) — `scrapers/utilities/grand_forks.py`
 - **_prices()** (4 connections) — `scrapers/utilities/grand_forks.py`
 - **Pattern** (4 connections)
@@ -25,13 +26,15 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [re](re.md) (7 shared connections)
-- [.fetch_page](fetch_page.md) (7 shared connections)
+- [.fetch_page](fetch_page.md) (8 shared connections)
+- [BaseScraper](BaseScraper.md) (7 shared connections)
+- [re](re.md) (6 shared connections)
 - [DocumentPage](DocumentPage.md) (4 shared connections)
-- [TariffRecord](TariffRecord.md) (3 shared connections)
-- [json](json.md) (2 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
+- [TariffRecord](TariffRecord.md) (2 shared connections)
+- [parsing.py](parsing.py.md) (2 shared connections)
+- [maritime_electric.py](maritime_electric.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -39,7 +42,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 55 (95%)
+- EXTRACTED: 58 (95%)
 - INFERRED: 3 (5%)
 - AMBIGUOUS: 0 (0%)
 

@@ -30,7 +30,7 @@
 - *…and 30 more `calls` connection(s) not listed (lowest-degree first to go)*
 
 ### contains
-- parsing.py `EXTRACTED`
+- [parsing.py](parsing.py.md) `EXTRACTED`
 
 ### imports
 - base.py `EXTRACTED`
@@ -43,16 +43,16 @@
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- atco_gas.py `EXTRACTED`
+- [atco_gas.py](atco_gas.py.md) `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - alberta_rolr.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
-- maritime_electric.py `EXTRACTED`
+- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - [grand_forks.py](grand_forks.py.md) `EXTRACTED`
 - hydro_quebec.py `EXTRACTED`
 - [new_westminster.py](new_westminster.py.md) `EXTRACTED`
-- summerland.py `EXTRACTED`
+- [summerland.py](summerland.py.md) `EXTRACTED`
 - *…and 13 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### rationale_for

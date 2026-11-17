@@ -9,7 +9,7 @@
 
 ## Relationships
 
-- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
+- [TariffRecord](TariffRecord.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files

@@ -1,6 +1,6 @@
 # SaskEnergyScraper
 
-> 23 nodes
+> 21 nodes
 
 ## Key Concepts
 
@@ -14,9 +14,7 @@
 - **._carbon()** (5 connections) — `scrapers/utilities/saskenergy.py`
 - **._industrial_rows()** (5 connections) — `scrapers/utilities/saskenergy.py`
 - **._num()** (5 connections) — `scrapers/utilities/saskenergy.py`
-- **.scrape()** (5 connections) — `scrapers/utilities/saskenergy.py`
 - **._effective()** (4 connections) — `scrapers/utilities/saskenergy.py`
-- **._seed_data()** (4 connections) — `scrapers/utilities/saskenergy.py`
 - **._norm()** (3 connections) — `scrapers/utilities/saskenergy.py`
 - **._page_text()** (3 connections) — `scrapers/utilities/saskenergy.py`
 - **._service_rows()** (3 connections) — `scrapers/utilities/saskenergy.py`
@@ -30,9 +28,9 @@
 
 ## Relationships
 
-- [NBPowerScraper](NBPowerScraper.md) (7 shared connections)
-- [TariffRecord](TariffRecord.md) (5 shared connections)
+- [TariffRecord](TariffRecord.md) (8 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
 - [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
@@ -42,7 +40,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 63 (97%)
+- EXTRACTED: 58 (97%)
 - INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 

@@ -8,7 +8,7 @@
 
 ### calls
 - [re](re.md) `EXTRACTED`
-- [json](json.md) `EXTRACTED`
+- json `EXTRACTED`
 - build_models() `EXTRACTED`
 - _prepare() `EXTRACTED`
 - _context() `EXTRACTED`

@@ -15,7 +15,7 @@
 - extract_tariff_pages() `EXTRACTED`
 
 ### contains
-- parsing.py `EXTRACTED`
+- [parsing.py](parsing.py.md) `EXTRACTED`
 
 ### imports
 - [oeb_tariff.py](oeb_tariff.py.md) `EXTRACTED`
@@ -29,14 +29,14 @@
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- atco_gas.py `EXTRACTED`
+- [atco_gas.py](atco_gas.py.md) `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
-- maritime_electric.py `EXTRACTED`
+- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - [grand_forks.py](grand_forks.py.md) `EXTRACTED`
 - hydro_quebec.py `EXTRACTED`
-- [saint_john_energy.py](saint_john_energy.py.md) `EXTRACTED`
+- saint_john_energy.py `EXTRACTED`
 - [new_westminster.py](new_westminster.py.md) `EXTRACTED`
 - *…and 8 more `imports` connection(s) not listed (lowest-degree first to go)*
 
@@ -87,7 +87,7 @@
 - _schedule_page() `INFERRED`
 - SaskPowerScraper `INFERRED`
 - parse_manual() `INFERRED`
-- [ManitobaHydroScraper](ManitobaHydroScraper.md) `INFERRED`
+- ManitobaHydroScraper `INFERRED`
 - parse_tariff_pages() `INFERRED`
 - _parse_commercial() `INFERRED`
 - *…and 76 more `uses` connection(s) not listed (lowest-degree first to go)*

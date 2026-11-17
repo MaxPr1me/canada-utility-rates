@@ -1,10 +1,12 @@
 # new_westminster.py
 
-> 10 nodes
+> 14 nodes
 
 ## Key Concepts
 
+- **new_westminster.py** (20 connections) — `scrapers/utilities/new_westminster.py`
 - **parse_schedule()** (14 connections) — `scrapers/utilities/new_westminster.py`
+- **find_bylaw_url()** (5 connections) — `scrapers/utilities/new_westminster.py`
 - **_one()** (4 connections) — `scrapers/utilities/new_westminster.py`
 - **comp()** (3 connections) — `scrapers/utilities/new_westminster.py`
 - **_body()** (3 connections) — `scrapers/utilities/new_westminster.py`
@@ -13,16 +15,19 @@
 - **_iso()** (2 connections) — `scrapers/utilities/new_westminster.py`
 - **add()** (2 connections) — `scrapers/utilities/new_westminster.py`
 - **date** (1 connections)
+- **new_westminster.py — Scraper for the City of New Westminster Electrical Utility…** (1 connections) — `scrapers/utilities/new_westminster.py`
+- **The exact bylaw link; the migrated site's extensionless media endpoint serves…** (1 connections) — `scrapers/utilities/new_westminster.py`
 - **Build the in-scope Schedule A classes; raise ValueError (fail closed) on a…** (1 connections) — `scrapers/utilities/new_westminster.py`
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (5 shared connections)
-- [re](re.md) (3 shared connections)
-- [TariffRecord](TariffRecord.md) (2 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (2 shared connections)
-- [.fetch_page](fetch_page.md) (1 shared connections)
-- [DocumentPage](DocumentPage.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (7 shared connections)
+- [re](re.md) (5 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [TariffRecord](TariffRecord.md) (3 shared connections)
+- [DocumentPage](DocumentPage.md) (2 shared connections)
+- [parsing.py](parsing.py.md) (2 shared connections)
 
 ## Source Files
 
@@ -30,8 +35,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 24 (96%)
-- INFERRED: 1 (4%)
+- EXTRACTED: 43 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

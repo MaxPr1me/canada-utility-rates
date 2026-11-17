@@ -1,6 +1,6 @@
 # FortisBCEnergyScraper
 
-> 40 nodes
+> 45 nodes
 
 ## Key Concepts
 
@@ -29,15 +29,17 @@
 - **._document_text()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._seed_data()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **AreaClassSpec** (3 connections) — `scrapers/utilities/fortisbc_energy.py`
-- *... and 15 more nodes in this community*
+- *... and 20 more nodes in this community*
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (14 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (11 shared connections)
+- [RateComponent](RateComponent.md) (13 shared connections)
+- [TariffRecord](TariffRecord.md) (11 shared connections)
 - [BaseScraper](BaseScraper.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (4 shared connections)
+- [.mark_fallback](mark_fallback.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [FortisAlbertaScraper](FortisAlbertaScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -45,8 +47,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 128 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 133 (99%)
+- INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

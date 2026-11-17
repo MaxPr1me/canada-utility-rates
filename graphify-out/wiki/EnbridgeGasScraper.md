@@ -1,10 +1,11 @@
 # EnbridgeGasScraper
 
-> 49 nodes
+> 56 nodes
 
 ## Key Concepts
 
 - **EnbridgeGasScraper** (36 connections) — `scrapers/utilities/enbridge_gas.py`
+- **enbridge_gas.py** (36 connections) — `scrapers/utilities/enbridge_gas.py`
 - **Schedule** (21 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._build_egd_contract()** (18 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._build_m4()** (17 connections) — `scrapers/utilities/enbridge_gas.py`
@@ -28,18 +29,19 @@
 - **Edition** (8 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._value()** (8 connections) — `scrapers/utilities/enbridge_gas.py`
 - **check_complete()** (8 connections) — `scrapers/utilities/enbridge_gas.py`
-- **._blocks()** (8 connections) — `scrapers/utilities/enbridge_gas.py`
-- *... and 24 more nodes in this community*
+- *... and 31 more nodes in this community*
 
 ## Relationships
 
-- [re](re.md) (20 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (9 shared connections)
-- [TariffRecord](TariffRecord.md) (7 shared connections)
-- [DocumentPage](DocumentPage.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [TariffRecord](TariffRecord.md) (12 shared connections)
+- [BaseScraper](BaseScraper.md) (9 shared connections)
+- [DocumentPage](DocumentPage.md) (9 shared connections)
+- [RateComponent](RateComponent.md) (6 shared connections)
+- [.fetch_page](fetch_page.md) (5 shared connections)
+- [re](re.md) (5 shared connections)
+- [parsing.py](parsing.py.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
 
 ## Source Files
 
@@ -47,8 +49,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 237 (98%)
-- INFERRED: 6 (2%)
+- EXTRACTED: 263 (97%)
+- INFERRED: 8 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

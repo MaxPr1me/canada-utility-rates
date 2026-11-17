@@ -1,6 +1,6 @@
 # ntpc.py
 
-> 55 nodes
+> 59 nodes
 
 ## Key Concepts
 
@@ -21,6 +21,7 @@
 - **_Schedule** (7 connections) — `scrapers/utilities/ntpc.py`
 - **build_records()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **_iso()** (7 connections) — `scrapers/utilities/ntpc.py`
+- **.scrape()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **parse_schedule_index()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **_Block** (6 connections) — `scrapers/utilities/ntpc.py`
 - **_content()** (6 connections) — `scrapers/utilities/ntpc.py`
@@ -28,19 +29,20 @@
 - **parse_tpsp()** (6 connections) — `scrapers/utilities/ntpc.py`
 - **_ResidentialPage** (5 connections) — `scrapers/utilities/ntpc.py`
 - **_schedule_component()** (5 connections) — `scrapers/utilities/ntpc.py`
-- **_norm()** (5 connections) — `scrapers/utilities/ntpc.py`
-- *... and 30 more nodes in this community*
+- *... and 34 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (13 shared connections)
 - [re](re.md) (12 shared connections)
+- [BaseScraper](BaseScraper.md) (10 shared connections)
 - [TariffRecord](TariffRecord.md) (9 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (7 shared connections)
+- [RateComponent](RateComponent.md) (7 shared connections)
 - [DocumentPage](DocumentPage.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
+- [.mark_fallback](mark_fallback.md) (3 shared connections)
+- [parsing.py](parsing.py.md) (3 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
+- [.now_iso](now_iso.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,8 +50,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 168 (95%)
-- INFERRED: 8 (5%)
+- EXTRACTED: 176 (96%)
+- INFERRED: 8 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

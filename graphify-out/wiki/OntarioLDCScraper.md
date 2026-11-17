@@ -14,11 +14,12 @@
 - **._energy_entry()** (8 connections) — `scrapers/utilities/ontario_ldc.py`
 - **._load_sheets()** (8 connections) — `scrapers/utilities/ontario_ldc.py`
 - **date** (8 connections)
-- **clean_zone()** (7 connections) — `scrapers/utilities/ontario_ldc.py`
 - **._build_rpp_records()** (7 connections) — `scrapers/utilities/ontario_ldc.py`
+- **.scrape()** (7 connections) — `scrapers/utilities/ontario_ldc.py`
 - **._xml_cross_check()** (6 connections) — `scrapers/utilities/ontario_ldc.py`
 - **._fetch_oeb()** (5 connections) — `scrapers/utilities/ontario_ldc.py`
 - **._fetch_tariff_pages()** (5 connections) — `scrapers/utilities/ontario_ldc.py`
+- **._seed_data()** (5 connections) — `scrapers/utilities/ontario_ldc.py`
 - **select_energy_classification()** (5 connections) — `scrapers/utilities/ontario_ldc.py`
 - **_today()** (5 connections) — `scrapers/utilities/ontario_ldc.py`
 - **_validate_billdata_row()** (5 connections) — `scrapers/utilities/ontario_ldc.py`
@@ -26,25 +27,24 @@
 - **_kwh_threshold()** (4 connections) — `scrapers/utilities/ontario_ldc.py`
 - **._record_absent_classes()** (4 connections) — `scrapers/utilities/ontario_ldc.py`
 - **._rpp_components()** (4 connections) — `scrapers/utilities/ontario_ldc.py`
-- **split_oeb_distributor()** (4 connections) — `scrapers/utilities/ontario_ldc.py`
 - **_cents()** (3 connections) — `scrapers/utilities/ontario_ldc.py`
 - **_connection_optional()** (3 connections) — `scrapers/utilities/ontario_ldc.py`
 - *... and 40 more nodes in this community*
 
 ## Relationships
 
-- [ontario_ldc.py](ontario_ldc.py.md) (24 shared connections)
-- [TariffRecord](TariffRecord.md) (10 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (6 shared connections)
+- [ontario_ldc.py](ontario_ldc.py.md) (26 shared connections)
+- [TariffRecord](TariffRecord.md) (9 shared connections)
+- [RateComponent](RateComponent.md) (7 shared connections)
 - [build_demand_records](build_demand_records.md) (4 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
-- [re](re.md) (2 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
+- [.mark_fallback](mark_fallback.md) (2 shared connections)
 - [class_loss_factors](class_loss_factors.md) (1 shared connections)
+- [re](re.md) (1 shared connections)
 - [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 - [TariffSheet](TariffSheet.md) (1 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (1 shared connections)
+- [.fetch_page](fetch_page.md) (1 shared connections)
 
 ## Source Files
 
@@ -52,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 156 (96%)
+- EXTRACTED: 159 (96%)
 - INFERRED: 6 (4%)
 - AMBIGUOUS: 0 (0%)
 

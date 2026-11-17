@@ -33,11 +33,12 @@
 
 ## Relationships
 
-- [NBPowerScraper](NBPowerScraper.md) (6 shared connections)
+- [TariffRecord](TariffRecord.md) (9 shared connections)
 - [BaseScraper](BaseScraper.md) (5 shared connections)
-- [TariffRecord](TariffRecord.md) (5 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
+- [RateComponent](RateComponent.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [FortisAlbertaScraper](FortisAlbertaScraper.md) (1 shared connections)
 
 ## Source Files
 

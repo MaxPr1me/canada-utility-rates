@@ -15,8 +15,8 @@
 
 - [BaseScraper](BaseScraper.md) (3 shared connections)
 - [run_scrape.py](run_scrape.py.md) (1 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
 - [TariffRecord](TariffRecord.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (1 shared connections)
 
 ## Source Files
 

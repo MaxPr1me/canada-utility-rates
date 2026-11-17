@@ -9,7 +9,7 @@
 ### calls
 - [re](re.md) `EXTRACTED`
 - [DocumentPage](DocumentPage.md) `EXTRACTED`
-- io `EXTRACTED`
+- [io](io.md) `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
@@ -30,7 +30,7 @@
 - *…and 12 more `calls` connection(s) not listed (lowest-degree first to go)*
 
 ### contains
-- parsing.py `EXTRACTED`
+- [parsing.py](parsing.py.md) `EXTRACTED`
 
 ### imports
 - base.py `EXTRACTED`
@@ -41,15 +41,15 @@
 - nl_hydro.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- atco_gas.py `EXTRACTED`
+- [atco_gas.py](atco_gas.py.md) `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - [grand_forks.py](grand_forks.py.md) `EXTRACTED`
 - hydro_quebec.py `EXTRACTED`
-- [saint_john_energy.py](saint_john_energy.py.md) `EXTRACTED`
+- saint_john_energy.py `EXTRACTED`
 - [new_westminster.py](new_westminster.py.md) `EXTRACTED`
-- summerland.py `EXTRACTED`
+- [summerland.py](summerland.py.md) `EXTRACTED`
 - nova_scotia_power.py `EXTRACTED`
 - bc_hydro.py `EXTRACTED`
 - summerside_electric.py `EXTRACTED`
