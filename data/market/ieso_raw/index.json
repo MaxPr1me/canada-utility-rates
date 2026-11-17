@@ -520,10 +520,30 @@
       "size": 6078,
       "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261115_v1.xml"
     },
+    "PUB_DAHourlyOntarioZonalPrice_20261116_v1.xml.67f2f397ac924e90a94dec7f412280a3c9ec325b51c9381e6d24de3b882d736b.gz": {
+      "sha256": "67f2f397ac924e90a94dec7f412280a3c9ec325b51c9381e6d24de3b882d736b",
+      "size": 6089,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261116_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261117_v1.xml.3052ae17a65e12b2faefce498ef10e4505c82748b9663d9590c597b31af5f6b3.gz": {
+      "sha256": "3052ae17a65e12b2faefce498ef10e4505c82748b9663d9590c597b31af5f6b3",
+      "size": 6083,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261117_v1.xml"
+    },
+    "PUB_DAHourlyOntarioZonalPrice_20261118_v1.xml.59c2d64b29889b5ac6c4e151e0dd7e95a2dc4e0c1dd352372538034c6d228e6b.gz": {
+      "sha256": "59c2d64b29889b5ac6c4e151e0dd7e95a2dc4e0c1dd352372538034c6d228e6b",
+      "size": 6099,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261118_v1.xml"
+    },
     "PUB_HourlyLFDA_2025_v1.csv.2454e4689c6eb7536f0e845ae3ea778ef9e0936ae5099c663b44611a329a6747.gz": {
       "sha256": "2454e4689c6eb7536f0e845ae3ea778ef9e0936ae5099c663b44611a329a6747",
       "size": 145471,
       "source_url": "https://reports-public.ieso.ca/public/HourlyLFDA/PUB_HourlyLFDA_2025_v1.csv"
+    },
+    "PUB_HourlyLFDA_2026_v1.csv.4ea9c6e32602434914e30cb60674730f39edcc9ff3bcaf9ae8943051840d0797.gz": {
+      "sha256": "4ea9c6e32602434914e30cb60674730f39edcc9ff3bcaf9ae8943051840d0797",
+      "size": 191239,
+      "source_url": "https://reports-public.ieso.ca/public/HourlyLFDA/PUB_HourlyLFDA_2026_v1.csv"
     },
     "PUB_HourlyLFDA_2026_v1.csv.7f2c52391996d5dc31acb2a20b3f49254e6e528abb2600d007ae390ffb626172.gz": {
       "sha256": "7f2c52391996d5dc31acb2a20b3f49254e6e528abb2600d007ae390ffb626172",
