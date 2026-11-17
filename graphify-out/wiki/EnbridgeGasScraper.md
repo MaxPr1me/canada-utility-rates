@@ -1,11 +1,10 @@
 # EnbridgeGasScraper
 
-> 58 nodes
+> 49 nodes
 
 ## Key Concepts
 
 - **EnbridgeGasScraper** (36 connections) — `scrapers/utilities/enbridge_gas.py`
-- **enbridge_gas.py** (36 connections) — `scrapers/utilities/enbridge_gas.py`
 - **Schedule** (21 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._build_egd_contract()** (18 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._build_m4()** (17 connections) — `scrapers/utilities/enbridge_gas.py`
@@ -29,17 +28,17 @@
 - **Edition** (8 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._value()** (8 connections) — `scrapers/utilities/enbridge_gas.py`
 - **check_complete()** (8 connections) — `scrapers/utilities/enbridge_gas.py`
-- *... and 33 more nodes in this community*
+- **._blocks()** (8 connections) — `scrapers/utilities/enbridge_gas.py`
+- *... and 24 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (11 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (10 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (10 shared connections)
-- [.fetch_page](fetch_page.md) (6 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (6 shared connections)
-- [re](re.md) (6 shared connections)
-- [io](io.md) (2 shared connections)
+- [re](re.md) (20 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (9 shared connections)
+- [TariffRecord](TariffRecord.md) (7 shared connections)
+- [DocumentPage](DocumentPage.md) (6 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
@@ -48,8 +47,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 268 (97%)
-- INFERRED: 8 (3%)
+- EXTRACTED: 237 (98%)
+- INFERRED: 6 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

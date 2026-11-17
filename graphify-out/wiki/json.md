@@ -34,17 +34,17 @@
 ## Relationships
 
 - [representative_models.py](representative_models.py.md) (24 shared connections)
-- [export_json.py](export_json.py.md) (10 shared connections)
+- [export_json.py](export_json.py.md) (7 shared connections)
 - [Any](Any.md) (7 shared connections)
 - [check_db_history.py](check_db_history.py.md) (5 shared connections)
 - [run_scrape.py](run_scrape.py.md) (5 shared connections)
+- [argparse](argparse.md) (4 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (4 shared connections)
+- [Path](Path.md) (4 shared connections)
 - [match_record](match_record.md) (3 shared connections)
 - [market_pricing.py](market_pricing.py.md) (3 shared connections)
-- [re](re.md) (3 shared connections)
 - [coverage_gate.py](coverage_gate.py.md) (3 shared connections)
-- [export_views](export_views.md) (3 shared connections)
 - [os](os.md) (2 shared connections)
-- [_fullmatch](_fullmatch.md) (2 shared connections)
 
 ## Source Files
 

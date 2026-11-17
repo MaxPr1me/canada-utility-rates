@@ -9,7 +9,7 @@
 ### calls
 - [re](re.md) `EXTRACTED`
 - [DocumentPage](DocumentPage.md) `EXTRACTED`
-- [io](io.md) `EXTRACTED`
+- io `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
@@ -17,9 +17,9 @@
 - ._parse_residential_pdfs() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
 - ._interruptible() `EXTRACTED`
 - .verify_official_records() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
@@ -41,13 +41,13 @@
 - nl_hydro.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- [atco_gas.py](atco_gas.py.md) `EXTRACTED`
+- atco_gas.py `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
+- [grand_forks.py](grand_forks.py.md) `EXTRACTED`
 - hydro_quebec.py `EXTRACTED`
 - [saint_john_energy.py](saint_john_energy.py.md) `EXTRACTED`
-- grand_forks.py `EXTRACTED`
 - [new_westminster.py](new_westminster.py.md) `EXTRACTED`
 - summerland.py `EXTRACTED`
 - nova_scotia_power.py `EXTRACTED`

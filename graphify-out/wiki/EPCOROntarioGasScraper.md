@@ -1,10 +1,9 @@
 # EPCOROntarioGasScraper
 
-> 59 nodes
+> 50 nodes
 
 ## Key Concepts
 
-- **epcor_gas_ontario.py** (38 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **EPCOROntarioGasScraper** (25 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._build()** (21 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._zone_context()** (13 connections) — `scrapers/utilities/epcor_gas_ontario.py`
@@ -28,20 +27,19 @@
 - **._fetch_pdf_pages()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._fetch_text()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._require_effective()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
-- **._seasons()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
-- *... and 34 more nodes in this community*
+- **notice_case()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
+- **notice_url()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
+- *... and 25 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (13 shared connections)
-- [re](re.md) (9 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (5 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (23 shared connections)
+- [re](re.md) (11 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (4 shared connections)
+- [TariffRecord](TariffRecord.md) (4 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
+- [DocumentPage](DocumentPage.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,8 +47,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 179 (98%)
-- INFERRED: 4 (2%)
+- EXTRACTED: 152 (97%)
+- INFERRED: 4 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

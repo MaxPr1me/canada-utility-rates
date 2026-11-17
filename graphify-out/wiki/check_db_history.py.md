@@ -33,9 +33,10 @@
 
 ## Relationships
 
-- [export_json.py](export_json.py.md) (7 shared connections)
+- [export_json.py](export_json.py.md) (5 shared connections)
 - [json](json.md) (5 shared connections)
 - [os](os.md) (4 shared connections)
+- [argparse](argparse.md) (2 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files

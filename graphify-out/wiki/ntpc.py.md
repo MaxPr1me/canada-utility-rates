@@ -1,6 +1,6 @@
 # ntpc.py
 
-> 59 nodes
+> 55 nodes
 
 ## Key Concepts
 
@@ -21,7 +21,6 @@
 - **_Schedule** (7 connections) — `scrapers/utilities/ntpc.py`
 - **build_records()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **_iso()** (7 connections) — `scrapers/utilities/ntpc.py`
-- **.scrape()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **parse_schedule_index()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **_Block** (6 connections) — `scrapers/utilities/ntpc.py`
 - **_content()** (6 connections) — `scrapers/utilities/ntpc.py`
@@ -29,19 +28,19 @@
 - **parse_tpsp()** (6 connections) — `scrapers/utilities/ntpc.py`
 - **_ResidentialPage** (5 connections) — `scrapers/utilities/ntpc.py`
 - **_schedule_component()** (5 connections) — `scrapers/utilities/ntpc.py`
-- *... and 34 more nodes in this community*
+- **_norm()** (5 connections) — `scrapers/utilities/ntpc.py`
+- *... and 30 more nodes in this community*
 
 ## Relationships
 
 - [BaseScraper](BaseScraper.md) (13 shared connections)
 - [re](re.md) (12 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (9 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (7 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (6 shared connections)
+- [TariffRecord](TariffRecord.md) (9 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (7 shared connections)
+- [DocumentPage](DocumentPage.md) (6 shared connections)
 - [.fetch_page](fetch_page.md) (3 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,8 +48,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 176 (96%)
-- INFERRED: 8 (4%)
+- EXTRACTED: 168 (95%)
+- INFERRED: 8 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

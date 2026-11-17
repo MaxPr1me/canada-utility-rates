@@ -19,8 +19,9 @@
 ## Relationships
 
 - [BaseScraper](BaseScraper.md) (6 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
+- [TariffRecord](TariffRecord.md) (1 shared connections)
 - [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
 
 ## Source Files

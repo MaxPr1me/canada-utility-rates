@@ -1,6 +1,6 @@
 # run_scrape.py
 
-> 43 nodes
+> 41 nodes
 
 ## Key Concepts
 
@@ -12,7 +12,6 @@
 - **store_results()** (6 connections) — `pipeline/run_scrape.py`
 - **validate_batch()** (6 connections) — `scrapers/utils/validation.py`
 - **load_scraper()** (5 connections) — `pipeline/run_scrape.py`
-- **derive_provenance()** (5 connections) — `pipeline/export_json.py`
 - **tally_provenance()** (5 connections) — `pipeline/run_scrape.py`
 - **get_active_utilities()** (5 connections) — `scrapers/registry.py`
 - **emit_github_notice()** (4 connections) — `pipeline/run_scrape.py`
@@ -29,27 +28,28 @@
 - **names_with()** (1 connections) — `pipeline/run_scrape.py`
 - **Connection** (1 connections)
 - **Path** (1 connections)
-- *... and 18 more nodes in this community*
+- **run_scrape.py — Main entry point for running utility scrapers. Usage: #…** (1 connections) — `pipeline/run_scrape.py`
+- *... and 16 more nodes in this community*
 
 ## Relationships
 
-- [export_json.py](export_json.py.md) (15 shared connections)
-- [BaseScraper](BaseScraper.md) (8 shared connections)
+- [export_json.py](export_json.py.md) (13 shared connections)
+- [BaseScraper](BaseScraper.md) (10 shared connections)
 - [NBPowerScraper](NBPowerScraper.md) (6 shared connections)
 - [json](json.md) (5 shared connections)
 - [os](os.md) (3 shared connections)
-- [validation.py](validation.py.md) (3 shared connections)
+- [argparse](argparse.md) (2 shared connections)
+- [validation.py](validation.py.md) (1 shared connections)
 
 ## Source Files
 
-- `pipeline/export_json.py`
 - `pipeline/run_scrape.py`
 - `scrapers/registry.py`
 - `scrapers/utils/validation.py`
 
 ## Audit Trail
 
-- EXTRACTED: 96 (94%)
+- EXTRACTED: 93 (94%)
 - INFERRED: 6 (6%)
 - AMBIGUOUS: 0 (0%)
 

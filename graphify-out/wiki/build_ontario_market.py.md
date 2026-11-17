@@ -33,14 +33,14 @@
 
 ## Relationships
 
-- [build_alberta_market.py](build_alberta_market.py.md) (5 shared connections)
-- [io](io.md) (5 shared connections)
-- [export_json.py](export_json.py.md) (4 shared connections)
-- [re](re.md) (3 shared connections)
+- [re](re.md) (8 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (6 shared connections)
+- [argparse](argparse.md) (2 shared connections)
 - [json](json.md) (2 shared connections)
 - [os](os.md) (2 shared connections)
-- [export_ontario_totals.py](export_ontario_totals.py.md) (2 shared connections)
+- [export_json.py](export_json.py.md) (2 shared connections)
 - [BaseScraper](BaseScraper.md) (2 shared connections)
+- [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
 
 ## Source Files
 

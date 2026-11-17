@@ -1,33 +1,32 @@
-# RateComponent
+# TariffRecord
 
-> God node · 276 connections · `scrapers/base.py`
+> God node · 400 connections · `scrapers/base.py`
 
-**Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
+**Community:** [NBPowerScraper](NBPowerScraper.md)
 
 ## Connections by Relation
 
 ### calls
-- ._build() `EXTRACTED`
+- build_demand_records() `EXTRACTED`
 - _parse_class() `EXTRACTED`
-- ._schedule_record() `EXTRACTED`
-- ._parse_building_extras() `EXTRACTED`
-- parse_sources() `EXTRACTED`
-- parse_sources() `EXTRACTED`
+- _build_record() `EXTRACTED`
+- _build_record() `EXTRACTED`
+- _tariff() `EXTRACTED`
 - parse_manual() `EXTRACTED`
-- ._parse_residential_pdfs() `EXTRACTED`
-- _parse_interruptible() `EXTRACTED`
 - parse_schedule() `EXTRACTED`
-- ._build() `EXTRACTED`
-- _component() `EXTRACTED`
-- energy_component() `EXTRACTED`
 - parse_schedule() `EXTRACTED`
-- ._parse_optional_domestic_rates() `EXTRACTED`
-- ._parse_labrador_nonfirm() `EXTRACTED`
-- make() `EXTRACTED`
-- _base_rider() `EXTRACTED`
-- _charge() `EXTRACTED`
-- ._transport() `EXTRACTED`
-- *…and 144 more `calls` connection(s) not listed (lowest-degree first to go)*
+- parse_rates() `EXTRACTED`
+- parse_manual() `EXTRACTED`
+- rolr_record() `EXTRACTED`
+- parse_appendix() `EXTRACTED`
+- parse_bylaw() `EXTRACTED`
+- build_interruptible_record() `EXTRACTED`
+- _record() `EXTRACTED`
+- finish() `EXTRACTED`
+- build() `EXTRACTED`
+- finish() `EXTRACTED`
+- add() `EXTRACTED`
+- record() `EXTRACTED`
 
 ### contains
 - base.py `EXTRACTED`
@@ -44,39 +43,42 @@
 - epcor_gas_ontario.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
+- [run_scrape.py](run_scrape.py.md) `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- [atco_gas.py](atco_gas.py.md) `EXTRACTED`
+- atco_gas.py `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - alberta_rolr.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
 - nb_power.py `EXTRACTED`
-- yukon_energy.py `EXTRACTED`
-- aeso.py `EXTRACTED`
 - maritime_electric.py `EXTRACTED`
-- *…and 24 more `imports` connection(s) not listed (lowest-degree first to go)*
+- yukon_energy.py `EXTRACTED`
+- *…and 26 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### rationale_for
-- One individual charge line within a tariff. `EXTRACTED`
+- A complete tariff / rate plan scraped from a utility. Contains one or more… `EXTRACTED`
 
 ### references
-- ._rider_components() `EXTRACTED`
-- ._record() `EXTRACTED`
-- ._rider() `EXTRACTED`
-- ._business_rider_components() `EXTRACTED`
-- ._new_record() `EXTRACTED`
-- ._nonfirm_record() `EXTRACTED`
-- ._murb_rider_components() `EXTRACTED`
-- ._rtp_rider_components() `EXTRACTED`
-- ._general_service_records() `EXTRACTED`
-- ._supply() `EXTRACTED`
-- ._shared_components() `EXTRACTED`
-- ._pdf_parts() `EXTRACTED`
-- ._parse_component_line() `EXTRACTED`
-- ._parse_components() `EXTRACTED`
-- ._rpp_components() `EXTRACTED`
-- ._page_component() `EXTRACTED`
-- ._tariff_component() `EXTRACTED`
-- ._copy_components() `EXTRACTED`
+- .mark_fallback() `EXTRACTED`
+- .mark_live_parsed() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
+- .parse_pages() `EXTRACTED`
+- ._build() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
+- ._pdf_records() `EXTRACTED`
+- ._parse_building_extras() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
+- ._schedule_record() `EXTRACTED`
+- ._build_egd_contract() `EXTRACTED`
+- ._build_m4() `EXTRACTED`
+- ._build_un_contract() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
+- ._parse_spec() `EXTRACTED`
+- ._build_general() `EXTRACTED`
+- ._build_m5() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
+- .parse_documents() `EXTRACTED`
+- *…and 239 more `references` connection(s) not listed (lowest-degree first to go)*
 
 ### uses
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) `INFERRED`
@@ -92,14 +94,14 @@
 - [EnergirScraper](EnergirScraper.md) `INFERRED`
 - HydroQuebecScraper `INFERRED`
 - NLHydroScraper `INFERRED`
-- _build_record() `INFERRED`
 - [MaritimeElectricScraper](MaritimeElectricScraper.md) `INFERRED`
 - [SaskEnergyScraper](SaskEnergyScraper.md) `INFERRED`
 - YukonEnergyScraper `INFERRED`
 - [HeritageGasScraper](HeritageGasScraper.md) `INFERRED`
 - [LibertyGasNBScraper](LibertyGasNBScraper.md) `INFERRED`
-- _tariff() `INFERRED`
-- *…and 28 more `uses` connection(s) not listed (lowest-degree first to go)*
+- main() `INFERRED`
+- parse_sources() `INFERRED`
+- *…and 53 more `uses` connection(s) not listed (lowest-degree first to go)*
 
 ---
 

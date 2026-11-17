@@ -22,14 +22,14 @@
 - enbridge_gas.py `EXTRACTED`
 - [run_scrape.py](run_scrape.py.md) `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- [atco_gas.py](atco_gas.py.md) `EXTRACTED`
+- atco_gas.py `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
 - nb_power.py `EXTRACTED`
+- maritime_electric.py `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - aeso.py `EXTRACTED`
-- maritime_electric.py `EXTRACTED`
-- direct_energy_regulated.py `EXTRACTED`
+- [grand_forks.py](grand_forks.py.md) `EXTRACTED`
 - *…and 22 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### inherits
