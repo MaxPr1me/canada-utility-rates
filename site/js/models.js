@@ -146,6 +146,17 @@
         return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names.join("");
     }
 
+    // Both views explain published reductions using applied lines, without recalculating taxes.
+    function rebateExplanation(level) {
+        const withTax = level.with_tax || {};
+        const without = (level.without_tax || {}).median;
+        const rebates = list(withTax.lines).filter(line => line.kind === "rebate" && line.name)
+            .map(line => line.name);
+        if (!rebates.length || !isNum(withTax.median) || !isNum(without) || withTax.median >= without) return "";
+        return "Rebates can exceed sales taxes, making the total with tax and rebates lower than the amount "
+            + `before tax and rebates. Applied rebates: ${joinNames(rebates)}.`;
+    }
+
     // coverage.contributor_noun names what a model counts once (a distributor, a wires + RoLR pair...).
     function nounOf(model) {
         const noun = (model.coverage || {}).contributor_noun || {};
@@ -377,12 +388,14 @@
             return;
         }
         const noun = nounOf(model);
+        [...new Set(levels.map(rebateExplanation).filter(Boolean))].forEach(text =>
+            wrap.append(el("p", "rm-note rm-rebate-note", text)));
         const table = el("table", "rm-table");
         table.append(el("caption", null, "Modeled monthly cost in Canadian dollars at each usage level. "
-            + `Spread, closest ${noun.singular} and outliers are based on costs without tax.`));
+            + `Spread, closest ${noun.singular} and outliers are based on costs before tax and rebates.`));
         const headRow = el("tr");
         [
-            "Monthly usage", "Median without tax", "Median with tax", `${sentenceCase(noun.plural)} (n)`,
+            "Monthly usage", "Median before tax and rebates", "Median with tax and rebates", `${sentenceCase(noun.plural)} (n)`,
             "Middle half (p25\u2013p75)", "Range (min\u2013max)", "Closest to median", "Outliers",
         ].forEach(text => {
             const th = el("th", null, text);
@@ -530,8 +543,8 @@
             [
                 ["Historical energy", marketPriceText(costs, info.window)],
                 ["Energy amount", money(costs.market_energy_cost) + " a month"],
-                ["Benchmark without tax", statsText(costs.without_tax, noun)],
-                ["Benchmark with tax", statsText(costs.with_tax, noun)],
+                ["Benchmark before tax and rebates", statsText(costs.without_tax, noun)],
+                ["Benchmark with tax and rebates", statsText(costs.with_tax, noun)],
             ].forEach(([name, text]) => grid.append(el("span", "meta-label", name), el("span", null, text)));
             section.append(grid);
             if (typeof info.method === "string") section.append(el("p", "rm-text", info.method));
@@ -580,14 +593,7 @@
         });
         skipped.forEach(line => ul.append(el("li", null,
             `Not applied: ${line.name || "tax line"}${line.reason ? ` (${line.reason})` : ""}.`)));
-        const nodes = [el("h3", null, title), ul];
-        const rebates = lines.filter(line => line.kind === "rebate" && line.name).map(line => line.name);
-        const without = (level.without_tax || {}).median;
-        if (rebates.length && isNum(withTax.median) && isNum(without) && withTax.median < without) {
-            nodes.push(el("p", "rm-note", "The median with tax is lower than the median without tax because "
-                + `${rebates.length > 1 ? "rebates are" : "a rebate is"} subtracted from the bill: ${joinNames(rebates)}.`));
-        }
-        return nodes;
+        return [el("h3", null, title), ul];
     }
 
     function taxLineText(line) {
@@ -654,7 +660,7 @@
         table.append(el("caption", null, `Modeled monthly cost for ${usageText(level)}`));
         const headRow = el("tr");
         const hasVariants = [...rows.values()].some(row => list(row.fixed_charge_variants).length);
-        const headings = [sentenceCase(noun.singular), "Without tax", "With tax"];
+        const headings = [sentenceCase(noun.singular), "Before tax and rebates", "With tax and rebates"];
         if (hasVariants) headings.push("Selected fixed charge (model assumption)");
         headings.forEach(text => {
             const th = el("th", null, text);
@@ -805,8 +811,8 @@
         add("Market energy price used", marketPriceText(all, info.window));
         add("Market energy cost", isNum(all.market_energy_cost) ? `${money(all.market_energy_cost)} a month` : "");
         add("Synthetic load profile", profileText(all.profile));
-        add("Illustrative median without tax", statsText(all.without_tax, noun));
-        add("Illustrative median with tax", statsText(all.with_tax, noun));
+        add("Illustrative median before tax and rebates", statsText(all.without_tax, noun));
+        add("Illustrative median with tax and rebates", statsText(all.with_tax, noun));
         return [el("h4", null, `${usageText(level)}${levelSuffix(level)}`), grid];
     }
 
@@ -862,6 +868,7 @@
         money,
         formatDate,
         sourceLink,
+        rebateExplanation,
         provinceNames: Object.freeze(PROVINCE_NAMES),
         structureLabels: Object.freeze(STRUCTURE_LABELS),
     });

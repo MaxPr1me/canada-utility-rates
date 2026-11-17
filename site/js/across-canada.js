@@ -68,7 +68,7 @@
                 : model.state === "market_energy_pending" ? "Market energy pending - not a full cost"
                     : "Not computable at this usage - not a full cost";
         }
-        return { province, model, structure, label, complete: Boolean(complete), state, before, after };
+        return { province, model, structure, label, complete: Boolean(complete), state, before, after, level };
     }
 
     function row(item) {
@@ -92,7 +92,7 @@
 
     function renderChart(rows, kwh) {
         const taxed = byId("across-tax").value === "with_tax";
-        const basis = taxed ? "after tax" : "before tax";
+        const basis = taxed ? "after tax and rebates" : "before tax and rebates";
         const value = item => (taxed ? item.after : item.before).median;
         const values = rows.filter(item => item.complete).map(value);
         const lower = Math.floor(Math.min(0, ...values) / 50) * 50;
@@ -102,6 +102,12 @@
         title.id = "across-chart-title";
         const note = el("p", "CAD per month. All provinces use the same dollar scale. "
             + "Shades distinguish rate structures; labels give their exact costs. Details and both tax amounts are below.");
+        const rebateNotes = [...new Set(rows.filter(item => item.complete)
+            .map(item => shared.rebateExplanation(item.level)).filter(Boolean))].map(text => {
+            const note = el("p", text);
+            note.className = "rm-note rm-rebate-note";
+            return note;
+        });
         const axis = el("div");
         axis.className = "across-axis";
         axis.append(el("span", shared.money(lower)), el("span", shared.money(upper)));
@@ -142,7 +148,7 @@
             }
             groups.push(group);
         }
-        byId("across-chart").replaceChildren(title, note, axis, ...groups);
+        byId("across-chart").replaceChildren(title, note, ...rebateNotes, axis, ...groups);
     }
 
     function render() {
@@ -153,7 +159,7 @@
             + "one row per jurisdiction and published rate structure. No cross-structure ranking."));
         const thead = el("thead");
         const headers = el("tr");
-        ["Jurisdiction", "Rate structure", "Without tax", "With tax", "Contributors", "Status", "Context"]
+        ["Jurisdiction", "Rate structure", "Before tax and rebates", "With tax and rebates", "Contributors", "Status", "Context"]
             .forEach(text => {
                 const th = el("th", text);
                 th.scope = "col";

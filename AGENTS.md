@@ -188,6 +188,11 @@ never converted); business gas and the territories come later.
 | `site/js/across-canada.js` | Residential electricity across Canada at 500, 1,000 or 2,000 kWh (default 1,000), with tax by default. It reuses the model file, never recalculates bills or uses synthetic estimates, and never turns a missing model into a zero bar. |
 | `site/css/` | How the pages look (`style.css`, `models.css`, `across-canada.css`). |
 
+The model views label totals **"Before tax and rebates"** and **"With tax and rebates"**.
+The second can be lower when an automatic rebate exceeds sales tax (for example Ontario's
+Electricity Rebate). An explanation beside the prices names the applied rebate; this is not a
+swap of the two amounts.
+
 ### Where the automation lives
 
 | File | What it does |

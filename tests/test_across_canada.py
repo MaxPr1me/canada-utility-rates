@@ -1,6 +1,7 @@
 """Offline browser regressions for shared models, assumptions and residential comparisons."""
 import copy
 import mimetypes
+import re
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -123,6 +124,61 @@ def test_shared_load_and_separate_structures(open_site, payload, first):
     page.locator('[data-view="models"]').click()
     expect(page.locator("#models-content")).to_be_visible()
     assert len(requests) == 1
+    assert not errors
+
+
+def test_tax_rebate_clarification_is_next_to_prices_without_changing_totals(open_site, payload):
+    model = next(m for m in payload["models"] if m["id"] == "ON|electricity|residential|tou|-")
+    payload["models"] = [model]
+    page, _, errors = open_site(payload)
+    page.locator('[data-view="models"]').click()
+    table = page.locator("#models-table-wrap")
+    expect(table.get_by_role("columnheader", name="Median before tax and rebates", exact=True)).to_be_visible()
+    expect(table.get_by_role("columnheader", name="Median with tax and rebates", exact=True)).to_be_visible()
+    note = table.locator(".rm-rebate-note")
+    expect(note).to_have_count(1)
+    expect(note).to_contain_text("Ontario Electricity Rebate")
+    expect(note).to_contain_text("exceed sales taxes")
+    for level in model["levels"]:
+        row = table.get_by_role("row").filter(has=page.get_by_role(
+            "rowheader", name=re.compile(f"{level['kwh']:,.0f} kWh")))
+        for column, field in (("without", "without_tax"), ("with", "with_tax")):
+            amount = page.evaluate("n => CanadaUtilityModels.money(n)", level[field]["median"])
+            expect(row.locator(f'[data-col="{column}"]')).to_have_text(amount)
+
+    page.locator('[data-view="across-canada"]').click()
+    expect(page.locator("#across-tax option:checked")).to_have_text("With tax and rebates")
+    expect(page.locator("#across-chart-title")).to_contain_text("after tax and rebates")
+    expect(page.locator("#across-content").get_by_role(
+        "columnheader", name="With tax and rebates", exact=True)).to_be_visible()
+    expect(page.locator("#across-chart .rm-rebate-note")).to_contain_text("Ontario Electricity Rebate")
+    typical = next(level for level in model["levels"] if level["id"] == "typical")
+    bar = page.locator(".across-bar")
+    expect(bar).to_have_attribute("data-value", str(typical["with_tax"]["median"]))
+    page.select_option("#across-tax", "without_tax")
+    expect(page.locator("#across-chart-title")).to_contain_text("before tax and rebates")
+    assert float(bar.get_attribute("data-value")) == typical["without_tax"]["median"]
+    assert not errors
+
+
+@pytest.mark.parametrize("case", ["not_applied", "higher_total", "missing_total"])
+def test_rebate_explanation_requires_applied_rebate_and_lower_published_total(open_site, payload, case):
+    model = next(m for m in payload["models"] if m["id"] == "ON|electricity|residential|tou|-")
+    payload["models"] = [model]
+    for level in model["levels"]:
+        if case == "not_applied":
+            level["with_tax"]["not_applied"] = level["with_tax"]["lines"]
+            level["with_tax"]["lines"] = []
+        else:
+            level["with_tax"]["median"] = (
+                level["without_tax"]["median"] + 1 if case == "higher_total" else None)
+    page, _, errors = open_site(payload)
+    page.locator('[data-view="models"]').click()
+    expect(page.locator("#models-content")).to_be_visible()
+    expect(page.locator("#models-table-wrap .rm-rebate-note")).to_have_count(0)
+    page.locator('[data-view="across-canada"]').click()
+    expect(page.locator("#across-content table")).to_be_visible()
+    expect(page.locator("#across-chart .rm-rebate-note")).to_have_count(0)
     assert not errors
 
 

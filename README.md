@@ -336,7 +336,7 @@ Each charge has its own row with:
 `pipeline/representative_models.py`, which uses the reviewed inputs in `data/models/`
 (crosswalk, usage levels, block periods and taxes) to work out, for each of the ten provinces,
 the median monthly electricity cost of its utilities' live tariffs at set example usage levels,
-without and with tax, and writes `site/data/representative_models.json`. Models are labelled
+before and after sales taxes and automatic rebates, and writes `site/data/representative_models.json`. Models are labelled
 modeled, are never a bill and never count as live coverage. [AGENTS.md](AGENTS.md) describes
 their inputs and rules.
 

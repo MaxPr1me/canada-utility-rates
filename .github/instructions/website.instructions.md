@@ -59,9 +59,12 @@ reading `site/data/`. Model data rules, including Across-Canada's:
   helpers and labels. Representative Models and Across-Canada share one lazy fetch of
   `representative_models.json`; neither rewrites the export.
 - Default view (owner decision 2026-10-15): Ontario residential TOU at the typical level (1,000 kWh),
-  with cascading selectors, without/with-tax columns, a table and CSS range bars (no new charts), then
+  with cascading selectors, before/with-tax-and-rebates columns, a table and CSS range bars (no new charts), then
   contributors and outliers, taxes, method, coverage and exclusions. Keep the contributor nouns and the
   excluded-market-charge notes.
+- Both model views label tax-inclusive totals as "with tax and rebates". The shared
+  `rebateExplanation()` uses applied rebate lines and published medians to explain a lower total
+  beside the prices; never infer a rebate from a lower number alone or recalculate tax in the browser.
 - Gas models (7D-1) show levels in each utility's native unit (`quantity` + `unit`: m³ or GJ, never
   converted) with Reference/Sensitivity tags; the reference level is highlighted like the electricity
   typical level. Across-Canada keeps filtering to residential electricity.
