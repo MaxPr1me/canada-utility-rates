@@ -1,11 +1,11 @@
 # Live Parser Gap Report
 
-**Current update, November 4:** all 78 active utilities have stored live output (917 latest
-tariffs) and the strict gate passes 78 of 78. The targeted Monthly Scrapes stored the two
-corrections: Centra's 13 November records from the approved quarterly PDF (scrape run 31) and
-Maritime's printed first 20 kW free for rates 232/233 (scrape runs 32-33). History and model
-parity were verified. The scoped coverage-complete claim awaits the owner's approval.
-See the [current matrix checkpoint](phase5_completion_matrix.md).
+**Current state:** the registered municipal additions still await database publication.
+Maritime Electric, Grand Forks and New Westminster source-discovery repairs pass local checks;
+fresh GitHub source verification must precede the Monthly Scrape. The earlier Centra and Maritime
+rate corrections were stored and verified, but that does not prove present source health.
+The scoped coverage-complete claim still awaits the owner's approval.
+See the [current queue](phase5_completion_matrix.md) and [README figures](../README.md#current-status).
 The older counts and queues below are historical evidence, not the current publication state.
 
 **Updated:** 2026-10-30 (batches 15 and 16, pushed October 30. Batch 16: Yukon rate-book discovery through the page data, Centra's v1126 text Appendix A, kept dead seed citations and the October 30 model decisions. Batch 15: Manitoba Hydro's moved rate pages, the Alberta Rate of Last Resort seed citations and a dead-address guard test; early monitor checks for Centra, Yukon, NTPC, Qulliq, EPCOR Distribution and the Rate of Last Resort term). Before that, 2026-10-16 (batch 14: EPCOR Energy Alberta's moved Rate of Last Resort pages fixed (Lane F); representative-model blockers recorded under Manitoba Hydro, NB Power, Newfoundland Power and Maritime Electric; CI and market-history changes noted; tariff evidence below is from batch 12, October 9)
@@ -81,9 +81,9 @@ other live utilities still have catalogue, component or verification gaps.
 | **Qulliq Energy** | NU | Customer-rates, interim-notice and rate-application HTML | 6 live records | Non-government, government, municipal | Same three customer types | Medium (interim rates) |
 | **Saint John Energy** (batch 18) | NB | Rates page (headless Chromium; incomplete TLS chain) → Customer Policy and Rates Manual PDF | 8 records (dry run 8 live) | 001; 006 central electric heating | 002, 202 (closed), 004 non-demand; Industrial 008, 009 (closed), 010 | High; base + rider = total checked |
 | **Nelson Hydro** (batch 18) | BC | Electrical Rates page + Hydro Services Bylaw 3608 (CivicWeb PDF) | 4 records | A1 urban, A3 rural (demand above 20 kW conditional) | B1/B4 small commercial; C1/C4 source-blocked (">25 kVA" wording) | Medium (interim 2026/2027 rates) |
-| **City of New Westminster** (batch 18) | BC | Bylaw index → Electrical Utility Bylaw 6502 Schedule A PDF | 10 records | 101, 102, 103; multi-residential 131, 134 | 201, 202; 210, 211, 212 (220/230/240 discounts conditional) | High; 2.5% rider and 3.5% levy are percentage riders |
+| **City of New Westminster** (batch 18) | BC | Electrical Utility bylaw page → Bylaw 6502 Schedule A PDF (extensionless media URL) | 10 records | 101, 102, 103; multi-residential 131, 134 | 201, 202; 210, 211, 212 (220/230/240 discounts conditional) | High; 2.5% rider and 3.5% levy are percentage riders |
 | **City of Penticton** (batch 18) | BC | Bylaw directory → Fees and Charges Bylaw 2014-07 Appendix 7 PDF + accounts page | 5 records | Rate Code 10 | 20, 25, 30, 35 (demand above 45 kVA) | High; dated January 1 of the column year |
-| **City of Grand Forks** (batch 18) | BC | Media search → Fees & Charges Bylaw 1958 (consolidated) + amending bylaw 1958-A19 | 3 records | Schedule G item 1 | Item 2 (two-month 200,000 kWh block), item 3 seasonal | High; amendment prices must match |
+| **City of Grand Forks** (batch 18) | BC | Dated document library (media-search fallback) → Fees & Charges Bylaw 1958 + matching amending bylaw | 3 records | Schedule G item 1 | Item 2 (two-month 200,000 kWh block), item 3 seasonal | High; amendment identity, prices and effective date required |
 | **District of Summerland** (batch 18) | BC | Bylaws page → Fees and Charges Bylaw 98-001 Schedule A PDF | 5 records | E01-E08 | E10 (demand above 40 kVA), primary E15/E17/19 | High |
 | **Summerside Electric** (batch 18) | PE | My Utilities page → Electric Rates, Schedule & Policy Manual PDF | 8 records | Urban, rural, seasonal, seasonal option | General Service I and seasonal (first 20 kW free); Small/Large Industrial | High; ECAM adjustment not printed (source-blocked) |
 
@@ -219,9 +219,9 @@ continues only under its existing hash gates.
 **Maritime correction (November 2):** contrary to the earlier model-blocker note, N-28
 does print the first 20 kW free for 232/233. The parser discarded it. Both records now retain
 a zero-priced tier with threshold 20 kW, and 232 business costs are verified end-to-end.
-The corrected stored records/models await Monthly Scrape; seasonal exclusions stay unchanged.
+The corrected records/models were stored and verified November 4; seasonal exclusions stay unchanged.
 
-- **Maritime Electric:** ten supported classes parsed from one IRAC schedule plus the Section N rates page, whose date must match N-28. Small Industrial 320 and Large Industrial 310 are audited complete (billing-demand rules as conditions; 310 losses and transformation charges conditional; no curtailable credit published). 330/340 are the Wholesale Rate Schedule for the City of Summerside and are retained as reference only. Representative models: the residential and general-service energy blocks are per "Billing Period", whose length the rules do not state; since October 30 (user decision) they count as per month because Maritime Electric's billing pages confirm monthly billing (seasonal options 133/233 stay null). The residential model is computable (single source); the three business models stay not computable because the general-service "balance of kW" demand block has no stored threshold.
+- **Maritime Electric:** ten supported classes parsed from one IRAC schedule plus the Section N rates page, whose date must match N-28. HTTP 403 on that page triggers a Chromium retry of the same official source, without relaxing its checks. Small Industrial 320 and Large Industrial 310 are audited complete (billing-demand rules as conditions; 310 losses and transformation charges conditional; no curtailable credit published). 330/340 are the Wholesale Rate Schedule for the City of Summerside and are retained as reference only. Representative models: the residential and general-service energy blocks are per "Billing Period", whose length the rules do not state; since October 30 (user decision) they count as per month because Maritime Electric's billing pages confirm monthly billing (seasonal options 133/233 stay null). The residential and standard general-service models use the stored free-demand block described above.
 - **FortisAlberta:** moved to the Alberta Electricity section below (five live rates since batch 12).
 - **Yukon Energy:** Rate 1160 now uses base fixed/energy columns with separate R/J/J1 percentages, current fuel Rider F and dated affordability relief. The prior combined R/J-only interpretation omitted J1/F/relief. The corrected October 1 version contains nine components, each with source details; no total is calculated. Relief ends March 31, 2027, applies only to eligible non-government residential energy up to 1,500 kWh, and excludes fuel/fixed charges.
 - **Yukon verification:** 18 focused tests cover missing documents or changed context, future/expired dates, negative/wrong-unit base rows, rider applicability, source mutation and persistence of rebate limits/end dates. The live dry run returned one live 1160 tariff plus two labelled seed fallbacks. Both old and new 1160 versions remain stored; latest-per-name counts must not count this as a second supported class.
@@ -278,9 +278,9 @@ The corrected stored records/models await Monthly Scrape; seasonal exclusions st
 
 ## Recommended Next Steps
 
-Current: the owner-targeted Centra and Maritime CI scrapes and the publication, history and model
-checks are done (November 4; see the matrix checkpoint). The scoped README completion awaits the
-owner's approval. Keep monitor deadlines.
+Current: finish GitHub verification of the source repairs, then publish and verify the registered
+municipal additions through Monthly Scrape (see the matrix's current queue). The scoped README
+completion wording still needs owner approval. Keep monitor deadlines.
 
 The following is the **historical October 16-30 queue**, retained for decisions and context.
 

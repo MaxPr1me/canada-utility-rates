@@ -13,14 +13,13 @@ fails closed. Demand schedules price the first block as "First 100 kWh/kW of bil
 sjenergy.ca serves an incomplete certificate chain (leaf only, checked 2026-11-04), so Python
 cannot verify it. The manual link is discovered with a plain request first, then headless
 Chromium (which completes the chain itself); if both fail the last known manual is read and
-the records say so. TLS verification is never disabled (batch 18 provisional decision,
-2026-11-04).
+the records say so. TLS verification is never disabled (owner confirmed 2026-11-17).
 
 Scope (building service): Residential 001 and 006, General Service 002, 202 (closed) and 004,
 Industrial 008, 009 (closed) and 010. Excluded: water-heater and heat-pump rentals, lighting,
 pole attachments, EV charging, miscellaneous fees and the City of Saint John "Municipal
-Related" rates (101/102/104/106/112/M, restricted to municipal operations; batch 18
-provisional decision, 2026-11-04). Rates exclude HST.
+Related" rates (101/102/104/106/112/M, restricted to municipal operations; owner confirmed
+2026-11-17). Rates exclude HST.
 """
 
 from __future__ import annotations
@@ -236,7 +235,7 @@ class SaintJohnEnergyScraper(BaseScraper):
         super().__init__(utility_name=UTILITY, province="NB")
 
     def scrape(self) -> list[TariffRecord]:
-        # No seed fallback for utilities added in batch 18 (provisional decision 2026-11-04):
+        # No seed fallback for batch 18 utilities (owner confirmed 2026-11-17):
         # a source failure returns no records and shows up as a failed utility.
         records = self._try_live_scrape()
         if not records:

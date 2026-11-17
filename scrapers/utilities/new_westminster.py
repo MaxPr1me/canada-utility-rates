@@ -2,15 +2,15 @@
 new_westminster.py — Scraper for the City of New Westminster Electrical Utility (British Columbia).
 
 Official source: Schedule "A" (Schedule of Rates) of the consolidated Electrical Utility Bylaw No. 6502,
-1998, linked as "Bylaw No. 6502, 1998" from the City's bylaw index
-(https://www.newwestcity.ca/city_hall/bylaws/main/131/site_bylaws.php?sw=e). The schedule prints one
+1998, linked as "Bylaw No. 6502, 1998" from the City's Electrical Utility bylaw page
+(https://www.newwestcity.ca/bylaws/electrical-utility). The schedule prints one
 date ("SCHEDULE OF RATES – Effective January 1, 2026"). Council sets the rates; the BCUC does not
 regulate them. Residential and small general service are billed per two-month period, large general
 service per month (the electrical utility page: "Residential accounts: Billed every two months").
 
 Every class adds "a rate rider equal to 2.5% of the billed amount" and "a climate action levy equal to
 3.5% of the billed amount". Both are stored as percentage riders; the representative models disclose
-but do not apply percentage riders (engine rule kept, batch 18 provisional decision 2026-11-04).
+but do not apply percentage riders (engine rule kept, owner confirmed 2026-11-17).
 
 Scope: residential 101, 102 (strata common areas) and 103 (multiple occupancy, per dwelling unit),
 multi-residential 131 (with the 133 transformer-ownership discount) and 134 (100% rental buildings, with
@@ -31,9 +31,8 @@ from scrapers.base import BaseScraper, RateComponent, TariffRecord
 from scrapers.utils.parsing import DocumentPage, extract_pdf_pages, parse_html
 
 UTILITY = "City of New Westminster"
-BYLAW_INDEX_URL = "https://www.newwestcity.ca/city_hall/bylaws/main/131/site_bylaws.php?sw=e"
-LAST_KNOWN_BYLAW_URL = ("https://www.newwestcity.ca/database/files/library/"
-                        "Consolidated_Bylaw_6502__1998_Electrical_Utility__2025_12_15_consolidation_.pdf")
+BYLAW_PAGE_URL = "https://www.newwestcity.ca/bylaws/electrical-utility"
+LAST_KNOWN_BYLAW_URL = "https://www.newwestcity.ca/media/file/bylaw-no-6502-1998"
 _NUM = r"\$?\s?(\d*\.\d+|\d+)"
 
 
@@ -41,12 +40,14 @@ def _iso(text: str) -> str:
     return datetime.strptime(text, "%B %d, %Y").date().isoformat()
 
 
-def find_bylaw_url(html: str, base_url: str = BYLAW_INDEX_URL) -> Optional[str]:
-    """The consolidated Electrical Utility Bylaw No. 6502 link on the bylaw index page."""
+def find_bylaw_url(html: str, base_url: str = BYLAW_PAGE_URL) -> Optional[str]:
+    """The exact bylaw link; the migrated site's extensionless media endpoint serves the PDF."""
     for anchor in parse_html(html or "").find_all("a", href=True):
         label = re.sub(r"\s+", " ", anchor.get_text(" ", strip=True))
-        if re.fullmatch(r"Bylaw No\. 6502, 1998", label) and anchor["href"].lower().endswith(".pdf"):
-            return urljoin(base_url, anchor["href"])
+        url = urljoin(base_url, anchor["href"])
+        if re.fullmatch(r"Bylaw No\. 6502, 1998", label) and (
+                url.lower().endswith(".pdf") or url == LAST_KNOWN_BYLAW_URL):
+            return url
     return None
 
 
@@ -252,7 +253,7 @@ class NewWestminsterScraper(BaseScraper):
         super().__init__(utility_name=UTILITY, province="BC")
 
     def scrape(self) -> list[TariffRecord]:
-        # No seed fallback for utilities added in batch 18 (provisional decision 2026-11-04).
+        # No seed fallback for batch 18 utilities (owner confirmed 2026-11-17).
         records = self._try_live_scrape()
         if not records:
             self.logger.warning("New Westminster: no live records (no seed fallback)")
@@ -260,13 +261,13 @@ class NewWestminsterScraper(BaseScraper):
 
     def _discover(self) -> tuple[str, str]:
         try:
-            url = find_bylaw_url(self.fetch_page(BYLAW_INDEX_URL))
+            url = find_bylaw_url(self.fetch_page(BYLAW_PAGE_URL))
         except Exception as exc:
-            self.logger.warning("New Westminster bylaw index unavailable: %s", exc)
+            self.logger.warning("New Westminster bylaw page unavailable: %s", exc)
             url = None
         if url:
             return url, ""
-        return LAST_KNOWN_BYLAW_URL, ("The bylaw index did not link Bylaw No. 6502, so the last known consolidation "
+        return LAST_KNOWN_BYLAW_URL, ("The bylaw page did not link Bylaw No. 6502, so the last known consolidation "
                                       "was read (it may not be the current one).")
 
     def _try_live_scrape(self) -> list[TariffRecord]:

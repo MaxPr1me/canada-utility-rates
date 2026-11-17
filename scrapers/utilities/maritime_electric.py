@@ -19,6 +19,8 @@ import re
 from datetime import datetime
 from typing import Optional
 
+from requests.exceptions import HTTPError
+
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
 from scrapers.utils.parsing import parse_html, find_pdf_links, DocumentPage
 
@@ -246,7 +248,13 @@ class MaritimeElectricScraper(BaseScraper):
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
         """Parse every non-lighting service class from the official Schedule of Adjusted Rates PDF."""
         try:
-            html = self.fetch_page(SOURCE_URL)
+            try:
+                html = self.fetch_page(SOURCE_URL)
+            except HTTPError as exc:
+                if exc.response is None or exc.response.status_code != 403:
+                    raise
+                self.logger.warning("Maritime Electric rates page returned HTTP 403; retrying with Chromium")
+                html = self.fetch_rendered_page(SOURCE_URL)
             if not html:
                 return None
             pdf_links = find_pdf_links(

@@ -1,6 +1,24 @@
 # Phase 5 Completion Matrix
 
-## Batch 18 - new utilities (November 4, 2026)
+## Current queue - source reliability and Batch 18 publication
+
+Owner decision (November 17): repair and verify Maritime Electric, Grand Forks and New Westminster
+source discovery, then publish the already-registered municipal additions below. Local checks pass;
+GitHub source verification and database publication are still pending. Current figures are in the
+[README status](../README.md#current-status).
+
+The November 15 Source Health log returned estimates for Maritime and no records for Grand Forks,
+despite a green workflow. New Westminster's old index returned 404. The repairs retry Maritime's
+official page through Chromium after HTTP 403, prefer Grand Forks' dated document library and follow
+New Westminster's migrated bylaw page. No rate arithmetic, source/date checks or provenance rules
+were relaxed.
+
+Acceptance order: inspect a fresh GitHub Source Health log; run the unfiltered Monthly Scrape only
+after target sources are healthy; verify preserved history, the strict coverage gate, zero unmapped
+live tariffs, model contributors/limitations and the deployed data. A stored live record or green
+workflow alone does not close a source problem.
+
+### Registered municipal additions
 
 Owner decision (November 4): add the easy and medium electricity utilities to the inventory and register
 each one once its parser is live and audited; they join their province's model medians.
@@ -22,20 +40,17 @@ unmapped; 69 models instead of 64. BC residential grows from 2 to 7 utilities (1
 $157.21 to $168.74 before tax); NB and PE residential and commercial models gain a second utility;
 five new BC/NB commercial groups appear. Published numbers change only after the dispatch.
 
-Provisional decisions (owner unavailable November 4; conservative choices, open for review): no seed
-fallback for new utilities; Saint John's manual found through headless Chromium (incomplete TLS chain)
-with a labelled last-known fallback; municipal-account rates excluded; Penticton's year column dated
-January 1; Nelson C1/C4 held back; Red Deer's RoLR administration charge from Schedule D ($0.3035/day,
-March 1, 2026); Medicine Hat 4.1/5.1 left out (energy unpublished); percentage riders stay out of model
-totals.
+The first-seven provisional choices were confirmed by the owner on November 17; see the
+[municipal rules](../.github/instructions/regional-utilities.instructions.md#municipal-utilities-batch-18).
+Still unconfirmed for the later Alberta-city work: Red Deer's RoLR administration charge from
+Schedule D ($0.3035/day, March 1, 2026) and Medicine Hat 4.1/5.1 being left out while energy is unpublished.
 
 Remaining:
-- The owner's Monthly Scrape dispatch for NB, BC and PE (or per utility), then verification (history only
-  grew, strict gate, crosswalk 0 unmapped, model parity).
+- The owner's Source Health check, then an unfiltered Monthly Scrape and verification as described above.
 - Naka Power (NT) and the Alberta cities Lethbridge, Red Deer and Medicine Hat: sources found and in the
   inventory; parsers and the Alberta city pairing are the next batch 18 step.
 
-## Current checkpoint - November 4, 2026
+## Previous checkpoint - November 4, 2026
 
 The owner's targeted Monthly Scrapes stored both corrections.
 - **Centra:** run [41867595672](https://github.com/MaxPr1me/canada-utility-rates/actions/runs/41867595672),
@@ -801,10 +816,11 @@ live records also need crosswalk rules: after export,
     models (hidden by default; never in medians or comparisons). Next: 7D gas; a source-backed 7E
     needs further analysis (Ontario) and 6C (Alberta).
 9. **Phase 8: Representative Model Refresh Automation** ([README](../README.md#roadmap)):
-    GitHub Actions rebuild models after the Monthly Scrape and publish only on considerable change
-    (proposed: 2% or more at any usage level, or membership/structure/tax/method change), with a
-    changelog and stale-input issues; illustrative values are never inputs. Depends on 7B/7C and
-    the first stored CI scrape (October 16; item 1 covers the archive re-run).
+    Reuse the existing model rebuild after the Monthly Scrape and always publish valid fresh models.
+    A threshold would govern notifications only (2% is proposed, not approved); membership, structure,
+    tax and method changes need separate reporting. Changelog and stale-input issue policies remain
+    proposals; illustrative values are never inputs. Details:
+    [model instructions](../.github/instructions/representative-models.instructions.md#method-export-and-tests).
 10. **Phase 9: Product Follow-up** ([README](../README.md#roadmap)):
     historical charts and AI exports, calculator/API scoping, and the Across-Canada comparison
     view built on the Phase 7 models (it can start now that 7C is done; it never uses illustrative

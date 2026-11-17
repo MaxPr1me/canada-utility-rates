@@ -1,12 +1,13 @@
 """
 grand_forks.py — Scraper for the City of Grand Forks electrical utility (British Columbia).
 
-Official sources (City WordPress media library, https://www.grandforks.ca/):
+Official sources (City document library, https://www.grandforks.ca/document-library/):
   - Fees & Charges Bylaw No. 1958, consolidated for convenience: Schedule "G" Electrical Utility Fees
     and Charges names the amending bylaw that set it (for example "SCHEDULE "G" (Bylaw 1958-A19)").
   - That amending bylaw: "The effective date of this amending bylaw shall be April 15, 2026", with the
     same replacement Schedule G. Its prices must equal the consolidation's or the run fails closed.
-Both documents are found through the site's public media search (wp-json/wp/v2/media), newest first.
+Both documents are found through the dated fees-and-charges library, with public media search
+(wp-json/wp/v2/media) as a fallback. The media API can reject a request even when the library works.
 The consolidation prints no effective date of its own, so a missing amending bylaw also fails closed.
 
 Council sets these rates; the BCUC does not regulate them. Scope: 1. Residential Service,
@@ -22,11 +23,15 @@ import json
 import re
 from datetime import date, datetime
 from typing import Optional
+from urllib.parse import urljoin
+
+from requests.exceptions import RequestException
 
 from scrapers.base import BaseScraper, RateComponent, TariffRecord
-from scrapers.utils.parsing import DocumentPage, extract_pdf_pages
+from scrapers.utils.parsing import DocumentPage, extract_pdf_pages, parse_html
 
 UTILITY = "City of Grand Forks"
+DOCUMENT_LIBRARY_URL = "https://www.grandforks.ca/document-library/?document_type=fees-and-charges"
 MEDIA_SEARCH_URL = "https://www.grandforks.ca/wp-json/wp/v2/media?search={query}&per_page=100"
 LAST_KNOWN_CONSOLIDATION_URL = "https://www.grandforks.ca/wp-content/uploads/By1958Fees-and-Charges-CONSOLIDATED-through-A20.pdf"
 _CONSOLIDATION = re.compile(r"/(?:By|Bylaw)1958[^/]*Fees[^/]*CONSOLIDATED[^/]*\.pdf$", re.I)
@@ -44,6 +49,24 @@ def newest_media_url(payload: str, pattern: re.Pattern) -> Optional[str]:
              if isinstance(item, dict) and pattern.search(item.get("source_url") or "")]
     items.sort(key=lambda item: item.get("date") or "", reverse=True)
     return items[0]["source_url"] if items else None
+
+
+def newest_document_url(html: str, pattern: re.Pattern) -> Optional[str]:
+    """Choose a matching library document by publication date, never by its position on the page."""
+    documents: list[tuple[str, str]] = []
+    for heading in parse_html(html or "").find_all("h3"):
+        anchor = heading.find("a", href=True)
+        if anchor is None:
+            continue
+        url = urljoin(DOCUMENT_LIBRARY_URL, anchor["href"])
+        if not pattern.search(url):
+            continue
+        published = heading.find("small")
+        if published is None:
+            raise ValueError(f"document library publication date missing for {url}")
+        documents.append((_iso(published.get_text(" ", strip=True)), url))
+    documents.sort(key=lambda document: document[0], reverse=True)
+    return documents[0][1] if documents else None
 
 
 def amendment_pattern(amendment: str) -> re.Pattern:
@@ -166,7 +189,7 @@ class GrandForksScraper(BaseScraper):
         super().__init__(utility_name=UTILITY, province="BC")
 
     def scrape(self) -> list[TariffRecord]:
-        # No seed fallback for utilities added in batch 18 (provisional decision 2026-11-04).
+        # No seed fallback for batch 18 utilities (owner confirmed 2026-11-17).
         records = self._try_live_scrape()
         if not records:
             self.logger.warning("Grand Forks: no live records (no seed fallback)")
@@ -181,16 +204,24 @@ class GrandForksScraper(BaseScraper):
 
     def _try_live_scrape(self) -> list[TariffRecord]:
         note = ""
-        consolidation_url = self._media("CONSOLIDATED", _CONSOLIDATION)
-        if not consolidation_url:
-            consolidation_url = LAST_KNOWN_CONSOLIDATION_URL
-            note = "The media search found no consolidation, so the last known one was read (it may not be current)."
         try:
+            try:
+                library = self.fetch_page(DOCUMENT_LIBRARY_URL)
+            except RequestException as exc:
+                self.logger.warning("Grand Forks document library unavailable: %s", exc)
+                library = ""
+            consolidation_url = newest_document_url(library, _CONSOLIDATION) or self._media(
+                "CONSOLIDATED", _CONSOLIDATION)
+            if not consolidation_url:
+                consolidation_url = LAST_KNOWN_CONSOLIDATION_URL
+                note = ("Neither the document library nor media search found a consolidation, so the last known "
+                        "one was read (it may not be current).")
             consolidation = extract_pdf_pages(self.fetch_bytes(consolidation_url), drop_repeated_lines=False)
             _, number, _ = schedule_g(consolidation)
-            amendment_url = self._media(number, amendment_pattern(number))
+            pattern = amendment_pattern(number)
+            amendment_url = newest_document_url(library, pattern) or self._media(number, pattern)
             if not amendment_url:
-                raise ValueError(f"amending bylaw {number} not found in the media library")
+                raise ValueError(f"amending bylaw {number} not found in the document library or media search")
             amendment = extract_pdf_pages(self.fetch_bytes(amendment_url), drop_repeated_lines=False)
             records = parse_schedule(consolidation, amendment, consolidation_url, amendment_url, discovery_note=note)
         except Exception as exc:

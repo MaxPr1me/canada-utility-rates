@@ -6,6 +6,7 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+from requests import HTTPError
 
 from scrapers.utilities import grand_forks as gf
 from scrapers.utils.parsing import DocumentPage
@@ -13,6 +14,7 @@ from scrapers.utils.parsing import DocumentPage
 FIXTURES = Path(__file__).parent / "fixtures"
 CONSOLIDATION = json.loads((FIXTURES / "grand_forks_fees_consolidated_a20.json").read_text(encoding="utf-8"))
 AMENDMENT = json.loads((FIXTURES / "grand_forks_bylaw_1958_a19.json").read_text(encoding="utf-8"))
+LIBRARY = (FIXTURES / "grand_forks_document_library.html").read_text(encoding="utf-8")
 TODAY = date(2026, 11, 4)
 
 
@@ -74,9 +76,44 @@ def test_media_search_picks_the_newest_matching_document():
 
 def test_no_records_without_the_amending_bylaw(monkeypatch):
     scraper = gf.GrandForksScraper()
+    monkeypatch.setattr(scraper, "fetch_page", lambda *_a, **_k: "")
     monkeypatch.setattr(scraper, "_media", lambda query, pattern: CONSOLIDATION["source_url"]
                         if pattern is gf._CONSOLIDATION else None)
     monkeypatch.setattr(gf, "extract_pdf_pages", lambda *_a, **_k: _pages(CONSOLIDATION))
     monkeypatch.setattr(scraper, "fetch_bytes", lambda *_a, **_k: b"%PDF")
     assert scraper.scrape() == []
     assert re.search(r"1958-A19", gf.schedule_g(_pages(CONSOLIDATION))[1])
+
+
+def test_document_library_selects_the_latest_consolidation_and_matching_amendment():
+    older = LIBRARY.replace("through-A20.pdf", "through-A18.pdf").replace("June 16, 2026", "January 22, 2026")
+    assert gf.newest_document_url(older + LIBRARY, gf._CONSOLIDATION) == CONSOLIDATION["source_url"]
+    assert gf.newest_document_url(LIBRARY, gf.amendment_pattern("1958-A19")) == AMENDMENT["source_url"]
+    assert gf.newest_document_url(LIBRARY, gf.amendment_pattern("1958-A21")) is None
+    with pytest.raises(ValueError, match="publication date"):
+        gf.newest_document_url(LIBRARY.replace('<small style="opacity:.65">June 16, 2026 </small>', ""),
+                               gf._CONSOLIDATION)
+
+
+@pytest.mark.parametrize("library_available", [True, False])
+def test_discovery_uses_the_library_with_media_search_as_fallback(monkeypatch, library_available):
+    scraper = gf.GrandForksScraper()
+    documents = {CONSOLIDATION["source_url"]: CONSOLIDATION, AMENDMENT["source_url"]: AMENDMENT}
+
+    def fetch_page(url):
+        if "/document-library/" in url:
+            if library_available:
+                return LIBRARY
+            raise HTTPError("document library unavailable")
+        if library_available:
+            raise HTTPError("403 Forbidden: media search unavailable")
+        fixture = CONSOLIDATION if "search=CONSOLIDATED" in url else AMENDMENT
+        return json.dumps([{"date": "2026-11-04T00:00:00", "source_url": fixture["source_url"]}])
+
+    monkeypatch.setattr(scraper, "fetch_page", fetch_page)
+    monkeypatch.setattr(scraper, "fetch_bytes", lambda url: url.encode("utf-8"))
+    monkeypatch.setattr(gf, "extract_pdf_pages", lambda content, **_k: _pages(documents[content.decode("utf-8")]))
+    records = scraper.scrape()
+    assert [r.tariff_code for r in records] == ["G-1", "G-2", "G-3"]
+    assert {r.effective_date for r in records} == {"2026-04-15"}
+    assert all("Provenance: live_parsed" in r.notes for r in records)

@@ -101,6 +101,9 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
 
 ## Maritime Electric
 
+- If the rates page returns HTTP 403, retry that same official page with `fetch_rendered_page()`.
+  The rendered page and N-28 PDF still need the same date, value and Section N checks; an unavailable
+  or unreadable rendered source does not become live data.
 - Rates 232/233 (N-28) print the first 20 kW free. Store it as demand tier 1 ($0/kW, upper bound
   20 kW); tier 2 charges only the balance. Never discard the free block or charge the balance price
   on all demand; reject a missing or duplicate free-block structure.
@@ -131,16 +134,23 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
   `understanding-rates.model.json` (the newest `yecl-yec-rate-schedules-MM-YYYY.pdf` on the AEY asset
   path not later than the current UTC month), then the static page link, then the last known link.
 
-## Municipal utilities (batch 18, owner decision 2026-11-04)
+## Municipal utilities (batch 18)
 
 - Saint John Energy (NB), Nelson Hydro, New Westminster, Penticton, Grand Forks, Summerland (BC) and
-  Summerside Electric (PE) read council bylaw schedules or rate manuals. They have no seed fallback: a
-  failed or doubtful source returns no records (batch 18 provisional decision). They join their
-  province's representative-model medians like any registered utility.
+  Summerside Electric (PE) read council bylaw schedules or rate manuals. Their provisional choices
+  below were confirmed by the owner on 2026-11-17. The generic no-seed rule is in
+  [scrapers.instructions.md](scrapers.instructions.md#fail-closed). They join their province's
+  representative-model medians like any registered utility.
 - Discovery follows the current link on the official page each run, then a last-known document whose
   records say they came from it. Parse PDFs with `extract_pdf_pages(..., drop_repeated_lines=False)`:
   these schedules repeat identical price lines that the header/footer heuristic would drop. Bound each
   class to its own section so a missing price never borrows the next class's block.
+- Grand Forks: prefer the dated fees-and-charges document library, with public media search as a
+  fallback. Publication dates choose the newest matching document, not the tariff's effective date;
+  the matching amending bylaw must still reconcile with Schedule G.
+- New Westminster: the Electrical Utility bylaw page links an extensionless `/media/file/` PDF.
+  Require the exact Bylaw No. 6502, 1998 label and supported document link; a generic media link is
+  not enough.
 - Dates: use the schedule's own date. Penticton prints only year columns ("Effective 2026"): use the
   current year's column dated January 1 and fail closed when that column is missing. Nelson's rates page
   year selects the bylaw's year-labelled schedules and must equal the current year; its 2026/2027 rates
@@ -154,7 +164,8 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
   (Grand Forks two months; Summerside monthly per the 2026-10-30 pattern). Penticton's "per billing" is
   monthly only while its accounts page says bills are mailed monthly.
 - Percentage riders of the billed amount (New Westminster's 2.5% rider and 3.5% climate action levy) are
-  stored as `%` components; the models disclose but do not apply them.
-- Excluded on purpose (batch 18 provisional decisions): municipal-account rates (Saint John Municipal
+  stored as `%` components; their model treatment is defined in
+  [representative-models.instructions.md](representative-models.instructions.md#costing-rules).
+- Excluded on purpose (owner confirmed 2026-11-17): municipal-account rates (Saint John Municipal
   Related, Nelson E1, Penticton 45, Summerland E25), Nelson C1/C4 until the ">25 kVA" demand wording is
   confirmed (source-blocked), lighting, unmetered, EV charging, rentals and pilots.

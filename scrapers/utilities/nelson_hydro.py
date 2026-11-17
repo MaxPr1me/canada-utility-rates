@@ -16,7 +16,7 @@ rural customers), so records carry medium confidence.
 Scope: A1/A3 residential and B1/B4 small commercial (loads up to 25 kVA without a demand meter), urban and
 rural, billed every two months. The residential demand charge for demand above 20 kW per period is stored
 as a conditional component. Excluded: C1/C4 large commercial until Nelson Hydro confirms whether ">25 kVA:
-$10.33 per kVA" bills only the kVA above 25 (batch 18 provisional decision, 2026-11-04), E1 City of Nelson
+$10.33 per kVA" bills only the kVA above 25 (owner confirmed 2026-11-17), E1 City of Nelson
 accounts, EV1 charging, F1/F2 flat commercial service under 400 kWh per period, G-3 lighting and M1/M2
 manual meter reading.
 """
@@ -150,7 +150,7 @@ class NelsonHydroScraper(BaseScraper):
         super().__init__(utility_name=UTILITY, province="BC")
 
     def scrape(self) -> list[TariffRecord]:
-        # No seed fallback for utilities added in batch 18 (provisional decision 2026-11-04).
+        # No seed fallback for batch 18 utilities (owner confirmed 2026-11-17).
         records = self._try_live_scrape()
         if not records:
             self.logger.warning("Nelson Hydro: no live records (no seed fallback)")

@@ -3641,6 +3641,51 @@ class TestMaritimeElectricBuildingLive:
         assert all("Provenance: seed_fallback" in r.notes for r in fallback)
         assert all(r.confidence == "unverified" for r in fallback)
 
+    @pytest.mark.parametrize("rendered_result", ["schedule", None, "<html>Forbidden</html>"])
+    def test_http_403_tries_the_same_official_page_in_chromium(self, monkeypatch, rendered_result):
+        from requests import HTTPError, Response
+
+        scraper = me.MaritimeElectricScraper()
+        response = Response()
+        response.status_code = 403
+        schedule = "\n".join(ME_FIXTURE["rates_page"]["html_lines"])
+        html = f'<html><a href="{ME_URL}">Section N-28</a>{schedule}</html>'
+
+        def forbidden(url):
+            raise HTTPError("403 Forbidden", response=response)
+
+        def rendered(url):
+            assert url == me.SOURCE_URL
+            return html if rendered_result == "schedule" else rendered_result
+
+        monkeypatch.setattr(scraper, "fetch_page", forbidden)
+        monkeypatch.setattr(scraper, "fetch_rendered_page", rendered)
+        monkeypatch.setattr(scraper, "fetch_bytes", lambda *_a, **_k: b"%PDF")
+        monkeypatch.setattr(me, "_extract_pages", lambda _b: [DocumentPage(1, ME_PAGE1)])
+        records = scraper.scrape()
+        if rendered_result == "schedule":
+            assert {r.tariff_code for r in records} == ME_BUILDING | ME_INDUSTRIAL
+            assert all("Provenance: live_parsed" in r.notes for r in records)
+        else:
+            assert len(records) == 2
+            assert all("Provenance: seed_fallback" in r.notes and r.confidence == "unverified" for r in records)
+
+    def test_other_http_errors_do_not_retry_with_chromium(self, monkeypatch):
+        from requests import HTTPError, Response
+
+        scraper = me.MaritimeElectricScraper()
+        response = Response()
+        response.status_code = 404
+
+        def missing(url):
+            raise HTTPError("404 Not Found", response=response)
+
+        monkeypatch.setattr(scraper, "fetch_page", missing)
+        monkeypatch.setattr(scraper, "fetch_rendered_page", lambda *_a, **_k: pytest.fail("unexpected browser retry"))
+        records = scraper.scrape()
+        assert len(records) == 2
+        assert all("Provenance: seed_fallback" in r.notes for r in records)
+
 
 class TestRegionalBatchStorage:
     @pytest.mark.parametrize("family", ["hydro_quebec", "nl_hydro", "saskenergy", "fortisbc_electric", "nova_scotia_power", "centra_gas",

@@ -13,7 +13,7 @@ Scope (building service): residential E01-E08, general commercial E10 and primar
 customer-owned equipment E15, E17 and 19. E10 and E15 bill demand only above 40 kVA, stored as a
 $0 first block like Maritime Electric's free 20 kW. Excluded: E12/E14 (E10 prices for GST- or
 PST-exempt customers), E20 irrigation, E22 unmetered cable amplifiers, E25 municipal energy (District
-accounts; batch 18 provisional decision, 2026-11-04), E26 flat-rate power, E31-E44 and E50 lighting,
+accounts; owner confirmed 2026-11-17), E26 flat-rate power, E31-E44 and E50 lighting,
 distributed-generation credits and connection fees.
 """
 
@@ -175,7 +175,7 @@ class SummerlandScraper(BaseScraper):
         super().__init__(utility_name=UTILITY, province="BC")
 
     def scrape(self) -> list[TariffRecord]:
-        # No seed fallback for utilities added in batch 18 (provisional decision 2026-11-04).
+        # No seed fallback for batch 18 utilities (owner confirmed 2026-11-17).
         records = self._try_live_scrape()
         if not records:
             self.logger.warning("Summerland: no live records (no seed fallback)")

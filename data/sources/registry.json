@@ -2540,13 +2540,13 @@
       "status": "partial",
       "sources": [
         {
-          "url": "https://www.newwestcity.ca/city_hall/bylaws/main/131/site_bylaws.php?sw=e",
+          "url": "https://www.newwestcity.ca/bylaws/electrical-utility",
           "source_type": "html",
-          "description": "Bylaw index (links the consolidated Electrical Utility Bylaw No. 6502)",
+          "description": "Electrical Utility bylaw page (links the consolidated Bylaw No. 6502 PDF)",
           "is_primary": true
         },
         {
-          "url": "https://www.newwestcity.ca/database/files/library/Consolidated_Bylaw_6502__1998_Electrical_Utility__2025_12_15_consolidation_.pdf",
+          "url": "https://www.newwestcity.ca/media/file/bylaw-no-6502-1998",
           "source_type": "pdf",
           "description": "Electrical Utility Bylaw No. 6502 consolidated December 15, 2025, Schedule A Schedule of Rates effective January 1, 2026",
           "is_primary": false
@@ -2592,10 +2592,16 @@
       "status": "partial",
       "sources": [
         {
+          "url": "https://www.grandforks.ca/document-library/?document_type=fees-and-charges",
+          "source_type": "html",
+          "description": "Dated fees-and-charges document library (current consolidation and matching amendments; public media search is a fallback)",
+          "is_primary": true
+        },
+        {
           "url": "https://www.grandforks.ca/wp-content/uploads/By1958Fees-and-Charges-CONSOLIDATED-through-A20.pdf",
           "source_type": "pdf",
-          "description": "Fees & Charges Bylaw No. 1958 consolidated through A20, Schedule G Electrical Utility Fees and Charges (found through the site's media search)",
-          "is_primary": true
+          "description": "Fees & Charges Bylaw No. 1958 consolidated through A20, Schedule G Electrical Utility Fees and Charges",
+          "is_primary": false
         },
         {
           "url": "https://www.grandforks.ca/wp-content/uploads/Bylaw1958-A19City-of-Grand-Forks-Fees-and-Charges-Amendment-Bylaw-1.pdf",

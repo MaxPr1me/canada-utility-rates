@@ -203,7 +203,7 @@ class SummersideElectricScraper(BaseScraper):
         super().__init__(utility_name=UTILITY, province="PE")
 
     def scrape(self) -> list[TariffRecord]:
-        # No seed fallback for utilities added in batch 18 (provisional decision 2026-11-04).
+        # No seed fallback for batch 18 utilities (owner confirmed 2026-11-17).
         records = self._try_live_scrape()
         if not records:
             self.logger.warning("Summerside Electric: no live records (no seed fallback)")

@@ -75,7 +75,13 @@ DENYLIST: dict[str, str] = {
         "https://www.newwestcity.ca/services/electrical-utility",
     # 2026-11-04: HTTP 404.
     "https://www.newwestcity.ca/electricity/rates-and-charges":
-        "Electrical Utility Bylaw No. 6502 via https://www.newwestcity.ca/city_hall/bylaws/main/131/site_bylaws.php?sw=e",
+        "Electrical Utility Bylaw No. 6502 via https://www.newwestcity.ca/bylaws/electrical-utility",
+    # 2026-11-17: HTTP 404 after the City's website migration.
+    "https://www.newwestcity.ca/city_hall/bylaws/main/131/site_bylaws.php?sw=e":
+        "https://www.newwestcity.ca/bylaws/electrical-utility",
+    # 2026-11-17: HTTP 301 to the extensionless PDF endpoint.
+    "https://www.newwestcity.ca/database/files/library/Consolidated_Bylaw_6502__1998_Electrical_Utility__2025_12_15_consolidation_.pdf":
+        "https://www.newwestcity.ca/media/file/bylaw-no-6502-1998",
     # 2026-11-04: HTTP 404.
     "https://www.penticton.ca/our-services/electric-utility":
         "https://www.penticton.ca/city-services/utility-electrical-services",

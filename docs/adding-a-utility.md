@@ -9,13 +9,13 @@ eligibility, not an assumption that NECB 2025 defines tariff classes. Do not exp
 farm/oil-field processes, irrigation, standalone lighting, wholesale or other non-building
 services merely to complete a catalogue. Existing implementations remain reference data.
 
-Every active registered utility, including AESO (a market reference stored November 1), now has live output: the
-16 campaign utilities in BC/QC/MB/SK/NB/NS/PE/NL, the four territorial utilities, all 47 active
-Ontario distributors and, since batch 12 (October 9), Alberta electricity and Ontario/Alberta gas.
+Registration, a successful local parser and stored live output are different milestones. See the
+[README status](../README.md#current-status) for current publication and source-health results.
 Batch 12 also registered one new utility, EPCOR Natural Gas (Ontario), to replace a mis-registered
 Alberta entry that is now `status: "retired"`. Batch 18 (owner decision 2026-11-04) onboards the easy and
-medium inventory utilities: seven municipal utilities in NB, BC and PE are registered; Naka Power (NT) and
-the Alberta cities are still to come. Other inventory utilities are not onboarded without a decision. Use this guide to fill missing classes in the owning utility module, and
+medium inventory utilities: the municipal additions in NB, BC and PE are registered but still await
+verified publication; Naka Power (NT) and the Alberta cities are still to come. Other inventory utilities
+are not onboarded without a decision. Use this guide to fill missing classes in the owning utility module, and
 consult the [current coverage matrix](phase5_completion_matrix.md) before choosing work.
 Current examples include page-aware domestic options, NL Hydro service alternatives,
 and SaskEnergy/Centra gas variants with separately dated required components. The

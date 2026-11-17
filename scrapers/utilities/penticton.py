@@ -11,14 +11,14 @@ Official sources:
 
 The current year's column is used; a document without a column for the current year fails closed (no
 stale column is carried into a new year). The bylaw prints only the year, so records are dated January 1
-of that year with a note (batch 18 provisional decision, 2026-11-04). Council sets these rates; the BCUC
+of that year with a note (owner confirmed 2026-11-17). Council sets these rates; the BCUC
 does not regulate them.
 
 Scope: Rate Code 10 Residential and the general service codes 20 (secondary metered, City-owned
 transformation), 25 (primary metered, City-owned), 30 (secondary, customer-owned) and 35 (primary,
 customer-owned); each code prints its own discounted prices. Demand is billed per kVA in excess of 45 kVA,
-stored as a $0 first block. Excluded: Rate Code 45 City accounts (batch 18 provisional decision,
-2026-11-04), Rate Code 55 lighting and unmetered loads, net metering and service fees.
+stored as a $0 first block. Excluded: Rate Code 45 City accounts (owner confirmed 2026-11-17),
+Rate Code 55 lighting and unmetered loads, net metering and service fees.
 """
 
 from __future__ import annotations
@@ -172,7 +172,7 @@ class PentictonScraper(BaseScraper):
         super().__init__(utility_name=UTILITY, province="BC")
 
     def scrape(self) -> list[TariffRecord]:
-        # No seed fallback for utilities added in batch 18 (provisional decision 2026-11-04).
+        # No seed fallback for batch 18 utilities (owner confirmed 2026-11-17).
         records = self._try_live_scrape()
         if not records:
             self.logger.warning("Penticton: no live records (no seed fallback)")

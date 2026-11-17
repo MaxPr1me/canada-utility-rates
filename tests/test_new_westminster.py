@@ -13,6 +13,7 @@ FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "new_westminster_byla
                      .read_text(encoding="utf-8"))
 URL = FIXTURE["source_url"]
 TODAY = date(2026, 11, 4)
+BYLAW_PAGE = (Path(__file__).parent / "fixtures" / "new_westminster_bylaw_page.html").read_text(encoding="utf-8")
 
 
 def _pages(old: str = "", new: str = "") -> list[DocumentPage]:
@@ -83,3 +84,20 @@ def test_bylaw_link_discovery_and_fallback(monkeypatch):
     monkeypatch.setattr(scraper, "fetch_page", lambda *_a, **_k: "<a href='x.pdf'>Bylaw No. 6503, 1998</a>")
     url, note = scraper._discover()
     assert url == nw.LAST_KNOWN_BYLAW_URL and "last known" in note
+
+
+def test_migrated_page_discovers_the_extensionless_pdf(monkeypatch):
+    scraper = nw.NewWestminsterScraper()
+
+    def fetch_page(url):
+        assert url == "https://www.newwestcity.ca/bylaws/electrical-utility"
+        return BYLAW_PAGE
+
+    monkeypatch.setattr(scraper, "fetch_page", fetch_page)
+    assert scraper._discover() == (URL, "")
+
+
+def test_migrated_download_still_requires_the_exact_bylaw():
+    assert nw.find_bylaw_url(BYLAW_PAGE.replace("Bylaw No. 6502, 1998", "Bylaw No. 6503, 1998")) is None
+    assert nw.find_bylaw_url(BYLAW_PAGE.replace("/media/file/bylaw-no-6502-1998",
+                                             "/media/file/bylaw-no-6503-1998")) is None

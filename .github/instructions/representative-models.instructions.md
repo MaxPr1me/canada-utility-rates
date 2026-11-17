@@ -114,7 +114,8 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   PF 0.9. Never assume any other conversion.
 - Municipal utilities registered in batch 18 join their province's medians like any registered utility
   (owner decision 2026-11-04); their percentage riders of the billed amount (New Westminster) are
-  disclosed but not applied, like every percentage adjustment.
+  disclosed but not applied, like every percentage adjustment (retained for this milestone by the
+  owner on 2026-11-17).
 
 ## Costing rules
 

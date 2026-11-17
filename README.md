@@ -90,7 +90,8 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
 
 ## Current Status
 
-- **Live output:** all 78 previously active registered utilities have stored live output.
+- **Stored coverage:** 78 of 85 active registered utilities have live output; the strict gate
+  fails for the seven additions below. Stored output alone does not prove a source is still healthy.
 - **New utilities (registered November 4, not stored yet):** Saint John Energy (NB), Nelson Hydro,
   New Westminster, Penticton, Grand Forks and Summerland (BC), and Summerside Electric (PE) now
   have live parsers and are registered (85 active utilities). They have no stored output until the
@@ -102,10 +103,15 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   conditional products and reference-only records, not complete utility catalogues.
 - **Corrections stored (verified November 4):** the targeted Monthly Scrapes stored Centra Gas
   Manitoba's 13 November records and Maritime Electric's first-20-kW-free demand tier; history
-  checks, the strict coverage gate (78 of 78), the crosswalk (0 unmapped) and model parity pass.
+  checks, the then-current coverage gate, the crosswalk (0 unmapped) and model parity passed.
+- **Source repairs (locally verified November 17; CI/publication pending):** Maritime retries an
+  HTTP 403 with Chromium; Grand Forks reads the dated document library before its media API;
+  New Westminster follows its migrated bylaw page and PDF endpoint. Targeted dry runs returned
+  53 live, 0 estimated and 0 invalid records across these sources and the seven additions.
 - **"Coverage complete" is not claimed yet:** the scoped wording awaits the owner's approval and
-  now needs the new utilities stored first.
-- **Tests:** 2,331 tests across 47 test modules (run with `pytest tests`).
+  needs verified GitHub source checks and the new utilities stored first.
+- **Focused validation:** 73 source, URL and model regression tests passed on Python 3.11.
+  The full suite is run with `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.
@@ -370,13 +376,14 @@ history database `data/db/rates.db` (owner decision), kept as asset `rates.db` o
    `scripts/check_db_history.py stats` records integrity-checked statistics right after the
    restore.
 2. **Test, scrape, validate, export:** deterministic tests, the scrape (all active utilities, one
-   utility or one province), validation, JSON export and a check that rejects empty exports.
+   utility or one province), validation, `git pull --ff-only origin main` before JSON export,
+   and a check that rejects empty exports. Synchronizing first makes queued runs use the latest
+   committed inputs; generated files are never rebased onto newer inputs.
 3. **Check before upload:** `scripts/check_db_history.py verify` requires SQLite `integrity_check`
    "ok", no fewer snapshots, tariff versions or scrape runs, and every earlier snapshot unchanged
    (a digest over all earlier rows). It posts a public "Database history" notice on the run page.
 4. **Upload:** a dated gzip backup (`rates-YYYY-MM-DD.db.gz`), then `rates.db`. The bot then
-   commits `site/data/` (rebasing on `main` first, because the archive workflow also commits on
-   the 1st), and dated backups are pruned to the newest 12.
+   commits `site/data/` with a plain `git push`, and dated backups are pruned to the newest 12.
 5. **Failure issue:** a failed step opens a GitHub issue with the test, scrape, validation,
    database-history and diff output; a failed check uploads nothing.
 
@@ -397,7 +404,9 @@ entries. **Risk:** deleting the `data-history` release deletes `rates.db` and ev
   run; it checks out `main`. A failed data run that still committed new data needs a manual
   deploy.
 - [Source Health](.github/workflows/source-health.yml) runs a non-blocking dry run on the 15th
-  and uploads its log without publishing; it installs Playwright Chromium.
+  and uploads its log without publishing; it installs Playwright Chromium. Read the
+  [source-health troubleshooting note](AGENTS.md#source-health-is-green-but-a-source-failed)
+  before treating a green run as healthy live coverage.
 - [Ontario Price Archive](.github/workflows/ontario-price-archive.yml) runs at 06:00 UTC on the
   1st and 15th and after relevant code pushes. It first commits the raw IESO reports, then
   extends and commits `data/market/ontario_price_hourly.csv`, then runs
@@ -696,7 +705,7 @@ One line per phase; sub-phase detail and the work queue are in the
 [coverage matrix](docs/phase5_completion_matrix.md).
 
 - **Earlier phases (foundations)** — done: scraper framework, granular schema, registry, validation, history snapshots, JSON export and the website.
-- **Phase 5: Live Parser Completion** — in progress: every active registered utility has live output (see Current Status); the Centra and Maritime corrections are stored and verified (November 4), the scoped coverage-complete claim awaits owner approval, and remaining building-catalogue gaps are tracked in the coverage matrix.
+- **Phase 5: Live Parser Completion** — in progress: source-reliability verification and publication of the registered municipal additions come next (see Current Status); the scoped coverage-complete claim awaits owner approval, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas commodity cadence started).
 - **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D residential gas done as method 7D-1, in each utility's native m³ or GJ, with business gas withheld until its usage scenarios are approved).
 - **Phase 8: Representative Model Refresh Automation** — planned (design reviewed, not implemented; the proposed 2% change threshold is not approved).

@@ -423,6 +423,16 @@ See [docs/adding-a-utility.md](docs/adding-a-utility.md) for the full guide, and
 5. Test a fix with a dry run for that utility (see "How to Scrape Just One Utility"); the Monthly
    Scrape on GitHub then stores it.
 
+### Source Health is green but a source failed
+
+**What happened:** Source Health is deliberately non-blocking. A scraper can return estimates or no
+records without raising an error, so "utilities succeeded" and a green workflow do not mean every
+utility returned live rates.
+
+**What to do:** read the public "Scrape provenance" notice and the final log summary for seed-only or
+empty utilities. Check each named utility with a targeted dry run, repair its official-source access
+or parsing, then inspect a fresh GitHub Source Health log before publishing the repaired data.
+
 ### The monthly automation fails
 
 **What happened:** The GitHub Actions workflow encountered an error.
