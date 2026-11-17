@@ -278,9 +278,10 @@ The corrected records/models were stored and verified November 4; seasonal exclu
 
 ## Recommended Next Steps
 
-Current: finish GitHub verification of the source repairs, then publish and verify the registered
-municipal additions through Monthly Scrape (see the matrix's current queue). The scoped README
-completion wording still needs owner approval. Keep monitor deadlines.
+Source work remains: finish GitHub verification of the repairs, then publish and verify the registered
+municipal additions through Monthly Scrape. The owner selected Phase 8 monitoring as the current
+milestone while that publication stays pending (see the matrix). The scoped README completion wording
+still needs owner approval. Keep monitor deadlines.
 
 The following is the **historical October 16-30 queue**, retained for decisions and context.
 

@@ -1,0 +1,714 @@
+"""Model change history, explicit refresh receipts and read-only health checks.
+
+Owner decision 2026-11-17: material means >=5% movement in an after-tax median.
+Synthetic estimates never enter these comparisons. Monitoring is not a publication gate.
+"""
+from __future__ import annotations
+
+import argparse
+import calendar
+import copy
+import hashlib
+import json
+import logging
+import math
+import os
+import re
+import zipfile
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+from pathlib import Path
+from typing import Any
+
+logger = logging.getLogger(__name__)
+ROOT = Path(__file__).resolve().parents[1]
+HISTORY_PATH = ROOT / "site" / "data" / "model_change_history.json"
+MODELS_PATH = ROOT / "site" / "data" / "representative_models.json"
+SCHEMA_VERSION = 1
+MATERIAL_PERCENT = 5
+OVERDUE_GRACE = timedelta(hours=24)
+
+MODEL_FIELDS = (
+    "id", "key", "label", "state", "provenance", "cost_basis", "energy", "coverage", "buckets",
+    "tou", "tiers", "utilities", "reference_customer", "exclusions", "warnings", "block_periods",
+    "fixed_charge_variants", "required_contributors",
+)
+USAGE_FIELDS = ("id", "kwh", "kw", "quantity", "unit", "role")
+LEVEL_FIELDS = USAGE_FIELDS + (
+    "without_tax", "with_tax", "closest_utility", "outliers", "utilities", "withheld", "reason",
+)
+ASSUMPTION_FIELDS = (
+    "usage_levels", "days_per_month", "power_factor_for_kva", "tou_shares", "seasons", "zone_policy",
+    "statistics", "closest_utility", "outliers", "component_rules", "reference_customer",
+    "fixed_charge_variants", "buckets", "pairs", "block_periods", "required_contributors",
+    "usage_bounds", "taxes",
+)
+INPUT_FIELDS = {
+    "crosswalk": ("vocabulary", "pairs", "required_contributors", "usage_bounds", "rules"),
+    "usage_levels": (
+        "days_per_month", "power_factor_for_kva", "market_benchmarks", "electricity", "gas",
+        "tou_shares", "seasons", "reference_customer", "fixed_charge_variants",
+    ),
+    "taxes": ("sectors", "jurisdictions"),
+    "block_periods": ("entries",),
+}
+VOLATILE_FIELDS = {
+    "generated_at", "created_at", "updated", "as_of", "generated_from", "rates_generated_at",
+    "latest_record_created_at", "file", "input",
+}
+ORDERED_FIELDS = {"rules", "entries", "reference_customer", "fixed_charge_variants"}
+SYNTHETIC_FIELDS = {"illustrative", "illustrative_all_in", "synthetic_profiles"}
+
+
+def timestamp(value: str) -> datetime:
+    """Reject ambiguous clocks instead of treating a local time as UTC."""
+    if not isinstance(value, str):
+        raise ValueError("monitoring timestamps must be ISO-8601 strings")
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        raise ValueError("monitoring timestamps must include a time zone")
+    return parsed.astimezone(timezone.utc)
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+
+
+def fingerprint(value: Any) -> str:
+    return hashlib.sha256(_json(value).encode("utf-8")).hexdigest()
+
+
+def read_json(path: Path) -> Any:
+    def reject_constant(value: str) -> None:
+        raise ValueError(f"{path}: non-finite JSON value {value}")
+
+    return json.loads(path.read_text(encoding="utf-8"), parse_constant=reject_constant)
+
+
+def write_json(path: Path, value: Any) -> None:
+    """Replace only a complete JSON document; retain earlier history on failure."""
+    text = _json(value) + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    try:
+        temporary.write_text(text, encoding="utf-8")
+        os.replace(temporary, path)
+    finally:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            logger.exception("Could not remove monitoring temporary file %s", temporary)
+
+
+def _pick(value: dict, keys: tuple[str, ...]) -> dict:
+    return {key: value[key] for key in keys if key in value}
+
+
+def _normalize(value: Any, field: str = "") -> Any:
+    if isinstance(value, dict):
+        return {key: _normalize(item, key) for key, item in sorted(value.items())
+                if key not in VOLATILE_FIELDS | SYNTHETIC_FIELDS}
+    if isinstance(value, list):
+        items = [_normalize(item) for item in value]
+        return items if field in ORDERED_FIELDS else sorted(items, key=_json)
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("non-finite model value")
+        return int(value) if value.is_integer() else value
+    return value
+
+
+def input_fingerprints(inputs: dict[str, dict]) -> dict[str, str]:
+    """Fingerprint calculation inputs, preserving first-match rules but not synthetic settings."""
+    unknown = set(inputs) - set(INPUT_FIELDS)
+    if unknown:
+        raise ValueError(f"unsupported model input roles: {sorted(unknown)}")
+    return {name: fingerprint(_normalize(_pick(value, INPUT_FIELDS[name])))
+            for name, value in sorted(inputs.items())}
+
+
+def _median(summary: Any) -> float | int | None:
+    if not isinstance(summary, dict) or "median" not in summary:
+        raise ValueError("model cost summary has no median")
+    value = summary["median"]
+    if value is not None and (isinstance(value, bool) or not isinstance(value, (float, int))
+                              or not math.isfinite(value)):
+        raise ValueError("model median must be a finite number or null")
+    return value
+
+
+def _check_benchmark(value: Any) -> None:
+    if value is not None and (not isinstance(value, dict) or type(value.get("available")) is not bool
+                              or value.get("synthetic_profile") or value.get("illustrative_only")):
+        raise ValueError("invalid observed benchmark")
+
+
+def semantic_models(document: dict) -> dict:
+    """Project the supported export, not its timestamps, machine paths or illustrative estimates."""
+    if (not isinstance(document, dict) or document.get("version") != 1
+            or not isinstance(document.get("method_version"), str) or not document["method_version"]
+            or not isinstance(document.get("models"), list) or not document["models"]):
+        raise ValueError("unsupported or empty representative model export")
+    timestamp(document["generated_at"])
+    datetime.strptime(document["as_of"], "%Y-%m-%d")
+    models = {}
+    for model in document["models"]:
+        if not isinstance(model, dict):
+            raise ValueError("invalid representative model")
+        model_id = model.get("id")
+        if (not isinstance(model_id, str) or not model_id or model_id in models
+                or model.get("provenance") != "modeled"
+                or model.get("state") not in ("modeled", "single_source", "market_energy_pending", "not_computable")
+                or not isinstance(model.get("levels"), list)):
+            raise ValueError("invalid or duplicate representative model")
+        base = _pick(model, MODEL_FIELDS)
+        method = model.get("method")
+        if isinstance(method, str):
+            generated = model.get("generated_from") or {}
+            footer = f" Generated {generated.get('as_of')} from {generated.get('input')}."
+            base["method"] = method.removesuffix(footer)
+        levels, benchmarks = {}, {}
+        _check_benchmark(model.get("market_benchmark"))
+        for level in model["levels"]:
+            if not isinstance(level, dict):
+                raise ValueError(f"{model_id}: invalid usage level")
+            level_id = level.get("id")
+            if not isinstance(level_id, str) or not level_id or level_id in levels:
+                raise ValueError(f"{model_id}: invalid or duplicate usage level")
+            _median(level.get("without_tax"))
+            _median(level.get("with_tax"))
+            levels[level_id] = _pick(level, LEVEL_FIELDS)
+            benchmark = level.get("market_benchmark")
+            _check_benchmark(benchmark)
+            if benchmark is not None:
+                if benchmark.get("available"):
+                    _median(benchmark.get("without_tax"))
+                    _median(benchmark.get("with_tax"))
+                benchmarks[level_id] = {**_pick(level, USAGE_FIELDS), **benchmark}
+        base["levels"] = levels
+        models[model_id] = _normalize({
+            "base": base,
+            "benchmark": {"metadata": model.get("market_benchmark"), "levels": benchmarks},
+        })
+    return _normalize({
+        "method_version": document["method_version"], "models": models,
+        "assumptions": _pick(document.get("assumptions") or {}, ASSUMPTION_FIELDS),
+        "coverage": document.get("coverage_report"),
+        "scope": _pick(document.get("input") or {}, ("provinces", "fuels", "withheld_gas_models")),
+    })
+
+
+def observe_previous(path: Path) -> dict:
+    """Capture the replaced generation so a missed monitoring run can be disclosed later."""
+    if not path.exists():
+        return {"status": "absent"}
+    try:
+        document = read_json(path)
+        return {"status": "known", "generated_at": document["generated_at"],
+                "fingerprint": fingerprint(semantic_models(document))}
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        logger.warning("Previous model generation cannot be verified: %s", exc)
+        return {"status": "unverified", "detail": str(exc)}
+
+
+def run_identity() -> dict:
+    run_id = os.environ.get("GITHUB_RUN_ID")
+    repository = os.environ.get("GITHUB_REPOSITORY")
+    return {
+        "workflow": os.environ.get("GITHUB_WORKFLOW", "manual"),
+        "id": run_id, "attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+        "url": f"https://github.com/{repository}/actions/runs/{run_id}" if repository and run_id else None,
+    }
+
+
+def generation_receipt(result: dict | None, *, previous: dict, inputs: dict[str, dict] | None = None,
+                       error: str | None = None) -> dict:
+    """Success comes from the producer, never from an unchanged output file."""
+    if result is None and not error:
+        raise ValueError("a failed generation requires an explicit error")
+    receipt = {"version": SCHEMA_VERSION, "kind": "model_generation", "checked_at": utc_now(),
+               "run": run_identity(), "status": "failed" if result is None else "success",
+               "previous": previous, "error": error}
+    if result is not None:
+        model_hash = fingerprint(semantic_models(result))
+        receipt.update(
+            generated_at=result["generated_at"], as_of=result["as_of"], method_version=result["method_version"],
+            fingerprint=model_hash,
+            input_fingerprints=input_fingerprints(inputs or {}),
+            change_status=("unchanged" if previous.get("fingerprint") == model_hash else
+                           "initial" if previous["status"] == "absent" else "changed"),
+        )
+    return receipt
+
+
+def save_generation_receipt(path: Path | None, result: dict | None, *, previous: dict,
+                            inputs: dict[str, dict] | None = None, error: str | None = None) -> None:
+    """A monitoring defect must not break the primary exporter; missing receipts stay unverified."""
+    if path is None:
+        return
+    try:
+        if result is not None and inputs is not None:
+            inputs = {**inputs, "block_periods": result["assumptions"]["block_periods"]}
+        write_json(path, generation_receipt(result, previous=previous, inputs=inputs, error=error))
+    except Exception:
+        logger.exception("Model generation receipt failed; monitoring cannot verify this refresh")
+
+
+def _successful_generation(receipt: dict) -> None:
+    """Validate producer evidence before either history recording or freshness can rely on it."""
+    if (not isinstance(receipt, dict) or receipt.get("version") != SCHEMA_VERSION
+            or receipt.get("kind") != "model_generation" or receipt.get("status") != "success"
+            or not isinstance(receipt.get("method_version"), str) or not receipt["method_version"]
+            or not isinstance(receipt.get("fingerprint"), str)
+            or not re.fullmatch(r"[a-f0-9]{64}", receipt["fingerprint"])
+            or not isinstance(receipt.get("input_fingerprints"), dict) or not isinstance(receipt.get("run"), dict)):
+        raise ValueError("missing, failed or invalid model generation receipt")
+    timestamp(receipt["checked_at"])
+    timestamp(receipt["generated_at"])
+    datetime.strptime(receipt["as_of"], "%Y-%m-%d")
+    for name, value in receipt["input_fingerprints"].items():
+        if name not in INPUT_FIELDS or not isinstance(value, str) or not re.fullmatch(r"[a-f0-9]{64}", value):
+            raise ValueError("invalid model input fingerprint in generation receipt")
+
+
+def _cost_change(before: dict | None, after: dict | None, comparable: bool) -> dict:
+    old = (before or {}).get("with_tax", {}).get("median")
+    new = (after or {}).get("with_tax", {}).get("median")
+    comparison, percent, material = "comparable", None, False
+    if before is None or after is None or old is None or new is None:
+        comparison = "availability_changed"
+    elif not comparable:
+        comparison = "basis_changed"
+    elif old == 0:
+        comparison = "from_zero" if new != 0 else "unchanged_zero"
+    else:
+        delta = Decimal(str(new)) - Decimal(str(old))
+        fraction = delta / abs(Decimal(str(old)))
+        percent = float(fraction * 100)
+        if not math.isfinite(percent):
+            raise ValueError("after-tax percentage is outside the finite numeric range")
+        material = abs(delta) >= abs(Decimal(str(old))) * Decimal("0.05")
+    return {"comparison": comparison, "after_tax_percent": percent, "material": material}
+
+
+def _level_summary(level: dict | None) -> dict | None:
+    if level is None:
+        return None
+    return {
+        **_pick(level, USAGE_FIELDS + ("available", "reason", "without_tax", "with_tax")),
+        "contributors": [
+            _pick(row, ("utility", "cost_without_tax", "cost_with_tax"))
+            for row in level.get("utilities", [])
+        ],
+    }
+
+
+def compare_models(before: dict, after: dict) -> list[dict]:
+    """Diff canonical snapshots using model ID, level ID and base/benchmark as separate identities."""
+    changes = []
+    context_fields = [key for key in ("method_version", "assumptions", "coverage", "scope", "input_fingerprints")
+                      if before.get(key) != after.get(key)]
+    if context_fields:
+        changes.append({"category": "inputs", "model_id": None, "fields": context_fields,
+                        "before": {key: before.get(key) for key in context_fields},
+                        "after": {key: after.get(key) for key in context_fields}, "material": False})
+    for model_id in sorted(before["models"].keys() | after["models"].keys()):
+        old_model, new_model = before["models"].get(model_id), after["models"].get(model_id)
+        if old_model is None or new_model is None:
+            changes.append({"category": "model_added" if old_model is None else "model_removed",
+                            "model_id": model_id, "material": False,
+                            "before": (old_model or {}).get("base", {}).get("state"),
+                            "after": (new_model or {}).get("base", {}).get("state")})
+        for kind in ("base", "benchmark"):
+            old, new = (old_model or {}).get(kind, {}), (new_model or {}).get(kind, {})
+            metadata_fields = sorted(key for key in old.keys() | new.keys()
+                                     if key != "levels" and old.get(key) != new.get(key))
+            if metadata_fields and old_model is not None and new_model is not None:
+                changes.append({"category": "structure", "model_id": model_id, "kind": kind,
+                                "fields": metadata_fields, "material": False,
+                                "before": {key: old.get(key) for key in metadata_fields},
+                                "after": {key: new.get(key) for key in metadata_fields}})
+            old_levels, new_levels = old.get("levels", {}), new.get("levels", {})
+            for level_id in sorted(old_levels.keys() | new_levels.keys()):
+                old_level, new_level = old_levels.get(level_id), new_levels.get(level_id)
+                if old_level == new_level:
+                    continue
+                fields = sorted(key for key in (old_level or {}).keys() | (new_level or {}).keys()
+                                if (old_level or {}).get(key) != (new_level or {}).get(key))
+                comparable = (
+                    old_model is not None and new_model is not None
+                    and old_model["base"].get("cost_basis") == new_model["base"].get("cost_basis")
+                    and _pick(old_level or {}, USAGE_FIELDS) == _pick(new_level or {}, USAGE_FIELDS)
+                )
+                changes.append({
+                    "category": "level", "model_id": model_id, "kind": kind, "level_id": level_id,
+                    "fields": fields, "before": _level_summary(old_level), "after": _level_summary(new_level),
+                    **_cost_change(old_level, new_level, comparable),
+                })
+    return changes
+
+
+def validate_history(history: dict) -> None:
+    """Corrupt or incompatible history cannot be silently reset or extended."""
+    if not isinstance(history, dict) or history.get("version") != SCHEMA_VERSION:
+        raise ValueError("unsupported model change history")
+    if history.get("policy") != {"material_after_tax_percent": MATERIAL_PERCENT, "synthetic_excluded": True}:
+        raise ValueError("unsupported model history policy")
+    baseline = history.get("baseline")
+    if (not isinstance(baseline, dict) or not isinstance(baseline.get("snapshot"), dict)
+            or baseline.get("fingerprint") != fingerprint(baseline["snapshot"])
+            or not isinstance(history.get("events"), list) or not history["events"]
+            or not isinstance(history.get("last_changed"), dict)):
+        raise ValueError("invalid model history baseline")
+    previous, ids = None, set()
+    for event in history["events"]:
+        event_id = event.get("id")
+        if (event_id in ids or event.get("previous_event") != previous
+                or event_id != fingerprint({key: value for key, value in event.items() if key != "id"})):
+            raise ValueError("model change history integrity check failed")
+        timestamp(event["recorded_at"])
+        ids.add(event_id)
+        previous = event_id
+    timestamp(history["last_refresh"]["generated_at"])
+    expected_changed = {key: None for key in baseline["snapshot"]["models"]}
+    for event in history["events"]:
+        for change in event["changes"]:
+            if change["model_id"] is not None:
+                expected_changed[change["model_id"]] = event["recorded_at"]
+    if history["last_changed"] != expected_changed:
+        raise ValueError("last-change dates do not match recorded history")
+    model_snapshot = {key: value for key, value in baseline["snapshot"].items() if key != "input_fingerprints"}
+    if history["last_refresh"]["model_fingerprint"] != fingerprint(model_snapshot):
+        raise ValueError("last refresh does not match the recorded baseline")
+
+
+def record_refresh(history: dict | None, document: dict, receipt: dict) -> dict:
+    """Advance the last-reported baseline only after an explicitly successful, matching generation."""
+    snapshot = semantic_models(document)
+    _successful_generation(receipt)
+    if (receipt["generated_at"] != document["generated_at"] or receipt["as_of"] != document["as_of"]
+            or receipt["method_version"] != document["method_version"]
+            or receipt["fingerprint"] != fingerprint(snapshot)):
+        raise ValueError("missing, failed or mismatched model generation receipt")
+    snapshot["input_fingerprints"] = receipt["input_fingerprints"]
+    now = receipt["checked_at"]
+    timestamp(now)
+    if history is not None:
+        validate_history(history)
+        if timestamp(receipt["generated_at"]) < timestamp(history["last_refresh"]["generated_at"]):
+            raise ValueError("refusing a model generation older than the recorded history")
+        result = copy.deepcopy(history)
+        changes = compare_models(history["baseline"]["snapshot"], snapshot)
+        previous = receipt.get("previous") or {}
+        gap = (receipt["generated_at"] != history["last_refresh"]["generated_at"]
+               and (previous.get("status") != "known"
+                    or previous.get("generated_at") != history["last_refresh"]["generated_at"]
+                    or previous.get("fingerprint") != history["last_refresh"]["model_fingerprint"]))
+    else:
+        result = {"version": SCHEMA_VERSION, "tracking_started_at": now,
+                  "policy": {"material_after_tax_percent": MATERIAL_PERCENT, "synthetic_excluded": True},
+                  "events": [], "last_changed": {}}
+        changes, gap = [], False
+    if history is None or changes or gap:
+        event = {"recorded_at": now, "generated_at": document["generated_at"], "run": receipt["run"],
+                 "kind": "baseline" if history is None else "refresh", "changes": changes,
+                 "history_gap": gap, "previous_event": result["events"][-1]["id"] if result["events"] else None}
+        event["id"] = fingerprint(event)
+        result["events"].append(event)
+        for change in changes:
+            if change["model_id"] is not None:
+                result["last_changed"][change["model_id"]] = now
+    for model_id in snapshot["models"]:
+        result["last_changed"].setdefault(model_id, None)
+    result["baseline"] = {"snapshot": snapshot, "fingerprint": fingerprint(snapshot)}
+    result["last_refresh"] = {
+        "generated_at": document["generated_at"], "as_of": document["as_of"],
+        "method_version": document["method_version"], "checked_at": now, "run": receipt["run"],
+        "model_fingerprint": receipt["fingerprint"],
+        "change_status": "initial" if history is None else "changed" if changes else "unchanged",
+    }
+    return result
+
+
+def input_checks(root: Path, now: datetime) -> list[dict]:
+    """Reuse coverage and observed-market validity rules; a documented missing model is not corrupt data."""
+    from scripts.coverage_gate import evaluate
+    from scrapers.utils.market_pricing import historical_market_price
+    from pipeline.representative_models import coverage_report, load_block_periods
+
+    checks = []
+    try:
+        coverage = evaluate(read_json(root / "data" / "sources" / "registry.json"),
+                            read_json(root / "site" / "data" / "rates.json"),
+                            read_json(root / "data" / "sources" / "coverage_ledger.json"), now.date())
+        problems = [f"{name}: {finding['code']}: {finding['message']}"
+                    for name, findings in coverage["utilities"].items() for finding in findings
+                    if finding["level"] == "error"]
+        problems.extend(f"{finding['code']}: {finding['message']}" for finding in coverage["global"]
+                        if finding["level"] == "error")
+        checks.append({"id": "coverage", "ok": coverage["passed"], "details": problems,
+                       "warnings": coverage["warnings"]})
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        checks.append({"id": "coverage", "ok": False, "details": [f"Coverage inputs cannot be checked: {exc}"]})
+    try:
+        configs = {}
+        required = {
+            "crosswalk": {"rules": list, "vocabulary": dict},
+            "usage_levels": {"electricity": dict, "gas": dict, "tou_shares": dict},
+            "taxes": {"jurisdictions": dict},
+        }
+        for name, fields in required.items():
+            config = read_json(root / "data" / "models" / f"{name}.json")
+            if (not isinstance(config, dict) or config.get("version") != 1
+                    or any(not isinstance(config.get(key), kind) or not config[key] for key, kind in fields.items())):
+                raise ValueError(f"invalid {name} configuration")
+            configs[name] = config
+        unmapped = coverage_report(read_json(root / "site" / "data" / "rates.json"),
+                                   configs["crosswalk"])["totals"]["unmapped"]
+        periods = load_block_periods(root / "data" / "models" / "block_periods.json")
+        problems = [f"{unmapped} live tariffs are unmapped."] if unmapped else []
+        if periods.get("problem") or periods.get("skipped"):
+            problems.append(f"Reviewed block periods are invalid: {periods.get('problem') or periods['skipped']}")
+        checks.append({"id": "model_configuration", "ok": not problems, "details": problems})
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        checks.append({"id": "model_configuration", "ok": False,
+                       "details": [f"Model configuration cannot be checked: {exc}"]})
+    for province, name in (("ON", "ontario"), ("AB", "alberta")):
+        try:
+            config = read_json(root / "data" / "models" / "usage_levels.json")["market_benchmarks"][province]
+            document = read_json(root / "site" / "data" / f"market_pricing_{name}.json")
+            historical_market_price(document, province=province, as_of=now.date(),
+                                    max_lag_months=config["max_window_lag_months"])
+            checks.append({"id": f"market:{province}", "ok": True, "details": []})
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            checks.append({"id": f"market:{province}", "ok": False,
+                           "details": [f"Observed {province} market history cannot be used: {exc}"]})
+    return checks
+
+
+def scheduled_due(cron: str, now: datetime) -> datetime:
+    """Evaluate the repository's fixed UTC day-of-month schedules, rejecting other cron forms."""
+    minute, hour, days, month, weekday = cron.split()
+    if month != "*" or weekday != "*" or not minute.isdigit() or not hour.isdigit():
+        raise ValueError(f"unsupported monitoring schedule: {cron}")
+    day_numbers = [int(day) for day in days.split(",")]
+    if not day_numbers or any(day < 1 or day > 31 for day in day_numbers):
+        raise ValueError(f"invalid monitoring schedule: {cron}")
+    for offset in range(3):
+        index = now.year * 12 + now.month - 1 - offset
+        year, month_number = index // 12, index % 12 + 1
+        candidates = [datetime(year, month_number, day, int(hour), int(minute), tzinfo=timezone.utc)
+                      for day in day_numbers if day <= calendar.monthrange(year, month_number)[1]]
+        candidates = [value for value in candidates if value <= now]
+        if candidates:
+            return max(candidates)
+    raise ValueError(f"no occurrence found for {cron}")
+
+
+def source_checks(receipt: dict) -> list[dict]:
+    if receipt.get("version") != 1 or receipt.get("kind") != "source_check":
+        raise ValueError("missing or unsupported source-check receipt")
+    checked_at = receipt["checked_at"]
+    timestamp(checked_at)
+    rows = receipt["summary"]["rows"]
+    expected = receipt["expected_utilities"]
+    if (not isinstance(receipt.get("scope"), dict) or type(receipt["scope"].get("full")) is not bool
+            or not rows or not isinstance(expected, list) or not expected
+            or len(rows) != len(expected) or len(set(expected)) != len(expected)
+            or sorted(row["utility"] for row in rows) != sorted(expected)):
+        raise ValueError("source receipt is incomplete or has duplicate utilities")
+    checks = []
+    for row in rows:
+        if any(type(row.get(key)) is not int or row[key] < 0 for key in ("live", "seed", "invalid")):
+            raise ValueError("invalid source receipt counts")
+        healthy = row["live"] > 0 and row["seed"] == row["invalid"] == 0 and row.get("error") is None
+        checks.append({"id": f"source:{row['utility']}", "ok": healthy, "checked_at": checked_at,
+                       "details": [] if healthy else [
+                           f"{row['utility']}: {row['live']} live, {row['seed']} estimated, "
+                           f"{row['invalid']} invalid; {row.get('error') or row['status']}"]})
+    return checks
+
+
+def _evidence(run: dict, name: str) -> dict:
+    value = run.get("evidence", {}).get(name)
+    identity = value.get("run") if isinstance(value, dict) else None
+    if (not isinstance(identity, dict) or str(identity.get("id")) != str(run["id"])
+            or str(identity.get("attempt")) != str(run["run_attempt"])):
+        raise ValueError(f"missing or mismatched {name} for run {run['id']}")
+    return value
+
+
+def workflow_checks(context: dict, now: datetime) -> list[dict]:
+    """Use completed-step evidence, including source provenance; a green badge alone is insufficient."""
+    checks, latest_sources = [], {}
+    workflows = context["workflows"]
+    parents = [run for name in ("scrape.yml", "ontario-price-archive.yml")
+               for run in workflows.get(name, {}).get("runs", [])
+               if run["status"] == "completed" and (name == "ontario-price-archive.yml"
+                                                   or run.get("conclusion") == "success")]
+    for name in ("scrape.yml", "source-health.yml", "ontario-price-archive.yml", "market-benchmarks.yml"):
+        key = f"workflow:{name}"
+        try:
+            entry = workflows[name]
+            if entry.get("error"):
+                raise ValueError(entry["error"])
+            due = (max(scheduled_due(cron, now) for cron in entry["schedules"]) if entry["schedules"] else
+                   max((timestamp(run["updated_at"]) for run in parents), default=None))
+            if due is None:
+                checks.append({"id": key, "ok": None, "details": ["No qualifying parent refresh was observed."]})
+                continue
+            successes, failures = [], []
+            latest_success, latest_unverified = None, None
+            for run in entry["runs"]:
+                observed_at = timestamp(run["updated_at"])
+                if run.get("evidence_error"):
+                    failures.append((observed_at, False, run["evidence_error"]))
+                    continue
+                if not run.get("evidence"):
+                    if run["status"] == "completed" and run.get("conclusion") not in ("success", "skipped"):
+                        failures.append((observed_at, False,
+                                         f"{run.get('html_url', run['id'])}: workflow failed without complete receipts"))
+                    elif run["status"] == "completed":
+                        latest_unverified = max(latest_unverified or observed_at, observed_at)
+                    continue
+                reported_elsewhere, full_refresh = False, True
+                try:
+                    outcome = _evidence(run, "monitor-status.json")
+                    if (outcome.get("version") != 1 or outcome.get("kind") != "workflow_outcome"
+                            or type(outcome.get("failure_reported")) is not bool):
+                        raise ValueError("invalid workflow outcome")
+                    observed_at = timestamp(outcome["checked_at"])
+                    reported_elsewhere = outcome["failure_reported"]
+                    if name in ("scrape.yml", "source-health.yml"):
+                        sources = _evidence(run, "source-summary.json")
+                        for check in source_checks(sources):
+                            prior = latest_sources.get(check["id"])
+                            if prior is None or timestamp(check["checked_at"]) > timestamp(prior["checked_at"]):
+                                latest_sources[check["id"]] = {
+                                    **check, "reported_elsewhere": outcome.get("failure_reported", False),
+                                }
+                        full_refresh = sources["scope"]["full"]
+                        if outcome["sources"] != "success":
+                            raise ValueError("source-check step did not complete")
+                        finished = timestamp(sources["checked_at"])
+                    if name != "source-health.yml":
+                        generated = _evidence(run, "model-generation.json")
+                        _successful_generation(generated)
+                        if outcome["publication"] != "success":
+                            raise ValueError("model publication failed or was not attempted")
+                        finished = timestamp(generated["checked_at"])
+                        if (outcome.get("history_step") not in ("success", "failure")
+                                or outcome.get("history_recorded") is not True):
+                            raise ValueError("change history recording was not verified; data publication stayed separate")
+                    if name == "ontario-price-archive.yml" and not outcome["archive_complete"]:
+                        raise ValueError("raw preservation or validated archive update failed")
+                    latest_success = max(latest_success or observed_at, observed_at)
+                    if full_refresh and finished >= due:
+                        successes.append(finished)
+                except (ValueError, KeyError, TypeError) as exc:
+                    failures.append((observed_at, reported_elsewhere, f"{run.get('html_url', run['id'])}: {exc}"))
+            failure = max(failures, key=lambda item: item[0]) if failures else None
+            unverified = (latest_unverified is not None
+                          and (latest_success is None or latest_unverified > latest_success))
+            if failure is not None and (latest_success is None or failure[0] >= latest_success):
+                checks.append({"id": key, "ok": False, "reported_elsewhere": failure[1],
+                               "details": [f"{name}: latest attempted refresh failed or could not be verified.", failure[2]],
+                               "checked_at": now.isoformat()})
+            elif successes and not unverified:
+                checks.append({"id": key, "ok": True, "details": [],
+                               "checked_at": now.isoformat(), "refresh_completed_at": max(successes).isoformat()})
+            elif now - due > OVERDUE_GRACE:
+                checks.append({"id": key, "ok": False,
+                               "details": [f"{name}: expected refresh {due.isoformat()} is over 24 hours overdue; "
+                                           "the latest full refresh could not be verified."]})
+            else:
+                checks.append({"id": key, "ok": None, "details": [
+                    f"{name}: refresh due {due.isoformat()}; awaiting complete evidence within the 24-hour grace."]})
+        except (ValueError, KeyError, TypeError) as exc:
+            checks.append({"id": key, "ok": False, "details": [f"Cannot verify workflow freshness: {exc}"]})
+    return checks + list(latest_sources.values())
+
+
+def read_evidence_archive(path: Path) -> dict:
+    """Read only named JSON receipts from a small Actions artifact; never extract paths from a ZIP."""
+    names = {"model-generation.json", "source-summary.json", "monitor-status.json"}
+    result = {}
+    with zipfile.ZipFile(path) as archive:
+        for info in archive.infolist():
+            if info.filename not in names:
+                continue
+            if info.file_size > 2_000_000 or info.filename in result:
+                raise ValueError("oversized or duplicate monitoring receipt")
+            result[info.filename] = json.loads(archive.read(info).decode("utf-8"))
+    return result
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--models", type=Path, default=MODELS_PATH)
+    parser.add_argument("--history", type=Path, default=HISTORY_PATH)
+    parser.add_argument("--receipt", type=Path)
+    parser.add_argument("--record", action="store_true", help="explicitly write history from a generation receipt")
+    parser.add_argument("--dry-run", action="store_true", help="check only; never write history")
+    parser.add_argument("--report", type=Path, help="explicitly write a diagnostic report")
+    parser.add_argument("--github-context", type=Path, help="verified Actions run metadata and receipts")
+    parser.add_argument("--artifact", type=Path, help="read named receipts from an Actions ZIP (no extraction)")
+    args = parser.parse_args(argv)
+    if args.artifact:
+        print(_json(read_evidence_archive(args.artifact)))
+        return 0
+    if args.record and (args.dry_run or args.receipt is None):
+        parser.error("--record requires --receipt and cannot be combined with --dry-run")
+    now = datetime.now(timezone.utc)
+    report = {"version": SCHEMA_VERSION, "checked_at": now.isoformat(), "run": run_identity(),
+              "checks": input_checks(ROOT, now)}
+    if args.github_context:
+        report["checks"].extend(workflow_checks(read_json(args.github_context), now))
+    else:
+        report["scope_note"] = "Local file checks only; GitHub workflow cadence was not checked."
+    try:
+        document = read_json(args.models)
+        semantic_models(document)
+        if document.get("coverage_report") is not None:
+            unmapped = document["coverage_report"]["totals"]["unmapped"]
+            block_periods = document.get("assumptions", {}).get("block_periods", {})
+            problems = ([f"{unmapped} live tariffs are unmapped."] if unmapped else [])
+            if block_periods.get("problem") or block_periods.get("skipped"):
+                problems.append("Reviewed block-period inputs are missing or invalid.")
+            report["checks"].append({"id": "model_inputs", "ok": not problems, "details": problems})
+        history = read_json(args.history) if args.history.exists() else None
+        if args.receipt:
+            history = record_refresh(history, document, read_json(args.receipt))
+        elif history is None:
+            raise ValueError("model change tracking has not been initialized")
+        else:
+            validate_history(history)
+            if (history["last_refresh"]["model_fingerprint"] != fingerprint(semantic_models(document))
+                    or any(history["last_refresh"][key] != document[key]
+                           for key in ("generated_at", "as_of", "method_version"))):
+                raise ValueError("published models do not match the last recorded generation")
+        if args.record:
+            write_json(args.history, history)
+        report["checks"].append({"id": "model_history", "ok": True, "details": []})
+        report["refresh"] = history["last_refresh"]
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        logger.error("Model monitoring could not record/verify the refresh: %s", exc)
+        report["checks"].append({"id": "model_history", "ok": False, "details": [str(exc)]})
+    if args.report:
+        write_json(args.report, report)
+    failed = [check for check in report["checks"] if check["ok"] is False]
+    print(f"Model monitoring: {len(failed)} problem check(s); "
+          f"{'history write requested' if args.record else 'read-only check'}.")
+    for check in failed:
+        print(f"{check['id']}: " + "; ".join(check["details"]))
+    if report.get("scope_note"):
+        print(report["scope_note"])
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

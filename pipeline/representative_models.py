@@ -2311,22 +2311,38 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--province", action="append",
                         help="province code, repeatable (default: the export's MODEL_PROVINCES)")
     parser.add_argument("--as-of", default=None, help="YYYY-MM-DD (default: today, UTC)")
+    parser.add_argument("--generation-receipt", type=Path, help="write an explicit model refresh outcome for CI")
     args = parser.parse_args(argv)
+    if args.generation_receipt and not (args.build and args.output):
+        parser.error("--generation-receipt requires --build and --output")
     if not (args.coverage or args.build):
         parser.print_help()
         return 0
-    rates, crosswalk = load_rates(args.rates), load_crosswalk(args.crosswalk)
-    if args.coverage:
-        print(format_coverage(coverage_report(rates, crosswalk)))
-    if args.build:
-        from pipeline.export_json import MODEL_PROVINCES  # the export's list is the single source of truth
-
-        kwargs = {"rates": rates, "crosswalk": crosswalk, "usage_levels": load_usage_levels(args.usage_levels),
-                  "taxes": load_taxes(args.taxes), "provinces": tuple(args.province or MODEL_PROVINCES),
-                  "as_of": args.as_of, "zone_policy": args.zone_policy,
-                  "input_label": Path(args.rates).as_posix()}
-        result = write_models(args.output, **kwargs) if args.output else build_models(**kwargs)
-        print(format_models(result))
+    monitor, previous = None, {}
+    if args.generation_receipt:
+        from pipeline.export_json import start_model_receipt
+        monitor, previous = start_model_receipt(args.generation_receipt, Path(args.output))
+    inputs = {}
+    try:
+        rates, crosswalk = load_rates(args.rates), load_crosswalk(args.crosswalk)
+        if args.coverage:
+            print(format_coverage(coverage_report(rates, crosswalk)))
+        if args.build:
+            from pipeline.export_json import MODEL_PROVINCES  # the export owns the default scope
+            inputs = {"crosswalk": crosswalk, "usage_levels": load_usage_levels(args.usage_levels),
+                      "taxes": load_taxes(args.taxes)}
+            kwargs = {"rates": rates, **inputs, "provinces": tuple(args.province or MODEL_PROVINCES),
+                      "as_of": args.as_of, "zone_policy": args.zone_policy,
+                      "input_label": Path(args.rates).as_posix()}
+            result = write_models(args.output, **kwargs) if args.output else build_models(**kwargs)
+            if monitor is not None:
+                monitor.save_generation_receipt(args.generation_receipt, result, previous=previous, inputs=inputs)
+            print(format_models(result))
+    except Exception as exc:
+        if monitor is not None:
+            monitor.save_generation_receipt(args.generation_receipt, None, previous=previous,
+                                            error=f"{type(exc).__name__}: {exc}")
+        raise
     return 0
 
 

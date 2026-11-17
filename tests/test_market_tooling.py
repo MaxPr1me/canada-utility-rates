@@ -148,7 +148,8 @@ def test_ontario_raw_reports_are_saved_before_validation_even_after_partial_capt
     assert "--no-site-api" in by_id["archive"]["run"]
     assert "scripts/export_ontario_totals.py" in by_id["totals"]["run"]
     assert "steps.totals.outcome == 'success'" in by_id["models"]["if"]
-    (artifact,) = [step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@")]
+    (artifact,) = [step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@")
+                   and step.get("with", {}).get("name", "").startswith("ieso-raw-recovery-")]
     assert "failure()" in artifact["if"]
     assert "data/market/ieso_raw" in artifact["with"]["path"]
     assert artifact["with"]["retention-days"] == 90

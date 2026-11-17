@@ -1,6 +1,15 @@
 # Phase 5 Completion Matrix
 
-## Current queue - source reliability and Batch 18 publication
+## Current milestone - Phase 8 monitoring
+
+Owner decision (November 17): implement model change/freshness monitoring while municipal
+publication remains pending. The implementation passes the full local suite; first CI
+publication/deployment verification remains. See the
+[approved model policy](../.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17)
+and [workflow rules](../.github/instructions/ci-data-history.instructions.md#model-monitoring).
+This does not waive source checks or authorize a Monthly Scrape merely to test monitoring.
+
+## Separately pending - source reliability and Batch 18 publication
 
 Owner decision (November 17): repair and verify Maritime Electric, Grand Forks and New Westminster
 source discovery, then publish the already-registered municipal additions below. Local checks pass;
@@ -187,14 +196,13 @@ actions below remain independent.
    `SCHEDULE_EDITIONS` entry. Pinned by `tests/test_edition_rollover.py`.
 6. Manitoba Small (Non-Demand) is calculable from stored corrected data; Small (Demand)
    remains unavailable without phase and qualifying demand-history assumptions.
-7. Gas usage/unit and Phase 8 monitoring proposals were delivered for review only. Gas:
+7. Gas usage/unit and Phase 8 monitoring were initially proposals. Gas:
    separate native m3/GJ tracks, source-backed residential examples; commercial demand
    needs explicit annual/history inputs. **Gas update (November 4, owner decisions):** 7D-1
    implements residential default-supply gas models in native units (m3 100/200/400, GJ
    4/8/16); commercial gas withheld; Energir (banded per-device fees) and Liberty NB
-   (optional utility supply) fail closed; gas tax lines audited unchanged. Phase 8: one existing rebuild, always publish
-   valid fresh models, exclude synthetic changes from alerts, explicit failure/expiry
-   evidence, visible nonblocking errors; 2% and issue policy remain unapproved.
+   (optional utility supply) fail closed; gas tax lines audited unchanged. Phase 8 was approved on
+   November 17 and is now the current milestone above; the former threshold/issue proposal is superseded.
    Synthetic sensitivity remains queued. Historical Alberta market work is implemented above;
    real-profile weighting remains unavailable. Toronto Hydro's published numeric example is
    illustrative; FortisAlberta settlement profiles are assigned shapes, not verified observed
@@ -300,8 +308,8 @@ building coverage; counts include optional adjustments and reference records.
 | Done (October 30, batch 15; pushed with batch 16) | Dated model inputs (`tou_shares` effective/end dates; ULO 41/20/26/13 and Ontario Electricity Rebate 15.7% from November 1, 2026); Manitoba Hydro pages moved to `/account/rates/...`; Alberta Rate of Last Resort seed citations now cite the ETS pool price report; `tests/test_source_urls.py` dead-address guard; legacy market generator default `logs/market_pricing_legacy_2020_2024.json`; Deploy Site after successful Ontario Price Archive runs; monitor checks recorded in the coverage ledger | 2,032 tests across 24 modules. Models rebuilt for the committed as-of date are unchanged |
 | Done (October 30, batch 16; pushed October 30) | W1 Yukon book discovery through the page model JSON; W2 Centra schedule edition by rates date and the v1126 text Appendix A (high confidence); W3 dead seed citations kept with notes (`KEPT_DEAD`), inventory and AESO pool-price links fixed, guard scans reference data; W4 local check kit (`logs/_b16_kit_*`, untracked); W5 model decisions (method 7C-3) | 2,090 tests across 27 modules. Dry runs: Yukon 20 and 20, Centra 13, Alberta 2/4/5/2 live. Gate 77 of 78 on the committed export (AESO, stored by the next Monthly Scrape) |
 | Done (October 15-16) | Lane B (7F site view, October 15); Lane F (EPCOR Energy Alberta's moved pages), CI as the only database writer (first stored run: Monthly Scrape #11, scrape run 29), the Ontario market continuation (rolling 60-month history), Lane A (7C, all ten provinces) and the 7E illustrative sidecar (all October 16) | See Next Batches item 0 |
-| Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones; the 7E synthetic profile (Monday-Friday hours beginning 7-18 EST). Phase 8: change threshold 2% (proposed) | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
-| Planned (after the lanes) | Commercial gas models (7D-1 covers residential gas); the rest of 6E gas commodity cadence; Phase 8 model refresh automation (must ignore illustrative values); Phase 9 product follow-up incl. the Across-Canada comparison (never uses illustrative values) | See Next Batches items 7-10 |
+| Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones; the 7E synthetic profile (Monday-Friday hours beginning 7-18 EST). | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
+| Planned (after the lanes) | Commercial gas models (7D-1 covers residential gas); the rest of 6E gas commodity cadence; Phase 9 product follow-up incl. the Across-Canada comparison (never uses illustrative values) | See Next Batches items 7-10; Phase 8 is the current milestone above |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11) while the rate pages show August 1, 2026 rates; from the November 1, 2026 rates the v1126 text Appendix A is parsed at high confidence (batch 16, row 1b) |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Checked October 30 (ledger notes): Qulliq, NTPC Snare, EPCOR Distribution (2026 tariffs still interim) and the next Rate of Last Resort term (the UCA table shows only the 2025-2026 term) unchanged, next review December 15; Centra and Yukon changed (row 1b), review November 30. Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |
@@ -816,11 +824,11 @@ live records also need crosswalk rules: after export,
     models (hidden by default; never in medians or comparisons). Next: 7D gas; a source-backed 7E
     needs further analysis (Ontario) and 6C (Alberta).
 9. **Phase 8: Representative Model Refresh Automation** ([README](../README.md#roadmap)):
-    Reuse the existing model rebuild after the Monthly Scrape and always publish valid fresh models.
-    A threshold would govern notifications only (2% is proposed, not approved); membership, structure,
-    tax and method changes need separate reporting. Changelog and stale-input issue policies remain
-    proposals; illustrative values are never inputs. Details:
-    [model instructions](../.github/instructions/representative-models.instructions.md#method-export-and-tests).
+    Implemented and locally validated; first CI verification remains. The existing builds produce
+    explicit receipts and a public change history; a reusable non-blocking job checks inputs,
+    source results and refresh cadence. No additional daily job or database writer. Details:
+    [model policy](../.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17)
+    and [workflow rules](../.github/instructions/ci-data-history.instructions.md#model-monitoring).
 10. **Phase 9: Product Follow-up** ([README](../README.md#roadmap)):
     historical charts and AI exports, calculator/API scoping, and the Across-Canada comparison
     view built on the Phase 7 models (it can start now that 7C is done; it never uses illustrative

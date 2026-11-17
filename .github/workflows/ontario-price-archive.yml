@@ -45,6 +45,7 @@ concurrency:
 permissions:
   contents: write       # to commit the updated archive
   issues: write         # to create an issue on failures
+  actions: read
 
 # Explicit bash adds pipefail, so a failing command piped into tee fails its step.
 defaults:
@@ -139,7 +140,13 @@ jobs:
       - name: Refresh representative models
         id: models
         if: ${{ !cancelled() && steps.totals.outcome == 'success' }}
-        run: python -m pipeline.representative_models --build --output site/data/representative_models.json 2>&1 | tee model_output.txt
+        run: python -m pipeline.representative_models --build --output site/data/representative_models.json --generation-receipt model-generation.json 2>&1 | tee model_output.txt
+
+      - name: Record model change history
+        id: monitor_history
+        if: ${{ !cancelled() && steps.models.outcome == 'success' }}
+        continue-on-error: true
+        run: python -m pipeline.model_monitoring --receipt model-generation.json --record --report model-monitor-prepublication.json
 
       - name: Commit updated market history
         id: market_commit
@@ -149,6 +156,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add site/data/market_pricing_ontario.json data/market/ontario_market_monthly.csv
           git add site/data/representative_models.json
+          if [ -f site/data/model_change_history.json ]; then git add site/data/model_change_history.json; fi
           git add data/market/ontario_total_hourly.csv data/market/ontario_total_hourly_2020_2025.csv
           git add data/market/ontario_total_monthly.csv data/market/ontario_total_metadata.json
           if git diff --staged --quiet; then
@@ -173,6 +181,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Create issue on failure
+        id: failure_issue
         if: failure()
         uses: actions/github-script@v8
         env:
@@ -237,3 +246,31 @@ jobs:
               body: `## Raw Capture Output\n\n\`\`\`\n${rawOutput.slice(-3000)}\n\`\`\`\n\n## Archive Output\n\n\`\`\`\n${output.slice(-3000)}\n\`\`\`\n\n## Market History Output\n\n\`\`\`\n${marketOutput.slice(-3000)}\n\`\`\`\n\n## Combined Price Output\n\n\`\`\`\n${totalsOutput.slice(-3000)}\n\`\`\`\n\n## Model Output\n\n\`\`\`\n${modelOutput.slice(-3000)}\n\`\`\`\n\n${note}\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nThis issue was created automatically by the Ontario Price Archive workflow.`,
               labels: ['scrape-issue', 'automated'],
             });
+
+      - name: Record explicit workflow outcomes
+        if: always()
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          MONITOR_STEPS: ${{ toJSON(steps) }}
+        with:
+          script: |
+            const monitor = require('./scripts/model_monitoring_issue.js');
+            monitor.writeOutcome({context, steps: JSON.parse(process.env.MONITOR_STEPS), workflow: 'ontario-price-archive.yml'});
+
+      - name: Keep monitoring evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: model-monitoring-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            model-generation.json
+            monitor-status.json
+            model-monitor-prepublication.json
+          if-no-files-found: warn
+
+  monitor:
+    needs: archive
+    if: ${{ always() && !cancelled() }}
+    uses: ./.github/workflows/model-monitoring.yml

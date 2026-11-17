@@ -48,6 +48,7 @@ concurrency:
 permissions:
   contents: write       # to commit updated data
   issues: write         # to create issue on failures
+  actions: read         # to verify explicit refresh receipts
 
 # Explicit bash adds pipefail, so a failing command piped into tee fails its step.
 defaults:
@@ -143,11 +144,11 @@ jobs:
           PROVINCE: ${{ github.event.inputs.province }}
         run: |
           if [ -n "$UTILITY" ]; then
-            python -m pipeline.run_scrape --utility "$UTILITY" 2>&1 | tee scrape_output.txt
+            python -m pipeline.run_scrape --utility "$UTILITY" --summary-json source-summary.json 2>&1 | tee scrape_output.txt
           elif [ -n "$PROVINCE" ]; then
-            python -m pipeline.run_scrape --province "$PROVINCE" 2>&1 | tee scrape_output.txt
+            python -m pipeline.run_scrape --province "$PROVINCE" --summary-json source-summary.json 2>&1 | tee scrape_output.txt
           else
-            python -m pipeline.run_scrape 2>&1 | tee scrape_output.txt
+            python -m pipeline.run_scrape --summary-json source-summary.json 2>&1 | tee scrape_output.txt
           fi
 
       - name: Validate data
@@ -161,7 +162,13 @@ jobs:
         run: git pull --ff-only origin main
 
       - name: Export JSON for site
-        run: python -m pipeline.export_json
+        id: models
+        run: python -m pipeline.export_json --generation-receipt model-generation.json
+
+      - name: Record model change history
+        id: monitor_history
+        continue-on-error: true
+        run: python -m pipeline.model_monitoring --receipt model-generation.json --record --report model-monitor-prepublication.json
 
       - name: Reject empty or corrupt exports
         run: |
@@ -217,6 +224,7 @@ jobs:
         run: python -m pipeline.diff_report 2>&1 | tee diff_output.txt
 
       - name: Commit updated data
+        id: publish
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -242,6 +250,7 @@ jobs:
           done < old_backups.txt
 
       - name: Create issue on workflow errors
+        id: failure_issue
         if: failure() && steps.inputs.outcome != 'failure'
         uses: actions/github-script@v8
         with:
@@ -271,3 +280,32 @@ jobs:
               body: `## Test Output\n\n\`\`\`\n${testOutput.slice(-3000)}\n\`\`\`\n\n## Scrape Output\n\n\`\`\`\n${scrapeOutput.slice(0, 3000)}\n\`\`\`\n\n## Validation Report\n\n\`\`\`\n${validateOutput.slice(0, 3000)}\n\`\`\`\n\n## Database History\n\n\`\`\`\n${historyOutput.slice(-3000)}\n\`\`\`\n\n## Diff Report\n\n\`\`\`\n${diffOutput.slice(0, 3000)}\n\`\`\`\n\nThis issue was created automatically by the monthly scrape workflow.`,
               labels: ['scrape-issue', 'automated'],
             });
+
+      - name: Record explicit workflow outcomes
+        if: always()
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          MONITOR_STEPS: ${{ toJSON(steps) }}
+        with:
+          script: |
+            const monitor = require('./scripts/model_monitoring_issue.js');
+            monitor.writeOutcome({context, steps: JSON.parse(process.env.MONITOR_STEPS), workflow: 'scrape.yml'});
+
+      - name: Keep monitoring evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: model-monitoring-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            model-generation.json
+            source-summary.json
+            monitor-status.json
+            model-monitor-prepublication.json
+          if-no-files-found: warn
+
+  monitor:
+    needs: scrape
+    if: ${{ always() && !cancelled() }}
+    uses: ./.github/workflows/model-monitoring.yml

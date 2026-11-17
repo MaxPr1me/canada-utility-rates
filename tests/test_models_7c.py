@@ -366,6 +366,25 @@ def test_export_hook_writes_compact_all_province_models_and_keeps_the_previous_f
     assert out.read_bytes() == previous and not list(out.parent.glob("*.tmp"))
 
 
+def test_generation_receipt_distinguishes_success_from_failure_retaining_the_file(tmp_path, monkeypatch):
+    from pipeline.model_monitoring import read_json
+
+    out, receipt_path = tmp_path / "models.json", tmp_path / "generation.json"
+    assert export_json.export_representative_models(_records(), out, generation_receipt_path=receipt_path)
+    assert read_json(receipt_path)["status"] == "success"
+    assert export_json.export_representative_models(_records(), out, generation_receipt_path=receipt_path)
+    assert read_json(receipt_path)["change_status"] == "unchanged"
+    previous = out.read_bytes()
+
+    def broken(*args, **kwargs):
+        raise RuntimeError("model build failed")
+
+    monkeypatch.setattr(rm, "build_models", broken)
+    assert export_json.export_representative_models(_records(), out, generation_receipt_path=receipt_path) is None
+    assert read_json(receipt_path)["status"] == "failed"
+    assert out.read_bytes() == previous
+
+
 def test_cli_build_defaults_to_the_export_provinces_and_writes_compact_json(tmp_path, capsys):
     output = tmp_path / "models.json"
     assert rm.main(["--build", "--rates", str(FIXTURE), "--output", str(output), "--as-of", AS_OF]) == 0
@@ -374,6 +393,39 @@ def test_cli_build_defaults_to_the_export_provinces_and_writes_compact_json(tmp_
     assert text == json.dumps(written, separators=(",", ":"), ensure_ascii=False) + "\n"
     assert written["input"]["provinces"] == sorted(PROVINCES) and written["as_of"] == AS_OF
     assert AB_RES in capsys.readouterr().out
+
+
+def test_cli_generation_receipt_covers_success_and_input_failure(tmp_path):
+    from pipeline.model_monitoring import read_json
+
+    output, evidence = tmp_path / "models.json", tmp_path / "receipt.json"
+    args = ["--build", "--rates", str(FIXTURE), "--output", str(output),
+            "--as-of", AS_OF, "--generation-receipt", str(evidence)]
+    assert rm.main(args) == 0
+    assert read_json(evidence)["status"] == "success"
+    before = output.read_bytes()
+    with pytest.raises(FileNotFoundError):
+        rm.main(args + ["--crosswalk", str(tmp_path / "missing-crosswalk.json")])
+    assert read_json(evidence)["status"] == "failed"
+    assert "FileNotFoundError" in read_json(evidence)["error"]
+    assert output.read_bytes() == before
+    with pytest.raises(SystemExit) as error:
+        rm.main(["--generation-receipt", str(evidence)])
+    assert error.value.code == 2
+
+
+def test_monitoring_write_failure_does_not_stop_a_valid_model_export(tmp_path, monkeypatch, caplog):
+    from pipeline import model_monitoring
+
+    def failed_receipt(*args):
+        raise OSError("receipt directory unavailable")
+
+    monkeypatch.setattr(model_monitoring, "write_json", failed_receipt)
+    output = tmp_path / "models.json"
+    result = export_json.export_representative_models(_records(), output,
+                                                      generation_receipt_path=tmp_path / "receipt.json")
+    assert result is not None and json.loads(output.read_text(encoding="utf-8")) == result
+    assert "monitoring cannot verify this refresh" in caplog.text
 
 
 # 7C-2 (user decisions October 16, 2026)

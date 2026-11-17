@@ -74,6 +74,14 @@ reading `site/data/`. Model data rules, including Across-Canada's:
   plus each contributor's chosen component. They describe the example customer, not the visitor's
   actual service or eligibility. Older exports may omit these fields.
 - Show the historical market benchmarks apart from the delivery-only table, never in place of it.
+- Load `model_change_history.json` independently of the shared model-data promise. Its generation,
+  as-of, method, model/level identities, usage, costs and recorded last-change dates must match;
+  missing or invalid history gets a retryable notice without hiding prices or breaking Across-Canada.
+- The selected model's **Last changed** is a meaningful recorded change, not a build/check date.
+  A first baseline says earlier changes are unknown. Keep selected/all-model history access,
+  separate base/observed-benchmark labels, material flags and recording-gap notices. Display saved
+  amounts rather than recalculating bills; history policy is in the
+  [model rules](representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
 - Build the model views with `createElement`/`textContent` and allow only http(s) links. A missing or
   broken file shows a notice without breaking the other views.
 

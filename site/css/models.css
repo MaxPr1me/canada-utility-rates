@@ -42,3 +42,12 @@
 .rm-benchmark h4 { margin-top: 0.75rem; }
 .rm-benchmark p { margin: 0.5rem 0; }
 .rm-benchmark .methodology-grid { margin: 0.75rem 0; }
+
+.rm-history { overflow-wrap: anywhere; }
+.rm-history summary { cursor: pointer; font-weight: 600; }
+.rm-history p, .rm-history select, .rm-history button { margin: 0.5rem 0; }
+.rm-history select { max-width: 100%; padding: 0.3rem; }
+.rm-history-event { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #cbd5e1; }
+.rm-history-event ul { padding-left: 1.25rem; }
+.rm-history-event li { margin: 0.5rem 0; }
+.rm-history-warning, .rm-history-material { color: #78350f; }

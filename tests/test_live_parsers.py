@@ -14016,6 +14016,18 @@ def test_ops_tally_provenance_counts_live_markers_and_everything_else_as_seed():
     assert tally_provenance([]) == {"live": 0, "seed": 0}
 
 
+def test_ops_structured_receipt_preserves_provenance_and_targeted_scope(tmp_path, monkeypatch):
+    receipt_path = tmp_path / "source-summary.json"
+    scrapers = {"Example": OPS__summary_scraper([OPS__summary_record("Example", OPS_SUMMARY_SEED_NOTE)])}
+    OPS__summary_run_main(monkeypatch, tmp_path, scrapers,
+                          ["--dry-run", "--utility", "Example", "--summary-json", str(receipt_path)])
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    assert receipt["scope"] == {"full": False, "utility": "Example", "province": None}
+    assert receipt["summary"]["rows"][0]["status"] == "seed only"
+    assert receipt["summary"]["live"] == 0 and receipt["summary"]["seed"] == 1
+    assert not (tmp_path / "rates.db").exists()
+
+
 def test_ops_summarize_run_totals_problem_lists_and_problems_first_rows():
     summary = summarize_run({
         "Alpha Power": {"live": 3, "seed": 0, "invalid": 0, "error": None},

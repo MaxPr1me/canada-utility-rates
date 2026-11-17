@@ -16,6 +16,7 @@ Output:
 
 from __future__ import annotations
 
+import argparse
 import contextlib
 import json
 import logging
@@ -24,6 +25,7 @@ import sqlite3
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from types import ModuleType
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -52,7 +54,7 @@ def derive_provenance(confidence: str | None, notes: str | None) -> str:
     return "seed"
 
 
-def export_all() -> None:
+def export_all(generation_receipt_path: Path | None = None) -> None:
     """Export all data from the database to JSON files for the site."""
     setup_logging()
 
@@ -143,34 +145,58 @@ def export_all() -> None:
     logger.info("Exported missing classes report (%d entries)", len(classes_report))
 
     conn.close()
-    export_representative_models(tariffs, SITE_DATA_DIR / "representative_models.json")
+    result = export_representative_models(tariffs, SITE_DATA_DIR / "representative_models.json",
+                                         generation_receipt_path=generation_receipt_path)
     print(f"JSON export complete -> {SITE_DATA_DIR}")
+    if result is None:
+        print("Representative model refresh FAILED; the previous model file was retained.")
 
 
-def export_representative_models(tariffs: list[dict], out_path: Path) -> dict | None:
+def start_model_receipt(receipt_path: Path | None, output: Path) -> tuple[ModuleType | None, dict]:
+    """Keep optional monitoring setup out of the primary generation's failure path."""
+    if receipt_path is not None:
+        try:
+            from pipeline import model_monitoring
+            return model_monitoring, model_monitoring.observe_previous(output)
+        except Exception:
+            logger.exception("Model monitoring setup failed; continuing the primary generation without a receipt")
+    return None, {}
+
+
+def export_representative_models(tariffs: list[dict], out_path: Path, *,
+                                 generation_receipt_path: Path | None = None) -> dict | None:
     """Build the representative models from the exported tariffs and write them as compact JSON.
 
     Never raises: on any failure the error is logged, ``None`` is returned and an existing file is left untouched.
     """
     out_path = Path(out_path)
     tmp_path = out_path.with_name(out_path.name + ".tmp")
+    monitor, previous = start_model_receipt(generation_receipt_path, out_path)
+    inputs = {}
     try:
         # Imported here so a broken models module cannot break the main export.
         from pipeline import representative_models as models
 
+        inputs = {"crosswalk": models.load_crosswalk(), "usage_levels": models.load_usage_levels(),
+                  "taxes": models.load_taxes()}
         result = models.build_models(
-            tariffs, models.load_crosswalk(), models.load_usage_levels(), models.load_taxes(),
+            tariffs, inputs["crosswalk"], inputs["usage_levels"], inputs["taxes"],
             provinces=MODEL_PROVINCES, zone_policy="median_of_zones", input_label="site/data/rates.json",
         )
         text = json.dumps(result, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         tmp_path.write_text(text + "\n", encoding="utf-8")
         os.replace(tmp_path, out_path)
-    except Exception:
+    except Exception as exc:
         logger.exception("Representative models export failed; %s left unchanged", out_path)
         with contextlib.suppress(OSError):
             tmp_path.unlink(missing_ok=True)
+        if monitor is not None:
+            monitor.save_generation_receipt(generation_receipt_path, None, previous=previous,
+                                            error=f"{type(exc).__name__}: {exc}")
         return None
+    if monitor is not None:
+        monitor.save_generation_receipt(generation_receipt_path, result, previous=previous, inputs=inputs)
     logger.info("Exported %d representative models to %s", len(result["models"]), out_path)
     return result
 
@@ -182,4 +208,6 @@ def write_json(path: Path, data: object) -> None:
 
 
 if __name__ == "__main__":
-    export_all()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--generation-receipt", type=Path, help="write an explicit model refresh outcome for CI")
+    export_all(generation_receipt_path=parser.parse_args().generation_receipt)

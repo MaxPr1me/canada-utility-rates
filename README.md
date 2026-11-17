@@ -64,6 +64,8 @@ python -m pipeline.export_json
 
 It writes the JSON files in `site/data/` (rates, utilities, summaries and the representative
 models) and prints `JSON export complete`.
+Change history is recorded by automated refreshes, not this local export; model prices still work
+if the optional history panel is unavailable.
 
 **5. View the website:**
 
@@ -110,8 +112,9 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   53 live, 0 estimated and 0 invalid records across these sources and the seven additions.
 - **"Coverage complete" is not claimed yet:** the scoped wording awaits the owner's approval and
   needs verified GitHub source checks and the new utilities stored first.
-- **Focused validation:** 73 source, URL and model regression tests passed on Python 3.11.
-  The full suite is run with `pytest tests`.
+- **Phase 8 monitoring:** implementation and full local validation are complete; first automated
+  publication/deployment verification is pending. Municipal publication remains separate.
+- **Validation:** all 2,413 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.
@@ -417,6 +420,11 @@ entries. **Risk:** deleting the `data-history` release deletes `rates.db` and ev
   Ontario Price Archive workflows and after relevant code or model-input pushes. It publishes
   the Alberta market history and refreshes the representative models without touching the
   database, and opens an issue if it fails.
+- [Model Monitoring](.github/workflows/model-monitoring.yml) is a non-blocking follow-up to the
+  existing data workflows and Source Health, not a new daily job. It checks explicit refresh
+  evidence and reports input/refresh problems; ordinary changes appear in the model change log.
+  See the [maintainer guide](AGENTS.md#model-monitoring-opened-an-issue-or-history-is-unavailable)
+  for local checks and recovery.
 
 The three data workflows take turns publishing. Every workflow runs on `ubuntu-24.04`, and steps
 that pipe output into `tee` run under `bash -o pipefail`, so a failing command still fails its
@@ -708,7 +716,7 @@ One line per phase; sub-phase detail and the work queue are in the
 - **Phase 5: Live Parser Completion** — in progress: source-reliability verification and publication of the registered municipal additions come next (see Current Status); the scoped coverage-complete claim awaits owner approval, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas commodity cadence started).
 - **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D residential gas done as method 7D-1, in each utility's native m³ or GJ, with business gas withheld until its usage scenarios are approved).
-- **Phase 8: Representative Model Refresh Automation** — planned (design reviewed, not implemented; the proposed 2% change threshold is not approved).
+- **Phase 8: Representative Model Refresh Automation** — implementation ready; first CI publication/deployment verification pending. Public change history and problem-only monitoring follow the [approved policy](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
 - **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done; historical charts, AI-ready exports, a bill calculator or API and commercial/gas comparisons are planned).
 
 ---

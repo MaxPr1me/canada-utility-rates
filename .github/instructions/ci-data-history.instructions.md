@@ -1,6 +1,6 @@
 ---
 description: "Use when changing GitHub Actions workflows, the scrape pipeline or the database tooling: .github/workflows/ (scrape.yml, source-health.yml, deploy.yml), pipeline/run_scrape.py, pipeline/export_json.py, pipeline/validate.py, pipeline/diff_report.py, scripts/check_db_history.py, scripts/pull_history_db.py, scripts/coverage_gate.py, data/sources/coverage_ledger.json and schema/. Covers the single-writer SQLite history in the data-history release, restore and SHA-256 digest checks, history verification, upload order and backups, dispatch inputs, pipefail and runner pins, the public provenance notice, the coverage gate and its ledger, upserts and workflow_run deployment chaining."
-applyTo: ".github/workflows/**, scripts/check_db_history.py, scripts/pull_history_db.py, scripts/coverage_gate.py, data/sources/coverage_ledger.json, pipeline/run_scrape.py, pipeline/export_json.py, pipeline/validate.py, pipeline/diff_report.py, schema/**"
+applyTo: ".github/workflows/**, scripts/check_db_history.py, scripts/pull_history_db.py, scripts/coverage_gate.py, scripts/model_monitoring_issue.js, pipeline/model_monitoring.py, tests/test_model_monitoring.py, data/sources/coverage_ledger.json, pipeline/run_scrape.py, pipeline/export_json.py, pipeline/validate.py, pipeline/diff_report.py, schema/**"
 ---
 # CI, database history and the coverage gate
 
@@ -77,6 +77,43 @@ snapshot rules: [scrapers.instructions.md](scrapers.instructions.md). Model expo
   CR and LF, only when `GITHUB_ACTIONS == "true"`. Tests that call `main()` set or clear that variable.
 - `pipeline.validate` reconfigures stdout so Windows consoles do not crash on non-ASCII names.
 - `export_json.py` writes the site JSON, then the representative models.
+- `run_scrape --summary-json PATH` optionally writes the existing per-utility provenance summary
+  with expected utility names, full/targeted scope, dry-run status and run/attempt identity.
+  Receipt failure is logged without changing the scrape or database behavior.
+
+## Model monitoring
+
+Comparison/history policy is in the
+[model rules](representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
+The following workflow decisions were approved on 2026-11-17.
+
+- Reuse the existing model build in each data writer. Record history after generation and stage it
+  with the models in the same publication step. Never add a build or database writer for monitoring.
+- `scripts/model_monitoring_issue.js` captures actual step outcomes and collects run/attempt-bound
+  generation, source and publication receipts. A green workflow or an unchanged file proves
+  neither source health nor a successful model generation. A partial scrape cannot satisfy a
+  full-registry cadence check; per-utility recovery stays scoped to its checked sources.
+- The three data writers and Source Health call `model-monitoring.yml`, a reusable read-only
+  reporting job with **no schedule**. Its `model-monitoring-issues` job concurrency serializes issue
+  updates without putting Source Health in the data-writer concurrency group.
+- Check on existing/manual runs only. Read scheduled due times from the workflow YAML; Market
+  Benchmarks is due after qualifying completed parent workflows, not on an invented calendar.
+  A missing refresh becomes overdue **strictly more than 24 hours after its due time**, detected
+  at the next check. Known failures are reported immediately. This grace never extends tariff
+  expiry, audit/review deadlines or observed-market validity rules. Complete workflow silence
+  cannot be detected until another check runs.
+- Reuse the coverage gate, crosswalk coverage, reviewed block-period checks and observed-market
+  reader. Missing/invalid configuration and unmapped live tariffs remain problems; a documented
+  `not_computable` model is not inherently corrupt. Do not hide known coverage gaps.
+- Keep one bot-owned, marked monitoring issue for input/refresh problems, never ordinary price
+  changes. Preserve unchecked problems and maintainer text, reject older recovery evidence and
+  avoid duplicating a failure already reported by its workflow. Only monitoring-owned issues are
+  auto-closed, with recovery evidence; publication problems require verified publication.
+- Recording, evidence upload and the reusable reporting job are non-blocking. Failures stay
+  visible in Actions logs/annotations and diagnostic artifacts; missing receipts stay unverified.
+  These failures must not bypass database safety gates or turn a valid publication into a failed
+  workflow that prevents deployment. The reporter uses standard-library Python and Node built-ins;
+  both sides of its JSON subprocess pipe use UTF-8, including on Windows.
 
 ## Coverage gate (`scripts/coverage_gate.py`, owner decisions 2026-10-30)
 

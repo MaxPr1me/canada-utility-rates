@@ -446,11 +446,11 @@ def test_scrape_verifies_history_before_uploading_with_a_dated_backup():
     order = ["Check manual inputs", "Checkout repository", "Set up Python", "Install dependencies",
              "Install Playwright browser", "Restore database history", "Initialize database (first run only)",
              "Run deterministic tests before scraping", "Run scrapers", "Validate data",
-             "Synchronize inputs before exporting", "Export JSON for site",
+             "Synchronize inputs before exporting", "Export JSON for site", "Record model change history",
              "Reject empty or corrupt exports", "Report live-rate coverage gate",
              "Check database history before upload", "Save database history",
              "Generate diff report", "Commit updated data", "Prune old database backups",
-             "Create issue on workflow errors"]
+             "Create issue on workflow errors", "Record explicit workflow outcomes", "Keep monitoring evidence"]
     assert [name for name, _ in steps] == order
     verify = _run(_step(steps, "Check database history before upload"))
     assert ("python scripts/check_db_history.py verify --db data/db/rates.db --before db_before.json 2>&1 "
@@ -504,8 +504,8 @@ def test_scrape_inputs_utility_or_province_pass_through_env():
     check_inputs = _run(_step(steps, "Check manual inputs"))
     assert re.search(r'if \[ -n "\$UTILITY" \] && \[ -n "\$PROVINCE" \]; then\n[^\n]*\n\s*exit 1', check_inputs)
     scrape = _run(_step(steps, "Run scrapers"))
-    assert 'python -m pipeline.run_scrape --utility "$UTILITY" 2>&1 | tee scrape_output.txt' in scrape
-    assert 'python -m pipeline.run_scrape --province "$PROVINCE" 2>&1 | tee scrape_output.txt' in scrape
+    assert 'python -m pipeline.run_scrape --utility "$UTILITY" --summary-json source-summary.json 2>&1 | tee scrape_output.txt' in scrape
+    assert 'python -m pipeline.run_scrape --province "$PROVINCE" --summary-json source-summary.json 2>&1 | tee scrape_output.txt' in scrape
 
 
 def test_archive_workflow_commits_the_archive_before_building_the_market_history():
@@ -514,9 +514,10 @@ def test_archive_workflow_commits_the_archive_before_building_the_market_history
              "Test archive and combined totals", "Preserve raw IESO reports", "Commit raw reports before validation",
              "Update the Ontario Price archive",
              "Commit updated archive", "Synchronize model inputs", "Build the Ontario market history",
-             "Export combined Ontario prices", "Refresh representative models", "Commit updated market history",
+             "Export combined Ontario prices", "Refresh representative models", "Record model change history",
+             "Commit updated market history",
              "Keep raw reports for recovery after failure",
-             "Create issue on failure"]
+             "Create issue on failure", "Record explicit workflow outcomes", "Keep monitoring evidence"]
     assert [name for name, _ in steps] == order
     archive_commit = _run(_step(steps, "Commit updated archive"))
     assert re.findall(r"git add [^\n]+", archive_commit) == ["git add data/market/ontario_price_hourly.csv"]
@@ -526,6 +527,7 @@ def test_archive_workflow_commits_the_archive_before_building_the_market_history
     assert re.findall(r"git add [^\n]+", market_commit) == [
         "git add site/data/market_pricing_ontario.json data/market/ontario_market_monthly.csv",
         "git add site/data/representative_models.json",
+        "git add site/data/model_change_history.json; fi",
         "git add data/market/ontario_total_hourly.csv data/market/ontario_total_hourly_2020_2025.csv",
         "git add data/market/ontario_total_monthly.csv data/market/ontario_total_metadata.json"]
     assert 'git commit -m "data: Ontario market history update $(date +%Y-%m-%d)"' in market_commit
@@ -572,7 +574,7 @@ def test_workflows_parse_as_yaml():
         data = yaml.safe_load(workflow.read_text(encoding="utf-8"))
         triggers = data.get("on", data.get(True))
         assert "workflow_dispatch" in triggers and "schedule" in triggers
-        (job,) = data["jobs"].values()
+        (job,) = [job for job in data["jobs"].values() if "steps" in job]
         assert [step["name"] for step in job["steps"]] == [name for name, _ in _steps(workflow)]
         for step in job["steps"]:
             assert "${{" not in step.get("run", "")
@@ -583,3 +585,31 @@ def test_workflows_parse_as_yaml():
     assert steps["Initialize database (first run only)"]["if"] == "steps.restore.outputs.history == 'new'"
     assert "if" not in steps["Save database history"]
     assert steps["Check database history before upload"]["env"]["HISTORY"] == "${{ steps.restore.outputs.history }}"
+
+
+def test_monitoring_is_nonblocking_and_only_issue_updates_are_serialized():
+    yaml = pytest.importorskip("yaml")
+    directory = SCRAPE_WORKFLOW.parent
+    for filename, primary in (("scrape.yml", "scrape"), ("ontario-price-archive.yml", "archive"),
+                              ("market-benchmarks.yml", "market"), ("source-health.yml", "live-source-check")):
+        workflow = yaml.safe_load((directory / filename).read_text(encoding="utf-8"))
+        reporter = workflow["jobs"]["monitor"]
+        assert reporter["needs"] == primary
+        assert reporter["uses"] == "./.github/workflows/model-monitoring.yml"
+        steps = {step.get("name"): step for step in workflow["jobs"][primary]["steps"]}
+        assert steps["Record explicit workflow outcomes"]["continue-on-error"] is True
+        assert steps["Keep monitoring evidence"]["continue-on-error"] is True
+        if filename == "source-health.yml":
+            assert workflow["permissions"]["contents"] == "read"
+            assert "concurrency" not in workflow
+            assert all("git push" not in step.get("run", "") for step in steps.values())
+        else:
+            assert steps["Record model change history"]["continue-on-error"] is True
+            assert workflow["concurrency"]["group"] == "utility-data-updates"
+            for step in steps.values():
+                if "git push" in step.get("run", ""):
+                    assert "monitor_history" not in step.get("if", "")
+    reusable = yaml.safe_load((directory / "model-monitoring.yml").read_text(encoding="utf-8"))
+    assert set(reusable.get("on", reusable.get(True))) == {"workflow_call"}
+    assert reusable["jobs"]["report"]["continue-on-error"] is True
+    assert reusable["jobs"]["report"]["concurrency"]["group"] == "model-monitoring-issues"

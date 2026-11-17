@@ -247,10 +247,22 @@
                         <h3 id="models-title"></h3>
                         <span id="models-badge" class="rm-badge"></span>
                     </div>
+                    <p id="models-last-changed" class="section-desc" role="status"></p>
                     <p id="models-reasons" class="section-desc hidden"></p>
                     <div id="models-table-wrap" class="rm-table-wrap"></div>
                 </section>
 
+                <details id="models-history" class="market-section rm-history">
+                    <summary>Model change log</summary>
+                    <p id="models-history-notice" role="status"></p>
+                    <button id="models-history-retry" class="hidden" type="button">Retry history</button>
+                    <label for="models-history-scope">Show changes for</label>
+                    <select id="models-history-scope">
+                        <option value="selected">Selected model</option>
+                        <option value="all">All models</option>
+                    </select>
+                    <div id="models-history-events"></div>
+                </details>
                 <section id="models-notes" class="market-section"></section>
             </div><!-- /models-content -->
 

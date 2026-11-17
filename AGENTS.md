@@ -177,6 +177,8 @@ never converted); business gas and the territories come later.
 | `data/models/taxes.json` | Sales taxes and automatic bill rebates for every province and territory, as dated lines: for example the Ontario Electricity Rebate is 23.5% until October 31, 2026 and 15.7% from November 1, 2026 (O. Reg. 328/26). Municipal taxes and income-tested programs are left out. |
 | `pipeline/representative_models.py` | The calculator: each utility's monthly cost at each level, then the median, the spread, the utility closest to the median and any far from it (outliers), without and with tax, with a written explanation of how each number was made. |
 | `site/data/representative_models.json` | The results, rewritten by every export (if the calculation fails, the previous file is kept). These are comparison aids, never rates anyone is billed. |
+| `pipeline/model_monitoring.py` | Compares successful model refreshes and checks whether their saved inputs are usable. It does not calculate bills or write the database. |
+| `site/data/model_change_history.json` | The public change log, created by a verified automated refresh. Its first entry starts tracking; it does not invent earlier history. |
 
 ### Where the website lives
 
@@ -193,6 +195,13 @@ The second can be lower when an automatic rebate exceeds sales tax (for example 
 Electricity Rebate). An explanation beside the prices names the applied rebate; this is not a
 swap of the two amounts.
 
+The Representative Models page also has a **Last changed** note and a change log for one model or
+all models. It separates ordinary models from historical market benchmarks and never includes the
+synthetic estimate. A routine rebuild does not mean the prices changed. If the history is missing
+or belongs to a different model generation, the page says so and keeps the model prices usable.
+The comparison policy is in the
+[model monitoring rules](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
+
 ### Where the automation lives
 
 | File | What it does |
@@ -201,6 +210,7 @@ swap of the two amounts.
 | `.github/workflows/source-health.yml` | **Source Health** (the 15th): a test scrape that publishes nothing. |
 | `.github/workflows/ontario-price-archive.yml` | **Ontario Price Archive** (06:00 UTC on the 1st and 15th): saves the original IESO reports, then the checked Ontario Price archive, the market history, the combined totals and the models. |
 | `.github/workflows/market-benchmarks.yml` | **Market Benchmarks**: publishes the Alberta market history and refreshes the models, without touching the database. |
+| `.github/workflows/model-monitoring.yml`, `scripts/model_monitoring_issue.js` | A shared follow-up check called by the existing data workflows and Source Health. It reports input/refresh problems and manages its own issue; it has no daily schedule and does not block valid publication. |
 | `.github/workflows/deploy.yml` | **Deploy Site**: publishes the website on push, by hand, and by itself after each successful Monthly Scrape, Ontario Price Archive or Market Benchmarks run. |
 | `scripts/check_db_history.py` | The Monthly Scrape's safety check: the database is not damaged, and nothing old was lost or changed. |
 | `scripts/coverage_gate.py`, `data/sources/coverage_ledger.json` | The coverage gate (see the glossary) and the audit ledger it reads: audit dates, exclusions, and deferred and monitored items for each utility. The ledger records decisions; it never changes a rate. |
@@ -451,6 +461,29 @@ or parsing, then inspect a fresh GitHub Source Health log before publishing the 
    - A dependency (Python library) had a breaking update.
    - GitHub Actions had a temporary problem.
 4. You can re-run the workflow by clicking **"Re-run all jobs"**.
+
+### Model monitoring opened an issue or history is unavailable
+
+**What happened:** a saved input, source check or refresh could not be verified, failed, or became
+overdue. Ordinary price changes go in the public change log, not failure issues. A green data
+workflow does not dismiss a monitoring warning.
+
+**What to do:**
+1. Read the named checks and their linked run. For a local, read-only check, run
+   `python -m pipeline.model_monitoring --dry-run`; it checks saved files, not GitHub's schedule.
+2. Fix or verify the named source/input, then use the appropriate existing workflow. A source-only
+   problem can recover through Source Health; a publication problem needs a successful data
+   publication. Checking just one utility does not replace a full source refresh.
+3. The checker updates its own issue and closes it only after all recorded problems have verified
+   recovery. Other issues and maintainer notes are left alone. Do not delete change history to
+   silence a warning.
+4. If tracking has not started, the first verified automated model refresh creates the baseline.
+   Local exports do not update that shared history, so their history panel may be unavailable even
+   while their model prices work.
+
+There is no daily checker: missed refreshes are noticed at the next existing or manual check.
+Timing and recovery details are in the
+[CI monitoring rules](.github/instructions/ci-data-history.instructions.md#model-monitoring).
 
 ### The Ontario Price Archive opened an issue
 

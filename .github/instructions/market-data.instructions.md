@@ -172,3 +172,7 @@ them: [website.instructions.md](website.instructions.md).
   Scrape since issue #5; owner decision 2026-11-04; see
   [ci-data-history.instructions.md](ci-data-history.instructions.md), which also describes
   deployment chaining).
+- Both market workflows record model change history around their existing build and publication.
+  Observed benchmarks remain separate from base models and synthetic estimates. Reporting failures
+  cannot block valid publication; evidence, cadence and issue recovery are governed by the
+  [monitoring rules](ci-data-history.instructions.md#model-monitoring).

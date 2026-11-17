@@ -1,6 +1,6 @@
 ---
-description: "Use when changing representative models, their inputs or the views that read them: pipeline/representative_models.py, data/models/ (crosswalk.json, usage_levels.json, block_periods.json, taxes.json), site/data/representative_models.json, site/js/models.js, site/js/across-canada.js and their CSS. Covers crosswalk first-match rules and 0 unmapped, Alberta wires + RoLR pairs, required contributors, usage levels, dated TOU/ULO shares, fixed_charge_variants (reference customer), block periods, unit conversions (30.4375 days), taxes and rebates, median of zones, outliers, model states, the 7E synthetic illustrative sidecar, market benchmark sidecars, METHOD_VERSION, math.fsum and Across-Canada constraints."
-applyTo: "pipeline/representative_models.py, data/models/**, site/js/models.js, site/js/across-canada.js, site/css/models.css, site/css/across-canada.css, site/data/representative_models.json"
+description: "Use when changing representative models, model change monitoring, their inputs or the views that read them. Covers crosswalk rules, required contributors, usage, taxes, block periods, model states, separate synthetic/observed sidecars, semantic change history, METHOD_VERSION and Across-Canada constraints."
+applyTo: "pipeline/representative_models.py, pipeline/model_monitoring.py, tests/test_model_monitoring.py, data/models/**, site/js/models.js, site/js/across-canada.js, site/css/models.css, site/css/across-canada.css, site/data/representative_models.json, site/data/model_change_history.json"
 ---
 # Representative models
 
@@ -24,8 +24,37 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 - Tests use frozen record fixtures (`tests/fixtures/rm_records_sample.json`, `rm_engine_sample.json`,
   `rm_records_b12.json`, `rm_records_b14.json`, `rm_records_ws_6d.json`, `rm_records_7d_gas.json`),
   so the pre-scrape CI tests never depend on the live export.
-- Phase 8 refresh automation exists only as a proposal; the proposed 2% Phase 8 change threshold is
-  unapproved; there is no synthetic sensitivity tool.
+- The export and model CLI accept `--generation-receipt PATH`. This optional record distinguishes
+  successful unchanged generation from failure retaining an old file; monitoring defects cannot
+  break the primary export. The CLI requires `--build --output` when requesting a receipt.
+- There is no synthetic sensitivity tool.
+
+## Change monitoring (Phase 8, owner decision 2026-11-17)
+
+- `pipeline/model_monitoring.py` compares base models and observed benchmarks separately by stable
+  model and usage-level IDs. Material means **at least 5% absolute movement in the median with tax
+  and rebates**, using the absolute prior median as denominator and decimal boundary arithmetic.
+  Before-tax-only movement is not material. Zero, missing or non-comparable usage/unit/cost bases
+  get explicit classifications rather than invented percentages.
+- Smaller cost changes and substantive state, contributor, tax, usage, method and input changes
+  are recorded too. The threshold marks changes in the public log; it does not govern publication
+  or create price-change issues.
+- Semantic fingerprints omit routine timestamps, machine paths, illustrative sidecars and
+  synthetic-only inputs. Preserve first-match rule order. Fingerprint allowlisted input fields,
+  not whole mixed-purpose files; use the actual loaded configuration and reviewed block-period
+  inputs from that build. Monitoring alone does not change `METHOD_VERSION`.
+- `site/data/model_change_history.json` keeps the last recorded semantic baseline, append-only
+  hash-linked events, per-model last-change dates and the exact successful generation receipt.
+  Initialization is labelled as a baseline, not a historical price change. Unchanged rebuilds
+  advance refresh metadata, not last-change dates. Disclose skipped recording intervals; never
+  reset corrupt history to hide a failure. Writes are atomic and retain prior history on failure.
+- `python -m pipeline.model_monitoring --dry-run` checks local files without writing history or
+  contacting GitHub. Only explicit `--record --receipt PATH` records a generation; `--report PATH`
+  writes diagnostics. A receipt must match the model fingerprint, generation date, as-of and
+  method. Missing, failed or malformed evidence is not success.
+- Freshness, workflow evidence and issue recovery belong to the
+  [CI rules](ci-data-history.instructions.md#model-monitoring); optional history display belongs
+  to the [website rules](website.instructions.md#representative-models-sitejsmodelsjs).
 
 ## Gas models (Phase 7D first slice, method 7D-1, owner decision 2026-11-04)
 

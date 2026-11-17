@@ -1,0 +1,42 @@
+name: Model Monitoring
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+jobs:
+  report:
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    # Serialize issue updates, not the read-only source checks or primary data writers.
+    concurrency:
+      group: model-monitoring-issues
+      cancel-in-progress: false
+    steps:
+      - name: Read current published inputs
+        uses: actions/checkout@v5
+        with:
+          ref: main
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Check freshness and manage the monitoring issue
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const monitor = require('./scripts/model_monitoring_issue.js');
+            await monitor.reportWorkflow({github, context, core});
+      - name: Keep monitoring diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: model-monitor-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            model-monitor-report.json
+            ${{ runner.temp }}/model-monitor-context.json
+          if-no-files-found: warn

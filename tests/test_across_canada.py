@@ -47,7 +47,7 @@ def payload(model_template):
 def open_site(browser):
     contexts = []
 
-    def open_page(payload, failures=(), width=1280, markets=None, chart_stub=None):
+    def open_page(payload, failures=(), width=1280, markets=None, chart_stub=None, history=None):
         context = browser.new_context(viewport={"width": width, "height": 900})
         contexts.append(context)
         requests, errors = [], []
@@ -67,6 +67,13 @@ def open_site(browser):
                     request.fulfill(json={"models": []})
                 else:
                     request.fulfill(json=payload)
+            elif path == "data/model_change_history.json":
+                if history == "http":
+                    request.fulfill(status=503, body="Unavailable")
+                elif history == "json":
+                    request.fulfill(content_type="application/json", body="{broken")
+                else:
+                    request.fulfill(json=history or {})
             elif path == "data/rates.json":
                 request.fulfill(json=rates)
             elif markets is not None and path in markets:
@@ -93,6 +100,67 @@ def open_site(browser):
     yield open_page
     for context in contexts:
         context.close()
+
+
+def test_model_history_records_material_changes_without_recalculating_prices(open_site, payload):
+    from pipeline import model_monitoring as monitoring
+    from datetime import timedelta
+
+    model = next(m for m in payload["models"] if m["key"]["province"] == "ON"
+                 and m["key"]["sector"] == "residential" and m["key"]["structure"] == "tou")
+    level = next(level for level in model["levels"] if level["id"] == "typical")
+    level["with_tax"]["median"] = 100
+    receipt = monitoring.generation_receipt(payload, previous={"status": "absent"})
+    history = monitoring.record_refresh(None, payload, receipt)
+    level["with_tax"]["median"] = 105
+    payload["generated_at"] = (monitoring.timestamp(payload["generated_at"]) + timedelta(seconds=1)).isoformat()
+    receipt = monitoring.generation_receipt(payload, previous={
+        "status": "known", "generated_at": history["last_refresh"]["generated_at"],
+        "fingerprint": history["last_refresh"]["model_fingerprint"],
+    })
+    history = monitoring.record_refresh(history, payload, receipt)
+    page, requests, errors = open_site(payload, history=history, width=390)
+    page.locator('[data-view="models"]').click()
+    expect(page.locator("#models-last-changed")).to_contain_text("Last changed:")
+    page.locator("#models-history summary").click()
+    expect(page.locator("#models-history-events")).to_contain_text("Material after-tax change")
+    expect(page.locator("#models-history-events")).to_contain_text("$100.00 to $105.00")
+    page.locator("#models-history-scope").select_option("all")
+    page.locator("#models-structure").select_option("tiered")
+    expect(page.locator("#models-history-events")).to_contain_text("Material after-tax change")
+    expect(page.locator("#models-last-changed")).to_contain_text("not yet observed")
+    page.locator("#models-history-scope").select_option("selected")
+    expect(page.locator("#models-history-events")).not_to_contain_text("Material after-tax change")
+    page.locator('[data-view="across-canada"]').click()
+    expect(page.locator("#across-content table")).to_be_visible()
+    assert requests == ["data/representative_models.json"] and errors == []
+
+
+@pytest.mark.parametrize("failure", ["http", "json", "mismatched", "usage", "benchmark", "last_changed"])
+def test_optional_history_failure_never_hides_usable_models(open_site, payload, failure):
+    from pipeline import model_monitoring as monitoring
+
+    history = failure
+    if failure not in ("http", "json"):
+        history = monitoring.record_refresh(None, payload,
+                                            monitoring.generation_receipt(payload, previous={"status": "absent"}))
+        if failure == "mismatched":
+            history["last_refresh"]["generated_at"] = "2000-01-01T00:00:00Z"
+        elif failure == "usage":
+            payload["models"][0]["levels"][0]["kwh"] += 1
+        elif failure == "benchmark":
+            payload["models"][0]["levels"][0]["market_benchmark"] = {"available": False}
+        else:
+            history["last_changed"][payload["models"][0]["id"]] = "2000-01-01T00:00:00Z"
+    page, requests, errors = open_site(payload, history=history)
+    page.locator('[data-view="models"]').click()
+    expect(page.locator("#models-table-wrap table")).to_be_visible()
+    expect(page.locator("#models-last-changed")).to_contain_text("history unavailable")
+    page.locator("#models-history summary").click()
+    expect(page.locator("#models-history-notice")).to_contain_text("The model prices remain available")
+    page.locator('[data-view="across-canada"]').click()
+    expect(page.locator("#across-content table")).to_be_visible()
+    assert requests == ["data/representative_models.json"] and errors == []
 
 
 @pytest.mark.parametrize("first", ["models", "across-canada"])

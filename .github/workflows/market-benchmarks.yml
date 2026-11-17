@@ -6,6 +6,9 @@ on:
     paths:
       - "scripts/build_alberta_market.py"
       - "pipeline/representative_models.py"
+      - "pipeline/model_monitoring.py"
+      - "scripts/model_monitoring_issue.js"
+      - ".github/workflows/model-monitoring.yml"
       - "scrapers/utils/market_pricing.py"
       - "scrapers/utilities/aeso.py"
       - "data/models/**"
@@ -23,6 +26,7 @@ concurrency:
 permissions:
   contents: write
   issues: write
+  actions: read
 
 defaults:
   run:
@@ -55,7 +59,7 @@ jobs:
           pip install -e .
 
       - name: Test market ingestion and benchmarks
-        run: python -m pytest -q tests/test_alberta_market.py tests/test_ws4_aeso.py tests/test_market_benchmarks.py tests/test_models_7c.py
+        run: python -m pytest -q tests/test_alberta_market.py tests/test_ws4_aeso.py tests/test_market_benchmarks.py tests/test_models_7c.py tests/test_model_monitoring.py
 
       - name: Synchronize inputs before calculating
         run: git pull --ff-only origin main
@@ -64,13 +68,21 @@ jobs:
         run: python scripts/build_alberta_market.py 2>&1 | tee alberta_market_output.txt
 
       - name: Refresh representative models
-        run: python -m pipeline.representative_models --build --output site/data/representative_models.json 2>&1 | tee model_output.txt
+        id: models
+        run: python -m pipeline.representative_models --build --output site/data/representative_models.json --generation-receipt model-generation.json 2>&1 | tee model_output.txt
+
+      - name: Record model change history
+        id: monitor_history
+        continue-on-error: true
+        run: python -m pipeline.model_monitoring --receipt model-generation.json --record --report model-monitor-prepublication.json
 
       - name: Commit verified history and models
+        id: publish
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/market/alberta_pool_hourly.csv data/market/alberta_market_monthly.csv site/data/market_pricing_alberta.json site/data/representative_models.json
+          if [ -f site/data/model_change_history.json ]; then git add site/data/model_change_history.json; fi
           if git diff --staged --quiet; then
             echo "No market changes to commit."
           else
@@ -79,6 +91,7 @@ jobs:
           fi
 
       - name: Report failed market update
+        id: failure_issue
         if: failure()
         uses: actions/github-script@v8
         with:
@@ -93,3 +106,31 @@ jobs:
               body: `${logs}\n\nNo database was written. Review the failing source/test or concurrent push; the website retains its published files.`,
               labels: ['scrape-issue', 'automated'],
             });
+
+      - name: Record explicit workflow outcomes
+        if: always()
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          MONITOR_STEPS: ${{ toJSON(steps) }}
+        with:
+          script: |
+            const monitor = require('./scripts/model_monitoring_issue.js');
+            monitor.writeOutcome({context, steps: JSON.parse(process.env.MONITOR_STEPS), workflow: 'market-benchmarks.yml'});
+
+      - name: Keep monitoring evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: model-monitoring-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            model-generation.json
+            monitor-status.json
+            model-monitor-prepublication.json
+          if-no-files-found: warn
+
+  monitor:
+    needs: market
+    if: ${{ always() && !cancelled() }}
+    uses: ./.github/workflows/model-monitoring.yml

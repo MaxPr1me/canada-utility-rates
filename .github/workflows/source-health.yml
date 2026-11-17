@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: read
+  actions: read
+  issues: write
 
 # Explicit bash adds pipefail, so a failing command piped into tee fails its step.
 defaults:
@@ -27,9 +29,37 @@ jobs:
       - name: Install Playwright browser
         run: python -m playwright install --with-deps chromium
       - name: Exercise all official sources without publishing
-        run: python -m pipeline.run_scrape --dry-run 2>&1 | tee source-health.txt
+        id: scrape
+        run: python -m pipeline.run_scrape --dry-run --summary-json source-summary.json 2>&1 | tee source-health.txt
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: source-health-${{ github.run_id }}
           path: source-health.txt
+
+      - name: Record explicit workflow outcomes
+        if: always()
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          MONITOR_STEPS: ${{ toJSON(steps) }}
+        with:
+          script: |
+            const monitor = require('./scripts/model_monitoring_issue.js');
+            monitor.writeOutcome({context, steps: JSON.parse(process.env.MONITOR_STEPS), workflow: 'source-health.yml'});
+
+      - name: Keep monitoring evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: model-monitoring-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            source-summary.json
+            monitor-status.json
+          if-no-files-found: warn
+
+  monitor:
+    needs: live-source-check
+    if: ${{ always() && !cancelled() }}
+    uses: ./.github/workflows/model-monitoring.yml

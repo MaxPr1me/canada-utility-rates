@@ -12,6 +12,7 @@
     "use strict";
 
     const DATA_URL = "data/representative_models.json";
+    const HISTORY_URL = "data/model_change_history.json";
     const FIELDS = ["province", "fuel", "segment", "structure"];
     const SELECT_IDS = {
         province: "models-province", fuel: "models-fuel", segment: "models-segment", structure: "models-structure",
@@ -80,6 +81,10 @@
     let loading = null;
     let data = null;
     let models = [];
+    let activeModel = null;
+    let history = null;
+    let historyLoading = null;
+    let historyError = null;
     const selection = {};
 
     // ── Helpers ───────────────────────────────────────────────
@@ -234,6 +239,7 @@
                 renderBanner();
                 resetFrom(0);
                 renderModel();
+                loadHistory();
             })
             .catch(error => {
                 loading = null;
@@ -261,6 +267,161 @@
         if (data.as_of) parts.push(`Data as of ${formatDate(data.as_of)}`);
         parts.push(`method version ${data.method_version}`);
         target.textContent = ` ${parts.join("; ")}.`;
+    }
+
+    function validateHistory(json) {
+        const refresh = json && json.last_refresh;
+        const snapshot = json && json.baseline && json.baseline.snapshot;
+        if (!json || json.version !== 1 || !refresh || !snapshot || !snapshot.models
+            || !json.last_changed || !json.policy || json.policy.material_after_tax_percent !== 5
+            || json.policy.synthetic_excluded !== true || !Array.isArray(json.events) || !json.events.length
+            || refresh.generated_at !== data.generated_at || refresh.as_of !== data.as_of
+            || refresh.method_version !== data.method_version
+            || !Number.isFinite(Date.parse(refresh.checked_at))
+            || !Number.isFinite(Date.parse(json.tracking_started_at))
+            || Object.keys(snapshot.models).length !== models.length) {
+            throw new Error("history does not match this model generation");
+        }
+        for (const model of models) {
+            const saved = snapshot.models[model.id];
+            if (!saved || saved.base.state !== model.state || saved.base.cost_basis !== model.cost_basis
+                || ["province", "fuel", "sector", "structure", "size_band"].some(key => saved.base.key[key] !== model.key[key])
+                || Object.keys(saved.base.levels).length !== list(model.levels).length) {
+                throw new Error("history model identities do not match");
+            }
+            for (const level of list(model.levels)) {
+                const prior = saved.base.levels[level.id];
+                if (!prior || ["kwh", "kw", "quantity", "unit", "role"].some(key => prior[key] !== level[key])
+                    || ["without_tax", "with_tax"].some(key => !prior[key] || !level[key]
+                    || prior[key].median !== level[key].median)) {
+                    throw new Error("history usage or costs do not match");
+                }
+                const benchmark = level.market_benchmark;
+                const savedBenchmark = saved.benchmark.levels[level.id];
+                if (Boolean(benchmark) !== Boolean(savedBenchmark) || (benchmark
+                    && (benchmark.available !== savedBenchmark.available
+                        || (benchmark.available && ["without_tax", "with_tax"].some(
+                            key => !savedBenchmark[key] || !benchmark[key]
+                                || savedBenchmark[key].median !== benchmark[key].median))))) {
+                    throw new Error("observed benchmark history does not match");
+                }
+            }
+            if (!(model.id in json.last_changed)
+                || (json.last_changed[model.id] !== null && !Number.isFinite(Date.parse(json.last_changed[model.id])))) {
+                throw new Error("invalid last-change date");
+            }
+        }
+        const changedDates = Object.fromEntries(models.map(model => [model.id, null]));
+        for (const event of json.events) {
+            if (!Number.isFinite(Date.parse(event.recorded_at)) || !Array.isArray(event.changes)
+                || !["baseline", "refresh"].includes(event.kind)) throw new Error("invalid change event");
+            for (const change of event.changes) {
+                if (!["inputs", "structure", "level", "model_added", "model_removed"].includes(change.category)
+                    || (change.model_id !== null && typeof change.model_id !== "string")
+                    || typeof change.material !== "boolean") throw new Error("invalid model change");
+                if (change.category === "level" && (!["base", "benchmark"].includes(change.kind)
+                    || typeof change.level_id !== "string"
+                    || (change.after_tax_percent !== null && !isNum(change.after_tax_percent)))) {
+                    throw new Error("invalid level change");
+                }
+                if (change.model_id !== null) changedDates[change.model_id] = event.recorded_at;
+            }
+        }
+        if (Object.keys(json.last_changed).length !== Object.keys(changedDates).length
+            || Object.keys(changedDates).some(id => json.last_changed[id] !== changedDates[id])) {
+            throw new Error("last-change dates do not match the events");
+        }
+        return json;
+    }
+
+    function loadHistory() {
+        if (historyLoading) return historyLoading;
+        historyError = null;
+        renderHistory();
+        // This optional fetch never participates in the model-data promise shared with Across-Canada.
+        historyLoading = fetch(HISTORY_URL, { cache: "no-cache" })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(json => { history = validateHistory(json); })
+            .catch(error => {
+                console.warn("Model change history unavailable:", error);
+                history = null;
+                historyError = "Change history is unavailable or does not match the loaded models. "
+                    + "The model prices remain available. Retry history or reload the page.";
+            })
+            .finally(() => {
+                historyLoading = null;
+                renderHistory();
+            });
+        return historyLoading;
+    }
+
+    function renderHistory() {
+        if (!activeModel) return;
+        const lastChanged = byId("models-last-changed");
+        const notice = byId("models-history-notice");
+        const target = byId("models-history-events");
+        const retry = byId("models-history-retry");
+        retry.onclick = loadHistory;
+        byId("models-history-scope").onchange = renderHistory;
+        target.replaceChildren();
+        retry.classList.toggle("hidden", !historyError);
+        if (!history) {
+            lastChanged.textContent = historyError ? "Last changed: history unavailable." : "Loading change history...";
+            notice.textContent = historyError || "Loading change history...";
+            return;
+        }
+        const changed = history.last_changed[activeModel.id];
+        lastChanged.textContent = changed ? `Last changed: ${formatDate(changed)}.`
+            : `Last changed: not yet observed; tracking began ${formatDate(history.tracking_started_at)}.`;
+        notice.textContent = `Change comparison last checked ${formatDate(history.last_refresh.checked_at)}. `
+            + "Material means a 5% or greater change in the median with tax and rebates. Smaller and structural "
+            + "changes are also recorded. Synthetic estimates are excluded.";
+        const all = byId("models-history-scope").value === "all";
+        for (const event of [...history.events].reverse()) {
+            const changes = event.changes.filter(change => all || change.model_id === null || change.model_id === activeModel.id);
+            if (!changes.length && event.kind !== "baseline" && !event.history_gap) continue;
+            const section = el("section", "rm-history-event");
+            section.append(el("h4", null, formatDate(event.recorded_at)));
+            if (event.kind === "baseline") section.append(el("p", null, "Tracking started. Earlier changes are unknown."));
+            if (event.history_gap) section.append(el("p", "rm-history-warning",
+                "History gap: one or more refreshes were not recorded. These changes compare with the last recorded baseline, not every intermediate refresh."));
+            const rows = el("ul");
+            for (const change of changes) {
+                const row = el("li");
+                const name = change.model_id ? (models.find(model => model.id === change.model_id) || {}).label
+                    || change.model_id.replace(/\|/g, " / ") : "Shared model inputs";
+                let text = `${name}: ${humanize(change.category)}`;
+                if (change.category === "level") {
+                    const before = change.before && change.before.with_tax;
+                    const after = change.after && change.after.with_tax;
+                    text = `${name} - ${change.level_id} (${change.kind === "benchmark" ? "observed historical benchmark" : "base model"}): `
+                        + `with tax and rebates ${money(before && before.median)} to ${money(after && after.median)}`;
+                    text += isNum(change.after_tax_percent) ? ` (${deviation(change.after_tax_percent)})`
+                        : `; ${humanize(change.comparison)} (no comparable percentage)`;
+                    if (change.before && change.after) {
+                        text += `; before tax and rebates ${money((change.before.without_tax || {}).median)} to `
+                            + money((change.after.without_tax || {}).median);
+                        if (list(change.fields).some(field => ["kwh", "kw", "quantity", "unit"].includes(field))) {
+                            text += `; usage ${usageText(change.before)} to ${usageText(change.after)}`;
+                        }
+                    }
+                }
+                if (list(change.fields).length) text += `. Changed: ${change.fields.map(humanize).join(", ")}`;
+                row.append(el("span", null, text + "."));
+                if (change.material) row.append(el("strong", "rm-history-material", " Material after-tax change"));
+                rows.append(row);
+            }
+            section.append(rows);
+            const source = sourceLink(event.run && event.run.url);
+            if (source) {
+                source.textContent = "Refresh evidence";
+                section.append(source);
+            }
+            target.append(section);
+        }
     }
 
     // ── Cascading selectors ───────────────────────────────────
@@ -329,6 +490,7 @@
     function renderModel() {
         const model = models.find(m => FIELDS.every(f => valueOf(m, f) === selection[f]));
         if (!model) throw new Error("no model matches the selection");
+        activeModel = model;
         const levels = list(model.levels).filter(level => typeof level === "object");
         const typical = levels.findIndex(level => level.id === DEFAULT_LEVEL_ID || level.role === "reference");
         const highlight = typical >= 0 ? typical : Math.floor((levels.length - 1) / 2);
@@ -336,6 +498,7 @@
         renderBadge(model, levels);
         renderTable(model, levels, highlight);
         renderNotes(model, levels[highlight] || null);
+        renderHistory();
     }
 
     function renderBadge(model, levels) {

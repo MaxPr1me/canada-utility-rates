@@ -392,6 +392,7 @@ def main() -> None:
     parser.add_argument("--province", type=str, help="Scrape all utilities in a province")
     parser.add_argument("--dry-run", action="store_true", help="Scrape but don't save to database")
     parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
+    parser.add_argument("--summary-json", type=Path, help="write a structured provenance receipt (no database change)")
     args = parser.parse_args()
 
     setup_logging(level=logging.DEBUG if args.verbose else logging.INFO)
@@ -534,6 +535,20 @@ def main() -> None:
 
     append_step_summary(format_summary_markdown(summary, dry_run=args.dry_run))
     emit_github_notice(summary, dry_run=args.dry_run)
+    if args.summary_json:
+        try:
+            from pipeline.model_monitoring import run_identity, utc_now, write_json
+
+            write_json(args.summary_json, {
+                "version": 1, "kind": "source_check", "checked_at": utc_now(), "run": run_identity(),
+                "dry_run": args.dry_run,
+                "scope": {"utility": args.utility, "province": args.province,
+                          "full": not args.utility and not args.province},
+                "expected_utilities": sorted(entry["name"] for entry in entries),
+                "summary": summary,
+            })
+        except Exception:
+            logger.exception("Source-check receipt failed; monitoring cannot verify this run")
 
 
 if __name__ == "__main__":
