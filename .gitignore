@@ -39,8 +39,9 @@ data/excel/
 logs/
 *.log
 
-# Local task tracker and campaign history
+# Local-only inputs, working files, task tracker and campaign history
 .local/
+/local only/
 
 # Environment
 .env

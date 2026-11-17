@@ -19,6 +19,10 @@ history lives in the maintainer's local, git-ignored `.local/HISTORY.md` and ope
 affected work. Markdown links cannot force a tool to load files; reading them is the
 agent's job.
 
+Keep private inputs and their derived working files under `.local/` or `local only/` (both
+git-ignored). Never copy private input records, account/meter identifiers or household details
+into tracked fixtures, exports, generated code maps or documentation.
+
 ## Clarify before relying on assumptions
 
 Use available evidence to establish facts. If requirements, scope, behaviour, data, sources,
