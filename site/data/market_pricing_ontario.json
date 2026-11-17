@@ -24,8 +24,8 @@
       2025,
       2026
     ],
-    "generated_at": "2026-11-15T13:43:31Z",
-    "as_of": "2026-11-15",
+    "generated_at": "2026-11-17T20:35:58Z",
+    "as_of": "2026-11-17",
     "change_date": "2025-05-01",
     "eras": [
       {
@@ -572,7 +572,7 @@
     "incomplete_months": [
       {
         "month": "2026-10",
-        "reason": "energy not validated (not in the IESO monthly table); no Class B GA actual rate published (latest: SecondEstimateRate)"
+        "reason": "energy not validated (not in the IESO monthly table)"
       }
     ],
     "revisions": [],
@@ -1192,7 +1192,7 @@
           "2026-07": "PUB_GlobalAdjustment_202607_v3.xml",
           "2026-08": "PUB_GlobalAdjustment_202608_v3.xml",
           "2026-09": "PUB_GlobalAdjustment_202609_v3.xml",
-          "2026-10": "PUB_GlobalAdjustment_202610_v2.xml",
+          "2026-10": "PUB_GlobalAdjustment_202610_v3.xml",
           "2026-11": "PUB_GlobalAdjustment_202611_v1.xml"
         }
       }
