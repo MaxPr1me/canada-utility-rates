@@ -1,8 +1,8 @@
 {
-  "last_updated": "2026-11-18T19:14:23.311467+00:00",
-  "total_utilities": 93,
-  "total_tariffs": 1856,
-  "total_components": 20659,
+  "last_updated": "2026-11-18T19:40:25.829170+00:00",
+  "total_utilities": 94,
+  "total_tariffs": 1861,
+  "total_components": 20685,
   "provinces_covered": [
     "AB",
     "BC",
@@ -19,7 +19,7 @@
     "YT"
   ],
   "utility_types": {
-    "electricity": 83,
+    "electricity": 84,
     "gas": 10
   },
   "customer_classes": [
@@ -28,12 +28,12 @@
     "other",
     "residential"
   ],
-  "live_tariffs": 1374,
+  "live_tariffs": 1379,
   "seed_tariffs": 482,
   "last_scrape_run": {
-    "id": 35,
-    "started_at": "2026-11-18T19:14:14.143808+00:00",
-    "finished_at": "2026-11-18T19:14:21.804800+00:00",
+    "id": 36,
+    "started_at": "2026-11-18T19:40:15.537437+00:00",
+    "finished_at": "2026-11-18T19:40:24.747878+00:00",
     "status": "completed",
     "utilities_attempted": 1,
     "utilities_succeeded": 1,

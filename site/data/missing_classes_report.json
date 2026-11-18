@@ -80,6 +80,21 @@
     ]
   },
   {
+    "utility": "City of Penticton",
+    "province": "BC",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General – Secondary Metered, City-Owned Transformation",
+      "General – Primary Metered, City-Owned Transformation",
+      "General – Secondary Metered, Customer-Owned Transformation",
+      "General – Primary Metered, Customer-Owned Transformation"
+    ]
+  },
+  {
     "utility": "District of Summerland",
     "province": "BC",
     "utility_type": "electricity",
