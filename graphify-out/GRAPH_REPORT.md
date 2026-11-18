@@ -1,7 +1,7 @@
 # Graph Report - canada-utility-costs  (2026-11-18)
 
 ## Corpus Check
-- 75 files · ~286,131 words
+- 75 files · ~286,397 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: (none) 4, .css 3)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b0e52008`
+- Built from commit: `54637095`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
