@@ -92,33 +92,37 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
 
 ## Current Status
 
-- **Stored coverage:** 78 of 85 active registered utilities have live output; the strict gate
-  fails for the seven additions below. Stored output alone does not prove a source is still healthy.
-- **New utilities (registered November 4, not stored yet):** Saint John Energy (NB), Nelson Hydro,
-  New Westminster, Penticton, Grand Forks and Summerland (BC), and Summerside Electric (PE) now
-  have live parsers and are registered (85 active utilities). They have no stored output until the
-  owner runs the Monthly Scrape for them, so the strict coverage gate reports them until then.
+- **Stored coverage:** all 85 active registered utilities have live output and the strict coverage
+  gate passes (checked November 18). Stored output alone does not prove a source is still healthy:
+  two sources fail on GitHub (see below).
+- **New utilities (published November 18):** Saint John Energy (NB), Nelson Hydro, New
+  Westminster, Penticton, Grand Forks and Summerland (BC), and Summerside Electric (PE) are stored
+  live and contribute to their province's models (69 models; BC residential now has 7 utilities).
   Naka Power (NT) and the Alberta cities Lethbridge, Red Deer and Medicine Hat are in the
   inventory but not registered yet.
-- **Latest export (November 4, scrape run 33):** 917 latest live tariffs and 480 retained
-  estimates; 1,336 stored live versions and 5,567 history snapshots. Counts include
+- **Latest export (November 18, scrape run 39):** 960 latest live tariffs and 482 retained
+  estimates; 1,381 stored live versions and 6,548 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
 - **Corrections stored (verified November 4):** the targeted Monthly Scrapes stored Centra Gas
   Manitoba's 13 November records and Maritime Electric's first-20-kW-free demand tier; history
   checks, the then-current coverage gate, the crosswalk (0 unmapped) and model parity passed.
-- **Source repairs (locally verified November 17; CI/publication pending):** Maritime retries an
-  HTTP 403 with Chromium; Grand Forks reads the dated document library before its media API, and
-  the last known bylaw copies when Cloudflare blocks both on GitHub (owner decision November 18);
-  New Westminster follows its migrated bylaw page and PDF endpoint. Targeted dry runs returned
-  53 live, 0 estimated and 0 invalid records across these sources and the seven additions.
-  A full local dry run on November 18 returned all 85 utilities: 959 live, 45 estimated (each a
-  labelled Ontario street-lighting estimate) and 0 invalid records.
-- **"Coverage complete" is not claimed yet:** the scoped wording awaits the owner's approval and
-  needs verified GitHub source checks and the new utilities stored first.
+- **Source repairs (November 17-18):** Grand Forks reads the dated document library before its
+  media API, and the last known bylaw copies when Cloudflare blocks both on GitHub (owner decision
+  November 18); New Westminster follows its migrated bylaw page and PDF endpoint. Both are stored
+  live. Maritime retries an HTTP 403 with Chromium, which works locally but not on GitHub.
+- **Open source problems (issue #6):** on GitHub's runners, Cloudflare blocks Maritime Electric,
+  and NL Hydro's rates page has come back without its Schedule of Rates link since the afternoon of
+  November 18 (it works locally; cause not confirmed). Both stored labelled estimates only; their
+  earlier live tariffs stay. Eastward Energy (Heritage Gas) still dates its General Service page
+  October 1 while its rate table is dated November 1 with the same values, so that class failed
+  closed and kept its October record. Owner decision (November 18): revisit later; the December 1
+  Monthly Scrape retries every source.
+- **"Coverage complete" is not claimed yet:** issue #6 is open and the scoped wording awaits the
+  owner's approval. Eight ledger reviews fall due December 15; the strict gate fails from
+  December 16 unless they are done.
 - **Phase 8 monitoring:** implemented, published and verified through the existing market workflows
-  and deployment. The change log starts from its first verified baseline; municipal publication
-  and fresh source-check evidence remain separate outstanding work. Monitoring issue #6 stays open
-  until a receipted Source Health run and an unfiltered Monthly Scrape store the seven additions.
+  and deployment. The change log starts from its first verified baseline. Monitoring issue #6 now
+  lists only Maritime Electric and NL Hydro and closes itself once both return live records.
   Source checks ignore only labelled excluded-class estimates (owner decision November 18).
 - **Validation:** all 2,419 tests passed on Python 3.11 using `pytest tests`.
 
@@ -719,7 +723,7 @@ One line per phase; sub-phase detail and the work queue are in the
 [coverage matrix](docs/phase5_completion_matrix.md).
 
 - **Earlier phases (foundations)** — done: scraper framework, granular schema, registry, validation, history snapshots, JSON export and the website.
-- **Phase 5: Live Parser Completion** — in progress: source-reliability verification and publication of the registered municipal additions come next (see Current Status); the scoped coverage-complete claim awaits owner approval, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
+- **Phase 5: Live Parser Completion** — in progress: the registered municipal additions are published (November 18); the two sources that still fail on GitHub (issue #6) come next (see Current Status); the scoped coverage-complete claim awaits owner approval, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas commodity cadence started).
 - **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D residential gas done as method 7D-1, in each utility's native m³ or GJ, with business gas withheld until its usage scenarios are approved).
 - **Phase 8: Representative Model Refresh Automation** — done and verified in CI and on the deployed site. Public change history and problem-only monitoring follow the [approved policy](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).

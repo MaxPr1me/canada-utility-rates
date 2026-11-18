@@ -9,12 +9,12 @@ history publication, monitoring and the deployed desktop/mobile views are verifi
 and [workflow rules](../.github/instructions/ci-data-history.instructions.md#model-monitoring).
 This does not waive source checks or authorize a Monthly Scrape merely to test monitoring.
 
-## Next milestone - source reliability and Batch 18 publication
+## Current milestone - source reliability (Batch 18 published)
 
 Owner decision (November 17): repair and verify Maritime Electric, Grand Forks and New Westminster
-source discovery, then publish the already-registered municipal additions below. Local checks pass;
-GitHub source verification and database publication are still pending. Current figures are in the
-[README status](../README.md#current-status).
+source discovery, then publish the already-registered municipal additions below. The additions,
+Grand Forks and New Westminster are published (November 18); Maritime Electric and NL Hydro still
+fail on GitHub's runners. Current figures are in the [README status](../README.md#current-status).
 
 The November 15 Source Health log returned estimates for Maritime and no records for Grand Forks,
 despite a green workflow. New Westminster's old index returned 404. The repairs retry Maritime's
@@ -27,12 +27,11 @@ after target sources are healthy; verify preserved history, the strict coverage 
 live tariffs, model contributors/limitations and the deployed data. A stored live record or green
 workflow alone does not close a source problem.
 
-Monitoring issue #6 (November 18): it lists the seven unpublished additions, a Monthly Scrape
+Monitoring issue #6 (November 18): it first listed the seven unpublished additions, a Monthly Scrape
 without receipts and the overdue November 15 Source Health. Owner decisions (November 18): source
 checks ignore only labelled excluded-class estimates, so the 45 Ontario distributors that keep
 their street-lighting estimate are not permanently unhealthy, and the Centra monitor is closed.
-The issue closes itself after a receipted Source Health run and the unfiltered Monthly Scrape
-above; if a municipal source fails on GitHub, repair and re-check it first.
+Those three problem groups are now cleared; the issue's remaining source problems are listed below.
 
 The November 18 Source Health confirmed the street-lighting rule on GitHub but found three sources
 that work locally and fail only on GitHub's runners. Owner decisions (November 18):
@@ -46,12 +45,35 @@ that work locally and fail only on GitHub's runners. Owner decisions (November 1
   change.
 Then run Source Health again, then the unfiltered Monthly Scrape.
 
+Publication (November 18): the owner's unfiltered Monthly Scrape (run 44365197451) stored every
+utility, but on GitHub's runners New Westminster and Penticton returned no valid records and Heritage
+Gas, Liberty NB, Maritime Electric and NL Hydro returned estimates only. All except Maritime had been
+live locally and in Source Health shortly before. Owner decision (November 18): rerun each with a
+single-utility Monthly Scrape, one at a time, with no code change. New Westminster (44377933899),
+Penticton (44381098574), Heritage Gas (44384556313) and Liberty NB (44386489358) were stored live;
+every run verified the preserved history. The strict coverage gate passes for all 85 utilities,
+the crosswalk has 0 unmapped live tariffs and the published models match the November 4 preview.
+
+Still open (owner decision November 18: stop here and revisit; the December 1 Monthly Scrape retries
+every source):
+- NL Hydro (rerun 44388480702 failed again): GitHub's runner gets a rates page without the Schedule
+  of Rates link that the page shows locally. The cause is not confirmed because the logs record no
+  response details. Options: log response details, retry later, or wait for December 1.
+- Maritime Electric: the Cloudflare block on GitHub, accepted above.
+- Eastward Energy (Heritage Gas) General Service: the business page still says "as of October 1,
+  2026" while the rate table is effective November 1, 2026 with the same fixed charge, delivery
+  and gas-cost values. The date check rejected the class, so November stored no General Service
+  record and the October record stays. Options: wait for Eastward to update the page, or relax the
+  check (owner decision needed).
+Issue #6 lists only Maritime Electric and NL Hydro and closes itself once both return live records.
+Eight ledger monitor reviews fall due December 15.
+
 ### Registered municipal additions
 
 Owner decision (November 4): add the easy and medium electricity utilities to the inventory and register
 each one once its parser is live and audited; they join their province's model medians.
 
-Registered with live parsers (status `partial`), not stored yet:
+Registered with live parsers (status `partial`) and stored live on November 18:
 
 | Utility | Prov. | Dry run | Classes | Held back or excluded |
 |---|---|---|---|---|
@@ -66,7 +88,7 @@ Registered with live parsers (status `partial`), not stored yet:
 Model preview with the parsed fixtures (as of November 4): crosswalk 584 mapped / 376 excluded / 0
 unmapped; 69 models instead of 64. BC residential grows from 2 to 7 utilities (1,000 kWh median
 $157.21 to $168.74 before tax); NB and PE residential and commercial models gain a second utility;
-five new BC/NB commercial groups appear. Published numbers change only after the dispatch.
+five new BC/NB commercial groups appear. The November 18 publication matched this preview.
 
 The first-seven provisional choices were confirmed by the owner on November 17; see the
 [municipal rules](../.github/instructions/regional-utilities.instructions.md#municipal-utilities-batch-18).

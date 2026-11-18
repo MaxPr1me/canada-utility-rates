@@ -1,10 +1,11 @@
 # Live Parser Gap Report
 
-**Current state:** the registered municipal additions still await database publication.
-Maritime Electric, Grand Forks and New Westminster source-discovery repairs pass local checks;
-fresh GitHub source verification must precede the Monthly Scrape. The earlier Centra and Maritime
-rate corrections were stored and verified, but that does not prove present source health.
-The scoped coverage-complete claim still awaits the owner's approval.
+**Current state:** the registered municipal additions were published on November 18 (unfiltered
+Monthly Scrape plus single-utility reruns) and all 85 active utilities have stored live output.
+Two sources still fail only on GitHub's runners: Maritime Electric (Cloudflare) and NL Hydro (rates
+page without its Schedule of Rates link). Eastward Energy (Heritage Gas) General Service was not
+refreshed in November because its business page is still dated October 1. The scoped
+coverage-complete claim still awaits the owner's approval.
 See the [current queue](phase5_completion_matrix.md) and [README figures](../README.md#current-status).
 The older counts and queues below are historical evidence, not the current publication state.
 
