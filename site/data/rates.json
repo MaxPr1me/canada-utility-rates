@@ -41754,7 +41754,7 @@
   {
     "id": 56,
     "utility_id": 54,
-    "scrape_run_id": 34,
+    "scrape_run_id": 39,
     "name": "General Service",
     "tariff_code": null,
     "utility_type": "electricity",
@@ -41781,9 +41781,9 @@
     "provenance": "seed",
     "components": [
       {
-        "id": 59458,
+        "id": 68900,
         "tariff_id": 56,
-        "scrape_run_id": 34,
+        "scrape_run_id": 39,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -41807,12 +41807,12 @@
         "source_detail": null,
         "confidence": "unverified",
         "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. Applied to billing demand (kW)",
-        "created_at": "2026-11-18 18:22:04"
+        "created_at": "2026-11-18 20:20:08"
       },
       {
-        "id": 59459,
+        "id": 68901,
         "tariff_id": 56,
-        "scrape_run_id": 34,
+        "scrape_run_id": 39,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -41836,12 +41836,12 @@
         "source_detail": null,
         "confidence": "unverified",
         "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. ",
-        "created_at": "2026-11-18 18:22:04"
+        "created_at": "2026-11-18 20:20:08"
       },
       {
-        "id": 59457,
+        "id": 68899,
         "tariff_id": 56,
-        "scrape_run_id": 34,
+        "scrape_run_id": 39,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -41865,7 +41865,7 @@
         "source_detail": null,
         "confidence": "unverified",
         "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. ",
-        "created_at": "2026-11-18 18:22:04"
+        "created_at": "2026-11-18 20:20:08"
       }
     ]
   },
@@ -44754,7 +44754,7 @@
   {
     "id": 55,
     "utility_id": 54,
-    "scrape_run_id": 34,
+    "scrape_run_id": 39,
     "name": "Labrador Interconnected Residential Service",
     "tariff_code": null,
     "utility_type": "electricity",
@@ -44781,9 +44781,9 @@
     "provenance": "seed",
     "components": [
       {
-        "id": 59456,
+        "id": 68898,
         "tariff_id": 55,
-        "scrape_run_id": 34,
+        "scrape_run_id": 39,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -44807,12 +44807,12 @@
         "source_detail": null,
         "confidence": "unverified",
         "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. Labrador interconnected rate — substantially lower than island rates due to local hydroelectric generation",
-        "created_at": "2026-11-18 18:22:04"
+        "created_at": "2026-11-18 20:20:08"
       },
       {
-        "id": 59455,
+        "id": 68897,
         "tariff_id": 55,
-        "scrape_run_id": 34,
+        "scrape_run_id": 39,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -44836,7 +44836,7 @@
         "source_detail": null,
         "confidence": "unverified",
         "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. ",
-        "created_at": "2026-11-18 18:22:04"
+        "created_at": "2026-11-18 20:20:08"
       }
     ]
   },
@@ -44932,7 +44932,7 @@
   {
     "id": 54,
     "utility_id": 54,
-    "scrape_run_id": 34,
+    "scrape_run_id": 39,
     "name": "Rural Residential Service (Domestic)",
     "tariff_code": null,
     "utility_type": "electricity",
@@ -44959,9 +44959,9 @@
     "provenance": "seed",
     "components": [
       {
-        "id": 59454,
+        "id": 68896,
         "tariff_id": 54,
-        "scrape_run_id": 34,
+        "scrape_run_id": 39,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -44985,12 +44985,12 @@
         "source_detail": null,
         "confidence": "unverified",
         "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. Flat rate applied to all kWh consumed",
-        "created_at": "2026-11-18 18:22:04"
+        "created_at": "2026-11-18 20:20:08"
       },
       {
-        "id": 59453,
+        "id": 68895,
         "tariff_id": 54,
-        "scrape_run_id": 34,
+        "scrape_run_id": 39,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -45014,7 +45014,7 @@
         "source_detail": null,
         "confidence": "unverified",
         "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. Monthly basic charge regardless of consumption",
-        "created_at": "2026-11-18 18:22:04"
+        "created_at": "2026-11-18 20:20:08"
       }
     ]
   },
