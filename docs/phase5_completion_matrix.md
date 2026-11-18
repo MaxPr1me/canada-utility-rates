@@ -34,6 +34,18 @@ their street-lighting estimate are not permanently unhealthy, and the Centra mon
 The issue closes itself after a receipted Source Health run and the unfiltered Monthly Scrape
 above; if a municipal source fails on GitHub, repair and re-check it first.
 
+The November 18 Source Health confirmed the street-lighting rule on GitHub but found three sources
+that work locally and fail only on GitHub's runners. Owner decisions (November 18):
+- Grand Forks: Cloudflare returns 403 for its document library and media search but not for the
+  uploaded PDFs. The scraper now reads the last known copy of the amending bylaw that Schedule G
+  names, with a note on the records; an amendment with no known copy still fails closed.
+- Maritime Electric: Cloudflare also blocks the Chromium retry. Accepted for now: its labelled
+  estimates keep issue #6 open until Maritime Electric allows automated access or another official
+  route is found.
+- FortisBC Energy: the B.C. carbon-tax page dropped the connection once; recheck it without a code
+  change.
+Then run Source Health again, then the unfiltered Monthly Scrape.
+
 ### Registered municipal additions
 
 Owner decision (November 4): add the easy and medium electricity utilities to the inventory and register

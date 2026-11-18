@@ -107,7 +107,8 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   Manitoba's 13 November records and Maritime Electric's first-20-kW-free demand tier; history
   checks, the then-current coverage gate, the crosswalk (0 unmapped) and model parity passed.
 - **Source repairs (locally verified November 17; CI/publication pending):** Maritime retries an
-  HTTP 403 with Chromium; Grand Forks reads the dated document library before its media API;
+  HTTP 403 with Chromium; Grand Forks reads the dated document library before its media API, and
+  the last known bylaw copies when Cloudflare blocks both on GitHub (owner decision November 18);
   New Westminster follows its migrated bylaw page and PDF endpoint. Targeted dry runs returned
   53 live, 0 estimated and 0 invalid records across these sources and the seven additions.
   A full local dry run on November 18 returned all 85 utilities: 959 live, 45 estimated (each a

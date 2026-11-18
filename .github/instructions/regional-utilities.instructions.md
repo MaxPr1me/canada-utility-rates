@@ -147,7 +147,11 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
   class to its own section so a missing price never borrows the next class's block.
 - Grand Forks: prefer the dated fees-and-charges document library, with public media search as a
   fallback. Publication dates choose the newest matching document, not the tariff's effective date;
-  the matching amending bylaw must still reconcile with Schedule G.
+  the matching amending bylaw must still reconcile with Schedule G. Cloudflare answers GitHub's
+  runners with 403 for both discovery routes but not for `wp-content/uploads`, so the scraper then
+  reads the last known consolidation and the last known copy of the amending bylaw that Schedule G
+  names (`LAST_KNOWN_AMENDMENT_URLS`, keyed by bylaw number), and notes it (owner decision
+  2026-11-18). An amendment with no known copy fails closed; add each new one when it is published.
 - New Westminster: the Electrical Utility bylaw page links an extensionless `/media/file/` PDF.
   Require the exact Bylaw No. 6502, 1998 label and supported document link; a generic media link is
   not enough.

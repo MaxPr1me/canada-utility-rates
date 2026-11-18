@@ -76,6 +76,7 @@ def test_media_search_picks_the_newest_matching_document():
 
 def test_no_records_without_the_amending_bylaw(monkeypatch):
     scraper = gf.GrandForksScraper()
+    monkeypatch.setattr(gf, "LAST_KNOWN_AMENDMENT_URLS", {})
     monkeypatch.setattr(scraper, "fetch_page", lambda *_a, **_k: "")
     monkeypatch.setattr(scraper, "_media", lambda query, pattern: CONSOLIDATION["source_url"]
                         if pattern is gf._CONSOLIDATION else None)
@@ -117,3 +118,29 @@ def test_discovery_uses_the_library_with_media_search_as_fallback(monkeypatch, l
     assert [r.tariff_code for r in records] == ["G-1", "G-2", "G-3"]
     assert {r.effective_date for r in records} == {"2026-04-15"}
     assert all("Provenance: live_parsed" in r.notes for r in records)
+
+
+def test_blocked_discovery_reads_the_last_known_documents_and_says_so(monkeypatch):
+    """Cloudflare 403s GitHub's runners for the library and media API but not wp-content/uploads."""
+    scraper = gf.GrandForksScraper()
+    documents = {gf.LAST_KNOWN_CONSOLIDATION_URL: CONSOLIDATION, gf.LAST_KNOWN_AMENDMENT_URLS["1958-A19"]: AMENDMENT}
+    fetched = []
+
+    def blocked(url):
+        raise HTTPError(f"403 Client Error: Forbidden for url: {url}")
+
+    def fetch_bytes(url):
+        fetched.append(url)
+        return url.encode("utf-8")
+
+    monkeypatch.setattr(scraper, "fetch_page", blocked)
+    monkeypatch.setattr(scraper, "fetch_bytes", fetch_bytes)
+    monkeypatch.setattr(gf, "extract_pdf_pages", lambda content, **_k: _pages(documents[content.decode("utf-8")]))
+    records = scraper.scrape()
+    assert fetched == list(documents)
+    assert gf.amendment_pattern("1958-A19").search(gf.LAST_KNOWN_AMENDMENT_URLS["1958-A19"])
+    assert [r.tariff_code for r in records] == ["G-1", "G-2", "G-3"]
+    for record in records:
+        assert "Provenance: live_parsed" in record.notes
+        assert "last known one was read (it may not be current)" in record.notes
+        assert "found amending Bylaw 1958-A19, so its last known copy was read" in record.notes

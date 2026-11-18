@@ -8,7 +8,11 @@ Official sources (City document library, https://www.grandforks.ca/document-libr
     same replacement Schedule G. Its prices must equal the consolidation's or the run fails closed.
 Both documents are found through the dated fees-and-charges library, with public media search
 (wp-json/wp/v2/media) as a fallback. The media API can reject a request even when the library works.
-The consolidation prints no effective date of its own, so a missing amending bylaw also fails closed.
+Since November 2026 Cloudflare answers GitHub's runners with HTTP 403 for both, while files under
+wp-content/uploads still download; the last known consolidation and the last known copy of the
+amending bylaw it names are then read, and the records say so (owner decision 2026-11-18). A
+consolidation naming an amendment with no known copy still fails closed, because the consolidation
+prints no effective date of its own.
 
 Council sets these rates; the BCUC does not regulate them. Scope: 1. Residential Service,
 2. Commercial/Industrial/Institutional Service (its first block is "the first 200,000 kWh used in a
@@ -34,6 +38,10 @@ UTILITY = "City of Grand Forks"
 DOCUMENT_LIBRARY_URL = "https://www.grandforks.ca/document-library/?document_type=fees-and-charges"
 MEDIA_SEARCH_URL = "https://www.grandforks.ca/wp-json/wp/v2/media?search={query}&per_page=100"
 LAST_KNOWN_CONSOLIDATION_URL = "https://www.grandforks.ca/wp-content/uploads/By1958Fees-and-Charges-CONSOLIDATED-through-A20.pdf"
+# Keyed by the amending bylaw that Schedule G names, so a newer consolidation never borrows an old amendment.
+LAST_KNOWN_AMENDMENT_URLS = {
+    "1958-A19": "https://www.grandforks.ca/wp-content/uploads/Bylaw1958-A19City-of-Grand-Forks-Fees-and-Charges-Amendment-Bylaw-1.pdf",
+}
 _CONSOLIDATION = re.compile(r"/(?:By|Bylaw)1958[^/]*Fees[^/]*CONSOLIDATED[^/]*\.pdf$", re.I)
 _DATE = r"([A-Z][a-z]+ \d{1,2}, \d{4})"
 _MONEY = r"\$(\d+(?:\.\d+)?)"
@@ -221,7 +229,13 @@ class GrandForksScraper(BaseScraper):
             pattern = amendment_pattern(number)
             amendment_url = newest_document_url(library, pattern) or self._media(number, pattern)
             if not amendment_url:
-                raise ValueError(f"amending bylaw {number} not found in the document library or media search")
+                amendment_url = LAST_KNOWN_AMENDMENT_URLS.get(number)
+                if not amendment_url:
+                    raise ValueError(f"amending bylaw {number} not found in the document library, media search "
+                                     "or the last known amendments")
+                note = " ".join(filter(None, [note, (
+                    f"Neither the document library nor media search found amending Bylaw {number}, so its last "
+                    "known copy was read.")]))
             amendment = extract_pdf_pages(self.fetch_bytes(amendment_url), drop_repeated_lines=False)
             records = parse_schedule(consolidation, amendment, consolidation_url, amendment_url, discovery_note=note)
         except Exception as exc:
