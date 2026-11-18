@@ -37698,7 +37698,7 @@
   {
     "id": 4671,
     "utility_id": 12,
-    "scrape_run_id": 30,
+    "scrape_run_id": 38,
     "name": "Commercial — Large General Service",
     "tariff_code": "LGS",
     "utility_type": "gas",
@@ -37725,9 +37725,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 47584,
+        "id": 68890,
         "tariff_id": 4671,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "carbon",
         "component_name": "Federal Carbon Charge",
         "sub_component": null,
@@ -37751,12 +37751,12 @@
         "source_detail": "CRA fuel charge rates",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Canada Revenue Agency fuel charge rates, beginning April 1, 2025: all federal fuel charge rates set to zero; New Brunswick's charge applied until March 31, 2025. Liberty's rate pages publish no carbon row.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47583,
+        "id": 68889,
         "tariff_id": 4671,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "commodity",
         "component_name": "Liberty Utility Gas",
         "sub_component": null,
@@ -37780,12 +37780,12 @@
         "source_detail": "Utility Gas Rate History ($/GJ)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Optional utility supply at cost, may change monthly; customers may buy from a marketer instead, whose price is not included.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47580,
+        "id": 68886,
         "tariff_id": 4671,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "delivery",
         "component_name": "Monthly Distribution Delivery Charge — Block 1",
         "sub_component": null,
@@ -37809,12 +37809,12 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. First 250 GJ delivered per month",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47581,
+        "id": 68887,
         "tariff_id": 4671,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "delivery",
         "component_name": "Monthly Distribution Delivery Charge — Block 2 (Sep-Apr)",
         "sub_component": null,
@@ -37838,12 +37838,12 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Volumes in excess of 250 GJ per month delivered Sep-Apr",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47582,
+        "id": 68888,
         "tariff_id": 4671,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "delivery",
         "component_name": "Monthly Distribution Delivery Charge — Block 2 (May-Aug)",
         "sub_component": null,
@@ -37867,12 +37867,12 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Volumes in excess of 250 GJ per month delivered May-Aug",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47578,
+        "id": 68884,
         "tariff_id": 4671,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "fixed",
         "component_name": "Monthly Distribution Customer Charge",
         "sub_component": "conditional",
@@ -37896,12 +37896,12 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies when maximum monthly consumption is up to 650 GJ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47579,
+        "id": 68885,
         "tariff_id": 4671,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "fixed",
         "component_name": "Monthly Distribution Customer Charge (higher consumption)",
         "sub_component": "conditional",
@@ -37925,7 +37925,7 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies when maximum monthly consumption is greater than 650 GJ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       }
     ]
   },
@@ -38137,7 +38137,7 @@
   {
     "id": 4670,
     "utility_id": 12,
-    "scrape_run_id": 30,
+    "scrape_run_id": 38,
     "name": "Commercial — Mid-General Service",
     "tariff_code": "MGS",
     "utility_type": "gas",
@@ -38164,9 +38164,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 47577,
+        "id": 68883,
         "tariff_id": 4670,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "carbon",
         "component_name": "Federal Carbon Charge",
         "sub_component": null,
@@ -38190,12 +38190,12 @@
         "source_detail": "CRA fuel charge rates",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Canada Revenue Agency fuel charge rates, beginning April 1, 2025: all federal fuel charge rates set to zero; New Brunswick's charge applied until March 31, 2025. Liberty's rate pages publish no carbon row.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47576,
+        "id": 68882,
         "tariff_id": 4670,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "commodity",
         "component_name": "Liberty Utility Gas",
         "sub_component": null,
@@ -38219,12 +38219,12 @@
         "source_detail": "Utility Gas Rate History ($/GJ)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Optional utility supply at cost, may change monthly; customers may buy from a marketer instead, whose price is not included.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47574,
+        "id": 68880,
         "tariff_id": 4670,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "delivery",
         "component_name": "Monthly Distribution Delivery Charge — Block 1",
         "sub_component": null,
@@ -38248,12 +38248,12 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. First 100 GJ delivered per month",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47575,
+        "id": 68881,
         "tariff_id": 4670,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "delivery",
         "component_name": "Monthly Distribution Delivery Charge — Block 2",
         "sub_component": null,
@@ -38277,12 +38277,12 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Volumes in excess of 100 GJ per month",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47572,
+        "id": 68878,
         "tariff_id": 4670,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "fixed",
         "component_name": "Monthly Distribution Customer Charge",
         "sub_component": "conditional",
@@ -38306,12 +38306,12 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies when maximum monthly consumption is up to 60 GJ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47573,
+        "id": 68879,
         "tariff_id": 4670,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "fixed",
         "component_name": "Monthly Distribution Customer Charge (higher consumption)",
         "sub_component": "conditional",
@@ -38335,7 +38335,7 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies when maximum monthly consumption is greater than 60 GJ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       }
     ]
   },
@@ -38489,7 +38489,7 @@
   {
     "id": 4672,
     "utility_id": 12,
-    "scrape_run_id": 30,
+    "scrape_run_id": 38,
     "name": "Commercial — Off-Peak Service",
     "tariff_code": "OPS",
     "utility_type": "gas",
@@ -38516,9 +38516,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 47588,
+        "id": 68894,
         "tariff_id": 4672,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "carbon",
         "component_name": "Federal Carbon Charge",
         "sub_component": null,
@@ -38542,12 +38542,12 @@
         "source_detail": "CRA fuel charge rates",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Canada Revenue Agency fuel charge rates, beginning April 1, 2025: all federal fuel charge rates set to zero; New Brunswick's charge applied until March 31, 2025. Liberty's rate pages publish no carbon row.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47587,
+        "id": 68893,
         "tariff_id": 4672,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "commodity",
         "component_name": "Liberty Utility Gas",
         "sub_component": null,
@@ -38571,12 +38571,12 @@
         "source_detail": "Utility Gas Rate History ($/GJ)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Optional utility supply at cost, may change monthly; customers may buy from a marketer instead, whose price is not included.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47586,
+        "id": 68892,
         "tariff_id": 4672,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "delivery",
         "component_name": "Monthly Distribution Delivery Charge",
         "sub_component": null,
@@ -38600,12 +38600,12 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47585,
+        "id": 68891,
         "tariff_id": 4672,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "fixed",
         "component_name": "Monthly Distribution Customer Charge",
         "sub_component": null,
@@ -38629,7 +38629,7 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       }
     ]
   },
@@ -38959,7 +38959,7 @@
   {
     "id": 4669,
     "utility_id": 12,
-    "scrape_run_id": 30,
+    "scrape_run_id": 38,
     "name": "Residential — Small General Service",
     "tariff_code": "SGS",
     "utility_type": "gas",
@@ -38986,9 +38986,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 47571,
+        "id": 68877,
         "tariff_id": 4669,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "carbon",
         "component_name": "Federal Carbon Charge",
         "sub_component": null,
@@ -39012,12 +39012,12 @@
         "source_detail": "CRA fuel charge rates",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Canada Revenue Agency fuel charge rates, beginning April 1, 2025: all federal fuel charge rates set to zero; New Brunswick's charge applied until March 31, 2025. Liberty's rate pages publish no carbon row.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47570,
+        "id": 68876,
         "tariff_id": 4669,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "commodity",
         "component_name": "Liberty Utility Gas",
         "sub_component": null,
@@ -39041,12 +39041,12 @@
         "source_detail": "Utility Gas Rate History ($/GJ)",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Optional utility supply at cost, may change monthly; customers may buy from a marketer instead, whose price is not included.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47569,
+        "id": 68875,
         "tariff_id": 4669,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "delivery",
         "component_name": "Monthly Distribution Delivery Charge",
         "sub_component": null,
@@ -39070,12 +39070,12 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       },
       {
-        "id": 47568,
+        "id": 68874,
         "tariff_id": 4669,
-        "scrape_run_id": 30,
+        "scrape_run_id": 38,
         "component_type": "fixed",
         "component_name": "Monthly Distribution Customer Charge",
         "sub_component": null,
@@ -39099,7 +39099,7 @@
         "source_detail": "Current Natural Gas Distribution Rates & Charges, effective January 1, 2025",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-18 20:03:27"
       }
     ]
   },
