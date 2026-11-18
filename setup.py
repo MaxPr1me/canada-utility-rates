@@ -16,6 +16,8 @@ setup(
     name="canada-utility-costs",
     version="0.1.0",
     description="Scrape, store, and browse utility rates across Canada",
+    license="NRCan End-User Licence Agreement (proprietary); see LICENSE",
+    license_files=["LICENSE"],
     packages=find_packages(),
     python_requires=">=3.9",
     install_requires=[

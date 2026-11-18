@@ -1,0 +1,116 @@
+NRCan End-User Licence Agreement – Canada Utility Rates
+Contrat de licence d'utilisateur final de RNCan – Canada Utility Rates
+
+Copyright © His Majesty the King in Right of Canada, as represented by the Minister of Natural Resources, 2026.
+Droit d'auteur © Sa Majesté le Roi du chef du Canada, représenté par le ministre des Ressources naturelles, 2026.
+
+The English version is followed by the French version.
+La version anglaise est suivie de la version française.
+
+==============================================================================
+ENGLISH
+==============================================================================
+
+THIS END-USER LICENCE AGREEMENT ("EULA") IS A LEGAL AGREEMENT BETWEEN YOU, THE END-USER, IN YOUR CAPACITY AS AN INDIVIDUAL AND/OR AS AN AGENT FOR YOUR COMPANY, INSTITUTION OR OTHER ENTITY (hereinafter referred to as the "Licensee"), AND HIS MAJESTY THE KING IN RIGHT OF CANADA, AS REPRESENTED BY THE MINISTER OF NATURAL RESOURCES (hereinafter referred to as "NRCan").
+
+WHEREAS NRCAN HAS THE RIGHT TO GRANT A LICENCE FOR CANADA UTILITY RATES, A SOFTWARE TOOL AND WEBSITE THAT COLLECTS PUBLISHED ELECTRICITY AND NATURAL GAS RATES FROM OFFICIAL CANADIAN SOURCES AND PRESENTS THOSE RATES, MARKET PRICE HISTORY AND REPRESENTATIVE COST COMPARISONS (hereinafter referred to as the "Software").
+
+BY DOWNLOADING, INSTALLING, ACCESSING, USING OR COPYING THE SOFTWARE, THE LICENSEE AGREES TO BE BOUND BY THE TERMS AND CONDITIONS BELOW:
+
+1. DEFINITIONS
+   1. "Software" includes the source code, scripts, configuration, tests, documentation and website files, and the databases, exports, representative models, analyses and compilations prepared by or for NRCan for Canada Utility Rates (including the Python package named canada-utility-costs), in every version, but does not include Third-Party Material.
+   2. "Third-Party Material" means material that NRCan does not own, including: rate schedules, tariffs, rate orders, market data and other documents published by utilities, regulators, system operators (such as the IESO and the AESO), governments or other third parties, and the rate and price values they contain; the names and trademarks of those parties; and third-party software libraries and services used by the Software (such as Chart.js and the Python packages it installs).
+
+2. GRANT OF LICENCE
+   1. Upon the terms and conditions hereinafter set forth, NRCan hereby grants to the Licensee a non-exclusive, non-transferable licence to use the Software, including to view its source code where NRCan makes it publicly available and to install and run it for the Licensee's own use.
+   2. Except with the prior written permission of NRCan, the Licensee shall not copy, reproduce, modify, adapt, translate, create derivative works from, publish, distribute, sell, sublicense, loan or transfer the Software or any part of it, or otherwise assign any rights under this EULA to any third party. Making a copy solely to install and run the Software under Article 2.1 is permitted.
+   3. Viewing the source code of the Software and forking it on GitHub, to the extent permitted by the GitHub Terms of Service for public repositories, does not breach this EULA. Any other use, copying or distribution of a fork remains subject to this EULA.
+
+3. TERM
+   1. This EULA shall come into force upon the first instance that the Software is used by the Licensee or comes into the possession of the Licensee, and shall remain in force until it is terminated under Article 9 or until the Licensee stops using the Software and destroys all copies of it.
+
+4. OBLIGATIONS OF THE LICENSEE
+   1. The Licensee's publications referring to the Software, or quoting results displayed by it, must state the origin of the Software using the following text: "Canada Utility Rates is owned by His Majesty the King in Right of Canada, as represented by the Minister of Natural Resources © 2026".
+   2. The Licensee may quote individual results displayed by the Software in the Licensee's own reports and publications, provided that Article 4.1 is met. This does not permit copying the source code, databases, exports or models of the Software, in whole or in substantial part.
+
+5. MAINTENANCE AND SUPPORT
+   1. The parties understand and agree that while the Licensee may report any bugs or technical malfunctions in the Software to NRCan, NRCan is under no obligation to provide technical support, maintenance services, update services, notices of latent defects, or correction of defects for the Software.
+
+6. TITLE
+   1. The Licensee agrees that the Software is and shall at all times remain the property of NRCan. The Licensee shall have no right, title and interest therein or thereto, except as expressly set forth in this EULA.
+   2. The Licensee acknowledges that the Software is protected under the Copyright Act.
+
+7. THIRD-PARTY MATERIAL
+   1. NRCan claims no ownership of Third-Party Material, and this EULA grants no rights in it. Third-Party Material remains the property of its owners and is subject to their own terms and licences.
+
+8. WARRANTY AND INDEMNITY
+   1. The Software is licensed on an "AS IS" basis. NRCan makes no guarantees, representations, or warranties respecting the Software, either express or implied, arising by law or otherwise, including but not limited to effectiveness, completeness, accuracy, currency or fitness for a particular purpose. Rates, prices and representative models presented by the Software may be incomplete, estimated or out of date, and are not bills, quotes or offers of service. The Licensee should verify rates with the relevant utility or regulator.
+   2. NRCan shall not be liable in respect of any claim, demand or action, irrespective of the nature of the cause of the claim, demand or action alleging any loss, injury or damages, direct or indirect, which may result from the Licensee's use or possession of the Software. NRCan shall not be liable in any way for loss of revenue or contracts, or any other consequential loss of any kind resulting from the Licensee's use or possession of the Software.
+   3. The Licensee shall indemnify NRCan, its employees, contractors, agents and suppliers, from and against all claims, demands, losses, damages, costs, legal fees, actions, suits or proceedings that are in any manner based upon, arising out of, or attributable to the use, possession, or performance of the Software by the Licensee, or its employees or agents.
+
+9. TERMINATION
+   1. If the Licensee breaches any obligation under this EULA and fails to remedy the breach within thirty (30) calendar days, this EULA is deemed to be terminated immediately without any notice.
+   2. Notwithstanding any other provision of this EULA, Articles 4, 6, 7, 8 and 10 shall survive termination of this EULA.
+
+10. DESTRUCTION
+    1. Prior to assigning, selling or otherwise disposing of any media, the Licensee shall completely erase or otherwise destroy any Software contained on such media.
+    2. Upon termination of this EULA, the Licensee agrees to either:
+       (1) Return to NRCan immediately all copies of the Software and any related documentation; or
+       (2) Completely erase or otherwise destroy all copies of the Software as well as any related documentation on the Licensee's media.
+
+11. APPLICABLE LAW
+    1. This EULA shall be interpreted in accordance with the provincial or territorial laws in force in Ontario, Canada.
+
+==============================================================================
+FRANÇAIS
+==============================================================================
+
+LE PRÉSENT CONTRAT DE LICENCE D'UTILISATEUR FINAL (« CLUF ») CONSTITUE UNE ENTENTE JURIDIQUE ENTRE VOUS, L'UTILISATEUR FINAL, EN VOTRE QUALITÉ DE PARTICULIER OU DE MANDATAIRE DE VOTRE ENTREPRISE, INSTITUTION OU AUTRE ENTITÉ, OU EN CES DEUX QUALITÉS (ci-après appelé le « titulaire de licence »), ET SA MAJESTÉ LE ROI DU CHEF DU CANADA, REPRÉSENTÉ PAR LE MINISTRE DES RESSOURCES NATURELLES (ci-après appelé « RNCan »).
+
+ATTENDU QUE RNCAN A LE DROIT D'OCTROYER UNE LICENCE POUR CANADA UTILITY RATES, UN OUTIL LOGICIEL ET UN SITE WEB QUI RECUEILLENT LES TARIFS D'ÉLECTRICITÉ ET DE GAZ NATUREL PUBLIÉS PAR DES SOURCES OFFICIELLES CANADIENNES ET QUI PRÉSENTENT CES TARIFS, L'HISTORIQUE DES PRIX DU MARCHÉ ET DES COMPARAISONS DE COÛTS REPRÉSENTATIFS (ci-après appelé le « logiciel »).
+
+EN TÉLÉCHARGEANT, EN INSTALLANT, EN CONSULTANT, EN UTILISANT OU EN COPIANT LE LOGICIEL, LE TITULAIRE DE LICENCE ACCEPTE D'ÊTRE LIÉ PAR LES MODALITÉS CI-DESSOUS :
+
+1. DÉFINITIONS
+   1. Le « logiciel » comprend le code source, les scripts, la configuration, les tests, la documentation et les fichiers du site Web, ainsi que les bases de données, les exportations, les modèles représentatifs, les analyses et les compilations préparés par RNCan ou pour son compte dans le cadre de Canada Utility Rates (y compris le paquet Python nommé canada-utility-costs), dans toutes leurs versions, mais il exclut le matériel de tiers.
+   2. Le « matériel de tiers » désigne le matériel qui n'appartient pas à RNCan, notamment : les barèmes de tarifs, les tarifs, les ordonnances tarifaires, les données du marché et les autres documents publiés par des services publics, des organismes de réglementation, des exploitants de réseau (comme la SIERE (IESO) et l'AESO), des gouvernements ou d'autres tiers, ainsi que les valeurs de tarifs et de prix qu'ils contiennent; les noms et les marques de commerce de ces tiers; et les bibliothèques et services logiciels de tiers utilisés par le logiciel (comme Chart.js et les paquets Python qu'il installe).
+
+2. OCTROI DE LA LICENCE
+   1. Sous réserve des modalités énoncées ci-après, RNCan accorde par les présentes au titulaire de licence une licence non exclusive et non transférable d'utilisation du logiciel, y compris le droit d'en consulter le code source lorsque RNCan le rend public et de l'installer et de l'exécuter pour son propre usage.
+   2. Sauf autorisation écrite préalable de RNCan, le titulaire de licence ne doit pas copier, reproduire, modifier, adapter, traduire, publier, distribuer, vendre, prêter ou transférer le logiciel ou toute partie de celui-ci, en octroyer une sous-licence ou en tirer des œuvres dérivées, ni autrement céder à un tiers quelque droit que ce soit en vertu du présent CLUF. Il est permis de faire une copie uniquement pour installer et exécuter le logiciel conformément à l'article 2.1.
+   3. La consultation du code source du logiciel et sa duplication (« fork ») sur GitHub, dans la mesure permise par les conditions d'utilisation de GitHub applicables aux dépôts publics, ne constituent pas une violation du présent CLUF. Toute autre utilisation, copie ou distribution d'une telle duplication demeure assujettie au présent CLUF.
+
+3. DURÉE
+   1. Le présent CLUF entre en vigueur dès la première utilisation du logiciel par le titulaire de licence ou dès que le logiciel entre en sa possession, et demeure en vigueur jusqu'à sa résiliation en vertu de l'article 9 ou jusqu'à ce que le titulaire de licence cesse d'utiliser le logiciel et en détruise toutes les copies.
+
+4. OBLIGATIONS DU TITULAIRE DE LICENCE
+   1. Les publications du titulaire de licence qui font référence au logiciel ou qui citent des résultats affichés par celui-ci doivent indiquer l'origine du logiciel au moyen du texte suivant : « Canada Utility Rates appartient à Sa Majesté le Roi du chef du Canada, représenté par le ministre des Ressources naturelles © 2026 ».
+   2. Le titulaire de licence peut citer des résultats individuels affichés par le logiciel dans ses propres rapports et publications, à condition de respecter l'article 4.1. La présente disposition ne permet pas de copier le code source, les bases de données, les exportations ou les modèles du logiciel, en tout ou en partie importante.
+
+5. ENTRETIEN ET SOUTIEN
+   1. Les parties comprennent et conviennent que, bien que le titulaire de licence puisse signaler à RNCan tout bogue ou mauvais fonctionnement technique du logiciel, RNCan n'est aucunement tenu de fournir du soutien technique, des services d'entretien ou de mise à jour, des avis de vices cachés ou la correction de défauts du logiciel.
+
+6. TITRE DE PROPRIÉTÉ
+   1. Le titulaire de licence convient que le logiciel est et demeure en tout temps la propriété de RNCan. Le titulaire de licence n'a aucun droit, titre ou intérêt sur le logiciel, sauf ce qui est expressément prévu au présent CLUF.
+   2. Le titulaire de licence reconnaît que le logiciel est protégé par la Loi sur le droit d'auteur.
+
+7. MATÉRIEL DE TIERS
+   1. RNCan ne revendique aucun droit de propriété sur le matériel de tiers, et le présent CLUF n'accorde aucun droit sur celui-ci. Le matériel de tiers demeure la propriété de ses titulaires et est assujetti à leurs propres conditions et licences.
+
+8. GARANTIE ET INDEMNISATION
+   1. Le logiciel est concédé sous licence « TEL QUEL ». RNCan ne donne aucune garantie et ne fait aucune déclaration à l'égard du logiciel, expresse ou implicite, découlant de la loi ou autrement, notamment quant à son efficacité, son intégralité, son exactitude, son actualité ou son adaptation à un usage particulier. Les tarifs, les prix et les modèles représentatifs présentés par le logiciel peuvent être incomplets, estimatifs ou périmés; ils ne constituent ni des factures, ni des soumissions, ni des offres de service. Le titulaire de licence devrait vérifier les tarifs auprès du service public ou de l'organisme de réglementation concerné.
+   2. RNCan ne peut être tenu responsable à l'égard d'aucune réclamation, demande ou action, quelle que soit la nature de sa cause, alléguant une perte, une blessure ou des dommages, directs ou indirects, pouvant découler de l'utilisation ou de la possession du logiciel par le titulaire de licence. RNCan ne peut en aucun cas être tenu responsable d'une perte de revenus ou de contrats, ni de toute autre perte indirecte de quelque nature que ce soit, découlant de l'utilisation ou de la possession du logiciel par le titulaire de licence.
+   3. Le titulaire de licence s'engage à indemniser RNCan, ses employés, entrepreneurs, mandataires et fournisseurs à l'égard de l'ensemble des réclamations, demandes, pertes, dommages, coûts, frais juridiques, actions, poursuites ou procédures qui sont fondés de quelque manière que ce soit sur l'utilisation, la possession ou l'exécution du logiciel par le titulaire de licence, ses employés ou ses mandataires, qui en découlent ou qui y sont attribuables.
+
+9. RÉSILIATION
+   1. Si le titulaire de licence manque à l'une de ses obligations en vertu du présent CLUF et ne remédie pas à ce manquement dans un délai de trente (30) jours civils, le présent CLUF est réputé résilié immédiatement, sans préavis.
+   2. Nonobstant toute autre disposition du présent CLUF, les articles 4, 6, 7, 8 et 10 survivent à la résiliation du présent CLUF.
+
+10. DESTRUCTION
+    1. Avant de céder, de vendre ou d'aliéner autrement tout support, le titulaire de licence doit effacer complètement ou détruire autrement tout logiciel s'y trouvant.
+    2. À la résiliation du présent CLUF, le titulaire de licence convient :
+       (1) soit de retourner immédiatement à RNCan toutes les copies du logiciel et toute documentation connexe;
+       (2) soit d'effacer complètement ou de détruire autrement toutes les copies du logiciel ainsi que toute documentation connexe se trouvant sur ses supports.
+
+11. DROIT APPLICABLE
+    1. Le présent CLUF est interprété conformément aux lois provinciales ou territoriales en vigueur en Ontario (Canada).
