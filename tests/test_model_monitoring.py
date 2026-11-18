@@ -246,6 +246,27 @@ def test_full_receipt_not_workflow_badge_proves_refresh_scope(document):
     assert next(check for check in checks if check["id"] == "source:A")["ok"] is False
 
 
+def source_receipt(**row):
+    base = {"utility": "LDC", "live": 9, "seed": 1, "invalid": 0, "status": "live + seed", "error": None}
+    return {"version": 1, "kind": "source_check", "checked_at": "2026-11-18T10:00:00Z",
+            "scope": {"full": True}, "expected_utilities": ["LDC"], "summary": {"rows": [{**base, **row}]}}
+
+
+@pytest.mark.parametrize("row,healthy", [
+    ({"excluded_seed": 1}, True),  # labelled street-lighting estimate only (owner decision 2026-11-18)
+    ({"seed": 2, "excluded_seed": 1}, False),  # another estimate still fails the source
+    ({}, False),  # older receipt without the field stays strict
+    ({"live": 0, "excluded_seed": 1, "status": "seed only"}, False),
+])
+def test_only_labelled_excluded_class_estimates_are_ignored(row, healthy):
+    assert monitoring.source_checks(source_receipt(**row))[0]["ok"] is healthy
+
+
+def test_excluded_estimates_cannot_exceed_the_estimate_count():
+    with pytest.raises(ValueError, match="invalid source receipt counts"):
+        monitoring.source_checks(source_receipt(excluded_seed=2))
+
+
 def test_failed_publication_is_reported_immediately_not_given_a_grace(document):
     context = workflow_context(document, publication="failure")
     assert workflow_check(context, "2026-11-01T10:00:00Z")["ok"] is False

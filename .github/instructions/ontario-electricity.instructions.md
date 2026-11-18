@@ -69,7 +69,8 @@ Market history: [market-data.instructions.md](market-data.instructions.md).
   (owner decision: go by live sources). Older stored estimates stay in history, labelled seed.
 - Seed suppression: a configured LDC with a class rejection or no such class (`gs:absent`,
   `demand:absent`) emits no residential, GS or GS-demand (Res/GS/GS-D) seeds. A fetch failure or a
-  whole-sheet rejection keeps the seeds. The street-lighting seed is always kept.
+  whole-sheet rejection keeps the seeds. The street-lighting seed is always kept and labelled with
+  `EXCLUDED_CLASS_FALLBACK_REASON`, so model monitoring does not count it as a source failure.
 - Absorbed distributors have `status: "merged"` and a `merged_into` successor and keep their history.
   Their successors, Enova Power and GrandBridge Energy, have no seeds, so they return nothing when
   their tariff cannot be read.

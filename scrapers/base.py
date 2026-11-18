@@ -36,6 +36,17 @@ from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 
+# Fallback reason for a labelled estimate of a class the project deliberately excludes (for example
+# Ontario street lighting). Source-health checks ignore estimates carrying exactly this marker; any
+# other estimate is still a source problem (owner decision 2026-11-18).
+EXCLUDED_CLASS_FALLBACK_REASON = "Excluded class with no live parser; seed estimate only"
+EXCLUDED_CLASS_FALLBACK_MARKER = f"Provenance: seed_fallback. {EXCLUDED_CLASS_FALLBACK_REASON}."
+
+
+def is_excluded_class_estimate(notes: Optional[str]) -> bool:
+    """True when ``mark_fallback`` labelled the record as an excluded-class estimate."""
+    return EXCLUDED_CLASS_FALLBACK_MARKER in (notes or "")
+
 
 # ─── Data classes returned by scrapers ────────────────────────────
 

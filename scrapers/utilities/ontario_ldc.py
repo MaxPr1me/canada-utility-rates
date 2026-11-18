@@ -37,7 +37,7 @@ from dataclasses import replace
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from scrapers.base import BaseScraper, TariffRecord, RateComponent
+from scrapers.base import EXCLUDED_CLASS_FALLBACK_REASON, BaseScraper, TariffRecord, RateComponent
 from scrapers.utils import oeb_tariff
 
 logger = logging.getLogger(__name__)
@@ -1741,7 +1741,7 @@ class OntarioLDCScraper(BaseScraper):
             ([r for r in other if r.tariff_code in self.DEMAND_CODES],
              "Approved-tariff demand classes not configured or not completely verified"),
             ([r for r in other if r.tariff_code not in self.DEMAND_CODES],
-             "Excluded class with no live parser; seed estimate only"),
+             EXCLUDED_CLASS_FALLBACK_REASON),
         ):
             if subset:
                 self.mark_fallback(subset, reason)

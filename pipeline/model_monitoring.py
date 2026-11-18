@@ -525,11 +525,19 @@ def source_checks(receipt: dict) -> list[dict]:
     for row in rows:
         if any(type(row.get(key)) is not int or row[key] < 0 for key in ("live", "seed", "invalid")):
             raise ValueError("invalid source receipt counts")
-        healthy = row["live"] > 0 and row["seed"] == row["invalid"] == 0 and row.get("error") is None
+        # Older receipts have no excluded_seed field: every estimate then counts as a problem.
+        excluded = row.get("excluded_seed", 0)
+        if type(excluded) is not int or not 0 <= excluded <= row["seed"]:
+            raise ValueError("invalid source receipt counts")
+        # Labelled excluded-class estimates (Ontario street lighting) are expected output, not a
+        # source failure (owner decision 2026-11-18); any other estimate still fails the source.
+        healthy = (row["live"] > 0 and row["seed"] == excluded and row["invalid"] == 0
+                   and row.get("error") is None)
         checks.append({"id": f"source:{row['utility']}", "ok": healthy, "checked_at": checked_at,
                        "details": [] if healthy else [
-                           f"{row['utility']}: {row['live']} live, {row['seed']} estimated, "
-                           f"{row['invalid']} invalid; {row.get('error') or row['status']}"]})
+                           f"{row['utility']}: {row['live']} live, {row['seed']} estimated "
+                           f"({excluded} excluded-class), {row['invalid']} invalid; "
+                           f"{row.get('error') or row['status']}"]})
     return checks
 
 

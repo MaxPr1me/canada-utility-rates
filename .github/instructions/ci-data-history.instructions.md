@@ -79,7 +79,10 @@ snapshot rules: [scrapers.instructions.md](scrapers.instructions.md). Model expo
 - `export_json.py` writes the site JSON, then the representative models.
 - `run_scrape --summary-json PATH` optionally writes the existing per-utility provenance summary
   with expected utility names, full/targeted scope, dry-run status and run/attempt identity.
-  Receipt failure is logged without changing the scrape or database behavior.
+  Receipt failure is logged without changing the scrape or database behavior. Each row's
+  `excluded_seed` counts the part of `seed` labelled by `mark_fallback` with
+  `scrapers.base.EXCLUDED_CLASS_FALLBACK_REASON` (Ontario street lighting); public totals still
+  count those records as seed.
 
 ## Model monitoring
 
@@ -93,6 +96,9 @@ The following workflow decisions were approved on 2026-11-17.
   generation, source and publication receipts. A green workflow or an unchanged file proves
   neither source health nor a successful model generation. A partial scrape cannot satisfy a
   full-registry cadence check; per-utility recovery stays scoped to its checked sources.
+- A source check passes only with live records, no invalid records, no error and no estimates
+  other than labelled excluded-class estimates (`excluded_seed`, owner decision 2026-11-18). Any
+  other estimate is a source problem; receipts without the field count every estimate.
 - The three data writers and Source Health call `model-monitoring.yml`, a reusable read-only
   reporting job with **no schedule**. Its `model-monitoring-issues` job concurrency serializes issue
   updates without putting Source Health in the data-writer concurrency group.

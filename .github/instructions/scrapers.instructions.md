@@ -34,7 +34,10 @@ historical checkpoint instructions it retains. To add a utility, follow
   HTML/PDF component verifier. Finding the same number somewhere is not enough.
 - **Seed fallback (estimate):** when fetching fails or a schedule changes shape, call
   `mark_fallback()`. It recursively sets every tariff and component to `confidence: unverified` and
-  adds `Provenance: seed_fallback` to the notes. Never raise this confidence by hand.
+  adds `Provenance: seed_fallback` to the notes. Never raise this confidence by hand. Use the
+  reason `EXCLUDED_CLASS_FALLBACK_REASON` only for a kept estimate of a deliberately excluded
+  class; model monitoring ignores exactly that label and treats every other estimate as a source
+  problem.
 - `pipeline/export_json.py:derive_provenance()` exports `provenance: "live"` only for the
   `officially_verified` and `live_parsed` markers; everything else is `"seed"`, which the site hides
   by default.

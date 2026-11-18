@@ -110,12 +110,16 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   HTTP 403 with Chromium; Grand Forks reads the dated document library before its media API;
   New Westminster follows its migrated bylaw page and PDF endpoint. Targeted dry runs returned
   53 live, 0 estimated and 0 invalid records across these sources and the seven additions.
+  A full local dry run on November 18 returned all 85 utilities: 959 live, 45 estimated (each a
+  labelled Ontario street-lighting estimate) and 0 invalid records.
 - **"Coverage complete" is not claimed yet:** the scoped wording awaits the owner's approval and
   needs verified GitHub source checks and the new utilities stored first.
 - **Phase 8 monitoring:** implemented, published and verified through the existing market workflows
   and deployment. The change log starts from its first verified baseline; municipal publication
-  and fresh source-check evidence remain separate outstanding work.
-- **Validation:** all 2,413 tests passed on Python 3.11 using `pytest tests`.
+  and fresh source-check evidence remain separate outstanding work. Monitoring issue #6 stays open
+  until a receipted Source Health run and an unfiltered Monthly Scrape store the seven additions.
+  Source checks ignore only labelled excluded-class estimates (owner decision November 18).
+- **Validation:** all 2,419 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.

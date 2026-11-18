@@ -37,7 +37,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from pipeline.export_json import derive_provenance
-from scrapers.base import BaseScraper, TariffRecord
+from scrapers.base import BaseScraper, TariffRecord, is_excluded_class_estimate
 from scrapers.registry import load_registry, get_active_utilities
 from scrapers.utils.logging_config import setup_logging
 from scrapers.utils.validation import validate_batch
@@ -272,19 +272,26 @@ SUMMARY_STATUS_ORDER = ("failed", "no valid records", "seed only", "live + seed"
 
 
 def tally_provenance(records: list[TariffRecord]) -> dict[str, int]:
-    """Count records the way the site labels them: ``live`` or ``seed`` (estimated)."""
-    counts = {"live": 0, "seed": 0}
+    """Count records the way the site labels them: ``live`` or ``seed`` (estimated).
+
+    ``excluded_seed`` is the subset of ``seed`` labelled as an excluded-class estimate, which the
+    model monitor's source-health check ignores; public totals still count it as seed.
+    """
+    counts = {"live": 0, "seed": 0, "excluded_seed": 0}
     for record in records:
-        counts[derive_provenance(record.confidence, record.notes)] += 1
+        provenance = derive_provenance(record.confidence, record.notes)
+        counts[provenance] += 1
+        if provenance == "seed" and is_excluded_class_estimate(record.notes):
+            counts["excluded_seed"] += 1
     return counts
 
 
 def summarize_run(per_utility: dict[str, dict]) -> dict:
     """Aggregate per-utility tallies into totals, problem lists and problems-first rows.
 
-    Each value holds ``live``/``seed`` counts of valid records, an ``invalid``
-    count and ``error``, which is set only when the utility failed (no scraper
-    configured or an exception).
+    Each value holds ``live``/``seed`` counts of valid records (``excluded_seed`` is the
+    labelled excluded-class part of ``seed``), an ``invalid`` count and ``error``, which is
+    set only when the utility failed (no scraper configured or an exception).
     """
     rows = []
     for name, tally in per_utility.items():
@@ -299,6 +306,7 @@ def summarize_run(per_utility: dict[str, dict]) -> dict:
         else:
             status = "live + seed" if seed else "live"
         rows.append({"utility": name, "live": live, "seed": seed,
+                     "excluded_seed": tally.get("excluded_seed", 0),
                      "invalid": tally.get("invalid", 0), "status": status, "error": error})
     rows.sort(key=lambda row: (
         SUMMARY_STATUS_ORDER.index(row["status"]), not row["invalid"], row["utility"].lower(),

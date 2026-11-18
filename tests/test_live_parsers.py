@@ -9234,6 +9234,8 @@ def test_onl_demand_hook_replaces_seed_demand(monkeypatch):
     codes = {r.tariff_code for r in records}
     assert "GS-D1-EXT" in codes and not codes & {"GS-D1", "GS-D2", "GS-D3"}
     assert "SL" in codes
+    from scrapers.base import is_excluded_class_estimate
+    assert {r.tariff_code for r in records if is_excluded_class_estimate(r.notes)} == {"SL"}
 
 
 # ======================================================================
@@ -14012,8 +14014,18 @@ def test_ops_tally_provenance_counts_live_markers_and_everything_else_as_seed():
         OPS__summary_record("A", OPS_SUMMARY_SEED_NOTE, name="Seed"),
         OPS__summary_record("A", None, name="Legacy"),
     ]
-    assert tally_provenance(records) == {"live": 2, "seed": 2}
-    assert tally_provenance([]) == {"live": 0, "seed": 0}
+    assert tally_provenance(records) == {"live": 2, "seed": 2, "excluded_seed": 0}
+    assert tally_provenance([]) == {"live": 0, "seed": 0, "excluded_seed": 0}
+
+
+def test_ops_tally_counts_labelled_excluded_class_estimates_within_seed():
+    from scrapers.base import EXCLUDED_CLASS_FALLBACK_REASON, BaseScraper
+
+    lighting, other = (OPS__summary_record("A", "OEB rate.", name=name) for name in ("Street Lighting", "Residential"))
+    scraper = SimpleNamespace(logger=logging.getLogger("test"), utility_name="A")
+    BaseScraper.mark_fallback(scraper, [lighting], EXCLUDED_CLASS_FALLBACK_REASON)
+    BaseScraper.mark_fallback(scraper, [other])
+    assert tally_provenance([lighting, other]) == {"live": 0, "seed": 2, "excluded_seed": 1}
 
 
 def test_ops_structured_receipt_preserves_provenance_and_targeted_scope(tmp_path, monkeypatch):

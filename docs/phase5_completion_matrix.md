@@ -27,6 +27,13 @@ after target sources are healthy; verify preserved history, the strict coverage 
 live tariffs, model contributors/limitations and the deployed data. A stored live record or green
 workflow alone does not close a source problem.
 
+Monitoring issue #6 (November 18): it lists the seven unpublished additions, a Monthly Scrape
+without receipts and the overdue November 15 Source Health. Owner decisions (November 18): source
+checks ignore only labelled excluded-class estimates, so the 45 Ontario distributors that keep
+their street-lighting estimate are not permanently unhealthy, and the Centra monitor is closed.
+The issue closes itself after a receipted Source Health run and the unfiltered Monthly Scrape
+above; if a municipal source fails on GitHub, repair and re-check it first.
+
 ### Registered municipal additions
 
 Owner decision (November 4): add the easy and medium electricity utilities to the inventory and register
@@ -311,7 +318,7 @@ building coverage; counts include optional adjustments and reference records.
 | Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones; the 7E synthetic profile (Monday-Friday hours beginning 7-18 EST). | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
 | Planned (after the lanes) | Commercial gas models (7D-1 covers residential gas); the rest of 6E gas commodity cadence; Phase 9 product follow-up incl. the Across-Canada comparison (never uses illustrative values) | See Next Batches items 7-10; Phase 8 is completed above |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11) while the rate pages show August 1, 2026 rates; from the November 1, 2026 rates the v1126 text Appendix A is parsed at high confidence (batch 16, row 1b) |
-| Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Checked October 30 (ledger notes): Qulliq, NTPC Snare, EPCOR Distribution (2026 tariffs still interim) and the next Rate of Last Resort term (the UCA table shows only the 2025-2026 term) unchanged, next review December 15; Centra and Yukon changed (row 1b), review November 30. Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
+| Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Checked October 30 (ledger notes): Qulliq, NTPC Snare, EPCOR Distribution (2026 tariffs still interim) and the next Rate of Last Resort term (the UCA table shows only the 2025-2026 term) unchanged, next review December 15; Centra and Yukon changed (row 1b); the Centra monitor was closed November 18 (owner decision) and Yukon's review is December 15. Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |
 
 **Calendar:**
@@ -325,8 +332,10 @@ building coverage; counts include optional adjustments and reference records.
 - **November 15:** Ontario Price Archive (with the market history build) and Source Health. Risk:
   the IESO table's October LFDA may still be preliminary while the archive holds final values (all
   three monthly checks are strict).
-- **November 30:** Centra stored November correction and HTML-discrepancy review; the original
-  deadline is retained, not silently postponed. Unresolved afterward means `monitor_overdue`.
+- **November 30 (closed November 18):** Centra stored November correction and HTML-discrepancy
+  review. CI storage was verified November 4; after a fresh 13-live dry run from the v1126 PDF the
+  owner closed the monitor (November 18). The two HTML differences stay logged; the PDF stays
+  authoritative.
 - **December 1:** Monthly Scrape; the coverage gate warns `live_expiring` for the eight Alberta
   Rate of Last Resort records.
 - **December 15:** monitor reviews for both Yukon utilities, Qulliq, NTPC Snare, EPCOR Distribution and the next Rate of
