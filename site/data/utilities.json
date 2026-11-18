@@ -120,6 +120,16 @@
     "notes": null
   },
   {
+    "id": 6525,
+    "name": "City of New Westminster",
+    "province": "BC",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
     "id": 6512,
     "name": "District of Summerland",
     "province": "BC",

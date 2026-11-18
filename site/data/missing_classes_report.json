@@ -66,6 +66,20 @@
     ]
   },
   {
+    "utility": "City of New Westminster",
+    "province": "BC",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service (35 kW and Over)",
+      "General Service (35 kW and Over) – Rental Apartment Common Areas",
+      "General Service (35 kW and Over) – Strata Mixed-Use Common Areas"
+    ]
+  },
+  {
     "utility": "District of Summerland",
     "province": "BC",
     "utility_type": "electricity",
