@@ -110,6 +110,26 @@
     "notes": null
   },
   {
+    "id": 6509,
+    "name": "City of Grand Forks",
+    "province": "BC",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 6512,
+    "name": "District of Summerland",
+    "province": "BC",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
     "id": 17,
     "name": "FortisBC Electric",
     "province": "BC",
@@ -124,6 +144,16 @@
     "name": "FortisBC Energy",
     "province": "BC",
     "utility_type": "gas",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 6505,
+    "name": "Nelson Hydro",
+    "province": "BC",
+    "utility_type": "electricity",
     "website": null,
     "rate_page_url": null,
     "regulator": null,
@@ -162,6 +192,16 @@
   {
     "id": 33,
     "name": "NB Power",
+    "province": "NB",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 6497,
+    "name": "Saint John Energy",
     "province": "NB",
     "utility_type": "electricity",
     "website": null,
@@ -802,6 +842,16 @@
   {
     "id": 40,
     "name": "Maritime Electric",
+    "province": "PE",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 6517,
+    "name": "Summerside Electric",
     "province": "PE",
     "utility_type": "electricity",
     "website": null,

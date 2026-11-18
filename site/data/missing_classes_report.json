@@ -66,6 +66,21 @@
     ]
   },
   {
+    "utility": "District of Summerland",
+    "province": "BC",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Commercial",
+      "Primary Power (under 500 kVA)",
+      "Primary Power (500 to 1,000 kVA)",
+      "Primary Power (over 1,000 kVA)"
+    ]
+  },
+  {
     "utility": "FortisBC Electric",
     "province": "BC",
     "utility_type": "electricity",
@@ -101,6 +116,20 @@
       "LUBD General Service Large (>750 V to 30 kV)",
       "LUBD General Service Large (>30 kV to 100 kV)",
       "LUBD General Service Large (>100 kV)"
+    ]
+  },
+  {
+    "utility": "Saint John Energy",
+    "province": "NB",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "industrial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service",
+      "General Service – Customer-Owned Transformation (Closed)"
     ]
   },
   {
@@ -231,6 +260,20 @@
       "General Service - Seasonal Operators Option (Rate 233)",
       "Long Term Contract (Rate 340)",
       "Short Term Contract (Rate 330)"
+    ]
+  },
+  {
+    "utility": "Summerside Electric",
+    "province": "PE",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "industrial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service I",
+      "General Service I - Seasonal"
     ]
   },
   {
