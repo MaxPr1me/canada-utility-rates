@@ -29,8 +29,8 @@
 - [BaseScraper](BaseScraper.md) (9 shared connections)
 - [re](re.md) (6 shared connections)
 - [generate_market_pricing.py](generate_market_pricing.py.md) (1 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
-- [TariffRecord](TariffRecord.md) (1 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (1 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
 - [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
 
 ## Source Files

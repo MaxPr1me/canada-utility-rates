@@ -1,6 +1,6 @@
 # os
 
-> 23 nodes
+> 22 nodes
 
 ## Key Concepts
 
@@ -12,7 +12,6 @@
 - **download()** (9 connections) — `scripts/pull_history_db.py`
 - **PullError** (6 connections) — `scripts/pull_history_db.py`
 - **resolve_asset()** (6 connections) — `scripts/pull_history_db.py`
-- **digest()** (4 connections) — `scripts/graphify_hook.py`
 - **file_sha256()** (4 connections) — `scripts/pull_history_db.py`
 - **Path** (4 connections)
 - **shutil** (4 connections)
@@ -30,28 +29,27 @@
 
 ## Relationships
 
-- [graphify_hook.py](graphify_hook.py.md) (7 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (8 shared connections)
+- [BaseScraper](BaseScraper.md) (6 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (6 shared connections)
-- [main](main.md) (6 shared connections)
 - [run_scrape.py](run_scrape.py.md) (5 shared connections)
 - [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (5 shared connections)
-- [BaseScraper](BaseScraper.md) (4 shared connections)
+- [main](main.md) (5 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (4 shared connections)
 - [check_db_history.py](check_db_history.py.md) (4 shared connections)
-- [Path](Path.md) (3 shared connections)
-- [parsing.py](parsing.py.md) (2 shared connections)
-- [argparse](argparse.md) (2 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (3 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
+- [io](io.md) (2 shared connections)
 
 ## Source Files
 
 - `scrapers/utils/parsing.py`
-- `scripts/graphify_hook.py`
 - `scripts/pull_history_db.py`
 
 ## Audit Trail
 
-- EXTRACTED: 103 (100%)
+- EXTRACTED: 100 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

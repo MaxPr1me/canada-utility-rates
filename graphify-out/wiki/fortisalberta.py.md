@@ -1,6 +1,6 @@
 # fortisalberta.py
 
-> 42 nodes
+> 48 nodes
 
 ## Key Concepts
 
@@ -9,10 +9,12 @@
 - **_date()** (17 connections) — `scrapers/utilities/fortisalberta.py`
 - **_Section** (12 connections) — `scrapers/utilities/fortisalberta.py`
 - **_Document** (11 connections) — `scrapers/utilities/fortisalberta.py`
+- **FortisAlbertaScraper** (11 connections) — `scrapers/utilities/fortisalberta.py`
 - **_charge()** (11 connections) — `scrapers/utilities/fortisalberta.py`
 - **_balancing_pool_rider()** (11 connections) — `scrapers/utilities/fortisalberta.py`
 - **_base_rider()** (11 connections) — `scrapers/utilities/fortisalberta.py`
 - **_schedule()** (11 connections) — `scrapers/utilities/fortisalberta.py`
+- **._current_schedule()** (10 connections) — `scrapers/utilities/fortisalberta.py`
 - **_option_a()** (10 connections) — `scrapers/utilities/fortisalberta.py`
 - **_option_i()** (10 connections) — `scrapers/utilities/fortisalberta.py`
 - **_quarterly_rider()** (10 connections) — `scrapers/utilities/fortisalberta.py`
@@ -26,20 +28,19 @@
 - **document_edition_date()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **_document()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **Match** (6 connections)
-- **.one()** (5 connections) — `scrapers/utilities/fortisalberta.py`
-- **_demand_rules()** (4 connections) — `scrapers/utilities/fortisalberta.py`
-- **_link_date()** (4 connections) — `scrapers/utilities/fortisalberta.py`
-- *... and 17 more nodes in this community*
+- **._read_pdf()** (5 connections) — `scrapers/utilities/fortisalberta.py`
+- *... and 23 more nodes in this community*
 
 ## Relationships
 
-- [RateComponent](RateComponent.md) (9 shared connections)
-- [BaseScraper](BaseScraper.md) (9 shared connections)
+- [BaseScraper](BaseScraper.md) (13 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (10 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (9 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (7 shared connections)
 - [re](re.md) (7 shared connections)
-- [FortisAlbertaScraper](FortisAlbertaScraper.md) (6 shared connections)
-- [DocumentPage](DocumentPage.md) (4 shared connections)
-- [TariffRecord](TariffRecord.md) (3 shared connections)
-- [parsing.py](parsing.py.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
+- [FortisAlbertaScraper](FortisAlbertaScraper.md) (1 shared connections)
+- [.mark_fallback](mark_fallback.md) (1 shared connections)
 
 ## Source Files
 
@@ -47,8 +48,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 152 (92%)
-- INFERRED: 13 (8%)
+- EXTRACTED: 169 (91%)
+- INFERRED: 16 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

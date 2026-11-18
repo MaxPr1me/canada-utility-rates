@@ -41,8 +41,8 @@
 - [_fullmatch](_fullmatch.md) (9 shared connections)
 - [market_pricing.py](market_pricing.py.md) (7 shared connections)
 - [re](re.md) (4 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (3 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
+- [argparse](argparse.md) (2 shared connections)
 - [run_scrape.py](run_scrape.py.md) (2 shared connections)
 - [_fixed_variant_groups](_fixed_variant_groups.md) (2 shared connections)
 

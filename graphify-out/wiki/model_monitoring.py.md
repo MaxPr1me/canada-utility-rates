@@ -1,6 +1,6 @@
 # model_monitoring.py
 
-> 53 nodes
+> 52 nodes
 
 ## Key Concepts
 
@@ -29,22 +29,22 @@
 - **_pick()** (5 connections) — `pipeline/model_monitoring.py`
 - **run_identity()** (5 connections) — `pipeline/model_monitoring.py`
 - **save_generation_receipt()** (5 connections) — `pipeline/model_monitoring.py`
-- *... and 28 more nodes in this community*
+- *... and 27 more nodes in this community*
 
 ## Relationships
 
-- [coverage_gate.py](coverage_gate.py.md) (8 shared connections)
 - [run_scrape.py](run_scrape.py.md) (8 shared connections)
 - [market_pricing.py](market_pricing.py.md) (6 shared connections)
+- [argparse](argparse.md) (5 shared connections)
 - [os](os.md) (4 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (4 shared connections)
 - [re](re.md) (4 shared connections)
 - [build_models](build_models.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
-- [argparse](argparse.md) (2 shared connections)
 - [main](main.md) (2 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
+- [BaseScraper](BaseScraper.md) (2 shared connections)
 - [_prepare](_prepare.md) (1 shared connections)
 - [representative_models.py](representative_models.py.md) (1 shared connections)
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -53,7 +53,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 165 (99%)
+- EXTRACTED: 162 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

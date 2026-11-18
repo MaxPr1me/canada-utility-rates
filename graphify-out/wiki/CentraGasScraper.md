@@ -1,6 +1,6 @@
 # CentraGasScraper
 
-> 52 nodes
+> 50 nodes
 
 ## Key Concepts
 
@@ -8,11 +8,9 @@
 - **.parse_pages()** (21 connections) — `scrapers/utilities/centra_gas.py`
 - **._pdf_records()** (19 connections) — `scrapers/utilities/centra_gas.py`
 - **date** (12 connections)
-- **._try_live_scrape()** (11 connections) — `scrapers/utilities/centra_gas.py`
 - **._mainline_interruptible()** (9 connections) — `scrapers/utilities/centra_gas.py`
 - **._appendix_tables()** (8 connections) — `scrapers/utilities/centra_gas.py`
 - **._commodity_headline()** (8 connections) — `scrapers/utilities/centra_gas.py`
-- **._build()** (7 connections) — `scrapers/utilities/centra_gas.py`
 - **._edition()** (6 connections) — `scrapers/utilities/centra_gas.py`
 - **._carbon()** (5 connections) — `scrapers/utilities/centra_gas.py`
 - **._long_date()** (5 connections) — `scrapers/utilities/centra_gas.py`
@@ -29,16 +27,17 @@
 - **._appendix_text()** (3 connections) — `scrapers/utilities/centra_gas.py`
 - **._check_appendix_row()** (3 connections) — `scrapers/utilities/centra_gas.py`
 - **._eligibility()** (3 connections) — `scrapers/utilities/centra_gas.py`
-- *... and 27 more nodes in this community*
+- **._page_text()** (3 connections) — `scrapers/utilities/centra_gas.py`
+- **._residential_section()** (3 connections) — `scrapers/utilities/centra_gas.py`
+- *... and 25 more nodes in this community*
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (9 shared connections)
+- [FortisAlbertaScraper](FortisAlbertaScraper.md) (7 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (6 shared connections)
 - [BaseScraper](BaseScraper.md) (5 shared connections)
-- [RateComponent](RateComponent.md) (2 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [FortisAlbertaScraper](FortisAlbertaScraper.md) (1 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (4 shared connections)
+- [.fetch_page](fetch_page.md) (1 shared connections)
 
 ## Source Files
 
@@ -46,7 +45,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 125 (98%)
+- EXTRACTED: 118 (98%)
 - INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 

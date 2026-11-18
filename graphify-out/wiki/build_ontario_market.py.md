@@ -1,6 +1,6 @@
 # build_ontario_market.py
 
-> 63 nodes
+> 60 nodes
 
 ## Key Concepts
 
@@ -18,6 +18,7 @@
 - **_cents()** (6 connections) — `scripts/build_ontario_market.py`
 - **build_bins()** (6 connections) — `scripts/build_ontario_market.py`
 - **load_ga()** (6 connections) — `scripts/build_ontario_market.py`
+- **render_document()** (6 connections) — `scripts/build_ontario_market.py`
 - **_span()** (6 connections) — `scripts/build_ontario_market.py`
 - **_ym()** (6 connections) — `scripts/build_ontario_market.py`
 - **Decimal** (6 connections)
@@ -28,19 +29,22 @@
 - **_revisable()** (5 connections) — `scripts/build_ontario_market.py`
 - **serialize_monthly()** (5 connections) — `scripts/build_ontario_market.py`
 - **_shift()** (5 connections) — `scripts/build_ontario_market.py`
-- **write_outputs()** (5 connections) — `scripts/build_ontario_market.py`
-- *... and 38 more nodes in this community*
+- *... and 35 more nodes in this community*
 
 ## Relationships
 
-- [io](io.md) (11 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (5 shared connections)
+- [io](io.md) (6 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (5 shared connections)
+- [load_ga_reports](load_ga_reports.md) (3 shared connections)
 - [re](re.md) (3 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
 - [argparse](argparse.md) (2 shared connections)
 - [os](os.md) (2 shared connections)
 - [run_scrape.py](run_scrape.py.md) (2 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (2 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
+- [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
+- [_load](_load.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 173 (99%)
+- EXTRACTED: 175 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

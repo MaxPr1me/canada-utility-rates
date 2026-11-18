@@ -1,6 +1,6 @@
 # .mark_live_parsed
 
-> 53 nodes
+> 48 nodes
 
 ## Key Concepts
 
@@ -15,7 +15,6 @@
 - **._parse_island_nonfirm()** (10 connections) — `scrapers/utilities/nl_hydro.py`
 - **_energy_components()** (10 connections) — `scrapers/utilities/nl_hydro.py`
 - **.parse_schedule_pages()** (10 connections) — `scrapers/utilities/nl_hydro.py`
-- **._try_live_scrape()** (10 connections) — `scrapers/utilities/nl_hydro.py`
 - **date** (10 connections)
 - **._parse_labrador_industrial()** (9 connections) — `scrapers/utilities/nl_hydro.py`
 - **._parse_net_metering()** (9 connections) — `scrapers/utilities/nl_hydro.py`
@@ -23,25 +22,23 @@
 - **._new_record()** (8 connections) — `scrapers/utilities/nl_hydro.py`
 - **_demand_components()** (8 connections) — `scrapers/utilities/nl_hydro.py`
 - **_diesel_energy()** (8 connections) — `scrapers/utilities/nl_hydro.py`
+- **._nonfirm_record()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_basic_components()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_billing_conditions()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **._audit_island_industrial_other()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_option_components()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_verify_nonfirm_formula()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_energy_rows()** (6 connections) — `scrapers/utilities/nl_hydro.py`
-- *... and 28 more nodes in this community*
+- *... and 23 more nodes in this community*
 
 ## Relationships
 
+- [BCHydroScraper](BCHydroScraper.md) (15 shared connections)
 - [re](re.md) (15 shared connections)
-- [RateComponent](RateComponent.md) (14 shared connections)
-- [BaseScraper](BaseScraper.md) (13 shared connections)
-- [TariffRecord](TariffRecord.md) (13 shared connections)
-- [DocumentPage](DocumentPage.md) (12 shared connections)
-- [.fetch_page](fetch_page.md) (6 shared connections)
-- [.mark_fallback](mark_fallback.md) (2 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [parsing.py](parsing.py.md) (1 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (14 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (13 shared connections)
+- [BaseScraper](BaseScraper.md) (11 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
 
 ## Source Files
 
@@ -49,7 +46,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 215 (99%)
+- EXTRACTED: 204 (99%)
 - INFERRED: 3 (1%)
 - AMBIGUOUS: 0 (0%)
 

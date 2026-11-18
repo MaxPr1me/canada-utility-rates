@@ -1,42 +1,52 @@
 # main
 
-> 11 nodes
+> 21 nodes
 
 ## Key Concepts
 
-- **main()** (6 connections) — `scripts/generate_market_pricing.py`
-- **write_document()** (6 connections) — `scripts/generate_market_pricing.py`
-- **http_get()** (5 connections) — `scripts/generate_market_pricing.py`
-- **time** (5 connections)
-- **parse_args()** (4 connections) — `scripts/generate_market_pricing.py`
-- **api_get()** (4 connections) — `scripts/archive_ontario_price.py`
-- **.__init__()** (3 connections) — `scripts/generate_market_pricing.py`
-- **Path** (3 connections)
-- **Namespace** (1 connections)
-- **Like generate_market_pricing.http_get, but a 404 (no data for those dates) is…** (1 connections) — `scripts/archive_ontario_price.py`
-- **Write the JSON document atomically (temporary file, then os.replace), so a…** (1 connections) — `scripts/generate_market_pricing.py`
+- **main()** (13 connections) — `pipeline/representative_models.py`
+- **export_representative_models()** (12 connections) — `pipeline/export_json.py`
+- **write_models()** (12 connections) — `pipeline/representative_models.py`
+- **start_model_receipt()** (8 connections) — `pipeline/export_json.py`
+- **load_crosswalk()** (7 connections) — `pipeline/representative_models.py`
+- **load_taxes()** (7 connections) — `pipeline/representative_models.py`
+- **load_usage_levels()** (7 connections) — `pipeline/representative_models.py`
+- **PathLike** (7 connections)
+- **load_rates()** (6 connections) — `pipeline/representative_models.py`
+- **format_coverage()** (3 connections) — `pipeline/representative_models.py`
+- **contextlib** (3 connections)
+- **ModuleType** (1 connections)
+- **Keep optional monitoring setup out of the primary generation's failure path.** (1 connections) — `pipeline/export_json.py`
+- **Build the representative models from the exported tariffs and write them as…** (1 connections) — `pipeline/export_json.py`
+- **Build the models (missing inputs load from their default paths) and write them…** (1 connections) — `pipeline/representative_models.py`
+- **CLI: --coverage (Phase 7A) and/or --build [--output PATH] [--zone-policy ...]…** (1 connections) — `pipeline/representative_models.py`
+- **Short plain-text summary of a coverage report.** (1 connections) — `pipeline/representative_models.py`
+- **Read the crosswalk JSON (default data/models/crosswalk.json).** (1 connections) — `pipeline/representative_models.py`
+- **Read the tax and rebate table (default data/models/taxes.json).** (1 connections) — `pipeline/representative_models.py`
+- **Read the usage-level definitions (default data/models/usage_levels.json).** (1 connections) — `pipeline/representative_models.py`
+- **Read an export (list of records) or a fixture ({"records": [...]}).** (1 connections) — `pipeline/representative_models.py`
 
 ## Relationships
 
-- [generate_market_pricing.py](generate_market_pricing.py.md) (6 shared connections)
-- [os](os.md) (3 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (2 shared connections)
-- [MarketDataError](MarketDataError.md) (2 shared connections)
-- [ReportSource](ReportSource.md) (2 shared connections)
-- [argparse](argparse.md) (1 shared connections)
+- [representative_models.py](representative_models.py.md) (9 shared connections)
+- [run_scrape.py](run_scrape.py.md) (6 shared connections)
+- [argparse](argparse.md) (6 shared connections)
+- [build_models](build_models.md) (5 shared connections)
+- [os](os.md) (2 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
 - [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
-- [_yearly_files](_yearly_files.md) (1 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [_prepare](_prepare.md) (1 shared connections)
+- [check_db_history.py](check_db_history.py.md) (1 shared connections)
 
 ## Source Files
 
-- `scripts/archive_ontario_price.py`
-- `scripts/generate_market_pricing.py`
+- `pipeline/export_json.py`
+- `pipeline/representative_models.py`
 
 ## Audit Trail
 
-- EXTRACTED: 28 (97%)
-- INFERRED: 1 (3%)
+- EXTRACTED: 64 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -38,13 +38,13 @@
 - [_yearly_files](_yearly_files.md) (7 shared connections)
 - [main](main.md) (6 shared connections)
 - [market_pricing.py](market_pricing.py.md) (4 shared connections)
-- [ReportSource](ReportSource.md) (3 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (3 shared connections)
 - [io](io.md) (3 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
 - [os](os.md) (2 shared connections)
 - [re](re.md) (2 shared connections)
 - [run_scrape.py](run_scrape.py.md) (2 shared connections)
-- [parsing.py](parsing.py.md) (2 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
 
 ## Source Files
 

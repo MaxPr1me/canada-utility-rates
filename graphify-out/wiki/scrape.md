@@ -9,7 +9,7 @@
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (1 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files

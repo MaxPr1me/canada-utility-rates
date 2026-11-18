@@ -1,6 +1,6 @@
 # find_text_near_label
 
-> 8 nodes
+> 9 nodes
 
 ## Key Concepts
 
@@ -8,6 +8,7 @@
 - **extract_rate_from_text()** (6 connections) — `scrapers/utils/parsing.py`
 - **._extract_basic_charge()** (5 connections) — `scrapers/utilities/nova_scotia_power.py`
 - **._extract_energy_rate()** (5 connections) — `scrapers/utilities/nova_scotia_power.py`
+- **BeautifulSoup** (3 connections)
 - **Extract the monthly base/fixed charge from the page.** (1 connections) — `scrapers/utilities/nova_scotia_power.py`
 - **Extract the per-kWh energy charge from the page.** (1 connections) — `scrapers/utilities/nova_scotia_power.py`
 - **Find a label (like "Basic Charge") in the page and return numeric text found…** (1 connections) — `scrapers/utils/parsing.py`
@@ -15,11 +16,9 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (3 shared connections)
-- [RateComponent](RateComponent.md) (2 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
+- [BaseScraper](BaseScraper.md) (6 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
 - [re](re.md) (2 shared connections)
-- [parsing.py](parsing.py.md) (2 shared connections)
 
 ## Source Files
 
@@ -28,7 +27,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 19 (100%)
+- EXTRACTED: 21 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

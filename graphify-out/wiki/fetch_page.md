@@ -1,66 +1,78 @@
 # .fetch_page
 
-> 34 nodes
+> 56 nodes
 
 ## Key Concepts
 
 - **.fetch_page()** (45 connections) — `scrapers/base.py`
 - **.mark_live_parsed()** (44 connections) — `scrapers/base.py`
-- **._try_live_scrape()** (12 connections) — `scrapers/utilities/grand_forks.py`
+- **.__init__()** (43 connections) — `scrapers/base.py`
 - **._try_live_scrape()** (11 connections) — `scrapers/utilities/enbridge_gas.py`
-- **._try_live_scrape()** (10 connections) — `scrapers/utilities/heritage_gas.py`
+- **FortisBCElectricScraper** (10 connections) — `scrapers/utilities/fortisbc_electric.py`
 - **._try_live_scrape()** (10 connections) — `scrapers/utilities/penticton.py`
+- **TorontoHydroScraper** (9 connections) — `scrapers/utilities/toronto_hydro.py`
 - **._try_live_scrape()** (9 connections) — `scrapers/utilities/nelson_hydro.py`
-- **GrandForksScraper** (8 connections) — `scrapers/utilities/grand_forks.py`
 - **NewWestminsterScraper** (8 connections) — `scrapers/utilities/new_westminster.py`
 - **PentictonScraper** (8 connections) — `scrapers/utilities/penticton.py`
+- **.scrape()** (8 connections) — `scrapers/utilities/fortisbc_electric.py`
+- **._try_live_scrape()** (8 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._try_live_scrape()** (8 connections) — `scrapers/utilities/new_westminster.py`
 - **NelsonHydroScraper** (7 connections) — `scrapers/utilities/nelson_hydro.py`
-- **._nonfirm_record()** (7 connections) — `scrapers/utilities/nl_hydro.py`
-- **extract_handbook_pages()** (7 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._discover_handbook()** (5 connections) — `scrapers/utilities/enbridge_gas.py`
+- **._fetch_schedule_pages()** (5 connections) — `scrapers/utilities/fortisbc_electric.py`
+- **.parse_schedule_pages()** (5 connections) — `scrapers/utilities/fortisbc_electric.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/toronto_hydro.py`
+- **._seed_data()** (4 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._discover()** (4 connections) — `scrapers/utilities/new_westminster.py`
 - **._discover()** (4 connections) — `scrapers/utilities/penticton.py`
-- **.scrape()** (3 connections) — `scrapers/utilities/grand_forks.py`
+- **._seed_data()** (4 connections) — `scrapers/utilities/toronto_hydro.py`
+- **._try_live_scrape()** (4 connections) — `scrapers/utilities/toronto_hydro.py`
 - **.scrape()** (3 connections) — `scrapers/utilities/nelson_hydro.py`
-- **.scrape()** (3 connections) — `scrapers/utilities/new_westminster.py`
-- **.scrape()** (3 connections) — `scrapers/utilities/penticton.py`
-- **.__init__()** (2 connections) — `scrapers/utilities/grand_forks.py`
-- **.__init__()** (2 connections) — `scrapers/utilities/nelson_hydro.py`
-- **.__init__()** (2 connections) — `scrapers/utilities/new_westminster.py`
-- **.__init__()** (2 connections) — `scrapers/utilities/penticton.py`
-- *... and 9 more nodes in this community*
+- *... and 31 more nodes in this community*
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (22 shared connections)
-- [BaseScraper](BaseScraper.md) (19 shared connections)
-- [.mark_fallback](mark_fallback.md) (11 shared connections)
-- [grand_forks.py](grand_forks.py.md) (8 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (6 shared connections)
-- [.__init__](__init__.md) (6 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (28 shared connections)
+- [BaseScraper](BaseScraper.md) (20 shared connections)
+- [.mark_fallback](mark_fallback.md) (19 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (10 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (8 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (6 shared connections)
+- [FortisAlbertaScraper](FortisAlbertaScraper.md) (5 shared connections)
+- [LibertyGasNBScraper](LibertyGasNBScraper.md) (5 shared connections)
 - [EnbridgeGasScraper](EnbridgeGasScraper.md) (5 shared connections)
-- [FortisAlbertaScraper](FortisAlbertaScraper.md) (4 shared connections)
-- [nelson_hydro.py](nelson_hydro.py.md) (3 shared connections)
-- [new_westminster.py](new_westminster.py.md) (3 shared connections)
-- [DocumentPage](DocumentPage.md) (3 shared connections)
-- [re](re.md) (3 shared connections)
+- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (4 shared connections)
+- [grand_forks.py](grand_forks.py.md) (4 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (4 shared connections)
 
 ## Source Files
 
 - `scrapers/base.py`
+- `scrapers/utilities/atco_gas.py`
+- `scrapers/utilities/bc_hydro.py`
 - `scrapers/utilities/enbridge_gas.py`
-- `scrapers/utilities/grand_forks.py`
-- `scrapers/utilities/heritage_gas.py`
+- `scrapers/utilities/energir.py`
+- `scrapers/utilities/fortisbc_electric.py`
+- `scrapers/utilities/fortisbc_energy.py`
+- `scrapers/utilities/liberty_gas_nb.py`
+- `scrapers/utilities/manitoba_hydro.py`
+- `scrapers/utilities/maritime_electric.py`
+- `scrapers/utilities/nb_power.py`
 - `scrapers/utilities/nelson_hydro.py`
 - `scrapers/utilities/new_westminster.py`
+- `scrapers/utilities/newfoundland_power.py`
 - `scrapers/utilities/nl_hydro.py`
 - `scrapers/utilities/penticton.py`
+- `scrapers/utilities/saskenergy.py`
+- `scrapers/utilities/saskpower.py`
+- `scrapers/utilities/toronto_hydro.py`
+- `scrapers/utilities/yukon_energy.py`
 
 ## Audit Trail
 
-- EXTRACTED: 186 (98%)
-- INFERRED: 4 (2%)
+- EXTRACTED: 248 (97%)
+- INFERRED: 7 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,6 +1,6 @@
 # MaritimeElectricScraper
 
-> 27 nodes
+> 25 nodes
 
 ## Key Concepts
 
@@ -15,7 +15,6 @@
 - **.scrape()** (6 connections) — `scrapers/utilities/maritime_electric.py`
 - **._parse_component_line()** (5 connections) — `scrapers/utilities/maritime_electric.py`
 - **_expect_amounts()** (5 connections) — `scrapers/utilities/maritime_electric.py`
-- **_extract_pages()** (5 connections) — `scrapers/utilities/maritime_electric.py`
 - **._apply_schedules()** (5 connections) — `scrapers/utilities/maritime_electric.py`
 - **._cross_checked()** (5 connections) — `scrapers/utilities/maritime_electric.py`
 - **._seed_data()** (5 connections) — `scrapers/utilities/maritime_electric.py`
@@ -29,20 +28,19 @@
 - **Build one record; None unless the class has exactly its expected components.** (1 connections) — `scrapers/utilities/maritime_electric.py`
 - **Cross-check industrial/wholesale classes against their Section N schedules;…** (1 connections) — `scrapers/utilities/maritime_electric.py`
 - **Turn one '... Charge ... $ value' schedule line into a RateComponent.** (1 connections) — `scrapers/utilities/maritime_electric.py`
-- *... and 2 more nodes in this community*
+- **Return seed/fallback data based on known published rates.** (1 connections) — `scrapers/utilities/maritime_electric.py`
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (13 shared connections)
-- [maritime_electric.py](maritime_electric.py.md) (9 shared connections)
-- [RateComponent](RateComponent.md) (6 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (13 shared connections)
+- [re](re.md) (8 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (6 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
-- [DocumentPage](DocumentPage.md) (3 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (2 shared connections)
 - [.mark_fallback](mark_fallback.md) (2 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
 - [FortisAlbertaScraper](FortisAlbertaScraper.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
 
 ## Source Files
 
@@ -50,8 +48,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 83 (97%)
-- INFERRED: 3 (3%)
+- EXTRACTED: 79 (96%)
+- INFERRED: 3 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -16,19 +16,19 @@
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
 - [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- nl_hydro.py `EXTRACTED`
 - [run_scrape.py](run_scrape.py.md) `EXTRACTED`
+- nl_hydro.py `EXTRACTED`
 - epcor_gas_ontario.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- [atco_gas.py](atco_gas.py.md) `EXTRACTED`
+- atco_gas.py `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
-- nb_power.py `EXTRACTED`
-- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
+- [nb_power.py](nb_power.py.md) `EXTRACTED`
+- maritime_electric.py `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
-- aeso.py `EXTRACTED`
+- [aeso.py](aeso.py.md) `EXTRACTED`
 - [grand_forks.py](grand_forks.py.md) `EXTRACTED`
 - *…and 22 more `imports` connection(s) not listed (lowest-degree first to go)*
 

@@ -1,6 +1,6 @@
 # FortisBCEnergyScraper
 
-> 45 nodes
+> 43 nodes
 
 ## Key Concepts
 
@@ -24,22 +24,21 @@
 - **._footer_after()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._money()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._rate_section()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
-- **.scrape()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._discover_documents()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._document_text()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
-- **._seed_data()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **AreaClassSpec** (3 connections) — `scrapers/utilities/fortisbc_energy.py`
-- *... and 20 more nodes in this community*
+- **._page_text()** (3 connections) — `scrapers/utilities/fortisbc_energy.py`
+- **comp()** (2 connections) — `scrapers/utilities/fortisbc_energy.py`
+- *... and 18 more nodes in this community*
 
 ## Relationships
 
-- [RateComponent](RateComponent.md) (13 shared connections)
-- [TariffRecord](TariffRecord.md) (11 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (12 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (12 shared connections)
 - [BaseScraper](BaseScraper.md) (6 shared connections)
-- [.mark_fallback](mark_fallback.md) (2 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
 - [FortisAlbertaScraper](FortisAlbertaScraper.md) (1 shared connections)
+- [.mark_fallback](mark_fallback.md) (1 shared connections)
 
 ## Source Files
 
@@ -47,8 +46,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 133 (99%)
-- INFERRED: 2 (1%)
+- EXTRACTED: 128 (98%)
+- INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

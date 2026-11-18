@@ -21,7 +21,7 @@
 
 - [oeb_tariff.py](oeb_tariff.py.md) (7 shared connections)
 - [parse_tariff_pages](parse_tariff_pages.md) (5 shared connections)
-- [DocumentPage](DocumentPage.md) (4 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (4 shared connections)
 - [build_demand_records](build_demand_records.md) (3 shared connections)
 - [class_loss_factors](class_loss_factors.md) (1 shared connections)
 - [close_class](close_class.md) (1 shared connections)

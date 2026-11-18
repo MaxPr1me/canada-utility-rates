@@ -10,7 +10,7 @@
 
 ## Relationships
 
-- [.__init__](__init__.md) (1 shared connections)
+- [.fetch_page](fetch_page.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
