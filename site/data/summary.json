@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-19T15:13:19.339334+00:00",
+  "last_updated": "2026-11-19T15:17:58.385860+00:00",
   "total_utilities": 94,
   "total_tariffs": 1863,
   "total_components": 20702,
@@ -31,9 +31,9 @@
   "live_tariffs": 1381,
   "seed_tariffs": 482,
   "last_scrape_run": {
-    "id": 40,
-    "started_at": "2026-11-19T15:13:10.687591+00:00",
-    "finished_at": "2026-11-19T15:13:18.146954+00:00",
+    "id": 41,
+    "started_at": "2026-11-19T15:17:53.281254+00:00",
+    "finished_at": "2026-11-19T15:17:56.775048+00:00",
     "status": "completed",
     "utilities_attempted": 1,
     "utilities_succeeded": 1,

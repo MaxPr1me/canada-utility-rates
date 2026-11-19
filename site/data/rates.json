@@ -626464,7 +626464,7 @@
   {
     "id": 5809,
     "utility_id": 40,
-    "scrape_run_id": 34,
+    "scrape_run_id": 41,
     "name": "General Service",
     "tariff_code": null,
     "utility_type": "electricity",
@@ -626491,9 +626491,9 @@
     "provenance": "seed",
     "components": [
       {
-        "id": 59420,
+        "id": 68989,
         "tariff_id": 5809,
-        "scrape_run_id": 34,
+        "scrape_run_id": 41,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -626517,12 +626517,12 @@
         "source_detail": null,
         "confidence": "unverified",
         "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. Flat rate applied to all kWh consumed",
-        "created_at": "2026-11-18 18:22:04"
+        "created_at": "2026-11-19 15:17:56"
       },
       {
-        "id": 59419,
+        "id": 68988,
         "tariff_id": 5809,
-        "scrape_run_id": 34,
+        "scrape_run_id": 41,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -626546,7 +626546,7 @@
         "source_detail": null,
         "confidence": "unverified",
         "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. ",
-        "created_at": "2026-11-18 18:22:04"
+        "created_at": "2026-11-19 15:17:56"
       }
     ]
   },
@@ -627760,7 +627760,7 @@
   {
     "id": 5808,
     "utility_id": 40,
-    "scrape_run_id": 34,
+    "scrape_run_id": 41,
     "name": "Residential Service",
     "tariff_code": null,
     "utility_type": "electricity",
@@ -627787,9 +627787,9 @@
     "provenance": "seed",
     "components": [
       {
-        "id": 59418,
+        "id": 68987,
         "tariff_id": 5808,
-        "scrape_run_id": 34,
+        "scrape_run_id": 41,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -627813,12 +627813,12 @@
         "source_detail": null,
         "confidence": "unverified",
         "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. Flat rate applied to all kWh consumed",
-        "created_at": "2026-11-18 18:22:04"
+        "created_at": "2026-11-19 15:17:56"
       },
       {
-        "id": 59417,
+        "id": 68986,
         "tariff_id": 5808,
-        "scrape_run_id": 34,
+        "scrape_run_id": 41,
         "component_type": "fixed",
         "component_name": "Basic Charge",
         "sub_component": null,
@@ -627842,7 +627842,7 @@
         "source_detail": null,
         "confidence": "unverified",
         "notes": "Provenance: seed_fallback. Official source could not be fetched or completely verified. Monthly basic charge regardless of consumption",
-        "created_at": "2026-11-18 18:22:04"
+        "created_at": "2026-11-19 15:17:56"
       }
     ]
   },
