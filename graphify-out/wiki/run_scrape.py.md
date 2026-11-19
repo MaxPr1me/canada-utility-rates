@@ -1,65 +1,59 @@
 # run_scrape.py
 
-> 78 nodes
+> 46 nodes
 
 ## Key Concepts
 
-- **json** (60 connections)
 - **run_scrape.py** (39 connections) — `pipeline/run_scrape.py`
-- **argparse** (31 connections)
-- **export_json.py** (23 connections) — `pipeline/export_json.py`
 - **main()** (21 connections) — `pipeline/run_scrape.py`
-- **pathlib** (19 connections)
-- **sys** (19 connections)
-- **validate.py** (14 connections) — `pipeline/validate.py`
-- **diff_report.py** (13 connections) — `pipeline/diff_report.py`
-- **export_representative_models()** (12 connections) — `pipeline/export_json.py`
-- **setup_logging()** (11 connections) — `scrapers/utils/logging_config.py`
-- **sqlite3** (11 connections)
-- **export_all()** (10 connections) — `pipeline/export_json.py`
-- **logging_config.py** (10 connections) — `scrapers/utils/logging_config.py`
-- **main()** (9 connections) — `pipeline/validate.py`
-- **main()** (8 connections) — `pipeline/diff_report.py`
-- **start_model_receipt()** (8 connections) — `pipeline/export_json.py`
+- **registry.py** (10 connections) — `scrapers/registry.py`
+- **load_registry()** (9 connections) — `scrapers/registry.py`
 - **canonical_snapshot()** (6 connections) — `pipeline/run_scrape.py`
 - **store_results()** (6 connections) — `pipeline/run_scrape.py`
 - **tally_provenance()** (6 connections) — `pipeline/run_scrape.py`
-- **generate_missing_classes_report()** (6 connections) — `pipeline/validate.py`
 - **validate_batch()** (6 connections) — `scrapers/utils/validation.py`
 - **load_scraper()** (5 connections) — `pipeline/run_scrape.py`
-- **diff_runs()** (5 connections) — `pipeline/diff_report.py`
-- **get_snapshots_for_run()** (5 connections) — `pipeline/diff_report.py`
-- *... and 53 more nodes in this community*
+- **derive_provenance()** (5 connections) — `pipeline/export_json.py`
+- **get_active_utilities()** (5 connections) — `scrapers/registry.py`
+- **utc_now()** (4 connections) — `pipeline/model_monitoring.py`
+- **emit_github_notice()** (4 connections) — `pipeline/run_scrape.py`
+- **format_github_notice()** (4 connections) — `pipeline/run_scrape.py`
+- **format_summary_markdown()** (4 connections) — `pipeline/run_scrape.py`
+- **init_db()** (4 connections) — `pipeline/run_scrape.py`
+- **summarize_run()** (4 connections) — `pipeline/run_scrape.py`
+- **is_excluded_class_estimate()** (4 connections) — `scrapers/base.py`
+- **append_step_summary()** (3 connections) — `pipeline/run_scrape.py`
+- **get_utilities_by_province()** (3 connections) — `scrapers/registry.py`
+- **get_utility()** (3 connections) — `scrapers/registry.py`
+- **importlib** (2 connections)
+- **names()** (1 connections) — `pipeline/run_scrape.py`
+- **cell()** (1 connections) — `pipeline/run_scrape.py`
+- **names_with()** (1 connections) — `pipeline/run_scrape.py`
+- *... and 21 more nodes in this community*
 
 ## Relationships
 
-- [main](main.md) (18 shared connections)
-- [BaseScraper](BaseScraper.md) (16 shared connections)
-- [check_db_history.py](check_db_history.py.md) (11 shared connections)
-- [os](os.md) (9 shared connections)
-- [graphify_hook.py](graphify_hook.py.md) (9 shared connections)
-- [registry.py](registry.py.md) (8 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (7 shared connections)
-- [io](io.md) (7 shared connections)
-- [representative_models.py](representative_models.py.md) (6 shared connections)
+- [argparse](argparse.md) (15 shared connections)
+- [BaseScraper](BaseScraper.md) (9 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (6 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (6 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (6 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (6 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (5 shared connections)
+- [os](os.md) (3 shared connections)
+- [validation.py](validation.py.md) (3 shared connections)
 
 ## Source Files
 
-- `pipeline/diff_report.py`
 - `pipeline/export_json.py`
+- `pipeline/model_monitoring.py`
 - `pipeline/run_scrape.py`
-- `pipeline/validate.py`
 - `scrapers/base.py`
-- `scrapers/utils/logging_config.py`
+- `scrapers/registry.py`
 - `scrapers/utils/validation.py`
 
 ## Audit Trail
 
-- EXTRACTED: 297 (98%)
-- INFERRED: 6 (2%)
+- EXTRACTED: 108 (95%)
+- INFERRED: 6 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

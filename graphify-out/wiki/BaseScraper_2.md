@@ -1,6 +1,6 @@
 # BaseScraper
 
-> God node · 99 connections · `scrapers/base.py`
+> God node · 107 connections · `scrapers/base.py`
 
 **Community:** [BaseScraper](BaseScraper.md)
 
@@ -14,7 +14,7 @@
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
 - [fortisbc_electric.py](fortisbc_electric.py.md) `EXTRACTED`
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
-- ontario_ldc.py `EXTRACTED`
+- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
 - [run_scrape.py](run_scrape.py.md) `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
@@ -25,12 +25,12 @@
 - atco_gas.py `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
+- [naka_power.py](naka_power.py.md) `EXTRACTED`
 - nb_power.py `EXTRACTED`
 - [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - aeso.py `EXTRACTED`
-- grand_forks.py `EXTRACTED`
-- *…and 22 more `imports` connection(s) not listed (lowest-degree first to go)*
+- *…and 26 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### inherits
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) `EXTRACTED`
@@ -41,7 +41,7 @@
 - [BCHydroScraper](BCHydroScraper.md) `EXTRACTED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `EXTRACTED`
 - [NBPowerScraper](NBPowerScraper.md) `EXTRACTED`
-- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `EXTRACTED`
+- NewfoundlandPowerScraper `EXTRACTED`
 - [ATCOGasScraper](ATCOGasScraper.md) `EXTRACTED`
 - [EnergirScraper](EnergirScraper.md) `EXTRACTED`
 - HydroQuebecScraper `EXTRACTED`
@@ -53,17 +53,17 @@
 - [LibertyGasNBScraper](LibertyGasNBScraper.md) `EXTRACTED`
 - SaskPowerScraper `EXTRACTED`
 - ManitobaHydroScraper `EXTRACTED`
-- *…and 22 more `inherits` connection(s) not listed (lowest-degree first to go)*
+- *…and 26 more `inherits` connection(s) not listed (lowest-degree first to go)*
 
 ### method
 - .fetch_page() `EXTRACTED`
 - .mark_live_parsed() `EXTRACTED`
-- .mark_fallback() `EXTRACTED`
 - .__init__() `EXTRACTED`
 - .fetch_bytes() `EXTRACTED`
+- .mark_fallback() `EXTRACTED`
 - .now_iso() `EXTRACTED`
-- .verify_official_records() `EXTRACTED`
 - .fetch_rendered_page() `EXTRACTED`
+- .verify_official_records() `EXTRACTED`
 - ._log_response() `EXTRACTED`
 - ._build_session() `EXTRACTED`
 - .scrape() `EXTRACTED`

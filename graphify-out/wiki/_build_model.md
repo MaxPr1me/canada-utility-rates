@@ -1,6 +1,6 @@
 # _build_model()
 
-> God node · 31 connections · `pipeline/representative_models.py`
+> God node · 32 connections · `pipeline/representative_models.py`
 
 **Community:** [representative_models.py](representative_models.py.md)
 
@@ -27,7 +27,7 @@
 - find_synthetic_profile() `EXTRACTED`
 - _benchmark() `EXTRACTED`
 - gas_volume_unit() `EXTRACTED`
-- *…and 8 more `calls` connection(s) not listed (lowest-degree first to go)*
+- *…and 9 more `calls` connection(s) not listed (lowest-degree first to go)*
 
 ### contains
 - [representative_models.py](representative_models.py.md) `EXTRACTED`
@@ -36,7 +36,7 @@
 - One model: per-utility costs at each usage level, statistics, buckets, energy… `EXTRACTED`
 
 ### references
-- [date](date.md) `EXTRACTED`
+- date `EXTRACTED`
 
 ---
 

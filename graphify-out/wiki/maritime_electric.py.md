@@ -1,9 +1,10 @@
 # maritime_electric.py
 
-> 40 nodes
+> 36 nodes
 
 ## Key Concepts
 
+- **.mark_live_parsed()** (49 connections) — `scrapers/base.py`
 - **MaritimeElectricScraper** (21 connections) — `scrapers/utilities/maritime_electric.py`
 - **._try_live_scrape()** (14 connections) — `scrapers/utilities/maritime_electric.py`
 - **._apply_large_industrial()** (8 connections) — `scrapers/utilities/maritime_electric.py`
@@ -11,6 +12,7 @@
 - **._try_last_known_schedule()** (8 connections) — `scrapers/utilities/maritime_electric.py`
 - **._apply_small_industrial()** (7 connections) — `scrapers/utilities/maritime_electric.py`
 - **._apply_wholesale()** (7 connections) — `scrapers/utilities/maritime_electric.py`
+- **.scrape()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **._build_record()** (6 connections) — `scrapers/utilities/maritime_electric.py`
 - **_extract_pages()** (6 connections) — `scrapers/utilities/maritime_electric.py`
 - **._apply_schedules()** (6 connections) — `scrapers/utilities/maritime_electric.py`
@@ -20,38 +22,40 @@
 - **._parse_component_line()** (5 connections) — `scrapers/utilities/maritime_electric.py`
 - **_expect_amounts()** (5 connections) — `scrapers/utilities/maritime_electric.py`
 - **._cross_checked()** (5 connections) — `scrapers/utilities/maritime_electric.py`
-- **_schedule_date()** (5 connections) — `scrapers/utilities/maritime_electric.py`
-- **_schedule_sections()** (5 connections) — `scrapers/utilities/maritime_electric.py`
+- **._seed_data()** (5 connections) — `scrapers/utilities/ntpc.py`
 - **._page_component()** (4 connections) — `scrapers/utilities/maritime_electric.py`
-- **_amounts()** (4 connections) — `scrapers/utilities/maritime_electric.py`
-- **_parse_date()** (4 connections) — `scrapers/utilities/maritime_electric.py`
 - **_require()** (4 connections) — `scrapers/utilities/maritime_electric.py`
 - **_section()** (4 connections) — `scrapers/utilities/maritime_electric.py`
-- **_tier_from_label()** (4 connections) — `scrapers/utilities/maritime_electric.py`
 - **component()** (2 connections) — `scrapers/utilities/maritime_electric.py`
-- *... and 15 more nodes in this community*
+- **record()** (2 connections) — `scrapers/utilities/maritime_electric.py`
+- **Label records rebuilt directly from a live fetch this run. Use this when a…** (1 connections) — `scrapers/base.py`
+- *... and 11 more nodes in this community*
 
 ## Relationships
 
-- [BCHydroScraper](BCHydroScraper.md) (15 shared connections)
-- [BaseScraper](BaseScraper.md) (14 shared connections)
-- [RateComponent](RateComponent.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (5 shared connections)
-- [enmax_power.py](enmax_power.py.md) (4 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
-- [io](io.md) (1 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [.mark_fallback](mark_fallback.md) (1 shared connections)
-- [FortisAlbertaScraper](FortisAlbertaScraper.md) (1 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (20 shared connections)
+- [.fetch_page](fetch_page.md) (13 shared connections)
+- [re](re.md) (9 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (9 shared connections)
+- [BaseScraper](BaseScraper.md) (4 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (4 shared connections)
+- [._try_live_scrape](_try_live_scrape.md) (3 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (3 shared connections)
+- [ntpc.py](ntpc.py.md) (3 shared connections)
+- [.__init__](__init__.md) (2 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (2 shared connections)
 
 ## Source Files
 
+- `scrapers/base.py`
 - `scrapers/utilities/maritime_electric.py`
+- `scrapers/utilities/ntpc.py`
 
 ## Audit Trail
 
-- EXTRACTED: 111 (97%)
-- INFERRED: 3 (3%)
+- EXTRACTED: 151 (98%)
+- INFERRED: 3 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

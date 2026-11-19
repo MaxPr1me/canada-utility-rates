@@ -1,10 +1,9 @@
 # .mark_fallback
 
-> 39 nodes
+> 30 nodes
 
 ## Key Concepts
 
-- **.mark_fallback()** (44 connections) — `scrapers/base.py`
 - **YukonEnergyScraper** (20 connections) — `scrapers/utilities/yukon_energy.py`
 - **._parse_residential_pdfs()** (15 connections) — `scrapers/utilities/yukon_energy.py`
 - **.live_records()** (12 connections) — `scrapers/utilities/yukon_energy.py`
@@ -13,50 +12,49 @@
 - **._try_live_scrape()** (8 connections) — `scrapers/utilities/yukon_electrical.py`
 - **._general_service_records()** (7 connections) — `scrapers/utilities/yukon_energy.py`
 - **._try_live_scrape()** (7 connections) — `scrapers/utilities/yukon_energy.py`
-- **.scrape()** (6 connections) — `scrapers/utilities/nl_hydro.py`
 - **.scrape()** (6 connections) — `scrapers/utilities/yukon_electrical.py`
 - **._seed_data()** (6 connections) — `scrapers/utilities/yukon_electrical.py`
 - **._discover_joint_schedule()** (6 connections) — `scrapers/utilities/yukon_energy.py`
 - **.scrape()** (6 connections) — `scrapers/utilities/yukon_energy.py`
 - **._seed_data()** (6 connections) — `scrapers/utilities/yukon_energy.py`
-- **._seed_data()** (5 connections) — `scrapers/utilities/nl_hydro.py`
-- **parse_joint_schedules()** (5 connections) — `scrapers/utilities/yukon_energy.py`
-- **rider_a_terms()** (5 connections) — `scrapers/utilities/yukon_energy.py`
 - **._page_of()** (4 connections) — `scrapers/utilities/yukon_energy.py`
 - **._residential_base_values()** (3 connections) — `scrapers/utilities/yukon_energy.py`
-- **Label seed output conservatively and visibly. A fallback is useful historical…** (1 connections) — `scrapers/base.py`
-- **Return seed/fallback data based on known published rates.** (1 connections) — `scrapers/utilities/nl_hydro.py`
-- **Attempt to scrape live NL Hydro rates. Classes the live schedule cannot prove…** (1 connections) — `scrapers/utilities/nl_hydro.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/yukon_electrical.py`
 - **Return seed/fallback data based on known published rates.** (1 connections) — `scrapers/utilities/yukon_electrical.py`
 - **Scrape Yukon Electrical Company electricity rates.** (1 connections) — `scrapers/utilities/yukon_electrical.py`
-- *... and 14 more nodes in this community*
+- **Attempt to scrape live Yukon Electrical rates. Falls back to seed data if the…** (1 connections) — `scrapers/utilities/yukon_electrical.py`
+- **Reuse the joint-schedule parser; unproven seed classes stay labelled estimates.** (1 connections) — `scrapers/utilities/yukon_electrical.py`
+- **Scrape Yukon Energy Corporation electricity rates.** (1 connections) — `scrapers/utilities/yukon_energy.py`
+- **Attempt to scrape live Yukon Energy rates. Falls back to seed data if the live…** (1 connections) — `scrapers/utilities/yukon_energy.py`
+- **Parse live residential/general-service schedules; unparsed seed classes stay…** (1 connections) — `scrapers/utilities/yukon_energy.py`
+- **Return only live-parsed records (no seeds), or None when 1160 cannot be proven.** (1 connections) — `scrapers/utilities/yukon_energy.py`
+- **Return the newest model-JSON book link not later than the current UTC month;…** (1 connections) — `scrapers/utilities/yukon_energy.py`
+- *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [BCHydroScraper](BCHydroScraper.md) (26 shared connections)
-- [BaseScraper](BaseScraper.md) (12 shared connections)
-- [.fetch_page](fetch_page.md) (11 shared connections)
-- [RateComponent](RateComponent.md) (9 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (8 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (11 shared connections)
+- [BaseScraper](BaseScraper.md) (9 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (6 shared connections)
+- [.fetch_page](fetch_page.md) (5 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (4 shared connections)
+- [RateComponent](RateComponent.md) (4 shared connections)
+- [extract_effective_date](extract_effective_date.md) (3 shared connections)
 - [.__init__](__init__.md) (2 shared connections)
-- [FortisAlbertaScraper](FortisAlbertaScraper.md) (2 shared connections)
-- [._parse_commercial](_parse_commercial.md) (2 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (2 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (2 shared connections)
-- [enmax_power.py](enmax_power.py.md) (2 shared connections)
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (1 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
+- [re](re.md) (2 shared connections)
+- [_strings](_strings.md) (1 shared connections)
+- [._try_live_scrape](_try_live_scrape.md) (1 shared connections)
 
 ## Source Files
 
-- `scrapers/base.py`
-- `scrapers/utilities/nl_hydro.py`
 - `scrapers/utilities/yukon_electrical.py`
 - `scrapers/utilities/yukon_energy.py`
 
 ## Audit Trail
 
-- EXTRACTED: 143 (94%)
-- INFERRED: 9 (6%)
+- EXTRACTED: 89 (93%)
+- INFERRED: 7 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

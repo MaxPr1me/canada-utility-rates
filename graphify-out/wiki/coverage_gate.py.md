@@ -1,9 +1,10 @@
 # coverage_gate.py
 
-> 29 nodes
+> 30 nodes
 
 ## Key Concepts
 
+- **json** (60 connections)
 - **coverage_gate.py** (22 connections) — `scripts/coverage_gate.py`
 - **evaluate()** (13 connections) — `scripts/coverage_gate.py`
 - **collections** (9 connections)
@@ -28,23 +29,22 @@
 - **Return problems with the ledger's shape (empty when it is well formed).** (1 connections) — `scripts/coverage_gate.py`
 - **Validate one ledger entry or group; an entry without its own audit must inherit…** (1 connections) — `scripts/coverage_gate.py`
 - **The ledger entry for a utility with its group's audit and lists folded in (None…** (1 connections) — `scripts/coverage_gate.py`
-- **Check every active utility and return findings per utility plus global findings.** (1 connections) — `scripts/coverage_gate.py`
-- *... and 4 more nodes in this community*
+- *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [run_scrape.py](run_scrape.py.md) (7 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
-- [input_checks](input_checks.md) (1 shared connections)
-- [record_refresh](record_refresh.md) (1 shared connections)
-- [os](os.md) (1 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
-- [representative_models.py](representative_models.py.md) (1 shared connections)
-- [enmax_power.py](enmax_power.py.md) (1 shared connections)
-- [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
+- [argparse](argparse.md) (11 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (8 shared connections)
+- [main](main.md) (8 shared connections)
+- [run_scrape.py](run_scrape.py.md) (5 shared connections)
+- [check_db_history.py](check_db_history.py.md) (4 shared connections)
+- [Path](Path.md) (4 shared connections)
+- [representative_models.py](representative_models.py.md) (3 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (3 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (3 shared connections)
+- [io](io.md) (3 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (2 shared connections)
 
 ## Source Files
 
@@ -52,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 69 (100%)
+- EXTRACTED: 126 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

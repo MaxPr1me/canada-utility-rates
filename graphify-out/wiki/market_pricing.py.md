@@ -31,18 +31,17 @@
 
 ## Relationships
 
-- [representative_models.py](representative_models.py.md) (7 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (3 shared connections)
-- [run_scrape.py](run_scrape.py.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
+- [representative_models.py](representative_models.py.md) (8 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (6 shared connections)
+- [BaseScraper](BaseScraper.md) (4 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (4 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (3 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (3 shared connections)
-- [enmax_power.py](enmax_power.py.md) (2 shared connections)
-- [main](main.md) (2 shared connections)
-- [Any](Any.md) (2 shared connections)
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (2 shared connections)
+- [re](re.md) (2 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
 - [MarketDataError](MarketDataError.md) (2 shared connections)
-- [input_checks](input_checks.md) (1 shared connections)
+- [argparse](argparse.md) (1 shared connections)
+- [Any](Any.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
 
 ## Source Files
 

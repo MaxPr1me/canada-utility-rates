@@ -1,65 +1,64 @@
-# parse_html()
+# parse_html
 
-> God node · 86 connections · `scrapers/utils/parsing.py`
+> 28 nodes
 
-**Community:** [BaseScraper](BaseScraper.md)
+## Key Concepts
 
-## Connections by Relation
+- **parse_html()** (100 connections) — `scrapers/utils/parsing.py`
+- **medicine_hat.py** (24 connections) — `scrapers/utilities/medicine_hat.py`
+- **urllib_parse** (20 connections)
+- **penticton.py** (17 connections) — `scrapers/utilities/penticton.py`
+- **parse_energy_page()** (10 connections) — `scrapers/utilities/medicine_hat.py`
+- **parse_rates()** (10 connections) — `scrapers/utilities/medicine_hat.py`
+- **calendar** (10 connections)
+- **extract_brochure_columns()** (6 connections) — `scrapers/utilities/medicine_hat.py`
+- **_blocks()** (5 connections) — `scrapers/utilities/medicine_hat.py`
+- **find_bylaw_url()** (5 connections) — `scrapers/utilities/penticton.py`
+- **find_bylaw_url()** (5 connections) — `scrapers/utilities/summerland.py`
+- **find_brochure_url()** (4 connections) — `scrapers/utilities/medicine_hat.py`
+- **_flat()** (4 connections) — `scrapers/utilities/medicine_hat.py`
+- **_tables()** (4 connections) — `scrapers/utilities/medicine_hat.py`
+- **find_manual_url()** (4 connections) — `scrapers/utilities/summerside_electric.py`
+- **_iso()** (3 connections) — `scrapers/utilities/medicine_hat.py`
+- **_pair()** (3 connections) — `scrapers/utilities/penticton.py`
+- **_prices()** (2 connections) — `scrapers/utilities/medicine_hat.py`
+- **date** (2 connections)
+- **medicine_hat.py — Scraper for the City of Medicine Hat Electric Utility…** (1 connections) — `scrapers/utilities/medicine_hat.py`
+- **Default energy prices and the Going Green surcharge; ValueError (fail closed)…** (1 connections) — `scrapers/utilities/medicine_hat.py`
+- **Electric rate-class blocks {code: {heading, page, lines}} and the brochure's…** (1 connections) — `scrapers/utilities/medicine_hat.py`
+- **Build the in-scope bundled records; return (records, {code: rejection reason}).** (1 connections) — `scrapers/utilities/medicine_hat.py`
+- **Each page's left half then right half: the brochure prints two independent…** (1 connections) — `scrapers/utilities/medicine_hat.py`
+- **penticton.py — Scraper for the City of Penticton electric utility (British…** (1 connections) — `scrapers/utilities/penticton.py`
+- *... and 3 more nodes in this community*
 
-### calls
-- ._try_live_scrape() `EXTRACTED`
-- parse_uca_table() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- detect_js_rendered() `EXTRACTED`
-- parse_enmax_page() `EXTRACTED`
-- parse_rpp_page() `EXTRACTED`
-- .live_records() `EXTRACTED`
-- ._commodity() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._parse_residential_tariffs() `EXTRACTED`
-- html_text() `EXTRACTED`
-- .verify_official_records() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- page_effective_date() `EXTRACTED`
-- ._joint_schedule() `EXTRACTED`
-- discover_documents() `EXTRACTED`
-- *…and 30 more `calls` connection(s) not listed (lowest-degree first to go)*
+## Relationships
 
-### contains
-- parsing.py `EXTRACTED`
+- [BaseScraper](BaseScraper.md) (38 shared connections)
+- [re](re.md) (18 shared connections)
+- [.fetch_page](fetch_page.md) (13 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (9 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (8 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (6 shared connections)
+- [naka_power.py](naka_power.py.md) (5 shared connections)
+- [ATCOGasScraper](ATCOGasScraper.md) (4 shared connections)
+- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (4 shared connections)
+- [lethbridge.py](lethbridge.py.md) (4 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (4 shared connections)
+- [extract_effective_date](extract_effective_date.md) (4 shared connections)
 
-### imports
-- base.py `EXTRACTED`
-- [enmax_power.py](enmax_power.py.md) `EXTRACTED`
-- [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
-- ontario_ldc.py `EXTRACTED`
-- [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- nl_hydro.py `EXTRACTED`
-- epcor_gas_ontario.py `EXTRACTED`
-- atco_electric.py `EXTRACTED`
-- enbridge_gas.py `EXTRACTED`
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- atco_gas.py `EXTRACTED`
-- enmax_energy.py `EXTRACTED`
-- alberta_rolr.py `EXTRACTED`
-- manitoba_hydro.py `EXTRACTED`
-- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
-- yukon_energy.py `EXTRACTED`
-- grand_forks.py `EXTRACTED`
-- hydro_quebec.py `EXTRACTED`
-- [new_westminster.py](new_westminster.py.md) `EXTRACTED`
-- summerland.py `EXTRACTED`
-- *…and 13 more `imports` connection(s) not listed (lowest-degree first to go)*
+## Source Files
 
-### rationale_for
-- Parse HTML into a BeautifulSoup tree using the fast lxml parser. `EXTRACTED`
+- `scrapers/utilities/medicine_hat.py`
+- `scrapers/utilities/penticton.py`
+- `scrapers/utilities/summerland.py`
+- `scrapers/utilities/summerside_electric.py`
+- `scrapers/utils/parsing.py`
 
-### references
-- BeautifulSoup `EXTRACTED`
+## Audit Trail
+
+- EXTRACTED: 203 (99%)
+- INFERRED: 2 (1%)
+- AMBIGUOUS: 0 (0%)
 
 ---
 

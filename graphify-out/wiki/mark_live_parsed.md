@@ -1,6 +1,6 @@
 # .mark_live_parsed
 
-> 48 nodes
+> 52 nodes
 
 ## Key Concepts
 
@@ -29,18 +29,20 @@
 - **_option_components()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_verify_nonfirm_formula()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_energy_rows()** (6 connections) — `scrapers/utilities/nl_hydro.py`
-- *... and 23 more nodes in this community*
+- *... and 27 more nodes in this community*
 
 ## Relationships
 
-- [enmax_power.py](enmax_power.py.md) (15 shared connections)
-- [RateComponent](RateComponent.md) (14 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (13 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (11 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (15 shared connections)
+- [re](re.md) (15 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (13 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (13 shared connections)
 - [BaseScraper](BaseScraper.md) (10 shared connections)
-- [.fetch_page](fetch_page.md) (8 shared connections)
-- [.mark_fallback](mark_fallback.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (5 shared connections)
+- [maritime_electric.py](maritime_electric.py.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (1 shared connections)
+- [parse_html](parse_html.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 206 (99%)
+- EXTRACTED: 214 (99%)
 - INFERRED: 3 (1%)
 - AMBIGUOUS: 0 (0%)
 

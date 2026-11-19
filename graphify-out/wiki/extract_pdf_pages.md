@@ -1,8 +1,8 @@
 # extract_pdf_pages()
 
-> God node · 63 connections · `scrapers/utils/parsing.py`
+> God node · 69 connections · `scrapers/utils/parsing.py`
 
-**Community:** [.fetch_page](fetch_page.md)
+**Community:** [BaseScraper](BaseScraper.md)
 
 ## Connections by Relation
 
@@ -19,15 +19,15 @@
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
 - ._interruptible() `EXTRACTED`
 - .verify_official_records() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._joint_schedule() `EXTRACTED`
-- *…and 13 more `calls` connection(s) not listed (lowest-degree first to go)*
+- *…and 16 more `calls` connection(s) not listed (lowest-degree first to go)*
 
 ### contains
 - parsing.py `EXTRACTED`
@@ -36,7 +36,7 @@
 - base.py `EXTRACTED`
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
-- ontario_ldc.py `EXTRACTED`
+- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
@@ -44,16 +44,16 @@
 - atco_gas.py `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
+- [naka_power.py](naka_power.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - grand_forks.py `EXTRACTED`
+- [lethbridge.py](lethbridge.py.md) `EXTRACTED`
 - hydro_quebec.py `EXTRACTED`
 - [saint_john_energy.py](saint_john_energy.py.md) `EXTRACTED`
+- [red_deer.py](red_deer.py.md) `EXTRACTED`
 - [new_westminster.py](new_westminster.py.md) `EXTRACTED`
 - summerland.py `EXTRACTED`
-- nova_scotia_power.py `EXTRACTED`
-- bc_hydro.py `EXTRACTED`
-- summerside_electric.py `EXTRACTED`
-- *…and 7 more `imports` connection(s) not listed (lowest-degree first to go)*
+- *…and 10 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### indirect_call
 - ._fetch_tariff_pages() `INFERRED`

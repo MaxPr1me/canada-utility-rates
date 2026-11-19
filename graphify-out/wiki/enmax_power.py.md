@@ -1,10 +1,9 @@
 # enmax_power.py
 
-> 45 nodes
+> 51 nodes
 
 ## Key Concepts
 
-- **re** (244 connections)
 - **enmax_power.py** (52 connections) — `scrapers/utilities/enmax_power.py`
 - **_build_record()** (20 connections) — `scrapers/utilities/enmax_power.py`
 - **_Reject** (16 connections) — `scrapers/utilities/enmax_power.py`
@@ -15,6 +14,7 @@
 - **parse_schedule_pages()** (12 connections) — `scrapers/utilities/enmax_power.py`
 - **_date()** (11 connections) — `scrapers/utilities/enmax_power.py`
 - **_rider_page()** (9 connections) — `scrapers/utilities/enmax_power.py`
+- **extract_schedule_pages()** (8 connections) — `scrapers/utilities/enmax_power.py`
 - **_parse_riders()** (8 connections) — `scrapers/utilities/enmax_power.py`
 - **_class_pages()** (7 connections) — `scrapers/utilities/enmax_power.py`
 - **_class_values()** (7 connections) — `scrapers/utilities/enmax_power.py`
@@ -29,22 +29,20 @@
 - **_page_with()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_split_footer()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_Riders** (4 connections) — `scrapers/utilities/enmax_power.py`
-- *... and 20 more nodes in this community*
+- *... and 26 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (37 shared connections)
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (18 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (16 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (15 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (15 shared connections)
-- [epcor_distribution.py](epcor_distribution.py.md) (12 shared connections)
-- [ntpc.py](ntpc.py.md) (12 shared connections)
-- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (9 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (8 shared connections)
-- [re](re.md) (7 shared connections)
-- [fortisalberta.py](fortisalberta.py.md) (7 shared connections)
-- [saint_john_energy.py](saint_john_energy.py.md) (7 shared connections)
+- [re](re.md) (18 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (15 shared connections)
+- [BaseScraper](BaseScraper.md) (7 shared connections)
+- [._try_live_scrape](_try_live_scrape.md) (4 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (3 shared connections)
+- [parse_html](parse_html.md) (3 shared connections)
+- [io](io.md) (2 shared connections)
+- [os](os.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -52,8 +50,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 384 (96%)
-- INFERRED: 15 (4%)
+- EXTRACTED: 167 (92%)
+- INFERRED: 15 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

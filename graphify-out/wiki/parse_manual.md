@@ -1,26 +1,32 @@
 # parse_manual
 
-> 8 nodes
+> 11 nodes
 
 ## Key Concepts
 
 - **parse_manual()** (11 connections) — `scrapers/utilities/summerside_electric.py`
-- **manual_effective()** (6 connections) — `scrapers/utilities/summerside_electric.py`
-- **_iso()** (2 connections) — `scrapers/utilities/summerside_electric.py`
+- **SummersideElectricScraper** (8 connections) — `scrapers/utilities/summerside_electric.py`
+- **._try_live_scrape()** (8 connections) — `scrapers/utilities/summerside_electric.py`
+- **._discover()** (4 connections) — `scrapers/utilities/summerside_electric.py`
+- **.scrape()** (3 connections) — `scrapers/utilities/summerside_electric.py`
 - **record()** (2 connections) — `scrapers/utilities/summerside_electric.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/summerside_electric.py`
 - **where()** (1 connections) — `scrapers/utilities/summerside_electric.py`
 - **date** (1 connections)
-- **Most recent date of the page-2 revision table (rate adjustments only).** (1 connections) — `scrapers/utilities/summerside_electric.py`
+- **Parse Summerside Electric's building-service rate schedules.** (1 connections) — `scrapers/utilities/summerside_electric.py`
 - **Build the in-scope Section N schedules; raise ValueError (fail closed) on a…** (1 connections) — `scrapers/utilities/summerside_electric.py`
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (3 shared connections)
-- [enmax_power.py](enmax_power.py.md) (2 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (2 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
-- [.fetch_page](fetch_page.md) (1 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (5 shared connections)
+- [BaseScraper](BaseScraper.md) (4 shared connections)
+- [re](re.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (1 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (1 shared connections)
+- [parse_html](parse_html.md) (1 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
+- [maritime_electric.py](maritime_electric.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -28,8 +34,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 16 (89%)
-- INFERRED: 2 (11%)
+- EXTRACTED: 28 (93%)
+- INFERRED: 2 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

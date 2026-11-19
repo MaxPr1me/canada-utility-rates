@@ -1,6 +1,6 @@
 # generate_market_pricing.py
 
-> 31 nodes
+> 32 nodes
 
 ## Key Concepts
 
@@ -22,29 +22,29 @@
 - **check_ga_units()** (4 connections) — `scripts/generate_market_pricing.py`
 - **check_hoep_unit()** (4 connections) — `scripts/generate_market_pricing.py`
 - **day_type()** (4 connections) — `scripts/generate_market_pricing.py`
+- **validate_document()** (4 connections) — `scripts/generate_market_pricing.py`
 - **check_years()** (3 connections) — `scripts/generate_market_pricing.py`
 - **coverage()** (2 connections) — `scripts/generate_market_pricing.py`
 - **_ranges()** (2 connections) — `scripts/generate_market_pricing.py`
 - **window_months()** (2 connections) — `scripts/generate_market_pricing.py`
 - **datetime** (2 connections)
 - **openpyxl** (2 connections)
-- **Namespace** (1 connections)
-- *... and 6 more nodes in this community*
+- *... and 7 more nodes in this community*
 
 ## Relationships
 
-- [MarketDataError](MarketDataError.md) (25 shared connections)
-- [_actual_rates](_actual_rates.md) (20 shared connections)
-- [_yearly_files](_yearly_files.md) (13 shared connections)
-- [run_scrape.py](run_scrape.py.md) (6 shared connections)
-- [os](os.md) (5 shared connections)
-- [market_pricing.py](market_pricing.py.md) (3 shared connections)
+- [MarketDataError](MarketDataError.md) (23 shared connections)
+- [_actual_rates](_actual_rates.md) (19 shared connections)
+- [_yearly_files](_yearly_files.md) (8 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (5 shared connections)
+- [parse_hoep_averages](parse_hoep_averages.md) (5 shared connections)
+- [argparse](argparse.md) (4 shared connections)
+- [market_pricing.py](market_pricing.py.md) (4 shared connections)
+- [os](os.md) (4 shared connections)
 - [io](io.md) (3 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (3 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
 - [BaseScraper](BaseScraper.md) (2 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (2 shared connections)
-- [enmax_power.py](enmax_power.py.md) (1 shared connections)
-- [parse_rpp_page](parse_rpp_page.md) (1 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -52,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 143 (99%)
+- EXTRACTED: 145 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 
