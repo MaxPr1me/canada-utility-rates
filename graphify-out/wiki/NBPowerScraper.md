@@ -1,6 +1,6 @@
 # NBPowerScraper
 
-> 45 nodes
+> 46 nodes
 
 ## Key Concepts
 
@@ -29,17 +29,16 @@
 - **._seed_data_residential()** (5 connections) — `scrapers/utilities/nb_power.py`
 - **._seed_data_small_industrial()** (5 connections) — `scrapers/utilities/nb_power.py`
 - **._get_business_sections()** (5 connections) — `scrapers/utilities/nb_power.py`
-- *... and 20 more nodes in this community*
+- *... and 21 more nodes in this community*
 
 ## Relationships
 
-- [BCHydroScraper](BCHydroScraper.md) (18 shared connections)
-- [nb_power.py](nb_power.py.md) (16 shared connections)
+- [TariffRecord](TariffRecord.md) (20 shared connections)
+- [BaseScraper](BaseScraper.md) (19 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (8 shared connections)
-- [re](re.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (4 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
-- [.mark_fallback](mark_fallback.md) (2 shared connections)
+- [re](re.md) (7 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +47,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 139 (99%)
+- EXTRACTED: 141 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

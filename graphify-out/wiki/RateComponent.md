@@ -49,8 +49,8 @@
 - enmax_energy.py `EXTRACTED`
 - alberta_rolr.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
-- [nb_power.py](nb_power.py.md) `EXTRACTED`
-- maritime_electric.py `EXTRACTED`
+- nb_power.py `EXTRACTED`
+- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - [aeso.py](aeso.py.md) `EXTRACTED`
 - *…and 24 more `imports` connection(s) not listed (lowest-degree first to go)*
@@ -87,13 +87,13 @@
 - [BCHydroScraper](BCHydroScraper.md) `INFERRED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `INFERRED`
 - [NBPowerScraper](NBPowerScraper.md) `INFERRED`
-- NewfoundlandPowerScraper `INFERRED`
+- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `INFERRED`
 - [ATCOGasScraper](ATCOGasScraper.md) `INFERRED`
 - [EnergirScraper](EnergirScraper.md) `INFERRED`
 - HydroQuebecScraper `INFERRED`
 - NLHydroScraper `INFERRED`
+- MaritimeElectricScraper `INFERRED`
 - _build_record() `INFERRED`
-- [MaritimeElectricScraper](MaritimeElectricScraper.md) `INFERRED`
 - [SaskEnergyScraper](SaskEnergyScraper.md) `INFERRED`
 - YukonEnergyScraper `INFERRED`
 - [HeritageGasScraper](HeritageGasScraper.md) `INFERRED`

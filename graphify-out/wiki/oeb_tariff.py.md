@@ -30,11 +30,11 @@
 - [parse_tariff_pages](parse_tariff_pages.md) (5 shared connections)
 - [close_class](close_class.md) (5 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (2 shared connections)
-- [io](io.md) (2 shared connections)
+- [DocumentPage](DocumentPage.md) (2 shared connections)
 - [class_loss_factors](class_loss_factors.md) (2 shared connections)
 - [_dedupe_classifications](_dedupe_classifications.md) (2 shared connections)
 - [OntarioLDCScraper](OntarioLDCScraper.md) (1 shared connections)
+- [aeso.py](aeso.py.md) (1 shared connections)
 
 ## Source Files
 

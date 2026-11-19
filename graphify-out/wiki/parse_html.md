@@ -17,10 +17,10 @@
 - .live_records() `EXTRACTED`
 - ._commodity() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
 - ._parse_residential_tariffs() `EXTRACTED`
 - html_text() `EXTRACTED`
 - .verify_official_records() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
@@ -47,9 +47,9 @@
 - enmax_energy.py `EXTRACTED`
 - alberta_rolr.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
-- maritime_electric.py `EXTRACTED`
+- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
-- [grand_forks.py](grand_forks.py.md) `EXTRACTED`
+- grand_forks.py `EXTRACTED`
 - hydro_quebec.py `EXTRACTED`
 - [new_westminster.py](new_westminster.py.md) `EXTRACTED`
 - summerland.py `EXTRACTED`

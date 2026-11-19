@@ -1,6 +1,6 @@
 # extract_pdf_pages()
 
-> God node · 62 connections · `scrapers/utils/parsing.py`
+> God node · 63 connections · `scrapers/utils/parsing.py`
 
 **Community:** [BaseScraper](BaseScraper.md)
 
@@ -18,6 +18,7 @@
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
 - ._interruptible() `EXTRACTED`
 - .verify_official_records() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
@@ -25,9 +26,8 @@
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
 - ._joint_schedule() `EXTRACTED`
-- *…and 12 more `calls` connection(s) not listed (lowest-degree first to go)*
+- *…and 13 more `calls` connection(s) not listed (lowest-degree first to go)*
 
 ### contains
 - parsing.py `EXTRACTED`
@@ -45,9 +45,9 @@
 - enmax_energy.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
-- [grand_forks.py](grand_forks.py.md) `EXTRACTED`
+- grand_forks.py `EXTRACTED`
 - hydro_quebec.py `EXTRACTED`
-- [saint_john_energy.py](saint_john_energy.py.md) `EXTRACTED`
+- saint_john_energy.py `EXTRACTED`
 - [new_westminster.py](new_westminster.py.md) `EXTRACTED`
 - summerland.py `EXTRACTED`
 - nova_scotia_power.py `EXTRACTED`

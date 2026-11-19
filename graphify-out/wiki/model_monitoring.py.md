@@ -1,6 +1,6 @@
 # model_monitoring.py
 
-> 52 nodes
+> 53 nodes
 
 ## Key Concepts
 
@@ -16,7 +16,7 @@
 - **_normalize()** (8 connections) — `pipeline/model_monitoring.py`
 - **read_json()** (8 connections) — `pipeline/model_monitoring.py`
 - **generation_receipt()** (8 connections) — `pipeline/model_monitoring.py`
-- **load_block_periods()** (8 connections) — `pipeline/representative_models.py`
+- **calendar** (8 connections)
 - **_json()** (7 connections) — `pipeline/model_monitoring.py`
 - **observe_previous()** (7 connections) — `pipeline/model_monitoring.py`
 - **Any** (7 connections)
@@ -29,31 +29,30 @@
 - **_pick()** (5 connections) — `pipeline/model_monitoring.py`
 - **run_identity()** (5 connections) — `pipeline/model_monitoring.py`
 - **save_generation_receipt()** (5 connections) — `pipeline/model_monitoring.py`
-- *... and 27 more nodes in this community*
+- *... and 28 more nodes in this community*
 
 ## Relationships
 
-- [run_scrape.py](run_scrape.py.md) (8 shared connections)
+- [run_scrape.py](run_scrape.py.md) (14 shared connections)
 - [market_pricing.py](market_pricing.py.md) (6 shared connections)
-- [argparse](argparse.md) (5 shared connections)
+- [BaseScraper](BaseScraper.md) (5 shared connections)
 - [os](os.md) (4 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (4 shared connections)
-- [re](re.md) (4 shared connections)
-- [build_models](build_models.md) (3 shared connections)
+- [build_models](build_models.md) (4 shared connections)
+- [re](re.md) (3 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
 - [main](main.md) (2 shared connections)
 - [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
-- [BaseScraper](BaseScraper.md) (2 shared connections)
-- [_prepare](_prepare.md) (1 shared connections)
-- [representative_models.py](representative_models.py.md) (1 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (2 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (1 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
 
 ## Source Files
 
 - `pipeline/model_monitoring.py`
-- `pipeline/representative_models.py`
 
 ## Audit Trail
 
-- EXTRACTED: 162 (99%)
+- EXTRACTED: 167 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

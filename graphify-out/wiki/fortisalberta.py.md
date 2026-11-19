@@ -1,6 +1,6 @@
 # fortisalberta.py
 
-> 48 nodes
+> 50 nodes
 
 ## Key Concepts
 
@@ -19,6 +19,7 @@
 - **_option_i()** (10 connections) — `scrapers/utilities/fortisalberta.py`
 - **_quarterly_rider()** (10 connections) — `scrapers/utilities/fortisalberta.py`
 - **_ClassSpec** (9 connections) — `scrapers/utilities/fortisalberta.py`
+- **.scrape()** (9 connections) — `scrapers/utilities/fortisalberta.py`
 - **parse_schedule_pages()** (9 connections) — `scrapers/utilities/fortisalberta.py`
 - **_kw_kva_pair()** (8 connections) — `scrapers/utilities/fortisalberta.py`
 - **_rider_row()** (8 connections) — `scrapers/utilities/fortisalberta.py`
@@ -28,19 +29,18 @@
 - **document_edition_date()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **_document()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **Match** (6 connections)
-- **._read_pdf()** (5 connections) — `scrapers/utilities/fortisalberta.py`
-- *... and 23 more nodes in this community*
+- *... and 25 more nodes in this community*
 
 ## Relationships
 
 - [BaseScraper](BaseScraper.md) (13 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (10 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (9 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (7 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (12 shared connections)
+- [DocumentPage](DocumentPage.md) (7 shared connections)
 - [re](re.md) (7 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
-- [FortisAlbertaScraper](FortisAlbertaScraper.md) (1 shared connections)
+- [TariffRecord](TariffRecord.md) (6 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
 - [.mark_fallback](mark_fallback.md) (1 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,8 +48,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 169 (91%)
-- INFERRED: 16 (9%)
+- EXTRACTED: 174 (92%)
+- INFERRED: 16 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

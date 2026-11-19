@@ -15,11 +15,11 @@
 
 ## Relationships
 
-- [saint_john_energy.py](saint_john_energy.py.md) (3 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (2 shared connections)
+- [BaseScraper](BaseScraper.md) (4 shared connections)
+- [TariffRecord](TariffRecord.md) (3 shared connections)
 - [.fetch_page](fetch_page.md) (2 shared connections)
-- [.mark_fallback](mark_fallback.md) (1 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
+- [re](re.md) (1 shared connections)
 
 ## Source Files
 

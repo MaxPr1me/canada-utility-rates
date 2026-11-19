@@ -28,14 +28,12 @@
 
 ## Relationships
 
-- [representative_models.py](representative_models.py.md) (9 shared connections)
-- [run_scrape.py](run_scrape.py.md) (6 shared connections)
-- [argparse](argparse.md) (6 shared connections)
+- [run_scrape.py](run_scrape.py.md) (13 shared connections)
+- [representative_models.py](representative_models.py.md) (10 shared connections)
 - [build_models](build_models.md) (5 shared connections)
 - [os](os.md) (2 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
-- [_prepare](_prepare.md) (1 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
+- [Any](Any.md) (1 shared connections)
 - [check_db_history.py](check_db_history.py.md) (1 shared connections)
 
 ## Source Files

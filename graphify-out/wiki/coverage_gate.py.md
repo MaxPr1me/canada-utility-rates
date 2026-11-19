@@ -1,10 +1,9 @@
 # coverage_gate.py
 
-> 27 nodes
+> 26 nodes
 
 ## Key Concepts
 
-- **argparse** (31 connections)
 - **coverage_gate.py** (21 connections) — `scripts/coverage_gate.py`
 - **evaluate()** (12 connections) — `scripts/coverage_gate.py`
 - **main()** (8 connections) — `scripts/coverage_gate.py`
@@ -29,22 +28,16 @@
 - **Check every active utility and return findings per utility plus global findings.** (1 connections) — `scripts/coverage_gate.py`
 - **One line for the public notice and the console.** (1 connections) — `scripts/coverage_gate.py`
 - **An input file cannot be read.** (1 connections) — `scripts/coverage_gate.py`
-- *... and 2 more nodes in this community*
+- **A live record that is in effect on the as-of date (an undated end means open-…** (1 connections) — `scripts/coverage_gate.py`
+- *... and 1 more nodes in this community*
 
 ## Relationships
 
 - [run_scrape.py](run_scrape.py.md) (7 shared connections)
-- [argparse](argparse.md) (5 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (4 shared connections)
-- [os](os.md) (3 shared connections)
-- [io](io.md) (3 shared connections)
-- [main](main.md) (2 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (2 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (2 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
-- [check_db_history.py](check_db_history.py.md) (2 shared connections)
-- [graphify_hook.py](graphify_hook.py.md) (2 shared connections)
-- [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (2 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
+- [os](os.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -52,7 +45,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 82 (100%)
+- EXTRACTED: 53 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

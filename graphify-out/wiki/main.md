@@ -1,41 +1,35 @@
 # main
 
-> 11 nodes
+> 9 nodes
 
 ## Key Concepts
 
-- **main()** (6 connections) — `scripts/generate_market_pricing.py`
-- **write_document()** (6 connections) — `scripts/generate_market_pricing.py`
-- **http_get()** (5 connections) — `scripts/generate_market_pricing.py`
-- **time** (5 connections)
-- **parse_args()** (4 connections) — `scripts/generate_market_pricing.py`
-- **api_get()** (4 connections) — `scripts/archive_ontario_price.py`
-- **.__init__()** (3 connections) — `scripts/generate_market_pricing.py`
+- **main()** (10 connections) — `scripts/build_ontario_market.py`
+- **render_document()** (6 connections) — `scripts/build_ontario_market.py`
+- **write_outputs()** (5 connections) — `scripts/build_ontario_market.py`
+- **parse_args()** (4 connections) — `scripts/build_ontario_market.py`
+- **_read()** (3 connections) — `scripts/build_ontario_market.py`
 - **Path** (3 connections)
 - **Namespace** (1 connections)
-- **Like generate_market_pricing.http_get, but a 404 (no data for those dates) is…** (1 connections) — `scripts/archive_ontario_price.py`
-- **Write the JSON document atomically (temporary file, then os.replace), so a…** (1 connections) — `scripts/generate_market_pricing.py`
+- **The JSON bytes to write, or None when only generated_at would change.** (1 connections) — `scripts/build_ontario_market.py`
+- **Write every file to a temporary sibling first, then move them all into place.** (1 connections) — `scripts/build_ontario_market.py`
 
 ## Relationships
 
-- [generate_market_pricing.py](generate_market_pricing.py.md) (6 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (4 shared connections)
-- [os](os.md) (3 shared connections)
-- [MarketDataError](MarketDataError.md) (2 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
-- [argparse](argparse.md) (1 shared connections)
-- [_yearly_files](_yearly_files.md) (1 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (8 shared connections)
+- [run_scrape.py](run_scrape.py.md) (2 shared connections)
+- [aeso.py](aeso.py.md) (2 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
+- [os](os.md) (1 shared connections)
 
 ## Source Files
 
-- `scripts/archive_ontario_price.py`
-- `scripts/generate_market_pricing.py`
+- `scripts/build_ontario_market.py`
 
 ## Audit Trail
 
-- EXTRACTED: 28 (97%)
-- INFERRED: 1 (3%)
+- EXTRACTED: 24 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

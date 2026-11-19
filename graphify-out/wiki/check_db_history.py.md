@@ -33,10 +33,8 @@
 
 ## Relationships
 
-- [run_scrape.py](run_scrape.py.md) (4 shared connections)
+- [run_scrape.py](run_scrape.py.md) (10 shared connections)
 - [os](os.md) (4 shared connections)
-- [argparse](argparse.md) (4 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
 - [main](main.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 

@@ -1,6 +1,6 @@
 # BaseScraper
 
-> God node · 98 connections · `scrapers/base.py`
+> God node · 99 connections · `scrapers/base.py`
 
 **Community:** [BaseScraper](BaseScraper.md)
 
@@ -25,11 +25,11 @@
 - atco_gas.py `EXTRACTED`
 - enmax_energy.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
-- [nb_power.py](nb_power.py.md) `EXTRACTED`
-- maritime_electric.py `EXTRACTED`
+- nb_power.py `EXTRACTED`
+- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - [aeso.py](aeso.py.md) `EXTRACTED`
-- [grand_forks.py](grand_forks.py.md) `EXTRACTED`
+- grand_forks.py `EXTRACTED`
 - *…and 22 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### inherits
@@ -41,12 +41,12 @@
 - [BCHydroScraper](BCHydroScraper.md) `EXTRACTED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `EXTRACTED`
 - [NBPowerScraper](NBPowerScraper.md) `EXTRACTED`
-- NewfoundlandPowerScraper `EXTRACTED`
+- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `EXTRACTED`
 - [ATCOGasScraper](ATCOGasScraper.md) `EXTRACTED`
 - [EnergirScraper](EnergirScraper.md) `EXTRACTED`
 - HydroQuebecScraper `EXTRACTED`
 - NLHydroScraper `EXTRACTED`
-- [MaritimeElectricScraper](MaritimeElectricScraper.md) `EXTRACTED`
+- MaritimeElectricScraper `EXTRACTED`
 - [SaskEnergyScraper](SaskEnergyScraper.md) `EXTRACTED`
 - YukonEnergyScraper `EXTRACTED`
 - [HeritageGasScraper](HeritageGasScraper.md) `EXTRACTED`
@@ -57,13 +57,14 @@
 
 ### method
 - .fetch_page() `EXTRACTED`
-- .mark_fallback() `EXTRACTED`
 - .mark_live_parsed() `EXTRACTED`
+- .mark_fallback() `EXTRACTED`
 - .__init__() `EXTRACTED`
 - .fetch_bytes() `EXTRACTED`
 - .now_iso() `EXTRACTED`
 - .verify_official_records() `EXTRACTED`
 - .fetch_rendered_page() `EXTRACTED`
+- ._log_response() `EXTRACTED`
 - ._build_session() `EXTRACTED`
 - .scrape() `EXTRACTED`
 - .content_hash() `EXTRACTED`

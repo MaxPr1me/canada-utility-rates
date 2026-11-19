@@ -17,7 +17,7 @@
 
 - [run_scrape.py](run_scrape.py.md) (3 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (2 shared connections)
+- [TariffRecord](TariffRecord.md) (2 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
 
 ## Source Files

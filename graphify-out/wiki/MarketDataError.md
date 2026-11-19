@@ -1,33 +1,35 @@
 # MarketDataError
 
-> 13 nodes
+> 17 nodes
 
 ## Key Concepts
 
 - **MarketDataError** (27 connections) — `scripts/generate_market_pricing.py`
 - **parse_hoep_csv()** (9 connections) — `scripts/generate_market_pricing.py`
-- **load_hoep()** (8 connections) — `scripts/generate_market_pricing.py`
+- **parse_hoep_averages()** (8 connections) — `scripts/generate_market_pricing.py`
 - **_number()** (7 connections) — `scripts/generate_market_pricing.py`
 - **parse_hoep_page()** (7 connections) — `scripts/generate_market_pricing.py`
 - **date** (6 connections)
+- **_parse_xml()** (5 connections) — `scripts/generate_market_pricing.py`
 - **_parse_date()** (4 connections) — `scripts/generate_market_pricing.py`
 - **_text()** (4 connections) — `scripts/generate_market_pricing.py`
-- **check_years()** (3 connections) — `scripts/generate_market_pricing.py`
+- **validate_document()** (4 connections) — `scripts/generate_market_pricing.py`
+- **_find_text()** (3 connections) — `scripts/generate_market_pricing.py`
+- **Element** (2 connections)
 - **Exception** (1 connections)
 - **Inputs are missing, malformed or inconsistent; the run must not write output.** (1 connections) — `scripts/generate_market_pricing.py`
 - **Return {delivery date: {IESO hour-ending 1-24: HOEP in $/MWh}} from a yearly…** (1 connections) — `scripts/generate_market_pricing.py`
+- **Return {"YYYY-MM": {"arithmetic", "weighted"}} in $/MWh from a yearly HOEP…** (1 connections) — `scripts/generate_market_pricing.py`
 - **Require the retirement statement; return {"YYYY-MM": weighted HOEP in…** (1 connections) — `scripts/generate_market_pricing.py`
 
 ## Relationships
 
 - [generate_market_pricing.py](generate_market_pricing.py.md) (25 shared connections)
 - [_actual_rates](_actual_rates.md) (8 shared connections)
-- [_yearly_files](_yearly_files.md) (3 shared connections)
-- [main](main.md) (2 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
-- [market_pricing.py](market_pricing.py.md) (1 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
+- [_yearly_files](_yearly_files.md) (6 shared connections)
+- [market_pricing.py](market_pricing.py.md) (2 shared connections)
+- [aeso.py](aeso.py.md) (2 shared connections)
+- [parse_bill_data](parse_bill_data.md) (1 shared connections)
 - [re](re.md) (1 shared connections)
 
 ## Source Files
@@ -36,8 +38,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 60 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 68 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---
