@@ -1,6 +1,6 @@
 # CentraGasScraper
 
-> 55 nodes
+> 54 nodes
 
 ## Key Concepts
 
@@ -29,16 +29,17 @@
 - **._text_rows()** (4 connections) — `scrapers/utilities/centra_gas.py`
 - **GasClassSpec** (3 connections) — `scrapers/utilities/centra_gas.py`
 - **._appendix_text()** (3 connections) — `scrapers/utilities/centra_gas.py`
-- *... and 30 more nodes in this community*
+- *... and 29 more nodes in this community*
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (9 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (8 shared connections)
 - [BaseScraper](BaseScraper.md) (5 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
 - [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 - [.mark_fallback](mark_fallback.md) (1 shared connections)
+- [FortisAlbertaScraper](FortisAlbertaScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -46,7 +47,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 131 (98%)
+- EXTRACTED: 130 (98%)
 - INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,6 +1,6 @@
 # graphify_hook.py
 
-> 74 nodes
+> 73 nodes
 
 ## Key Concepts
 
@@ -29,25 +29,24 @@
 - **callflow_sections()** (6 connections) — `scripts/graphify_hook.py`
 - **existing_hook()** (6 connections) — `scripts/graphify_hook.py`
 - **graph_summary()** (6 connections) — `scripts/graphify_hook.py`
-- *... and 49 more nodes in this community*
+- *... and 48 more nodes in this community*
 
 ## Relationships
 
 - [run_scrape.py](run_scrape.py.md) (9 shared connections)
 - [os](os.md) (8 shared connections)
-- [re](re.md) (4 shared connections)
+- [enmax_power.py](enmax_power.py.md) (3 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
 
-- `scrapers/utilities/bc_hydro.py`
 - `scripts/graphify_hook.py`
 
 ## Audit Trail
 
-- EXTRACTED: 211 (99%)
-- INFERRED: 3 (1%)
+- EXTRACTED: 210 (99%)
+- INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

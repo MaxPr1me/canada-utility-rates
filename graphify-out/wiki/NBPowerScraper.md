@@ -1,9 +1,10 @@
 # NBPowerScraper
 
-> 46 nodes
+> 50 nodes
 
 ## Key Concepts
 
+- **nb_power.py** (28 connections) — `scrapers/utilities/nb_power.py`
 - **NBPowerScraper** (24 connections) — `scrapers/utilities/nb_power.py`
 - **._try_live_scrape()** (19 connections) — `scrapers/utilities/nb_power.py`
 - **_clean()** (11 connections) — `scrapers/utilities/nb_power.py`
@@ -14,6 +15,7 @@
 - **clean_currency()** (8 connections) — `scrapers/utils/parsing.py`
 - **._parse_residential()** (7 connections) — `scrapers/utilities/nb_power.py`
 - **_cents_total()** (7 connections) — `scrapers/utilities/nb_power.py`
+- **extract_tables()** (7 connections) — `scrapers/utils/parsing.py`
 - **._parse_fast_charging()** (6 connections) — `scrapers/utilities/nb_power.py`
 - **._parse_large_industrial()** (6 connections) — `scrapers/utilities/nb_power.py`
 - **._parse_recreational_lighting()** (6 connections) — `scrapers/utilities/nb_power.py`
@@ -27,18 +29,18 @@
 - **_table_after()** (6 connections) — `scrapers/utilities/nb_power.py`
 - **._seed_data_gs1()** (5 connections) — `scrapers/utilities/nb_power.py`
 - **._seed_data_residential()** (5 connections) — `scrapers/utilities/nb_power.py`
-- **._seed_data_small_industrial()** (5 connections) — `scrapers/utilities/nb_power.py`
-- **._get_business_sections()** (5 connections) — `scrapers/utilities/nb_power.py`
-- *... and 21 more nodes in this community*
+- *... and 25 more nodes in this community*
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (20 shared connections)
-- [BaseScraper](BaseScraper.md) (19 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (8 shared connections)
-- [re](re.md) (7 shared connections)
+- [BaseScraper](BaseScraper.md) (20 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (19 shared connections)
+- [RateComponent](RateComponent.md) (9 shared connections)
+- [enmax_power.py](enmax_power.py.md) (8 shared connections)
 - [.fetch_page](fetch_page.md) (3 shared connections)
+- [.mark_fallback](mark_fallback.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -47,7 +49,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 141 (99%)
+- EXTRACTED: 162 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

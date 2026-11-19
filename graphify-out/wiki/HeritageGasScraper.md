@@ -1,6 +1,6 @@
 # HeritageGasScraper
 
-> 17 nodes
+> 18 nodes
 
 ## Key Concepts
 
@@ -16,6 +16,7 @@
 - **date** (4 connections)
 - **._row()** (3 connections) — `scrapers/utilities/heritage_gas.py`
 - **comp()** (2 connections) — `scrapers/utilities/heritage_gas.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/heritage_gas.py`
 - **._norm()** (2 connections) — `scrapers/utilities/heritage_gas.py`
 - **Strictly parse the monthly rate table; raises ValueError on any drift.** (1 connections) — `scrapers/utilities/heritage_gas.py`
 - **Build tariffs from texts keyed residential/business/rate_table. The rate table…** (1 connections) — `scrapers/utilities/heritage_gas.py`
@@ -24,8 +25,8 @@
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (6 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (6 shared connections)
+- [RateComponent](RateComponent.md) (4 shared connections)
 - [BaseScraper](BaseScraper.md) (2 shared connections)
 - [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
@@ -36,7 +37,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 46 (96%)
+- EXTRACTED: 47 (96%)
 - INFERRED: 2 (4%)
 - AMBIGUOUS: 0 (0%)
 

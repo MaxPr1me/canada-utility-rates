@@ -27,7 +27,7 @@
 - [archive_ontario_price.py](archive_ontario_price.py.md) (7 shared connections)
 - [MarketDataError](MarketDataError.md) (6 shared connections)
 - [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
-- [re](re.md) (1 shared connections)
+- [enmax_power.py](enmax_power.py.md) (1 shared connections)
 
 ## Source Files
 

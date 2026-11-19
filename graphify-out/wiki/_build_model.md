@@ -36,7 +36,7 @@
 - One model: per-utility costs at each usage level, statistics, buckets, energy… `EXTRACTED`
 
 ### references
-- date `EXTRACTED`
+- [date](date.md) `EXTRACTED`
 
 ---
 

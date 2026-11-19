@@ -33,13 +33,14 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (14 shared connections)
-- [TariffRecord](TariffRecord.md) (8 shared connections)
-- [DocumentPage](DocumentPage.md) (5 shared connections)
+- [BaseScraper](BaseScraper.md) (12 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (7 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [re](re.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (5 shared connections)
+- [.fetch_page](fetch_page.md) (5 shared connections)
+- [enmax_power.py](enmax_power.py.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [.mark_fallback](mark_fallback.md) (1 shared connections)
 - [run_scrape.py](run_scrape.py.md) (1 shared connections)
 
 ## Source Files

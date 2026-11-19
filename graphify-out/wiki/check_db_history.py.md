@@ -33,9 +33,8 @@
 
 ## Relationships
 
-- [run_scrape.py](run_scrape.py.md) (10 shared connections)
+- [run_scrape.py](run_scrape.py.md) (11 shared connections)
 - [os](os.md) (4 shared connections)
-- [main](main.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files

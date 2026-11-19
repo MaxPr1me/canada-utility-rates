@@ -14,7 +14,7 @@
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
 - [fortisbc_electric.py](fortisbc_electric.py.md) `EXTRACTED`
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
-- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
+- ontario_ldc.py `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
 - [run_scrape.py](run_scrape.py.md) `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
@@ -28,7 +28,7 @@
 - nb_power.py `EXTRACTED`
 - [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
-- [aeso.py](aeso.py.md) `EXTRACTED`
+- aeso.py `EXTRACTED`
 - grand_forks.py `EXTRACTED`
 - *…and 22 more `imports` connection(s) not listed (lowest-degree first to go)*
 

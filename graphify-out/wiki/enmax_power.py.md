@@ -1,9 +1,10 @@
 # enmax_power.py
 
-> 42 nodes
+> 45 nodes
 
 ## Key Concepts
 
+- **re** (244 connections)
 - **enmax_power.py** (52 connections) — `scrapers/utilities/enmax_power.py`
 - **_build_record()** (20 connections) — `scrapers/utilities/enmax_power.py`
 - **_Reject** (16 connections) — `scrapers/utilities/enmax_power.py`
@@ -23,26 +24,27 @@
 - **_money()** (6 connections) — `scrapers/utilities/enmax_power.py`
 - **_table_rows()** (6 connections) — `scrapers/utilities/enmax_power.py`
 - **_Rider** (5 connections) — `scrapers/utilities/enmax_power.py`
+- **current_tariff_link()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_log_exclusions()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_page_with()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_split_footer()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_Riders** (4 connections) — `scrapers/utilities/enmax_power.py`
-- **_component()** (4 connections) — `scrapers/utilities/enmax_power.py`
-- **_require()** (4 connections) — `scrapers/utilities/enmax_power.py`
-- *... and 17 more nodes in this community*
+- *... and 20 more nodes in this community*
 
 ## Relationships
 
-- [re](re.md) (17 shared connections)
-- [DocumentPage](DocumentPage.md) (14 shared connections)
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [TariffRecord](TariffRecord.md) (4 shared connections)
-- [extract_schedule_pages](extract_schedule_pages.md) (4 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (1 shared connections)
-- [aeso.py](aeso.py.md) (1 shared connections)
-- [os](os.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (37 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (18 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (16 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (15 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (15 shared connections)
+- [epcor_distribution.py](epcor_distribution.py.md) (12 shared connections)
+- [ntpc.py](ntpc.py.md) (12 shared connections)
+- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (9 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (8 shared connections)
+- [re](re.md) (7 shared connections)
+- [fortisalberta.py](fortisalberta.py.md) (7 shared connections)
+- [saint_john_energy.py](saint_john_energy.py.md) (7 shared connections)
 
 ## Source Files
 
@@ -50,8 +52,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 153 (91%)
-- INFERRED: 15 (9%)
+- EXTRACTED: 384 (96%)
+- INFERRED: 15 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

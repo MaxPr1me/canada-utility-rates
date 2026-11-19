@@ -29,12 +29,12 @@
 - [BaseScraper](BaseScraper.md) (6 shared connections)
 - [parse_tariff_pages](parse_tariff_pages.md) (5 shared connections)
 - [close_class](close_class.md) (5 shared connections)
+- [RateComponent](RateComponent.md) (2 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
-- [DocumentPage](DocumentPage.md) (2 shared connections)
 - [class_loss_factors](class_loss_factors.md) (2 shared connections)
 - [_dedupe_classifications](_dedupe_classifications.md) (2 shared connections)
 - [OntarioLDCScraper](OntarioLDCScraper.md) (1 shared connections)
-- [aeso.py](aeso.py.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
 
 ## Source Files
 

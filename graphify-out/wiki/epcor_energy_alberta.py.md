@@ -8,6 +8,7 @@
 - **enmax_energy.py** (34 connections) — `scrapers/utilities/enmax_energy.py`
 - **alberta_rolr.py** (32 connections) — `scrapers/utils/alberta_rolr.py`
 - **RolrError** (24 connections) — `scrapers/utils/alberta_rolr.py`
+- **aeso.py** (24 connections) — `scrapers/utilities/aeso.py`
 - **direct_energy_regulated.py** (23 connections) — `scrapers/utilities/direct_energy_regulated.py`
 - **parse_uca_table()** (17 connections) — `scrapers/utils/alberta_rolr.py`
 - **parse_sources()** (16 connections) — `scrapers/utilities/enmax_energy.py`
@@ -16,46 +17,48 @@
 - **make_period()** (13 connections) — `scrapers/utils/alberta_rolr.py`
 - **normalize_text()** (13 connections) — `scrapers/utils/alberta_rolr.py`
 - **parse_date()** (13 connections) — `scrapers/utils/alberta_rolr.py`
-- **ENMAXEnergyScraper** (12 connections) — `scrapers/utilities/enmax_energy.py`
-- **EPCOREnergyAlbertaScraper** (12 connections) — `scrapers/utilities/epcor_energy_alberta.py`
 - **parse_cents()** (12 connections) — `scrapers/utils/alberta_rolr.py`
+- **._try_live_scrape()** (12 connections) — `scrapers/utilities/aeso.py`
+- **parse_pool_price_csv()** (12 connections) — `scrapers/utilities/aeso.py`
 - **parse_sources()** (12 connections) — `scrapers/utilities/direct_energy_regulated.py`
 - **parse_enmax_page()** (12 connections) — `scrapers/utilities/enmax_energy.py`
-- **._try_live_scrape()** (12 connections) — `scrapers/utilities/epcor_energy_alberta.py`
 - **rolr_record()** (11 connections) — `scrapers/utils/alberta_rolr.py`
-- **._try_live_scrape()** (11 connections) — `scrapers/utilities/enmax_energy.py`
 - **html_text()** (11 connections) — `scrapers/utils/alberta_rolr.py`
 - **require_current()** (11 connections) — `scrapers/utils/alberta_rolr.py`
-- **DirectEnergyRegulatedScraper** (10 connections) — `scrapers/utilities/direct_energy_regulated.py`
+- **AESOScraper** (10 connections) — `scrapers/utilities/aeso.py`
 - **parse_price_schedule()** (10 connections) — `scrapers/utilities/epcor_energy_alberta.py`
 - **uca_detail()** (10 connections) — `scrapers/utils/alberta_rolr.py`
+- **RolrPeriod** (9 connections) — `scrapers/utils/alberta_rolr.py`
 - *... and 69 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (37 shared connections)
-- [TariffRecord](TariffRecord.md) (23 shared connections)
-- [re](re.md) (15 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (13 shared connections)
-- [DocumentPage](DocumentPage.md) (8 shared connections)
-- [.fetch_page](fetch_page.md) (8 shared connections)
-- [.__init__](__init__.md) (3 shared connections)
-- [aeso.py](aeso.py.md) (3 shared connections)
-- [run_scrape.py](run_scrape.py.md) (2 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
-- [epcor_distribution.py](epcor_distribution.py.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (36 shared connections)
+- [enmax_power.py](enmax_power.py.md) (18 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (14 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (13 shared connections)
+- [RateComponent](RateComponent.md) (12 shared connections)
+- [io](io.md) (5 shared connections)
+- [EPCOREnergyAlbertaScraper](EPCOREnergyAlbertaScraper.md) (5 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
+- [ENMAXEnergyScraper](ENMAXEnergyScraper.md) (4 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [DirectEnergyRegulatedScraper](DirectEnergyRegulatedScraper.md) (3 shared connections)
+- [market_pricing.py](market_pricing.py.md) (2 shared connections)
 
 ## Source Files
 
+- `scrapers/utilities/aeso.py`
 - `scrapers/utilities/direct_energy_regulated.py`
 - `scrapers/utilities/enmax_energy.py`
 - `scrapers/utilities/epcor_energy_alberta.py`
 - `scrapers/utils/alberta_rolr.py`
+- `scripts/build_alberta_market.py`
 
 ## Audit Trail
 
-- EXTRACTED: 339 (95%)
-- INFERRED: 19 (5%)
+- EXTRACTED: 355 (96%)
+- INFERRED: 15 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

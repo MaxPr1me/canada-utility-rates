@@ -1,58 +1,96 @@
 # DocumentPage
 
-> 22 nodes
+> God node · 222 connections · `scrapers/utils/parsing.py`
 
-## Key Concepts
+**Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
 
-- **DocumentPage** (222 connections) — `scrapers/utils/parsing.py`
-- **parse_manual()** (11 connections) — `scrapers/utilities/summerside_electric.py`
-- **FortisBCElectricScraper** (10 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **.scrape()** (8 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **extract_schedule_pages()** (6 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **manual_effective()** (6 connections) — `scrapers/utilities/summerside_electric.py`
-- **._fetch_schedule_pages()** (5 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **.parse_schedule_pages()** (5 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **find_pdf_section()** (4 connections) — `scrapers/utils/parsing.py`
-- **_iso()** (2 connections) — `scrapers/utilities/summerside_electric.py`
-- **record()** (2 connections) — `scrapers/utilities/summerside_electric.py`
-- **.source_detail()** (1 connections) — `scrapers/utils/parsing.py`
-- **where()** (1 connections) — `scrapers/utilities/summerside_electric.py`
-- **date** (1 connections)
-- **Extract only the supported schedule sheets from the full Electric Tariff PDF.…** (1 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **Scrape FortisBC Electric building rate schedules from the official Electric…** (1 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **Parse each schedule independently; label seed fallbacks for failed seeded…** (1 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **Return the schedules that parse completely; a failing schedule is skipped and…** (1 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **Most recent date of the page-2 revision table (rate adjustments only).** (1 connections) — `scrapers/utilities/summerside_electric.py`
-- **Build the in-scope Section N schedules; raise ValueError (fail closed) on a…** (1 connections) — `scrapers/utilities/summerside_electric.py`
-- **Return pages belonging to a labelled tariff section. Merely finding a number is…** (1 connections) — `scrapers/utils/parsing.py`
-- **Text extracted from one source page, retaining its human page number.** (1 connections) — `scrapers/utils/parsing.py`
+## Connections by Relation
 
-## Relationships
+### calls
+- [extract_pdf_pages()](extract_pdf_pages.md) `EXTRACTED`
+- extract_schedule_pages() `EXTRACTED`
+- extract_handbook_pages() `EXTRACTED`
+- extract_schedule_pages() `EXTRACTED`
+- _extract_pages() `EXTRACTED`
+- extract_tariff_pages() `EXTRACTED`
 
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (25 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (24 shared connections)
-- [BaseScraper](BaseScraper.md) (23 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (17 shared connections)
-- [epcor_distribution.py](epcor_distribution.py.md) (15 shared connections)
-- [TariffRecord](TariffRecord.md) (14 shared connections)
-- [enmax_power.py](enmax_power.py.md) (14 shared connections)
-- [re](re.md) (13 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (13 shared connections)
-- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) (11 shared connections)
-- [EnbridgeGasScraper](EnbridgeGasScraper.md) (10 shared connections)
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (8 shared connections)
+### contains
+- parsing.py `EXTRACTED`
 
-## Source Files
+### imports
+- [oeb_tariff.py](oeb_tariff.py.md) `EXTRACTED`
+- [enmax_power.py](enmax_power.py.md) `EXTRACTED`
+- [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
+- [fortisbc_electric.py](fortisbc_electric.py.md) `EXTRACTED`
+- [ntpc.py](ntpc.py.md) `EXTRACTED`
+- [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
+- nl_hydro.py `EXTRACTED`
+- epcor_gas_ontario.py `EXTRACTED`
+- atco_electric.py `EXTRACTED`
+- enbridge_gas.py `EXTRACTED`
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
+- atco_gas.py `EXTRACTED`
+- enmax_energy.py `EXTRACTED`
+- manitoba_hydro.py `EXTRACTED`
+- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
+- yukon_energy.py `EXTRACTED`
+- grand_forks.py `EXTRACTED`
+- hydro_quebec.py `EXTRACTED`
+- [saint_john_energy.py](saint_john_energy.py.md) `EXTRACTED`
+- [new_westminster.py](new_westminster.py.md) `EXTRACTED`
+- *…and 8 more `imports` connection(s) not listed (lowest-degree first to go)*
 
-- `scrapers/utilities/fortisbc_electric.py`
-- `scrapers/utilities/summerside_electric.py`
-- `scrapers/utils/parsing.py`
+### method
+- .source_detail() `EXTRACTED`
 
-## Audit Trail
+### rationale_for
+- Text extracted from one source page, retaining its human page number. `EXTRACTED`
 
-- EXTRACTED: 168 (63%)
-- INFERRED: 97 (37%)
-- AMBIGUOUS: 0 (0%)
+### references
+- ._schedule_record() `EXTRACTED`
+- ._parse_building_extras() `EXTRACTED`
+- ._parse_spec() `EXTRACTED`
+- .parse_documents() `EXTRACTED`
+- .parse_sources() `EXTRACTED`
+- ._parse_optional_domestic_rates() `EXTRACTED`
+- ._parse_labrador_nonfirm() `EXTRACTED`
+- ._schedule() `EXTRACTED`
+- ._parse_large_power_rates() `EXTRACTED`
+- ._parse_pages() `EXTRACTED`
+- .parse_schedule_pages() `EXTRACTED`
+- ._published_sections() `EXTRACTED`
+- ._order_context() `EXTRACTED`
+- ._parse_residential_tariffs() `EXTRACTED`
+- ._interruptible() `EXTRACTED`
+- ._parse_business_tariff() `EXTRACTED`
+- ._current_schedule() `EXTRACTED`
+- ._parse_island_industrial() `EXTRACTED`
+- ._parse_island_nonfirm() `EXTRACTED`
+- ._parse_industrial_tariff() `EXTRACTED`
+- *…and 69 more `references` connection(s) not listed (lowest-degree first to go)*
+
+### uses
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) `INFERRED`
+- [EnbridgeGasScraper](EnbridgeGasScraper.md) `INFERRED`
+- [BCHydroScraper](BCHydroScraper.md) `INFERRED`
+- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `INFERRED`
+- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `INFERRED`
+- [ATCOGasScraper](ATCOGasScraper.md) `INFERRED`
+- parse_tariff_pages() `INFERRED`
+- HydroQuebecScraper `INFERRED`
+- NLHydroScraper `INFERRED`
+- Schedule `INFERRED`
+- MaritimeElectricScraper `INFERRED`
+- _build_record() `INFERRED`
+- YukonEnergyScraper `INFERRED`
+- _page_source() `INFERRED`
+- _schedule_page() `INFERRED`
+- SaskPowerScraper `INFERRED`
+- parse_manual() `INFERRED`
+- ManitobaHydroScraper `INFERRED`
+- parse_tariff_pages() `INFERRED`
+- _parse_commercial() `INFERRED`
+- *…and 76 more `uses` connection(s) not listed (lowest-degree first to go)*
 
 ---
 

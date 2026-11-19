@@ -30,7 +30,7 @@
 
 - [generate_market_pricing.py](generate_market_pricing.py.md) (20 shared connections)
 - [MarketDataError](MarketDataError.md) (8 shared connections)
-- [re](re.md) (2 shared connections)
+- [enmax_power.py](enmax_power.py.md) (2 shared connections)
 - [market_pricing.py](market_pricing.py.md) (1 shared connections)
 
 ## Source Files

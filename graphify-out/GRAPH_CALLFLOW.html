@@ -60,7 +60,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>canada-utility-costs — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 2707 nodes, 8094 edges, 94 communities. Commit: 1a727b0</p>
+<p class="subtitle">Generated from graphify knowledge graph: 2714 nodes, 8111 edges, 106 communities. Commit: 97c7bb5</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
@@ -79,30 +79,30 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    UTILITY_SCRAPERS_C4265F53("Utility scrapers<br/><small>1646 nodes</small>")
+    UTILITY_SCRAPERS_C4265F53("Utility scrapers<br/><small>1640 nodes</small>")
     class UTILITY_SCRAPERS_C4265F53 module;
-    SCRAPER_FRAMEWORK_6AAA5E7A("Scraper framework and parsing helpers<br/><small>136 nodes</small>")
+    SCRAPER_FRAMEWORK_6AAA5E7A("Scraper framework and parsing helpers<br/><small>145 nodes</small>")
     class SCRAPER_FRAMEWORK_6AAA5E7A module;
-    PIPELINE_992B5D66("Pipeline: scrape, validate, export and models<br/><small>305 nodes</small>")
+    PIPELINE_992B5D66("Pipeline: scrape, validate, export and models<br/><small>296 nodes</small>")
     class PIPELINE_992B5D66 module;
-    SCRIPTS_16728D18("Market data and maintenance scripts<br/><small>457 nodes</small>")
+    SCRIPTS_16728D18("Market data and maintenance scripts<br/><small>470 nodes</small>")
     class SCRIPTS_16728D18 module;
     WEBSITE_3AB3E0B0("Website<br/><small>160 nodes</small>")
     class WEBSITE_3AB3E0B0 module;
     OTHER_D0941E68("Other<br/><small>3 nodes</small>")
     class OTHER_D0941E68 module;
-    SCRIPTS_16728D18 -->|calls x84| UTILITY_SCRAPERS_C4265F53
-    SCRIPTS_16728D18 -->|imports x72| PIPELINE_992B5D66
-    PIPELINE_992B5D66 -->|imports x38| UTILITY_SCRAPERS_C4265F53
-    SCRAPER_FRAMEWORK_6AAA5E7A -->|imports x33| UTILITY_SCRAPERS_C4265F53
-    PIPELINE_992B5D66 -->|calls x17| SCRAPER_FRAMEWORK_6AAA5E7A
-    UTILITY_SCRAPERS_C4265F53 -->|calls x16| SCRAPER_FRAMEWORK_6AAA5E7A
-    UTILITY_SCRAPERS_C4265F53 -->|imports x14| SCRIPTS_16728D18
-    PIPELINE_992B5D66 -->|imports x14| SCRIPTS_16728D18
-    UTILITY_SCRAPERS_C4265F53 -->|imports x12| PIPELINE_992B5D66
+    SCRIPTS_16728D18 -->|imports x69| PIPELINE_992B5D66
+    SCRIPTS_16728D18 -->|calls x51| UTILITY_SCRAPERS_C4265F53
+    PIPELINE_992B5D66 -->|calls x39| UTILITY_SCRAPERS_C4265F53
+    UTILITY_SCRAPERS_C4265F53 -->|imports x34| SCRIPTS_16728D18
+    SCRAPER_FRAMEWORK_6AAA5E7A -->|imports x29| UTILITY_SCRAPERS_C4265F53
+    PIPELINE_992B5D66 -->|calls x21| SCRAPER_FRAMEWORK_6AAA5E7A
+    UTILITY_SCRAPERS_C4265F53 -->|calls x18| SCRAPER_FRAMEWORK_6AAA5E7A
+    PIPELINE_992B5D66 -->|imports x16| SCRIPTS_16728D18
+    UTILITY_SCRAPERS_C4265F53 -->|imports x10| PIPELINE_992B5D66
     SCRIPTS_16728D18 -->|calls x9| SCRAPER_FRAMEWORK_6AAA5E7A
-    SCRAPER_FRAMEWORK_6AAA5E7A -->|calls x4| PIPELINE_992B5D66
-    SCRAPER_FRAMEWORK_6AAA5E7A -->|imports| SCRIPTS_16728D18
+    SCRAPER_FRAMEWORK_6AAA5E7A -->|calls x6| PIPELINE_992B5D66
+    SCRAPER_FRAMEWORK_6AAA5E7A -->|imports x2| SCRIPTS_16728D18
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -119,22 +119,22 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Utility scrapers</td><td>1646</td><td><code>0, 1, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 27, 28, 30, 36, 37, 41, 42, 44, 45, 49, 51, 52, 53, 55, 57, 58, 61, 62, 65, 67, 70, 71, 72, 73, 78, 79, 81, 86, 97</code></td></tr><tr><td>Scraper framework and parsing helpers</td><td>136</td><td><code>38, 43, 46, 50, 56, 63, 77, 84, 88, 90, 91, 92, 94</code></td></tr><tr><td>Pipeline: scrape, validate, export and models</td><td>305</td><td><code>4, 26, 29, 33, 35, 40, 47, 48, 59, 69, 76, 83, 85</code></td></tr><tr><td>Market data and maintenance scripts</td><td>457</td><td><code>2, 5, 6, 7, 22, 31, 32, 34, 39, 54, 60, 66, 68, 74, 80, 82, 87</code></td></tr><tr><td>Website</td><td>160</td><td><code>3, 14, 64</code></td></tr><tr><td>Other</td><td>3</td><td><code>75</code></td></tr>
+      <tr><td>Utility scrapers</td><td>1640</td><td><code>0, 1, 8, 9, 10, 11, 13, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 27, 28, 30, 36, 37, 41, 42, 44, 45, 49, 51, 52, 53, 55, 57, 58, 65, 67, 69, 70, 71, 72, 73, 78, 79, 83, 86, 90, 93, 95, 96, 97, 98, 99, 101, 102, 103</code></td></tr><tr><td>Scraper framework and parsing helpers</td><td>145</td><td><code>38, 43, 46, 50, 56, 63, 77, 84, 85, 88, 91, 92, 94, 104</code></td></tr><tr><td>Pipeline: scrape, validate, export and models</td><td>296</td><td><code>4, 26, 29, 33, 35, 40, 47, 48, 59, 61, 62, 76, 81, 89</code></td></tr><tr><td>Market data and maintenance scripts</td><td>470</td><td><code>2, 5, 6, 7, 12, 22, 31, 32, 34, 39, 54, 60, 66, 68, 74, 80, 82, 87, 100, 105</code></td></tr><tr><td>Website</td><td>160</td><td><code>3, 14, 64</code></td></tr><tr><td>Other</td><td>3</td><td><code>75</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">Website -&gt; Utility scrapers -&gt; Scraper framework and parsing helpers -&gt; Pipeline: scrape, validate, export and models -&gt; Market data and maintenance scripts -&gt; Other</div>
+    <div class="arrow-chain">Website -&gt; Utility scrapers -&gt; Market data and maintenance scripts -&gt; Pipeline: scrape, validate, export and models -&gt; Scraper framework and parsing helpers -&gt; Other</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>2707 nodes · 8094 edges · 94 communities (71 shown, 23 thin omitted)</li>
+      <li>2714 nodes · 8111 edges · 106 communities (77 shown, 29 thin omitted)</li>
       <li>Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 293 edges (avg confidence: 0.93)</li>
       <li>Token cost: 0 input · 0 output</li>
-      <li>1. `TariffRecord` - 402 edges</li>
+      <li>1. `TariffRecord` - 403 edges</li>
       <li>2. `RateComponent` - 276 edges</li>
       <li>3. `DocumentPage` - 222 edges</li>
     </ul>
@@ -143,12 +143,12 @@ flowchart LR
 <hr>
 <!-- ====== 2. Utility scrapers ====== -->
 <h2 id="utility-scrapers">2. Utility scrapers</h2>
-<p>Utility scrapers groups implementation around scrapers, utilities, parse, powerpy, mostly in scrapers/utilities/ontario_ldc.py, scrapers/utilities/nova_scotia_power.py, scrapers/utilities/enbridge_gas.py. This section covers 1646 nodes and 5221 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Utility scrapers groups implementation around scrapers, utilities, parse, powerpy, mostly in scrapers/utilities/ontario_ldc.py, scrapers/utilities/nova_scotia_power.py, scrapers/utilities/enbridge_gas.py. This section covers 1640 nodes and 5200 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Utility scrapers (1646 nodes, 5221 edges)
+    %% Section: Utility scrapers (1640 nodes, 5200 edges)
     subgraph utility_scrapers_scrapers_base_py_c99a276e["scrapers/base.py"]
         scrapers_base_basescraper_5e0510eb("BaseScraper<br/><small>scrapers/base.py</small>")
         scrapers_base_basescraper_init_8d38cc99("__init__()<br/><small>scrapers/base.py</small>")
@@ -186,7 +186,7 @@ flowchart LR
     scrapers_base_basescraper_verify_official_record_3d32643a -->|calls| scrapers_base_basescraper_fetch_bytes_0ca141c7
     scrapers_utilities_enmax_energy_929717e0 -->|imports| scrapers_base_basescraper_5e0510eb
     scrapers_utilities_epcor_energy_alberta_5eb72568 -->|imports| scrapers_base_basescraper_5e0510eb
-    %% Omitted for readability: 1628 nodes, 0 edges
+    %% Omitted for readability: 1622 nodes, 0 edges
     class scrapers_base_basescraper_5e0510eb klass;
     class scrapers_base_basescraper_init_8d38cc99 function;
     class scrapers_base_basescraper_fetch_page_dfc3e8ab function;
@@ -236,14 +236,6 @@ flowchart LR
 </tr>
 <tr>
   <td>2</td>
-  <td><code>_Class</code><br><small style="color:var(--muted)">scrapers/utilities/saint_john_energy.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>_Class node in scrapers/utilities/saint_john_energy.py.</td>
-</tr>
-<tr>
-  <td>3</td>
   <td><code>_Class</code><br><small style="color:var(--muted)">scrapers/utilities/summerland.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -251,7 +243,7 @@ flowchart LR
   <td>_Class node in scrapers/utilities/summerland.py.</td>
 </tr>
 <tr>
-  <td>4</td>
+  <td>3</td>
   <td><code>ChangeAlert</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td><code>_compare_components()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small><br><code>compare_to_seed()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
@@ -259,7 +251,7 @@ flowchart LR
   <td>ChangeAlert node in scrapers/utils/change_detection.py.</td>
 </tr>
 <tr>
-  <td>5</td>
+  <td>4</td>
   <td><code>parse_html()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_carbon()</code><br><small style="color:var(--muted)">scrapers/utilities/atco_gas.py</small><br><code>_commodity()</code><br><small style="color:var(--muted)">scrapers/utilities/atco_gas.py</small><br><code>_discover_documents()</code><br><small style="color:var(--muted)">scrapers/utilities/fortisbc_energy.py</small><br>+80 more</td>
@@ -267,7 +259,7 @@ flowchart LR
   <td>Exports documentation data to a target format.</td>
 </tr>
 <tr>
-  <td>6</td>
+  <td>5</td>
   <td><code>.content_hash()</code><br><small style="color:var(--muted)">scrapers/base.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>BaseScraper</code><br><small style="color:var(--muted)">scrapers/base.py</small></td>
@@ -275,31 +267,15 @@ flowchart LR
   <td>Caches analysis results or computes cache keys.</td>
 </tr>
 <tr>
-  <td>7</td>
-  <td><code>_iso()</code><br><small style="color:var(--muted)">scrapers/utilities/nelson_hydro.py</small></td>
+  <td>6</td>
+  <td><code>_mb_lines()</code><br><small style="color:var(--muted)">scrapers/utilities/manitoba_hydro.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
-  <td><code>parse_rates_page()</code><br><small style="color:var(--muted)">scrapers/utilities/nelson_hydro.py</small></td>
-  <td>No direct outbound edge</td>
-  <td>_iso() node in scrapers/utilities/nelson_hydro.py.</td>
-</tr>
-<tr>
-  <td>8</td>
-  <td><code>parse_rates_page()</code><br><small style="color:var(--muted)">scrapers/utilities/nelson_hydro.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/nelson_hydro.py</small><br><code>parse_rates()</code><br><small style="color:var(--muted)">scrapers/utilities/nelson_hydro.py</small></td>
-  <td><code>_iso()</code><br><small style="color:var(--muted)">scrapers/utilities/nelson_hydro.py</small><br><code>parse_html()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small><br><code>re</code></td>
-  <td>Organizes documentation pages, navigation, or content lookup.</td>
-</tr>
-<tr>
-  <td>9</td>
-  <td><code>find_bylaw_url()</code><br><small style="color:var(--muted)">scrapers/utilities/new_westminster.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>_discover()</code><br><small style="color:var(--muted)">scrapers/utilities/new_westminster.py</small></td>
+  <td><code>_parse_commercial()</code><br><small style="color:var(--muted)">scrapers/utilities/manitoba_hydro.py</small><br><code>_parse_residential()</code><br><small style="color:var(--muted)">scrapers/utilities/manitoba_hydro.py</small></td>
   <td><code>parse_html()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small><br><code>re</code></td>
-  <td>find_bylaw_url() node in scrapers/utilities/new_westminster.py.</td>
+  <td>_mb_lines() node in scrapers/utilities/manitoba_hydro.py.</td>
 </tr>
 <tr>
-  <td>10</td>
+  <td>7</td>
   <td><code>find_bylaw_url()</code><br><small style="color:var(--muted)">scrapers/utilities/penticton.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_discover()</code><br><small style="color:var(--muted)">scrapers/utilities/penticton.py</small></td>
@@ -307,7 +283,7 @@ flowchart LR
   <td>find_bylaw_url() node in scrapers/utilities/penticton.py.</td>
 </tr>
 <tr>
-  <td>11</td>
+  <td>8</td>
   <td><code>find_bylaw_url()</code><br><small style="color:var(--muted)">scrapers/utilities/summerland.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_discover()</code><br><small style="color:var(--muted)">scrapers/utilities/summerland.py</small></td>
@@ -315,7 +291,7 @@ flowchart LR
   <td>find_bylaw_url() node in scrapers/utilities/summerland.py.</td>
 </tr>
 <tr>
-  <td>12</td>
+  <td>9</td>
   <td><code>find_manual_url()</code><br><small style="color:var(--muted)">scrapers/utilities/summerside_electric.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_discover()</code><br><small style="color:var(--muted)">scrapers/utilities/summerside_electric.py</small></td>
@@ -323,7 +299,7 @@ flowchart LR
   <td>find_manual_url() node in scrapers/utilities/summerside_electric.py.</td>
 </tr>
 <tr>
-  <td>13</td>
+  <td>10</td>
   <td><code>_classify_severity()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_compare_components()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
@@ -331,7 +307,7 @@ flowchart LR
   <td>_classify_severity() node in scrapers/utils/change_detection.py.</td>
 </tr>
 <tr>
-  <td>14</td>
+  <td>11</td>
   <td><code>_compare_components()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
   <td><span class="tag tag-hook">UI</span></td>
   <td><code>compare_to_seed()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
@@ -339,7 +315,7 @@ flowchart LR
   <td>_compare_components() node in scrapers/utils/change_detection.py.</td>
 </tr>
 <tr>
-  <td>15</td>
+  <td>12</td>
   <td><code>compare_to_seed()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/hydro_quebec.py</small><br><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/manitoba_hydro.py</small><br><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/bc_hydro.py</small><br>+5 more</td>
@@ -347,7 +323,7 @@ flowchart LR
   <td>compare_to_seed() node in scrapers/utils/change_detection.py.</td>
 </tr>
 <tr>
-  <td>16</td>
+  <td>13</td>
   <td><code>has_critical_alerts()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/hydro_quebec.py</small><br><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/manitoba_hydro.py</small><br><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/bc_hydro.py</small><br>+5 more</td>
@@ -355,7 +331,7 @@ flowchart LR
   <td>has_critical_alerts() node in scrapers/utils/change_detection.py.</td>
 </tr>
 <tr>
-  <td>17</td>
+  <td>14</td>
   <td><code>log_change_alerts()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/hydro_quebec.py</small><br><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/manitoba_hydro.py</small><br><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/bc_hydro.py</small><br>+5 more</td>
@@ -363,7 +339,23 @@ flowchart LR
   <td>log_change_alerts() node in scrapers/utils/change_detection.py.</td>
 </tr>
 <tr>
-  <td>18</td>
+  <td>15</td>
+  <td><code>_match_key()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>_pair_records()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
+  <td><code>TariffRecord</code><br><small style="color:var(--muted)">scrapers/base.py</small></td>
+  <td>_match_key() node in scrapers/utils/change_detection.py.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>_pair_records()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>compare_to_seed()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small></td>
+  <td><code>_match_key()</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small><br><code>TariffRecord</code><br><small style="color:var(--muted)">scrapers/base.py</small></td>
+  <td>_pair_records() node in scrapers/utils/change_detection.py.</td>
+</tr>
+<tr>
+  <td>17</td>
   <td><code>detect_js_rendered()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/hydro_quebec.py</small><br><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/manitoba_hydro.py</small><br><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/saskpower.py</small><br>+7 more</td>
@@ -371,15 +363,7 @@ flowchart LR
   <td>detect_js_rendered() node in scrapers/utils/parsing.py.</td>
 </tr>
 <tr>
-  <td>19</td>
-  <td><code>extract_pdf_pages()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>_fetch_pdf_pages()</code><br><small style="color:var(--muted)">scrapers/utilities/epcor_distribution.py</small><br><code>_fetch_tariff_pages()</code><br><small style="color:var(--muted)">scrapers/utilities/ontario_ldc.py</small><br><code>_interruptible()</code><br><small style="color:var(--muted)">scrapers/utilities/ntpc.py</small><br>+54 more</td>
-  <td><code>DocumentPage</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small><br><code>io</code><br><code>normalize_document_text()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small><br>+1 more</td>
-  <td>Organizes documentation pages, navigation, or content lookup.</td>
-</tr>
-<tr>
-  <td>20</td>
+  <td>18</td>
   <td><code>extract_pdf_text()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/newfoundland_power.py</small><br><code>hydro_quebec.py</code><br><small style="color:var(--muted)">scrapers/utilities/hydro_quebec.py</small><br><code>newfoundland_power.py</code><br><small style="color:var(--muted)">scrapers/utilities/newfoundland_power.py</small></td>
@@ -387,7 +371,7 @@ flowchart LR
   <td>extract_pdf_text() node in scrapers/utils/parsing.py.</td>
 </tr>
 <tr>
-  <td>21</td>
+  <td>19</td>
   <td><code>extract_rate_from_text()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_extract_basic_charge()</code><br><small style="color:var(--muted)">scrapers/utilities/nova_scotia_power.py</small><br><code>_extract_energy_rate()</code><br><small style="color:var(--muted)">scrapers/utilities/nova_scotia_power.py</small><br><code>nova_scotia_power.py</code><br><small style="color:var(--muted)">scrapers/utilities/nova_scotia_power.py</small></td>
@@ -395,15 +379,7 @@ flowchart LR
   <td>extract_rate_from_text() node in scrapers/utils/parsing.py.</td>
 </tr>
 <tr>
-  <td>22</td>
-  <td><code>extract_tables()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>_get_business_sections()</code><br><small style="color:var(--muted)">scrapers/utilities/nb_power.py</small><br><code>_parse_residential()</code><br><small style="color:var(--muted)">scrapers/utilities/nb_power.py</small><br><code>find_table_by_header()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small><br>+1 more</td>
-  <td><code>parse_html()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
-  <td>extract_tables() node in scrapers/utils/parsing.py.</td>
-</tr>
-<tr>
-  <td>23</td>
+  <td>20</td>
   <td><code>find_pdf_links()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_discover_handbook()</code><br><small style="color:var(--muted)">scrapers/utilities/enbridge_gas.py</small><br><code>_try_live_residential()</code><br><small style="color:var(--muted)">scrapers/utilities/nova_scotia_power.py</small><br><code>_try_live_scrape()</code><br><small style="color:var(--muted)">scrapers/utilities/nl_hydro.py</small><br>+14 more</td>
@@ -411,7 +387,7 @@ flowchart LR
   <td>find_pdf_links() node in scrapers/utils/parsing.py.</td>
 </tr>
 <tr>
-  <td>24</td>
+  <td>21</td>
   <td><code>find_table_by_header()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -419,7 +395,7 @@ flowchart LR
   <td>find_table_by_header() node in scrapers/utils/parsing.py.</td>
 </tr>
 <tr>
-  <td>25</td>
+  <td>22</td>
   <td><code>find_text_near_label()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>_extract_basic_charge()</code><br><small style="color:var(--muted)">scrapers/utilities/nova_scotia_power.py</small><br><code>_extract_energy_rate()</code><br><small style="color:var(--muted)">scrapers/utilities/nova_scotia_power.py</small><br><code>nova_scotia_power.py</code><br><small style="color:var(--muted)">scrapers/utilities/nova_scotia_power.py</small></td>
@@ -427,15 +403,7 @@ flowchart LR
   <td>find_text_near_label() node in scrapers/utils/parsing.py.</td>
 </tr>
 <tr>
-  <td>26</td>
-  <td><code>normalize_document_text()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>extract_pdf_pages()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small><br><code>extract_schedule_pages()</code><br><small style="color:var(--muted)">scrapers/utilities/fortisbc_electric.py</small><br><code>fortisbc_electric.py</code><br><small style="color:var(--muted)">scrapers/utilities/fortisbc_electric.py</small></td>
-  <td><code>re</code></td>
-  <td>normalize_document_text() node in scrapers/utils/parsing.py.</td>
-</tr>
-<tr>
-  <td>27</td>
+  <td>23</td>
   <td><code>normalize_province()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -443,7 +411,7 @@ flowchart LR
   <td>normalize_province() node in scrapers/utils/parsing.py.</td>
 </tr>
 <tr>
-  <td>28</td>
+  <td>24</td>
   <td><code>rate_value_appears()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>verify_tariff_values()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
@@ -451,7 +419,7 @@ flowchart LR
   <td>rate_value_appears() node in scrapers/utils/parsing.py.</td>
 </tr>
 <tr>
-  <td>29</td>
+  <td>25</td>
   <td><code>verify_tariff_values()</code><br><small style="color:var(--muted)">scrapers/utils/parsing.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>base.py</code><br><small style="color:var(--muted)">scrapers/base.py</small><br><code>verify_official_records()</code><br><small style="color:var(--muted)">scrapers/base.py</small></td>
@@ -459,12 +427,44 @@ flowchart LR
   <td>verify_tariff_values() node in scrapers/utils/parsing.py.</td>
 </tr>
 <tr>
-  <td>30</td>
+  <td>26</td>
   <td><code>ABC</code><br><small style="color:var(--muted)"></small></td>
   <td><span class="tag tag-class">Class</span></td>
   <td><code>base.py</code><br><small style="color:var(--muted)">scrapers/base.py</small></td>
   <td>No direct outbound edge</td>
   <td>ABC node in project.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>BeautifulSoup</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>BeautifulSoup node in project.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>base.py</code><br><small style="color:var(--muted)">scrapers/base.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td><code>aeso.py</code><br><small style="color:var(--muted)">scrapers/utilities/aeso.py</small><br><code>alberta_rolr.py</code><br><small style="color:var(--muted)">scrapers/utils/alberta_rolr.py</small><br><code>atco_electric.py</code><br><small style="color:var(--muted)">scrapers/utilities/atco_electric.py</small><br>+43 more</td>
+  <td><code>ABC</code><br><code>dataclasses</code><br><code>datetime</code><br>+12 more</td>
+  <td>Module file in scrapers/base.py.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>bc_hydro.py</code><br><small style="color:var(--muted)">scrapers/utilities/bc_hydro.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>base.py</code><br><small style="color:var(--muted)">scrapers/base.py</small><br><code>BaseScraper</code><br><small style="color:var(--muted)">scrapers/base.py</small><br><code>change_detection.py</code><br><small style="color:var(--muted)">scrapers/utils/change_detection.py</small><br>+13 more</td>
+  <td>Module file in scrapers/utilities/bc_hydro.py.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>centra_gas.py</code><br><small style="color:var(--muted)">scrapers/utilities/centra_gas.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>base.py</code><br><small style="color:var(--muted)">scrapers/base.py</small><br><code>BaseScraper</code><br><small style="color:var(--muted)">scrapers/base.py</small><br><code>dataclasses</code><br>+9 more</td>
+  <td>Module file in scrapers/utilities/centra_gas.py.</td>
 </tr>
 </table>
 
@@ -485,19 +485,19 @@ flowchart LR
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: calls x2139, references x702, contains x526, method x500. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: calls x2122, references x701, contains x527, method x500. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
 <!-- ====== 3. Scraper framework and parsing helpers ====== -->
 <h2 id="scraper-framework">3. Scraper framework and parsing helpers</h2>
-<p>Scraper framework and parsing helpers groups implementation around scrapers, utils, oeb, tariffpy, mostly in scrapers/utils/oeb_tariff.py, scrapers/utils/market_pricing.py, scrapers/utils/validation.py. This section covers 136 nodes and 268 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Scraper framework and parsing helpers groups implementation around scrapers, utils, oeb, tariffpy, mostly in scrapers/utils/oeb_tariff.py, scrapers/utils/market_pricing.py, scrapers/registry.py. This section covers 145 nodes and 276 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Scraper framework and parsing helpers (136 nodes, 268 edges)
+    %% Section: Scraper framework and parsing helpers (145 nodes, 276 edges)
     subgraph scraper_framework_scrapers_utils_oeb_tariff_py_ba3a2621["scrapers/utils/oeb_tariff.py"]
         scrapers_utils_oeb_tariff_build_demand_records_eb170cbd("build_demand_records()<br/><small>scrapers/utils/oeb_tariff.py</small>")
         scrapers_utils_oeb_tariff_parse_tariff_pages_6e702b95("parse_tariff_pages()<br/><small>scrapers/utils/oeb_tariff.py</small>")
@@ -534,7 +534,7 @@ flowchart LR
     scrapers_utils_oeb_tariff_parse_tariff_pages_6e702b95 -->|calls| scrapers_utils_oeb_tariff_tariffsheet_3f241f72
     scrapers_utils_oeb_tariff_build_demand_records_eb170cbd -->|calls| scrapers_utils_oeb_tariff_component_2a70d8cf
     scrapers_utils_oeb_tariff_build_demand_records_eb170cbd -->|calls| scrapers_utils_oeb_tariff_norm_name_ffacca93
-    %% Omitted for readability: 118 nodes, 0 edges
+    %% Omitted for readability: 127 nodes, 0 edges
     class scrapers_utils_oeb_tariff_build_demand_records_eb170cbd function;
     class scrapers_utils_oeb_tariff_parse_tariff_pages_6e702b95 function;
     class scrapers_utils_oeb_tariff_parse_tariff_pages_clo_6cde4075 function;
@@ -823,27 +823,28 @@ flowchart LR
       <tr><th>File</th><th>Coverage</th></tr>
       <tr><td><code>scrapers/utils/oeb_tariff.py</code></td><td>94 nodes</td></tr>
 <tr><td><code>scrapers/utils/market_pricing.py</code></td><td>21 nodes</td></tr>
-<tr><td><code>scrapers/utils/validation.py</code></td><td>8 nodes</td></tr>
-<tr><td><code>scrapers/utils/change_detection.py</code></td><td>4 nodes</td></tr>
+<tr><td><code>scrapers/registry.py</code></td><td>10 nodes</td></tr>
+<tr><td><code>scrapers/utils/validation.py</code></td><td>6 nodes</td></tr>
+<tr><td><code>scrapers/utils/parsing.py</code></td><td>4 nodes</td></tr>
 <tr><td><code>scrapers/base.py</code></td><td>2 nodes</td></tr>
 <tr><td><code>scrapers/__init__.py</code></td><td>1 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: calls x103, contains x77, explains x44, references x41. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: calls x105, contains x78, explains x48, references x42. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
 <!-- ====== 4. Pipeline: scrape, validate, export and models ====== -->
 <h2 id="pipeline">4. Pipeline: scrape, validate, export and models</h2>
-<p>Pipeline: scrape, validate, export and models groups implementation around pipeline, representative, modelspy, model, mostly in pipeline/representative_models.py, pipeline/model_monitoring.py, pipeline/run_scrape.py. This section covers 305 nodes and 685 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Pipeline: scrape, validate, export and models groups implementation around pipeline, representative, modelspy, model, mostly in pipeline/representative_models.py, pipeline/model_monitoring.py, pipeline/run_scrape.py. This section covers 296 nodes and 668 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Pipeline: scrape, validate, export and models (305 nodes, 685 edges)
+    %% Section: Pipeline: scrape, validate, export and models (296 nodes, 668 edges)
     subgraph pipeline_pipeline_representative_models_py_a1c18e21["pipeline/representative_models.py"]
         pipeline_representative_models_build_model_fa9f9c03("_build_model()<br/><small>pipeline/representative_models.py</small>")
         pipeline_representative_models_build_models_80982d9d("build_models()<br/><small>pipeline/representative_models.py</small>")
@@ -886,15 +887,15 @@ flowchart LR
     pipeline_representative_models_market_energy_lev_f6b667fe -->|calls| statistics_3d18b2ea
     pipeline_representative_models_market_energy_lev_f6b667fe -->|calls| pipeline_representative_models_summary_stats_ec559c15
     pipeline_representative_models_summary_stats_ec559c15 -->|calls| statistics_3d18b2ea
-    pipeline_model_monitoring_main_a2682423 -->|calls| pipeline_model_monitoring_read_json_903356b3
     pipeline_representative_models_build_models_80982d9d -->|calls| json_05d97e6e
     pipeline_representative_models_build_models_80982d9d -->|calls| pipeline_representative_models_build_model_fa9f9c03
     pipeline_run_scrape_main_3befb113 -->|calls| pipeline_run_scrape_load_scraper_d543fa06
     pipeline_run_scrape_main_3befb113 -->|calls| json_05d97e6e
+    pipeline_model_monitoring_main_a2682423 -->|calls| pipeline_model_monitoring_read_json_903356b3
     pipeline_export_json_386f2418 -->|imports| json_05d97e6e
     pipeline_run_scrape_b852df2d -->|imports| importlib_a5e0f99b
     pipeline_run_scrape_b852df2d -->|imports| json_05d97e6e
-    %% Omitted for readability: 287 nodes, 1 edges
+    %% Omitted for readability: 278 nodes, 1 edges
     class pipeline_representative_models_build_model_fa9f9c03 function;
     class pipeline_representative_models_build_models_80982d9d function;
     class pipeline_representative_models_benchmark_aed60afb function;
@@ -944,6 +945,22 @@ flowchart LR
 </tr>
 <tr>
   <td>2</td>
+  <td><code>diff_runs()</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>main()</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
+  <td><code>get_snapshots_for_run()</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
+  <td>diff_runs() node in pipeline/diff_report.py.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>get_snapshots_for_run()</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>diff_runs()</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
+  <td><code>json</code></td>
+  <td>get_snapshots_for_run() node in pipeline/diff_report.py.</td>
+</tr>
+<tr>
+  <td>4</td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -951,7 +968,7 @@ flowchart LR
   <td>main() node in pipeline/diff_report.py.</td>
 </tr>
 <tr>
-  <td>3</td>
+  <td>5</td>
   <td><code>print_diff_report()</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
@@ -959,7 +976,7 @@ flowchart LR
   <td>print_diff_report() node in pipeline/diff_report.py.</td>
 </tr>
 <tr>
-  <td>4</td>
+  <td>6</td>
   <td><code>derive_provenance()</code><br><small style="color:var(--muted)">pipeline/export_json.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>export_all()</code><br><small style="color:var(--muted)">pipeline/export_json.py</small><br><code>run_scrape.py</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small><br><code>tally_provenance()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
@@ -967,7 +984,7 @@ flowchart LR
   <td>derive_provenance() node in pipeline/export_json.py.</td>
 </tr>
 <tr>
-  <td>5</td>
+  <td>7</td>
   <td><code>export_all()</code><br><small style="color:var(--muted)">pipeline/export_json.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -975,7 +992,23 @@ flowchart LR
   <td>Exports documentation data to a target format.</td>
 </tr>
 <tr>
-  <td>6</td>
+  <td>8</td>
+  <td><code>export_representative_models()</code><br><small style="color:var(--muted)">pipeline/export_json.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>export_all()</code><br><small style="color:var(--muted)">pipeline/export_json.py</small></td>
+  <td><code>build_models()</code><br><small style="color:var(--muted)">pipeline/representative_models.py</small><br><code>contextlib</code><br><code>json</code><br>+5 more</td>
+  <td>Exports documentation data to a target format.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>start_model_receipt()</code><br><small style="color:var(--muted)">pipeline/export_json.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>export representative models()</code><br><small style="color:var(--muted)">pipeline/export_json.py</small><br><code>main()</code><br><small style="color:var(--muted)">pipeline/representative_models.py</small><br><code>representative_models.py</code><br><small style="color:var(--muted)">pipeline/representative_models.py</small></td>
+  <td><code>observe_previous()</code><br><small style="color:var(--muted)">pipeline/model_monitoring.py</small></td>
+  <td>start_model_receipt() node in pipeline/export_json.py.</td>
+</tr>
+<tr>
+  <td>10</td>
   <td><code>write_json()</code><br><small style="color:var(--muted)">pipeline/export_json.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>export_all()</code><br><small style="color:var(--muted)">pipeline/export_json.py</small></td>
@@ -983,7 +1016,7 @@ flowchart LR
   <td>write_json() node in pipeline/export_json.py.</td>
 </tr>
 <tr>
-  <td>7</td>
+  <td>11</td>
   <td><code>append_step_summary()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
@@ -991,7 +1024,15 @@ flowchart LR
   <td>append_step_summary() node in pipeline/run_scrape.py.</td>
 </tr>
 <tr>
-  <td>8</td>
+  <td>12</td>
+  <td><code>canonical_snapshot()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>store_results()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
+  <td><code>hashlib</code><br><code>json</code><br><code>TariffRecord</code><br><small style="color:var(--muted)">scrapers/base.py</small></td>
+  <td>canonical_snapshot() node in pipeline/run_scrape.py.</td>
+</tr>
+<tr>
+  <td>13</td>
   <td><code>emit_github_notice()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
@@ -999,7 +1040,7 @@ flowchart LR
   <td>Turns a local path or remote repository into analysis context.</td>
 </tr>
 <tr>
-  <td>9</td>
+  <td>14</td>
   <td><code>format_github_notice()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>emit_github_notice()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
@@ -1007,7 +1048,7 @@ flowchart LR
   <td>Turns a local path or remote repository into analysis context.</td>
 </tr>
 <tr>
-  <td>10</td>
+  <td>15</td>
   <td><code>names()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -1015,7 +1056,7 @@ flowchart LR
   <td>names() node in pipeline/run_scrape.py.</td>
 </tr>
 <tr>
-  <td>11</td>
+  <td>16</td>
   <td><code>format_summary_markdown()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
@@ -1023,7 +1064,7 @@ flowchart LR
   <td>Exports documentation data to a target format.</td>
 </tr>
 <tr>
-  <td>12</td>
+  <td>17</td>
   <td><code>cell()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -1031,7 +1072,7 @@ flowchart LR
   <td>cell() node in pipeline/run_scrape.py.</td>
 </tr>
 <tr>
-  <td>13</td>
+  <td>18</td>
   <td><code>init_db()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
@@ -1039,7 +1080,7 @@ flowchart LR
   <td>init_db() node in pipeline/run_scrape.py.</td>
 </tr>
 <tr>
-  <td>14</td>
+  <td>19</td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -1047,7 +1088,15 @@ flowchart LR
   <td>main() node in pipeline/run_scrape.py.</td>
 </tr>
 <tr>
-  <td>15</td>
+  <td>20</td>
+  <td><code>store_results()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>main()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
+  <td><code>canonical_snapshot()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small><br><code>TariffRecord</code><br><small style="color:var(--muted)">scrapers/base.py</small></td>
+  <td>store_results() node in pipeline/run_scrape.py.</td>
+</tr>
+<tr>
+  <td>21</td>
   <td><code>summarize_run()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
@@ -1055,7 +1104,7 @@ flowchart LR
   <td>summarize_run() node in pipeline/run_scrape.py.</td>
 </tr>
 <tr>
-  <td>16</td>
+  <td>22</td>
   <td><code>names_with()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -1063,7 +1112,7 @@ flowchart LR
   <td>names_with() node in pipeline/run_scrape.py.</td>
 </tr>
 <tr>
-  <td>17</td>
+  <td>23</td>
   <td><code>tally_provenance()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
@@ -1071,7 +1120,7 @@ flowchart LR
   <td>tally_provenance() node in pipeline/run_scrape.py.</td>
 </tr>
 <tr>
-  <td>18</td>
+  <td>24</td>
   <td><code>generate_missing_classes_report()</code><br><small style="color:var(--muted)">pipeline/validate.py</small></td>
   <td><span class="tag tag-async">Async</span></td>
   <td><code>export_all()</code><br><small style="color:var(--muted)">pipeline/export_json.py</small><br><code>export_json.py</code><br><small style="color:var(--muted)">pipeline/export_json.py</small><br><code>main()</code><br><small style="color:var(--muted)">pipeline/validate.py</small></td>
@@ -1079,7 +1128,7 @@ flowchart LR
   <td>generate_missing_classes_report() node in pipeline/validate.py.</td>
 </tr>
 <tr>
-  <td>19</td>
+  <td>25</td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/validate.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td>External entry / no inbound edge</td>
@@ -1087,7 +1136,7 @@ flowchart LR
   <td>main() node in pipeline/validate.py.</td>
 </tr>
 <tr>
-  <td>20</td>
+  <td>26</td>
   <td><code>print_issues()</code><br><small style="color:var(--muted)">pipeline/validate.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/validate.py</small></td>
@@ -1095,7 +1144,7 @@ flowchart LR
   <td>print_issues() node in pipeline/validate.py.</td>
 </tr>
 <tr>
-  <td>21</td>
+  <td>27</td>
   <td><code>run_validation()</code><br><small style="color:var(--muted)">pipeline/validate.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/validate.py</small></td>
@@ -1103,7 +1152,7 @@ flowchart LR
   <td>run_validation() node in pipeline/validate.py.</td>
 </tr>
 <tr>
-  <td>22</td>
+  <td>28</td>
   <td><code>is_excluded_class_estimate()</code><br><small style="color:var(--muted)">scrapers/base.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>run_scrape.py</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small><br><code>tally_provenance()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
@@ -1111,39 +1160,7 @@ flowchart LR
   <td>is_excluded_class_estimate() node in scrapers/base.py.</td>
 </tr>
 <tr>
-  <td>23</td>
-  <td><code>get_active_utilities()</code><br><small style="color:var(--muted)">scrapers/registry.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>main()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small><br><code>run_scrape.py</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
-  <td><code>load_registry()</code><br><small style="color:var(--muted)">scrapers/registry.py</small></td>
-  <td>get_active_utilities() node in scrapers/registry.py.</td>
-</tr>
-<tr>
-  <td>24</td>
-  <td><code>get_utilities_by_province()</code><br><small style="color:var(--muted)">scrapers/registry.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>load_registry()</code><br><small style="color:var(--muted)">scrapers/registry.py</small></td>
-  <td>get_utilities_by_province() node in scrapers/registry.py.</td>
-</tr>
-<tr>
-  <td>25</td>
-  <td><code>get_utility()</code><br><small style="color:var(--muted)">scrapers/registry.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>load_registry()</code><br><small style="color:var(--muted)">scrapers/registry.py</small></td>
-  <td>get_utility() node in scrapers/registry.py.</td>
-</tr>
-<tr>
-  <td>26</td>
-  <td><code>load_registry()</code><br><small style="color:var(--muted)">scrapers/registry.py</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>get_active_utilities()</code><br><small style="color:var(--muted)">scrapers/registry.py</small><br><code>get_utilities_by_province()</code><br><small style="color:var(--muted)">scrapers/registry.py</small><br><code>get_utility()</code><br><small style="color:var(--muted)">scrapers/registry.py</small><br>+2 more</td>
-  <td><code>json</code></td>
-  <td>load_registry() node in scrapers/registry.py.</td>
-</tr>
-<tr>
-  <td>27</td>
+  <td>29</td>
   <td><code>setup_logging()</code><br><small style="color:var(--muted)">scrapers/utils/logging_config.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>diff_report.py</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small><br><code>export_all()</code><br><small style="color:var(--muted)">pipeline/export_json.py</small><br><code>export_json.py</code><br><small style="color:var(--muted)">pipeline/export_json.py</small><br>+5 more</td>
@@ -1151,28 +1168,12 @@ flowchart LR
   <td>setup_logging() node in scrapers/utils/logging_config.py.</td>
 </tr>
 <tr>
-  <td>28</td>
+  <td>30</td>
   <td><code>validate_batch()</code><br><small style="color:var(--muted)">scrapers/utils/validation.py</small></td>
   <td><span class="tag tag-func">Function</span></td>
   <td><code>main()</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small><br><code>run_scrape.py</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
   <td><code>TariffRecord</code><br><small style="color:var(--muted)">scrapers/base.py</small><br><code>validate_tariff()</code><br><small style="color:var(--muted)">scrapers/utils/validation.py</small></td>
   <td>validate_batch() node in scrapers/utils/validation.py.</td>
-</tr>
-<tr>
-  <td>29</td>
-  <td><code>diff_report.py</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
-  <td><span class="tag tag-class">Module</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>argparse</code><br><code>json</code><br><code>logging</code><br>+5 more</td>
-  <td>Module file in pipeline/diff_report.py.</td>
-</tr>
-<tr>
-  <td>30</td>
-  <td><code>export_json.py</code><br><small style="color:var(--muted)">pipeline/export_json.py</small></td>
-  <td><span class="tag tag-class">Module</span></td>
-  <td><code>run_scrape.py</code><br><small style="color:var(--muted)">pipeline/run_scrape.py</small></td>
-  <td><code>argparse</code><br><code>contextlib</code><br><code>datetime</code><br>+13 more</td>
-  <td>Module file in pipeline/export_json.py.</td>
 </tr>
 </table>
 
@@ -1182,30 +1183,30 @@ flowchart LR
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
       <tr><td><code>pipeline/representative_models.py</code></td><td>155 nodes</td></tr>
-<tr><td><code>pipeline/model_monitoring.py</code></td><td>47 nodes</td></tr>
+<tr><td><code>pipeline/model_monitoring.py</code></td><td>49 nodes</td></tr>
 <tr><td><code>pipeline/run_scrape.py</code></td><td>26 nodes</td></tr>
 <tr><td><code>pipeline/export_json.py</code></td><td>12 nodes</td></tr>
-<tr><td><code>scrapers/registry.py</code></td><td>10 nodes</td></tr>
 <tr><td><code>pipeline/diff_report.py</code></td><td>9 nodes</td></tr>
 <tr><td><code>pipeline/validate.py</code></td><td>9 nodes</td></tr>
 <tr><td><code>scrapers/utils/logging_config.py</code></td><td>4 nodes</td></tr>
+<tr><td><code>scrapers/base.py</code></td><td>2 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: calls x281, contains x151, explains x114, references x72. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: calls x275, contains x148, explains x110, references x74. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
 
 <!-- ====== 5. Market data and maintenance scripts ====== -->
 <h2 id="scripts">5. Market data and maintenance scripts</h2>
-<p>Market data and maintenance scripts groups implementation around scripts, ontario, build, graphify, mostly in scripts/generate_market_pricing.py, scripts/graphify_hook.py, scripts/archive_ontario_price.py. This section covers 457 nodes and 1080 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<p>Market data and maintenance scripts groups implementation around scripts, ontario, build, marketpy, mostly in scripts/generate_market_pricing.py, scripts/graphify_hook.py, scripts/archive_ontario_price.py. This section covers 470 nodes and 1137 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Market data and maintenance scripts (457 nodes, 1080 edges)
+    %% Section: Market data and maintenance scripts (470 nodes, 1137 edges)
     subgraph scripts_scripts_preserve_ieso_reports_py_0c1c4a5b["scripts/preserve_ieso_reports.py"]
         scripts_preserve_ieso_reports_rawreportsource_dc7381e5("RawReportSource<br/><small>scripts/preserve_ieso_reports.py</small>")
         scripts_preserve_ieso_reports_rawreportsource_in_b2726a1f("__init__()<br/><small>scripts/preserve_ieso_reports.py</small>")
@@ -1223,13 +1224,15 @@ flowchart LR
         scripts_build_alberta_market_source_init_c7f61884("__init__()<br/><small>scripts/build_alberta_market.py</small>")
         scripts_build_alberta_market_source_get_a163c60f("get()<br/><small>scripts/build_alberta_market.py</small>")
     end
-    subgraph scripts_scripts_graphify_hook_py_f4d85c6e["scripts/graphify_hook.py"]
-        scripts_graphify_hook_refresh_c87e2b0e("refresh()<br/><small>scripts/graphify_hook.py</small>")
-        scripts_graphify_hook_status_ff9a5d75("status()<br/><small>scripts/graphify_hook.py</small>")
+    subgraph scripts_scripts_archive_ontario_price_py_6b0c4fac["scripts/archive_ontario_price.py"]
+        scripts_archive_ontario_price_update_archive_bb84a868("update_archive()<br/><small>scripts/archive_ontario_price.py</small>")
+        scripts_archive_ontario_price_fc7e2c69("archive_ontario_price.py")
     end
-    scripts_archive_ontario_price_update_archive_bb84a868("update_archive()<br/><small>scripts/archive_ontario_price.py</small>")
+    subgraph scripts_scripts_generate_market_pricing_py_82d3af1f["scripts/generate_market_pricing.py"]
+        scripts_generate_market_pricing_build_document_99a7acc1("build_document()<br/><small>scripts/generate_market_pricing.py</small>")
+        scripts_generate_market_pricing_1c0077c1("generate_market_pricing.py")
+    end
     scripts_build_ontario_market_build_80754a_b332b112("build()<br/><small>scripts/build_ontario_market.py</small>")
-    scripts_generate_market_pricing_build_document_99a7acc1("build_document()<br/><small>scripts/generate_market_pricing.py</small>")
     scripts_build_alberta_market_source_f2fc2425 -->|method| scripts_build_alberta_market_source_init_c7f61884
     scripts_build_alberta_market_source_f2fc2425 -->|method| scripts_build_alberta_market_source_get_a163c60f
     scripts_preserve_ieso_reports_rawreportsource_dc7381e5 -->|method| scripts_preserve_ieso_reports_rawreportsource_in_b2726a1f
@@ -1241,7 +1244,7 @@ flowchart LR
     scripts_preserve_ieso_reports_rawstore_bad6f040 -->|method| scripts_preserve_ieso_reports_rawstore_names_31ca9e51
     scripts_preserve_ieso_reports_rawreportsource_in_b2726a1f -->|calls| scripts_preserve_ieso_reports_rawstore_bad6f040
     scripts_preserve_ieso_reports_rawreportsource_in_b2726a1f -->|calls| scripts_preserve_ieso_reports_rawstore_names_31ca9e51
-    %% Omitted for readability: 439 nodes, 0 edges
+    %% Omitted for readability: 452 nodes, 0 edges
     class scripts_preserve_ieso_reports_rawreportsource_dc7381e5 klass;
     class scripts_preserve_ieso_reports_rawreportsource_in_b2726a1f function;
     class scripts_preserve_ieso_reports_rawreportsource_ca_7b6453cc function;
@@ -1255,11 +1258,11 @@ flowchart LR
     class scripts_build_alberta_market_source_f2fc2425 klass;
     class scripts_build_alberta_market_source_init_c7f61884 function;
     class scripts_build_alberta_market_source_get_a163c60f function;
-    class scripts_graphify_hook_refresh_c87e2b0e function;
-    class scripts_graphify_hook_status_ff9a5d75 function;
     class scripts_archive_ontario_price_update_archive_bb84a868 function;
-    class scripts_build_ontario_market_build_80754a_b332b112 function;
+    class scripts_archive_ontario_price_fc7e2c69 module;
     class scripts_generate_market_pricing_build_document_99a7acc1 function;
+    class scripts_generate_market_pricing_1c0077c1 module;
+    class scripts_build_ontario_market_build_80754a_b332b112 function;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -1531,16 +1534,16 @@ flowchart LR
       <tr><td><code>scripts/generate_market_pricing.py</code></td><td>75 nodes</td></tr>
 <tr><td><code>scripts/graphify_hook.py</code></td><td>68 nodes</td></tr>
 <tr><td><code>scripts/archive_ontario_price.py</code></td><td>66 nodes</td></tr>
-<tr><td><code>scripts/build_ontario_market.py</code></td><td>59 nodes</td></tr>
+<tr><td><code>scripts/build_ontario_market.py</code></td><td>61 nodes</td></tr>
 <tr><td><code>scripts/preserve_ieso_reports.py</code></td><td>26 nodes</td></tr>
+<tr><td><code>scripts/coverage_gate.py</code></td><td>25 nodes</td></tr>
+<tr><td><code>scripts/build_alberta_market.py</code></td><td>24 nodes</td></tr>
 <tr><td><code>scripts/check_db_history.py</code></td><td>24 nodes</td></tr>
-<tr><td><code>scripts/build_alberta_market.py</code></td><td>23 nodes</td></tr>
-<tr><td><code>scripts/coverage_gate.py</code></td><td>23 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: calls x450, contains x249, references x177, explains x112. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: calls x485, contains x254, references x180, explains x115. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
@@ -1983,17 +1986,17 @@ flowchart LR
   <div class="card">
     <h4>Graph</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>Nodes</td><td>2707</td></tr>
-      <tr><td>Edges</td><td>8094</td></tr>
+      <tr><td>Nodes</td><td>2714</td></tr>
+      <tr><td>Edges</td><td>8111</td></tr>
       <tr><td>Hyperedges</td><td>0</td></tr>
-      <tr><td>Communities</td><td>94</td></tr>
+      <tr><td>Communities</td><td>106</td></tr>
       <tr><td>Documented Sections</td><td>6</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Edge Confidence</h4>
     <table style="width:100%;font-size:0.85rem;">
-      <tr><td>EXTRACTED</td><td>7801</td></tr>
+      <tr><td>EXTRACTED</td><td>7818</td></tr>
       <tr><td>INFERRED</td><td>293</td></tr>
       <tr><td>AMBIGUOUS</td><td>0</td></tr>
     </table>
@@ -2002,7 +2005,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>canada-utility-costs — Architecture Documentation</p>
-  <p>Generated: 2026-11-19 14:39 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-19 16:05 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->

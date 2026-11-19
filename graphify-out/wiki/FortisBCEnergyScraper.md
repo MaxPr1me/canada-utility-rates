@@ -33,12 +33,13 @@
 
 ## Relationships
 
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (13 shared connections)
-- [TariffRecord](TariffRecord.md) (12 shared connections)
-- [BaseScraper](BaseScraper.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
+- [RateComponent](RateComponent.md) (13 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (11 shared connections)
+- [BaseScraper](BaseScraper.md) (5 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 - [.mark_fallback](mark_fallback.md) (1 shared connections)
+- [FortisAlbertaScraper](FortisAlbertaScraper.md) (1 shared connections)
 
 ## Source Files
 

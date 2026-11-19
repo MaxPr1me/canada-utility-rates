@@ -1,6 +1,6 @@
 # ntpc.py
 
-> 56 nodes
+> 59 nodes
 
 ## Key Concepts
 
@@ -21,30 +21,27 @@
 - **_Schedule** (7 connections) — `scrapers/utilities/ntpc.py`
 - **build_records()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **_iso()** (7 connections) — `scrapers/utilities/ntpc.py`
+- **.scrape()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **parse_schedule_index()** (7 connections) — `scrapers/utilities/ntpc.py`
-- **bs4** (7 connections)
 - **_Block** (6 connections) — `scrapers/utilities/ntpc.py`
 - **_content()** (6 connections) — `scrapers/utilities/ntpc.py`
 - **_parse_block()** (6 connections) — `scrapers/utilities/ntpc.py`
 - **parse_tpsp()** (6 connections) — `scrapers/utilities/ntpc.py`
 - **_ResidentialPage** (5 connections) — `scrapers/utilities/ntpc.py`
 - **_schedule_component()** (5 connections) — `scrapers/utilities/ntpc.py`
-- *... and 31 more nodes in this community*
+- *... and 34 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (14 shared connections)
-- [re](re.md) (12 shared connections)
-- [TariffRecord](TariffRecord.md) (10 shared connections)
-- [DocumentPage](DocumentPage.md) (6 shared connections)
+- [enmax_power.py](enmax_power.py.md) (12 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (10 shared connections)
+- [BaseScraper](BaseScraper.md) (9 shared connections)
+- [RateComponent](RateComponent.md) (7 shared connections)
+- [.fetch_page](fetch_page.md) (7 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
-- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (1 shared connections)
+- [.mark_fallback](mark_fallback.md) (1 shared connections)
 - [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -52,7 +49,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 174 (96%)
+- EXTRACTED: 176 (96%)
 - INFERRED: 8 (4%)
 - AMBIGUOUS: 0 (0%)
 

@@ -15,7 +15,7 @@
 - [build_demand_records](build_demand_records.md) (2 shared connections)
 - [Classification](Classification.md) (1 shared connections)
 - [TariffSheet](TariffSheet.md) (1 shared connections)
-- [._tariff_demand_records](_tariff_demand_records.md) (1 shared connections)
+- [._energy_entries](_energy_entries.md) (1 shared connections)
 - [parse_tariff_pages](parse_tariff_pages.md) (1 shared connections)
 
 ## Source Files

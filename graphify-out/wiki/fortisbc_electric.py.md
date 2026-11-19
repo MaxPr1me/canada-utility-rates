@@ -33,12 +33,14 @@
 
 ## Relationships
 
-- [DocumentPage](DocumentPage.md) (24 shared connections)
-- [TariffRecord](TariffRecord.md) (17 shared connections)
-- [re](re.md) (16 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (8 shared connections)
-- [BaseScraper](BaseScraper.md) (8 shared connections)
-- [aeso.py](aeso.py.md) (1 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (20 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (17 shared connections)
+- [enmax_power.py](enmax_power.py.md) (16 shared connections)
+- [RateComponent](RateComponent.md) (8 shared connections)
+- [BaseScraper](BaseScraper.md) (7 shared connections)
+- [FortisBCElectricScraper](FortisBCElectricScraper.md) (3 shared connections)
+- [extract_schedule_pages](extract_schedule_pages.md) (2 shared connections)
+- [io](io.md) (1 shared connections)
 
 ## Source Files
 

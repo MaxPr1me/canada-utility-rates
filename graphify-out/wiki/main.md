@@ -1,35 +1,42 @@
 # main
 
-> 9 nodes
+> 15 nodes
 
 ## Key Concepts
 
-- **main()** (10 connections) — `scripts/build_ontario_market.py`
-- **render_document()** (6 connections) — `scripts/build_ontario_market.py`
-- **write_outputs()** (5 connections) — `scripts/build_ontario_market.py`
-- **parse_args()** (4 connections) — `scripts/build_ontario_market.py`
-- **_read()** (3 connections) — `scripts/build_ontario_market.py`
-- **Path** (3 connections)
-- **Namespace** (1 connections)
-- **The JSON bytes to write, or None when only generated_at would change.** (1 connections) — `scripts/build_ontario_market.py`
-- **Write every file to a temporary sibling first, then move them all into place.** (1 connections) — `scripts/build_ontario_market.py`
+- **main()** (14 connections) — `pipeline/model_monitoring.py`
+- **semantic_models()** (11 connections) — `pipeline/model_monitoring.py`
+- **fingerprint()** (10 connections) — `pipeline/model_monitoring.py`
+- **_normalize()** (8 connections) — `pipeline/model_monitoring.py`
+- **generation_receipt()** (8 connections) — `pipeline/model_monitoring.py`
+- **_json()** (7 connections) — `pipeline/model_monitoring.py`
+- **Any** (7 connections)
+- **input_fingerprints()** (6 connections) — `pipeline/model_monitoring.py`
+- **run_identity()** (5 connections) — `pipeline/model_monitoring.py`
+- **_median()** (4 connections) — `pipeline/model_monitoring.py`
+- **utc_now()** (4 connections) — `pipeline/model_monitoring.py`
+- **_check_benchmark()** (3 connections) — `pipeline/model_monitoring.py`
+- **Fingerprint calculation inputs, preserving first-match rules but not synthetic…** (1 connections) — `pipeline/model_monitoring.py`
+- **Project the supported export, not its timestamps, machine paths or illustrative…** (1 connections) — `pipeline/model_monitoring.py`
+- **Success comes from the producer, never from an unchanged output file.** (1 connections) — `pipeline/model_monitoring.py`
 
 ## Relationships
 
-- [build_ontario_market.py](build_ontario_market.py.md) (8 shared connections)
-- [run_scrape.py](run_scrape.py.md) (2 shared connections)
-- [aeso.py](aeso.py.md) (2 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (14 shared connections)
+- [input_checks](input_checks.md) (9 shared connections)
+- [record_refresh](record_refresh.md) (8 shared connections)
+- [run_scrape.py](run_scrape.py.md) (6 shared connections)
+- [market_pricing.py](market_pricing.py.md) (2 shared connections)
 - [os](os.md) (1 shared connections)
 
 ## Source Files
 
-- `scripts/build_ontario_market.py`
+- `pipeline/model_monitoring.py`
 
 ## Audit Trail
 
-- EXTRACTED: 24 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 64 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

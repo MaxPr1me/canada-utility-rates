@@ -1,9 +1,10 @@
 # BCHydroScraper
 
-> 50 nodes
+> 72 nodes
 
 ## Key Concepts
 
+- **TariffRecord** (403 connections) — `scrapers/base.py`
 - **extract_effective_date()** (26 connections) — `scrapers/utils/parsing.py`
 - **BCHydroScraper** (25 connections) — `scrapers/utilities/bc_hydro.py`
 - **.now_iso()** (19 connections) — `scrapers/base.py`
@@ -11,6 +12,7 @@
 - **._try_live_scrape()** (17 connections) — `scrapers/utilities/saskpower.py`
 - **SaskPowerScraper** (16 connections) — `scrapers/utilities/saskpower.py`
 - **._parse_business_tariff()** (10 connections) — `scrapers/utilities/bc_hydro.py`
+- **TorontoHydroScraper** (9 connections) — `scrapers/utilities/toronto_hydro.py`
 - **._numbered_section()** (9 connections) — `scrapers/utilities/bc_hydro.py`
 - **._parse_residential_schedules()** (9 connections) — `scrapers/utilities/saskpower.py`
 - **._parse_transformation()** (9 connections) — `scrapers/utilities/saskpower.py`
@@ -27,36 +29,39 @@
 - **._parse_business()** (6 connections) — `scrapers/utilities/bc_hydro.py`
 - **._parse_community_generation_tariff()** (6 connections) — `scrapers/utilities/bc_hydro.py`
 - **._parse_self_generation_tariff()** (6 connections) — `scrapers/utilities/bc_hydro.py`
-- **._parse_transmission_tariff()** (6 connections) — `scrapers/utilities/bc_hydro.py`
-- **._column_values()** (6 connections) — `scrapers/utilities/saskpower.py`
-- *... and 25 more nodes in this community*
+- *... and 47 more nodes in this community*
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (33 shared connections)
-- [BaseScraper](BaseScraper.md) (20 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (20 shared connections)
-- [DocumentPage](DocumentPage.md) (17 shared connections)
-- [.fetch_page](fetch_page.md) (7 shared connections)
-- [.mark_fallback](mark_fallback.md) (4 shared connections)
-- [.__init__](__init__.md) (2 shared connections)
-- [._parse_building_extras](_parse_building_extras.md) (1 shared connections)
-- [ntpc.py](ntpc.py.md) (1 shared connections)
-- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
-- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) (1 shared connections)
-- [re](re.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (49 shared connections)
+- [RateComponent](RateComponent.md) (45 shared connections)
+- [.fetch_page](fetch_page.md) (44 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (43 shared connections)
+- [.mark_fallback](mark_fallback.md) (26 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (19 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (17 shared connections)
+- [maritime_electric.py](maritime_electric.py.md) (15 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (14 shared connections)
+- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) (14 shared connections)
+- [EnbridgeGasScraper](EnbridgeGasScraper.md) (12 shared connections)
+- [FortisBCEnergyScraper](FortisBCEnergyScraper.md) (11 shared connections)
 
 ## Source Files
 
 - `scrapers/base.py`
 - `scrapers/utilities/bc_hydro.py`
+- `scrapers/utilities/enbridge_gas.py`
+- `scrapers/utilities/energir.py`
+- `scrapers/utilities/heritage_gas.py`
+- `scrapers/utilities/liberty_gas_nb.py`
 - `scrapers/utilities/saskpower.py`
+- `scrapers/utilities/toronto_hydro.py`
 - `scrapers/utils/parsing.py`
 
 ## Audit Trail
 
-- EXTRACTED: 201 (97%)
-- INFERRED: 6 (3%)
+- EXTRACTED: 553 (87%)
+- INFERRED: 80 (13%)
 - AMBIGUOUS: 0 (0%)
 
 ---
