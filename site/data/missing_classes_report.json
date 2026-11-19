@@ -26,6 +26,50 @@
     ]
   },
   {
+    "utility": "City of Lethbridge Electric Utility",
+    "province": "AB",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "Medium Single Phase Distribution (Rate 992)",
+      "General Three-Phase Distribution (Rate 994)",
+      "Medium Three-Phase Distribution (Rate 995)",
+      "Large Three-Phase Distribution (Rate 996)",
+      "Primary Distribution (Rate 997)"
+    ]
+  },
+  {
+    "utility": "City of Medicine Hat Electric Utility",
+    "province": "AB",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "industrial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "Medium Commercial (Rate 3.3)",
+      "Large Commercial - Primary (Rate 4.1)",
+      "Industrial - Primary (Rate 5.1)"
+    ]
+  },
+  {
+    "utility": "City of Red Deer Electric Light & Power",
+    "province": "AB",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service (50 kVA or greater) (Rate 64)",
+      "Large General Service/Industrial (Rate 78)"
+    ]
+  },
+  {
     "utility": "ENMAX Power",
     "province": "AB",
     "utility_type": "electricity",

@@ -30,6 +30,36 @@
     "notes": null
   },
   {
+    "id": 6621,
+    "name": "City of Lethbridge Electric Utility",
+    "province": "AB",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 6616,
+    "name": "City of Medicine Hat Electric Utility",
+    "province": "AB",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
+    "id": 6629,
+    "name": "City of Red Deer Electric Light & Power",
+    "province": "AB",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
     "id": 513,
     "name": "Direct Energy Regulated Services",
     "province": "AB",
