@@ -300,6 +300,16 @@
     "notes": null
   },
   {
+    "id": 6637,
+    "name": "Naka Power Utilities (NWT)",
+    "province": "NT",
+    "utility_type": "electricity",
+    "website": null,
+    "rate_page_url": null,
+    "regulator": null,
+    "notes": null
+  },
+  {
     "id": 62,
     "name": "Northwest Territories Power Corporation",
     "province": "NT",

@@ -264,6 +264,20 @@
     ]
   },
   {
+    "utility": "Naka Power Utilities (NWT)",
+    "province": "NT",
+    "utility_type": "electricity",
+    "classes_present": [
+      "commercial",
+      "residential"
+    ],
+    "demand_tariffs_missing_thresholds": [
+      "General Service (Commercial) — Snare Zone (Yellowknife)",
+      "General Service — Taltson Zone",
+      "Large General Service — Taltson Zone"
+    ]
+  },
+  {
     "utility": "Northwest Territories Power Corporation",
     "province": "NT",
     "utility_type": "electricity",
