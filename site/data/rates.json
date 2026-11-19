@@ -41694,7 +41694,7 @@
   {
     "id": 1220,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Burgeo School and Library (Rate 1.3)",
     "tariff_code": "1.3",
     "utility_type": "electricity",
@@ -41721,9 +41721,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48390,
+        "id": 68907,
         "tariff_id": 1220,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -41747,7 +41747,7 @@
         "source_detail": "PDF page 37",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
@@ -41872,7 +41872,7 @@
   {
     "id": 1221,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "General Service",
     "tariff_code": "2.1",
     "utility_type": "electricity",
@@ -41899,9 +41899,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48394,
+        "id": 68911,
         "tariff_id": 1221,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Demand Charge (December-March)",
         "sub_component": null,
@@ -41925,12 +41925,12 @@
         "source_detail": "PDF page 38",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Billed per kW of billing demand (maximum demand registered in the current month); only demand in excess of 10 kW is billed",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48395,
+        "id": 68912,
         "tariff_id": 1221,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Demand Charge (April-November)",
         "sub_component": null,
@@ -41954,12 +41954,12 @@
         "source_detail": "PDF page 38",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Billed per kW of billing demand (maximum demand registered in the current month); only demand in excess of 10 kW is billed",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48396,
+        "id": 68913,
         "tariff_id": 1221,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - First 3,500 kilowatt-hours",
         "sub_component": null,
@@ -41983,12 +41983,12 @@
         "source_detail": "PDF page 38",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48397,
+        "id": 68914,
         "tariff_id": 1221,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - All excess kilowatt-hours",
         "sub_component": null,
@@ -42012,12 +42012,12 @@
         "source_detail": "PDF page 38",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48391,
+        "id": 68908,
         "tariff_id": 1221,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Unmetered)",
         "sub_component": "Unmetered",
@@ -42041,12 +42041,12 @@
         "source_detail": "PDF page 38",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Unmetered' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48392,
+        "id": 68909,
         "tariff_id": 1221,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Single Phase)",
         "sub_component": "Single Phase",
@@ -42070,12 +42070,12 @@
         "source_detail": "PDF page 38",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Single Phase' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48393,
+        "id": 68910,
         "tariff_id": 1221,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Three Phase)",
         "sub_component": "Three Phase",
@@ -42099,14 +42099,14 @@
         "source_detail": "PDF page 38",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Three Phase' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1232,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "General Service 0-10 kW - Labrador (Rate 2.1L)",
     "tariff_code": "2.1L",
     "utility_type": "electricity",
@@ -42133,9 +42133,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48441,
+        "id": 68958,
         "tariff_id": 1232,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -42159,12 +42159,12 @@
         "source_detail": "PDF page 52",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48438,
+        "id": 68955,
         "tariff_id": 1232,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Unmetered)",
         "sub_component": "Unmetered",
@@ -42188,12 +42188,12 @@
         "source_detail": "PDF page 52",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Unmetered' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48439,
+        "id": 68956,
         "tariff_id": 1232,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Single Phase)",
         "sub_component": "Single Phase",
@@ -42217,12 +42217,12 @@
         "source_detail": "PDF page 52",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Single Phase' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48440,
+        "id": 68957,
         "tariff_id": 1232,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Three Phase)",
         "sub_component": "Three Phase",
@@ -42246,14 +42246,14 @@
         "source_detail": "PDF page 52",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Three Phase' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1223,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "General Service 1,000 kVA and Over (Rate 2.4)",
     "tariff_code": "2.4",
     "utility_type": "electricity",
@@ -42280,9 +42280,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48404,
+        "id": 68921,
         "tariff_id": 1223,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Demand Charge (December-March)",
         "sub_component": null,
@@ -42306,12 +42306,12 @@
         "source_detail": "PDF page 40",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Billed per kVA of billing demand (maximum demand registered in the current month)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48405,
+        "id": 68922,
         "tariff_id": 1223,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Demand Charge (April-November)",
         "sub_component": null,
@@ -42335,12 +42335,12 @@
         "source_detail": "PDF page 40",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Billed per kVA of billing demand (maximum demand registered in the current month)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48406,
+        "id": 68923,
         "tariff_id": 1223,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - First 75,000 kilowatt-hours",
         "sub_component": null,
@@ -42364,12 +42364,12 @@
         "source_detail": "PDF page 40",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48407,
+        "id": 68924,
         "tariff_id": 1223,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - All excess kilowatt-hours",
         "sub_component": null,
@@ -42393,12 +42393,12 @@
         "source_detail": "PDF page 40",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48403,
+        "id": 68920,
         "tariff_id": 1223,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge",
         "sub_component": null,
@@ -42422,14 +42422,14 @@
         "source_detail": "PDF page 40",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1235,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "General Service 1,000 kVA and Over - Labrador (Rate 2.4L)",
     "tariff_code": "2.4L",
     "utility_type": "electricity",
@@ -42456,9 +42456,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48449,
+        "id": 68966,
         "tariff_id": 1235,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -42482,12 +42482,12 @@
         "source_detail": "PDF page 55",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Maximum demand registered on the meter in the current month, billed per kVA",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48450,
+        "id": 68967,
         "tariff_id": 1235,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -42511,14 +42511,14 @@
         "source_detail": "PDF page 55",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1233,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "General Service 10-100 kW - Labrador (Rate 2.2L)",
     "tariff_code": "2.2L",
     "utility_type": "electricity",
@@ -42545,9 +42545,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48445,
+        "id": 68962,
         "tariff_id": 1233,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -42571,12 +42571,12 @@
         "source_detail": "PDF page 53",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Maximum demand registered on the meter in the current month, billed per kW",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48446,
+        "id": 68963,
         "tariff_id": 1233,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -42600,12 +42600,12 @@
         "source_detail": "PDF page 53",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48442,
+        "id": 68959,
         "tariff_id": 1233,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Unmetered)",
         "sub_component": "Unmetered",
@@ -42629,12 +42629,12 @@
         "source_detail": "PDF page 53",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Unmetered' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48443,
+        "id": 68960,
         "tariff_id": 1233,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Single Phase)",
         "sub_component": "Single Phase",
@@ -42658,12 +42658,12 @@
         "source_detail": "PDF page 53",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Single Phase' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48444,
+        "id": 68961,
         "tariff_id": 1233,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Three Phase)",
         "sub_component": "Three Phase",
@@ -42687,14 +42687,14 @@
         "source_detail": "PDF page 53",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Three Phase' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1222,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "General Service 110 kVA (100 kW)-1,000 kVA (Rate 2.3)",
     "tariff_code": "2.3",
     "utility_type": "electricity",
@@ -42721,9 +42721,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48399,
+        "id": 68916,
         "tariff_id": 1222,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Demand Charge (December-March)",
         "sub_component": null,
@@ -42747,12 +42747,12 @@
         "source_detail": "PDF page 39",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Billed per kVA of billing demand (maximum demand registered in the current month)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48400,
+        "id": 68917,
         "tariff_id": 1222,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Demand Charge (April-November)",
         "sub_component": null,
@@ -42776,12 +42776,12 @@
         "source_detail": "PDF page 39",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Billed per kVA of billing demand (maximum demand registered in the current month)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48401,
+        "id": 68918,
         "tariff_id": 1222,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - First 150 kilowatt-hours per kVA of billing demand, up to a maximum of 50,000 kilowatt-hours",
         "sub_component": null,
@@ -42805,12 +42805,12 @@
         "source_detail": "PDF page 39",
         "confidence": "high",
         "notes": "Provenance: live_parsed. First 150 kWh per kVA of billing demand, capped at 50,000 kWh per month",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48402,
+        "id": 68919,
         "tariff_id": 1222,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - All excess kilowatt-hours",
         "sub_component": null,
@@ -42834,12 +42834,12 @@
         "source_detail": "PDF page 39",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48398,
+        "id": 68915,
         "tariff_id": 1222,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge",
         "sub_component": null,
@@ -42863,14 +42863,14 @@
         "source_detail": "PDF page 39",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1234,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "General Service 110 kVA (100 kW)-1,000 kVA - Labrador (Rate 2.3L)",
     "tariff_code": "2.3L",
     "utility_type": "electricity",
@@ -42897,9 +42897,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48447,
+        "id": 68964,
         "tariff_id": 1234,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -42923,12 +42923,12 @@
         "source_detail": "PDF page 54",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Maximum demand registered on the meter in the current month, billed per kVA",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48448,
+        "id": 68965,
         "tariff_id": 1234,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -42952,14 +42952,14 @@
         "source_detail": "PDF page 54",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1226,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "General Service Diesel 0-10 kW (Rate 2.1D)",
     "tariff_code": "2.1D",
     "utility_type": "electricity",
@@ -42986,9 +42986,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48423,
+        "id": 68940,
         "tariff_id": 1226,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -43012,12 +43012,12 @@
         "source_detail": "PDF page 44",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48420,
+        "id": 68937,
         "tariff_id": 1226,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Unmetered)",
         "sub_component": "Unmetered",
@@ -43041,12 +43041,12 @@
         "source_detail": "PDF page 44",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Unmetered' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48421,
+        "id": 68938,
         "tariff_id": 1226,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Single Phase)",
         "sub_component": "Single Phase",
@@ -43070,12 +43070,12 @@
         "source_detail": "PDF page 44",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Single Phase' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48422,
+        "id": 68939,
         "tariff_id": 1226,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Three Phase)",
         "sub_component": "Three Phase",
@@ -43099,14 +43099,14 @@
         "source_detail": "PDF page 44",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Three Phase' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1229,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "General Service Diesel 0-10 kW - Government Departments (Rate 2.1G)",
     "tariff_code": "2.1G",
     "utility_type": "electricity",
@@ -43133,9 +43133,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48432,
+        "id": 68949,
         "tariff_id": 1229,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -43159,12 +43159,12 @@
         "source_detail": "PDF page 48",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48431,
+        "id": 68948,
         "tariff_id": 1229,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge",
         "sub_component": null,
@@ -43188,14 +43188,14 @@
         "source_detail": "PDF page 48",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1227,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "General Service Diesel Over 10 kW (Rate 2.2D)",
     "tariff_code": "2.2D",
     "utility_type": "electricity",
@@ -43222,9 +43222,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48427,
+        "id": 68944,
         "tariff_id": 1227,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -43248,12 +43248,12 @@
         "source_detail": "PDF page 45",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Maximum demand registered on the meter in the current month, billed per kW",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48428,
+        "id": 68945,
         "tariff_id": 1227,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -43277,12 +43277,12 @@
         "source_detail": "PDF page 45",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48424,
+        "id": 68941,
         "tariff_id": 1227,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Unmetered)",
         "sub_component": "Unmetered",
@@ -43306,12 +43306,12 @@
         "source_detail": "PDF page 45",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Unmetered' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48425,
+        "id": 68942,
         "tariff_id": 1227,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Single Phase)",
         "sub_component": "Single Phase",
@@ -43335,12 +43335,12 @@
         "source_detail": "PDF page 45",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Single Phase' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48426,
+        "id": 68943,
         "tariff_id": 1227,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Three Phase)",
         "sub_component": "Three Phase",
@@ -43364,14 +43364,14 @@
         "source_detail": "PDF page 45",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Three Phase' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1230,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "General Service Diesel Over 10 kW - Government Departments (Rate 2.2G)",
     "tariff_code": "2.2G",
     "utility_type": "electricity",
@@ -43398,9 +43398,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48434,
+        "id": 68951,
         "tariff_id": 1230,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Demand Charge",
         "sub_component": null,
@@ -43424,12 +43424,12 @@
         "source_detail": "PDF page 49",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Maximum demand registered on the meter in the current month, billed per kW",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48435,
+        "id": 68952,
         "tariff_id": 1230,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -43453,12 +43453,12 @@
         "source_detail": "PDF page 49",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48433,
+        "id": 68950,
         "tariff_id": 1230,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge",
         "sub_component": null,
@@ -43482,14 +43482,14 @@
         "source_detail": "PDF page 49",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1483,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Island Industrial Firm",
     "tariff_code": "IND-FIRM",
     "utility_type": "electricity",
@@ -43516,9 +43516,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48451,
+        "id": 68968,
         "tariff_id": 1483,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Firm Billing Demand",
         "sub_component": null,
@@ -43542,12 +43542,12 @@
         "source_detail": "PDF pages 9, 10",
         "confidence": "high",
         "notes": "Provenance: live_parsed. As defined in the Industrial Service Agreement.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48452,
+        "id": 68969,
         "tariff_id": 1483,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Firm Base Energy",
         "sub_component": null,
@@ -43571,12 +43571,12 @@
         "source_detail": "PDF pages 9, 10",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48455,
+        "id": 68972,
         "tariff_id": 1483,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Specifically Assigned: Corner Brook Pulp and Paper Limited",
         "sub_component": "conditional",
@@ -43600,12 +43600,12 @@
         "source_detail": "PDF pages 9, 10",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Only for the named customer's specifically assigned plant.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48456,
+        "id": 68973,
         "tariff_id": 1483,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Specifically Assigned: Braya Renewable Fuels (Newfoundland) GP Inc.",
         "sub_component": "conditional",
@@ -43629,12 +43629,12 @@
         "source_detail": "PDF pages 9, 10",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Only for the named customer's specifically assigned plant.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48457,
+        "id": 68974,
         "tariff_id": 1483,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Specifically Assigned: Teck Resources Limited",
         "sub_component": "conditional",
@@ -43658,12 +43658,12 @@
         "source_detail": "PDF pages 9, 10",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Only for the named customer's specifically assigned plant.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48458,
+        "id": 68975,
         "tariff_id": 1483,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Specifically Assigned: Vale",
         "sub_component": "conditional",
@@ -43687,12 +43687,12 @@
         "source_detail": "PDF pages 9, 10",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Only for the named customer's specifically assigned plant.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48453,
+        "id": 68970,
         "tariff_id": 1483,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "rider",
         "component_name": "Project Cost Recovery Rider",
         "sub_component": null,
@@ -43716,12 +43716,12 @@
         "source_detail": "PDF pages 9, 10",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48454,
+        "id": 68971,
         "tariff_id": 1483,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "rider",
         "component_name": "CDM Cost Recovery Adjustment",
         "sub_component": null,
@@ -43745,14 +43745,14 @@
         "source_detail": "PDF pages 9, 10",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 4860,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Island Industrial Non-Firm - Non-Thermal Generation Source",
     "tariff_code": "IND-NONFIRM",
     "utility_type": "electricity",
@@ -43779,9 +43779,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48465,
+        "id": 68982,
         "tariff_id": 4860,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Non-Firm Off-Peak Energy (Market-Indexed)",
         "sub_component": null,
@@ -43805,12 +43805,12 @@
         "source_detail": "PDF pages 11, 12",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Off-Peak period. The monthly on-peak and off-peak energy charges are market-indexed and stored without a number ('Variable'): for each calendar month Hydro takes the weighted average (by each market's share of the previous month's kWh exports) of the NYISO Zone A and ISO New England Mass Hub 5 MW calendar-month day-ahead futures settlement prices after trading ends on the 19th day of the previous month, converted to Canadian dollars at that day's exchange rate and adjusted for losses and other market fees. The charge is the greater of that rate and the energy charge of Rate No. 2.4L (General Service 1,000 kVA and Over); that floor is not added to it. Hydro informs the customer on the first business day after the 21st of the preceding month and publishes the monthly on-/off-peak prices (cents/kWh) at https://nlhydro.com/electicity-rates/non-firm-rates-customers/. HST is not included.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48464,
+        "id": 68981,
         "tariff_id": 4860,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Non-Firm On-Peak Energy (Market-Indexed)",
         "sub_component": null,
@@ -43834,14 +43834,14 @@
         "source_detail": "PDF pages 11, 12",
         "confidence": "high",
         "notes": "Provenance: live_parsed. On-Peak period. The monthly on-peak and off-peak energy charges are market-indexed and stored without a number ('Variable'): for each calendar month Hydro takes the weighted average (by each market's share of the previous month's kWh exports) of the NYISO Zone A and ISO New England Mass Hub 5 MW calendar-month day-ahead futures settlement prices after trading ends on the 19th day of the previous month, converted to Canadian dollars at that day's exchange rate and adjusted for losses and other market fees. The charge is the greater of that rate and the energy charge of Rate No. 2.4L (General Service 1,000 kVA and Over); that floor is not added to it. Hydro informs the customer on the first business day after the 21st of the preceding month and publishes the monthly on-/off-peak prices (cents/kWh) at https://nlhydro.com/electicity-rates/non-firm-rates-customers/. HST is not included.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1484,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Labrador Industrial Firm",
     "tariff_code": "LAB-IND",
     "utility_type": "electricity",
@@ -43868,9 +43868,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48459,
+        "id": 68976,
         "tariff_id": 1484,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Transmission Firm Demand (existing customers only)",
         "sub_component": "conditional",
@@ -43894,12 +43894,12 @@
         "source_detail": "PDF pages 62, 63, 64, 65",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48460,
+        "id": 68977,
         "tariff_id": 1484,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "demand",
         "component_name": "Generation Firm Demand",
         "sub_component": null,
@@ -43923,12 +43923,12 @@
         "source_detail": "PDF pages 62, 63, 64, 65",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48461,
+        "id": 68978,
         "tariff_id": 1484,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Development Energy Block (2026)",
         "sub_component": "conditional",
@@ -43952,12 +43952,12 @@
         "source_detail": "PDF pages 62, 63, 64, 65",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48462,
+        "id": 68979,
         "tariff_id": 1484,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Market Energy Block (2026)",
         "sub_component": "conditional",
@@ -43981,14 +43981,14 @@
         "source_detail": "PDF pages 62, 63, 64, 65",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 4861,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Labrador Non-Firm Energy Rate (Rate 5.1L)",
     "tariff_code": "5.1L",
     "utility_type": "electricity",
@@ -44015,9 +44015,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48468,
+        "id": 68985,
         "tariff_id": 4861,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Non-Firm Off-Peak Energy (Market-Indexed)",
         "sub_component": null,
@@ -44041,12 +44041,12 @@
         "source_detail": "PDF pages 59, 60, 61",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Off-Peak period. The monthly on-peak and off-peak energy charges are market-indexed and stored without a number ('Variable'): for each calendar month Hydro takes the weighted average (by each market's share of the previous month's kWh exports) of the NYISO Zone A and ISO New England Mass Hub 5 MW calendar-month day-ahead futures settlement prices after trading ends on the 19th day of the previous month, converted to Canadian dollars at that day's exchange rate and adjusted for losses and other market fees. The charge is the greater of that rate and the energy charge of Rate No. 2.4L (General Service 1,000 kVA and Over); that floor is not added to it. Hydro informs the customer on the first business day after the 21st of the preceding month and publishes the monthly on-/off-peak prices (cents/kWh) at https://nlhydro.com/electicity-rates/non-firm-rates-customers/. HST is not included.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48467,
+        "id": 68984,
         "tariff_id": 4861,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Non-Firm On-Peak Energy (Market-Indexed)",
         "sub_component": null,
@@ -44070,12 +44070,12 @@
         "source_detail": "PDF pages 59, 60, 61",
         "confidence": "high",
         "notes": "Provenance: live_parsed. On-Peak period. The monthly on-peak and off-peak energy charges are market-indexed and stored without a number ('Variable'): for each calendar month Hydro takes the weighted average (by each market's share of the previous month's kWh exports) of the NYISO Zone A and ISO New England Mass Hub 5 MW calendar-month day-ahead futures settlement prices after trading ends on the 19th day of the previous month, converted to Canadian dollars at that day's exchange rate and adjusted for losses and other market fees. The charge is the greater of that rate and the energy charge of Rate No. 2.4L (General Service 1,000 kVA and Over); that floor is not added to it. Hydro informs the customer on the first business day after the 21st of the preceding month and publishes the monthly on-/off-peak prices (cents/kWh) at https://nlhydro.com/electicity-rates/non-firm-rates-customers/. HST is not included.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48466,
+        "id": 68983,
         "tariff_id": 4861,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge",
         "sub_component": null,
@@ -44099,14 +44099,14 @@
         "source_detail": "PDF pages 59, 60, 61",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1485,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Net Metering Service Option",
     "tariff_code": "NM",
     "utility_type": "electricity",
@@ -44133,9 +44133,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48463,
+        "id": 68980,
         "tariff_id": 1485,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "rebate",
         "component_name": "Conditional Generation Energy Credit",
         "sub_component": "conditional",
@@ -44159,14 +44159,14 @@
         "source_detail": "PDF pages 67, 68, 69, 70",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Applies only to exported/banked kWh up to the month's imported kWh; not a standalone energy price. Surplus banked kWh settle at the published class-specific wholesale, imbalance or diesel excess rate, which varies by month.",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1224,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Domestic Diesel (Rate 1.2D)",
     "tariff_code": "1.2D",
     "utility_type": "electricity",
@@ -44193,9 +44193,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48410,
+        "id": 68927,
         "tariff_id": 1224,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block (Jan, Feb, Dec)",
         "sub_component": null,
@@ -44219,12 +44219,12 @@
         "source_detail": "PDF page 42",
         "confidence": "high",
         "notes": "Provenance: live_parsed. First Block is 1000 kWh per month in these billing months (published table)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48411,
+        "id": 68928,
         "tariff_id": 1224,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block (Mar, Apr, Nov)",
         "sub_component": null,
@@ -44248,12 +44248,12 @@
         "source_detail": "PDF page 42",
         "confidence": "high",
         "notes": "Provenance: live_parsed. First Block is 900 kWh per month in these billing months (published table)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48412,
+        "id": 68929,
         "tariff_id": 1224,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block (May, Jun, Oct)",
         "sub_component": null,
@@ -44277,12 +44277,12 @@
         "source_detail": "PDF page 42",
         "confidence": "high",
         "notes": "Provenance: live_parsed. First Block is 800 kWh per month in these billing months (published table)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48413,
+        "id": 68930,
         "tariff_id": 1224,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - First Block (Jul, Aug, Sep)",
         "sub_component": null,
@@ -44306,12 +44306,12 @@
         "source_detail": "PDF page 42",
         "confidence": "high",
         "notes": "Provenance: live_parsed. First Block is 700 kWh per month in these billing months (published table)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48414,
+        "id": 68931,
         "tariff_id": 1224,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - Second Block (Jul, Aug, Sep)",
         "sub_component": null,
@@ -44335,12 +44335,12 @@
         "source_detail": "PDF page 42",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Second Block is 300 kWh per month in these billing months (published table)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48415,
+        "id": 68932,
         "tariff_id": 1224,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - Second Block (May, Jun, Oct)",
         "sub_component": null,
@@ -44364,12 +44364,12 @@
         "source_detail": "PDF page 42",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Second Block is 200 kWh per month in these billing months (published table)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48416,
+        "id": 68933,
         "tariff_id": 1224,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - Second Block (Mar, Apr, Nov)",
         "sub_component": null,
@@ -44393,12 +44393,12 @@
         "source_detail": "PDF page 42",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Second Block is 100 kWh per month in these billing months (published table)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48417,
+        "id": 68934,
         "tariff_id": 1224,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge - All kWh over 1000 kWh per month",
         "sub_component": null,
@@ -44422,12 +44422,12 @@
         "source_detail": "PDF page 42",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Applies to all kWh above 1000 kWh per month in every billing month",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48408,
+        "id": 68925,
         "tariff_id": 1224,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Not Exceeding 200 Amp Service)",
         "sub_component": "Not Exceeding 200 Amp Service",
@@ -44451,12 +44451,12 @@
         "source_detail": "PDF page 42",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Not Exceeding 200 Amp Service' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together (the source row is unlabelled and precedes the 'Exceeding 200 Amp Service' row)",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48409,
+        "id": 68926,
         "tariff_id": 1224,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Exceeding 200 Amp Service)",
         "sub_component": "Exceeding 200 Amp Service",
@@ -44480,14 +44480,14 @@
         "source_detail": "PDF page 42",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Exceeding 200 Amp Service' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1228,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Domestic Diesel - Government Departments (Rate 1.2G)",
     "tariff_code": "1.2G",
     "utility_type": "electricity",
@@ -44514,9 +44514,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48430,
+        "id": 68947,
         "tariff_id": 1228,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -44540,12 +44540,12 @@
         "source_detail": "PDF page 47",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48429,
+        "id": 68946,
         "tariff_id": 1228,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge",
         "sub_component": null,
@@ -44569,14 +44569,14 @@
         "source_detail": "PDF page 47",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1225,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Domestic Diesel First Block Optional Seasonal Adjustment (Rate 1.2DS)",
     "tariff_code": "1.2DS",
     "utility_type": "electricity",
@@ -44603,9 +44603,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48419,
+        "id": 68936,
         "tariff_id": 1225,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "rebate",
         "component_name": "Non-Winter Season Premium Adjustment",
         "sub_component": "First Block Only",
@@ -44629,12 +44629,12 @@
         "source_detail": "PDF page 43",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Apply together with the base schedule: adjusts the Rate 1.2D energy charge (first block only); not a standalone energy price. A negative value is a credit per kWh. Requires the signup, 12-month minimum term and notice conditions listed on the tariff",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48418,
+        "id": 68935,
         "tariff_id": 1225,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "rider",
         "component_name": "Winter Season Premium Adjustment",
         "sub_component": "First Block Only",
@@ -44658,14 +44658,14 @@
         "source_detail": "PDF page 43",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Apply together with the base schedule: adjusts the Rate 1.2D energy charge (first block only); not a standalone energy price. A negative value is a credit per kWh. Requires the signup, 12-month minimum term and notice conditions listed on the tariff",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
   {
     "id": 1219,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Domestic Optional Seasonal Adjustment (Rate 1.1S)",
     "tariff_code": "1.1S",
     "utility_type": "electricity",
@@ -44692,9 +44692,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48389,
+        "id": 68906,
         "tariff_id": 1219,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "rebate",
         "component_name": "Non-Winter Season Premium Adjustment",
         "sub_component": null,
@@ -44718,12 +44718,12 @@
         "source_detail": "PDF page 36",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Apply together with the base schedule: adjusts the Rate 1.1 energy charge; not a standalone energy price. A negative value is a credit per kWh. Requires the signup, 12-month minimum term and notice conditions listed on the tariff",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48388,
+        "id": 68905,
         "tariff_id": 1219,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "rider",
         "component_name": "Winter Season Premium Adjustment",
         "sub_component": null,
@@ -44747,7 +44747,7 @@
         "source_detail": "PDF page 36",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Apply together with the base schedule: adjusts the Rate 1.1 energy charge; not a standalone energy price. A negative value is a credit per kWh. Requires the signup, 12-month minimum term and notice conditions listed on the tariff",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
@@ -44843,7 +44843,7 @@
   {
     "id": 1231,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Labrador Interconnected Residential Service",
     "tariff_code": "1.1L",
     "utility_type": "electricity",
@@ -44870,9 +44870,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48437,
+        "id": 68954,
         "tariff_id": 1231,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -44896,12 +44896,12 @@
         "source_detail": "PDF page 51",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48436,
+        "id": 68953,
         "tariff_id": 1231,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge",
         "sub_component": null,
@@ -44925,7 +44925,7 @@
         "source_detail": "PDF page 51",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
@@ -45021,7 +45021,7 @@
   {
     "id": 1218,
     "utility_id": 54,
-    "scrape_run_id": 30,
+    "scrape_run_id": 40,
     "name": "Rural Residential Service (Domestic)",
     "tariff_code": "1.1",
     "utility_type": "electricity",
@@ -45048,9 +45048,9 @@
     "provenance": "live",
     "components": [
       {
-        "id": 48387,
+        "id": 68904,
         "tariff_id": 1218,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "energy",
         "component_name": "Energy Charge",
         "sub_component": null,
@@ -45074,12 +45074,12 @@
         "source_detail": "PDF page 35",
         "confidence": "high",
         "notes": "Provenance: live_parsed. ",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48385,
+        "id": 68902,
         "tariff_id": 1218,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Not Exceeding 200 Amp Service)",
         "sub_component": "Not Exceeding 200 Amp Service",
@@ -45103,12 +45103,12 @@
         "source_detail": "PDF page 35",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Not Exceeding 200 Amp Service' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       },
       {
-        "id": 48386,
+        "id": 68903,
         "tariff_id": 1218,
-        "scrape_run_id": 30,
+        "scrape_run_id": 40,
         "component_type": "fixed",
         "component_name": "Basic Customer Charge (Exceeding 200 Amp Service)",
         "sub_component": "Exceeding 200 Amp Service",
@@ -45132,7 +45132,7 @@
         "source_detail": "PDF page 35",
         "confidence": "high",
         "notes": "Provenance: live_parsed. Alternative: applies only to 'Exceeding 200 Amp Service' service. Mutually exclusive with the other Basic Customer Charge rows; one row is billed per service, not all rows together",
-        "created_at": "2026-11-01 14:50:04"
+        "created_at": "2026-11-19 15:13:18"
       }
     ]
   },
