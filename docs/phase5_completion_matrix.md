@@ -94,9 +94,18 @@ workflow. Its 10 live August 2026 tariffs stay published; a rate change before t
 noticed only by the yearly local check. Procedure:
 [regional rules](../.github/instructions/regional-utilities.instructions.md#maritime-electric).
 
-Next (owner, on GitHub): after this change is pushed, run Source Health. Issue #6 should then close
-itself; if it does not, read its remaining problems. Eight ledger monitor reviews fall due
-December 15.
+Result (November 19): the Market Benchmarks run started by that push (44562265776) re-checked the
+receipts with the ledger rule, found no remaining problem and closed issue #6 itself. The source
+reliability milestone is complete.
+
+Next (owner decisions November 19): Batch 18 continued now with all four remaining utilities
+(Naka Power, Medicine Hat, Lethbridge, Red Deer), then the Alberta city pairing; see
+[Registered municipal additions](#registered-municipal-additions). Dated checks: the December 1
+Monthly Scrape; eight ledger monitor reviews due December 15; the Alberta Rate of Last Resort term
+ending December 31 (no 2027 term published yet); January editions (Ontario January rate orders are
+added once in effect, then one Ontario Monthly Scrape); ledger audits expiring February 4 (14) and
+February 27 (62) under the gate's 120-day rule. Afterwards: Phase 7 gas (commercial gas models and
+the open NB/QC residential choices).
 
 ### Registered municipal additions
 
@@ -258,10 +267,10 @@ actions below remain independent.
    headings; the HVF composition sentence and Interruptible Sales HTML prices still differ
    from the authoritative PDF. Dry runs: Yukon 20/20, NTPC 63, Qulliq 6, EPCOR Distribution 5,
    Centra 13 live, all 0 seed / 0 invalid. New `tests/test_rolr_next_term.py` pins the
-   January 1 switch and the fail-closed cases. **January readiness (November 4 audit):** unless
-   the OEB relabels its BillData feeds (all rows `YEAR=2026` on November 4) before 08:00 UTC on
-   January 1, that run rejects every Ontario residential and GS<50 row (stored versions stay
-   latest; owner decision pending, recommended: a targeted Ontario scrape after the relabel).
+   January 1 switch and the fail-closed cases. **January readiness (November 4 audit):** the OEB
+   BillData feeds said `YEAR=2026` on November 4 (corrected November 19: the feed is only a
+   cross-check, so a January run on a 2026-labelled feed only logs cross-check warnings and the
+   tariff-sheet records still refresh; no decision is needed).
    January-rate-year Ontario tariffs need `OEB_TARIFF_DOCUMENTS` updates on or after January 1,
    or the 2026 sheets stay accepted until their 500-day cutoff. Centra needs its February 1
    `SCHEDULE_EDITIONS` entry. Pinned by `tests/test_edition_rollover.py`.

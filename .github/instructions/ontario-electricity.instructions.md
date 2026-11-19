@@ -18,9 +18,10 @@ Market history: [market-data.instructions.md](market-data.instructions.md).
   source of values.
 - `parse_rpp_page()` rejects a missing, future-dated or stale RPP effective date, so an Ontario run
   fails before the date the page announces.
-- `parse_bill_data()` requires each BillData row's `YEAR` to equal the scrape's calendar year. Until
-  the OEB relabels the feed in January, a run rejects every residential and GS<50 row (the stored
-  versions stay the latest); relaxing this is an owner decision (`tests/test_edition_rollover.py`).
+- `parse_bill_data()` requires each BillData row's `YEAR` to equal the scrape's calendar year. The
+  feed is only read by the cross-check, so a January run on a feed still labelled with the previous
+  year only logs cross-check warnings; the tariff-sheet records are built and refreshed as usual
+  (`test_onl_xml_is_cross_check_only`, `tests/test_edition_rollover.py`).
 - A configured tariff sheet is rejected while its effective or implementation date is in the future
   and is treated as superseded 500 days after its effective date (`_TARIFF_STALE_DAYS`). A new rate
   year's sheet is not discovered: add its URL and case number to `OEB_TARIFF_DOCUMENTS` on or after

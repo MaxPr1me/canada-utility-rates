@@ -6,11 +6,11 @@ November 1, 2026 OEB RPP prices showed the pattern). These tests pin two calenda
 audit found untested, using saved official sources:
 
 - The OEB Bill Calculator feed (BillData.xml) must carry the current calendar year. On 2026-11-04
-  all 141 rows of the live residential and GS<50 feeds said YEAR=2026 (last modified 2026-10-30), so
-  unless the OEB relabels the feed before the January 1 Monthly Scrape, that run rejects every
-  Ontario residential and GS<50 row: those records are not refreshed and the stored versions stay
-  the latest. Accepting the previous year's rows in January would be a methodology change that
-  needs an owner decision; this test documents today's fail-closed rule.
+  all 141 rows of the live residential and GS<50 feeds said YEAR=2026 (last modified 2026-10-30).
+  The feed is only read by OntarioLDCScraper._xml_cross_check, which logs differences and never
+  alters records, so a January run on a 2026-labelled feed rejects these rows for the cross-check
+  only: it logs cross-check warnings while the tariff-sheet records are built as usual (see
+  test_onl_xml_is_cross_check_only). This test documents the year rule itself.
 - An Enbridge Gas Rate Handbook (one PDF re-issued with each quarterly rate adjustment) is never
   used before its effective and implementation dates: a January 1 handbook posted in December
   makes the whole utility fail closed until January 1, rather than mixing editions.

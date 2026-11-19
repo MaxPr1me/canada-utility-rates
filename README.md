@@ -94,14 +94,15 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
 
 - **Stored coverage:** all 85 active registered utilities have live output and the strict coverage
   gate passes (checked November 19). Stored output alone does not prove a source is still healthy:
-  Maritime Electric's source fails on GitHub (see below).
+  Maritime Electric's source fails on GitHub and is refreshed by hand (see below).
 - **New utilities (published November 18):** Saint John Energy (NB), Nelson Hydro, New
   Westminster, Penticton, Grand Forks and Summerland (BC), and Summerside Electric (PE) are stored
   live and contribute to their province's models (69 models; BC residential now has 7 utilities).
   Naka Power (NT) and the Alberta cities Lethbridge, Red Deer and Medicine Hat are in the
-  inventory but not registered yet.
-- **Latest export (November 18, scrape run 39):** 960 latest live tariffs and 482 retained
-  estimates; 1,381 stored live versions and 6,548 history snapshots. Counts include
+  inventory but not registered yet; their parsers are the current work (owner decision
+  November 19).
+- **Latest export (November 19, scrape run 42):** 960 latest live tariffs and 482 retained
+  estimates; 1,382 stored live versions and 6,576 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
 - **Corrections stored (verified November 4):** the targeted Monthly Scrapes stored Centra Gas
   Manitoba's 13 November records and Maritime Electric's first-20-kW-free demand tier; history
@@ -110,19 +111,22 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   media API, and the last known bylaw copies when Cloudflare blocks both on GitHub (owner decision
   November 18); New Westminster follows its migrated bylaw page and PDF endpoint. Both are stored
   live. Maritime retries an HTTP 403 with Chromium, which works locally but not on GitHub.
-- **Issue #6 (source problems on GitHub):** the November 19 repairs are verified on GitHub. Source
-  Health, then single-utility Monthly Scrapes, stored NL Hydro (23 live, from its last known
-  Schedule of Rates) and Heritage Gas (3 live, General Service refreshed). Cloudflare still blocks
-  Maritime Electric's page, Chromium retry and PDF on GitHub, so its runs store 2 labelled
-  estimates; its 10 live August 2026 tariffs stay published.
+- **Issue #6 (source problems on GitHub), closed November 19:** the November 19 repairs are
+  verified on GitHub. Source Health, then single-utility Monthly Scrapes, stored NL Hydro (23 live,
+  from its last known Schedule of Rates) and Heritage Gas (3 live, General Service refreshed).
+  Cloudflare still blocks Maritime Electric's page, Chromium retry and PDF on GitHub, so its runs
+  store 2 labelled estimates; its 10 live August 2026 tariffs stay published. The monitoring check
+  after the Maritime decision below found no remaining problem and closed the issue itself.
 - **Maritime manual updates (owner decision November 19):** its estimates now mirror the current
   N-28 values (still labelled Estimated), and the coverage ledger records a manual-update decision
   reviewed by September 1, 2027. Model monitoring accepts Maritime's estimates-only checks until
-  then, so issue #6 should close itself at the next Source Health. Locally Maritime stays fully
-  live (10 records).
-- **"Coverage complete" is not claimed yet:** issue #6 is open and the scoped wording awaits the
-  owner's approval. Eight ledger reviews fall due December 15; the strict gate fails from
-  December 16 unless they are done.
+  then. Locally Maritime stays fully live (10 records).
+- **"Coverage complete" is not claimed yet:** the scoped wording will be drafted for the owner's
+  approval after the January renewals and the four new utilities are stored (owner decision
+  November 19). Dated checks ahead: eight ledger reviews fall due December 15 (the strict gate
+  fails from December 16 unless they are done); the Alberta Rate of Last Resort term ends
+  December 31 and no 2027 term is published yet; 14 ledger audits expire on February 4 and 62 on
+  February 27 under the gate's 120-day rule.
 - **Phase 8 monitoring:** implemented, published and verified through the existing market workflows
   and deployment. The change log starts from its first verified baseline. Source checks ignore only
   labelled excluded-class estimates (owner decision November 18) and a ledger manual-update
