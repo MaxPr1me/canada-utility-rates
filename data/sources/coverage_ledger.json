@@ -182,65 +182,65 @@
     "Saint John Energy": {
       "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: rates manual (revised as of September 1, 2026) Section 9 schedules 001, 006, 002, 202, 004, 008, 009 and 010 parsed with base + rider = total checks; parser fixture tests", "source": "docs/phase5_completion_matrix.md; tests/test_saint_john_energy.py"},
       "excluded": ["Municipal Related 101/102/104/106/112/M (City of Saint John operations only)", "water-heater and heat-pump rentals", "lighting and pole attachments", "EV charging and miscellaneous fees"],
-      "notes": "Registered 2026-11-04 (batch 18). sjenergy.ca serves an incomplete certificate chain; the manual link is discovered with headless Chromium, falling back to the last known manual with a note. Not stored until the owner's Monthly Scrape dispatch."
+      "notes": "Registered 2026-11-04 (batch 18). sjenergy.ca serves an incomplete certificate chain; the manual link is discovered with headless Chromium, falling back to the last known manual with a note. Stored live on 2026-11-18 by the owner's Monthly Scrapes."
     },
     "Nelson Hydro": {
       "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Electrical Rates page (effective January 1, 2026) cross-checked against Hydro Services Bylaw No. 3608 Schedules B/C (2026); A1, A3, B1, B4 interim rates", "source": "docs/phase5_completion_matrix.md; tests/test_nelson_hydro.py"},
       "excluded": ["E1 City of Nelson accounts", "EV1 charging", "F1/F2 flat commercial service under 400 kWh per period", "G-3 lighting", "M1/M2 manual meter reading"],
       "source_blocked": ["C1/C4 large commercial: '>25 kVA: $10.33 per kVA' does not say whether the first 25 kVA are free; held back until Nelson Hydro confirms (batch 18 provisional decision 2026-11-04)"],
-      "notes": "Registered 2026-11-04 (batch 18). Interim 2026/2027 rates (medium confidence); a page year other than the current year fails closed. Not stored until the owner's Monthly Scrape dispatch."
+      "notes": "Registered 2026-11-04 (batch 18). Interim 2026/2027 rates (medium confidence); a page year other than the current year fails closed. Stored live on 2026-11-18 by the owner's Monthly Scrapes."
     },
     "City of New Westminster": {
       "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Electrical Utility Bylaw No. 6502 Schedule A (effective January 1, 2026); rates 101-103, 131, 134, 201, 202, 210-212 with the 2.5% rider and 3.5% climate action levy", "source": "docs/phase5_completion_matrix.md; tests/test_new_westminster.py"},
       "excluded": ["203/213 temporary service", "Rate 241 MURB thermal pilot", "lighting (302 onward)", "Rate 500 net metering", "standard charges"],
-      "notes": "Registered 2026-11-04 (batch 18). Percentage riders of the billed amount are disclosed but not applied by the representative models (engine rule kept). Not stored until the owner's Monthly Scrape dispatch."
+      "notes": "Registered 2026-11-04 (batch 18). Percentage riders of the billed amount are disclosed but not applied by the representative models (engine rule kept). Stored live on 2026-11-18 by the owner's Monthly Scrapes."
     },
     "City of Penticton": {
       "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Fees and Charges Bylaw No. 2014-07 Appendix 7 Electric (2026 column, Bylaw 2025-22); rate codes 10, 20, 25, 30 and 35; monthly billing confirmed on the accounts page", "source": "docs/phase5_completion_matrix.md; tests/test_penticton.py"},
       "excluded": ["Rate Code 45 City accounts", "Rate Code 55 lighting and unmetered loads", "net metering and service fees"],
-      "notes": "Registered 2026-11-04 (batch 18). The bylaw prints only 'Effective 2026', so records are dated January 1 (batch 18 provisional decision). A year without its own column fails closed. Not stored until the owner's Monthly Scrape dispatch."
+      "notes": "Registered 2026-11-04 (batch 18). The bylaw prints only 'Effective 2026', so records are dated January 1 (batch 18 provisional decision). A year without its own column fails closed. Stored live on 2026-11-18 by the owner's Monthly Scrapes."
     },
     "City of Grand Forks": {
       "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Fees & Charges Bylaw No. 1958 Schedule G (consolidated through A20) dated by Amendment Bylaw 1958-A19 (effective April 15, 2026) with matching prices", "source": "docs/phase5_completion_matrix.md; tests/test_grand_forks.py"},
       "excluded": ["4. Unmetered Service (priced by agreement)", "service and meter charges"],
-      "notes": "Registered 2026-11-04 (batch 18). The commercial block is per two-month billing period (data/models/block_periods.json). Not stored until the owner's Monthly Scrape dispatch."
+      "notes": "Registered 2026-11-04 (batch 18). The commercial block is per two-month billing period (data/models/block_periods.json). Stored live on 2026-11-18 by the owner's Monthly Scrapes."
     },
     "District of Summerland": {
       "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Fees and Charges Bylaw No. 98-001 Schedule A (replaced effective February 10, 2026 by Bylaw 2026-004); E01-E08, E10, E15, E17, 19", "source": "docs/phase5_completion_matrix.md; tests/test_summerland.py"},
       "excluded": ["E12/E14 GST/PST-exempt variants of E10", "E20 irrigation", "E22 unmetered cable amplifiers", "E25 municipal energy", "E26 flat-rate power", "E31-E44 and E50 lighting", "distributed generation credits"],
-      "notes": "Registered 2026-11-04 (batch 18). Not stored until the owner's Monthly Scrape dispatch."
+      "notes": "Registered 2026-11-04 (batch 18). Stored live on 2026-11-18 by the owner's Monthly Scrapes."
     },
     "Summerside Electric": {
       "audit": {"date": "2026-11-04", "basis": "Batch 18 onboarding: Electric Rates, Schedule & Policy Manual (rates effective August 1, 2026, v2) Section N residential, General Service I and industrial schedules", "source": "docs/phase5_completion_matrix.md; tests/test_summerside_electric.py"},
       "excluded": ["General Service II (closed March 1, 2016)", "Heat For Less Now equipment schedules", "unmetered and short-term unmetered service", "miscellaneous, lighting and rental facilities", "EV charging"],
       "source_blocked": ["ECAM bill adjustment: the current value is not printed in the manual"],
-      "notes": "Registered 2026-11-04 (batch 18). 'Per Billing Period' prices stored as monthly (the manual's billing period is about one month). Not stored until the owner's Monthly Scrape dispatch."
+      "notes": "Registered 2026-11-04 (batch 18). 'Per Billing Period' prices stored as monthly (the manual's billing period is about one month). Stored live on 2026-11-18 by the owner's Monthly Scrapes."
     },
     "Naka Power Utilities (NWT)": {
       "audit": {"date": "2026-11-19", "basis": "Batch 18 continued onboarding: Rate Schedule effective July 1, 2026 (base rows reconciled to each printed total; every rider a class lists looked up in its zone's table); Snare residential and general service, Taltson residential, general service and large general service, Thermal residential", "source": "docs/phase5_completion_matrix.md; tests/test_naka_power.py"},
       "excluded": ["street and sentinel lighting", "Taltson interruptible service (priced case by case under contract)", "Hay River transmission wheeling charge (a wholesale charge to NTPC)"],
       "source_blocked": ["Thermal Zone General Service: the schedule prints a $14.00/kW demand charge with a $10.00/kW total (since at least January 2026)", "Cost of Living Subsidy (Taltson Zone, February 1, 2026 to March 31, 2028): no value published"],
       "monitor": [{"item": "Final 2026-2028 GRA rates (the July 1, 2026 rider changes are interim, medium confidence)", "review_by": "2026-12-15"}],
-      "notes": "Registered 2026-11-19 (batch 18 continued). No last-known copy is read: riders change several times a year. Territories are not modelled yet. Not stored until the owner's Monthly Scrape dispatch."
+      "notes": "Registered 2026-11-19 (batch 18 continued). No last-known copy is read: riders change several times a year. Territories are not modelled yet. Stored live on 2026-11-19 by the owner's Monthly Scrapes (province AB, then Naka Power)."
     },
     "City of Medicine Hat Electric Utility": {
       "audit": {"date": "2026-11-19", "basis": "Batch 18 continued onboarding: 2026 Utility Rates brochure delivery charges for 1.1, 3.1, 3.3, 4.1 and 5.1 read column by column, with the Energy Plans & Pricing page's monthly default rate (current month's row), the fixed 2025-2026 Large Commercial and Industrial rate and the Going Green surcharge", "source": "docs/phase5_completion_matrix.md; tests/test_medicine_hat.py"},
       "excluded": ["2.1 farm", "3.2 and 3.4 temporary service", "3.5 and 3.6 irrigation", "6.1 unmetered service", "7.0 rental and 8.0 street lighting", "Municipal Consent & Access Fee stays a note (within city limits only)"],
       "monitor": [{"item": "Next Large Commercial and Industrial fixed default rate after 2026-12-31 (4.1 and 5.1 fail closed after the term): check the Energy Plans & Pricing page", "review_by": "2026-12-15"}],
-      "notes": "Registered 2026-11-19 (batch 18 continued). The monthly default rate must have a row for the current month, so a run before the City posts that month's row fails closed; the scheduled run on the 1st usually comes first, so the owner starts a Medicine Hat run once the row is posted (owner decision 2026-11-19). Each record ends with its shortest-lived price (the month for 1.1/3.1/3.3, December 31, 2026 for 4.1/5.1), so models and this gate stop using it until a newer record is stored. The Going Green surcharge is printed without a date and is stored for the month it was read (owner decision 2026-11-19). The kVA limits of 3.1 and 3.3 (Electric Utility Bylaw 2244) are not published, so the business levels are not modelled; 4.1 and 5.1 are kept out of the models (owner decisions 2026-11-19). Not stored until the owner's Monthly Scrape dispatch."
+      "notes": "Registered 2026-11-19 (batch 18 continued). The monthly default rate must have a row for the current month, so a run before the City posts that month's row fails closed; the scheduled run on the 1st usually comes first, so the owner starts a Medicine Hat run once the row is posted (owner decision 2026-11-19). Each record ends with its shortest-lived price (the month for 1.1/3.1/3.3, December 31, 2026 for 4.1/5.1), so models and this gate stop using it until a newer record is stored. The Going Green surcharge is printed without a date and is stored for the month it was read (owner decision 2026-11-19). The kVA limits of 3.1 and 3.3 (Electric Utility Bylaw 2244) are not published, so the business levels are not modelled; 4.1 and 5.1 are kept out of the models (owner decisions 2026-11-19). Stored live on 2026-11-19 by the owner's Monthly Scrapes (province AB, then Naka Power)."
     },
     "City of Lethbridge Electric Utility": {
       "audit": {"date": "2026-11-19", "basis": "Batch 18 continued onboarding: Electric Distribution Tariff Bylaw 6364 (consolidated December 8, 2025) rate codes 991-997 checked value by value against the 2026 Rate Table; Riders B and C (dated November 1, 2026) matched to the Utility Rates page; the City's 2026 Rate of Last Resort", "source": "docs/phase5_completion_matrix.md; tests/test_lethbridge.py"},
       "excluded": ["998 public lighting", "999 unmetered service", "1000 distributed generation", "Rider A 15.50% local access fee stays a note"],
       "source_blocked": ["'RDS' price ($0.10388/kWh) on the Utility Rates page: defined by neither the page nor the bylaw, so not stored"],
       "monitor": [{"item": "Next Rate of Last Resort price after 2026-12-31: check the City's Utility Rates page", "review_by": "2026-12-15"}],
-      "notes": "Registered 2026-11-19 (batch 18 continued). Representative models: 991 at every residential level and 994 at s2 and m1 (owner decisions 2026-11-19); 992 and 995 fit no reference level, so Lethbridge is not computable at s1; 996 needs time-of-use shares that Alberta does not publish. Not stored until the owner's Monthly Scrape dispatch."
+      "notes": "Registered 2026-11-19 (batch 18 continued). Representative models: 991 at every residential level and 994 at s2 and m1 (owner decisions 2026-11-19); 992 and 995 fit no reference level, so Lethbridge is not computable at s1; 996 needs time-of-use shares that Alberta does not publish. Stored live on 2026-11-19 by the owner's Monthly Scrapes (province AB, then Naka Power)."
     },
     "City of Red Deer Electric Light & Power": {
       "audit": {"date": "2026-11-19", "basis": "Batch 18 continued onboarding: Schedule A Distribution Tariff (effective March 1, 2026) rates 61, 63, 64 and 78 matched to the Delivery Rates and Charges page; 2026 Q4 Transmission Rider; Schedule D administration charge and the Rate of Last Resort page's energy price (2025-2026 term)", "source": "docs/phase5_completion_matrix.md; tests/test_red_deer.py"},
       "excluded": ["81 and 82 street and traffic lights", "83 distribution generation", "15% Local Access Fee stays a note"],
       "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the City's Rate of Last Resort page and Schedule D", "review_by": "2026-12-15"}],
-      "notes": "Registered 2026-11-19 (batch 18 continued). Schedule D's $0.3035/day administration charge (effective March 1, 2026) is stored; the Rate of Last Resort page still shows $0.2498/day from January 2026. The page prints the energy price under Residential only, but Schedule D gives every class the same energy charge, so it applies to all four rates (owner decisions 2026-11-19). Not stored until the owner's Monthly Scrape dispatch."
+      "notes": "Registered 2026-11-19 (batch 18 continued). Schedule D's $0.3035/day administration charge (effective March 1, 2026) is stored; the Rate of Last Resort page still shows $0.2498/day from January 2026. The page prints the energy price under Residential only, but Schedule D gives every class the same energy charge, so it applies to all four rates (owner decisions 2026-11-19). Stored live on 2026-11-19 by the owner's Monthly Scrapes (province AB, then Naka Power)."
     },
     "Alectra Utilities": {"group": "ontario_electricity"},
     "Algoma Power Inc.": {"group": "ontario_electricity", "excluded": ["No General Service < 50 kW or demand-billed GS class is published (R2 is a delivery-only residential demand record)"]},

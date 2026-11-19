@@ -92,22 +92,22 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
 
 ## Current Status
 
-- **Stored coverage:** 85 of the 89 active registered utilities have live output (checked
-  November 19). The four registered on November 19 (below) are not stored yet, so until the owner's
-  Monthly Scrapes store them the strict coverage gate reports them as `no_live_output` and the
-  model-monitoring issue lists them. Stored output alone does not prove a source is still healthy:
+- **Stored coverage:** all 89 active registered utilities have live output and the strict coverage
+  gate passes (checked November 19). Stored output alone does not prove a source is still healthy:
   Maritime Electric's source fails on GitHub and is refreshed by hand (see below).
 - **New utilities (published November 18):** Saint John Energy (NB), Nelson Hydro, New
   Westminster, Penticton, Grand Forks and Summerland (BC), and Summerside Electric (PE) are stored
   live and contribute to their province's models (69 models; BC residential now has 7 utilities).
-- **Batch 18 continued (registered November 19):** Naka Power (NT) and the Alberta cities Medicine
-  Hat, Lethbridge and Red Deer have live parsers (dry runs: 6, 5, 8 and 8 live records). To store
-  them, the owner starts Monthly Scrape for province AB, then for Naka Power. The Alberta models then
-  count each city as one service area (residential: 4 to 7). Medicine Hat's default energy price is
-  monthly: the owner starts a Medicine Hat run each month once the City posts it, and its records
-  drop out of the models until then (owner decisions November 19).
-- **Latest export (November 19, scrape run 42):** 960 latest live tariffs and 482 retained
-  estimates; 1,382 stored live versions and 6,576 history snapshots. Counts include
+- **Batch 18 continued (published November 19):** the owner's Monthly Scrapes for province AB and
+  for Naka Power stored Naka Power (NT, 6 live) and the Alberta cities Medicine Hat (5), Lethbridge
+  (8) and Red Deer (8), with the history verified. The Alberta models now count each city as one
+  service area: residential has 7 instead of 4 (1,000 kWh median $209.78 before tax, was $225.16).
+  The model-monitoring issue opened by the registration (#7) closed itself after the second run.
+  Medicine Hat's default energy price is monthly: the owner starts a Medicine Hat run each month
+  once the City posts it, and its records drop out of the models until then (owner decisions
+  November 19).
+- **Latest export (November 19, scrape run 44):** 987 latest live tariffs and 482 retained
+  estimates; 1,409 stored live versions and 6,642 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
 - **Corrections stored (verified November 4):** the targeted Monthly Scrapes stored Centra Gas
   Manitoba's 13 November records and Maritime Electric's first-20-kW-free demand tier; history
@@ -127,8 +127,8 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   reviewed by September 1, 2027. Model monitoring accepts Maritime's estimates-only checks until
   then. Locally Maritime stays fully live (10 records).
 - **"Coverage complete" is not claimed yet:** the scoped wording will be drafted for the owner's
-  approval after the January renewals and the four new utilities are stored (owner decision
-  November 19). Dated checks ahead: twelve ledger reviews fall due December 15 (the strict gate
+  approval after the January renewals (owner decision November 19; the four new utilities are now
+  stored). Dated checks ahead: twelve ledger reviews fall due December 15 (the strict gate
   fails from December 16 unless they are done); the Alberta Rate of Last Resort term ends
   December 31 and no 2027 term is published yet; 14 ledger audits expire on February 4 and 62 on
   February 27 under the gate's 120-day rule.

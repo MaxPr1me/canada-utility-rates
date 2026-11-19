@@ -14,8 +14,8 @@ Registration, a successful local parser and stored live output are different mil
 Batch 12 also registered one new utility, EPCOR Natural Gas (Ontario), to replace a mis-registered
 Alberta entry that is now `status: "retired"`. Batch 18 (owner decision 2026-11-04) onboards the easy and
 medium inventory utilities: the municipal additions in NB, BC and PE were published on November 18; Naka
-Power (NT) and the Alberta cities Medicine Hat, Lethbridge and Red Deer were registered on November 19
-(batch 18 continued) and await their first stored runs. Other inventory utilities
+Power (NT) and the Alberta cities Medicine Hat, Lethbridge and Red Deer were registered and published on
+November 19 (batch 18 continued). Other inventory utilities
 are not onboarded without a decision. Use this guide to fill missing classes in the owning utility module, and
 consult the [current coverage matrix](phase5_completion_matrix.md) before choosing work.
 Current examples include page-aware domestic options, NL Hydro service alternatives,
