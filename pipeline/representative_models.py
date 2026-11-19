@@ -176,6 +176,19 @@ def model_keys(outcome: dict) -> list[tuple]:
             for band in (model.get("size_band") or [None])]
 
 
+def crosswalk_rule_levels(crosswalk: dict) -> dict[str, list[str]]:
+    """Rule id -> the usage-level ids its optional model 'levels' list allows (rules without the list: absent).
+
+    Used when a class's printed eligibility (for example three-phase service only) rules out a reference level that
+    its size band would otherwise include (owner decision 2026-11-19, Lethbridge rate 994)."""
+    found = {}
+    for rule in (crosswalk or {}).get("rules") or []:
+        model = rule.get("model") if isinstance(rule, dict) else None
+        if isinstance(model, dict) and isinstance(model.get("levels"), list):
+            found[rule.get("id")] = [str(level) for level in model["levels"]]
+    return found
+
+
 def key_label(key: tuple) -> str:
     """Printable model key, e.g. 'ON|electricity|commercial|demand|commercial_large'."""
     return "|".join("-" if part is None else str(part) for part in key)
@@ -310,8 +323,10 @@ PROVINCE_NAMES = {"AB": "Alberta", "BC": "British Columbia", "MB": "Manitoba", "
                   "NL": "Newfoundland and Labrador", "NS": "Nova Scotia", "NT": "Northwest Territories",
                   "NU": "Nunavut", "ON": "Ontario", "PE": "Prince Edward Island", "QC": "Quebec",
                   "SK": "Saskatchewan", "YT": "Yukon"}
+# Alberta counts service areas (owner decision 2026-11-19): a wires + Rate of Last Resort pair, a city that publishes
+# both halves (Lethbridge, Red Deer) or Medicine Hat's bundled city rate.
 UTILITY_NOUNS = {("ON", "electricity"): ("distributor", "distributors"),
-                 ("AB", "electricity"): ("wires + Rate of Last Resort pair", "wires + Rate of Last Resort pairs")}
+                 ("AB", "electricity"): ("service area", "service areas")}
 DEFAULT_NOUNS = ("utility", "utilities")
 STRUCTURE_LABELS = {"flat": "flat-rate", "tiered": "tiered", "tou": "time-of-use (TOU)",
                     "tiered_tou": "tiered time-of-day", "ulo": "ultra-low overnight (ULO)",
@@ -995,6 +1010,11 @@ def _prepare(record: dict, ctx: dict) -> dict:
         blockers.append("energy components exist but none is unconditional and in effect")
     else:
         energy_status = "absent"
+    ended = _as_date(record.get("end_date"))
+    if ended is not None and ended < _as_of(ctx["as_of"]):
+        # A record past its own end date is not in effect, as in the coverage gate (owner decision 2026-11-19): its
+        # remaining charges are never priced without the expired ones (Medicine Hat's month-dated default energy).
+        blockers.append(f"record ended on {ended.isoformat()}; no newer record is stored")
     return {"items": items, "priced": priced, "blockers": blockers, "energy_status": energy_status,
             "market_pending": market, "market_other": market_other, "power_factor": ctx["power_factor"],
             "variant_groups": variant_groups, "volume_unit": ctx.get("volume_unit", "kwh")}
@@ -1714,6 +1734,7 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
         if keep:
             chosen[utility] = keep
     preps = {id(record): _prepare(record, ctx) for rows in chosen.values() for record, _, _ in rows}
+    rule_levels = crosswalk_rule_levels(crosswalk)
     used_ids: set = set()
     withheld_ids: set = set()
     withheld_missing: dict[Any, list[str]] = {}
@@ -1737,6 +1758,11 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
         for utility, rows in chosen.items():
             zone_rows, reasons = [], []
             for record, zone, rule_id in rows:
+                limits = rule_levels.get(rule_id)
+                if limits is not None and level.get("id") not in limits:
+                    reasons.append(f"{record.get('tariff_code')}: crosswalk rule {rule_id} covers only levels "
+                                   f"{', '.join(limits)}")
+                    continue
                 if not record_covers_level(record, kwh, kw):
                     reasons.append(f"{record.get('tariff_code')}: eligibility does not cover the level")
                     continue
@@ -2136,7 +2162,8 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
     province_utilities: dict[tuple, set[str]] = defaultdict(set)
     for record in live:
         name = record.get("utility_name") or ""
-        if name not in retail_utilities:
+        # A city that publishes both its wires tariff and its Rate of Last Resort is one unit, not a retail part.
+        if name not in retail_utilities or name in wires_units:
             province_utilities[(record.get("province"), record.get("utility_type"))].add(wires_units.get(name, name))
         outcome = match_record(record, crosswalk)
         for key in model_keys(outcome):

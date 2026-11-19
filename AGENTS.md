@@ -20,7 +20,7 @@ matching files are edited, but other tools may not, so open them yourself:
 |---|---|---|
 | Scrapers | [scrapers.instructions.md](.github/instructions/scrapers.instructions.md) | All scrapers, the utility registry and inventory, test fixtures |
 | Ontario electricity | [ontario-electricity.instructions.md](.github/instructions/ontario-electricity.instructions.md) | Ontario distributors and OEB tariff sheets |
-| Alberta electricity | [alberta-electricity.instructions.md](.github/instructions/alberta-electricity.instructions.md) | Alberta wires companies, the Rate of Last Resort, AESO |
+| Alberta electricity | [alberta-electricity.instructions.md](.github/instructions/alberta-electricity.instructions.md) | Alberta wires companies, the Rate of Last Resort, AESO, the Alberta city utilities |
 | Other provinces and territories | [regional-utilities.instructions.md](.github/instructions/regional-utilities.instructions.md) | Electricity in the other provinces and the territories |
 | Natural gas | [gas-utilities.instructions.md](.github/instructions/gas-utilities.instructions.md) | Natural gas utilities |
 | Market data | [market-data.instructions.md](.github/instructions/market-data.instructions.md) | Ontario and Alberta market history, the Ontario Price archive, raw IESO reports, combined totals |
@@ -142,6 +142,7 @@ records does not prove that every building class is covered. Current figures are
 | `enbridge_gas.py`, `epcor_gas_ontario.py`, `atco_gas.py` | Natural gas in Ontario and Alberta. |
 | `scrapers/utilities/epcor_gas.py` | A retired Alberta entry (EPCOR does not distribute gas in Alberta). Monthly runs skip it; its history stays. |
 | `saint_john_energy.py`, `nelson_hydro.py`, `new_westminster.py`, `penticton.py`, `grand_forks.py`, `summerland.py`, `summerside_electric.py` | Municipal utilities registered in batch 18 (November 4, 2026): Saint John (NB), five BC cities and Summerside (PE). They read council bylaw schedules or rate manuals and have no seed fallback, so a failed source returns no records. |
+| `naka_power.py`, `medicine_hat.py`, `lethbridge.py`, `red_deer.py` | Utilities registered in batch 18 continued (November 19, 2026): Naka Power (NT) and the Alberta cities Medicine Hat, Lethbridge and Red Deer. Lethbridge and Red Deer publish their own Rate of Last Resort price; Medicine Hat sells one bundled city rate. No seed fallback. |
 | `scrapers/registry.py` | Reads the list of all utilities and their scraper info. |
 | `scrapers/utils/parsing.py` | HTML/PDF reading helpers, including strict checks that a value really appears in an official schedule. |
 | `scrapers/utils/change_detection.py` | Compares live-parsed rates against seed data and flags changes by severity (info/warning/critical). If critical drift is detected, the scraper rejects live data and falls back to seed. |
@@ -655,6 +656,9 @@ Alberta is the only province where retail electricity is fully deregulated. This
   wires and charge regulated delivery rates: separate **distribution** and **transmission**
   lines, plus temporary riders with their own dates. Rates approved only temporarily ("interim")
   are shown at medium confidence with a note.
+- **City utilities:** Lethbridge and Red Deer own their wires and publish their area's Rate of Last
+  Resort price themselves. Medicine Hat produces, delivers and sells electricity, so each of its
+  prices bundles delivery and energy.
 - **Retail energy** is sold separately from wires service. Customers without a retail contract
   pay the **Rate of Last Resort** (RoLR), which replaced the Regulated Rate Option (RRO) on
   January 1, 2025. Each provider's price is fixed for a two-year term and must match the
@@ -665,10 +669,10 @@ Alberta is the only province where retail electricity is fully deregulated. This
   Pricing page and the model benchmarks.
 - The code models these pieces separately and never adds them into one price. Only the
   representative models put a wires company and the Rate of Last Resort provider for its area
-  together, as one "pair", to show a typical monthly cost; each charge keeps its own source. The
-  Rate of Last Resort is only for sites using less than 250,000 kWh a year, so larger business
-  models show delivery charges plus a separate historical pool-energy benchmark, never a promised
-  retail price.
+  together, as one "service area", to show a typical monthly cost; each charge keeps its own
+  source. Each city also counts as one service area. The Rate of Last Resort is only for sites
+  using less than 250,000 kWh a year, so larger business models show delivery charges plus a
+  separate historical pool-energy benchmark, never a promised retail price.
 
 The technical rules are in the [Alberta electricity rules](.github/instructions/alberta-electricity.instructions.md).
 
@@ -727,7 +731,7 @@ The detailed rules are in the area files: [all scrapers](.github/instructions/sc
 | **Demand charge** | A charge based on the peak power (kW) a customer draws, common for commercial and industrial accounts. |
 | **Rider** | A temporary adjustment to rates — can be a surcharge or a credit. |
 | **Variable (market) charge** | A charge that follows a market price that changes over time (for example the Ontario Price). It is stored with a link to the market but no number, and the website shows "Variable". |
-| **Representative model** | A "typical" monthly cost for a province, built from the median of its utilities' live tariffs at set example usage levels, shown without and with tax, with a note explaining how it was made. In Alberta, one "utility" in a model is a pair: a wires company plus the Rate of Last Resort provider for its area. It is a comparison aid, never a rate anyone is billed, and it never counts as live coverage. |
+| **Representative model** | A "typical" monthly cost for a province, built from the median of its utilities' live tariffs at set example usage levels, shown without and with tax, with a note explaining how it was made. In Alberta, one "utility" in a model is a service area: a wires company plus the Rate of Last Resort provider for its area, or one city utility (Lethbridge, Red Deer or Medicine Hat). It is a comparison aid, never a rate anyone is billed, and it never counts as live coverage. |
 | **Median** | The middle value when numbers are sorted from lowest to highest. Unlike an average, one unusually high or low utility barely moves it. |
 | **Outlier** | In a representative model, a utility whose cost is far from the median (more than 30% away, or well outside the range of the middle half of the utilities). It is named with how far away it is; it is not left out. |
 | **Synthetic load profile** | A made-up pattern of when a business uses electricity, not taken from any real customer. The project's one (approved by the project owner) assumes full power on weekdays from 7 a.m. to 7 p.m. (Eastern Standard Time) and a smaller, steady amount at all other hours. It is used only for the illustrative estimate. |

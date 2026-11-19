@@ -275,7 +275,7 @@
           "scraping_difficulty": "medium",
           "scraping_status": "planned",
           "customer_classes": ["residential", "commercial"],
-          "notes": "Added to the inventory 2026-11-04. Municipal wires owner: 2026 distribution tariff by rate code (991-997 building service) with Riders A (15.50% local access fee), B and C (monthly), and the City publishes its dated Rate of Last Resort energy price (2025-2026 term). Not registered yet (batch 18 follow-up; owner decision 2026-11-04 pairs the wires with the City-published RoLR price)."
+          "notes": "Added to the inventory 2026-11-04. Registered in data/sources/registry.json with a live parser in batch 18 continued (2026-11-19); stored once the owner runs the Monthly Scrape. Municipal wires owner: Electric Distribution Tariff Bylaw 6364 by rate code (991-997 building service), checked against the 2026 Rate Table, with Riders A (15.50% local access fee, a note), B and C (monthly, dated). The City publishes its dated Rate of Last Resort energy price (9.975 cents/kWh, January 1 to December 31, 2026); the representative models pair it with the City's wires (owner decision 2026-11-04)."
         },
         {
           "name": "City of Red Deer Electric Light & Power",
@@ -290,7 +290,7 @@
           "scraping_difficulty": "medium",
           "scraping_status": "planned",
           "customer_classes": ["residential", "commercial"],
-          "notes": "Added to the inventory 2026-11-04. Municipal wires owner (Electric Utility Bylaw 3273/2000 Schedule A Distribution Tariff, rates 61/63/64/78) with a Regulated Rate Tariff (Schedule D); ENMAX Energy provides the Rate of Last Resort in the City's area (RoLR page: 12.06 cents/kWh for 2025-2026). The site needs a headless browser. Not registered yet (batch 18 follow-up)."
+          "notes": "Added to the inventory 2026-11-04. Registered in data/sources/registry.json with a live parser in batch 18 continued (2026-11-19); stored once the owner runs the Monthly Scrape. Municipal wires owner (Electric Utility Bylaw 3273/2000 Schedule A Distribution Tariff, rates 61/63/64/78) with a Regulated Rate Tariff (Schedule D); ENMAX Energy provides the Rate of Last Resort in the City's area (RoLR page: 12.06 cents/kWh for 2025-2026). Pages are read over plain HTTP, with headless Chromium only when the expected content is missing."
         },
         {
           "name": "City of Medicine Hat Electric Utility",
@@ -298,14 +298,14 @@
           "ownership": "municipal",
           "service_area": "City of Medicine Hat",
           "website": "https://www.medicinehat.ca/home-property-utilities/utilities/",
-          "rate_page": "https://www.medicinehat.ca/home-property-utilities/utilities/",
+          "rate_page": "https://www.medicinehat.ca/home-property-utilities/utilities/energy-plans-pricing/",
           "tariff_page": "https://media-002-ca.cdn.govstack.com/medicinehat-016-ca/media/vhua0uvl/2026-utility-rate-brochure.pdf",
           "regulator_page": null,
           "source_types": ["html", "pdf"],
           "scraping_difficulty": "medium",
           "scraping_status": "planned",
           "customer_classes": ["residential", "commercial", "industrial"],
-          "notes": "Added to the inventory 2026-11-04. Bundled City utility (generation, distribution and a monthly default energy rate published separately); the 2026 Utility Rates brochure gives delivery charges and the Municipal Consent and Access Fee (within city limits only). Large commercial and industrial energy prices are not published. Not registered yet (batch 18 follow-up)."
+          "notes": "Added to the inventory 2026-11-04. Registered in data/sources/registry.json with a live parser in batch 18 continued (2026-11-19); stored once the owner runs the Monthly Scrape. Bundled City utility (generation, distribution and retail): the 2026 Utility Rates brochure gives delivery charges and the Municipal Consent and Access Fee (within city limits only); the Energy Plans & Pricing page gives the monthly default energy rate, the fixed 2025-2026 default rate for Large Commercial and Industrial customers and the Going Green surcharge."
         }
       ]
     },
@@ -1112,7 +1112,7 @@
           "scraping_difficulty": "medium",
           "scraping_status": "planned",
           "customer_classes": ["residential", "commercial"],
-          "notes": "Formerly Northland Utilities (NWT); northlandutilities.com redirects to nakapower.com (checked 2026-11-04). NWT Public Utilities Board regulated. Rate Schedule effective July 1, 2026: base schedules by zone plus dated riders (Rider F purchase power cost, Rider R revenue adjustment %, franchise tax %). Not registered yet: its parser is batch 18 follow-up work."
+          "notes": "Formerly Northland Utilities (NWT); northlandutilities.com redirects to nakapower.com (checked 2026-11-04). NWT Public Utilities Board regulated. Registered in data/sources/registry.json with a live parser in batch 18 continued (2026-11-19); stored once the owner runs the Monthly Scrape. Rate Schedule effective July 1, 2026: base schedules by zone plus dated riders (Rider F purchase power cost, Rider R revenue adjustment %, franchise tax %); the July 1, 2026 rider changes are interim pending the 2026-2028 GRA."
         }
       ]
     },

@@ -162,7 +162,7 @@
             + `before tax and rebates. Applied rebates: ${joinNames(rebates)}.`;
     }
 
-    // coverage.contributor_noun names what a model counts once (a distributor, a wires + RoLR pair...).
+    // coverage.contributor_noun names what a model counts once (a distributor, an Alberta service area...).
     function nounOf(model) {
         const noun = (model.coverage || {}).contributor_noun || {};
         const ok = value => typeof value === "string" && value.trim() !== "";

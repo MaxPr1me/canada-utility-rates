@@ -1,0 +1,804 @@
+{
+ "bylaw_url": "https://media-001-ca.cdn.govstack.com/lethbridge-001-ca/media/pckj4114/bylaw-6364-2025-12-08-consolidated.pdf",
+ "rate_table_url": "https://media-001-ca.cdn.govstack.com/lethbridge-001-ca/media/f5fhdlhv/2026-rate-table-final.pdf",
+ "rates_page_url": "https://www.lethbridge.ca/utilities/utility-rates/",
+ "electric_page_url": "https://www.lethbridge.ca/utilities/electric/",
+ "retrieved": "2026-11-19",
+ "note": "City of Lethbridge: Electric Distribution Tariff Bylaw 6364 consolidation (December 8, 2025; 2026 rates) pages 2, 8-9 and 11-17 as extracted by extract_pdf_pages(drop_repeated_lines=False); the 2026 Rate Table's positioned words (pdfplumber extract_words); Utility Rates page excerpt (rate table link, 2026 and 2025 RoLR tables, rider sentence and rider table); Electric page bylaw link.",
+ "rates_page_html": "<a href=\"https://media-001-ca.cdn.govstack.com/lethbridge-001-ca/media/f5fhdlhv/2026-rate-table-final.pdf\" title=\"2026 Rate Table Final\">2026 Rate Table</a>\n<div class=\"info repeatable-content collapse\" id=\"collapse_6a7aba13-92c4-4241-a8de-789c3372a1da_1\">\n<div class=\"text\"><table border=\"1\" style=\"border-collapse: collapse; width: 100.079%; height: 199.561px;\">\n<tbody>\n<tr style=\"height: 130.798px;\">\n<td style=\"width: 31.119%; height: 130.798px;\">\n<h4>2026</h4>\n</td>\n<td style=\"width: 31.119%; height: 130.798px;\">\n<h4>RoLR ($/kWh)</h4>\n</td>\n<td style=\"width: 31.1215%; height: 130.798px;\">\n<h4>RDS ($/kWh)</h4>\n</td>\n</tr>\n<tr style=\"height: 68.7631px;\">\n<td style=\"width: 31.119%; height: 68.7631px;\">January-December</td>\n<td style=\"width: 31.119%; height: 68.7631px;\">0.09975</td>\n<td style=\"width: 31.1215%; height: 68.7631px;\">0.10388</td>\n</tr>\n</tbody>\n</table>\n<p>Effective <strong>November 1, 2026</strong> the following City of Lethbridge Riders are as follows:</p>\n<ul>\n<li>Rider A: 15.50 % of DT charges</li>\n<li>Rider B: $0.00126/kWh</li>\n<li>Rider C: $-0.01200/kWh</li>\n</ul>\n<p>Going forward, Riders B and C will be reviewed monthly.</p>\n<p>LEU will adjust Rider B to reflect the charges/credit from the Balancing Pool.</p>\n<p>LEU will adjust Rider C to reflect the costs of the AESO DTS rate as billed to Lethbridge Electric Utility.​</p>\n<h3>Rate of Last Resort</h3>\n<p>The Rate of Last Resort (RoLR) is a two-year fixed, stable default rate with a 10% rate adjustment cap for any subsequent two-year fixed rate.</p>\n<p>The RoLR includes energy related charges (including, but not limited to, energy rates, risk margin and trading charges) and a consumer awareness surcharge of 0.1 cents/kWh to support initiatives by the Utilities Consumer Advocate to inform regulated rate customers about their electricity service options.</p>\n<p>Regulated rate customers are free to purchase electricity services from a retailer of their choice. For a list of retailers, visit <a href=\"https://ucahelps.alberta.ca/\" rel=\"noopener\" target=\"_blank\">ucahelps.alberta.ca</a> or call 310-4822 (toll free in Alberta).</p></div>\n</div>\n<table border=\"1\" style=\"border-collapse: collapse; width: 98.4952%; height: 440.393px;\">\n<tbody>\n<tr style=\"height: 71.271px;\">\n<td style=\"width: 33.3147%; height: 71.271px;\">\n<h4>2025</h4>\n</td>\n<td style=\"width: 33.3147%; height: 71.271px;\">\n<h4>ROLR ($/kWh)</h4>\n</td>\n<td style=\"width: 33.3147%; height: 71.271px;\">\n<h4>RDS ($/kWh)</h4>\n</td>\n</tr>\n<tr style=\"height: 48.271px;\">\n<td style=\"width: 33.3147%; height: 48.271px;\">\n<h4>January-December</h4>\n</td>\n<td style=\"width: 33.3147%; height: 48.271px;\">\n<h4>0.09975</h4>\n</td>\n<td style=\"width: 33.3147%; height: 48.271px;\">\n<h4>0.10388</h4>\n</td>\n</tr>\n<tr style=\"height: 71.271px;\">\n<td style=\"width: 33.3147%; height: 71.271px;\">\n<h4>2024</h4>\n</td>\n<td style=\"width: 33.3147%; height: 71.271px;\">\n<h4>RRO ($/kWh)</h4>\n</td>\n<td style=\"width: 33.3147%; height: 71.271px;\">\n<h4>RDS ($/kWh)</h4>\n</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">December</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.11189</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.11332</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">November</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.09852</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.09983</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">October</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.10322</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.10495</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">September</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.11062</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.11200</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">August</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.12845</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.12981</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">July</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.11455</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.11643</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">June</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.10883</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.10976</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">May</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.10050</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.10150</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">April</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.13762</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.13910</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">March</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.12521</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.12622</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">February</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.16788</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.16945</td>\n</tr>\n<tr style=\"height: 20.7983px;\">\n<td style=\"width: 33.3147%; height: 20.7983px;\">January</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.17636</td>\n<td style=\"width: 33.3147%; height: 20.7983px;\">0.17905</td>\n</tr>\n</tbody>\n</table>\n<table border=\"0\" style=\"width: 100.063%; height: 310.32px;\">\n<tbody>\n<tr style=\"height: 52.7836px;\">\n<td style=\"width: 12.8194%;\">\n<p><strong>Rider A</strong></p>\n</td>\n<td style=\"width: 54.8093%; height: 52.7836px;\" width=\"203\">\n<p>Local Access Fee ​</p>\n</td>\n<td style=\"width: 32.31%; height: 52.7836px;\" width=\"203\">\n<p>15.50% (% X Total DT)</p>\n</td>\n</tr>\n<tr style=\"height: 73.5819px;\">\n<td style=\"width: 12.8194%;\">\n<p><strong>Rider B</strong></p>\n</td>\n<td style=\"width: 54.8093%; height: 73.5819px;\" width=\"203\">\n<p>Balancing Pool Consumer Allocation Rider​</p>\n</td>\n<td style=\"width: 32.31%; height: 73.5819px;\" width=\"203\">\n<p>​$0.00126 ​($/kWh)</p>\n</td>\n</tr>\n<tr style=\"height: 183.955px;\">\n<td rowspan=\"4\" style=\"width: 12.8194%;\">\n<p><strong>Rider C</strong></p>\n</td>\n<td style=\"width: 54.8093%; height: 183.955px;\" width=\"203\">\n<p>AESO DTS to be reviewed and set monthly</p>\n</td>\n<td style=\"width: 32.31%; height: 183.955px;\" width=\"203\">\n<p>$0.00000 ($/kWh)</p>\n</td>\n</tr>\n<tr>\n<td style=\"width: 54.8093%;\">\n<p>Effective April 1, 2026</p>\n</td>\n<td style=\"width: 32.31%;\">\n<p>$-0.00400 ($/kWh)</p>\n</td>\n</tr>\n<tr>\n<td style=\"width: 54.8093%;\">\n<p>Effective October 1, 2026</p>\n</td>\n<td style=\"width: 32.31%;\">\n<p>$-0.00700 ($/kWh)</p>\n</td>\n</tr>\n<tr>\n<td style=\"width: 54.8093%;\">\n<p>Effective November 1, 2026</p>\n</td>\n<td style=\"width: 32.31%;\">\n<p>$-0.01200 ($/kWh)</p>\n</td>\n</tr>\n</tbody>\n</table>",
+ "electric_page_html": "<a href=\"https://media-001-ca.cdn.govstack.com/lethbridge-001-ca/media/pckj4114/bylaw-6364-2025-12-08-consolidated.pdf\" rel=\"noopener\" target=\"_blank\" title=\"Bylaw 6466 (Bylaw 6364)\">Bylaw 6466 Electric Distribution Tariff </a>",
+ "rate_table_words": [
+  {
+   "text": "2026",
+   "x0": 43.0213,
+   "x1": 65.43870753,
+   "top": 48.51226629999985
+  },
+  {
+   "text": "Rates",
+   "x0": 67.91550225,
+   "x1": 93.10283579000001,
+   "top": 48.51226629999985
+  },
+  {
+   "text": "Final",
+   "x0": 95.48960517,
+   "x1": 117.08470807,
+   "top": 48.51226629999985
+  },
+  {
+   "text": "991",
+   "x0": 249.70210000000003,
+   "x1": 266.51048970000005,
+   "top": 48.51226629999985
+  },
+  {
+   "text": "992",
+   "x0": 311.8723,
+   "x1": 328.6806897,
+   "top": 48.512166299999876
+  },
+  {
+   "text": "994",
+   "x0": 369.3192,
+   "x1": 386.12758970000004,
+   "top": 48.512166299999876
+  },
+  {
+   "text": "995",
+   "x0": 427.0213,
+   "x1": 443.8296897,
+   "top": 48.512166299999876
+  },
+  {
+   "text": "996",
+   "x0": 488.4255,
+   "x1": 505.23388969999996,
+   "top": 48.512166299999876
+  },
+  {
+   "text": "997",
+   "x0": 550.2128,
+   "x1": 567.0211897,
+   "top": 48.512166299999876
+  },
+  {
+   "text": "998",
+   "x0": 610.3405,
+   "x1": 627.1488897,
+   "top": 48.512166299999876
+  },
+  {
+   "text": "999",
+   "x0": 670.4681,
+   "x1": 687.2764897000001,
+   "top": 48.5120662999999
+  },
+  {
+   "text": "1000",
+   "x0": 727.7872,
+   "x1": 750.2166841,
+   "top": 48.5120662999999
+  },
+  {
+   "text": "TRAN",
+   "x0": 43.0213,
+   "x1": 68.51164566,
+   "top": 63.70376629999987
+  },
+  {
+   "text": "On",
+   "x0": 70.97965742,
+   "x1": 84.28035247000001,
+   "top": 63.70376629999987
+  },
+  {
+   "text": "Peak",
+   "x0": 86.68249202999999,
+   "x1": 108.67612173999999,
+   "top": 63.70376629999987
+  },
+  {
+   "text": "Sys",
+   "x0": 111.06947833999999,
+   "x1": 125.91817008999999,
+   "top": 63.70376629999987
+  },
+  {
+   "text": "Usage",
+   "x0": 128.30493947,
+   "x1": 155.91307636,
+   "top": 63.70376629999987
+  },
+  {
+   "text": "($/kwhr)",
+   "x0": 158.30643296,
+   "x1": 198.75745310999997,
+   "top": 63.70376629999987
+  },
+  {
+   "text": "$",
+   "x0": 469.9177899,
+   "x1": 475.4839908,
+   "top": 63.29755439999997
+  },
+  {
+   "text": "0.0217",
+   "x0": 492.1277,
+   "x1": 522.98662996,
+   "top": 63.29755439999997
+  },
+  {
+   "text": "$",
+   "x0": 533.3609573,
+   "x1": 538.9271582,
+   "top": 63.29755439999997
+  },
+  {
+   "text": "0.0221",
+   "x0": 552.2553,
+   "x1": 583.11422996,
+   "top": 63.29755439999997
+  },
+  {
+   "text": "TRAN",
+   "x0": 43.0213,
+   "x1": 68.51164566,
+   "top": 78.0016662999999
+  },
+  {
+   "text": "Sys",
+   "x0": 70.97965742,
+   "x1": 85.82834917,
+   "top": 78.0016662999999
+  },
+  {
+   "text": "Usage",
+   "x0": 88.21402067999999,
+   "x1": 115.82105969999998,
+   "top": 78.0016662999999
+  },
+  {
+   "text": "($/kwhr)",
+   "x0": 118.21441629999998,
+   "x1": 158.65884923000004,
+   "top": 78.0016662999999
+  },
+  {
+   "text": "$",
+   "x0": 230.03776290000002,
+   "x1": 235.60396380000003,
+   "top": 77.5954544
+  },
+  {
+   "text": "0.0338",
+   "x0": 254.5532,
+   "x1": 285.41212996,
+   "top": 77.5954544
+  },
+  {
+   "text": "$",
+   "x0": 295.79157530000003,
+   "x1": 301.35777620000005,
+   "top": 77.5954544
+  },
+  {
+   "text": "0.0194",
+   "x0": 313.1489,
+   "x1": 344.00782996000004,
+   "top": 77.5954544
+  },
+  {
+   "text": "$",
+   "x0": 354.388168,
+   "x1": 359.9543689,
+   "top": 77.5954544
+  },
+  {
+   "text": "0.0191",
+   "x0": 369.3192,
+   "x1": 400.17812996000004,
+   "top": 77.5954544
+  },
+  {
+   "text": "$",
+   "x0": 410.5550663,
+   "x1": 416.12126720000003,
+   "top": 77.5954544
+  },
+  {
+   "text": "0.0166",
+   "x0": 428.6809,
+   "x1": 459.53982996,
+   "top": 77.5954544
+  },
+  {
+   "text": "$",
+   "x0": 469.9177899,
+   "x1": 475.4839908,
+   "top": 77.59565439999994
+  },
+  {
+   "text": "0.0180",
+   "x0": 492.1277,
+   "x1": 522.98662996,
+   "top": 77.59565439999994
+  },
+  {
+   "text": "$",
+   "x0": 533.3610573,
+   "x1": 538.9272582,
+   "top": 77.59585440000001
+  },
+  {
+   "text": "0.0183",
+   "x0": 552.2554,
+   "x1": 583.11432996,
+   "top": 77.59585440000001
+  },
+  {
+   "text": "$",
+   "x0": 593.4887573,
+   "x1": 599.0549582,
+   "top": 77.59585440000001
+  },
+  {
+   "text": "0.0687",
+   "x0": 612.3831,
+   "x1": 643.24202996,
+   "top": 77.59585440000001
+  },
+  {
+   "text": "$",
+   "x0": 653.6161572999999,
+   "x1": 659.1823582,
+   "top": 77.59585440000001
+  },
+  {
+   "text": "0.0582",
+   "x0": 672.5105,
+   "x1": 703.36942996,
+   "top": 77.59585440000001
+  },
+  {
+   "text": "TRAN",
+   "x0": 43.0213,
+   "x1": 68.51603714000001,
+   "top": 92.29946629999984
+  },
+  {
+   "text": "Facilities",
+   "x0": 70.9840489,
+   "x1": 110.34488413999999,
+   "top": 92.29946629999984
+  },
+  {
+   "text": "Chg",
+   "x0": 112.73055564999999,
+   "x1": 129.67837483999998,
+   "top": 92.29946629999984
+  },
+  {
+   "text": "($/day)",
+   "x0": 132.1354079,
+   "x1": 165.81696163,
+   "top": 92.29946629999984
+  },
+  {
+   "text": "$",
+   "x0": 230.03776290000002,
+   "x1": 235.60396380000003,
+   "top": 91.89325439999993
+  },
+  {
+   "text": "0.3509",
+   "x0": 254.5532,
+   "x1": 285.41212996,
+   "top": 91.89325439999993
+  },
+  {
+   "text": "TRAN",
+   "x0": 43.0213,
+   "x1": 68.51164566,
+   "top": 106.59736629999986
+  },
+  {
+   "text": "Dmd",
+   "x0": 70.97965742,
+   "x1": 92.70650472000001,
+   "top": 106.59736629999986
+  },
+  {
+   "text": "Chrgs",
+   "x0": 95.11084002000001,
+   "x1": 120.42882009000004,
+   "top": 106.59736629999986
+  },
+  {
+   "text": "($/kVA/day)",
+   "x0": 122.81449160000005,
+   "x1": 179.60291521999997,
+   "top": 106.59736629999986
+  },
+  {
+   "text": "$",
+   "x0": 295.79157530000003,
+   "x1": 301.35777620000005,
+   "top": 106.19115439999996
+  },
+  {
+   "text": "0.1276",
+   "x0": 313.1489,
+   "x1": 344.00782996000004,
+   "top": 106.19115439999996
+  },
+  {
+   "text": "$",
+   "x0": 354.388168,
+   "x1": 359.9543689,
+   "top": 106.19115439999996
+  },
+  {
+   "text": "0.2024",
+   "x0": 369.3192,
+   "x1": 400.17812996000004,
+   "top": 106.19115439999996
+  },
+  {
+   "text": "$",
+   "x0": 410.5549663,
+   "x1": 416.1211672,
+   "top": 106.19115439999996
+  },
+  {
+   "text": "0.2867",
+   "x0": 428.6808,
+   "x1": 459.53972996,
+   "top": 106.19115439999996
+  },
+  {
+   "text": "$",
+   "x0": 469.9177899,
+   "x1": 475.4839908,
+   "top": 106.19115439999996
+  },
+  {
+   "text": "0.2356",
+   "x0": 492.1277,
+   "x1": 522.98662996,
+   "top": 106.19115439999996
+  },
+  {
+   "text": "$",
+   "x0": 533.3609573,
+   "x1": 538.9271582,
+   "top": 106.19115439999996
+  },
+  {
+   "text": "0.2514",
+   "x0": 552.2553,
+   "x1": 583.11422996,
+   "top": 106.19115439999996
+  },
+  {
+   "text": "DIST",
+   "x0": 43.0213,
+   "x1": 63.52072863999999,
+   "top": 135.19316629999986
+  },
+  {
+   "text": "Sys",
+   "x0": 66.00191484,
+   "x1": 80.85060659,
+   "top": 135.19316629999986
+  },
+  {
+   "text": "Usage",
+   "x0": 83.23737597000002,
+   "x1": 110.84221925000003,
+   "top": 135.19316629999986
+  },
+  {
+   "text": "Chrgs",
+   "x0": 113.23557585000002,
+   "x1": 138.55355592,
+   "top": 135.19316629999986
+  },
+  {
+   "text": "($/kwhr)",
+   "x0": 140.94032530000004,
+   "x1": 181.38914970999997,
+   "top": 135.19316629999986
+  },
+  {
+   "text": "$",
+   "x0": 230.03776290000002,
+   "x1": 235.60396380000003,
+   "top": 134.78695439999984
+  },
+  {
+   "text": "0.0209",
+   "x0": 254.5532,
+   "x1": 285.41212996,
+   "top": 134.78695439999984
+  },
+  {
+   "text": "$",
+   "x0": 295.79157530000003,
+   "x1": 301.35777620000005,
+   "top": 134.78705439999987
+  },
+  {
+   "text": "0.0012",
+   "x0": 313.1489,
+   "x1": 344.00782996000004,
+   "top": 134.78705439999987
+  },
+  {
+   "text": "$",
+   "x0": 354.388168,
+   "x1": 359.9543689,
+   "top": 134.78705439999987
+  },
+  {
+   "text": "0.0009",
+   "x0": 369.3192,
+   "x1": 400.17812996000004,
+   "top": 134.78705439999987
+  },
+  {
+   "text": "$",
+   "x0": 410.5549663,
+   "x1": 416.1211672,
+   "top": 134.78705439999987
+  },
+  {
+   "text": "0.0010",
+   "x0": 428.6808,
+   "x1": 459.53972996,
+   "top": 134.78705439999987
+  },
+  {
+   "text": "$",
+   "x0": 469.9177899,
+   "x1": 475.4839908,
+   "top": 134.78715439999985
+  },
+  {
+   "text": "0.0012",
+   "x0": 492.1277,
+   "x1": 522.98662996,
+   "top": 134.78715439999985
+  },
+  {
+   "text": "$",
+   "x0": 533.3609573,
+   "x1": 538.9271582,
+   "top": 134.78715439999985
+  },
+  {
+   "text": "0.0011",
+   "x0": 552.2553,
+   "x1": 583.11422996,
+   "top": 134.78715439999985
+  },
+  {
+   "text": "$",
+   "x0": 593.4887573,
+   "x1": 599.0549582,
+   "top": 134.78725439999988
+  },
+  {
+   "text": "0.3082",
+   "x0": 612.3831,
+   "x1": 643.24202996,
+   "top": 134.78725439999988
+  },
+  {
+   "text": "$",
+   "x0": 653.6163573,
+   "x1": 659.1825582,
+   "top": 134.78725439999988
+  },
+  {
+   "text": "0.2203",
+   "x0": 672.5107,
+   "x1": 703.36962996,
+   "top": 134.78725439999988
+  },
+  {
+   "text": "$",
+   "x0": 713.7442573,
+   "x1": 719.3104582,
+   "top": 134.78725439999988
+  },
+  {
+   "text": "0.0025",
+   "x0": 732.6386,
+   "x1": 763.49752996,
+   "top": 134.78725439999988
+  },
+  {
+   "text": "DIST",
+   "x0": 43.0213,
+   "x1": 63.51963076999999,
+   "top": 149.4910662999999
+  },
+  {
+   "text": "Facilities",
+   "x0": 66.00081697,
+   "x1": 105.36055434000001,
+   "top": 149.4910662999999
+  },
+  {
+   "text": "Chrgs",
+   "x0": 107.74622585,
+   "x1": 133.06310804999998,
+   "top": 149.4910662999999
+  },
+  {
+   "text": "($/day)",
+   "x0": 135.44877956,
+   "x1": 169.12923542000004,
+   "top": 149.4910662999999
+  },
+  {
+   "text": "$",
+   "x0": 230.03776290000002,
+   "x1": 235.60396380000003,
+   "top": 149.08485439999987
+  },
+  {
+   "text": "0.9372",
+   "x0": 254.5532,
+   "x1": 285.41212996,
+   "top": 149.08485439999987
+  },
+  {
+   "text": "$",
+   "x0": 295.79157530000003,
+   "x1": 301.35777620000005,
+   "top": 149.08485439999987
+  },
+  {
+   "text": "0.5440",
+   "x0": 313.1489,
+   "x1": 344.00782996000004,
+   "top": 149.08485439999987
+  },
+  {
+   "text": "$",
+   "x0": 354.388068,
+   "x1": 359.9542689,
+   "top": 149.08485439999987
+  },
+  {
+   "text": "0.4353",
+   "x0": 369.3191,
+   "x1": 400.17802996,
+   "top": 149.08485439999987
+  },
+  {
+   "text": "$",
+   "x0": 410.5549663,
+   "x1": 416.1211672,
+   "top": 149.08485439999987
+  },
+  {
+   "text": "0.4298",
+   "x0": 428.6808,
+   "x1": 459.53972996,
+   "top": 149.08485439999987
+  },
+  {
+   "text": "$",
+   "x0": 469.9108056,
+   "x1": 475.4770065,
+   "top": 149.08495439999984
+  },
+  {
+   "text": "16.4990",
+   "x0": 486.5106,
+   "x1": 522.99062436,
+   "top": 149.08495439999984
+  },
+  {
+   "text": "$",
+   "x0": 533.3649517,
+   "x1": 538.9311526,
+   "top": 149.08495439999984
+  },
+  {
+   "text": "13.9774",
+   "x0": 546.6382,
+   "x1": 583.11822436,
+   "top": 149.08495439999984
+  },
+  {
+   "text": "$",
+   "x0": 713.7479517,
+   "x1": 719.3141526,
+   "top": 149.08495439999984
+  },
+  {
+   "text": "36.0000",
+   "x0": 727.0212,
+   "x1": 763.50122436,
+   "top": 149.08495439999984
+  },
+  {
+   "text": "DIST",
+   "x0": 43.0213,
+   "x1": 63.52072863999999,
+   "top": 163.78886629999988
+  },
+  {
+   "text": "Dmd",
+   "x0": 66.00191484,
+   "x1": 87.72876214,
+   "top": 163.78886629999988
+  },
+  {
+   "text": "Chrgs",
+   "x0": 90.13309744,
+   "x1": 115.45107751,
+   "top": 163.78886629999988
+  },
+  {
+   "text": "($/kVA/day)",
+   "x0": 117.83674902000001,
+   "x1": 174.62407476999994,
+   "top": 163.78886629999988
+  },
+  {
+   "text": "$",
+   "x0": 295.79157530000003,
+   "x1": 301.35777620000005,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "0.0947",
+   "x0": 313.1489,
+   "x1": 344.00782996000004,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "$",
+   "x0": 354.388168,
+   "x1": 359.9543689,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "0.1385",
+   "x0": 369.3192,
+   "x1": 400.17812996000004,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "$",
+   "x0": 410.5549663,
+   "x1": 416.1211672,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "0.2176",
+   "x0": 428.6808,
+   "x1": 459.53972996,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "$",
+   "x0": 469.91768989999997,
+   "x1": 475.4838908,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "0.2218",
+   "x0": 492.1276,
+   "x1": 522.98652996,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "$",
+   "x0": 533.3608572999999,
+   "x1": 538.9270581999999,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "0.0999",
+   "x0": 552.2552,
+   "x1": 583.11412996,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "$",
+   "x0": 713.7438573,
+   "x1": 719.3100582,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "0.0334",
+   "x0": 732.6382,
+   "x1": 763.49712996,
+   "top": 163.38265439999986
+  },
+  {
+   "text": "Minimum",
+   "x0": 43.0213,
+   "x1": 87.56078803000001,
+   "top": 192.38466629999988
+  },
+  {
+   "text": "Billing",
+   "x0": 89.99696156000002,
+   "x1": 117.91689353000001,
+   "top": 192.38466629999988
+  },
+  {
+   "text": "Charge",
+   "x0": 120.37392659000002,
+   "x1": 152.19459067,
+   "top": 192.38466629999988
+  },
+  {
+   "text": "($/day)",
+   "x0": 154.58904514,
+   "x1": 188.27059886999996,
+   "top": 192.38466629999988
+  },
+  {
+   "text": "1.00000",
+   "x0": 600.5106,
+   "x1": 636.99062436,
+   "top": 191.97845439999986
+  },
+  {
+   "text": "1.00000",
+   "x0": 660.6384,
+   "x1": 697.1184243600001,
+   "top": 191.97845439999986
+  }
+ ],
+ "bylaw_pages": [
+  {
+   "page_number": 2,
+   "text": "Bylaw 6364\nBylaw Last Revised: December 8, 2025\nEffective Date: January 1, 2026\nBylaw 6502\nBYLAW 6364\n*****************\nA BYLAW OF THE CITY OF LETHBRIDGE\nTO ESTABLISH THE CITY OF LETHBRIDGE\nELECTRIC DISTRIBUTION TARIFF\n******************************************************\nWHEREAS the City of Lethbridge owns and operates a Municipal Electric\nDistribution Utility;\nAND WHEREAS the City of Lethbridge Municipal Electric Distribution Utility\nhas been designated as a Wire Service Provider pursuant to the ELECTRIC UTILITIES ACT, S.A. 2003, c.E-5.1;\nAND WHEREAS it is necessary to provide for the establishment of and the\ncollection of fees for the provision of access to the City of Lethbridge distribution\nsystem and provincial electric transmission grid;\nNOW THEREFORE, THE COUNCIL OF THE CITY OF LETHBRIDGE, DULY\nASSEMBLED, HEREBY ENACTS AS FOLLOWS: 1. Bylaw 6364, the City of Lethbridge Electric Distribution Tariff Bylaw is\nestablished. 2. The 2026 Electric Distribution Rates are contained in the following Rate\nSchedules: Rate Code 991 Standard Single Phase Distribution\nRate Code 992 Medium Single Phase Distribution\nRate Code 994 General Three Phase Distribution\nRate Code 995 Medium Three Phase Distribution\nRate Code 996 Large Three Phase Distribution\nRate Code 997 Primary Distribution\nRate Code 998 Public Lighting Distribution\nRate Code 999 Unmetered Distribution\n- 2 -"
+  },
+  {
+   "page_number": 8,
+   "text": "Definitions\nBilling Period The period of time for which distribution rate calculations apply.\nContract Demand The agreed contract minimum and maximum service load available\nas determined under a Distribution Service Agreement between\nthe customer and the City of Lethbridge Electric Utility.\nContract Maximum Means the maximum kVA established under a Distribution Service\nAgreement a customer agrees to demand and the City of\nLethbridge Electric Utility will provide.\nContract Minimum Means the minimum kVA established under a Distribution Service\nAgreement for which a customer is charged.\nContract Ratchet Means the maximum recorded kVA greater than Contract Maximum over the past 12 months.\nCumulative Meter A metering device that measure system usage by continuously\nadding current use to prior use. Current consumption is\ndetermined as the difference between a current reading and a prior\nreading.\nCustomer Means the recipient of electric distribution services.\nCustomer of Record: Means the party responsible for the payment of services.\nDemand Means the service load or rate at which electric energy is\ndelivered/taken at a given point in time measured in kVA or MVA.\nDemand Meter Means the metering device used to determine Demand.\nDistribution Access Means access to the City of Lethbridge Electric Distribution\nSystem.\nDistributed Generation Means generation interconnected to a distribution system with the expectation of generating more than 1 MW of\nelectricity. Bylaw 6412 – November 28, 2023\nDistribution Service Means an agreement between the City of Lethbridge Electric Utility\nAgreement and a distribution service connection customer.\nElectric Service Area The area determined under the Hydro and Electric Energy Act in\nwhich the City of Lethbridge as owner of an electric distribution\nsystem may distribute electricity. Interval Meter Means a meter that measures, at intervals of 60 minutes or less,\nthe amount of electricity consumed, and satisfies the standards for\nrevenue collection under the Electricity and Gas Inspection Act\n(Canada) and the Weights and Measures Act (Canada).\nkVA Means Kilovolt ampere and is the unit of measure used for\nDemand, Contract Maximum, Contract Minimum and Contract\nRatchet.\nkWh Means Kilowatt-hour (one kilowatt of power supplied/taken for one\nhour) and is the unit of measure used for System Usage. City of Lethbridge - 5 - Rate Schedule"
+  },
+  {
+   "page_number": 9,
+   "text": "Load Profile Means the measured or determined System Usage throughout a\nperiod of time.\nMVA Means megavolt amperes (MVA power) used for measuring apparent power. 1 MVA equals 1000 kVA\nBylaw 6412 – November 28, 2023\nOff-Peak Usage Means System Usage that is not On-Peak. Bylaw 6412 – November 28, 2023\nOn-Peak Usage Means System Usage between the 07:00 hours and 23:00 hours,\nevery day of the week. Bylaw 6412 – November 28, 2023\nPrimary Voltage Means a Service Connection at the City of Lethbridge distribution\nsystem high voltage level.\nRatchet Means the highest demand in the last 12 months\nRegulated Rate Option Means the Tariff an owner of an electric distribution system must\nprepare for the purpose of recovering prudent costs for providing\nelectric energy services to eligible customers that are not enrolled\nwith a retailer.\nSecondary Voltage Means the output of a load-supply City of Lethbridge Electric\nDistribution Transformer.\nService and Facility Means ongoing services, plant, works, equipment necessary to\nprovide electric distribution and transmission access.\nService Connection Means the point of connection to the City of Lethbridge Electric\nDistribution System. Single-Phase Means a 3-wire connection point.\nConnection\nSystem Usage Means the use of the City of Lethbridge Electric Distribution\nSystem and Alberta Interconnected Electric System measured in\nkWh.\nTotalized Refers to the combining of 2 or more services at one site for\nbilling purposes. Three-Phase Means a 4-wire connection point.\nConnection\nTransmission Access Means access to the Alberta Interconnected Electric System.\nUnmetered Means a Service Connection without a City of Lethbridge Electric\nUtility provided metering device. City of Lethbridge - 6 - Rate Schedule"
+  },
+  {
+   "page_number": 11,
+   "text": "2026 City of Lethbridge Electric Utility Distribution Tariff\nRate Code 991: Standard Single Phase Distribution\nService\nSingle phase service connected within the City of Lethbridge electric service area\nMetered through a single cumulative or demand meter For monthly demand less than 12 kVA and monthly consumption less than 800 kWh at\nleast 6 times in the past 12 months.\nBylaw 6412 – November 28, 2023\nTransmission Access Rate a) System Usage Charge 0.0338 $ per kWh\nb) Service and Facilities Charge 0.3509 $ per day\nDistribution Access Rate a) System Usage Charge 0.0209 $ per kWh\nb) Service and Facilities Charge 0.9372 $ per day\nBylaw 6466– January 1, 2025\no The minimum daily charge is the daily combined distribution and transmission service and\nfacilities charge\no The billing period is monthly o The City of Lethbridge Terms and Conditions of Electric Service contained in Appendix 2 of\nthis Bylaw apply to this rate\no The City of Lethbridge Rider A Local Access Fee (LAF) is applied to total charges under this rate\no Additional riders approved by City Council may be applied to this rate. City of Lethbridge - 8 - Rate Schedule"
+  },
+  {
+   "page_number": 12,
+   "text": "2026 City of Lethbridge Electric Utility Distribution Tariff\nRate Code 992: Medium Single Phase Distribution\nService\nSingle phase service connected within the City of Lethbridge electric service area\nMetered through a demand meter For monthly demand of 12kVA or greater and consumption greater than 800 kWh per\nmonth at least 6 out of the past 12 month\nBylaw 6412 – November 28, 2023\nTransmission Access Rate a) System Usage Charge 0.0194 $ per kWh\nb) Service and Facilities Charge 0.0000 $ per day\nc) Demand Charge 0.1276 $ per kVA per day\nDistribution Access Rate a) System Usage Charge 0.0012 $ per kWh\nb) Service and Facilities Charge 0.5440 $ per day\nc) Demand Charge 0.0947 $ per kVA per day\nBylaw 6466– January 1, 2025\nThe minimum daily charge is the daily combined distribution and transmission\no\ndemand charge plus the daily Service and Facilities Charge.\nThe billing period is monthly\no\nDemand charge based on the greater of “metered” or “ratchet” demand.\no\nThe City of Lethbridge Terms and Conditions of Electric Service contained in\no Appendix 2 of this Bylaw apply to this rate\nThe City of Lethbridge Rider A Local Access Fee (LAF) is applied to total charges\no\nunder this rate\nAdditional riders approved by city Council may be applied to this rate.\no City of Lethbridge - 9 - Rate Schedule"
+  },
+  {
+   "page_number": 13,
+   "text": "2026 City of Lethbridge Electric Utility Distribution Tariff\nRate Code 994: General Three-Phase Distribution\nService\nThree phase service connected within the City of Lethbridge electric service\narea\nMetered through a single demand meter System demand less than 150 kVA\nTransmission Access Rate a) System Usage Charge 0.0191 $ per kWh\nb) Service and Facilities Charge 0.0000 $ per day\nc) Demand Charge 0.2024 $ per kVA per day\nDistribution Access Rate a) System Usage Charge 0.0009 $ per kWh\nb) Service and Facilities Charge 0.4353 $ per day\nc) Demand Charge 0.1385 $ per kVA per day\nBylaw 6502 – January 1, 2026\nThe minimum daily charge is the daily combined distribution and transmission\no\ndemand charge plus the daily Service and Facilities Charge.\nThe billing period is monthly\no\nDemand charge based on the greater of “metered” or “ratchet” demand\no\nThe City of Lethbridge Terms and Conditions of Electric Service contained in\no Appendix 2 of this Bylaw apply to this rate\nThe City of Lethbridge Rider A Local Access Fee (LAF) is applied to total charges\no\nunder this rate\nAdditional riders approved by city Council may be applied to this rate.\no City of Lethbridge - 10 - Rate Schedule"
+  },
+  {
+   "page_number": 14,
+   "text": "2026 City of Lethbridge Electric Utility Distribution Tariff\nRate Code 995: Medium Three-Phase Distribution\nService\nService connected within the City of Lethbridge electric service\narea\nServiced through a three-phase connection at secondary voltage\nMetered through a single demand meter System demand of 150 kVA or greater and less than 300 kVA\nTransmission Access Rate a) System Usage Charge 0.0166 $ per kWh\nb) Service and Facilities Charge 0.0000 $ per day\nc) Demand Charge 0.2867 $ per kVA per day\nDistribution Access Rate a) System Usage Charge 0.0010 $ per kWh\nb) Service and Facilities Charge 0.4298 $ per day\nc) Demand Charge 0.2176 $ per kVA per day\nBylaw 6502 – January 1, 2026\nThe minimum daily charge is the daily combined distribution and transmission\no\ndemand charge plus the daily Service and Facilities Charge.\nDemand charge based on the greater of “metered” or “ratchet” demand\no\nThe billing period is monthly\no Bylaw 6412 – November 28, 2023\nThe City of Lethbridge Terms and Conditions of Electric Service contained in\no Appendix 2 of this Bylaw apply to this rate\nThe City of Lethbridge Rider A Local Access Fee (LAF) is applied to total charges\no\nunder this rate\nAdditional riders approved by city Council may be applied to this rate.\no City of Lethbridge - 11 - Rate Schedule"
+  },
+  {
+   "page_number": 15,
+   "text": "2026 City of Lethbridge Electric Utility Distribution Tariff\nRate Code 996: Large Three-Phase Distribution\nService\nService connected within the City of Lethbridge electric service\narea\nServiced through a three-phase connection at secondary voltage\nMetered through a single interval meter System demand of 300 kVA or greater\nTransmission Access Rate a) On-Peak System Usage Charge 0.0217 $ per kWh\nb) Off-Peak System Usage Charge 0.0180 $ per kWh\nb) Service and Facilities Charge 0.0000 $ per day\nc) Demand Charge 0.2356 $ per kVA per day\nDistribution Access Rate a) System Usage Charge 0.0012 $ per kWh\nb) Service and Facilities Charge 16.4990 $ per day\nc) Demand Charge 0.2218 $ per kVA per day\nBylaw 6502 – January 1, 2026\nThe minimum daily charge is the daily combined distribution and transmission\no\ndemand charge plus the daily Service and Facilities Charge.\nThe billing period is monthly\no\nDemand charge based on the greater of “metered”, or “ratchet” demand:\no\nThe City of Lethbridge Terms and Conditions of Electric Service contained in\no Appendix 2 of this Bylaw apply to this rate\nThe City of Lethbridge Rider A Local Access Fee (LAF) is applied to total charges\no\nunder this rate\nOn Peak System Usage Charge based on On-Peak Usage\no Bylaw 6412 – November 28, 2023\nAdditional riders approved by city Council may be applied to this rate.\no City of Lethbridge - 12 - Rate Schedule"
+  },
+  {
+   "page_number": 16,
+   "text": "2026 City of Lethbridge Electric Utility Distribution Tariff\nRate Code 997: Primary Distribution\nService\nService connected within the City of Lethbridge electric service area\nServiced through a three-phase connection at primary voltage to customer\ntransformation\nMetered through a single interval meter System demand of less than 15 MVA\nTransmission Access Rate a) On-Peak System Usage Charge 0.0221 $ per kWh\nb) Off-Peak System Usage Charge 0.0183 $ per kWh\nb) Service and Facilities Charge 0.0000 $ per day\nc) Demand Charge 0.2514 $ per kVA per day\nDistribution Access Rate a) System Usage Charge 0.0011 $ per kWh\nb) Service and Facilities Charge 13.9774 $ per day\nc) Demand Charge 0.0999 $ per kVA per day\nBylaw 6502 – January 1, 2026\nThe minimum daily charge is the daily combined distribution and transmission\no\ndemand charge plus the daily Service and Facilities Charge.\nThe billing period is monthly\no\nDemand charge based on the greater of “metered”, or “ratchet” demand:\no\nThe City of Lethbridge Terms and Conditions of Electric Service contained in\no Appendix 2 of this Bylaw apply to this rate\nThe City of Lethbridge Rider A Local Access Fee (LAF) is applied to total charges\no\nunder this rate\nOn Peak System Usage Charge based on On-Peak Usage\no Bylaw 6412 – November 28, 2023\nAdditional riders approved by city Council may be applied to this rate.\no City of Lethbridge - 13 - Rate Schedule"
+  },
+  {
+   "page_number": 17,
+   "text": "2026 City of Lethbridge Electric Utility Distribution Tariff\nRate Code 998: Public Lighting Distribution\nService\nService connected within the City of Lethbridge electric service\narea For unmetered public lighting systems\nPublic lighting system includes all municipally managed lighting distribution services and\nall provincially managed lighting distribution services\nPublic lighting includes all customer subscribed security lighting (dusk to dawn) provided\ndirectly by the City of Lethbridge\nTransmission Access Rate a) System Usage Charge 0.0687 $ per kWh\nDistribution Access Rate a) System Usage Charge 0.3082 $ per kWh\nMinimum Billing Charge 1.00 $ per day\nBylaw 6466– January 1, 2025\nThe minimum daily charge is the minimum billing charge or the Distribution\no\nAccess Rate plus the Transmission Access Rate whichever is greater.\nThe billing period is monthly\no\nThe City of Lethbridge Terms and Conditions of Electric Service contained in\no Appendix 2 of this Bylaw apply to this rate\nThe City of Lethbridge Rider A Local Access Fee (LAF) is applied to total charges\no\nunder this rate\nAdditional riders approved by City Council may be applied to this rate\no\nBilling period system usage is based on the sum of the estimated energy load\no\nprofile for all serviced lighting under this rate as determined by the City of\nLethbridge Electric Utility\nPublic lighting includes street, roadway, highway, park, walkway, unmetered\no\ntraffic sign lighting and customer subscribed security lighting City of Lethbridge - 14 - Rate Schedule"
+  }
+ ]
+}

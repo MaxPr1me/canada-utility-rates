@@ -92,15 +92,20 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
 
 ## Current Status
 
-- **Stored coverage:** all 85 active registered utilities have live output and the strict coverage
-  gate passes (checked November 19). Stored output alone does not prove a source is still healthy:
+- **Stored coverage:** 85 of the 89 active registered utilities have live output (checked
+  November 19). The four registered on November 19 (below) are not stored yet, so until the owner's
+  Monthly Scrapes store them the strict coverage gate reports them as `no_live_output` and the
+  model-monitoring issue lists them. Stored output alone does not prove a source is still healthy:
   Maritime Electric's source fails on GitHub and is refreshed by hand (see below).
 - **New utilities (published November 18):** Saint John Energy (NB), Nelson Hydro, New
   Westminster, Penticton, Grand Forks and Summerland (BC), and Summerside Electric (PE) are stored
   live and contribute to their province's models (69 models; BC residential now has 7 utilities).
-  Naka Power (NT) and the Alberta cities Lethbridge, Red Deer and Medicine Hat are in the
-  inventory but not registered yet; their parsers are the current work (owner decision
-  November 19).
+- **Batch 18 continued (registered November 19):** Naka Power (NT) and the Alberta cities Medicine
+  Hat, Lethbridge and Red Deer have live parsers (dry runs: 6, 5, 8 and 8 live records). To store
+  them, the owner starts Monthly Scrape for province AB, then for Naka Power. The Alberta models then
+  count each city as one service area (residential: 4 to 7). Medicine Hat's default energy price is
+  monthly: the owner starts a Medicine Hat run each month once the City posts it, and its records
+  drop out of the models until then (owner decisions November 19).
 - **Latest export (November 19, scrape run 42):** 960 latest live tariffs and 482 retained
   estimates; 1,382 stored live versions and 6,576 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
@@ -123,7 +128,7 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   then. Locally Maritime stays fully live (10 records).
 - **"Coverage complete" is not claimed yet:** the scoped wording will be drafted for the owner's
   approval after the January renewals and the four new utilities are stored (owner decision
-  November 19). Dated checks ahead: eight ledger reviews fall due December 15 (the strict gate
+  November 19). Dated checks ahead: twelve ledger reviews fall due December 15 (the strict gate
   fails from December 16 unless they are done); the Alberta Rate of Last Resort term ends
   December 31 and no 2027 term is published yet; 14 ledger audits expire on February 4 and 62 on
   February 27 under the gate's 120-day rule.
@@ -209,6 +214,9 @@ canada-utility-costs/
 │       ├── nelson_hydro.py, new_westminster.py, penticton.py, grand_forks.py, summerland.py
 │       │                     ← BC municipal utilities (council bylaw schedules; batch 18)
 │       ├── summerside_electric.py ← Summerside Electric (municipal, PE; batch 18)
+│       ├── naka_power.py     ← Naka Power Utilities (NT; batch 18 continued)
+│       ├── medicine_hat.py, lethbridge.py, red_deer.py
+│       │                     ← Alberta city utilities (wires + City Rate of Last Resort, or bundled; batch 18 continued)
 │       └── ...               ← Other provincial utilities
 │
 ├── pipeline/                 ← Scripts that run the whole process
@@ -599,8 +607,8 @@ independently inspected.
   conditional note.
 - **Representative models** show delivery charges with *market energy pending* wherever the
   energy itself is market-priced (Ontario and Alberta demand classes); they never guess a
-  number. Alberta's wires + Rate of Last Resort pairs apply only below 250,000 kWh a year, the
-  RoLR limit.
+  number. Alberta's Rate of Last Resort (in the provider pairs and the Lethbridge and Red Deer
+  city units) applies only below 250,000 kWh a year, the RoLR limit.
 - **Historical market benchmark (method 7C-4):** for Ontario and Alberta medium and large
   commercial demand models, a separate figure adds the average energy price of 60 complete
   months (each month counts equally) to the modeled delivery charges. Ontario adds actual Class

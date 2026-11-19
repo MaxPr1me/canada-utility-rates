@@ -1,6 +1,6 @@
 ---
-description: "Use when changing Alberta electricity scrapers: the wires companies (atco_electric.py, fortisalberta.py, epcor_distribution.py, enmax_power.py), the Rate of Last Resort providers (direct_energy_regulated.py, enmax_energy.py, epcor_energy_alberta.py, scrapers/utils/alberta_rolr.py) and the AESO pool price reference (aeso.py). Covers separate distribution and transmission (SAS) components, dated riders, ATCO TOTAL PRICE reconciliation, EPCOR interim rates, kW/kVA alternatives, AESO flow-throughs, the UCA cross-check and the RoLR fixed term."
-applyTo: "scrapers/utilities/atco_electric.py, scrapers/utilities/fortisalberta.py, scrapers/utilities/epcor_distribution.py, scrapers/utilities/enmax_power.py, scrapers/utilities/direct_energy_regulated.py, scrapers/utilities/enmax_energy.py, scrapers/utilities/epcor_energy_alberta.py, scrapers/utilities/aeso.py, scrapers/utils/alberta_rolr.py"
+description: "Use when changing Alberta electricity scrapers: the wires companies (atco_electric.py, fortisalberta.py, epcor_distribution.py, enmax_power.py), the Rate of Last Resort providers (direct_energy_regulated.py, enmax_energy.py, epcor_energy_alberta.py, scrapers/utils/alberta_rolr.py), the AESO pool price reference (aeso.py) and the municipal utilities (medicine_hat.py, lethbridge.py, red_deer.py). Covers separate distribution and transmission (SAS) components, dated riders, ATCO TOTAL PRICE reconciliation, EPCOR interim rates, kW/kVA alternatives, AESO flow-throughs, the UCA cross-check, the RoLR fixed term and city-published Rate of Last Resort and bundled prices."
+applyTo: "scrapers/utilities/atco_electric.py, scrapers/utilities/fortisalberta.py, scrapers/utilities/epcor_distribution.py, scrapers/utilities/enmax_power.py, scrapers/utilities/direct_energy_regulated.py, scrapers/utilities/enmax_energy.py, scrapers/utilities/epcor_energy_alberta.py, scrapers/utilities/aeso.py, scrapers/utils/alberta_rolr.py, scrapers/utilities/medicine_hat.py, scrapers/utilities/lethbridge.py, scrapers/utilities/red_deer.py"
 ---
 # Alberta electricity
 
@@ -10,8 +10,9 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md) (Alberta Electricit
 ## Market structure
 
 - Alberta separates regulated wires service (ATCO Electric, FortisAlberta, EPCOR Distribution, ENMAX
-  Power), retail energy and the AESO wholesale market. Model each piece separately and never add
-  wires charges and energy prices into one price. Only the representative models pair them (see
+  Power and the municipal wires owners), retail energy and the AESO wholesale market. Model each
+  piece separately and never add wires charges and energy prices into one price. Only the
+  representative models pair them (see
   [representative-models.instructions.md](representative-models.instructions.md)).
 - Customers without a retail contract pay the Rate of Last Resort (RoLR), which replaced the
   Regulated Rate Option (RRO) on January 1, 2025. Old RRO estimates stay in history.
@@ -60,6 +61,47 @@ Decisions marked 2026-10-09 are the owner's.
 - The old RRO seed records cite `aeso.REPORT_URL` (the ETS pool price report). The dead seed
   citations of ENMAX Energy, EPCOR Energy Alberta, EPCOR Distribution and DERS are kept on purpose in
   `KEPT_DEAD` (see scrapers.instructions.md).
+
+## Municipal utilities (batch 18 continued, 2026-11-19)
+
+Decisions marked 2026-11-04 and 2026-11-19 are the owner's.
+
+- Lethbridge and Red Deer own their wires and publish their area's Rate of Last Resort price
+  themselves; Medicine Hat generates, delivers and sells electricity. One scraper per city emits its
+  wires records and its Rate of Last Resort records, or Medicine Hat's bundled records (2026-11-04).
+- There is no UCA cross-check for these areas. The City's energy price must name its term and the
+  term must cover today, or the records fail closed; a term is never extended (the RoLR rule above).
+- Municipal access fees stay notes: Lethbridge Rider A (15.50%), Red Deer's 15% Local Access Fee and
+  Medicine Hat's Municipal Consent & Access Fee. No seed fallback. When a page links no document, the
+  last known copy is read with a note (Lethbridge's bylaw and rate table, Medicine Hat's brochure).
+- **Lethbridge** (991, 992, 994, 995, 996, 997): values come from the consolidated Electric
+  Distribution Tariff bylaw linked on the Electric page. Each must equal the year's Rate Table, read
+  by column position, and both documents must name the same rate year. Riders B and C are dated
+  per-kWh components that must match the Utility Rates page's rider table (Rider C is a credit,
+  stored as `rebate`). The page's "RDS" price is defined nowhere and is not stored. The City's one
+  Rate of Last Resort price is stored as RoLR-Res and RoLR-SB. The page text contains zero-width
+  spaces.
+- **Red Deer** (61, 63, 64, 78): Schedule A values must equal the Delivery Rates and Charges page,
+  whose date label may lag the schedule. That page's quarterly Transmission Rider is stored for the
+  current quarter. The Rate of Last Resort records (RRT-61/63/64/78) take the term's energy price
+  from the Rate of Last Resort page for every rate and Schedule D's administration charge, noting
+  the page's older $0.2498/day (2026-11-19). Pages are fetched over plain HTTP, with headless
+  Chromium only when the expected content is missing.
+- **Medicine Hat** (1.1, 3.1, 3.3, 4.1, 5.1): bundled records (delivery plus the City's energy
+  price).
+  - The brochure is read one page column at a time.
+  - 1.1, 3.1 and 3.3 use the monthly default rate. The current month's row must exist and equal the
+    page's "Current Electricity Rate", or the records fail closed. The rate is dated to that month.
+    The scheduled run on the 1st usually comes before the City posts the month's row, so the owner
+    starts a Medicine Hat run once it is posted (2026-11-19).
+  - 4.1 and 5.1 use the fixed default rate for its term (to December 31, 2026) and fail closed after
+    it (2026-11-19).
+  - Each record ends with its shortest-lived price (the month for 1.1/3.1/3.3, the fixed rate's term
+    for 4.1/5.1), so models and the coverage gate stop using it until a newer record is stored
+    (2026-11-19).
+  - The undated Going Green surcharge is stored for the month it was read, with a note
+    (2026-11-19).
+  - The Environmental Conservation Charge applies above 950 kWh a month; demand is per kVA.
 
 ## AESO pool price reference (`aeso.py`)
 

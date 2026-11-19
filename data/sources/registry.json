@@ -1,6 +1,6 @@
 {
   "_description": "Source registry for Canadian utility rate scrapers. Each entry maps a utility to its data sources and scraper implementation.",
-  "_last_updated": "2026-11-04",
+  "_last_updated": "2026-11-19",
   "utilities": [
     {
       "name": "Enbridge Gas",
@@ -2657,6 +2657,128 @@
         }
       ],
       "notes": "Summerside Electric is the City of Summerside's municipal utility (Prince Edward Island). Added in batch 18 (2026-11-04): residential urban/rural/seasonal/seasonal option, General Service I and seasonal (first 20 kW free), small and large industrial. The ECAM adjustment is not printed, so it is not shown. General Service II (closed 2016), Heat For Less Now equipment schedules, unmetered, lighting and EV charging are excluded. Maritime Electric's wholesale rates 330/340 to the City remain reference records. No seed fallback."
+    },
+    {
+      "name": "Naka Power Utilities (NWT)",
+      "province": "NT",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.naka_power",
+      "scraper_class": "NakaPowerScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.nakapower.com/en-ca/customer-billing-rates/rates-regulations.html",
+          "source_type": "html",
+          "description": "Rates & Regulations page: links the current Rate Schedule once per zone tab (both links must agree) and the rate-update notice that says whether the edition's rider changes are interim",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.nakapower.com/content/dam/web/nakapower/2026-07-01-NPUNWT-rate-schedule.pdf",
+          "source_type": "pdf",
+          "description": "NWT Public Utilities Board-approved Rate Schedule effective July 1, 2026: base rates per class and the dated rider tables per zone (discovered each run; no last-known copy is read)",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.nakapower.com/en-ca/customer-billing-rates/rates-regulations/rate-updates-july-2026.html",
+          "source_type": "html",
+          "description": "2026 Rate Updates notice: the July 1, 2026 rider changes are interim refundable rates pending the 2026-2028 General Rate Application",
+          "is_primary": false
+        }
+      ],
+      "notes": "Naka Power Utilities (NWT) Ltd., formerly Northland Utilities (NWT) and Naka Power Utilities (Yellowknife), amalgamated on January 1, 2026; Hay River moved to NTPC on March 1, 2025. Regulated by the NWT Public Utilities Board. Added in batch 18 continued (2026-11-19): residential and general service in the Snare (Yellowknife), Taltson and Thermal zones, plus Taltson Large General Service. Each rider is a dated component; percentage riders and the Yellowknife franchise tax stay percentages. The Territorial Power Subsidy Program and GNWT Rate Equalization Program prices are conditional alternatives. The July 1, 2026 riders are interim (medium confidence). Thermal General Service is not stored: its schedule prints a $14.00/kW demand charge with a $10.00/kW total. Lighting, Taltson interruptible service and the Hay River wheeling charge are excluded. No seed fallback."
+    },
+    {
+      "name": "City of Medicine Hat Electric Utility",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.medicine_hat",
+      "scraper_class": "MedicineHatScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.medicinehat.ca/home-property-utilities/utilities/energy-plans-pricing/",
+          "source_type": "html",
+          "description": "Energy Plans & Pricing page: the monthly default electricity rate (the current month's row must exist), the Large Commercial and Industrial fixed default rate with its term, and the Going Green surcharge; links the rates brochure as 'Current Utility Rates'",
+          "is_primary": true
+        },
+        {
+          "url": "https://media-002-ca.cdn.govstack.com/medicinehat-016-ca/media/vhua0uvl/2026-utility-rate-brochure.pdf",
+          "source_type": "pdf",
+          "description": "2026 Utility Rates brochure: electric delivery charges by rate class (last known copy, read when the page links no brochure)",
+          "is_primary": false
+        }
+      ],
+      "notes": "The City of Medicine Hat generates, distributes and sells electricity, so each record bundles the City's delivery charges with its own default energy price. Added in batch 18 continued (2026-11-19): 1.1 Residential, 3.1 Small Commercial and 3.3 Medium Commercial (monthly default rate plus the Going Green surcharge), 4.1 Large Commercial - Primary and 5.1 Industrial - Primary (fixed default rate to December 31, 2026). The Municipal Consent & Access Fee stays a note. Farm, temporary, irrigation, unmetered and lighting services are excluded. No seed fallback."
+    },
+    {
+      "name": "City of Lethbridge Electric Utility",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.lethbridge",
+      "scraper_class": "LethbridgeScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.lethbridge.ca/utilities/utility-rates/",
+          "source_type": "html",
+          "description": "Utility Rates page: the year's Rate of Last Resort price, the dated City riders (A, B and C) and the link to the year's Rate Table",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.lethbridge.ca/utilities/electric/",
+          "source_type": "html",
+          "description": "Electric page: links the Electric Distribution Tariff bylaw",
+          "is_primary": false
+        },
+        {
+          "url": "https://media-001-ca.cdn.govstack.com/lethbridge-001-ca/media/pckj4114/bylaw-6364-2025-12-08-consolidated.pdf",
+          "source_type": "pdf",
+          "description": "Electric Distribution Tariff Bylaw 6364, consolidated December 8, 2025 (linked as 'Bylaw 6466 Electric Distribution Tariff'; last known copy): charges, eligibility and on-peak hours per rate code",
+          "is_primary": false
+        },
+        {
+          "url": "https://media-001-ca.cdn.govstack.com/lethbridge-001-ca/media/f5fhdlhv/2026-rate-table-final.pdf",
+          "source_type": "pdf",
+          "description": "2026 Rate Table (last known copy): every bylaw value must equal the table's value for its rate code",
+          "is_primary": false
+        }
+      ],
+      "notes": "The City of Lethbridge owns its distribution system and publishes the Rate of Last Resort price for its area. Added in batch 18 continued (2026-11-19): distribution rate codes 991, 992, 994, 995, 996 and 997 (transmission and distribution access charges plus Riders B and C) and the City's Rate of Last Resort for residential and small business (9.975 cents/kWh, January 1 to December 31, 2026). Rider A (15.50% local access fee) stays a note; the page's undefined 'RDS' price is not stored. Public lighting, unmetered service and distributed generation are excluded. No seed fallback."
+    },
+    {
+      "name": "City of Red Deer Electric Light & Power",
+      "province": "AB",
+      "utility_type": "electricity",
+      "scraper_module": "scrapers.utilities.red_deer",
+      "scraper_class": "RedDeerScraper",
+      "status": "partial",
+      "sources": [
+        {
+          "url": "https://www.reddeer.ca/city-services/electric-light-and-power/understanding-your-electricity-bill-and-meter/delivery-rates-and-charges/",
+          "source_type": "html",
+          "description": "Delivery Rates and Charges page: cross-check of every Schedule A value and the quarterly Transmission Rider",
+          "is_primary": true
+        },
+        {
+          "url": "https://www.reddeer.ca/media/reddeerca/city-services/electric-light-and-power/Appendix_A.pdf",
+          "source_type": "pdf",
+          "description": "Electric Utility Bylaw 3273/2000 Schedule A, Distribution Tariff (effective March 1, 2026): System Access and Distribution Access charges, Balancing Pool Allocation, Local Access Fee",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.reddeer.ca/media/reddeerca/city-services/electric-light-and-power/Appendix_D.pdf",
+          "source_type": "pdf",
+          "description": "Schedule D, Regulated Rate Tariff (effective March 1, 2026): the daily Administration Charge",
+          "is_primary": false
+        },
+        {
+          "url": "https://www.reddeer.ca/city-services/electric-light-and-power/getting-electricity/rate-of-last-resort/",
+          "source_type": "html",
+          "description": "Rate of Last Resort page: the energy price for the current term (12.06 cents/kWh, January 1, 2025 to December 31, 2026)",
+          "is_primary": false
+        }
+      ],
+      "notes": "The City of Red Deer owns its distribution system and sets the Regulated Rate Tariff, its area's Rate of Last Resort (provided by ENMAX Energy under contract with the City). Added in batch 18 continued (2026-11-19): distribution rates 61, 63, 64 and 78 and the matching Rate of Last Resort records (energy plus Schedule D's $0.3035/day administration charge; the Rate of Last Resort page still shows $0.2498/day, owner decision 2026-11-19). The 15% Local Access Fee stays a note. Street and traffic lights and distribution generation are excluded. No seed fallback."
     }
   ]
 }

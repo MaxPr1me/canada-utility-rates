@@ -62,8 +62,10 @@ historical checkpoint instructions it retains. To add a utility, follow
 - Missing known classes keep their labelled seed fallbacks. Record newly discovered unsupported
   classes as gaps; never invent fallback rates for them.
 - A utility without seed data returns no records when its sources fail. Utilities registered in batch 18
-  have no seed data on purpose (owner confirmed 2026-11-17), so a source failure appears as no valid
-  records rather than as estimates. See the [municipal rules](regional-utilities.instructions.md#municipal-utilities-batch-18).
+  and batch 18 continued have no seed data on purpose (owner confirmed 2026-11-17 and 2026-11-19), so a
+  source failure appears as no valid records rather than as estimates. See the
+  [municipal rules](regional-utilities.instructions.md#municipal-utilities-batch-18) and the
+  [Alberta municipal rules](alberta-electricity.instructions.md#municipal-utilities-batch-18-continued-2026-11-19).
 - `scrapers/utils/validation.py` checks data quality after every scrape (`python -m pipeline.validate`).
 
 ## Components and dates

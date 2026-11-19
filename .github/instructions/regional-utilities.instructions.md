@@ -1,6 +1,6 @@
 ---
-description: "Use when changing electricity scrapers outside Ontario and Alberta, including the territories: BC Hydro, FortisBC Electric, Hydro-Quebec, Manitoba Hydro, SaskPower, NB Power, Nova Scotia Power, Maritime Electric, Newfoundland Power, NL Hydro, Yukon Energy, ATCO Electric Yukon (yukon_electrical.py), NTPC, Qulliq and the batch 18 municipal utilities (Saint John Energy, Nelson Hydro, New Westminster, Penticton, Grand Forks, Summerland, Summerside Electric). Covers HTML/PDF parser sources, conditional riders and credits, phase/amperage and kW/kVA alternatives, multipliers, continuation pages, market-indexed products (BC Hydro RS1892, FortisBC RS38, NSPower RTP, NL Hydro non-firm), Maritime's free first 20 kW, territorial subsidies and the Yukon joint rate book."
-applyTo: "scrapers/utilities/bc_hydro.py, scrapers/utilities/fortisbc_electric.py, scrapers/utilities/hydro_quebec.py, scrapers/utilities/manitoba_hydro.py, scrapers/utilities/saskpower.py, scrapers/utilities/nb_power.py, scrapers/utilities/nova_scotia_power.py, scrapers/utilities/maritime_electric.py, scrapers/utilities/newfoundland_power.py, scrapers/utilities/nl_hydro.py, scrapers/utilities/yukon_energy.py, scrapers/utilities/yukon_electrical.py, scrapers/utilities/ntpc.py, scrapers/utilities/qulliq.py, scrapers/utilities/saint_john_energy.py, scrapers/utilities/nelson_hydro.py, scrapers/utilities/new_westminster.py, scrapers/utilities/penticton.py, scrapers/utilities/grand_forks.py, scrapers/utilities/summerland.py, scrapers/utilities/summerside_electric.py"
+description: "Use when changing electricity scrapers outside Ontario and Alberta, including the territories: BC Hydro, FortisBC Electric, Hydro-Quebec, Manitoba Hydro, SaskPower, NB Power, Nova Scotia Power, Maritime Electric, Newfoundland Power, NL Hydro, Yukon Energy, ATCO Electric Yukon (yukon_electrical.py), NTPC, Naka Power (naka_power.py), Qulliq and the batch 18 municipal utilities (Saint John Energy, Nelson Hydro, New Westminster, Penticton, Grand Forks, Summerland, Summerside Electric). Covers HTML/PDF parser sources, conditional riders and credits, phase/amperage and kW/kVA alternatives, multipliers, continuation pages, market-indexed products (BC Hydro RS1892, FortisBC RS38, NSPower RTP, NL Hydro non-firm), Maritime's free first 20 kW, territorial subsidies and the Yukon joint rate book."
+applyTo: "scrapers/utilities/bc_hydro.py, scrapers/utilities/fortisbc_electric.py, scrapers/utilities/hydro_quebec.py, scrapers/utilities/manitoba_hydro.py, scrapers/utilities/saskpower.py, scrapers/utilities/nb_power.py, scrapers/utilities/nova_scotia_power.py, scrapers/utilities/maritime_electric.py, scrapers/utilities/newfoundland_power.py, scrapers/utilities/nl_hydro.py, scrapers/utilities/yukon_energy.py, scrapers/utilities/yukon_electrical.py, scrapers/utilities/ntpc.py, scrapers/utilities/naka_power.py, scrapers/utilities/qulliq.py, scrapers/utilities/saint_john_energy.py, scrapers/utilities/nelson_hydro.py, scrapers/utilities/new_westminster.py, scrapers/utilities/penticton.py, scrapers/utilities/grand_forks.py, scrapers/utilities/summerland.py, scrapers/utilities/summerside_electric.py"
 ---
 # Regional electricity utilities and territories
 
@@ -148,6 +148,18 @@ known copies, decided 2026-11-18, have a note but no review date.)
   energy price, never a derived difference. Taltson interruptible heating is conditional.
 - **Qulliq:** the April 1, 2025 rates are interim: medium confidence until a final decision is
   published. The page's date label is stale.
+- **Naka Power** (formerly Northland Utilities; batch 18 continued, 2026-11-19): the PUB-approved Rate
+  Schedule linked from the rates page once per zone tab. Both links must name the same document, and
+  its date must equal the newest date printed in the schedule.
+  - Base rows must add up to each printed Total. Thermal Zone General Service fails closed: it prints
+    a $14.00/kW demand charge with a $10.00/kW total.
+  - Each rider a class lists comes from its zone's table: cents-per-kWh riders per kWh (credits as
+    rebates); percentage riders and the Yellowknife franchise tax as `%` components.
+  - The rate-update notice for the same date decides confidence: interim rider changes are medium
+    confidence, with a ledger monitor for the final 2026-2028 GRA.
+  - The TPSP first-block price and the GREP reference rates are conditional alternatives; the Cost of
+    Living Subsidy publishes no value.
+  - No seed fallback and no last-known copy: riders change several times a year.
 - **Yukon Energy and ATCO Electric Yukon** share the text joint YECL/YEC rate book, cross-checked
   against the R/J cross-reference: the same 20 schedules, not 40 classes.
 - **Yukon Energy Rate 1160:** take the base column, then the separate R/J/J1 percentage riders, fuel

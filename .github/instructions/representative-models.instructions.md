@@ -22,8 +22,9 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 - Sum floats with `math.fsum` in the engine and market code: Python 3.12's built-in `sum()` differs
   from 3.11 and once moved a median by a cent.
 - Tests use frozen record fixtures (`tests/fixtures/rm_records_sample.json`, `rm_engine_sample.json`,
-  `rm_records_b12.json`, `rm_records_b14.json`, `rm_records_ws_6d.json`, `rm_records_7d_gas.json`),
-  so the pre-scrape CI tests never depend on the live export.
+  `rm_records_b12.json`, `rm_records_b14.json`, `rm_records_ws_6d.json`, `rm_records_7d_gas.json`,
+  `rm_records_b18.json`, `rm_records_b18_ab.json`), so the pre-scrape CI tests never depend on the
+  live export.
 - The export and model CLI accept `--generation-receipt PATH`. This optional record distinguishes
   successful unchanged generation from failure retaining an old file; monitoring defects cannot
   break the primary export. The CLI requires `--build --output` when requesting a receipt.
@@ -85,8 +86,15 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   the intentional rule overrides.
 - Exclusion reasons include `gas_models_phase_7d` (ON/AB gas records outside the residential
   first slice), `territory_planned_later`,
-  `paired_retail_component` (Alberta RoLR records) and, for AESO and the market-indexed products,
-  `market_reference_only`, `optional_product`, `pilot` and `industrial_use_only`.
+  `paired_retail_component` (Alberta RoLR records), `no_reference_level` (a class whose printed
+  eligibility fits no usage level: Lethbridge 992 and 995), `eligibility_unpublished` (class size
+  limits not published: Medicine Hat 3.1 and 3.3, owner decision 2026-11-19) and, for AESO and the
+  market-indexed products, `market_reference_only`, `optional_product`, `pilot` and
+  `industrial_use_only`.
+- A rule's optional `model.levels` lists the only usage levels its class can serve when the printed
+  eligibility rules out a level that its size band includes. Other levels are excluded with a
+  written reason (Lethbridge 994 is three-phase only, so s2 and m1 but not s1; owner decision
+  2026-11-19).
 - Out of medians (owner decision 2026-10-16): optional TOU/peak-event products and pilots outside
   Ontario (BC Hydro 2101 combinations, FortisBC 22A/32, Hydro-Quebec Flex D/G, ATCO D13). ATCO T31,
   FortisAlberta 65, ENMAX D410 and EPCOR DAS-TOUP are supply-voltage alternatives.
@@ -96,6 +104,13 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   each charge keeps its own source. The RoLR variant applies only below 250,000 kWh/year (12 x the
   level's kWh); above it the market variant is wires plus a value-less pool-price energy line
   (`market_energy_pending`). Retailer fees, losses and unpriced conditional charges are excluded.
+- Alberta cities (owner decisions 2026-11-04 and 2026-11-19):
+  - Lethbridge and Red Deer are single-utility pairs units: the City's wires class plus its own Rate
+    of Last Resort record.
+  - Medicine Hat's bundled 1.1 counts once as flat. Its conservation charge is costed above 950 kWh.
+  - Medicine Hat 3.1 and 3.3 are not modelled (class limits unpublished), nor are 4.1 and 5.1.
+  - Lethbridge 991 serves every residential level.
+  - Every Alberta unit is a service area: `coverage.contributor_noun` is "service area(s)".
 - `required_contributors`: withhold a level (reason `withheld`, state `not_computable`) when a listed
   utility is not computable there (NL residential needs Newfoundland Power).
 - `usage_bounds`: quoted annual-use eligibility limits, applied as the level's kWh x 12.
@@ -152,6 +167,11 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   alternative, optional, expired and not-yet-effective components, percentage adjustments and
   value-less market components are excluded and counted, except the reviewed `reference_customer`
   entries.
+- A record is not computable when its energy components exist but none is in effect, or when its own
+  `end_date` is before the as-of date ("record ended on ...", as the coverage gate treats it; owner
+  decision 2026-11-19). A scraper whose bundled price expires sooner than its other charges ends the
+  record with it (Medicine Hat). Pairs keep the wires record's dates; their expired Rate of Last
+  Resort energy already blocks them.
 - Energy is pending only when the energy itself is market-priced. EPCOR's operating reserve (a
   percentage of the pool price) is excluded and listed in `energy.market_indexed_excluded`.
 - Bill demand only above a published threshold; apply energy blocks per kW, kVA or day as printed;
@@ -167,7 +187,7 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   from the median, never removed.
 - States: `modeled`, `single_source`, `market_energy_pending` (Ontario and Alberta demand classes) and
   `not_computable`. `coverage.contributor_noun` names the contributors (utilities, distributors, or
-  wires + Rate of Last Resort pairs).
+  Alberta service areas).
 
 ## Taxes and rebates (`data/models/taxes.json`)
 

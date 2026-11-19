@@ -13,8 +13,9 @@ Registration, a successful local parser and stored live output are different mil
 [README status](../README.md#current-status) for current publication and source-health results.
 Batch 12 also registered one new utility, EPCOR Natural Gas (Ontario), to replace a mis-registered
 Alberta entry that is now `status: "retired"`. Batch 18 (owner decision 2026-11-04) onboards the easy and
-medium inventory utilities: the municipal additions in NB, BC and PE are registered but still await
-verified publication; Naka Power (NT) and the Alberta cities are still to come. Other inventory utilities
+medium inventory utilities: the municipal additions in NB, BC and PE were published on November 18; Naka
+Power (NT) and the Alberta cities Medicine Hat, Lethbridge and Red Deer were registered on November 19
+(batch 18 continued) and await their first stored runs. Other inventory utilities
 are not onboarded without a decision. Use this guide to fill missing classes in the owning utility module, and
 consult the [current coverage matrix](phase5_completion_matrix.md) before choosing work.
 Current examples include page-aware domestic options, NL Hydro service alternatives,
@@ -241,10 +242,13 @@ not modelled:
   only where the utility's own billing pages confirm monthly billing (NB Power GS1, Maritime
   Electric; user decision). Never assume a period.
 - **Alberta pairs:** the crosswalk's `pairs` section pairs each Alberta wires class with the Rate
-  of Last Resort record for its area; each pair counts as one utility and the Rate of Last Resort
-  applies only below 250,000 kWh a year. A new Alberta wires class needs a pairing (otherwise it
+  of Last Resort record for its area; each pair counts as one service area and the Rate of Last
+  Resort applies only below 250,000 kWh a year. A new Alberta wires class needs a pairing (otherwise it
   is not computable at those levels); Rate of Last Resort records themselves are excluded as
-  `paired_retail_component`.
+  `paired_retail_component`. A city that publishes both halves is one unit whose wires and retail
+  utility are the same (Lethbridge, Red Deer).
+- **Level limits:** when a class's printed eligibility rules out a level its size band includes (for
+  example three-phase only), list the allowed levels in the rule's `model.levels` (Lethbridge 994).
 - **Required contributors:** `required_contributors` in the crosswalk withholds a model level when
   a listed utility is not computable there, instead of showing the others alone (Newfoundland
   Power for the Newfoundland and Labrador residential model).
@@ -374,3 +378,18 @@ Grand Forks, Summerland and Summerside Electric. Utility rules are in the
   per-period block thresholds in `data/models/block_periods.json` with a quote.
 - **Never weaken TLS.** A site with an incomplete certificate chain (sjenergy.ca) is read through headless
   Chromium for discovery; documents come from hosts with valid chains.
+
+Batch 18 continued (November 19, 2026: Naka Power, Medicine Hat, Lethbridge, Red Deer) added these
+patterns. Utility rules are in the
+[Alberta instructions](../.github/instructions/alberta-electricity.instructions.md#municipal-utilities-batch-18-continued-2026-11-19)
+and the [Territories section](../.github/instructions/regional-utilities.instructions.md#territories).
+
+- **One scraper per city, both halves.** A city that owns its wires and publishes its area's Rate of Last
+  Resort emits both sets of records from one scraper (Lethbridge, Red Deer). The crosswalk then pairs
+  them as a single-utility unit.
+- **End a record with its shortest-lived price.** When a bundled price expires sooner than the record's
+  other charges (Medicine Hat's month-dated default energy), set the record's `end_date` to it. Models
+  and the coverage gate then stop using the record instead of pricing what is left.
+- **Cross-check two official documents value by value.** The bylaw against the rate table, read by
+  column position (Lethbridge); a schedule against the City's delivery page (Red Deer). A rate-update
+  notice decides interim confidence (Naka Power).

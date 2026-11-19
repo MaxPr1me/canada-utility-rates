@@ -251,10 +251,10 @@ def test_province_labels_method_texts_and_states_are_generic():
         assert ("loss factors" in model["method"]) == (province == "ON")
         assert ("Class A Global Adjustment" in model["method"]) == (province == "ON")
     alberta = _model(result, AB_RES)
-    for text in ("Median of 4 Alberta wires + Rate of Last Resort pairs' residential flat-rate tariffs",
+    for text in ("Median of 4 Alberta service areas' residential flat-rate tariffs",
                  "Direct Energy Regulated Services' daily administration charge is not included",
-                 "applies only below 250,000 kWh a year", "Coverage: 4 of 4 Alberta electricity wires + Rate of Last "
-                 "Resort pairs with live records", "municipal franchise and local access fees"):
+                 "applies only below 250,000 kWh a year", "Coverage: 4 of 4 Alberta electricity service areas with "
+                 "live records", "municipal franchise and local access fees"):
         assert text in alberta["method"], text
     assert result["assumptions"]["pairs"]["retail_below_annual_kwh"] == 250000
     quebec = _model(result, "QC|electricity|residential|tiered|-")
@@ -287,13 +287,15 @@ def test_crosswalk_maps_alberta_wires_classes_and_marks_retail_records_as_pair_p
 def test_frozen_samples_together_leave_nothing_unmapped():
     records = (load_rates(FIXTURES / "rm_records_sample.json") + load_rates(FIXTURES / "rm_records_b12.json")
                + _records() + load_rates(FIXTURES / "rm_records_ws_6d.json")
-               + load_rates(FIXTURES / "rm_records_b18.json"))
+               + load_rates(FIXTURES / "rm_records_b18.json") + load_rates(FIXTURES / "rm_records_b18_ab.json"))
     report = coverage_report(records, load_crosswalk())
     assert report["unmapped"] == [] and report["unused_rules"] == []
     assert "province_not_modelled_yet_7c" not in report["exclusions"]
-    assert report["exclusions"]["paired_retail_component"] == 8
-    assert report["model_keys"][AB_RES]["utilities"] == ["ATCO Electric", "ENMAX Power", "EPCOR Distribution",
-                                                         "FortisAlberta"]
+    # 8 provider RoLR records, plus Lethbridge's 2 and Red Deer's 4 city Rate of Last Resort records.
+    assert report["exclusions"]["paired_retail_component"] == 14
+    assert report["model_keys"][AB_RES]["utilities"] == [
+        "ATCO Electric", "City of Lethbridge Electric Utility", "City of Medicine Hat Electric Utility",
+        "City of Red Deer Electric Light & Power", "ENMAX Power", "EPCOR Distribution", "FortisAlberta"]
 
 
 def test_market_indexed_and_aeso_records_are_excluded_by_their_own_rules():
@@ -615,7 +617,7 @@ def _without_sidecar(models):
 def test_contributor_nouns_name_what_each_model_counts_once():
     result = _build()
     assert _model(result, AB_RES)["coverage"]["contributor_noun"] == {
-        "singular": "wires + Rate of Last Resort pair", "plural": "wires + Rate of Last Resort pairs"}
+        "singular": "service area", "plural": "service areas"}
     assert _model(result, BC_RES_FLAT)["coverage"]["contributor_noun"] == {"singular": "utility", "plural": "utilities"}
     ontario = _on_build(_on_fixture(inject=False, profiles=False))["models"]
     assert ontario and all(m["coverage"]["contributor_noun"] == {"singular": "distributor", "plural": "distributors"}
