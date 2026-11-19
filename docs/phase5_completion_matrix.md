@@ -9,7 +9,26 @@ history publication, monitoring and the deployed desktop/mobile views are verifi
 and [workflow rules](../.github/instructions/ci-data-history.instructions.md#model-monitoring).
 This does not waive source checks or authorize a Monthly Scrape merely to test monitoring.
 
-## Current milestone - source reliability (Batch 18 published)
+## Current milestone - December renewals, then Phase 7 gas
+
+Owner decisions (November 19). Batch 18 continued was published on November 19 (see
+[Registered municipal additions](#registered-municipal-additions)), so every registered utility has
+stored live output. Dated checks:
+- December 1: the scheduled Monthly Scrape; Medicine Hat then needs the owner's run once the City
+  posts December's default rate.
+- December 15: twelve ledger monitor reviews (Yukon Energy, ATCO Electric Yukon, NTPC, Qulliq, EPCOR
+  Distribution, the three Rate of Last Resort providers, Naka Power, Medicine Hat, Lethbridge and
+  Red Deer). The strict gate fails from December 16 for any not reviewed.
+- December 31: the Alberta Rate of Last Resort term ends (no 2027 term published yet), with the
+  Lethbridge and Red Deer city prices and Medicine Hat's large-customer fixed rate.
+- January: other January editions, and the Ontario January rate orders (added once in effect, then
+  one Ontario Monthly Scrape).
+- Ledger audits expire February 4 (14) and February 27 (62) under the gate's 120-day rule.
+
+Next phase: Phase 7 gas (commercial gas models and the open NB/QC residential choices). It starts
+with owner decisions.
+
+## Completed - source reliability and Batch 18 publication (November 17-19)
 
 Owner decision (November 17): repair and verify Maritime Electric, Grand Forks and New Westminster
 source discovery, then publish the already-registered municipal additions below. The additions,
@@ -96,16 +115,9 @@ noticed only by the yearly local check. Procedure:
 
 Result (November 19): the Market Benchmarks run started by that push (44562265776) re-checked the
 receipts with the ledger rule, found no remaining problem and closed issue #6 itself. The source
-reliability milestone is complete.
-
-Next (owner decisions November 19): Batch 18 continued, with all four remaining utilities (Naka
-Power, Medicine Hat, Lethbridge, Red Deer) and the Alberta city pairing, was published on November 19;
-see [Registered municipal additions](#registered-municipal-additions). Dated checks: the December 1
-Monthly Scrape (Medicine Hat then needs the owner's run once the City posts December); twelve ledger
-monitor reviews due December 15; the Alberta Rate of Last Resort term ending December 31 (no 2027
-term published yet); January editions (Ontario January rate orders are added once in effect, then one
-Ontario Monthly Scrape); ledger audits expiring February 4 (14) and February 27 (62) under the gate's
-120-day rule. Next phase: Phase 7 gas (commercial gas models and the open NB/QC residential choices).
+reliability milestone is complete. Batch 18 continued (Naka Power, Medicine Hat, Lethbridge, Red
+Deer and the Alberta city pairing) followed and was published the same day; see
+[Registered municipal additions](#registered-municipal-additions).
 
 ### Registered municipal additions
 

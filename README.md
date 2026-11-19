@@ -584,6 +584,12 @@ Advocate (UCA) default-rates table. These records fail closed after the term end
 term is published; old RRO seeds remain labelled history. Competitive retail contracts are not
 included. AESO's pool price is a live market reference with no stored number.
 
+Three city utilities follow their own published rates (batch 18 continued, November 19, 2026).
+Lethbridge and Red Deer own their wires and publish their area's Rate of Last Resort price
+themselves; no UCA cross-check exists for them, and the City's term must cover the run date.
+Medicine Hat generates, delivers and sells electricity, so each record bundles delivery with the
+City's own default energy price, which is published month by month.
+
 **Alberta market history:** `scripts/build_alberta_market.py` reads the official AESO hourly
 pool prices and checks every monthly arithmetic average against AESO's **Pool Monthly Summary**
 within $0.01/MWh. It keeps permanent raw hourly (`data/market/alberta_pool_hourly.csv`) and
@@ -738,7 +744,7 @@ One line per phase; sub-phase detail and the work queue are in the
 [coverage matrix](docs/phase5_completion_matrix.md).
 
 - **Earlier phases (foundations)** — done: scraper framework, granular schema, registry, validation, history snapshots, JSON export and the website.
-- **Phase 5: Live Parser Completion** — in progress: the registered municipal additions are published (November 18); the two sources that still fail on GitHub (issue #6) come next (see Current Status); the scoped coverage-complete claim awaits owner approval, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
+- **Phase 5: Live Parser Completion** — in progress: the Batch 18 additions are published (municipal utilities in NB, BC and PE on November 18; Naka Power and the Alberta cities on November 19) and issue #6 is closed; the scoped coverage-complete claim will be drafted for owner approval after the January renewals, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas commodity cadence started).
 - **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D residential gas done as method 7D-1, in each utility's native m³ or GJ, with business gas withheld until its usage scenarios are approved).
 - **Phase 8: Representative Model Refresh Automation** — done and verified in CI and on the deployed site. Public change history and problem-only monitoring follow the [approved policy](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).

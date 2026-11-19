@@ -354,6 +354,16 @@ The **Ontario Price Archive** workflow can be started the same way. The owner's 
 GitHub command-line tool, so start workflows from the website. **Deploy Site** can also be run by
 hand if it did not start by itself after a successful data update.
 
+**Medicine Hat each month (owner decision, November 19, 2026):** the scheduled run starts at 08:00
+UTC on the 1st (1 a.m. in Alberta in winter), usually before the City of Medicine Hat posts the new
+month's default electricity rate. That run then stores nothing for Medicine Hat, and the
+model-monitoring issue names it. Once the new month appears on the City's
+[Energy Plans & Pricing page](https://www.medicinehat.ca/home-property-utilities/utilities/energy-plans-pricing/),
+start Monthly Scrape with the utility `City of Medicine Hat Electric Utility`. Until then its
+residential and small-business prices are left out of the Alberta models. Its fixed rate for large
+customers ends December 31, 2026, so from January 1, 2027 until that run the coverage gate also
+reports Medicine Hat as having no live rates.
+
 ---
 
 ## Where Official Sources Are Stored
@@ -418,6 +428,7 @@ See [docs/adding-a-utility.md](docs/adding-a-utility.md) for the full guide, and
 4. Save a small source-derived test fixture and parse the published classes, values, units and dates.
 5. Add the utility and official schedule URLs to `data/sources/registry.json`.
 6. Run the focused tests, then `python -m pipeline.run_scrape --utility "Your Utility" --dry-run`. Seed constants alone are not a completed live parser.
+7. Push, then start Monthly Scrape for the new utility (or its province) to store it; see the full guide's "Verify the data".
 
 ---
 
@@ -481,9 +492,15 @@ workflow does not dismiss a monitoring warning.
    A utility the ledger marks for manual updates (`manual_update`; Maritime Electric, whose website
    blocks GitHub) is named only once its yearly review is overdue: follow its yearly procedure in the
    [regional rules](.github/instructions/regional-utilities.instructions.md#maritime-electric).
+   A newly registered utility is named as having no live output from the first check after it is
+   registered until a Monthly Scrape stores it: start that run and the issue closes itself
+   (November 19, 2026).
+   Medicine Hat named after the 1st: see "Medicine Hat each month" above.
 3. The checker updates its own issue and closes it only after all recorded problems have verified
    recovery. Other issues and maintainer notes are left alone. Do not delete change history to
-   silence a warning.
+   silence a warning. On a data run while a problem is open, the "Record model change history" step
+   can show "Process completed with exit code 1" although the run succeeded: that step only reports,
+   never blocks, and the change history is still saved.
 4. If tracking has not started, the first verified automated model refresh creates the baseline.
    Local exports do not update that shared history, so their history panel may be unavailable even
    while their model prices work.

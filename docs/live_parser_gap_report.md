@@ -1,7 +1,9 @@
 # Live Parser Gap Report
 
 **Current state:** the registered municipal additions were published on November 18 (unfiltered
-Monthly Scrape plus single-utility reruns) and all 85 active utilities have stored live output.
+Monthly Scrape plus single-utility reruns); batch 18 continued (Naka Power and the Alberta cities
+Medicine Hat, Lethbridge and Red Deer) was published on November 19, and all 89 active utilities
+have stored live output.
 The November 19 repairs (response logging, reviewed last-known schedules, the Eastward General
 Service date rule) were verified on GitHub: NL Hydro and Heritage Gas store live records again.
 Cloudflare still blocks Maritime Electric on GitHub's runners, so it is a manual-update utility

@@ -207,7 +207,10 @@ never upload a database by hand. Instead:
 3. Push the parser, fixture, registry entry and tests, then start **Monthly Scrape** from the
    Actions tab with the `utility` input (or a two-letter `province` input), or wait for the 1st.
    Its history check (integrity, nothing fewer, earlier snapshots unchanged) must pass before the
-   database is uploaded.
+   database is uploaded. Until the first stored run, the coverage gate reports the new utility as
+   `no_live_output`, and the next model-monitoring check opens the monitoring issue (Market
+   Benchmarks runs one on any push that changes model inputs; it closes itself after the storing
+   run), so start the run promptly.
 4. Afterwards, refresh your mirror and check the stored data:
 
 ```bash
