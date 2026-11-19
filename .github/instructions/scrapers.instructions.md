@@ -112,6 +112,11 @@ historical checkpoint instructions it retains. To add a utility, follow
 
 - JS-rendered pages: `BaseScraper.fetch_rendered_page()` uses headless Chromium
   (`python -m playwright install chromium`).
+- Every `fetch_page()` and `fetch_bytes()` response is logged on one line before its status is checked
+  (`describe_response()`): status, final URL, content type, size, server, `cf-ray` and HTML title, at
+  WARNING for HTTP 400 or more. `fetch_rendered_page()` logs status, final URL, size and title the same
+  way. This shows why a runner was refused (for example Cloudflare). Never log bodies or other headers.
+  The `User-Agent` names the project and its repository URL (owner decision 2026-11-19).
 - `scrapers/utils/parsing.py` provides `DocumentPage`, page-aware fail-closed PDF extraction and
   section selection, CSV/XLSX readers, content hashing, effective-date/unit/currency normalization
   and contextual verification, plus `find_text_near_label()`, `extract_rate_from_text()`,

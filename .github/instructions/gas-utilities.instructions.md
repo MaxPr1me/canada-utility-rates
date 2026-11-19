@@ -69,6 +69,11 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
 
 - Follow the business page to the monthly rate-table PDF, cross-check the page summaries and fail
   closed on an edition/month mismatch.
+- **General Service summary date (owner decision 2026-11-19, issue #6):** the business page can lag the
+  monthly rate table. An older "as of" date is accepted only when the page's fixed, base energy and gas
+  cost values equal the table's exactly; the table sets the effective date and the record notes the
+  page's date. A newer page date or any value difference is rejected. The residential summary stays
+  strict: its date must match the table.
 - Municipal riders apply to a limited charge base.
 - Rate Class 3's demand charge is per GJ of Billing Demand per month (the greater of 225 GJ, contract
   demand or maximum 24-hour use); take this unit from the approved tariff PDF, not the rate table.

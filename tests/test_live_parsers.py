@@ -2761,6 +2761,41 @@ class TestHeritageGasLive:
         document["pages"][key]["text"] = document["pages"][key]["text"].replace(old, new, 1)
         assert len(self.parse(document)) == count
 
+    @staticmethod
+    def parse_november(document, key=None, old=None, new=None):
+        from datetime import date
+        from scrapers.utilities.heritage_gas import HeritageGasScraper
+
+        pages = {k: v["text"] for k, v in document["pages"].items()}
+        pages["rate_table"] = pages["rate_table"].replace("RATE TABLE OCTOBER 2026", "RATE TABLE NOVEMBER 2026", 1)
+        if key:
+            assert old in pages[key], old
+            pages[key] = pages[key].replace(old, new, 1)
+        return {record.tariff_code: record for record in HeritageGasScraper().parse_pages(
+            pages, date(2026, 11, 19), table_url=document["pages"]["rate_table"]["url"])}
+
+    def test_general_service_accepts_an_older_page_summary_whose_values_match(self, document):
+        # Owner decision 2026-11-19: General Service only; residential still needs the table's date.
+        records = self.parse_november(document)
+        assert set(records) == {"GS"}
+        assert records["GS"].effective_date == "2026-11-01"
+        assert "as of October 1, 2026" in records["GS"].notes
+        assert "as of" not in self.parse(document)["GS"].notes
+
+    @pytest.mark.parametrize(("old", "new"), [
+        ("Commodity Charge per GJ $8.10", "Commodity Charge per GJ $8.20"),
+        ("Fixed Delivery Charge $", "Fixed Delivery Charge $1"),
+    ])
+    def test_general_service_older_page_summary_with_a_changed_value_is_rejected(self, document, old, new):
+        assert self.parse_november(document, "business", old, new) == {}
+
+    def test_general_service_page_summary_newer_than_the_table_is_rejected(self, document):
+        page = document["pages"]["business"]["text"]
+        assert "Rates for General Service Class as of October 1, 2026" in page
+        document["pages"]["business"]["text"] = page.replace(
+            "Rates for General Service Class as of October 1, 2026", "Rates for General Service Class as of November 1, 2026")
+        assert set(self.parse(document)) == {"Residential"}
+
 
 class TestHeritageGasRC3Live:
     @pytest.fixture
@@ -3650,6 +3685,7 @@ class TestMaritimeElectricBuildingLive:
         response.status_code = 403
         schedule = "\n".join(ME_FIXTURE["rates_page"]["html_lines"])
         html = f'<html><a href="{ME_URL}">Section N-28</a>{schedule}</html>'
+        fetched = []
 
         def forbidden(url):
             raise HTTPError("403 Forbidden", response=response)
@@ -3658,17 +3694,52 @@ class TestMaritimeElectricBuildingLive:
             assert url == me.SOURCE_URL
             return html if rendered_result == "schedule" else rendered_result
 
+        def pdf(url, **_k):
+            fetched.append(url)
+            return b"%PDF"
+
         monkeypatch.setattr(scraper, "fetch_page", forbidden)
         monkeypatch.setattr(scraper, "fetch_rendered_page", rendered)
-        monkeypatch.setattr(scraper, "fetch_bytes", lambda *_a, **_k: b"%PDF")
+        monkeypatch.setattr(scraper, "fetch_bytes", pdf)
         monkeypatch.setattr(me, "_extract_pages", lambda _b: [DocumentPage(1, ME_PAGE1)])
         records = scraper.scrape()
+        assert all("Provenance: live_parsed" in r.notes for r in records)
         if rendered_result == "schedule":
             assert {r.tariff_code for r in records} == ME_BUILDING | ME_INDUSTRIAL
-            assert all("Provenance: live_parsed" in r.notes for r in records)
+            assert not any(me.LAST_KNOWN_SCHEDULE_NOTE in r.notes for r in records)
         else:
-            assert len(records) == 2
-            assert all("Provenance: seed_fallback" in r.notes and r.confidence == "unverified" for r in records)
+            # Owner decision 2026-11-19: the last known N-28 is read; Section N classes cannot be checked.
+            assert fetched == [me.LAST_KNOWN_SCHEDULE_URL] == [ME_URL]
+            assert {r.tariff_code for r in records} == ME_BUILDING
+            assert all(me.LAST_KNOWN_SCHEDULE_NOTE in r.notes for r in records)
+
+    @pytest.mark.parametrize("case", ["past_review_date", "unreadable_pdf"])
+    def test_blocked_page_without_a_usable_last_known_schedule_falls_back_to_seed(self, monkeypatch, case):
+        from datetime import date
+        from requests import HTTPError, Response
+
+        scraper = me.MaritimeElectricScraper()
+        response = Response()
+        response.status_code = 403
+        fetched = []
+
+        def forbidden(url):
+            raise HTTPError("403 Forbidden", response=response)
+
+        def pdf(url, **_k):
+            fetched.append(url)
+            return b"%PDF"
+
+        if case == "past_review_date":
+            monkeypatch.setattr(me, "LAST_KNOWN_SCHEDULE_REVIEW_BY", date(2026, 1, 1))
+        monkeypatch.setattr(scraper, "fetch_page", forbidden)
+        monkeypatch.setattr(scraper, "fetch_rendered_page", lambda url: None)
+        monkeypatch.setattr(scraper, "fetch_bytes", pdf)
+        monkeypatch.setattr(me, "_extract_pages", lambda _b: [DocumentPage(1, "Section N-28 cover page only")])
+        records = scraper.scrape()
+        assert fetched == ([] if case == "past_review_date" else [me.LAST_KNOWN_SCHEDULE_URL])
+        assert len(records) == 2
+        assert all("Provenance: seed_fallback" in r.notes and r.confidence == "unverified" for r in records)
 
     def test_other_http_errors_do_not_retry_with_chromium(self, monkeypatch):
         from requests import HTTPError, Response
@@ -3682,6 +3753,7 @@ class TestMaritimeElectricBuildingLive:
 
         monkeypatch.setattr(scraper, "fetch_page", missing)
         monkeypatch.setattr(scraper, "fetch_rendered_page", lambda *_a, **_k: pytest.fail("unexpected browser retry"))
+        monkeypatch.setattr(scraper, "fetch_bytes", lambda *_a, **_k: pytest.fail("unexpected last-known fallback"))
         records = scraper.scrape()
         assert len(records) == 2
         assert all("Provenance: seed_fallback" in r.notes for r in records)
@@ -5921,6 +5993,65 @@ def test_nlb10_future_dated_industrial_pages_are_not_audited_as_current():
     assert "IND-NONFIRM" not in records
     assert scraper.excluded_published == {}
     assert len(records) == 21
+
+
+# Owner decision 2026-11-19 (issue #6): a current-rates page without a Schedule link reads the last known one.
+import scrapers.utilities.nl_hydro as NLKNOWN_module
+
+
+def NLKNOWN__scrape(monkeypatch, landing, pdf_pages=None):
+    document = NLB10__document()
+    pages = pdf_pages if pdf_pages is not None else [
+        DocumentPage(**page) for page in document["pages"] + document["wp1_pages"] + document["b10_industrial_pages"]]
+    scraper = NLB10_NLHydroScraper()
+    fetched = []
+
+    def fetch_bytes(url, **kwargs):
+        fetched.append(url)
+        return b"%PDF"
+
+    monkeypatch.setattr(scraper, "fetch_page", landing)
+    monkeypatch.setattr(scraper, "fetch_bytes", fetch_bytes)
+    monkeypatch.setattr(NLKNOWN_module, "extract_pdf_pages", lambda data: pages)
+    return scraper.scrape(), fetched
+
+
+def _nlknown_blocked(url, **kwargs):
+    raise RuntimeError("HTTP 403")
+
+
+@pytest.mark.parametrize("landing", [lambda url, **k: "<html><p>Current rates</p></html>", _nlknown_blocked])
+def test_nl_hydro_missing_schedule_link_reads_last_known_schedule_with_note(monkeypatch, landing):
+    records, fetched = NLKNOWN__scrape(monkeypatch, landing)
+    assert fetched == [NLKNOWN_module.LAST_KNOWN_SCHEDULE_URL]
+    assert len(records) == 22
+    assert all("Provenance: live_parsed" in record.notes for record in records)
+    assert all(NLKNOWN_module.LAST_KNOWN_SCHEDULE_NOTE in record.notes for record in records)
+    assert all(record.source_url == NLKNOWN_module.LAST_KNOWN_SCHEDULE_URL for record in records)
+
+
+def test_nl_hydro_discovered_schedule_link_is_used_without_the_fallback_note(monkeypatch):
+    discovered = "https://nlhydro.com/wp-content/uploads/2027/07/Schedule-of-Rates-Rules-and-Regulations_Jul_2027.pdf"
+    records, fetched = NLKNOWN__scrape(
+        monkeypatch, lambda url, **k: f'<html><a href="{discovered}">Schedule of Rates</a></html>')
+    assert fetched == [discovered]
+    assert len(records) == 22
+    assert not any(NLKNOWN_module.LAST_KNOWN_SCHEDULE_NOTE in record.notes for record in records)
+
+
+def test_nl_hydro_last_known_schedule_is_refused_after_its_review_date(monkeypatch):
+    monkeypatch.setattr(NLKNOWN_module, "LAST_KNOWN_SCHEDULE_REVIEW_BY", date(2026, 1, 1))
+    records, fetched = NLKNOWN__scrape(monkeypatch, _nlknown_blocked)
+    assert fetched == []
+    assert len(records) == 3
+    assert all(record.confidence == "unverified" and "seed_fallback" in record.notes for record in records)
+
+
+def test_nl_hydro_unreadable_last_known_schedule_falls_back_to_seed(monkeypatch):
+    records, fetched = NLKNOWN__scrape(monkeypatch, _nlknown_blocked, pdf_pages=[])
+    assert fetched == [NLKNOWN_module.LAST_KNOWN_SCHEDULE_URL]
+    assert len(records) == 3
+    assert all("seed_fallback" in record.notes for record in records)
 
 
 # ======================================================================

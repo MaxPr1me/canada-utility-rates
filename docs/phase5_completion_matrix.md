@@ -40,7 +40,7 @@ that work locally and fail only on GitHub's runners. Owner decisions (November 1
   names, with a note on the records; an amendment with no known copy still fails closed.
 - Maritime Electric: Cloudflare also blocks the Chromium retry. Accepted for now: its labelled
   estimates keep issue #6 open until Maritime Electric allows automated access or another official
-  route is found.
+  route is found (superseded November 19, below).
 - FortisBC Energy: the B.C. carbon-tax page dropped the connection once; recheck it without a code
   change.
 Then run Source Health again, then the unfiltered Monthly Scrape.
@@ -54,18 +54,35 @@ Penticton (44381098574), Heritage Gas (44384556313) and Liberty NB (44386489358)
 every run verified the preserved history. The strict coverage gate passes for all 85 utilities,
 the crosswalk has 0 unmapped live tariffs and the published models match the November 4 preview.
 
-Still open (owner decision November 18: stop here and revisit; the December 1 Monthly Scrape retries
-every source):
+Still open on November 18 (owner decision: stop here and revisit):
 - NL Hydro (rerun 44388480702 failed again): GitHub's runner gets a rates page without the Schedule
-  of Rates link that the page shows locally. The cause is not confirmed because the logs record no
-  response details. Options: log response details, retry later, or wait for December 1.
+  of Rates link that the page shows locally. The cause is not confirmed because the logs recorded
+  no response details.
 - Maritime Electric: the Cloudflare block on GitHub, accepted above.
 - Eastward Energy (Heritage Gas) General Service: the business page still says "as of October 1,
   2026" while the rate table is effective November 1, 2026 with the same fixed charge, delivery
   and gas-cost values. The date check rejected the class, so November stored no General Service
-  record and the October record stays. Options: wait for Eastward to update the page, or relax the
-  check (owner decision needed).
-Issue #6 lists only Maritime Electric and NL Hydro and closes itself once both return live records.
+  record and the October record stays.
+
+Owner decisions (November 19), implemented and verified locally (all tests pass; dry runs fully
+live: NL Hydro 23, Maritime 10, Heritage 3):
+- Every fetch logs its response (status, final URL, type, size, server, `cf-ray`, title), and the
+  `User-Agent` names the repository, so the next GitHub log shows why a runner was refused.
+- NL Hydro: when the page fails or links no schedule, read the last known Schedule of Rates PDF with
+  a note. A discovered link always wins.
+- Maritime Electric: only when the 403 retry yields no schedule link, read the last known N-28 PDF
+  with a note. Residential and general service stay live; Section N classes still fail closed.
+- Both known copies stop counting as live after November 19, 2027 unless reviewed, so a stale copy
+  cannot stay live indefinitely.
+- Eastward General Service: an older page date is accepted only when every value matches the rate
+  table; a newer one is rejected. Residential stays strict.
+Rules: [regional](../.github/instructions/regional-utilities.instructions.md#maritime-electric) and
+[gas](../.github/instructions/gas-utilities.instructions.md#eastward-heritage-gas).
+
+Next (owner, on GitHub): run Source Health and read the new response lines for NL Hydro and
+Maritime, then single-utility Monthly Scrapes for NL Hydro, Maritime Electric and Heritage Gas, one
+at a time. Issue #6 lists only Maritime Electric and NL Hydro and closes itself once both return
+live records in a receipted run.
 Eight ledger monitor reviews fall due December 15.
 
 ### Registered municipal additions

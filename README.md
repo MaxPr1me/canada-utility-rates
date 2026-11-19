@@ -115,8 +115,15 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   November 18 (it works locally; cause not confirmed). Both stored labelled estimates only; their
   earlier live tariffs stay. Eastward Energy (Heritage Gas) still dates its General Service page
   October 1 while its rate table is dated November 1 with the same values, so that class failed
-  closed and kept its October record. Owner decision (November 18): revisit later; the December 1
-  Monthly Scrape retries every source.
+  closed and kept its October record.
+- **Repairs ready for GitHub verification (owner decisions November 19):** every fetch now logs its
+  response (status, server, `cf-ray`, title) so a refused runner shows why. When NL Hydro's page
+  links no schedule, or Maritime's 403 retry yields none, each reads its last known official
+  schedule (also in the registry) with a note, until a review date of November 19, 2027; Maritime's
+  Section N classes still fail closed. Eastward General Service accepts an older page date only
+  when every value matches the table. Locally all three dry runs are fully live (NL Hydro 23,
+  Maritime 10, Heritage 3). Not yet confirmed on GitHub: Source Health, then single-utility Monthly
+  Scrapes, must show live records before issue #6 can close.
 - **"Coverage complete" is not claimed yet:** issue #6 is open and the scoped wording awaits the
   owner's approval. Eight ledger reviews fall due December 15; the strict gate fails from
   December 16 unless they are done.
@@ -124,7 +131,7 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   and deployment. The change log starts from its first verified baseline. Monitoring issue #6 now
   lists only Maritime Electric and NL Hydro and closes itself once both return live records.
   Source checks ignore only labelled excluded-class estimates (owner decision November 18).
-- **Validation:** all 2,419 tests passed on Python 3.11 using `pytest tests`.
+- **Validation:** all 2,432 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.

@@ -445,8 +445,11 @@ records without raising an error, so "utilities succeeded" and a green workflow 
 utility returned live rates.
 
 **What to do:** read the public "Scrape provenance" notice and the final log summary for seed-only or
-empty utilities. Check each named utility with a targeted dry run, repair its official-source access
-or parsing, then inspect a fresh GitHub Source Health log before publishing the repaired data.
+empty utilities. In the full log, the "Response from ..." lines for that utility show what each
+website answered (for example "HTTP 403 ... server cloudflare" means the site refused GitHub's
+computer, not that the rates changed). Check each named utility with a targeted dry run, repair its
+official-source access or parsing, then inspect a fresh GitHub Source Health log before publishing
+the repaired data.
 
 ### The monthly automation fails
 

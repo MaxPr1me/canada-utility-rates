@@ -8,6 +8,14 @@ significant share of its electricity from New Brunswick.
 Official source:
   https://www.maritimeelectric.com/my-account/understanding-my-bill/understanding-rates/
 
+The rates-and-regulations page links the IRAC-approved Schedule of Adjusted Rates (Section N-28) and
+prints the Section N terms that the industrial and wholesale classes are cross-checked against. Since
+November 2026 Cloudflare answers GitHub's runners with HTTP 403, and the Chromium retry gets no usable
+page (issue #6). When the page is blocked and no schedule link can be read, the last known N-28 PDF
+is read directly: residential and general service records say so, and the industrial and wholesale
+classes fail closed because their Section N terms are unavailable (owner decision 2026-11-19). That
+fallback is refused after LAST_KNOWN_SCHEDULE_REVIEW_BY; other HTTP errors never use it.
+
 Regulated by: Island Regulatory and Appeals Commission (IRAC)
 """
 
@@ -16,7 +24,7 @@ from __future__ import annotations
 import io
 import logging
 import re
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from requests.exceptions import HTTPError
@@ -27,6 +35,14 @@ from scrapers.utils.parsing import parse_html, find_pdf_links, DocumentPage
 logger = logging.getLogger(__name__)
 
 SOURCE_URL = "https://www.maritimeelectric.com/about-us/regulatory/rates-and-general-rules-and-regulations/"
+# Linked from SOURCE_URL when checked on 2026-11-19; keep in step with data/sources/registry.json.
+LAST_KNOWN_SCHEDULE_URL = (
+    "https://www.maritimeelectric.com/media/q1fcy52a/602000-section-n-28-effective-august-1-2026.pdf")
+# Owner decision 2026-11-19: re-confirm the last known edition within a year, or stop treating it as live.
+LAST_KNOWN_SCHEDULE_REVIEW_BY = date(2027, 11, 19)
+LAST_KNOWN_SCHEDULE_NOTE = (
+    "The rates page was blocked (HTTP 403) and linked no readable schedule, so the last known Section N-28 "
+    "Schedule of Adjusted Rates was read (it may not be current).")
 
 # Known rate values — used as seed/fallback data.
 # Rates are approximate; IRAC publishes exact approved schedules.
@@ -246,21 +262,25 @@ class MaritimeElectricScraper(BaseScraper):
         return records
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
-        """Parse every non-lighting service class from the official Schedule of Adjusted Rates PDF."""
+        """Parse every non-lighting service class from the official Schedule of Adjusted Rates PDF.
+
+        Only a 403 whose Chromium retry yields no schedule link reads LAST_KNOWN_SCHEDULE_URL (see the
+        module docstring). Discovered links that fail to parse do not fall back: they may be newer.
+        """
         try:
+            blocked = False
             try:
                 html = self.fetch_page(SOURCE_URL)
             except HTTPError as exc:
                 if exc.response is None or exc.response.status_code != 403:
                     raise
                 self.logger.warning("Maritime Electric rates page returned HTTP 403; retrying with Chromium")
+                blocked = True
                 html = self.fetch_rendered_page(SOURCE_URL)
-            if not html:
-                return None
             pdf_links = find_pdf_links(
                 parse_html(html), keywords=["adjusted", "rate", "schedule", "section"],
                 base_url=SOURCE_URL,
-            )
+            ) if html else []
             for link in pdf_links[:6]:
                 try:
                     pages = _extract_pages(self.fetch_bytes(link))
@@ -269,10 +289,28 @@ class MaritimeElectricScraper(BaseScraper):
                 records = self._apply_schedules(self._parse_pages(pages, link), html)
                 if records:
                     return self.mark_live_parsed(records)
+            if blocked and not pdf_links:
+                return self._try_last_known_schedule()
             return None
         except Exception:
             self.logger.exception("Error during Maritime Electric live scrape")
             return None
+
+    def _try_last_known_schedule(self) -> Optional[list[TariffRecord]]:
+        if date.today() > LAST_KNOWN_SCHEDULE_REVIEW_BY:
+            self.logger.warning(
+                "Maritime Electric: last known N-28 schedule was due for review by %s; not reading it as live",
+                LAST_KNOWN_SCHEDULE_REVIEW_BY.isoformat())
+            return None
+        self.logger.warning("Maritime Electric: reading the last known schedule %s", LAST_KNOWN_SCHEDULE_URL)
+        pages = _extract_pages(self.fetch_bytes(LAST_KNOWN_SCHEDULE_URL))
+        # Without the rates page, the Section N terms are unknown, so industrial and wholesale classes fail closed.
+        records = self._apply_schedules(self._parse_pages(pages, LAST_KNOWN_SCHEDULE_URL), "")
+        if not records:
+            return None
+        for record in records:
+            record.notes = f"{record.notes} {LAST_KNOWN_SCHEDULE_NOTE}".strip()
+        return self.mark_live_parsed(records)
 
     def _parse_pages(self, pages: list[DocumentPage], link: str) -> list[TariffRecord]:
         """Parse non-lighting service classes from the rate page; each class fails alone."""

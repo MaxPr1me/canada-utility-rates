@@ -102,8 +102,14 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
 ## Maritime Electric
 
 - If the rates page returns HTTP 403, retry that same official page with `fetch_rendered_page()`.
-  The rendered page and N-28 PDF still need the same date, value and Section N checks; an unavailable
-  or unreadable rendered source does not become live data.
+  The rendered page and N-28 PDF still need the same date, value and Section N checks.
+- **Known-copy route (owner decision 2026-11-19, issue #6):** only when the 403 retry still yields no
+  schedule link, read `LAST_KNOWN_SCHEDULE_URL` (the last known N-28 PDF, also in the registry). Its
+  header date must still match its file name. Residential and general service stay live with a note
+  naming the route; Section N classes need the rates page's date, so they fail closed. Other HTTP
+  errors (such as 404), an unreadable PDF or any run after `LAST_KNOWN_SCHEDULE_REVIEW_BY`
+  (2027-11-19) give seed estimates. When a newer N-28 is published, update the URL constant, the
+  registry and the review date together.
 - Rates 232/233 (N-28) print the first 20 kW free. Store it as demand tier 1 ($0/kW, upper bound
   20 kW); tier 2 charges only the balance. Never discard the free block or charge the balance price
   on all demand; reject a missing or duplicate free-block structure.
@@ -114,6 +120,16 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
 - Fixed phase/amperage choices are alternatives, never added together.
 - Seasonal options need their matching complete, same-date base schedules.
 - Keep native demand units; minimum and maximum bills stay conditions.
+- **Known-copy route (owner decision 2026-11-19, issue #6):** when the current-rates page fails or links
+  no schedule, read `LAST_KNOWN_SCHEDULE_URL` (the last known Schedule of Rates PDF, also in the
+  registry) without the landing-page cross-check, and note the route on every record. A schedule link
+  found on the page always wins; if that discovered PDF fails, do not fall back. An unreadable known PDF
+  or any run after `LAST_KNOWN_SCHEDULE_REVIEW_BY` (2027-11-19) gives seed estimates. Update the URL,
+  the registry and the review date together when a newer schedule is published.
+
+Both known-copy review dates keep an unreviewed copy from staying live for more than a year: past
+the date the records become estimates and model monitoring reopens the source problem. (Grand Forks'
+known copies, decided 2026-11-18, have a note but no review date.)
 
 ## Territories
 

@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -46,6 +47,36 @@ EXCLUDED_CLASS_FALLBACK_MARKER = f"Provenance: seed_fallback. {EXCLUDED_CLASS_FA
 def is_excluded_class_estimate(notes: Optional[str]) -> bool:
     """True when ``mark_fallback`` labelled the record as an excluded-class estimate."""
     return EXCLUDED_CLASS_FALLBACK_MARKER in (notes or "")
+
+
+_TITLE = re.compile(rb"<title[^>]*>(.*?)</title>", re.I | re.S)
+
+
+def describe_response(response: requests.Response, requested_url: Optional[str] = None) -> str:
+    """One-line summary of what a server answered, for diagnosing runner-only failures.
+
+    GitHub runners sometimes receive a block or a different page than a local machine (NL Hydro and
+    Maritime Electric, November 2026), and the logs held nothing to tell them apart (owner decision
+    2026-11-19). Only the status, final address, content type, size, ``Server`` and ``CF-Ray``
+    headers and the HTML title are recorded: never the body, cookies or request headers.
+    """
+    headers = response.headers
+    parts = [f"HTTP {response.status_code}"]
+    if requested_url and response.url and response.url != requested_url:
+        parts.append(f"final URL {response.url}")
+    content_type = headers.get("Content-Type") or "unknown type"
+    parts.append(content_type)
+    body = response.content or b""
+    parts.append(f"{len(body):,} bytes")
+    for header in ("Server", "CF-Ray"):
+        if headers.get(header):
+            parts.append(f"{header.lower()} {headers[header]}")
+    if "html" in content_type.lower() or body[:200].lstrip().lower().startswith((b"<!doctype html", b"<html")):
+        match = _TITLE.search(body[:65536])
+        if match:
+            title = " ".join(match.group(1).decode(response.encoding or "utf-8", "replace").split())
+            parts.append(f'title "{title[:120]}"')
+    return ", ".join(parts)
 
 
 # ─── Data classes returned by scrapers ────────────────────────────
@@ -134,10 +165,11 @@ class BaseScraper(ABC):
         content_hash(text) — SHA-256 hash for change detection
     """
 
-    # Identify ourselves politely when scraping
+    # Identify ourselves politely when scraping; the address is the project repository (owner
+    # decision 2026-11-19, replacing a YOUR_USERNAME placeholder).
     USER_AGENT = (
         "CanadaUtilityCosts/0.1 "
-        "(https://github.com/YOUR_USERNAME/canada-utility-costs; "
+        "(https://github.com/MaxPr1me/canada-utility-rates; "
         "open data project)"
     )
 
@@ -174,6 +206,7 @@ class BaseScraper(ABC):
         self.logger.info("Fetching %s", url)
         time.sleep(delay)  # be polite
         response = self._session.get(url, timeout=30)
+        self._log_response(url, response)
         response.raise_for_status()
         return response.text
 
@@ -182,8 +215,14 @@ class BaseScraper(ABC):
         self.logger.info("Fetching binary %s", url)
         time.sleep(delay)
         response = self._session.get(url, timeout=60)
+        self._log_response(url, response)
         response.raise_for_status()
         return response.content
+
+    def _log_response(self, url: str, response: requests.Response) -> None:
+        """Record the response summary: a warning for an error status, otherwise info."""
+        level = logging.WARNING if response.status_code >= 400 else logging.INFO
+        self.logger.log(level, "Response from %s: %s", url, describe_response(response, url))
 
     def fetch_rendered_page(
         self,
@@ -208,13 +247,23 @@ class BaseScraper(ABC):
                 browser = p.chromium.launch(headless=True)
                 try:
                     page = browser.new_page(user_agent=self.USER_AGENT)
-                    page.goto(url, wait_until="networkidle", timeout=timeout_ms)
+                    response = page.goto(url, wait_until="networkidle", timeout=timeout_ms)
                     if wait_selector:
                         try:
                             page.wait_for_selector(wait_selector, timeout=timeout_ms)
                         except Exception:
                             self.logger.debug("Selector %s not found on %s", wait_selector, url)
-                    return page.content()
+                    content = page.content()
+                    status = response.status if response else None
+                    try:
+                        title = " ".join(page.title().split())[:120]
+                    except Exception:
+                        title = "unknown"
+                    self.logger.log(
+                        logging.WARNING if status and status >= 400 else logging.INFO,
+                        'Rendered response from %s: HTTP %s, final URL %s, %s characters, title "%s"', url,
+                        status or "unknown", page.url, f"{len(content):,}", title)
+                    return content
                 finally:
                     browser.close()
         except Exception as e:

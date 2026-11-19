@@ -178,8 +178,9 @@ class HeritageGasScraper(BaseScraper):
                     table_url: Optional[str] = None, tariff_url: Optional[str] = None) -> list[TariffRecord]:
         """Build tariffs from texts keyed residential/business/rate_table.
 
-        The rate table is authoritative; each class must also agree with its page summary
-        for the same effective date. Classes are parsed independently.
+        The rate table is authoritative; each class must also agree with its page summary. The
+        residential summary must carry the table's effective date; the General Service summary may
+        carry an earlier one when all its values match. Classes are parsed independently.
         """
         today = today or datetime.now(timezone.utc).date()
         pages = {key: self._norm(text) for key, text in pages.items()}
@@ -202,17 +203,28 @@ class HeritageGasScraper(BaseScraper):
             self.logger.warning("Eastward Energy residential not parsed live: %s", exc)
         try:
             business = pages.get("business", "")
-            summary = self._summary(business, "Rates for General Service Class", r"Fixed Delivery Charge")
-            if summary != (values["effective"], values["fixed"][1], values["gs_tiers"][0][0], values["gcrr"][1]):
+            summary_date, *summary_values = self._summary(
+                business, "Rates for General Service Class", r"Fixed Delivery Charge")
+            if summary_values != [values["fixed"][1], values["gs_tiers"][0][0], values["gcrr"][1]]:
                 raise ValueError("General Service page summary does not match the rate table")
+            # Owner decision 2026-11-19: the business page can lag a monthly table whose General Service
+            # values did not change. An older summary date is accepted only when every value matches; a
+            # newer one means the table is stale. The record keeps the table's effective date.
+            if summary_date > values["effective"]:
+                raise ValueError("General Service page summary is newer than the rate table")
             definition = re.search(r"General Service: (Any Customer who is an end-user and whose rate class is not "
                                    r"either Residential, Rate Class 3, or Rate Class 4\.)", business)
             limit = re.search(r"Rate Class 3: Any Customer who is an end-user and whose total gas requirements at "
                               r"that location are greater than ([\d,]+) GJ per year", business)
             if not definition or not limit:
                 raise ValueError("General Service class definition missing")
-            records.append(self._build(values, 1, table_url, definition.group(1),
-                                       float(limit.group(1).replace(",", ""))))
+            record = self._build(values, 1, table_url, definition.group(1), float(limit.group(1).replace(",", "")))
+            if summary_date < values["effective"]:
+                record.notes += (
+                    f" The business rates page still summarizes General Service rates as of "
+                    f"{summary_date.strftime('%B')} {summary_date.day}, {summary_date.year}; its fixed, base energy "
+                    "and gas cost values match this rate table, which sets the effective date.")
+            records.append(record)
         except ValueError as exc:
             self.logger.warning("Eastward Energy General Service not parsed live: %s", exc)
         if pages.get("tariff"):

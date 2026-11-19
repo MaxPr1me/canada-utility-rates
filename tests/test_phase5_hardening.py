@@ -26,6 +26,10 @@ class _Scraper(BaseScraper):
         return []
 
 
+# Captured at import, before conftest's autouse fixture blocks network access for each test.
+_REAL_FETCH_PAGE = BaseScraper.fetch_page
+
+
 def tariff(value=0.123, *, code=None, effective="2026-01-01", components=None):
     return TariffRecord(
         utility_name="Fixture Utility", province="ON", utility_type="electricity",
@@ -80,6 +84,36 @@ def test_live_parsed_marks_provenance_on_tariff_and_components():
     assert record.notes.startswith("Provenance: live_parsed.")
     assert record.source_url == "https://example.com/rates"
     assert record.components[0].notes.startswith("Provenance: live_parsed.")
+
+
+def _response(status, body, url, **headers):
+    import requests
+
+    response = requests.Response()
+    response.status_code = status
+    response._content = body
+    response.url = url
+    response.headers.update(headers)
+    return response
+
+
+def test_blocked_response_is_logged_with_status_headers_and_title_before_raising(caplog):
+    import pytest
+    import requests
+
+    scraper = _Scraper()
+    blocked = _response(
+        403, b"<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>secret</body></html>",
+        "https://example.com/challenge", **{"Content-Type": "text/html", "Server": "cloudflare", "CF-Ray": "abc-YYZ"})
+    scraper._session.get = lambda url, timeout: blocked
+    with caplog.at_level("INFO"), pytest.raises(requests.HTTPError):
+        _REAL_FETCH_PAGE(scraper, "https://example.com/rates", delay=0)
+    message = next(r for r in caplog.records if r.getMessage().startswith("Response from"))
+    assert message.levelname == "WARNING"
+    assert message.getMessage() == (
+        'Response from https://example.com/rates: HTTP 403, final URL https://example.com/challenge, text/html, '
+        '91 bytes, server cloudflare, cf-ray abc-YYZ, title "Just a moment..."')
+    assert "secret" not in message.getMessage()
 
 
 def test_derive_provenance_only_trusts_explicit_live_markers():

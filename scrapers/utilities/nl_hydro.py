@@ -9,6 +9,13 @@ as well as customers on the Labrador interconnected system.
 Official source:
   https://nlhydro.com/electicity-rates/current-rates/
 
+The current-rates page links the Schedule of Rates, Rules and Regulations PDF and repeats some energy
+rates, which are cross-checked against it. Since November 2026 GitHub's runners receive that page
+without the link (issue #6). When the page fails or has no link, the last known schedule is read
+instead, its records say so, and the page cross-check is skipped for that run (owner decision
+2026-11-19). That fallback is refused after LAST_KNOWN_SCHEDULE_REVIEW_BY, so an edition nobody has
+re-confirmed becomes labelled estimates rather than stale live rates. A discovered link always wins.
+
 Regulated by: Board of Commissioners of Public Utilities (PUB NL)
 """
 
@@ -31,6 +38,14 @@ from scrapers.utils.parsing import (
 logger = logging.getLogger(__name__)
 
 NL_HYDRO_URL = "https://nlhydro.com/electicity-rates/current-rates/"
+# Linked from NL_HYDRO_URL when checked on 2026-11-19; keep in step with data/sources/registry.json.
+LAST_KNOWN_SCHEDULE_URL = (
+    "https://nlhydro.com/wp-content/uploads/2026/07/Schedule-of-Rates-Rules-and-Regulations_Jul_2026.pdf")
+# Owner decision 2026-11-19: re-confirm the last known edition within a year, or stop treating it as live.
+LAST_KNOWN_SCHEDULE_REVIEW_BY = date(2027, 11, 19)
+LAST_KNOWN_SCHEDULE_NOTE = (
+    "The current-rates page was unavailable or did not link a Schedule of Rates, so the last known schedule "
+    "was read (it may not be current) and the page's energy-rate cross-check was skipped.")
 # Hydro publishes each month's non-firm on-/off-peak price here; those numbers are never stored in a tariff.
 NL_NONFIRM_URL = "https://nlhydro.com/electicity-rates/non-firm-rates-customers/"
 NONFIRM_MARKET_REFERENCE = (
@@ -1026,19 +1041,26 @@ class NLHydroScraper(BaseScraper):
         """
         Parse the official Schedule of Rates linked from the current-rates page.
 
+        When the page fails or links no schedule, read LAST_KNOWN_SCHEDULE_URL until its review
+        date (see the module docstring). A discovered link that fails to parse does not fall back,
+        because it may be a newer edition than the last known one.
         Returns only classes proven complete; None if nothing could be verified.
         """
         try:
             html = self.fetch_page(NL_HYDRO_URL)
+        except Exception as exc:
+            self.logger.warning("NL Hydro: current-rates page unavailable — %s", exc)
+            html = ""
+        try:
             if not html:
                 self.logger.warning("NL Hydro: empty response from %s", NL_HYDRO_URL)
-                return None
+                return self._try_last_known_schedule()
             soup = parse_html(html)
             links = find_pdf_links(
                 soup, keywords=["schedule-of-rates", "schedule of rates"], base_url=NL_HYDRO_URL)
             if not links:
                 self.logger.warning("NL Hydro: no Schedule of Rates PDF link found on %s", NL_HYDRO_URL)
-                return None
+                return self._try_last_known_schedule()
             landing_text = soup.get_text(" ", strip=True)
             for link in links:
                 pages = extract_pdf_pages(self.fetch_bytes(link))
@@ -1052,6 +1074,22 @@ class NLHydroScraper(BaseScraper):
         except Exception as exc:
             self.logger.warning("NL Hydro: live scrape error — %s", exc)
             return None
+
+    def _try_last_known_schedule(self) -> Optional[list[TariffRecord]]:
+        if date.today() > LAST_KNOWN_SCHEDULE_REVIEW_BY:
+            self.logger.warning(
+                "NL Hydro: last known schedule was due for review by %s; not reading it as live",
+                LAST_KNOWN_SCHEDULE_REVIEW_BY.isoformat())
+            return None
+        self.logger.warning("NL Hydro: reading the last known schedule %s", LAST_KNOWN_SCHEDULE_URL)
+        pages = extract_pdf_pages(self.fetch_bytes(LAST_KNOWN_SCHEDULE_URL))
+        if not pages:
+            self.logger.warning("NL Hydro: no usable text in %s", LAST_KNOWN_SCHEDULE_URL)
+            return None
+        records = self.parse_schedule_pages(pages, LAST_KNOWN_SCHEDULE_URL)
+        for record in records:
+            record.notes = f"{record.notes} {LAST_KNOWN_SCHEDULE_NOTE}".strip()
+        return records or None
 
     def _seed_data(self) -> list[TariffRecord]:
         """Return seed/fallback data based on known published rates."""
