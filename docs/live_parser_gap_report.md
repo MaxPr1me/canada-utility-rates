@@ -2,12 +2,11 @@
 
 **Current state:** the registered municipal additions were published on November 18 (unfiltered
 Monthly Scrape plus single-utility reruns) and all 85 active utilities have stored live output.
-Two sources still fail only on GitHub's runners: Maritime Electric (Cloudflare) and NL Hydro (rates
-page without its Schedule of Rates link). Eastward Energy (Heritage Gas) General Service was not
-refreshed in November because its business page is still dated October 1. November 19 repairs
-(response logging, reviewed last-known schedules, the Eastward General Service date rule) pass
-locally and await GitHub verification. The scoped coverage-complete claim still awaits the owner's
-approval.
+The November 19 repairs (response logging, reviewed last-known schedules, the Eastward General
+Service date rule) were verified on GitHub: NL Hydro and Heritage Gas store live records again.
+Cloudflare still blocks Maritime Electric on GitHub's runners, so it is a manual-update utility
+(owner decision November 19): its labelled estimates mirror the current N-28 and are reviewed
+yearly by hand. The scoped coverage-complete claim still awaits the owner's approval.
 See the [current queue](phase5_completion_matrix.md) and [README figures](../README.md#current-status).
 The older counts and queues below are historical evidence, not the current publication state.
 
@@ -225,7 +224,7 @@ does print the first 20 kW free for 232/233. The parser discarded it. Both recor
 a zero-priced tier with threshold 20 kW, and 232 business costs are verified end-to-end.
 The corrected records/models were stored and verified November 4; seasonal exclusions stay unchanged.
 
-- **Maritime Electric:** ten supported classes parsed from one IRAC schedule plus the Section N rates page, whose date must match N-28. HTTP 403 on that page triggers a Chromium retry of the same official source, without relaxing its checks. Since November 19 (owner decision), when that retry still yields no schedule link, the last known N-28 PDF is read with a note until November 19, 2027: residential and general service stay live and the Section N classes fail closed. Small Industrial 320 and Large Industrial 310 are audited complete (billing-demand rules as conditions; 310 losses and transformation charges conditional; no curtailable credit published). 330/340 are the Wholesale Rate Schedule for the City of Summerside and are retained as reference only. Representative models: the residential and general-service energy blocks are per "Billing Period", whose length the rules do not state; since October 30 (user decision) they count as per month because Maritime Electric's billing pages confirm monthly billing (seasonal options 133/233 stay null). The residential and standard general-service models use the stored free-demand block described above.
+- **Maritime Electric:** ten supported classes parsed from one IRAC schedule plus the Section N rates page, whose date must match N-28. HTTP 403 on that page triggers a Chromium retry of the same official source, without relaxing its checks. Since November 19 (owner decision), when that retry still yields no schedule link, the last known N-28 PDF is read with a note until November 19, 2027: residential and general service stay live and the Section N classes fail closed. Cloudflare blocks even that PDF on GitHub's runners, so since November 19 (owner decision) Maritime is a manual-update utility: GitHub runs store two labelled estimates mirroring N-28, reviewed by hand yearly (ledger `manual_update`, review by September 1, 2027). Small Industrial 320 and Large Industrial 310 are audited complete (billing-demand rules as conditions; 310 losses and transformation charges conditional; no curtailable credit published). 330/340 are the Wholesale Rate Schedule for the City of Summerside and are retained as reference only. Representative models: the residential and general-service energy blocks are per "Billing Period", whose length the rules do not state; since October 30 (user decision) they count as per month because Maritime Electric's billing pages confirm monthly billing (seasonal options 133/233 stay null). The residential and standard general-service models use the stored free-demand block described above.
 - **FortisAlberta:** moved to the Alberta Electricity section below (five live rates since batch 12).
 - **Yukon Energy:** Rate 1160 now uses base fixed/energy columns with separate R/J/J1 percentages, current fuel Rider F and dated affordability relief. The prior combined R/J-only interpretation omitted J1/F/relief. The corrected October 1 version contains nine components, each with source details; no total is calculated. Relief ends March 31, 2027, applies only to eligible non-government residential energy up to 1,500 kWh, and excludes fuel/fixed charges.
 - **Yukon verification:** 18 focused tests cover missing documents or changed context, future/expired dates, negative/wrong-unit base rows, rider applicability, source mutation and persistence of rebate limits/end dates. The live dry run returned one live 1160 tariff plus two labelled seed fallbacks. Both old and new 1160 versions remain stored; latest-per-name counts must not count this as a second supported class.

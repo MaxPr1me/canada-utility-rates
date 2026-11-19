@@ -93,6 +93,26 @@ def test_monitor_items_warn_when_due_soon_and_fail_when_overdue():
     assert not overdue["passed"] and overdue["errors"] == {"monitor_overdue": 1}
 
 
+def test_manual_update_decision_is_validated_and_its_review_date_is_monitored():
+    # Owner decision 2026-11-19 (Maritime Electric): the yearly manual-update review reuses the monitor codes.
+    def result_for(review_by, **change):
+        manual = {"reason": "blocked on GitHub", "decided": "2026-10-01", "review_by": review_by, **change}
+        entry = {"audit": AUDIT, "manual_update": manual}
+        return gate.evaluate(_registry(("A", "active")), [_live("A")], _ledger(A=entry), AS_OF)
+
+    assert result_for("2027-09-01")["passed"] and not result_for("2027-09-01")["warnings"]
+    assert result_for("2026-11-15")["warnings"] == {"monitor_due_soon": 1}
+    overdue = result_for("2026-10-29")
+    assert overdue["errors"] == {"monitor_overdue": 1}
+    assert "manual source update" in overdue["utilities"]["A"][0]["message"]
+    assert result_for("2026-09-01")["errors"] == {"ledger_invalid": 1}  # review before the decision
+    assert "ledger_invalid" in result_for("2027-09-01", reason=" ")["errors"]
+    assert "ledger_invalid" in result_for("2027-09-01", extra="x")["errors"]
+    assert gate.evaluate(_registry(("A", "active")), [_live("A", provenance="seed")], _ledger(
+        A={"audit": AUDIT, "manual_update": {"reason": "r", "decided": "2026-10-01", "review_by": "2027-09-01"}}),
+        AS_OF)["errors"] == {"no_live_output": 1}
+
+
 def test_live_records_that_all_end_soon_warn_and_after_the_end_fail():
     ledger = _ledger(A={"audit": AUDIT})
     registry = _registry(("A", "active"))

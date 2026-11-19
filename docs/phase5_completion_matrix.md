@@ -13,8 +13,9 @@ This does not waive source checks or authorize a Monthly Scrape merely to test m
 
 Owner decision (November 17): repair and verify Maritime Electric, Grand Forks and New Westminster
 source discovery, then publish the already-registered municipal additions below. The additions,
-Grand Forks and New Westminster are published (November 18); Maritime Electric and NL Hydro still
-fail on GitHub's runners. Current figures are in the [README status](../README.md#current-status).
+Grand Forks and New Westminster are published (November 18); NL Hydro and Heritage Gas were verified
+on GitHub on November 19, and Maritime Electric became a manual-update utility (below). Current
+figures are in the [README status](../README.md#current-status).
 
 The November 15 Source Health log returned estimates for Maritime and no records for Grand Forks,
 despite a green workflow. New Westminster's old index returned 404. The repairs retry Maritime's
@@ -65,7 +66,7 @@ Still open on November 18 (owner decision: stop here and revisit):
   record and the October record stays.
 
 Owner decisions (November 19), implemented and verified locally (all tests pass; dry runs fully
-live: NL Hydro 23, Maritime 10, Heritage 3):
+live: NL Hydro 23, Maritime 10, Heritage 3) and then on GitHub:
 - Every fetch logs its response (status, final URL, type, size, server, `cf-ray`, title), and the
   `User-Agent` names the repository, so the next GitHub log shows why a runner was refused.
 - NL Hydro: when the page fails or links no schedule, read the last known Schedule of Rates PDF with
@@ -79,11 +80,23 @@ live: NL Hydro 23, Maritime 10, Heritage 3):
 Rules: [regional](../.github/instructions/regional-utilities.instructions.md#maritime-electric) and
 [gas](../.github/instructions/gas-utilities.instructions.md#eastward-heritage-gas).
 
-Next (owner, on GitHub): run Source Health and read the new response lines for NL Hydro and
-Maritime, then single-utility Monthly Scrapes for NL Hydro, Maritime Electric and Heritage Gas, one
-at a time. Issue #6 lists only Maritime Electric and NL Hydro and closes itself once both return
-live records in a receipted run.
-Eight ledger monitor reviews fall due December 15.
+GitHub verification (November 19): Source Health (44548652298) returned 950 live and 47 estimated
+records, with Maritime the only estimates-only utility. Single-utility Monthly Scrapes stored NL Hydro
+(44551268822, 23 live from the last known Schedule of Rates) and Heritage Gas (44555379607, 3 live,
+General Service refreshed). Maritime Electric (44552590090) stored 2 estimates: Cloudflare returns 403
+on GitHub for the rates page, the Chromium retry and the N-28 PDF itself.
+
+Owner decisions (November 19, Maritime): treat it as a manual-update utility. IRAC orders are not
+used as a live source and Maritime is not asked to unblock the runners. The seed estimates now mirror
+the current N-28 Rate 110/232 values (still labelled Estimated); the coverage ledger records a
+`manual_update` reviewed by September 1, 2027, which model monitoring honours until then, with no new
+workflow. Its 10 live August 2026 tariffs stay published; a rate change before the review is
+noticed only by the yearly local check. Procedure:
+[regional rules](../.github/instructions/regional-utilities.instructions.md#maritime-electric).
+
+Next (owner, on GitHub): after this change is pushed, run Source Health. Issue #6 should then close
+itself; if it does not, read its remaining problems. Eight ledger monitor reviews fall due
+December 15.
 
 ### Registered municipal additions
 

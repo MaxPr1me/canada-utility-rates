@@ -15,7 +15,7 @@ import math
 import os
 import re
 import zipfile
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -509,11 +509,26 @@ def scheduled_due(cron: str, now: datetime) -> datetime:
     raise ValueError(f"no occurrence found for {cron}")
 
 
-def source_checks(receipt: dict) -> list[dict]:
+def manual_update_reviews(ledger: dict) -> dict[str, date]:
+    """Review dates of the ledger's manual-update utilities; malformed decisions are left out (fail closed)."""
+    from scripts.coverage_gate import manual_update_review_by
+
+    reviews = {}
+    utilities = ledger.get("utilities") if isinstance(ledger, dict) else None
+    for name, entry in (utilities.items() if isinstance(utilities, dict) else ()):
+        if isinstance(entry, dict) and "manual_update" in entry:
+            try:
+                reviews[name] = manual_update_review_by(entry["manual_update"])
+            except ValueError:
+                continue
+    return reviews
+
+
+def source_checks(receipt: dict, manual_updates: dict[str, date] | None = None) -> list[dict]:
     if receipt.get("version") != 1 or receipt.get("kind") != "source_check":
         raise ValueError("missing or unsupported source-check receipt")
     checked_at = receipt["checked_at"]
-    timestamp(checked_at)
+    checked_on = timestamp(checked_at).date()
     rows = receipt["summary"]["rows"]
     expected = receipt["expected_utilities"]
     if (not isinstance(receipt.get("scope"), dict) or type(receipt["scope"].get("full")) is not bool
@@ -533,11 +548,20 @@ def source_checks(receipt: dict) -> list[dict]:
         # source failure (owner decision 2026-11-18); any other estimate still fails the source.
         healthy = (row["live"] > 0 and row["seed"] == excluded and row["invalid"] == 0
                    and row.get("error") is None)
+        detail = (f"{row['utility']}: {row['live']} live, {row['seed']} estimated "
+                  f"({excluded} excluded-class), {row['invalid']} invalid; {row.get('error') or row['status']}")
+        review_by = (manual_updates or {}).get(row["utility"])
+        if (review_by is not None and row["live"] == 0 and row["seed"] > 0 and row["invalid"] == 0
+                and row.get("error") is None):
+            # A ledger manual-update utility (Maritime Electric, owner decision 2026-11-19): its labelled
+            # estimates are expected until review_by; a later check fails as the yearly reminder.
+            healthy = checked_on <= review_by
+            if not healthy:
+                detail += (f"; manual update review was due by {review_by.isoformat()}: re-check the official "
+                           "schedule locally, update the estimates and move manual_update.review_by in "
+                           "data/sources/coverage_ledger.json")
         checks.append({"id": f"source:{row['utility']}", "ok": healthy, "checked_at": checked_at,
-                       "details": [] if healthy else [
-                           f"{row['utility']}: {row['live']} live, {row['seed']} estimated "
-                           f"({excluded} excluded-class), {row['invalid']} invalid; "
-                           f"{row.get('error') or row['status']}"]})
+                       "details": [] if healthy else [detail]})
     return checks
 
 
@@ -550,7 +574,7 @@ def _evidence(run: dict, name: str) -> dict:
     return value
 
 
-def workflow_checks(context: dict, now: datetime) -> list[dict]:
+def workflow_checks(context: dict, now: datetime, manual_updates: dict[str, date] | None = None) -> list[dict]:
     """Use completed-step evidence, including source provenance; a green badge alone is insufficient."""
     checks, latest_sources = [], {}
     workflows = context["workflows"]
@@ -593,7 +617,7 @@ def workflow_checks(context: dict, now: datetime) -> list[dict]:
                     reported_elsewhere = outcome["failure_reported"]
                     if name in ("scrape.yml", "source-health.yml"):
                         sources = _evidence(run, "source-summary.json")
-                        for check in source_checks(sources):
+                        for check in source_checks(sources, manual_updates):
                             prior = latest_sources.get(check["id"])
                             if prior is None or timestamp(check["checked_at"]) > timestamp(prior["checked_at"]):
                                 latest_sources[check["id"]] = {
@@ -675,7 +699,11 @@ def main(argv: list[str] | None = None) -> int:
     report = {"version": SCHEMA_VERSION, "checked_at": now.isoformat(), "run": run_identity(),
               "checks": input_checks(ROOT, now)}
     if args.github_context:
-        report["checks"].extend(workflow_checks(read_json(args.github_context), now))
+        try:
+            manual_updates = manual_update_reviews(read_json(ROOT / "data" / "sources" / "coverage_ledger.json"))
+        except (OSError, ValueError):
+            manual_updates = {}  # no exemption; the coverage check reports the unreadable ledger
+        report["checks"].extend(workflow_checks(read_json(args.github_context), now, manual_updates))
     else:
         report["scope_note"] = "Local file checks only; GitHub workflow cadence was not checked."
     try:

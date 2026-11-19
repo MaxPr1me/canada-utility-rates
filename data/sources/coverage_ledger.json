@@ -50,6 +50,7 @@
     "Maritime Electric": {
       "audit": {"date": "2026-11-02", "basis": "Batch 11 class reconciliation plus N-28 first-20-kW demand-block correction for 232/233; dry run 10 live, 0 seed, 0 invalid", "source": "docs/phase5_completion_matrix.md; tests/test_model_decisions.py"},
       "excluded": ["330/340 Summerside wholesale (reference)", "lighting, unmetered, short-term"],
+      "manual_update": {"reason": "maritimeelectric.com answers GitHub's runners with a Cloudflare HTTP 403 on the rates page and the N-28 PDF (Source Health and Monthly Scrape, issue #6), so GitHub runs return the two labelled estimates. Once a year, on the owner's computer: dry-run Maritime Electric; if N-28 changed, update SEED_* and LAST_KNOWN_SCHEDULE_URL in scrapers/utilities/maritime_electric.py; then move review_by forward a year.", "decided": "2026-11-19", "review_by": "2027-09-01"},
       "notes": "N-28 does publish the first 20 kW free. The parser previously discarded it; corrected November 2. Seasonal 233 model exclusion and unresolved seasonal billing period remain. Stored 2026-11-04 by the targeted Monthly Scrape (scrape run 32; published by run 33 after issue #5): rates 232/233 carry the $0.00/kW first-20-kW tier; PE 232 pre-tax model costs 462.17 / 1,617.12 / 7,225.97 / 85,460.97 at s1/s2/m1/l1, verified against the published export."
     },
     "Newfoundland Power": {

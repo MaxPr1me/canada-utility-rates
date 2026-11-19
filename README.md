@@ -93,8 +93,8 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
 ## Current Status
 
 - **Stored coverage:** all 85 active registered utilities have live output and the strict coverage
-  gate passes (checked November 18). Stored output alone does not prove a source is still healthy:
-  two sources fail on GitHub (see below).
+  gate passes (checked November 19). Stored output alone does not prove a source is still healthy:
+  Maritime Electric's source fails on GitHub (see below).
 - **New utilities (published November 18):** Saint John Energy (NB), Nelson Hydro, New
   Westminster, Penticton, Grand Forks and Summerland (BC), and Summerside Electric (PE) are stored
   live and contribute to their province's models (69 models; BC residential now has 7 utilities).
@@ -110,28 +110,24 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   media API, and the last known bylaw copies when Cloudflare blocks both on GitHub (owner decision
   November 18); New Westminster follows its migrated bylaw page and PDF endpoint. Both are stored
   live. Maritime retries an HTTP 403 with Chromium, which works locally but not on GitHub.
-- **Open source problems (issue #6):** on GitHub's runners, Cloudflare blocks Maritime Electric,
-  and NL Hydro's rates page has come back without its Schedule of Rates link since the afternoon of
-  November 18 (it works locally; cause not confirmed). Both stored labelled estimates only; their
-  earlier live tariffs stay. Eastward Energy (Heritage Gas) still dates its General Service page
-  October 1 while its rate table is dated November 1 with the same values, so that class failed
-  closed and kept its October record.
-- **Repairs ready for GitHub verification (owner decisions November 19):** every fetch now logs its
-  response (status, server, `cf-ray`, title) so a refused runner shows why. When NL Hydro's page
-  links no schedule, or Maritime's 403 retry yields none, each reads its last known official
-  schedule (also in the registry) with a note, until a review date of November 19, 2027; Maritime's
-  Section N classes still fail closed. Eastward General Service accepts an older page date only
-  when every value matches the table. Locally all three dry runs are fully live (NL Hydro 23,
-  Maritime 10, Heritage 3). Not yet confirmed on GitHub: Source Health, then single-utility Monthly
-  Scrapes, must show live records before issue #6 can close.
+- **Issue #6 (source problems on GitHub):** the November 19 repairs are verified on GitHub. Source
+  Health, then single-utility Monthly Scrapes, stored NL Hydro (23 live, from its last known
+  Schedule of Rates) and Heritage Gas (3 live, General Service refreshed). Cloudflare still blocks
+  Maritime Electric's page, Chromium retry and PDF on GitHub, so its runs store 2 labelled
+  estimates; its 10 live August 2026 tariffs stay published.
+- **Maritime manual updates (owner decision November 19):** its estimates now mirror the current
+  N-28 values (still labelled Estimated), and the coverage ledger records a manual-update decision
+  reviewed by September 1, 2027. Model monitoring accepts Maritime's estimates-only checks until
+  then, so issue #6 should close itself at the next Source Health. Locally Maritime stays fully
+  live (10 records).
 - **"Coverage complete" is not claimed yet:** issue #6 is open and the scoped wording awaits the
   owner's approval. Eight ledger reviews fall due December 15; the strict gate fails from
   December 16 unless they are done.
 - **Phase 8 monitoring:** implemented, published and verified through the existing market workflows
-  and deployment. The change log starts from its first verified baseline. Monitoring issue #6 now
-  lists only Maritime Electric and NL Hydro and closes itself once both return live records.
-  Source checks ignore only labelled excluded-class estimates (owner decision November 18).
-- **Validation:** all 2,432 tests passed on Python 3.11 using `pytest tests`.
+  and deployment. The change log starts from its first verified baseline. Source checks ignore only
+  labelled excluded-class estimates (owner decision November 18) and a ledger manual-update
+  utility's estimates until its review date (November 19).
+- **Validation:** all 2,441 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.

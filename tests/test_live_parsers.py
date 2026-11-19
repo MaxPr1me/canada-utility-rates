@@ -3741,6 +3741,22 @@ class TestMaritimeElectricBuildingLive:
         assert len(records) == 2
         assert all("Provenance: seed_fallback" in r.notes and r.confidence == "unverified" for r in records)
 
+    def test_manual_estimates_match_the_n28_fixture_without_replacing_live_records(self):
+        # Owner decision 2026-11-19: the hand-updated estimates mirror N-28 Rates 110 and 232.
+        def shape(record):
+            return sorted((c.component_type, c.tier_number, c.tier_threshold, c.charge_value, c.charge_unit,
+                           c.component_name) for c in record.components)
+
+        live = _ME_parse()
+        seeds = {r.tariff_name: r for r in me.MaritimeElectricScraper()._seed_data()}
+        assert shape(seeds["Residential Service"]) == shape(live["110"])
+        assert shape(seeds["General Service"]) == shape(live["232"])
+        for seed, code in ((seeds["Residential Service"], "110"), (seeds["General Service"], "232")):
+            assert seed.effective_date == live[code].effective_date == "2026-08-01"
+            assert seed.rate_structure == live[code].rate_structure
+            assert seed.tariff_code is None and seed.tariff_name != live[code].tariff_name
+            assert seed.source_url == me.LAST_KNOWN_SCHEDULE_URL
+
     def test_other_http_errors_do_not_retry_with_chromium(self, monkeypatch):
         from requests import HTTPError, Response
 

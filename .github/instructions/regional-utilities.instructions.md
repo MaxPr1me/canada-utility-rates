@@ -110,6 +110,15 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
   errors (such as 404), an unreadable PDF or any run after `LAST_KNOWN_SCHEDULE_REVIEW_BY`
   (2027-11-19) give seed estimates. When a newer N-28 is published, update the URL constant, the
   registry and the review date together.
+- **Manual updates (owner decision 2026-11-19, issue #6):** Cloudflare blocks GitHub's runners from
+  the rates page, its Chromium retry and the N-28 PDF, so GitHub runs store only the two seed
+  estimates. They mirror the current N-28 Rate 110/232 components, stay labelled Estimated, keep
+  names that never collide with the live records, and carry no `tariff_code`. IRAC orders are not
+  used as a live source. The ledger `manual_update` (review by 2027-09-01) keeps model monitoring
+  quiet until then. Yearly procedure: on the owner's computer run
+  `python -m pipeline.run_scrape --utility "Maritime Electric" --dry-run`; if N-28 changed, update
+  the seeds, `LAST_KNOWN_SCHEDULE_URL`, its review date, the registry and the fixture together;
+  then move `manual_update.review_by` forward one year.
 - Rates 232/233 (N-28) print the first 20 kW free. Store it as demand tier 1 ($0/kW, upper bound
   20 kW); tier 2 charges only the balance. Never discard the free block or charge the balance price
   on all demand; reject a missing or duplicate free-block structure.

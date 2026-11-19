@@ -267,6 +267,38 @@ def test_excluded_estimates_cannot_exceed_the_estimate_count():
         monitoring.source_checks(source_receipt(excluded_seed=2))
 
 
+MANUAL_LEDGER = {"utilities": {
+    "LDC": {"manual_update": {"reason": "blocked on GitHub", "decided": "2026-11-19", "review_by": "2027-09-01"}},
+    "Broken": {"manual_update": {"reason": "missing review date", "decided": "2026-11-19"}},
+}}
+
+
+@pytest.mark.parametrize("checked_at,row,healthy", [
+    ("2027-09-01T23:00:00Z", {"live": 0, "seed": 2, "status": "seed only"}, True),  # on the review date
+    ("2027-09-02T10:00:00Z", {"live": 0, "seed": 2, "status": "seed only"}, False),  # the yearly reminder
+    ("2026-11-20T10:00:00Z", {"live": 0, "seed": 2, "invalid": 1, "status": "seed only"}, False),
+    ("2026-11-20T10:00:00Z", {"live": 0, "seed": 0, "status": "no valid records"}, False),
+    ("2026-11-20T10:00:00Z", {"live": 0, "seed": 2, "error": "boom", "status": "failed"}, False),
+    ("2026-11-20T10:00:00Z", {"live": 10, "seed": 0, "status": "live"}, True),  # a live source stays healthy
+])
+def test_manual_update_utility_estimates_are_accepted_only_until_review(checked_at, row, healthy):
+    # Owner decision 2026-11-19 (Maritime Electric): ledger manual_update, yearly review reminder.
+    receipt = {**source_receipt(**row), "checked_at": checked_at}
+    (check,) = monitoring.source_checks(receipt, monitoring.manual_update_reviews(MANUAL_LEDGER))
+    assert check["ok"] is healthy
+    if checked_at.startswith("2027-09-02"):
+        assert "manual update review was due by 2027-09-01" in check["details"][0]
+
+
+def test_manual_update_exemption_needs_a_wellformed_ledger_decision():
+    reviews = monitoring.manual_update_reviews(MANUAL_LEDGER)
+    assert reviews == {"LDC": datetime(2027, 9, 1).date()}
+    receipt = source_receipt(utility="Broken", live=0, seed=2, status="seed only")
+    receipt["expected_utilities"] = ["Broken"]
+    assert monitoring.source_checks(receipt, reviews)[0]["ok"] is False
+    assert monitoring.manual_update_reviews({"utilities": []}) == {}
+
+
 def test_failed_publication_is_reported_immediately_not_given_a_grace(document):
     context = workflow_context(document, publication="failure")
     assert workflow_check(context, "2026-11-01T10:00:00Z")["ok"] is False

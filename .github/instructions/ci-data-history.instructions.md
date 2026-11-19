@@ -99,6 +99,11 @@ The following workflow decisions were approved on 2026-11-17.
 - A source check passes only with live records, no invalid records, no error and no estimates
   other than labelled excluded-class estimates (`excluded_seed`, owner decision 2026-11-18). Any
   other estimate is a source problem; receipts without the field count every estimate.
+- **Manual-update utilities (owner decision 2026-11-19, issue #6):** a well-formed ledger
+  `manual_update` lets that utility's estimates-only check (no live, no invalid, no error) pass
+  while the receipt's `checked_at` date is on or before `review_by`; after it the check fails and
+  asks for the yearly manual procedure. A malformed or unreadable ledger grants no exemption. Any
+  live, invalid or error result is checked normally.
 - The three data writers and Source Health call `model-monitoring.yml`, a reusable read-only
   reporting job with **no schedule**. Its `model-monitoring-issues` job concurrency serializes issue
   updates without putting Source Health in the data-writer concurrency group.
@@ -133,7 +138,10 @@ The following workflow decisions were approved on 2026-11-17.
   has not passed), `no_audit`, `stale_audit`, `deferred_open`, `monitor_overdue`, `ledger_orphan`,
   `ledger_invalid`. Warnings: `monitor_due_soon`, `live_expiring`.
 - Ledger schema 1: per registry name an `audit` {date, basis, source}, the string lists `excluded`,
-  `source_blocked` and `deferred`, a `monitor` {item, review_by} and an optional `stored_name`.
+  `source_blocked` and `deferred`, a `monitor` {item, review_by}, an optional `stored_name` and an
+  optional entry-only `manual_update` {reason, decided, review_by} (exactly these keys; review_by on
+  or after decided) for a source refreshed by hand. Its review date counts like a monitor item
+  (`monitor_due_soon`, then `monitor_overdue`); it never stands in for live output.
   `groups` let entries inherit an audit and standard exclusions (`"group": "ontario_electricity"`); an
   entry's own audit wins and the lists are concatenated. The ledger records decisions and never
   changes a rate. Undecided items go under `deferred`, which keeps the gate failing until resolved.

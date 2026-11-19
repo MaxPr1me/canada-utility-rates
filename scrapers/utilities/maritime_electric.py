@@ -14,7 +14,9 @@ November 2026 Cloudflare answers GitHub's runners with HTTP 403, and the Chromiu
 page (issue #6). When the page is blocked and no schedule link can be read, the last known N-28 PDF
 is read directly: residential and general service records say so, and the industrial and wholesale
 classes fail closed because their Section N terms are unavailable (owner decision 2026-11-19). That
-fallback is refused after LAST_KNOWN_SCHEDULE_REVIEW_BY; other HTTP errors never use it.
+fallback is refused after LAST_KNOWN_SCHEDULE_REVIEW_BY; other HTTP errors never use it. On GitHub the
+known PDF is blocked too, so GitHub runs return the two labelled estimates, which the owner refreshes by hand
+once a year (see SEED_NOTE and the "manual_update" entry in data/sources/coverage_ledger.json).
 
 Regulated by: Island Regulatory and Appeals Commission (IRAC)
 """
@@ -44,21 +46,31 @@ LAST_KNOWN_SCHEDULE_NOTE = (
     "The rates page was blocked (HTTP 403) and linked no readable schedule, so the last known Section N-28 "
     "Schedule of Adjusted Rates was read (it may not be current).")
 
-# Known rate values — used as seed/fallback data.
-# Rates are approximate; IRAC publishes exact approved schedules.
+# Seed estimates, hand-copied from N-28 (Rate 110 Residential Urban and Rate 232 General Service). GitHub's
+# runners cannot reach maritimeelectric.com, so the owner updates them by hand once a year (owner decision
+# 2026-11-19): the "manual_update" entry in data/sources/coverage_ledger.json carries the review date, and
+# the model monitor reopens its issue as the reminder once it passes. They stay labelled estimates.
 SEED_RESIDENTIAL = {
-    "effective_date": "2024-04-01",
-    "source_url": "https://www.maritimeelectric.com/my-account/understanding-my-bill/understanding-rates/",
-    "energy_rate": 0.1740,          # $/kWh
-    "basic_charge_per_month": 19.28,  # $/month
+    "effective_date": "2026-08-01",
+    "source_url": LAST_KNOWN_SCHEDULE_URL,
+    "service_charge_per_month": 24.57,   # $/month
+    "energy_first_2000_kwh": 0.1784,     # $/kWh
+    "energy_balance": 0.1423,            # $/kWh
 }
 
 SEED_GENERAL_SERVICE = {
-    "effective_date": "2024-04-01",
-    "source_url": "https://www.maritimeelectric.com/my-account/understanding-my-bill/understanding-rates/",
-    "energy_rate": 0.1740,          # $/kWh
-    "basic_charge_per_month": 30.00,  # $/month
+    "effective_date": "2026-08-01",
+    "source_url": LAST_KNOWN_SCHEDULE_URL,
+    "service_charge_per_month": 24.57,   # $/month
+    "demand_balance_per_kw": 13.43,      # $/kW above the free first 20 kW
+    "energy_first_5000_kwh": 0.2188,     # $/kWh
+    "energy_balance": 0.1438,            # $/kWh
 }
+
+SEED_NOTE = (
+    "Estimate hand-copied from Section N-28 (Schedule of Adjusted Rates effective August 1, 2026) and checked "
+    "against IRAC Order UE26-07 Appendix A. maritimeelectric.com blocks GitHub's runners (Cloudflare HTTP 403, "
+    "checked 2026-11-19), so this estimate is updated by hand once a year.")
 
 # Non-lighting service classes published in the IRAC-approved Schedule of
 # Adjusted Rates (Section N-28). (rate code, display name, customer_class,
@@ -631,78 +643,50 @@ class MaritimeElectricScraper(BaseScraper):
         return None
 
     def _seed_data(self) -> list[TariffRecord]:
-        """Return seed/fallback data based on known published rates."""
-        records = []
+        """Estimates mirroring the N-28 Rate 110 and Rate 232 components (see SEED_NOTE).
 
-        # ── Residential ──────────────────────────────────────────
-        records.append(TariffRecord(
-            utility_name="Maritime Electric",
-            province="PE",
-            utility_type="electricity",
-            tariff_name="Residential Service",
-            customer_class="residential",
-            rate_structure="flat",
-            effective_date=SEED_RESIDENTIAL["effective_date"],
-            source_url=SEED_RESIDENTIAL["source_url"],
-            confidence="medium",
-            notes=(
-                "Maritime Electric (Fortis-owned) residential rate. "
-                "Rates are approximate; check IRAC-approved rate schedule for exact values."
-            ),
-            components=[
-                RateComponent(
-                    component_type="fixed",
-                    component_name="Basic Charge",
-                    charge_value=SEED_RESIDENTIAL["basic_charge_per_month"],
-                    charge_unit="$/month",
-                    confidence="medium",
-                    notes="Monthly basic charge regardless of consumption",
-                ),
-                RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge",
-                    charge_value=SEED_RESIDENTIAL["energy_rate"],
-                    charge_unit="$/kWh",
-                    confidence="medium",
-                    notes="Flat rate applied to all kWh consumed",
-                ),
-            ],
-        ))
+        The tariff names stay "Residential Service" and "General Service" and carry no rate code, so a
+        new estimate supersedes the older estimates but never replaces a live Rate 110/232 record.
+        """
+        res, gs = SEED_RESIDENTIAL, SEED_GENERAL_SERVICE
 
-        # ── General Service ──────────────────────────────────────
-        records.append(TariffRecord(
-            utility_name="Maritime Electric",
-            province="PE",
-            utility_type="electricity",
-            tariff_name="General Service",
-            customer_class="commercial",
-            sub_class="general service",
-            rate_structure="flat",
-            effective_date=SEED_GENERAL_SERVICE["effective_date"],
-            source_url=SEED_GENERAL_SERVICE["source_url"],
-            confidence="medium",
-            eligibility="Small commercial customers",
-            notes=(
-                "Maritime Electric (Fortis-owned) general service rate. "
-                "Rates are approximate; check IRAC-approved rate schedule for exact values."
-            ),
-            components=[
-                RateComponent(
-                    component_type="fixed",
-                    component_name="Basic Charge",
-                    charge_value=SEED_GENERAL_SERVICE["basic_charge_per_month"],
-                    charge_unit="$/month",
-                    confidence="medium",
-                ),
-                RateComponent(
-                    component_type="energy",
-                    component_name="Energy Charge",
-                    charge_value=SEED_GENERAL_SERVICE["energy_rate"],
-                    charge_unit="$/kWh",
-                    confidence="medium",
-                    notes="Flat rate applied to all kWh consumed",
-                ),
-            ],
-        ))
+        def component(ctype: str, name: str, value: float, unit: str, data: dict,
+                      tier: Optional[int] = None, threshold: Optional[float] = None) -> RateComponent:
+            tier_unit = None
+            if threshold is not None:
+                tier_unit = "kW" if unit == "$/kW" else "kWh"
+            return RateComponent(
+                component_type=ctype, component_name=name, charge_value=value, charge_unit=unit,
+                demand_unit="kW" if unit == "$/kW" else None,
+                tier_number=tier, tier_threshold=threshold, tier_unit=tier_unit,
+                effective_date=data["effective_date"], source_url=data["source_url"], confidence="medium",
+            )
 
-        return records
+        def record(name: str, customer_class: str, structure: str, data: dict, rate: str,
+                   components: list[RateComponent], **extra) -> TariffRecord:
+            return TariffRecord(
+                utility_name="Maritime Electric", province="PE", utility_type="electricity",
+                tariff_name=name, customer_class=customer_class, rate_structure=structure,
+                effective_date=data["effective_date"], source_url=data["source_url"], confidence="medium",
+                notes=f"Mirrors N-28 Rate {rate}. {SEED_NOTE}", components=components, **extra,
+            )
+
+        return [
+            record("Residential Service", "residential", "tiered", res, "110 Residential Urban", [
+                component("fixed", "Service Charge", res["service_charge_per_month"], "$/month", res),
+                component("energy", "Energy Charge per kWh for first 2,000 kWh", res["energy_first_2000_kwh"],
+                          "$/kWh", res, 1, 2000.0),
+                component("energy", "Energy Charge per kWh for balance kWh", res["energy_balance"],
+                          "$/kWh", res, 2),
+            ]),
+            record("General Service", "commercial", "demand", gs, "232 General Service", [
+                component("fixed", "Service Charge", gs["service_charge_per_month"], "$/month", gs),
+                component("demand", "Demand Charge - per kW for first 20 kW", 0.0, "$/kW", gs, 1, 20.0),
+                component("demand", "Demand Charge - per kW for balance of kW", gs["demand_balance_per_kw"],
+                          "$/kW", gs, 2),
+                component("energy", "Energy Charge per kWh for first 5,000 kWh", gs["energy_first_5000_kwh"],
+                          "$/kWh", gs, 1, 5000.0),
+                component("energy", "Energy Charge per kWh for balance of kWh", gs["energy_balance"],
+                          "$/kWh", gs, 2),
+            ], sub_class="general service"),
+        ]

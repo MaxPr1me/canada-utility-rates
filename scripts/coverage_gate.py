@@ -12,7 +12,11 @@ merged and retired entries are skipped) against these gates:
 * G2 ``no_audit`` / ``stale_audit``: a ledger entry with a dated class-level audit not older than --max-age-days.
 * G3 ``deferred_open``: no item left in the ledger's "deferred" list (market-indexed products still to be added);
   excluded and source-blocked items are allowed because each one is written down with its reason.
-  ``monitor_overdue``: a monitored item whose review_by date has passed.
+  ``monitor_overdue``: a monitored item, or a ``manual_update`` decision, whose review_by date has passed.
+
+A ``manual_update`` entry {reason, decided, review_by} records a utility whose official source cannot be read from
+GitHub, so its labelled estimates are refreshed by hand (Maritime Electric, owner decision 2026-11-19). It never
+counts as live output; pipeline/model_monitoring.py accepts that utility's estimates until review_by.
 
 Warnings (never fail the gate): ``monitor_due_soon`` and ``live_expiring`` (every live record ends within
 --warn-days). ``ledger_orphan`` (a ledger entry for a utility that is not active) and ``ledger_invalid`` are errors.
@@ -41,7 +45,7 @@ SCHEMA_VERSION = 1
 DEFAULT_MAX_AGE_DAYS = 120
 DEFAULT_WARN_DAYS = 30
 LIST_KEYS = ("excluded", "source_blocked", "deferred")
-ENTRY_KEYS = {"audit", "monitor", "notes", "stored_name", "group", *LIST_KEYS}
+ENTRY_KEYS = {"audit", "monitor", "manual_update", "notes", "stored_name", "group", *LIST_KEYS}
 GROUP_KEYS = {"audit", "monitor", "notes", *LIST_KEYS}
 ERROR_ORDER = ("no_live_output", "no_audit", "stale_audit", "deferred_open", "monitor_overdue",
                "ledger_orphan", "ledger_invalid")
@@ -67,6 +71,19 @@ def _parse_date(value, label: str) -> date:
 
 def active_utilities(registry: dict) -> list[dict]:
     return [u for u in registry["utilities"] if u.get("status") in ACTIVE_STATUSES]
+
+
+def manual_update_review_by(value) -> date:
+    """The review date of a ledger ``manual_update`` decision; ValueError when the decision is malformed."""
+    if not isinstance(value, dict) or set(value) != {"reason", "decided", "review_by"}:
+        raise ValueError("'manual_update' needs exactly reason, decided and review_by")
+    if not isinstance(value["reason"], str) or not value["reason"].strip():
+        raise ValueError("manual_update.reason must be a non-empty string")
+    decided = _parse_date(value["decided"], "manual_update.decided")
+    review_by = _parse_date(value["review_by"], "manual_update.review_by")
+    if review_by < decided:
+        raise ValueError("manual_update.review_by is before its decision date")
+    return review_by
 
 
 def is_live_on(record: dict, as_of: date) -> bool:
@@ -135,6 +152,11 @@ def _validate_block(problems: list[str], where: str, block, allowed: set, requir
             problems.append(f"{where} '{key}' must be a list of non-empty strings")
     if "stored_name" in block and (not isinstance(block["stored_name"], str) or not block["stored_name"].strip()):
         problems.append(f"{where} 'stored_name' must be a non-empty string")
+    if "manual_update" in block:
+        try:
+            manual_update_review_by(block["manual_update"])
+        except ValueError as exc:
+            problems.append(f"{where} {exc}")
     monitor = block.get("monitor", [])
     if not isinstance(monitor, list):
         problems.append(f"{where} 'monitor' must be a list")
@@ -226,14 +248,22 @@ def evaluate(registry: dict, rates: list[dict], ledger: dict, as_of: date,
                 f"last audited {audited.isoformat()}, more than {max_age_days} days before {as_of.isoformat()}")
         for item in entry.get("deferred", []) if isinstance(entry.get("deferred", []), list) else []:
             add(name, "error", "deferred_open", f"deferred item still open: {item}")
+        reviews = []
         for item in entry.get("monitor", []) if isinstance(entry.get("monitor", []), list) else []:
             if not isinstance(item, dict):
                 continue
             try:
-                review_by = _parse_date(item.get("review_by"), "review_by")
+                reviews.append((item.get("item"), _parse_date(item.get("review_by"), "review_by")))
             except ValueError:
                 continue
-            label = f"{item.get('item')} (review by {review_by.isoformat()})"
+        if "manual_update" in entry:
+            try:
+                reviews.append(("manual source update of its estimates",
+                                manual_update_review_by(entry["manual_update"])))
+            except ValueError:
+                pass  # reported once as ledger_invalid
+        for item, review_by in reviews:
+            label = f"{item} (review by {review_by.isoformat()})"
             if review_by < as_of:
                 add(name, "error", "monitor_overdue", f"monitor review overdue: {label}")
             elif review_by <= warn_cutoff:

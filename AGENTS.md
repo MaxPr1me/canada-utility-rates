@@ -213,7 +213,7 @@ The comparison policy is in the
 | `.github/workflows/model-monitoring.yml`, `scripts/model_monitoring_issue.js` | A shared follow-up check called by the existing data workflows and Source Health. It reports input/refresh problems and manages its own issue; it has no daily schedule and does not block valid publication. |
 | `.github/workflows/deploy.yml` | **Deploy Site**: publishes the website on push, by hand, and by itself after each successful Monthly Scrape, Ontario Price Archive or Market Benchmarks run. |
 | `scripts/check_db_history.py` | The Monthly Scrape's safety check: the database is not damaged, and nothing old was lost or changed. |
-| `scripts/coverage_gate.py`, `data/sources/coverage_ledger.json` | The coverage gate (see the glossary) and the audit ledger it reads: audit dates, exclusions, and deferred and monitored items for each utility. The ledger records decisions; it never changes a rate. |
+| `scripts/coverage_gate.py`, `data/sources/coverage_ledger.json` | The coverage gate (see the glossary) and the audit ledger it reads: audit dates, exclusions, deferred and monitored items, and manual-update decisions for each utility. The ledger records decisions; it never changes a rate. |
 | `scripts/pull_history_db.py` | Downloads the newest database to your computer, checks it, and keeps your old copy. It never uploads anything. |
 | `scripts/build_ontario_market.py`, `archive_ontario_price.py`, `preserve_ieso_reports.py`, `export_ontario_totals.py` | Build the Ontario market history, extend the hourly Ontario Price archive, save the original IESO reports, and create the combined energy-plus-GA files. |
 | `scripts/build_alberta_market.py` | Builds the Alberta market history, checked against every official AESO monthly summary. |
@@ -477,6 +477,9 @@ workflow does not dismiss a monitoring warning.
 2. Fix or verify the named source/input, then use the appropriate existing workflow. A source-only
    problem can recover through Source Health; a publication problem needs a successful data
    publication. Checking just one utility does not replace a full source refresh.
+   A utility the ledger marks for manual updates (`manual_update`; Maritime Electric, whose website
+   blocks GitHub) is named only once its yearly review is overdue: follow its yearly procedure in the
+   [regional rules](.github/instructions/regional-utilities.instructions.md#maritime-electric).
 3. The checker updates its own issue and closes it only after all recorded problems have verified
    recovery. Other issues and maintainer notes are left alone. Do not delete change history to
    silence a warning.
