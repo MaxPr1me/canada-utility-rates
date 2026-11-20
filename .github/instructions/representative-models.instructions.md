@@ -117,6 +117,13 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 
 ## Usage levels and reference customer (`data/models/usage_levels.json`)
 
+- **Documented backing (owner decision 2026-11-20):** every typical energy-use level and load
+  profile, electricity or gas, records three things where it is defined: the decision (who
+  approved it and when), why it was chosen, and what it represents (customer or building type,
+  size, period and units). Back it with official sources (utilities, regulators, statistical
+  agencies, government programs) and, where they exist, peer-reviewed research data, each cited
+  with its title, URL or DOI, date and the exact figure used. A sensitivity level or a simulated
+  or made-up profile says so; never present one as typical or observed.
 - Owner-approved levels: residential 500, 1,000 and 2,000 kWh; commercial under 50 kW 2,000 kWh at
   10 kW (s1) and 8,000 kWh at 25 kW (s2); 50-499 kW 40,000 kWh at 100 kW (m1); 500-4,999 kW
   500,000 kWh at 1,000 kW (l1). There is no 5,000 kW+ level (those models report buckets only).
