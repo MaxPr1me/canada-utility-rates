@@ -1,13 +1,11 @@
 # parse_tariff_pages
 
-> 14 nodes
+> 12 nodes
 
 ## Key Concepts
 
 - **parse_tariff_pages()** (22 connections) — `scrapers/utils/oeb_tariff.py`
 - **add_line()** (5 connections) — `scrapers/utils/oeb_tariff.py`
-- **_today_iso()** (4 connections) — `scrapers/utils/oeb_tariff.py`
-- **date** (4 connections)
 - **extend_tail()** (3 connections) — `scrapers/utils/oeb_tariff.py`
 - **flush_allowance()** (3 connections) — `scrapers/utils/oeb_tariff.py`
 - **start_class()** (3 connections) — `scrapers/utils/oeb_tariff.py`
@@ -21,11 +19,14 @@
 
 ## Relationships
 
-- [oeb_tariff.py](oeb_tariff.py.md) (14 shared connections)
-- [build_demand_records](build_demand_records.md) (4 shared connections)
+- [TariffSheet](TariffSheet.md) (5 shared connections)
+- [oeb_tariff.py](oeb_tariff.py.md) (5 shared connections)
+- [build_demand_records](build_demand_records.md) (3 shared connections)
+- [close_class](close_class.md) (2 shared connections)
+- [Classification](Classification.md) (1 shared connections)
 - [_dedupe_classifications](_dedupe_classifications.md) (1 shared connections)
 - [class_loss_factors](class_loss_factors.md) (1 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (1 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -33,7 +34,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 37 (97%)
+- EXTRACTED: 32 (97%)
 - INFERRED: 1 (3%)
 - AMBIGUOUS: 0 (0%)
 

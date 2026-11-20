@@ -11,9 +11,11 @@
 
 ## Relationships
 
-- [oeb_tariff.py](oeb_tariff.py.md) (3 shared connections)
-- [build_demand_records](build_demand_records.md) (2 shared connections)
+- [oeb_tariff.py](oeb_tariff.py.md) (2 shared connections)
+- [build_demand_records](build_demand_records.md) (1 shared connections)
 - [parse_tariff_pages](parse_tariff_pages.md) (1 shared connections)
+- [TariffSheet](TariffSheet.md) (1 shared connections)
+- [Classification](Classification.md) (1 shared connections)
 
 ## Source Files
 

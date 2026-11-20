@@ -2,12 +2,12 @@
 
 > God node · 239 connections · `scrapers/utils/parsing.py`
 
-**Community:** [fortisbc_electric.py](fortisbc_electric.py.md)
+**Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
 
 ## Connections by Relation
 
 ### calls
-- [extract_pdf_pages()](extract_pdf_pages.md) `EXTRACTED`
+- [extract_pdf_pages()](extract_pdf_pages_2.md) `EXTRACTED`
 - extract_schedule_pages() `EXTRACTED`
 - extract_handbook_pages() `EXTRACTED`
 - extract_schedule_pages() `EXTRACTED`
@@ -75,7 +75,7 @@
 - [EnbridgeGasScraper](EnbridgeGasScraper.md) `INFERRED`
 - [BCHydroScraper](BCHydroScraper.md) `INFERRED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `INFERRED`
-- NewfoundlandPowerScraper `INFERRED`
+- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `INFERRED`
 - [ATCOGasScraper](ATCOGasScraper.md) `INFERRED`
 - parse_tariff_pages() `INFERRED`
 - HydroQuebecScraper `INFERRED`
@@ -88,7 +88,7 @@
 - _schedule_page() `INFERRED`
 - SaskPowerScraper `INFERRED`
 - parse_manual() `INFERRED`
-- ManitobaHydroScraper `INFERRED`
+- [ManitobaHydroScraper](ManitobaHydroScraper.md) `INFERRED`
 - parse_tariff_pages() `INFERRED`
 - _parse_commercial() `INFERRED`
 - *…and 88 more `uses` connection(s) not listed (lowest-degree first to go)*

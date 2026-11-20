@@ -1,14 +1,11 @@
 # ntpc.py
 
-> 55 nodes
+> 47 nodes
 
 ## Key Concepts
 
 - **ntpc.py** (48 connections) — `scrapers/utilities/ntpc.py`
-- **._try_live_scrape()** (16 connections) — `scrapers/utilities/ntpc.py`
-- **NTPCScraper** (12 connections) — `scrapers/utilities/ntpc.py`
 - **_Reject** (12 connections) — `scrapers/utilities/ntpc.py`
-- **._interruptible()** (11 connections) — `scrapers/utilities/ntpc.py`
 - **_page_subsidies()** (10 connections) — `scrapers/utilities/ntpc.py`
 - **parse_residential_page()** (10 connections) — `scrapers/utilities/ntpc.py`
 - **parse_schedule()** (9 connections) — `scrapers/utilities/ntpc.py`
@@ -29,19 +26,19 @@
 - **_ResidentialPage** (5 connections) — `scrapers/utilities/ntpc.py`
 - **_schedule_component()** (5 connections) — `scrapers/utilities/ntpc.py`
 - **_norm()** (5 connections) — `scrapers/utilities/ntpc.py`
-- *... and 30 more nodes in this community*
+- **parse_rider_page()** (5 connections) — `scrapers/utilities/ntpc.py`
+- **_dollars_per_kwh()** (4 connections) — `scrapers/utilities/ntpc.py`
+- **_Interruptible** (3 connections) — `scrapers/utilities/ntpc.py`
+- *... and 22 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (12 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (12 shared connections)
 - [re](re.md) (12 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (7 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (6 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (6 shared connections)
-- [maritime_electric.py](maritime_electric.py.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [extract_effective_date](extract_effective_date.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (8 shared connections)
+- [RateComponent](RateComponent.md) (5 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (4 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
 - [parse_html](parse_html.md) (1 shared connections)
 
 ## Source Files
@@ -50,8 +47,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 168 (95%)
-- INFERRED: 8 (5%)
+- EXTRACTED: 145 (97%)
+- INFERRED: 5 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

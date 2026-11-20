@@ -36,12 +36,11 @@
 - [BaseScraper](BaseScraper.md) (9 shared connections)
 - [re](re.md) (9 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (5 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
+- [RateComponent](RateComponent.md) (5 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (4 shared connections)
 - [parse_html](parse_html.md) (4 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [maritime_electric.py](maritime_electric.py.md) (1 shared connections)
 - [io](io.md) (1 shared connections)
 
 ## Source Files

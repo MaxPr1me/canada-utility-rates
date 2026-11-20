@@ -33,15 +33,16 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (8 shared connections)
 - [re](re.md) (7 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (5 shared connections)
-- [ATCOElectricScraper](ATCOElectricScraper.md) (5 shared connections)
+- [BaseScraper](BaseScraper.md) (7 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
 - [parse_html](parse_html.md) (5 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (4 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
-- [Path](Path.md) (1 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
+- [ATCOElectricScraper](ATCOElectricScraper.md) (3 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (3 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
+- [json](json.md) (1 shared connections)
 
 ## Source Files
 

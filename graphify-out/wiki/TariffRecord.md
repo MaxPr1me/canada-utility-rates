@@ -38,9 +38,9 @@
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
 - [fortisbc_electric.py](fortisbc_electric.py.md) `EXTRACTED`
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
-- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
+- ontario_ldc.py `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- [run_scrape.py](run_scrape.py.md) `EXTRACTED`
+- run_scrape.py `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
 - epcor_gas_ontario.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
@@ -87,12 +87,12 @@
 - [CentraGasScraper](CentraGasScraper.md) `INFERRED`
 - [OntarioLDCScraper](OntarioLDCScraper.md) `INFERRED`
 - [FortisBCEnergyScraper](FortisBCEnergyScraper.md) `INFERRED`
+- [EnergirScraper](EnergirScraper.md) `INFERRED`
 - [BCHydroScraper](BCHydroScraper.md) `INFERRED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `INFERRED`
 - [NBPowerScraper](NBPowerScraper.md) `INFERRED`
-- NewfoundlandPowerScraper `INFERRED`
+- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `INFERRED`
 - [ATCOGasScraper](ATCOGasScraper.md) `INFERRED`
-- [EnergirScraper](EnergirScraper.md) `INFERRED`
 - HydroQuebecScraper `INFERRED`
 - NLHydroScraper `INFERRED`
 - main() `INFERRED`

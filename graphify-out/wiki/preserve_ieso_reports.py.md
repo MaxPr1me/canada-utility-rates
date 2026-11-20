@@ -1,6 +1,6 @@
 # preserve_ieso_reports.py
 
-> 32 nodes
+> 31 nodes
 
 ## Key Concepts
 
@@ -18,7 +18,6 @@
 - **.__init__()** (5 connections) — `scripts/preserve_ieso_reports.py`
 - **.read_da()** (5 connections) — `scripts/preserve_ieso_reports.py`
 - **._write_index()** (4 connections) — `scripts/preserve_ieso_reports.py`
-- **importlib_util** (4 connections)
 - **._load_index()** (3 connections) — `scripts/preserve_ieso_reports.py`
 - **.names()** (3 connections) — `scripts/preserve_ieso_reports.py`
 - **_report_url()** (3 connections) — `scripts/preserve_ieso_reports.py`
@@ -29,18 +28,18 @@
 - **gzip** (2 connections)
 - **_load_archive()** (1 connections) — `scripts/preserve_ieso_reports.py`
 - **Pattern** (1 connections)
-- *... and 7 more nodes in this community*
+- **Preserve unverified IESO DA-OZP/LFDA bytes independently of monthly price…** (1 connections) — `scripts/preserve_ieso_reports.py`
+- *... and 6 more nodes in this community*
 
 ## Relationships
 
-- [os](os.md) (5 shared connections)
-- [argparse](argparse.md) (4 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (2 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
+- [json](json.md) (5 shared connections)
+- [os](os.md) (3 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (2 shared connections)
+- [_yearly_files](_yearly_files.md) (1 shared connections)
+- [export_ontario_totals.py](export_ontario_totals.py.md) (1 shared connections)
 - [re](re.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +47,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 69 (93%)
+- EXTRACTED: 66 (93%)
 - INFERRED: 5 (7%)
 - AMBIGUOUS: 0 (0%)
 

@@ -25,10 +25,10 @@
 
 ## Relationships
 
-- [BCHydroScraper](BCHydroScraper.md) (6 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [RateComponent](RateComponent.md) (6 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (4 shared connections)
 - [BaseScraper](BaseScraper.md) (2 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files

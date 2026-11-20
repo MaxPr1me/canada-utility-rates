@@ -1,6 +1,6 @@
 # FortisBCEnergyScraper
 
-> 41 nodes
+> 38 nodes
 
 ## Key Concepts
 
@@ -23,19 +23,19 @@
 - **._footer_after()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._money()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._rate_section()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._discover_documents()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._document_text()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
+- **._seed_data()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **AreaClassSpec** (3 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._page_text()** (3 connections) — `scrapers/utilities/fortisbc_energy.py`
-- **comp()** (2 connections) — `scrapers/utilities/fortisbc_energy.py`
-- **comp()** (2 connections) — `scrapers/utilities/fortisbc_energy.py`
-- *... and 16 more nodes in this community*
+- *... and 13 more nodes in this community*
 
 ## Relationships
 
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (12 shared connections)
+- [RateComponent](RateComponent.md) (14 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (10 shared connections)
-- [.fetch_page](fetch_page.md) (5 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (6 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
 - [parse_html](parse_html.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
@@ -46,7 +46,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 120 (98%)
+- EXTRACTED: 121 (98%)
 - INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 

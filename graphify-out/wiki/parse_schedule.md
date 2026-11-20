@@ -1,6 +1,6 @@
 # parse_schedule
 
-> 19 nodes
+> 18 nodes
 
 ## Key Concepts
 
@@ -14,7 +14,6 @@
 - **_prices()** (4 connections) — `scrapers/utilities/grand_forks.py`
 - **Pattern** (4 connections)
 - **_iso()** (3 connections) — `scrapers/utilities/grand_forks.py`
-- **requests_exceptions** (2 connections)
 - **date** (1 connections)
 - **grand_forks.py — Scraper for the City of Grand Forks electrical utility…** (1 connections) — `scrapers/utilities/grand_forks.py`
 - **The six published prices of Schedule G items 1-3.** (1 connections) — `scrapers/utilities/grand_forks.py`
@@ -26,13 +25,13 @@
 
 ## Relationships
 
+- [extract_pdf_pages](extract_pdf_pages.md) (8 shared connections)
 - [re](re.md) (7 shared connections)
-- [.fetch_page](fetch_page.md) (7 shared connections)
-- [BaseScraper](BaseScraper.md) (6 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (5 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
 - [parse_html](parse_html.md) (3 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
+- [json](json.md) (2 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (2 shared connections)
 
 ## Source Files
@@ -41,7 +40,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 56 (95%)
+- EXTRACTED: 55 (95%)
 - INFERRED: 3 (5%)
 - AMBIGUOUS: 0 (0%)
 

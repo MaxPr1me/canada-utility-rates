@@ -1,6 +1,6 @@
 # build_alberta_market.py
 
-> 33 nodes
+> 31 nodes
 
 ## Key Concepts
 
@@ -14,7 +14,6 @@
 - **check_hours()** (7 connections) — `scripts/build_alberta_market.py`
 - **output_bytes()** (7 connections) — `scripts/build_alberta_market.py`
 - **read_archive()** (7 connections) — `scripts/build_alberta_market.py`
-- **metadata_document()** (6 connections) — `scrapers/utilities/aeso.py`
 - **.get()** (5 connections) — `scripts/build_alberta_market.py`
 - **write_outputs()** (5 connections) — `scripts/build_alberta_market.py`
 - **SourceMissing** (4 connections) — `scripts/build_alberta_market.py`
@@ -29,20 +28,20 @@
 - **get_summary()** (2 connections) — `scripts/build_alberta_market.py`
 - **.__init__()** (2 connections) — `scripts/build_alberta_market.py`
 - **ValueError** (1 connections)
-- *... and 8 more nodes in this community*
+- **ETS report URL; the end date is exclusive.** (1 connections) — `scrapers/utilities/aeso.py`
+- *... and 6 more nodes in this community*
 
 ## Relationships
 
-- [io](io.md) (10 shared connections)
-- [os](os.md) (6 shared connections)
-- [BaseScraper](BaseScraper.md) (5 shared connections)
-- [re](re.md) (5 shared connections)
-- [argparse](argparse.md) (4 shared connections)
-- [AESOVerificationError](AESOVerificationError.md) (3 shared connections)
+- [io](io.md) (19 shared connections)
+- [json](json.md) (6 shared connections)
+- [os](os.md) (5 shared connections)
 - [market_pricing.py](market_pricing.py.md) (3 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (3 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
+- [re](re.md) (3 shared connections)
 - [parse_html](parse_html.md) (2 shared connections)
+- [BaseScraper](BaseScraper.md) (2 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
+- [export_ontario_totals.py](export_ontario_totals.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -51,8 +50,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 110 (96%)
-- INFERRED: 5 (4%)
+- EXTRACTED: 106 (95%)
+- INFERRED: 5 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -35,12 +35,10 @@
 
 - [BaseScraper](BaseScraper.md) (18 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (18 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (8 shared connections)
+- [RateComponent](RateComponent.md) (10 shared connections)
 - [re](re.md) (7 shared connections)
-- [maritime_electric.py](maritime_electric.py.md) (2 shared connections)
-- [RateComponent](RateComponent.md) (2 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [.fetch_page](fetch_page.md) (1 shared connections)
 
 ## Source Files
 

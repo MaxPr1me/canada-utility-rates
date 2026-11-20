@@ -1,55 +1,56 @@
 # EnergirScraper
 
-> 26 nodes
+> 42 nodes
 
 ## Key Concepts
 
-- **EnergirScraper** (22 connections) — `scrapers/utilities/energir.py`
-- **._parse_stable_load()** (12 connections) — `scrapers/utilities/energir.py`
-- **._parse_d5()** (11 connections) — `scrapers/utilities/energir.py`
-- **.parse_pages()** (10 connections) — `scrapers/utilities/energir.py`
-- **._try_live_scrape()** (10 connections) — `scrapers/utilities/energir.py`
+- **EnergirScraper** (27 connections) — `scrapers/utilities/energir.py`
+- **energir.py** (18 connections) — `scrapers/utilities/energir.py`
+- **date** (17 connections)
+- **._parse_stable_load()** (13 connections) — `scrapers/utilities/energir.py`
+- **._parse_d5()** (12 connections) — `scrapers/utilities/energir.py`
+- **._monthly_prices()** (12 connections) — `scrapers/utilities/energir.py`
+- **.parse_pages()** (11 connections) — `scrapers/utilities/energir.py`
 - **._parse_d1()** (9 connections) — `scrapers/utilities/energir.py`
-- **date** (8 connections)
+- **._shared_components()** (8 connections) — `scrapers/utilities/energir.py`
+- **._build()** (7 connections) — `scrapers/utilities/energir.py`
 - **._blocks()** (7 connections) — `scrapers/utilities/energir.py`
 - **._dollars()** (7 connections) — `scrapers/utilities/energir.py`
 - **._shared_values()** (7 connections) — `scrapers/utilities/energir.py`
-- **._build()** (6 connections) — `scrapers/utilities/energir.py`
-- **._shared_components()** (6 connections) — `scrapers/utilities/energir.py`
+- **._dated_price()** (6 connections) — `scrapers/utilities/energir.py`
 - **component()** (5 connections) — `scrapers/utilities/energir.py`
-- **._dated_price()** (5 connections) — `scrapers/utilities/energir.py`
-- **.scrape()** (5 connections) — `scrapers/utilities/energir.py`
+- **._history_value()** (5 connections) — `scrapers/utilities/energir.py`
+- **._monthly_notes()** (5 connections) — `scrapers/utilities/energir.py`
 - **._volume()** (5 connections) — `scrapers/utilities/energir.py`
+- **_quarter_end()** (5 connections) — `scrapers/utilities/energir.py`
+- **read_xlsx_tables()** (5 connections) — `scrapers/utils/parsing.py`
+- **._column_date()** (4 connections) — `scrapers/utilities/energir.py`
+- **._cst_price()** (4 connections) — `scrapers/utilities/energir.py`
 - **._long_date()** (4 connections) — `scrapers/utilities/energir.py`
-- **._seed_data()** (4 connections) — `scrapers/utilities/energir.py`
-- **component()** (2 connections) — `scrapers/utilities/energir.py`
-- **component()** (2 connections) — `scrapers/utilities/energir.py`
-- **._norm()** (2 connections) — `scrapers/utilities/energir.py`
-- **Contiguous (price, upper bound) bands from 0 to an open-ended last band.** (1 connections) — `scrapers/utilities/energir.py`
-- **Build D1, D3, D4 and D5 from pricing/tariff texts; each rate fails closed on…** (1 connections) — `scrapers/utilities/energir.py`
-- **Rate D3 or D4 (article 14.3); both share one price schedule and differ in…** (1 connections) — `scrapers/utilities/energir.py`
-- **Scrape Energir natural gas rates for Quebec.** (1 connections) — `scrapers/utilities/energir.py`
-- *... and 1 more nodes in this community*
+- **_month()** (4 connections) — `scrapers/utilities/energir.py`
+- **_month_end()** (4 connections) — `scrapers/utilities/energir.py`
+- *... and 17 more nodes in this community*
 
 ## Relationships
 
-- [BCHydroScraper](BCHydroScraper.md) (9 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (6 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (8 shared connections)
+- [BaseScraper](BaseScraper.md) (7 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (7 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (4 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
 - [parse_html](parse_html.md) (1 shared connections)
-- [maritime_electric.py](maritime_electric.py.md) (1 shared connections)
+- [re](re.md) (1 shared connections)
 
 ## Source Files
 
 - `scrapers/utilities/energir.py`
+- `scrapers/utils/parsing.py`
 
 ## Audit Trail
 
-- EXTRACTED: 85 (96%)
-- INFERRED: 4 (4%)
+- EXTRACTED: 129 (97%)
+- INFERRED: 4 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

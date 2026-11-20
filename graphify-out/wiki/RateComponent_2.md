@@ -2,7 +2,7 @@
 
 > God node · 287 connections · `scrapers/base.py`
 
-**Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
+**Community:** [RateComponent](RateComponent.md)
 
 ## Connections by Relation
 
@@ -38,7 +38,7 @@
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
 - [fortisbc_electric.py](fortisbc_electric.py.md) `EXTRACTED`
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
-- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
+- ontario_ldc.py `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
 - epcor_gas_ontario.py `EXTRACTED`
@@ -63,13 +63,13 @@
 - ._record() `EXTRACTED`
 - ._rider() `EXTRACTED`
 - ._business_rider_components() `EXTRACTED`
+- ._shared_components() `EXTRACTED`
 - ._new_record() `EXTRACTED`
 - ._nonfirm_record() `EXTRACTED`
 - ._murb_rider_components() `EXTRACTED`
 - ._rtp_rider_components() `EXTRACTED`
 - ._general_service_records() `EXTRACTED`
 - ._supply() `EXTRACTED`
-- ._shared_components() `EXTRACTED`
 - ._pdf_parts() `EXTRACTED`
 - ._parse_component_line() `EXTRACTED`
 - ._parse_components() `EXTRACTED`
@@ -84,12 +84,12 @@
 - [CentraGasScraper](CentraGasScraper.md) `INFERRED`
 - [OntarioLDCScraper](OntarioLDCScraper.md) `INFERRED`
 - [FortisBCEnergyScraper](FortisBCEnergyScraper.md) `INFERRED`
+- [EnergirScraper](EnergirScraper.md) `INFERRED`
 - [BCHydroScraper](BCHydroScraper.md) `INFERRED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `INFERRED`
 - [NBPowerScraper](NBPowerScraper.md) `INFERRED`
-- NewfoundlandPowerScraper `INFERRED`
+- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `INFERRED`
 - [ATCOGasScraper](ATCOGasScraper.md) `INFERRED`
-- [EnergirScraper](EnergirScraper.md) `INFERRED`
 - HydroQuebecScraper `INFERRED`
 - NLHydroScraper `INFERRED`
 - MaritimeElectricScraper `INFERRED`

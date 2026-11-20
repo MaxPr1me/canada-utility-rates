@@ -33,9 +33,9 @@
 
 ## Relationships
 
-- [argparse](argparse.md) (7 shared connections)
-- [os](os.md) (4 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (4 shared connections)
+- [json](json.md) (11 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (3 shared connections)
+- [os](os.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files

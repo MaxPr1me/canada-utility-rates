@@ -18,10 +18,10 @@
 - ._commodity() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
+- ._try_live_scrape() `EXTRACTED`
 - ._parse_residential_tariffs() `EXTRACTED`
 - html_text() `EXTRACTED`
 - .verify_official_records() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - parse_energy_page() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
@@ -36,7 +36,7 @@
 - base.py `EXTRACTED`
 - [enmax_power.py](enmax_power.py.md) `EXTRACTED`
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
-- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
+- ontario_ldc.py `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
 - epcor_gas_ontario.py `EXTRACTED`
