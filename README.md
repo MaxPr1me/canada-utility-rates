@@ -110,6 +110,11 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   AESO, which publishes only a market price reference (7 of 7 service areas, was 7 of 8; prices
   unchanged); the diff report compares only the utilities the newer run scraped; the console log
   writes UTF-8 on Windows.
+- **Énergir supply price (fixed November 20, stored by the next Monthly Scrape):** the stored price
+  was the tariff's October figure (15.535 ¢/m³) although Énergir changes it monthly (10.837 ¢/m³ from
+  November 1). The scraper now reads the current month from Énergir's supply-price page, checks it
+  against Énergir's price history workbooks, and leaves the supply price out while a month is not
+  posted yet.
 - **Latest export (November 19, scrape run 44):** 987 latest live tariffs and 482 retained
   estimates; 1,409 stored live versions and 6,642 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
@@ -140,7 +145,7 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   and deployment. The change log starts from its first verified baseline. Source checks ignore only
   labelled excluded-class estimates (owner decision November 18) and a ledger manual-update
   utility's estimates until its review date (November 19).
-- **Validation:** all 2,476 tests passed on Python 3.11 using `pytest tests`.
+- **Validation:** all 2,483 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.

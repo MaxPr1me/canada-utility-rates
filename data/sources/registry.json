@@ -68,9 +68,27 @@
           "source_type": "pdf",
           "description": "Conditions of Service and Tariff as of October 1, 2026: supply, transportation, load balancing, Rate D1, renewable-gas socialization and cap-and-trade prices (link is rediscovered from the pricing page each run)",
           "is_primary": false
+        },
+        {
+          "url": "https://energir.com/en/business/natural-gas-supply-prices",
+          "source_type": "html",
+          "description": "Monthly natural gas supply and cap-and-trade (CTEAS) prices; the current month's column sets the stored supply price (month start to month end) and CTEAS price (to quarter end)",
+          "is_primary": false
+        },
+        {
+          "url": "https://energir.com/files/energir_common/Historique_prix_fourniture_en.xlsx",
+          "source_type": "xlsx",
+          "description": "Five-year natural gas supply price history ($/GJ and cents/m3 by month); must match the supply-price page for the current month",
+          "is_primary": false
+        },
+        {
+          "url": "https://energir.com/files/energir_common/Historique_prix_SPEDE_en.xlsx",
+          "source_type": "xlsx",
+          "description": "Five-year cap-and-trade (CTEAS) price history (cents/m3 by month); must match the supply-price page and dates the CTEAS price from the first month of the quarter with the same value",
+          "is_primary": false
         }
       ],
-      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Regulated by the Régie de l'énergie du Québec. Default Rate D1 is parsed live for residential and business listings: seven annual-volume basic-fee bands, nine daily distribution blocks, supply, transportation, conditional load balancing and renewable-gas socialization, and the cap-and-trade (CTEAS) price, all in native cents/m3 stored as $/m3. Rates D3 and D4 (subscribed-volume minimum daily obligation bands, withdrawal prices, eligibility thresholds) are parsed from article 14.3 of the same tariff. Interruptible D5, the load-factor balancing formula, rate reductions and fixed-price/renewable supply options remain gaps. Batch 8 audited inventory-related adjustments (Energir inventory fact sheet): they are customer-specific supply/transportation price-difference adjustments or credits computed from each customer's storage parameters, with no published unit price, so they are documented conditions and are never added as a component. Batch 9 adds interruptible Rate D5 (PDF pages 62-65; Category A/B load-balancing alternatives conditional) and the dated RNG supply price (page 38) as an optional replacement component on D1/D3/D4/D5. Fixed-price supply is supplier-specific and unpriced."
+      "notes": "Énergir (formerly Gaz Métro) is the principal natural gas distributor in Quebec. Regulated by the Régie de l'énergie du Québec. Default Rate D1 is parsed live for residential and business listings: seven annual-volume basic-fee bands, nine daily distribution blocks, supply, transportation, conditional load balancing and renewable-gas socialization, and the cap-and-trade (CTEAS) price, all in native cents/m3 stored as $/m3. Since 2026-11-20 (owner decision) the supply and CTEAS prices come from the monthly supply-price page for the current month, cross-checked against the two price history workbooks: supply runs from the first to the last day of the month and CTEAS to the end of its quarter; a month the page does not show yet leaves the supply price out (fail closed, explained in the record notes) and CTEAS falls back to the tariff's own value only within the tariff edition's quarter. The tariff's 'as of' supply price must agree with the page in its edition month. Rates D3 and D4 (subscribed-volume minimum daily obligation bands, withdrawal prices, eligibility thresholds) are parsed from article 14.3 of the same tariff. Interruptible D5, the load-factor balancing formula, rate reductions and fixed-price/renewable supply options remain gaps. Batch 8 audited inventory-related adjustments (Energir inventory fact sheet): they are customer-specific supply/transportation price-difference adjustments or credits computed from each customer's storage parameters, with no published unit price, so they are documented conditions and are never added as a component. Batch 9 adds interruptible Rate D5 (PDF pages 62-65; Category A/B load-balancing alternatives conditional) and the dated RNG supply price (page 38) as an optional replacement component on D1/D3/D4/D5.       Fixed-price supply is supplier-specific and unpriced."
     },
     {
       "name": "FortisBC Energy",

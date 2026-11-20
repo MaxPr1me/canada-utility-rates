@@ -60,6 +60,14 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
 ## Energir
 
 - Follow the pricing page to the current tariff PDF; fail closed on an edition/month mismatch.
+- **Monthly supply and cap-and-trade prices (owner decision 2026-11-20):** the tariff prints supply and
+  CTEAS prices only "as of" its edition date ("may be adjusted monthly" / "quarterly"). Both come from
+  the supply-price page column for the current month and must match the two five-year price history
+  workbooks it links. Supply runs from the first to the last day of the month; CTEAS from the first
+  month of its quarter with the same workbook value to the quarter end. A month the page does not show
+  yet, or a workbook that disagrees, leaves the supply price out (record notes explain it); CTEAS then
+  falls back to the tariff's value only within the tariff edition's quarter. In the edition month the
+  tariff's supply price must equal the page's, otherwise the supply price is left out.
 - D3/D4 minimum daily obligation bands are per m³/day of **subscribed volume**. Above-subscribed-volume
   withdrawal, average load-balancing and renewable-gas charges are conditional.
 - Inventory adjustments depend on each customer's storage use and have no published price: explain

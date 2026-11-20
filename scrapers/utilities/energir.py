@@ -9,6 +9,15 @@ Official sources:
       (links the current Conditions of Service and Tariff PDF)
   Conditions of Service and Tariff PDF: supply (11), transportation (12), load
   balancing (13), Rate D1 distribution (14.2) and cap-and-trade (15) prices.
+  https://energir.com/en/business/natural-gas-supply-prices: the monthly supply
+      and cap-and-trade (CTEAS) prices, checked against the two five-year price
+      history workbooks it links.
+
+The tariff prints supply and cap-and-trade prices only "as of" its edition date and
+says they "may be adjusted monthly" and "quarterly": since the owner decision of
+2026-11-20 both come from the supply-price page for the current month. Supply ends
+at month end and cap-and-trade at quarter end; a month the page does not show yet is
+left out (fail closed) instead of reusing an older price.
 
 Quebec gas rates are regulated by the Regie de l'energie. Prices are published
 in cents per m3 and stored as $/m3 (a plain /100 conversion; no heat-content
@@ -19,7 +28,7 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
@@ -28,10 +37,43 @@ logger = logging.getLogger(__name__)
 
 PAGE_URLS = {
     "pricing": "https://energir.com/en/residential/customer-centre/billing-and-pricing/pricing",
+    "supply_prices": "https://energir.com/en/business/natural-gas-supply-prices",
+    "supply_history": "https://energir.com/files/energir_common/Historique_prix_fourniture_en.xlsx",
+    "cteas_history": "https://energir.com/files/energir_common/Historique_prix_SPEDE_en.xlsx",
 }
 DATE = r"([A-Z][a-z]+ \d{1,2}, \d{4})"
 CENTS = r"(\d+\.\d{3})¢/m³"
 VOLUME = r"(\d[\d,]*)"
+MONTH_NAMES = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+               "November", "December")
+SUPPLY_PATTERN = (r"the traditional natural gas supply price, as of " + DATE + r" is " + CENTS
+                  + r"\. The price may be adjusted monthly")
+CTEAS_PATTERN = r"the CTEAS price as of " + DATE + r" is " + CENTS + r"\. The price may be adjusted quarterly"
+PRICE_COLUMNS = re.compile(r"Price effective Description Unit ((?:[A-Za-z]{3,9}\.? \d{1,2}, \d{4} ?)+)", re.I)
+NUMBERS = r"((?:\d+(?:\.\d+)? ?)+)"
+SUPPLY_ROW = re.compile(r"Natural gas supply (?:Price )?\$/GJ ¢/m³ " + NUMBERS, re.I)
+CTEAS_ROW = re.compile(r"Cap-and-trade emission allowances system (?:Price )?¢/m³ " + NUMBERS, re.I)
+
+
+def _month_end(day: date) -> date:
+    return (day.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+
+
+def _quarter_start(day: date) -> date:
+    return date(day.year, 3 * ((day.month - 1) // 3) + 1, 1)
+
+
+def _quarter_end(day: date) -> date:
+    start = _quarter_start(day)
+    return _month_end(date(start.year, start.month + 2, 1))
+
+
+def _long(day: date) -> str:
+    return f"{MONTH_NAMES[day.month - 1]} {day.day}, {day.year}"
+
+
+def _month(day: date) -> str:
+    return f"{MONTH_NAMES[day.month - 1]} {day.year}"
 
 # Seed data based on Regie-approved rates.
 SEED_RESIDENTIAL = {
@@ -72,7 +114,7 @@ class EnergirScraper(BaseScraper):
 
     def _try_live_scrape(self) -> Optional[list[TariffRecord]]:
         """Fetch the pricing page, follow its current tariff PDF link and parse Rate D1."""
-        from scrapers.utils.parsing import extract_pdf_pages, parse_html
+        from scrapers.utils.parsing import extract_pdf_pages, parse_html, read_xlsx_tables
 
         try:
             soup = parse_html(self.fetch_page(PAGE_URLS["pricing"]))
@@ -91,7 +133,22 @@ class EnergirScraper(BaseScraper):
             self.logger.warning("Energir tariff PDF unavailable: %s", exc)
             return None
         pricing = (soup.find("main") or soup).get_text(" ", strip=True)
-        records = self.parse_pages({"pricing": pricing, "tariff": tariff}, tariff_url=tariff_url)
+        pages = {"pricing": pricing, "tariff": tariff}
+        # The monthly prices are optional inputs: without them the supply price is left out and the cap-and-trade
+        # price falls back to the tariff's own quarter (fail closed), while the tariff's other prices stay live.
+        try:
+            supply = parse_html(self.fetch_page(PAGE_URLS["supply_prices"]))
+            table = supply.find(class_="prices-table-container") or supply.find("main") or supply
+            pages["supply_prices"] = table.get_text(" ", strip=True)
+        except Exception as exc:
+            self.logger.warning("Energir supply-price page unavailable: %s", exc)
+        histories = {}
+        for key in ("supply", "cteas"):
+            try:
+                histories[key] = read_xlsx_tables(self.fetch_bytes(PAGE_URLS[f"{key}_history"]))
+            except Exception as exc:
+                self.logger.warning("Energir %s price history workbook unavailable: %s", key, exc)
+        records = self.parse_pages(pages, tariff_url=tariff_url, histories=histories)
         return self.mark_live_parsed(records) if records else None
 
     # ── Parsing ──────────────────────────────────────────────
@@ -148,8 +205,13 @@ class EnergirScraper(BaseScraper):
         return bands
 
     def parse_pages(self, pages: dict[str, str], today: Optional[date] = None,
-                    tariff_url: Optional[str] = None) -> list[TariffRecord]:
-        """Build D1, D3, D4 and D5 from pricing/tariff texts; each rate fails closed on its own."""
+                    tariff_url: Optional[str] = None,
+                    histories: Optional[dict[str, dict[str, list[list[str]]]]] = None) -> list[TariffRecord]:
+        """Build D1, D3, D4 and D5 from pricing/tariff texts; each rate fails closed on its own.
+
+        ``pages["supply_prices"]`` is the supply-price page text and ``histories`` holds the supply and cap-and-trade
+        history workbooks (``read_xlsx_tables`` rows) that confirm its current-month prices.
+        """
         today = today or datetime.now(timezone.utc).date()
         pages = {key: self._norm(text) for key, text in pages.items()}
         tariff = pages.get("tariff", "")
@@ -167,19 +229,175 @@ class EnergirScraper(BaseScraper):
         except ValueError as exc:
             self.logger.warning("Energir tariff edition not accepted: %s", exc)
             return []
-        records = self._parse_d1(tariff, edition, tariff_url)
+        monthly = self._monthly_prices(pages.get("supply_prices", ""), histories or {}, today, edition, tariff,
+                                       tariff_url)
+        records = self._parse_d1(tariff, edition, tariff_url, monthly)
         for code in ("D3", "D4"):
             try:
-                records.append(self._parse_stable_load(code, tariff, edition, tariff_url))
+                records.append(self._parse_stable_load(code, tariff, edition, tariff_url, monthly))
             except ValueError as exc:
                 self.logger.warning("Energir Rate %s not parsed live: %s", code, exc)
         try:
-            records.append(self._parse_d5(tariff, edition, tariff_url))
+            records.append(self._parse_d5(tariff, edition, tariff_url, monthly))
         except ValueError as exc:
             self.logger.warning("Energir Rate D5 not parsed live: %s", exc)
         return records
 
-    def _parse_d1(self, tariff: str, edition: date, tariff_url: str) -> list[TariffRecord]:
+    # ── Monthly supply and cap-and-trade prices ──────────────
+
+    @staticmethod
+    def _column_date(text: str) -> Optional[date]:
+        """'Nov 1, 2026' (also 'Sept', 'June' or a full month name, any case) as a date."""
+        month, rest = text.split(" ", 1)
+        month = month.rstrip(".").title()
+        month = {"Sept": "Sep", "June": "Jun", "July": "Jul"}.get(month, month)
+        for fmt in ("%b %d, %Y", "%B %d, %Y"):
+            try:
+                return datetime.strptime(f"{month} {rest}", fmt).date()
+            except ValueError:
+                continue
+        return None
+
+    @staticmethod
+    def _history_value(tables: Optional[dict[str, list[list[str]]]], day: date, unit: str) -> Optional[float]:
+        """One cell of an Énergir price history workbook: a 'Month' row of years, a row of units, then month rows."""
+        def norm(text: str) -> str:
+            return text.strip().lower().replace("m3", "m³")
+
+        month_name = MONTH_NAMES[day.month - 1].lower()
+        for rows in (tables or {}).values():
+            for index, row in enumerate(rows[:-1]):
+                if not row or norm(row[0]) != "month":
+                    continue
+                units = rows[index + 1]
+                years = [column for column, cell in enumerate(row) if column and cell.strip()]
+                for position, column in enumerate(years):
+                    if not re.fullmatch(rf"{day.year}(?:\.0)?", row[column].strip()):
+                        continue
+                    stop = years[position + 1] if position + 1 < len(years) else len(row)
+                    cells = [j for j in range(column, stop) if j < len(units) and norm(units[j]) == norm(unit)]
+                    if len(cells) != 1:
+                        return None
+                    for data in rows[index + 2:]:
+                        if data and norm(data[0]) == month_name:
+                            value = data[cells[0]].strip() if cells[0] < len(data) else ""
+                            try:
+                                return float(value) if value else None
+                            except ValueError:
+                                return None
+                    return None
+        return None
+
+    def _cst_price(self, tariff: str, pattern: str, label: str, edition: date) -> Optional[float]:
+        try:
+            return self._dated_price(tariff, pattern, label, edition)[1]
+        except ValueError:
+            return None
+
+    def _monthly_prices(self, page: str, histories: dict, today: date, edition: date, tariff: str,
+                        tariff_url: Optional[str]) -> dict:
+        """Current-month supply and cap-and-trade prices from the supply-price page, confirmed by the history workbooks.
+
+        Returns {"supply": {...} | None, "supply_problem": str | None, "cteas": {...} | None, "cteas_problem": ...}.
+        A month the page does not show, a workbook that disagrees or a tariff that contradicts the page leaves that
+        price out (owner decision 2026-11-20); the cap-and-trade price then falls back to the tariff's own value while
+        today is still in the tariff edition's quarter, because the tariff says it is adjusted quarterly.
+        """
+        current = date(today.year, today.month, 1)
+        result: dict = {"supply": None, "supply_problem": None, "cteas": None, "cteas_problem": None}
+        columns = PRICE_COLUMNS.search(page)
+        dates = [self._column_date(match) for match in
+                 re.findall(r"[A-Za-z]{3,9}\.? \d{1,2}, \d{4}", columns.group(1))] if columns else []
+        supply_row, cteas_row = SUPPLY_ROW.search(page), CTEAS_ROW.search(page)
+        supply_numbers = [float(value) for value in supply_row.group(1).split()] if supply_row else []
+        cteas_numbers = [float(value) for value in cteas_row.group(1).split()] if cteas_row else []
+        problem = None
+        if not page:
+            problem = "the supply-price page could not be read"
+        elif not dates or None in dates or len(supply_numbers) != 2 * len(dates) or len(cteas_numbers) != len(dates):
+            problem = "the supply-price page table is missing or changed"
+        elif min(supply_numbers + cteas_numbers) <= 0:
+            problem = "the supply-price page shows a non-positive price"
+        elif current not in dates:
+            problem = (f"the supply-price page does not show {_month(current)} yet (latest column: "
+                       f"{_long(max(dates))})")
+        if problem:
+            result["supply_problem"] = result["cteas_problem"] = problem
+        else:
+            column = dates.index(current)
+            gj, cents = supply_numbers[2 * column], supply_numbers[2 * column + 1]
+            history = self._history_value(histories.get("supply"), current, "¢/m³")
+            history_gj = self._history_value(histories.get("supply"), current, "$/GJ")
+            cst = self._cst_price(tariff, SUPPLY_PATTERN, "supply", edition)
+            if history is None or history_gj is None:
+                result["supply_problem"] = f"the supply price history workbook has no {_month(current)} price"
+            elif round(history, 3) != round(cents, 3) or round(history_gj, 2) != round(gj, 2):
+                result["supply_problem"] = (f"the supply price history workbook ({history_gj:.2f} $/GJ, "
+                                            f"{history:.3f} ¢/m³) differs from the page ({gj:.2f} $/GJ, "
+                                            f"{cents:.3f} ¢/m³) for {_month(current)}")
+            elif (edition.year, edition.month) == (current.year, current.month) and cst is not None \
+                    and round(cst * 100, 3) != round(cents, 3):
+                result["supply_problem"] = (f"the tariff's {_month(current)} supply price ({cst * 100:.3f} ¢/m³) "
+                                            f"differs from the supply-price page ({cents:.3f} ¢/m³)")
+            else:
+                result["supply"] = {
+                    "value": round(cents / 100, 6), "start": current, "end": _month_end(current),
+                    "detail": (f"Énergir natural gas supply prices page, price effective {_long(current)}: {gj:.2f} "
+                               f"$/GJ and {cents:.3f} ¢/m³; matches the five-year supply price history workbook"),
+                }
+            cteas = cteas_numbers[column]
+            cteas_history = self._history_value(histories.get("cteas"), current, "¢/m³")
+            cst_cteas = self._cst_price(tariff, CTEAS_PATTERN, "cap-and-trade", edition)
+            if cteas_history is None:
+                result["cteas_problem"] = f"the cap-and-trade price history workbook has no {_month(current)} price"
+            elif round(cteas_history, 3) != round(cteas, 3):
+                result["cteas_problem"] = (f"the cap-and-trade price history workbook ({cteas_history:.3f} ¢/m³) "
+                                           f"differs from the page ({cteas:.3f} ¢/m³) for {_month(current)}")
+            elif _quarter_start(edition) == _quarter_start(current) and cst_cteas is not None \
+                    and round(cst_cteas * 100, 3) != round(cteas, 3):
+                result["cteas_problem"] = (f"the tariff's cap-and-trade price ({cst_cteas * 100:.3f} ¢/m³) differs "
+                                           f"from the supply-price page ({cteas:.3f} ¢/m³) in the same quarter")
+            else:
+                start = current
+                while start > _quarter_start(current):
+                    previous = (start - timedelta(days=1)).replace(day=1)
+                    value = self._history_value(histories.get("cteas"), previous, "¢/m³")
+                    if value is None or round(value, 3) != round(cteas, 3):
+                        break
+                    start = previous
+                result["cteas"] = {
+                    "value": round(cteas / 100, 6), "start": start, "end": _quarter_end(current),
+                    "source_url": PAGE_URLS["supply_prices"],
+                    "detail": (f"Énergir natural gas supply prices page, price effective {_long(current)}: "
+                               f"{cteas:.3f} ¢/m³; the cap-and-trade price history workbook shows it since "
+                               f"{_month(start)} (adjusted quarterly, article 15.1.2.1)"),
+                }
+        if result["cteas"] is None:
+            cst_cteas = self._cst_price(tariff, CTEAS_PATTERN, "cap-and-trade", edition)
+            if cst_cteas is not None and _quarter_start(edition) == _quarter_start(current) and not (
+                    result["cteas_problem"] or "").startswith("the tariff's"):
+                result["cteas"] = {
+                    "value": cst_cteas, "start": edition, "end": _quarter_end(edition), "source_url": tariff_url,
+                    "detail": (f"Conditions of Service and Tariff as of {_long(edition)}, article 15.1.2.1 (adjusted "
+                               f"quarterly; used because {result['cteas_problem']})"),
+                }
+        for key, label in (("supply_problem", "supply"), ("cteas_problem", "cap-and-trade")):
+            if result[key]:
+                self.logger.warning("Energir %s price: %s", label, result[key])
+        return result
+
+    @staticmethod
+    def _monthly_notes(monthly: dict) -> str:
+        """Record-note sentences for a monthly price that is left out."""
+        notes = []
+        if monthly.get("supply") is None:
+            notes.append(f" Gas supply is not included: {monthly.get('supply_problem')}; it is added once Énergir "
+                         "posts the month's price.")
+        if monthly.get("cteas") is None:
+            notes.append(f" The cap-and-trade price is not included: {monthly.get('cteas_problem')}.")
+        return "".join(notes)
+
+    def _parse_d1(self, tariff: str, edition: date, tariff_url: str, monthly: dict) -> list[TariffRecord]:
         try:
             default = re.search(r"14\.1\.2 DEFAULT DISTRIBUTION RATE Rate D1 applies by default", tariff)
             fee_start = tariff.find("14.2.2.1 Basic Fee")
@@ -208,20 +426,16 @@ class EnergirScraper(BaseScraper):
         except ValueError as exc:
             self.logger.warning("Energir Rate D1 not parsed live: %s", exc)
             return []
-        return [self._build(values, edition, tariff_url, customer_class)
+        return [self._build(values, edition, tariff_url, customer_class, monthly)
                 for customer_class in ("residential", "commercial")]
 
     def _shared_values(self, tariff: str, edition: date) -> dict:
         values = {
-            "supply": self._dated_price(
-                tariff, r"the traditional natural gas supply price, as of " + DATE + r" is " + CENTS
-                + r"\. The price may be adjusted monthly", "supply", edition),
+            "supply": self._dated_price(tariff, SUPPLY_PATTERN, "supply", edition),
             "transport": self._dated_price(
                 tariff, r"12\.1\.2\.1\.1 Transportation Basis Price For each m³ of volume withdrawn, the "
                 r"transportation basis price as of " + DATE + r" is " + CENTS, "transportation", edition),
-            "cteas": self._dated_price(
-                tariff, r"the CTEAS price as of " + DATE + r" is " + CENTS + r"\. The price may be adjusted "
-                r"quarterly", "cap-and-trade", edition),
+            "cteas": self._dated_price(tariff, CTEAS_PATTERN, "cap-and-trade", edition),
         }
         social = re.search(r"11\.4\.2\.1 Socialization cost A price of " + CENTS + r" applies to each m³ of "
                            r"traditional natural gas withdrawn by a customer whose purchase of gas from renewable "
@@ -244,7 +458,7 @@ class EnergirScraper(BaseScraper):
             values["renewable"] = None
         return values
 
-    def _build(self, values: dict, edition: date, url: str, customer_class: str) -> TariffRecord:
+    def _build(self, values: dict, edition: date, url: str, customer_class: str, monthly: dict) -> TariffRecord:
         eff = edition.isoformat()
         detail = f"Conditions of Service and Tariff as of {edition.strftime('%B')} {edition.day}, {edition.year}"
 
@@ -265,13 +479,13 @@ class EnergirScraper(BaseScraper):
                 tier_threshold=upper, tier_unit="m³/day" if upper else None,
                 notes="Daily volume block (upper bound shown) multiplied by the days in the billing period"))
         threshold, balancing = values["balancing"]
-        shared = self._shared_components(component, values)
+        before, after = self._shared_components(component, values, monthly)
         comps += [
-            *shared[:-3],
+            *before,
             component("other", "Load Balancing", balancing, "$/m³", "13.1.2.1", sub_component="conditional",
                       notes=f"Applies to customers whose annual volume is less than {threshold:,.0f} m³; other "
                             "customers pay a load-factor formula price."),
-            *shared[-3:],
+            *after,
         ]
         residential = customer_class == "residential"
         return TariffRecord(
@@ -280,26 +494,42 @@ class EnergirScraper(BaseScraper):
             customer_class=customer_class, sub_class="general distribution service",
             eligibility="Rate D1 applies by default to any customer withdrawing firm-service natural gas at a single "
                         "metering point, regardless of volume.",
-            rate_structure="tiered", pricing_method="regulated", effective_date=eff, source_url=url,
+            rate_structure="tiered", pricing_method="regulated",
+            effective_date=max(c.effective_date for c in comps), source_url=url,
             source_page=detail, confidence="high",
             notes=("The same default Rate D1 schedule applies to residential and business customers. Prices are "
                    "published in cents per m³ and stored as $/m³. Inventory-related adjustments, rate rebates, "
-                   "minimum annual obligations and taxes are not included. Regulated by the Régie de l'énergie."),
+                   "minimum annual obligations and taxes are not included. Regulated by the Régie de l'énergie."
+                   + self._monthly_notes(monthly)),
             components=comps,
         )
 
     @staticmethod
-    def _shared_components(component, values: dict) -> list[RateComponent]:
+    def _shared_components(component, values: dict, monthly: dict) -> tuple[list[RateComponent], list[RateComponent]]:
+        """(components before load balancing, components after it); a monthly price that is left out is absent."""
         social, social_percent = values["social"]
         rider, rider_percent, rider_year = values["rider"]
-        result = [
-            component("commodity", "Natural Gas Supply", values["supply"][1], "$/m³", "11.1.2.1",
-                      market_reference="Energir traditional natural gas supply",
-                      notes="Distributor's traditional supply price, adjustable monthly. Customers may supply their own "
-                            "gas; fixed-price agreements and renewable-source gas are priced separately."),
-            component("transmission", "Transportation", values["transport"][1], "$/m³", "12.1.2.1.1",
-                      notes="Distributor's transportation basis price; customer-provided transportation is priced "
-                            "separately."),
+        supply, cteas = monthly.get("supply"), monthly.get("cteas")
+        before = []
+        if supply:
+            before.append(RateComponent(
+                "commodity", "Natural Gas Supply", supply["value"], "$/m³",
+                effective_date=supply["start"].isoformat(), end_date=supply["end"].isoformat(),
+                source_url=PAGE_URLS["supply_prices"], source_detail=supply["detail"],
+                market_reference="Energir traditional natural gas supply",
+                notes=(f"Distributor's traditional supply price for {_month(supply['start'])}; Énergir adjusts it "
+                       "monthly (article 11.1.2.1). Customers may supply their own gas; fixed-price agreements and "
+                       "renewable-source gas are priced separately.")))
+        if values["renewable"]:
+            before.append(component(
+                "commodity", "Gas from Renewable Sources Supply", values["renewable"][1], "$/m³",
+                "11.1.2.1", sub_component="conditional",
+                notes="Optional replacement for traditional supply on the subscribed share, not an added charge. "
+                      "Written request at least 60 days ahead; availability and allocation apply (article 11.1.3.5)."))
+        before.append(component("transmission", "Transportation", values["transport"][1], "$/m³", "12.1.2.1.1",
+                                notes="Distributor's transportation basis price; customer-provided transportation is "
+                                      "priced separately."))
+        after = [
             component("rider", "Renewable Gas Socialization Cost", social, "$/m³", "11.4.2.1",
                       sub_component="conditional",
                       notes=f"Applies to traditional gas when renewable-gas purchases are below the prescribed "
@@ -308,19 +538,17 @@ class EnergirScraper(BaseScraper):
                       sub_component="conditional",
                       notes=f"Applies to traditional gas when renewable-gas purchases were below {rider_percent}% "
                             f"for the year ending {rider_year}."),
-            component("carbon", "Cap-and-Trade Emission Allowances (CTEAS)", values["cteas"][1], "$/m³", "15.1.2.1",
-                      notes="Quebec cap-and-trade allowance cost per m³ of traditional gas, adjustable quarterly; "
-                            "registered emitters are not billed this service."),
         ]
-        if values["renewable"]:
-            result.insert(1, component(
-                "commodity", "Gas from Renewable Sources Supply", values["renewable"][1], "$/m³",
-                "11.1.2.1", sub_component="conditional",
-                notes="Optional replacement for traditional supply on the subscribed share, not an added charge. "
-                      "Written request at least 60 days ahead; availability and allocation apply (article 11.1.3.5)."))
-        return result
+        if cteas:
+            after.append(RateComponent(
+                "carbon", "Cap-and-Trade Emission Allowances (CTEAS)", cteas["value"], "$/m³",
+                effective_date=cteas["start"].isoformat(), end_date=cteas["end"].isoformat(),
+                source_url=cteas["source_url"], source_detail=cteas["detail"],
+                notes="Quebec cap-and-trade allowance cost per m³ of traditional gas, adjusted quarterly; "
+                      "registered emitters are not billed this service."))
+        return before, after
 
-    def _parse_stable_load(self, code: str, tariff: str, edition: date, url: str) -> TariffRecord:
+    def _parse_stable_load(self, code: str, tariff: str, edition: date, url: str, monthly: dict) -> TariffRecord:
         """Rate D3 or D4 (article 14.3); both share one price schedule and differ in eligibility and balancing."""
         price = r"\d+ ?\. ?\d ?\d ?\d"
         start = tariff.find("14.3.1 APPLICATION")
@@ -414,32 +642,33 @@ class EnergirScraper(BaseScraper):
                       "the band matching the subscribed volume (unit as printed, upper bound shown). Withdrawals above "
                       "150% from November 1 to March 31 are unauthorized (50 ¢/m³ penalty plus Iroquois price), "
                       "not parsed as a charge."))
-        shared = self._shared_components(component, values)
+        before, after = self._shared_components(component, values, monthly)
         comps += [
-            *shared[:-3],
+            *before,
             component("other", "Load Balancing — Average Price", values["balancing"], "$/m³", "13.1.2.3",
                       sub_component="conditional",
                       notes=f"Rate {code} average load-balancing price; applies only when the firm or interruptible "
                             "volume withdrawn from Oct 1, 2025 to Sep 30, 2026 is nil or does not represent 12 "
                             "consecutive months. Otherwise the load-factor formula price (article 13.1.2.2, capped at "
                             "23.602 ¢/m³) applies and is not parsed as a fixed value."),
-            *shared[-3:],
+            *after,
         ]
         return TariffRecord(
             utility_name="Energir", province="QC", utility_type="gas",
             tariff_name=f"Commercial — Rate {code}", tariff_code=code, customer_class="commercial",
             sub_class="stable load firm service", eligibility=eligibility,
             usage_min=annual, usage_unit="m³/year" if annual else None,
-            rate_structure="demand", pricing_method="regulated", effective_date=eff, source_url=url,
+            rate_structure="demand", pricing_method="regulated",
+            effective_date=max(c.effective_date for c in comps), source_url=url,
             source_page=detail, confidence="high",
             notes=(f"Rate {code} requires a written contract (subscribed volume, term of at least 12 months). Prices are "
                    "published in cents and stored as dollars; subscribed volume stays in m³/day. Contract-term and "
                    "additional reductions, minimum annual obligations, negotiated peak service, inventory adjustments "
-                   "and taxes are not included. Regulated by the Régie de l'énergie."),
+                   "and taxes are not included. Regulated by the Régie de l'énergie." + self._monthly_notes(monthly)),
             components=comps,
         )
 
-    def _parse_d5(self, tariff: str, edition: date, url: str) -> TariffRecord:
+    def _parse_d5(self, tariff: str, edition: date, url: str, monthly: dict) -> TariffRecord:
         start = tariff.find("14.4.1 APPLICATION")
         price_start = tariff.find("14.4.2.1 Unit Prices for the Volume Withdrawn", start)
         price_end = tariff.find("14.4.2.2 Reduction According to Minimum Annual Obligation", price_start)
@@ -483,7 +712,8 @@ class EnergirScraper(BaseScraper):
                            notes="Weighted average by combined firm subscribed and projected interruptible daily "
                                  "volume; the resulting price applies to each m³ withdrawn (not six additive rates).")
                  for number, (value, upper) in enumerate(bands, 1)]
-        comps.extend(self._shared_components(component, values))
+        before, after = self._shared_components(component, values, monthly)
+        comps.extend(before + after)
         for category, price in (("A", -self._dollars(averages.group(1))),
                                 ("B", self._dollars(averages.group(2)))):
             comps.append(component("rebate" if price < 0 else "other",
@@ -499,13 +729,15 @@ class EnergirScraper(BaseScraper):
                         "of the interruptible minimum contract volume at least 3,200 m³/day. Requires distributor "
                         "transportation and demonstrated ability to interrupt. Category A or B, not both; "
                         "Category B requires operational and economic availability.",
-            rate_structure="tiered", pricing_method="regulated", effective_date=eff, source_url=url,
+            rate_structure="tiered", pricing_method="regulated",
+            effective_date=max(c.effective_date for c in comps), source_url=url,
             source_page=f"{detail}, articles 14.4.1–14.4.6 (PDF pages 62–65)", confidence="high",
             notes="Written contract; minimum annual obligation is adjusted for interruption days, not an added "
                   "charge. Reductions depend on MAO and term. Notice at least 2 hours before interruption; "
                   "maximum interruption days depend on volume and category. Unauthorized withdrawals have "
                   "conditional penalties; unable-to-interrupt customers may face customer-specific make-up gas "
-                  "or supply and transportation pass-through prices. No negotiated amounts are assumed.",
+                  "or supply and transportation pass-through prices. No negotiated amounts are assumed."
+                  + self._monthly_notes(monthly),
             components=comps,
         )
 

@@ -29,13 +29,42 @@ is done as part of the gas work. Gas decisions:
 Small fixes approved the same day: Alberta's model coverage no longer counts AESO (a value-less
 price reference, not a seller), the diff report compares only the utilities the newer run scraped,
 and the console log writes UTF-8. Research only: observed 50-4,999 kW load profiles in OEB rate
-applications.
+applications (none qualifies; Alectra's combined 50-4,999 kW raw hourly class data comes closest).
+
+Second decision round (November 20), from the commercial gas research:
+- Commercial gas levels (average month), two building sizes per unit with half and double
+  sensitivity levels: 1,000 m³ (500, 2,000) and 5,000 m³ (2,500, 10,000); 30 GJ (15, 60) and 200 GJ
+  (100, 400). Each utility is priced on the general-service class whose published annual limits
+  contain 12 times the level. Backing: Enbridge, SaskEnergy, Énergir, FortisBC, ATCO, Eastward and
+  Liberty typical-customer figures, Statistics Canada deliveries and NRCan's 2019 commercial
+  building survey.
+- Liberty's class and customer charge follow its monthly peak, taken as 1.85 times the level
+  (Statistics Canada New Brunswick commercial January deliveries); Enbridge Union Rate 01/M1 and
+  ATCO Gas Low Use also feed the commercial models; Centra uses the cheaper of SGS and LGS.
+- Supply prices carry their period: quarter end for Enbridge, EPCOR and Énergir cap-and-trade, the
+  day before Centra's next quarterly date, month end for Énergir supply, Eastward General Service and
+  Liberty, the six-month block end for Eastward residential, none for FortisBC and SaskEnergy. A
+  second scheduled Monthly Scrape (about the 4th) refreshes the monthly-priced utilities, Medicine
+  Hat included, instead of the owner's manual run.
+- Énergir's supply price is fixed first (done November 20: read monthly from Énergir's
+  supply-price page, checked against its price history workbooks, stored by the next Monthly
+  Scrape); its two renewable-gas socialization charges count for the default customer.
+- Taxes as published (all eight provinces checked); Saskatchewan keeps 0% PST with a note on water
+  heating and cooking; Alberta's Natural Gas Rebate Program is named, not modelled, below its
+  $6.50/GJ trigger.
+- Owner rule: every usage level and load profile documents its decision, reason and what it
+  represents, with official and peer-reviewed sources; the approved electricity levels are being
+  documented.
+- Archetype load profiles: the owner runs BTAP commercial archetypes (Toronto and Calgary) and
+  supplies simulated meter data, first for the opt-in illustrative estimate (after the commercial
+  gas models are published), later for a Phase 9 archetype comparison. Simulated values stay out of
+  the base models.
 
 Dated checks (owner decisions, November 19) take priority when they fall due. Batch 18 continued
 was published on November 19 (see [Registered municipal additions](#registered-municipal-additions)),
 so every registered utility has stored live output:
 - December 1: the scheduled Monthly Scrape; Medicine Hat then needs the owner's run once the City
-  posts December's default rate.
+  posts December's default rate (until the second scheduled run replaces it).
 - December 15: twelve ledger monitor reviews (Yukon Energy, ATCO Electric Yukon, NTPC, Qulliq, EPCOR
   Distribution, the three Rate of Last Resort providers, Naka Power, Medicine Hat, Lethbridge and
   Red Deer). The strict gate fails from December 16 for any not reviewed.
@@ -796,7 +825,7 @@ certified complete for its published building catalogue.
 | Registry utility | Region / campaign | Latest live records | Implemented path and remaining work |
 |---|---|---|---|
 | Enbridge Gas | ON / live (batch 12), partial catalogue | 20 / Oct 9 | Rate Handbook (EB-2026-0221, effective October 1, 2026): EGD Rates 1/6/100/110/115/145/170; Union North Rates 01/10/20/100 for the North West and North East zones plus Rate 25; Union South Rates M1/M2/M4/M5. Customer charges, block delivery charges in $/m3, contract demand, quarterly gas supply (QRAM) commodity and transportation, Rider C, Rider J federal carbon (zero, with CRA evidence) and the facility carbon charge are separate components; Rider I expansion surcharges and marketer-only Dawn transportation conditional; negotiated prices/ranges are conditions. A PDF split-digit text artefact is repaired and tested. Excluded storage/transport-only, unbundled and wholesale service: EGD 125/135/200/300/315/316/320/401; Union M7/M9/T1-T3 (Rate 135 decision open) |
-| Énergir | QC / live, partial catalogue | 5 / Oct 6 | D1/D3/D4 plus interruptible D5 (Oct 1 CST p62 distribution bands $/m3, pp63-65 interruption/minimum volume; Category A/B load-balancing alternatives p49 conditional and non-additive). Optional RNG supply $0.85239/m3 (p38) replaces ordinary supply on D1/D3/D4/D5; missing RNG does not suppress base records. Inventory adjustments customer-specific and unpriced. Load-factor formula p49 published but not computed; fixed-price supply supplier-specific and D5 make-up gas pass-through unpriced |
+| Énergir | QC / live, partial catalogue | 5 / Oct 6 | D1/D3/D4 plus interruptible D5 (Oct 1 CST p62 distribution bands $/m3, pp63-65 interruption/minimum volume; Category A/B load-balancing alternatives p49 conditional and non-additive). Supply and cap-and-trade prices from the monthly supply-price page with its price history workbooks (from November 20; supply to month end, cap-and-trade to quarter end; a month not yet posted leaves supply out). Optional RNG supply $0.85239/m3 (p38) replaces ordinary supply on D1/D3/D4/D5; missing RNG does not suppress base records. Inventory adjustments customer-specific and unpriced. Load-factor formula p49 published but not computed; fixed-price supply supplier-specific and D5 make-up gas pass-through unpriced |
 | FortisBC Energy | BC / live, partial catalogue | 27 / Oct 7 | Rates 1/2/3 for Mainland/Vancouver Island and Fort Nelson (July 1, 2026; $/day basic, $/GJ components) with the BC carbon-tax elimination notice required; Rate 5 General Firm Service (basic $469.00 per month as the tariff prints it) and seasonal Rate 4 (Apr 1-Nov 1) for Mainland/Vancouver Island from the approved schedules. Residential Rate 1 and Commercial Rates 2/3 Revelstoke propane (business classes require the approved tariff index's Revelstoke availability plus residential propane evidence; each class fails independently). Batch 10: Rate 7 General Interruptible ($880/month as printed; curtailment-limited delivery; Sumas-indexed overrun as a condition) and delivery-only transportation 22/23/25/27 (marketer commodity excluded; Rate 22 firm/interruptible charges conditional). Rates 6/6P/26 NGV and 22A/22B excluded. Fort Nelson 4/5/7/22-27 have no published price table. Batch 11: Customer Choice 1U/2U/3U (delivery-only; not offered in Fort Nelson) and RNG 1RNG/2RNG/3RNG (Mainland/VI and Fort Nelson) plus 5RNG/7RNG, with Cost of Gas and RNG Charge as conditional alternatives on the chosen share; RNG Blend Service percentage unpublished; 11RNG and vehicle RNG excluded |
 | ATCO Gas | AB / live (batch 12), partial catalogue | 10 / Oct 9 | North and South Low, Mid, High and Ultra High Use and ATA from the rate schedule PDFs (base January 1, 2026, AUC Decision 30301-D01-2025); Riders L and T and South Rider W dated; Direct Energy Regulated Services' monthly Default Rate Tariff (October 2026: $1.458/GJ) as a dated commodity on Low/Mid/High Use, required to match the UCA table; CRA zero-carbon evidence; Riders A/B and South Rider E notes. Excluded: irrigation, producer receipt, unmetered gas lights. Open: ATA commodity and DERS gas admin charge |
 | EPCOR Natural Gas (Ontario) | ON / live (new entry, batch 12), partial catalogue | 10 / Oct 9 | Aylmer Rates 1 (residential and general service), 2, 3, 4, 5 and Southern Bruce Rates 1 (residential and commercial), 6, 11. Every value must appear in the OEB Decision and Rate Order Appendix A (EB-2026-0225 / EB-2026-0226); the gas supply price must match the OEB QRAM notice; CRA evidence required. No seed: returns nothing if sources fail. Excluded: Aylmer Rate 6 (single ethanol facility), Southern Bruce Rate 16 (direct purchase; rider basis unclear). Open: Aylmer Rates 2/4/5 inclusion |

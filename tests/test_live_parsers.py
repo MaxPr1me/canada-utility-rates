@@ -2504,6 +2504,11 @@ def _gas_fixture(name):
     return json.loads((Path(__file__).parent / "fixtures" / f"{name}.json").read_text(encoding="utf-8"))
 
 
+def _energir_histories(document):
+    """The Energir price history workbooks of the fixture, as read_xlsx_tables returns them."""
+    return {"supply": document["supply_history_workbook"]["sheets"], "cteas": document["cteas_history_workbook"]["sheets"]}
+
+
 class TestFortisBCEnergyLive:
     @pytest.fixture
     def document(self):
@@ -2887,13 +2892,14 @@ class TestEnergirLive:
         return _gas_fixture("energir")
 
     @staticmethod
-    def parse(document, today=None):
+    def parse(document, today=None, supply_page=None):
         from datetime import date
         from scrapers.utilities.energir import EnergirScraper
 
         return {record.tariff_name: record for record in EnergirScraper().parse_pages(
-            {"pricing": document["pricing"]["text"], "tariff": " ".join(page["text"] for page in document["tariff_pages"])},
-            today or date(2026, 10, 5), tariff_url=document["tariff_url"])}
+            {"pricing": document["pricing"]["text"], "tariff": " ".join(page["text"] for page in document["tariff_pages"]),
+             "supply_prices": supply_page or document["supply_price_history"]["text"]},
+            today or date(2026, 10, 5), tariff_url=document["tariff_url"], histories=_energir_histories(document))}
 
     def test_rate_d1_bands_and_components(self, document):
         records = self.parse(document)
@@ -2909,7 +2915,10 @@ class TestEnergirLive:
         assert by_name["Cap-and-Trade Emission Allowances (CTEAS)"].charge_value == 0.08727
         assert by_name["Load Balancing"].sub_component == "conditional"
         assert all(c.charge_unit == "$/m³" for c in record.components if c.component_type != "fixed")
-        assert all(c.source_url == document["tariff_url"] and c.source_detail for c in record.components)
+        monthly = {"Natural Gas Supply", "Cap-and-Trade Emission Allowances (CTEAS)"}
+        assert all(c.source_url == document["tariff_url"] and c.source_detail
+                   for c in record.components if c.component_name not in monthly)
+        assert all(by_name[name].source_url == document["supply_price_history"]["url"] for name in monthly)
         assert [c.charge_value for c in records["Business — Rate D1"].components] == [c.charge_value for c in record.components]
 
     @pytest.mark.parametrize(("old", "new", "surviving"), [
@@ -2944,6 +2953,76 @@ class TestEnergirLive:
         record = self.parse(document)["Residential — Rate D1"]
         assert next(c for c in record.components if c.component_type == "delivery").charge_value == 0.32
 
+    # Owner decision 2026-11-20: supply and cap-and-trade come from the monthly supply-price page, confirmed by the
+    # price history workbooks; the tariff only prints its edition month's prices.
+    def test_monthly_supply_price_replaces_the_tariff_edition_price(self, document):
+        from datetime import date
+
+        records = self.parse(document, date(2026, 11, 20), document["supply_prices_november"]["text"])
+        for record in records.values():
+            by_name = {c.component_name: c for c in record.components}
+            supply = by_name["Natural Gas Supply"]
+            assert (supply.charge_value, supply.effective_date, supply.end_date) == (0.10837, "2026-11-01", "2026-11-30")
+            assert supply.source_url == document["supply_prices_november"]["url"] and "2.86 $/GJ" in supply.source_detail
+            cteas = by_name["Cap-and-Trade Emission Allowances (CTEAS)"]
+            assert (cteas.charge_value, cteas.effective_date, cteas.end_date) == (0.08727, "2026-10-01", "2026-12-31")
+            assert by_name["Transportation"].effective_date == "2026-10-01"
+            assert record.effective_date == "2026-11-01" and "Gas supply is not included" not in record.notes
+            assert "cap-and-trade price is not included" not in record.notes
+
+    def test_month_not_posted_leaves_supply_out_and_keeps_the_quarter_cap_and_trade(self, document):
+        from datetime import date
+
+        records = self.parse(document, date(2026, 12, 2), document["supply_prices_november"]["text"])
+        assert set(records) == {"Residential — Rate D1", "Business — Rate D1", "Commercial — Rate D3", "Commercial — Rate D4"}
+        for record in records.values():
+            names = {c.component_name: c for c in record.components}
+            assert "Natural Gas Supply" not in names
+            assert "Gas supply is not included: the supply-price page does not show December 2026 yet" in record.notes
+            cteas = names["Cap-and-Trade Emission Allowances (CTEAS)"]
+            assert (cteas.charge_value, cteas.end_date, cteas.source_url) == (0.08727, "2026-12-31", document["tariff_url"])
+            assert record.effective_date == "2026-10-01"
+
+    def test_cap_and_trade_is_left_out_after_the_tariff_quarter(self, document):
+        from datetime import date
+
+        record = self.parse(document, date(2027, 1, 5), document["supply_prices_november"]["text"])["Business — Rate D1"]
+        names = {c.component_name for c in record.components}
+        assert not names & {"Natural Gas Supply", "Cap-and-Trade Emission Allowances (CTEAS)"}
+        assert "The cap-and-trade price is not included" in record.notes
+
+    @pytest.mark.parametrize(("column", "value", "expected"), [
+        (2, "11.000", "supply price history workbook (2.86 $/GJ, 11.000 ¢/m³) differs"),
+        (1, "", "has no November 2026 price"),
+    ])
+    def test_supply_history_disagreement_fails_closed(self, document, column, value, expected):
+        from datetime import date
+
+        rows = document["supply_history_workbook"]["sheets"]["2026-2021"]
+        next(r for r in rows if r and r[0] == "November")[column] = value
+        record = self.parse(document, date(2026, 11, 20), document["supply_prices_november"]["text"])["Business — Rate D1"]
+        assert expected in record.notes
+        assert "Natural Gas Supply" not in {c.component_name for c in record.components}
+
+    def test_cap_and_trade_history_disagreement_falls_back_to_the_tariff_quarter_price(self, document):
+        from datetime import date
+
+        rows = document["cteas_history_workbook"]["sheets"]["2026-2021"]
+        next(r for r in rows if r and r[0] == "November")[1] = "8.800"
+        record = self.parse(document, date(2026, 11, 20), document["supply_prices_november"]["text"])["Business — Rate D1"]
+        cteas = next(c for c in record.components if c.component_name == "Cap-and-Trade Emission Allowances (CTEAS)")
+        assert (cteas.charge_value, cteas.source_url, cteas.end_date) == (0.08727, document["tariff_url"], "2026-12-31")
+        assert "differs from the page" in cteas.source_detail
+
+    def test_supply_price_page_must_agree_with_the_tariff_in_its_edition_month(self, document):
+        page = document["supply_price_history"]["text"].replace("4.10 15.535", "4.12 15.611")
+        rows = document["supply_history_workbook"]["sheets"]["2026-2021"]
+        october = next(r for r in rows if r and r[0] == "October")
+        october[1], october[2] = "4.12", "15.611"
+        record = self.parse(document, supply_page=page)["Residential — Rate D1"]
+        assert "Natural Gas Supply" not in {c.component_name for c in record.components}
+        assert "differs from the supply-price page" in record.notes
+
 
 class TestEnergirD3D4Live:
     @pytest.fixture
@@ -2956,8 +3035,9 @@ class TestEnergirD3D4Live:
         from scrapers.utilities.energir import EnergirScraper
 
         return {record.tariff_name: record for record in EnergirScraper().parse_pages(
-            {"pricing": document["pricing"]["text"], "tariff": " ".join(page["text"] for page in document["tariff_pages"])},
-            today or date(2026, 10, 5), tariff_url=document["tariff_url"])}
+            {"pricing": document["pricing"]["text"], "tariff": " ".join(page["text"] for page in document["tariff_pages"]),
+             "supply_prices": document["supply_price_history"]["text"]},
+            today or date(2026, 10, 5), tariff_url=document["tariff_url"], histories=_energir_histories(document))}
 
     @staticmethod
     def mutate(document, old, new):
@@ -2978,8 +3058,12 @@ class TestEnergirD3D4Live:
             record = records[f"Commercial — Rate {code}"]
             assert record.tariff_code == code and record.customer_class == "commercial"
             assert record.effective_date == "2026-10-01" and record.rate_structure == "demand"
-            assert all(c.effective_date == "2026-10-01" and c.source_url == document["tariff_url"]
-                       and "article" in c.source_detail for c in record.components)
+            monthly = {"Natural Gas Supply", "Cap-and-Trade Emission Allowances (CTEAS)"}
+            assert all(c.effective_date == "2026-10-01" for c in record.components)
+            assert all(c.source_url == document["tariff_url"] and "article" in c.source_detail
+                       for c in record.components if c.component_name not in monthly)
+            assert {c.source_url for c in record.components if c.component_name in monthly} == {
+                document["supply_price_history"]["url"]}
             mdo = [c for c in record.components if c.component_type == "demand"]
             assert [(c.charge_value, c.tier_threshold) for c in mdo] == [
                 (0.11565, 333.0), (0.09317, 1000.0), (0.06356, 3000.0), (0.0527, 10000.0), (0.03863, 30000.0),
@@ -4239,8 +4323,11 @@ def ENI_fixture():
 def ENI_parse(document):
     return EnergirScraper().parse_pages(
         {"pricing": document["pricing"]["text"],
-         "tariff": " ".join(page["text"] for page in document["tariff_pages"])},
-        date(2026, 10, 5), tariff_url=document["tariff_url"])
+         "tariff": " ".join(page["text"] for page in document["tariff_pages"]),
+         "supply_prices": document["supply_price_history"]["text"]},
+        date(2026, 10, 5), tariff_url=document["tariff_url"],
+        histories={"supply": document["supply_history_workbook"]["sheets"],
+                   "cteas": document["cteas_history_workbook"]["sheets"]})
 
 
 def test_eni_inventory_evidence_does_not_invent_a_price():
@@ -4257,8 +4344,8 @@ def test_eni_inventory_evidence_does_not_invent_a_price():
         assert not any("inventory" in name.lower() for name in components)
         assert (components["Natural Gas Supply"].charge_value,
                 components["Transportation"].charge_value) == (0.15535, 0.02165)
-        assert all(component.source_url == document["tariff_url"] and component.source_detail
-                   for component in record.components)
+        assert all(component.source_url in (document["tariff_url"], document["supply_price_history"]["url"])
+                   and component.source_detail for component in record.components)
 
 
 def test_eni_shared_prices_follow_published_values():
@@ -4268,8 +4355,9 @@ def test_eni_shared_prices_follow_published_values():
         page["text"] = page["text"].replace("2.165¢/m³", "2.300¢/m³")
     for record in ENI_parse(document):
         values = {component.component_name: component.charge_value for component in record.components}
-        assert values["Natural Gas Supply"] == 0.157
         assert values["Transportation"] == 0.023
+        # The tariff's edition-month supply price now only confirms the monthly page; a contradiction fails closed.
+        assert "Natural Gas Supply" not in values and "differs from the supply-price page" in record.notes
         assert not any("inventory" in name.lower() for name in values)
 
 
@@ -4530,8 +4618,11 @@ def END5__document():
 def END5__parse(document):
     pages = document["tariff_pages"] + document["d5_pages"]
     return {record.tariff_code: record for record in END5_EnergirScraper().parse_pages(
-        {"pricing": document["pricing"]["text"], "tariff": " ".join(page["text"] for page in pages)},
-        today=date(2026, 10, 6), tariff_url=document["tariff_url"])}
+        {"pricing": document["pricing"]["text"], "tariff": " ".join(page["text"] for page in pages),
+         "supply_prices": document["supply_price_history"]["text"]},
+        today=date(2026, 10, 6), tariff_url=document["tariff_url"],
+        histories={"supply": document["supply_history_workbook"]["sheets"],
+                   "cteas": document["cteas_history_workbook"]["sheets"]})}
 
 
 def test_end5_energir_d5_units_eligibility_and_source():
@@ -4549,8 +4640,8 @@ def test_end5_energir_d5_units_eligibility_and_source():
     balancing = [component for component in d5.components if component.component_name.startswith("Load Balancing")]
     assert [(component.charge_value, component.sub_component) for component in balancing] == [
         (-0.01665, "conditional"), (0.02477, "conditional")]
-    assert all(component.source_url == document["tariff_url"] and component.source_detail
-               and component.effective_date == "2026-10-01" for component in d5.components)
+    assert all(component.source_url in (document["tariff_url"], document["supply_price_history"]["url"])
+               and component.source_detail and component.effective_date == "2026-10-01" for component in d5.components)
     assert "$5.00" not in [component.component_name for component in d5.components]
     assert "pass-through" in d5.notes and "minimum annual obligation" in d5.notes
 
