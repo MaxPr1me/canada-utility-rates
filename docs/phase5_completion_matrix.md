@@ -47,8 +47,9 @@ Second decision round (November 20), from the commercial gas research:
   second scheduled Monthly Scrape (about the 4th) refreshes the monthly-priced utilities, Medicine
   Hat included, instead of the owner's manual run.
 - Énergir's supply price is fixed first (done November 20: read monthly from Énergir's
-  supply-price page, checked against its price history workbooks, stored by the next Monthly
-  Scrape); its two renewable-gas socialization charges count for the default customer.
+  supply-price page, checked against its price history workbooks; stored the same day by the
+  owner's Énergir Monthly Scrape, scrape run 45); its two renewable-gas socialization charges count
+  for the default customer.
 - Taxes as published (all eight provinces checked); Saskatchewan keeps 0% PST with a note on water
   heating and cooking; Alberta's Natural Gas Rebate Program is named, not modelled, below its
   $6.50/GJ trigger.
