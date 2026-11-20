@@ -78,6 +78,25 @@ def test_a_record_past_its_own_end_date_is_left_out_instead_of_priced_without_it
     assert reasons and all("record ended on 2026-11-30; no newer record is stored" in r for r in reasons)
 
 
+def test_a_market_reference_operator_is_not_counted_as_a_missing_service_area():
+    # AESO's only live record is a value-less pool-price reference, so it never counts toward Alberta's coverage
+    # (owner decision 2026-11-20); before, the text read "7 of 8 ...; no mapped record: Alberta Electric System
+    # Operator".
+    aeso = [r for r in load_rates(FIXTURES / "rm_records_ws_6d.json")
+            if r["utility_name"] == "Alberta Electric System Operator"]
+    assert len(aeso) == 1
+    result = build_models(CITIES + load_rates(FIXTURES / "rm_records_b14.json") + aeso, load_crosswalk(),
+                          load_usage_levels(), load_taxes(), provinces=("AB",), as_of=AS_OF,
+                          market_documents={"ON": None, "AB": None})
+    for model in result["models"]:
+        if model["key"]["fuel"] == "electricity":
+            assert model["coverage"]["utilities_in_province"] == 7, model["id"]
+            assert "Alberta Electric System Operator" not in model["method"], model["id"]
+    residential = _model(result, "AB|electricity|residential|flat|-")
+    assert residential["coverage"]["missing_utilities"] == []
+    assert "Coverage: 7 of 7 Alberta electricity service areas with live records" in residential["method"]
+
+
 def test_lethbridge_three_phase_rate_skips_the_single_phase_level():
     assert crosswalk_rule_levels(load_crosswalk())["ab-lethbridge-994"] == ["s2", "m1"]
     model = _model(_build(), "AB|electricity|commercial|demand|commercial_small")

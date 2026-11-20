@@ -188,6 +188,9 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 - States: `modeled`, `single_source`, `market_energy_pending` (Ontario and Alberta demand classes) and
   `not_computable`. `coverage.contributor_noun` names the contributors (utilities, distributors, or
   Alberta service areas).
+- `coverage.utilities_in_province` counts the province's registered units with live records, except
+  a market operator whose only records are value-less price references (`market_reference_only`:
+  AESO), which sells nothing to the model's customers (owner decision 2026-11-20).
 
 ## Taxes and rebates (`data/models/taxes.json`)
 

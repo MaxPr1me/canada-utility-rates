@@ -144,6 +144,9 @@ historical checkpoint instructions it retains. To add a utility, follow
   at WARNING: per-token pdfminer DEBUG once grew `logs/scrape.log` to about 10 GB and stalled the
   test suite. The log rotates at 10 MB with 3 backups; it is a git-ignored debug diary that nothing
   reads, so deleting it is safe.
+- The console writes UTF-8 (owner decision 2026-11-20): `setup_logging()` switches a non-UTF-8
+  `sys.stdout` (a Windows pipe or redirect uses the ANSI code page) to UTF-8 with replacement, so
+  names and symbols in log messages never raise logging errors.
 
 ## Fixtures
 

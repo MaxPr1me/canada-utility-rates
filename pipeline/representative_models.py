@@ -2160,18 +2160,27 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
     groups: dict[tuple, list] = defaultdict(list)
     withheld_gas: set[tuple] = set()
     province_utilities: dict[tuple, set[str]] = defaultdict(set)
+    counted: list[tuple[tuple, str, str]] = []
+    market_reference_only: dict[str, bool] = {}
     for record in live:
         name = record.get("utility_name") or ""
+        outcome = match_record(record, crosswalk)
+        market_reference_only[name] = (market_reference_only.get(name, True)
+                                       and outcome.get("exclude") == "market_reference_only")
         # A city that publishes both its wires tariff and its Rate of Last Resort is one unit, not a retail part.
         if name not in retail_utilities or name in wires_units:
-            province_utilities[(record.get("province"), record.get("utility_type"))].add(wires_units.get(name, name))
-        outcome = match_record(record, crosswalk)
+            counted.append(((record.get("province"), record.get("utility_type")), name, wires_units.get(name, name)))
         for key in model_keys(outcome):
             if key[1] == "gas" and key[2] not in GAS_MODEL_SECTORS:
                 withheld_gas.add(key)
                 continue
             for row in variants.get(id(record), [record]):
                 groups[key].append((row, outcome.get("zone") or "default", outcome.get("rule_id")))
+    # A market operator whose only records are value-less wholesale price references (AESO) sells nothing to the
+    # model's customers, so it is not counted as a missing contributor (owner decision 2026-11-20).
+    for province_fuel, name, unit in counted:
+        if not market_reference_only.get(name):
+            province_utilities[province_fuel].add(unit)
     profiled = [key for key in groups if find_synthetic_profile(
         usage_levels, key[0], key[1], key[2], key[4] if key[2] == "commercial" and key[4] else key[2])[1] is not None]
     if market_documents is not _DEFAULT and not isinstance(market_documents, dict):

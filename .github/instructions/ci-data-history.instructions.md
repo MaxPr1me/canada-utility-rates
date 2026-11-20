@@ -43,6 +43,10 @@ snapshot rules: [scrapers.instructions.md](scrapers.instructions.md). Model expo
   generated files are never rebased onto newer inputs, like the market workflows (issue #5; owner
   decision 2026-11-04). A push rejected because `main` moved after the export fails the run after
   the database is saved; start a new dispatch rather than re-running the failed job.
+- The diff report (`pipeline.diff_report`) compares the newest run with the one before it, but only for
+  utilities with records in the newest run (owner decision 2026-11-20). The previous run's other
+  utilities are counted under "Not compared" instead of being listed as removed; a utility that
+  returned nothing is named by the run's provenance notice.
 - A failure after the input check opens an issue that includes a Database History section.
   Deployment is separate.
 

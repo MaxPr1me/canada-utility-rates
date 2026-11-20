@@ -9,11 +9,31 @@ history publication, monitoring and the deployed desktop/mobile views are verifi
 and [workflow rules](../.github/instructions/ci-data-history.instructions.md#model-monitoring).
 This does not waive source checks or authorize a Monthly Scrape merely to test monitoring.
 
-## Current milestone - December renewals, then Phase 7 gas
+## Current milestone - Phase 7 gas, then territorial models, then Phase 9
 
-Owner decisions (November 19). Batch 18 continued was published on November 19 (see
-[Registered municipal additions](#registered-municipal-additions)), so every registered utility has
-stored live output. Dated checks:
+Owner decisions (November 20): the order of work is Phase 7 commercial gas, then models for the
+territories, then Phase 9 after the coverage-complete claim. Phase 6E (gas supply-price freshness)
+is done as part of the gas work. Gas decisions:
+- volume-billed general-service classes first; contract-demand and interruptible classes later,
+  with their own decision;
+- Ontario and Alberta commercial gas are included (Enbridge and EPCOR general service; ATCO Gas Mid
+  Use with the Direct Energy Regulated Services default rate);
+- the example customers use typical volumes published by utilities or regulators, in m³ and GJ;
+  the owner approves the levels before any code;
+- New Brunswick uses Liberty Utility Gas as the reference supply (customers may choose a marketer);
+- Énergir D1: one meter; the annual volume is 12 times the monthly level (basic-fee band, load
+  balancing below 75,000 m³); the daily blocks use the monthly volume divided by 30.4375; the
+  renewable-gas riders are checked in the tariff first;
+- Saskatchewan commercial gas carries no PST (building-heating exemption).
+
+Small fixes approved the same day: Alberta's model coverage no longer counts AESO (a value-less
+price reference, not a seller), the diff report compares only the utilities the newer run scraped,
+and the console log writes UTF-8. Research only: observed 50-4,999 kW load profiles in OEB rate
+applications.
+
+Dated checks (owner decisions, November 19) take priority when they fall due. Batch 18 continued
+was published on November 19 (see [Registered municipal additions](#registered-municipal-additions)),
+so every registered utility has stored live output:
 - December 1: the scheduled Monthly Scrape; Medicine Hat then needs the owner's run once the City
   posts December's default rate.
 - December 15: twelve ledger monitor reviews (Yukon Energy, ATCO Electric Yukon, NTPC, Qulliq, EPCOR
@@ -24,9 +44,6 @@ stored live output. Dated checks:
 - January: other January editions, and the Ontario January rate orders (added once in effect, then
   one Ontario Monthly Scrape).
 - Ledger audits expire February 4 (14) and February 27 (62) under the gate's 120-day rule.
-
-Next phase: Phase 7 gas (commercial gas models and the open NB/QC residential choices). It starts
-with owner decisions.
 
 ## Completed - source reliability and Batch 18 publication (November 17-19)
 
@@ -444,7 +461,7 @@ building coverage; counts include optional adjustments and reference records.
 | Done (October 30, batch 16; pushed October 30) | W1 Yukon book discovery through the page model JSON; W2 Centra schedule edition by rates date and the v1126 text Appendix A (high confidence); W3 dead seed citations kept with notes (`KEPT_DEAD`), inventory and AESO pool-price links fixed, guard scans reference data; W4 local check kit (`logs/_b16_kit_*`, untracked); W5 model decisions (method 7C-3) | 2,090 tests across 27 modules. Dry runs: Yukon 20 and 20, Centra 13, Alberta 2/4/5/2 live. Gate 77 of 78 on the committed export (AESO, stored by the next Monthly Scrape) |
 | Done (October 15-16) | Lane B (7F site view, October 15); Lane F (EPCOR Energy Alberta's moved pages), CI as the only database writer (first stored run: Monthly Scrape #11, scrape run 29), the Ontario market continuation (rolling 60-month history), Lane A (7C, all ten provinces) and the 7E illustrative sidecar (all October 16) | See Next Batches item 0 |
 | Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones; the 7E synthetic profile (Monday-Friday hours beginning 7-18 EST). | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
-| Planned (after the lanes) | Commercial gas models (7D-1 covers residential gas); the rest of 6E gas commodity cadence; Phase 9 product follow-up incl. the Across-Canada comparison (never uses illustrative values) | See Next Batches items 7-10; Phase 8 is completed above |
+| Planned (order decided November 20) | Commercial gas models with the rest of 6E gas supply-price freshness (7D-1 covers residential gas); then territorial models; then Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses illustrative values) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11) while the rate pages show August 1, 2026 rates; from the November 1, 2026 rates the v1126 text Appendix A is parsed at high confidence (batch 16, row 1b) |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Checked October 30 (ledger notes): Qulliq, NTPC Snare, EPCOR Distribution (2026 tariffs still interim) and the next Rate of Last Resort term (the UCA table shows only the 2025-2026 term) unchanged, next review December 15; Centra and Yukon changed (row 1b); the Centra monitor was closed November 18 (owner decision) and Yukon's review is December 15. Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |

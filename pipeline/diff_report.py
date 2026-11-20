@@ -3,7 +3,7 @@ diff_report.py — Compare two scrape runs and report changes.
 
 This tool helps you see what changed between monthly scrape runs:
   - New tariffs that appeared
-  - Tariffs that disappeared
+  - Tariffs that disappeared (for the utilities the newer run scraped)
   - Rate values that changed
   - New utilities discovered
 
@@ -51,14 +51,25 @@ def diff_runs(conn: sqlite3.Connection, run1_id: int, run2_id: int) -> dict:
     """
     Compare two scrape runs and return a diff report.
 
+    Only utilities with snapshots in the newer run are compared (owner decision 2026-11-20): a single-utility
+    or single-province Monthly Scrape (for example Medicine Hat's monthly run) would otherwise list every other
+    utility's tariffs as "removed", although nothing is ever removed from the history. A utility that returned
+    no records in the newer run is reported under ``not_compared``; the run's provenance notice names it as
+    failed or without valid records.
+
     Returns a dict with keys:
         - new_tariffs: tariffs in run2 but not run1
-        - removed_tariffs: tariffs in run1 but not run2
+        - removed_tariffs: tariffs in run1 but not run2, for utilities that run2 scraped
         - changed_tariffs: tariffs present in both but with different hashes
         - unchanged_count: number of tariffs with identical hashes
+        - not_compared: run1 utilities (and their tariff count) with no snapshot in run2
     """
     snap1 = get_snapshots_for_run(conn, run1_id)
     snap2 = get_snapshots_for_run(conn, run2_id)
+
+    scraped = {snap["json"].get("utility_name") for snap in snap2.values()}
+    skipped = {tid: snap for tid, snap in snap1.items() if snap["json"].get("utility_name") not in scraped}
+    snap1 = {tid: snap for tid, snap in snap1.items() if tid not in skipped}
 
     ids1 = set(snap1.keys())
     ids2 = set(snap2.keys())
@@ -86,6 +97,10 @@ def diff_runs(conn: sqlite3.Connection, run1_id: int, run2_id: int) -> dict:
         "removed_tariffs": [snap1[tid]["json"] for tid in removed_ids],
         "changed_tariffs": changed,
         "unchanged_count": unchanged,
+        "not_compared": {
+            "utilities": sorted({snap["json"].get("utility_name") or "?" for snap in skipped.values()}),
+            "tariffs": len(skipped),
+        },
         "summary": {
             "new": len(new_ids),
             "removed": len(removed_ids),
@@ -106,6 +121,12 @@ def print_diff_report(diff: dict) -> None:
     print(f"  Removed tariffs:   {s['removed']}")
     print(f"  Changed tariffs:   {s['changed']}")
     print(f"  Unchanged tariffs: {s['unchanged']}")
+    skipped = diff.get("not_compared") or {}
+    if skipped.get("tariffs"):
+        names = skipped["utilities"]
+        listed = ": " + ", ".join(names) if len(names) <= 10 else ""
+        print(f"  Not compared:      {skipped['tariffs']} tariffs of {len(names)} utilities with no records in "
+              f"run #{diff['run2_id']}{listed}")
     print()
 
     if diff["new_tariffs"]:

@@ -116,6 +116,33 @@ def test_blocked_response_is_logged_with_status_headers_and_title_before_raising
     assert "secret" not in message.getMessage()
 
 
+def test_setup_logging_writes_the_console_in_utf8(monkeypatch, tmp_path):
+    # A Windows pipe defaults to cp1252, where "→" or "≥" in a log message raised logging errors (2026-11-20).
+    import io
+    import logging
+    from scrapers.utils import logging_config
+
+    stream = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+    monkeypatch.setattr(logging_config.sys, "stdout", stream)
+    monkeypatch.setattr(logging_config, "LOG_DIR", tmp_path)
+    root = logging.getLogger()
+    saved_handlers, saved_level = root.handlers[:], root.level
+    root.handlers = [h for h in saved_handlers if not getattr(h, "_setup_logging", False)]
+    try:
+        logging_config.setup_logging()
+        logging.getLogger("fixture").warning("Énergir → 30 m³ ≥ 1 kW")
+        stream.flush()
+        text = stream.buffer.getvalue().decode("utf-8")
+    finally:
+        for handler in root.handlers[:]:
+            if getattr(handler, "_setup_logging", False):
+                root.removeHandler(handler)
+                handler.close()
+        root.handlers, root.level = saved_handlers, saved_level
+    assert stream.encoding == "utf-8"
+    assert "WARNING  fixture - Énergir → 30 m³ ≥ 1 kW" in text
+
+
 def test_derive_provenance_only_trusts_explicit_live_markers():
     from pipeline.export_json import derive_provenance
 
@@ -161,6 +188,19 @@ def test_new_effective_version_preserves_old_tariff_and_is_reported_new():
     report = diff_runs(conn, 1, 2)
     assert report["summary"] == {"new": 1, "removed": 1, "changed": 0, "unchanged": 0}
     assert conn.execute("SELECT count(*) FROM tariffs").fetchone()[0] == 2
+
+
+def test_diff_compares_only_utilities_the_newer_run_scraped():
+    # A single-utility run must not list every other utility's tariffs as removed (owner decision 2026-11-20).
+    conn = database()
+    other = replace(tariff(code="G"), utility_name="Other Utility", tariff_name="General Service")
+    dropped = replace(tariff(code="X"), tariff_name="Dropped Class")
+    store_results([tariff(code="R"), dropped, other], 1, conn)
+    store_results([tariff(0.2, code="R")], 2, conn)
+    report = diff_runs(conn, 1, 2)
+    assert report["summary"] == {"new": 0, "removed": 1, "changed": 1, "unchanged": 0}
+    assert [t["tariff_name"] for t in report["removed_tariffs"]] == ["Dropped Class"]
+    assert report["not_compared"] == {"utilities": ["Other Utility"], "tariffs": 1}
 
 
 def test_saskpower_classes_keep_components_and_history_through_export(tmp_path, monkeypatch):

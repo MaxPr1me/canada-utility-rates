@@ -106,6 +106,10 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   Medicine Hat's default energy price is monthly: the owner starts a Medicine Hat run each month
   once the City posts it, and its records drop out of the models until then (owner decisions
   November 19).
+- **Small fixes (November 20, owner decisions):** the Alberta models' coverage no longer counts
+  AESO, which publishes only a market price reference (7 of 7 service areas, was 7 of 8; prices
+  unchanged); the diff report compares only the utilities the newer run scraped; the console log
+  writes UTF-8 on Windows.
 - **Latest export (November 19, scrape run 44):** 987 latest live tariffs and 482 retained
   estimates; 1,409 stored live versions and 6,642 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
@@ -136,7 +140,7 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   and deployment. The change log starts from its first verified baseline. Source checks ignore only
   labelled excluded-class estimates (owner decision November 18) and a ledger manual-update
   utility's estimates until its review date (November 19).
-- **Validation:** all 2,441 tests passed on Python 3.11 using `pytest tests`.
+- **Validation:** all 2,476 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.
@@ -318,7 +322,7 @@ use `--dry-run` and get the history with `python scripts/pull_history_db.py`.
 | Test-scrape all utilities in a province (nothing saved) | `python -m pipeline.run_scrape --province ON --dry-run` |
 | Export JSON for the website | `python -m pipeline.export_json` |
 | Validate data quality | `python -m pipeline.validate` |
-| Compare two scrape runs | `python -m pipeline.diff_report` |
+| Compare two scrape runs (default the two latest; only the utilities the newer run scraped) | `python -m pipeline.diff_report [--run1 ID --run2 ID]` |
 | Check the representative-model crosswalk | `python -m pipeline.representative_models --coverage` |
 | Build the representative models (summary; `--output PATH` writes the JSON) | `python -m pipeline.representative_models --build` |
 | Rebuild the rolling Ontario market history (downloads IESO files) | `python scripts/build_ontario_market.py` |
@@ -745,8 +749,8 @@ One line per phase; sub-phase detail and the work queue are in the
 
 - **Earlier phases (foundations)** — done: scraper framework, granular schema, registry, validation, history snapshots, JSON export and the website.
 - **Phase 5: Live Parser Completion** — in progress: the Batch 18 additions are published (municipal utilities in NB, BC and PE on November 18; Naka Power and the Alberta cities on November 19) and issue #6 is closed; the scoped coverage-complete claim will be drafted for owner approval after the January renewals, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
-- **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas commodity cadence started).
-- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D residential gas done as method 7D-1, in each utility's native m³ or GJ, with business gas withheld until its usage scenarios are approved).
+- **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas commodity cadence started and finishes with the Phase 7 commercial gas work).
+- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D residential gas done as method 7D-1, in each utility's native m³ or GJ, with business gas withheld until its usage scenarios are approved). Next (owner decision, November 20): commercial gas, then models for the territories.
 - **Phase 8: Representative Model Refresh Automation** — done and verified in CI and on the deployed site. Public change history and problem-only monitoring follow the [approved policy](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
 - **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done; historical charts, AI-ready exports, a bill calculator or API and commercial/gas comparisons are planned).
 

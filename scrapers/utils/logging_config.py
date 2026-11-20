@@ -22,7 +22,7 @@ def setup_logging(level: int = logging.INFO, log_file: str = "scrape.log") -> No
     """
     Configure logging for the project.
 
-    - Console output: INFO and above, compact format
+    - Console output: INFO and above, compact format, written in UTF-8
     - File output: DEBUG and above, detailed format with timestamps; rotates at
       LOG_MAX_BYTES, keeping LOG_BACKUP_COUNT older files
     """
@@ -36,6 +36,12 @@ def setup_logging(level: int = logging.INFO, log_file: str = "scrape.log") -> No
         logging.getLogger(noisy).setLevel(logging.WARNING)
     if any(getattr(h, "_setup_logging", False) for h in root.handlers):
         return
+
+    # Windows pipes and redirects default to the ANSI code page, where characters in log messages such as "→"
+    # or "≥" raise logging errors; write the console in UTF-8 as on GitHub's runners (owner decision 2026-11-20).
+    encoding = (getattr(sys.stdout, "encoding", None) or "").lower().replace("-", "").replace("_", "")
+    if encoding != "utf8" and hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
     # Console handler
     console = logging.StreamHandler(sys.stdout)
