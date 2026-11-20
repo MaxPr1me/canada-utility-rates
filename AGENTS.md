@@ -347,8 +347,12 @@ automatic trigger (`workflow_run`) only fires from the default branch.
 1. Go to the repository on GitHub.
 2. Click the **"Actions"** tab.
 3. Click **"Monthly Scrape"** on the left.
-4. Click the **"Run workflow"** button on the right. You may type one utility name or one
-   two-letter province code (not both); leave both empty for everything.
+4. Click the **"Run workflow"** button on the right. Type one utility name in the **utility** box,
+   spelled as in the registry including accents (for example `Énergir`), or one two-letter province
+   code in the **province** box (not both); leave both empty for everything. A utility name typed in
+   the province box stops the run at its input check, before anything is scraped or saved. Until a
+   planned fix moves that check after the code download, such a stopped run also opens a
+   model-monitoring issue; it closes itself after the next successful Monthly Scrape.
 
 The **Ontario Price Archive** workflow can be started the same way. The owner's computer has no
 GitHub command-line tool, so start workflows from the website. **Deploy Site** can also be run by
@@ -709,6 +713,12 @@ apply to all of them:
   and date. Conditional, optional and source-blocked prices are not charges that every customer
   pays. Different kinds of sources (Alberta wires, Alberta default retail, AESO, gas and northern
   utilities) stay separate.
+- **A price with a period ends on time.** Gas supply prices that change monthly, quarterly or every
+  six months carry the end of the period their source states (owner decision, November 20, 2026).
+  After that date the next model update leaves that tariff out (it is never priced without its
+  supply price) until a Monthly Scrape stores the new price. A price with no set period, which
+  changes only when a regulator approves a new one (FortisBC, SaskEnergy), stays open-ended. The
+  list is in the [gas rules](.github/instructions/gas-utilities.instructions.md#all-gas-utilities).
 - **"Complete" means checked.** Completing a utility means auditing its building-related standard
   published classes, not just replacing old estimates. Some products are left out on purpose;
   exclusions and remaining gaps are listed in the [parser gap report](docs/live_parser_gap_report.md)

@@ -64,6 +64,13 @@ Second decision round (November 20), from the commercial gas research:
   gas models are published), later for a Phase 9 archetype comparison. Simulated values stay out of
   the base models.
 
+Progress at the end of November 20: the small fixes are published; Énergir's monthly supply price
+is stored (scrape run 45); Enbridge, EPCOR, Centra, Eastward and Liberty supply prices carry their
+period end from each utility's next Monthly Scrape. Next: the second scheduled Monthly Scrape on the
+4th (with clearer input checks: code checked out first, a hint to use the utility box, utility
+names matched without accents), aimed for before December 1; then the commercial gas models
+(method 7D-2) together with the electricity level changes, the site view and publication.
+
 Dated checks (owner decisions, November 19) take priority when they fall due. Batch 18 continued
 was published on November 19 (see [Registered municipal additions](#registered-municipal-additions)),
 so every registered utility has stored live output:

@@ -106,6 +106,9 @@ change, and link to details instead of growing it. Never describe planned work a
 - Significant tested milestones may be committed and pushed, as the owner explicitly requested.
   Stage only the task's files: never unrelated work, `tests/_pending/` or the `.claude/worktrees/`
   gitlinks.
+- Text files are stored with LF line endings. Before committing, `git ls-files --eol <files>` must
+  show `i/lf`: a stray carriage return makes Git treat a file as binary (`-text`) and store it with
+  CRLF, turning a small edit into a whole-file diff.
 - Parallel workers may each own separate utility files; database, export, registry and test
   integration and publishing are done one at a time. Preserve all earlier snapshots.
 - Context checkpoint: when approaching the context limit (target about 90%), stop opening

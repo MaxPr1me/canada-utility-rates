@@ -393,6 +393,11 @@ and the [Territories section](../.github/instructions/regional-utilities.instruc
 - **End a record with its shortest-lived price.** When a bundled price expires sooner than the record's
   other charges (Medicine Hat's month-dated default energy), set the record's `end_date` to it. Models
   and the coverage gate then stop using the record instead of pricing what is left.
+- **A periodic supply price ends with its period** (Phase 6E, November 20, 2026). Give a gas supply price
+  that is set monthly, quarterly or for a fixed block the end date its source states (Énergir's month,
+  Enbridge's quarter, Eastward's six-month residential block); leave a price with no set period (it
+  changes only when a new order is approved) open-ended. The per-utility list is in the
+  [gas rules](../.github/instructions/gas-utilities.instructions.md#all-gas-utilities).
 - **Cross-check two official documents value by value.** The bylaw against the rate table, read by
   column position (Lethbridge); a schedule against the City's delivery page (Red Deer). A rate-update
   notice decides interim confidence (Naka Power).
