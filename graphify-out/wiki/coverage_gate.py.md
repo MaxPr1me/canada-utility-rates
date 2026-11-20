@@ -1,11 +1,12 @@
 # coverage_gate.py
 
-> 28 nodes
+> 29 nodes
 
 ## Key Concepts
 
 - **coverage_gate.py** (22 connections) — `scripts/coverage_gate.py`
 - **evaluate()** (13 connections) — `scripts/coverage_gate.py`
+- **collections** (9 connections)
 - **main()** (8 connections) — `scripts/coverage_gate.py`
 - **manual_update_review_by()** (8 connections) — `scripts/coverage_gate.py`
 - **_parse_date()** (5 connections) — `scripts/coverage_gate.py`
@@ -28,16 +29,22 @@
 - **Validate one ledger entry or group; an entry without its own audit must inherit…** (1 connections) — `scripts/coverage_gate.py`
 - **The ledger entry for a utility with its group's audit and lists folded in (None…** (1 connections) — `scripts/coverage_gate.py`
 - **Check every active utility and return findings per utility plus global findings.** (1 connections) — `scripts/coverage_gate.py`
-- **One line for the public notice and the console.** (1 connections) — `scripts/coverage_gate.py`
-- *... and 3 more nodes in this community*
+- *... and 4 more nodes in this community*
 
 ## Relationships
 
-- [json](json.md) (7 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (4 shared connections)
+- [argparse](argparse.md) (4 shared connections)
+- [main](main.md) (3 shared connections)
 - [os](os.md) (1 shared connections)
-- [export_ontario_totals.py](export_ontario_totals.py.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
+- [representative_models.py](representative_models.py.md) (1 shared connections)
+- [enmax_power.py](enmax_power.py.md) (1 shared connections)
+- [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
 
 ## Source Files
 
@@ -45,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 61 (100%)
+- EXTRACTED: 69 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

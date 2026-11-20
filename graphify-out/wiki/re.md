@@ -1,6 +1,6 @@
 # re
 
-> 34 nodes
+> 31 nodes
 
 ## Key Concepts
 
@@ -8,7 +8,6 @@
 - **._schedule_record()** (19 connections) — `scrapers/utilities/atco_electric.py`
 - **_parse_rider_page()** (11 connections) — `scrapers/utilities/atco_electric.py`
 - **_Reject** (10 connections) — `scrapers/utilities/atco_electric.py`
-- **.parse_schedule_pages()** (9 connections) — `scrapers/utilities/atco_electric.py`
 - **discover_documents()** (8 connections) — `scrapers/utilities/atco_electric.py`
 - **_reconcile()** (6 connections) — `scrapers/utilities/atco_electric.py`
 - **_row()** (6 connections) — `scrapers/utilities/atco_electric.py`
@@ -28,21 +27,21 @@
 - **_price_region()** (3 connections) — `scrapers/utilities/atco_electric.py`
 - **value()** (3 connections) — `scrapers/utilities/bc_hydro.py`
 - **Any** (2 connections)
-- **date** (1 connections)
-- *... and 9 more nodes in this community*
+- **Exception** (1 connections)
+- **atco_electric.py -- Scraper for ATCO Electric distribution rates (Alberta).…** (1 connections) — `scrapers/utilities/atco_electric.py`
+- *... and 6 more nodes in this community*
 
 ## Relationships
 
-- [re](re.md) (7 shared connections)
-- [BaseScraper](BaseScraper.md) (7 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
-- [parse_html](parse_html.md) (5 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (10 shared connections)
+- [re](re.md) (8 shared connections)
+- [ATCOElectricScraper](ATCOElectricScraper.md) (6 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (4 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
-- [ATCOElectricScraper](ATCOElectricScraper.md) (3 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (3 shared connections)
-- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
-- [json](json.md) (1 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (3 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
+- [Path](Path.md) (1 shared connections)
+- [main](main.md) (1 shared connections)
 
 ## Source Files
 
@@ -51,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 105 (96%)
+- EXTRACTED: 99 (96%)
 - INFERRED: 4 (4%)
 - AMBIGUOUS: 0 (0%)
 

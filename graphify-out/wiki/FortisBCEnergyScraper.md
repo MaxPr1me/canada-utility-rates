@@ -1,10 +1,11 @@
 # FortisBCEnergyScraper
 
-> 38 nodes
+> 45 nodes
 
 ## Key Concepts
 
 - **FortisBCEnergyScraper** (29 connections) — `scrapers/utilities/fortisbc_energy.py`
+- **._try_live_scrape()** (13 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **.parse_pages()** (12 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **date** (12 connections)
 - **._transport()** (11 connections) — `scrapers/utilities/fortisbc_energy.py`
@@ -28,17 +29,17 @@
 - **._document_text()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._seed_data()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **AreaClassSpec** (3 connections) — `scrapers/utilities/fortisbc_energy.py`
-- **._page_text()** (3 connections) — `scrapers/utilities/fortisbc_energy.py`
-- *... and 13 more nodes in this community*
+- *... and 20 more nodes in this community*
 
 ## Relationships
 
 - [RateComponent](RateComponent.md) (14 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (10 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (6 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
-- [parse_html](parse_html.md) (2 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (11 shared connections)
+- [BaseScraper](BaseScraper.md) (6 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [red_deer.py](red_deer.py.md) (1 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -46,8 +47,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 121 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 133 (99%)
+- INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

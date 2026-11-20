@@ -38,12 +38,13 @@
 - [RateComponent](RateComponent.md) (7 shared connections)
 - [parse_rpp_page](parse_rpp_page.md) (4 shared connections)
 - [._load_sheets](_load_sheets.md) (4 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (2 shared connections)
 - [oeb_distributor_for_registry](oeb_distributor_for_registry.md) (1 shared connections)
 - [validate_energy_charges](validate_energy_charges.md) (1 shared connections)
+- [.fetch_page](fetch_page.md) (1 shared connections)
 - [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
 - [build_demand_records](build_demand_records.md) (1 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
 
 ## Source Files
 

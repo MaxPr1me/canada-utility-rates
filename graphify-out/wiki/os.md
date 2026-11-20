@@ -27,17 +27,17 @@
 ## Relationships
 
 - [graphify_hook.py](graphify_hook.py.md) (7 shared connections)
-- [json](json.md) (7 shared connections)
+- [argparse](argparse.md) (5 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (5 shared connections)
 - [archive_ontario_price.py](archive_ontario_price.py.md) (4 shared connections)
 - [generate_market_pricing.py](generate_market_pricing.py.md) (4 shared connections)
+- [main](main.md) (3 shared connections)
 - [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
 - [BaseScraper](BaseScraper.md) (2 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
-- [main](main.md) (2 shared connections)
 - [representative_models.py](representative_models.py.md) (1 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
+- [run_scrape.py](run_scrape.py.md) (1 shared connections)
 
 ## Source Files
 

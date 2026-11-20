@@ -18,11 +18,12 @@
 
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (4 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (4 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (4 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (2 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
 
 ## Source Files
 

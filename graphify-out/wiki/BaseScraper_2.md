@@ -16,9 +16,9 @@
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
 - ontario_ldc.py `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- run_scrape.py `EXTRACTED`
-- nl_hydro.py `EXTRACTED`
+- [run_scrape.py](run_scrape.py.md) `EXTRACTED`
 - epcor_gas_ontario.py `EXTRACTED`
+- nl_hydro.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
@@ -29,7 +29,7 @@
 - nb_power.py `EXTRACTED`
 - [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
-- aeso.py `EXTRACTED`
+- [aeso.py](aeso.py.md) `EXTRACTED`
 - *…and 26 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### inherits
@@ -42,7 +42,7 @@
 - [BCHydroScraper](BCHydroScraper.md) `EXTRACTED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `EXTRACTED`
 - [NBPowerScraper](NBPowerScraper.md) `EXTRACTED`
-- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `EXTRACTED`
+- NewfoundlandPowerScraper `EXTRACTED`
 - [ATCOGasScraper](ATCOGasScraper.md) `EXTRACTED`
 - HydroQuebecScraper `EXTRACTED`
 - NLHydroScraper `EXTRACTED`
@@ -52,7 +52,7 @@
 - [HeritageGasScraper](HeritageGasScraper.md) `EXTRACTED`
 - [LibertyGasNBScraper](LibertyGasNBScraper.md) `EXTRACTED`
 - SaskPowerScraper `EXTRACTED`
-- [ManitobaHydroScraper](ManitobaHydroScraper.md) `EXTRACTED`
+- ManitobaHydroScraper `EXTRACTED`
 - *…and 26 more `inherits` connection(s) not listed (lowest-degree first to go)*
 
 ### method

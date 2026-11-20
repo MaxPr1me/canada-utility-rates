@@ -1,18 +1,18 @@
 # CentraGasScraper
 
-> 54 nodes
+> 56 nodes
 
 ## Key Concepts
 
 - **CentraGasScraper** (35 connections) — `scrapers/utilities/centra_gas.py`
 - **.parse_pages()** (21 connections) — `scrapers/utilities/centra_gas.py`
 - **._pdf_records()** (19 connections) — `scrapers/utilities/centra_gas.py`
-- **date** (12 connections)
+- **date** (13 connections)
 - **._try_live_scrape()** (11 connections) — `scrapers/utilities/centra_gas.py`
 - **._mainline_interruptible()** (9 connections) — `scrapers/utilities/centra_gas.py`
+- **._build()** (8 connections) — `scrapers/utilities/centra_gas.py`
 - **._appendix_tables()** (8 connections) — `scrapers/utilities/centra_gas.py`
 - **._commodity_headline()** (8 connections) — `scrapers/utilities/centra_gas.py`
-- **._build()** (7 connections) — `scrapers/utilities/centra_gas.py`
 - **._edition()** (6 connections) — `scrapers/utilities/centra_gas.py`
 - **._carbon()** (5 connections) — `scrapers/utilities/centra_gas.py`
 - **._long_date()** (5 connections) — `scrapers/utilities/centra_gas.py`
@@ -27,18 +27,19 @@
 - **._section()** (4 connections) — `scrapers/utilities/centra_gas.py`
 - **._seed_data()** (4 connections) — `scrapers/utilities/centra_gas.py`
 - **._text_rows()** (4 connections) — `scrapers/utilities/centra_gas.py`
+- **_quarterly_rate_end()** (4 connections) — `scrapers/utilities/centra_gas.py`
 - **GasClassSpec** (3 connections) — `scrapers/utilities/centra_gas.py`
-- **._appendix_text()** (3 connections) — `scrapers/utilities/centra_gas.py`
-- *... and 29 more nodes in this community*
+- *... and 31 more nodes in this community*
 
 ## Relationships
 
 - [BCHydroScraper](BCHydroScraper.md) (8 shared connections)
-- [BaseScraper](BaseScraper.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (6 shared connections)
 - [RateComponent](RateComponent.md) (4 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [parse_html](parse_html.md) (1 shared connections)
+- [.fetch_page](fetch_page.md) (1 shared connections)
+- [red_deer.py](red_deer.py.md) (1 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -46,8 +47,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 130 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 134 (99%)
+- INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -17,9 +17,9 @@
 - ._pdf_records() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._mainline_interruptible() `EXTRACTED`
+- ._build() `EXTRACTED`
 - ._commodity_headline() `EXTRACTED`
 - ._appendix_tables() `EXTRACTED`
-- ._build() `EXTRACTED`
 - ._edition() `EXTRACTED`
 - .scrape() `EXTRACTED`
 - ._long_date() `EXTRACTED`

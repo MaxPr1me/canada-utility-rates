@@ -2,7 +2,7 @@
 
 > God node · 100 connections · `scrapers/utils/parsing.py`
 
-**Community:** [parse_html](parse_html.md)
+**Community:** [BaseScraper](BaseScraper.md)
 
 ## Connections by Relation
 
@@ -38,8 +38,8 @@
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
 - ontario_ldc.py `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- nl_hydro.py `EXTRACTED`
 - epcor_gas_ontario.py `EXTRACTED`
+- nl_hydro.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
@@ -51,7 +51,7 @@
 - [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - grand_forks.py `EXTRACTED`
-- [lethbridge.py](lethbridge.py.md) `EXTRACTED`
+- lethbridge.py `EXTRACTED`
 - medicine_hat.py `EXTRACTED`
 - *…and 17 more `imports` connection(s) not listed (lowest-degree first to go)*
 

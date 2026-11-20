@@ -35,13 +35,15 @@
 
 - [io](io.md) (8 shared connections)
 - [_yearly_files](_yearly_files.md) (7 shared connections)
-- [json](json.md) (6 shared connections)
-- [re](re.md) (4 shared connections)
+- [re](re.md) (5 shared connections)
+- [argparse](argparse.md) (4 shared connections)
 - [os](os.md) (4 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
 - [generate_market_pricing.py](generate_market_pricing.py.md) (2 shared connections)
-- [export_ontario_totals.py](export_ontario_totals.py.md) (2 shared connections)
-- [parse_html](parse_html.md) (1 shared connections)
+- [main](main.md) (2 shared connections)
+- [BaseScraper](BaseScraper.md) (2 shared connections)
+- [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
+- [ntpc.py](ntpc.py.md) (1 shared connections)
 
 ## Source Files
 

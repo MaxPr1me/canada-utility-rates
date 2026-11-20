@@ -1,11 +1,11 @@
 # EnbridgeGasScraper
 
-> 58 nodes
+> 60 nodes
 
 ## Key Concepts
 
+- **enbridge_gas.py** (37 connections) — `scrapers/utilities/enbridge_gas.py`
 - **EnbridgeGasScraper** (36 connections) — `scrapers/utilities/enbridge_gas.py`
-- **enbridge_gas.py** (36 connections) — `scrapers/utilities/enbridge_gas.py`
 - **Schedule** (21 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._build_egd_contract()** (18 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._build_m4()** (17 connections) — `scrapers/utilities/enbridge_gas.py`
@@ -16,9 +16,9 @@
 - **._rider_components()** (15 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._record()** (14 connections) — `scrapers/utilities/enbridge_gas.py`
 - **_dec()** (13 connections) — `scrapers/utilities/enbridge_gas.py`
+- **make()** (12 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._build_un_interruptible()** (12 connections) — `scrapers/utilities/enbridge_gas.py`
 - **_Context** (11 connections) — `scrapers/utilities/enbridge_gas.py`
-- **make()** (11 connections) — `scrapers/utilities/enbridge_gas.py`
 - **ClassSpec** (10 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._customer_charge()** (10 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._maker()** (10 connections) — `scrapers/utilities/enbridge_gas.py`
@@ -29,18 +29,17 @@
 - **Edition** (8 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._value()** (8 connections) — `scrapers/utilities/enbridge_gas.py`
 - **check_complete()** (8 connections) — `scrapers/utilities/enbridge_gas.py`
-- *... and 33 more nodes in this community*
+- *... and 35 more nodes in this community*
 
 ## Relationships
 
-- [BCHydroScraper](BCHydroScraper.md) (10 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (10 shared connections)
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [RateComponent](RateComponent.md) (8 shared connections)
-- [re](re.md) (6 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (4 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (12 shared connections)
+- [BaseScraper](BaseScraper.md) (10 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (10 shared connections)
+- [re](re.md) (7 shared connections)
+- [RateComponent](RateComponent.md) (6 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
 - [io](io.md) (2 shared connections)
-- [parse_html](parse_html.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
@@ -49,7 +48,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 268 (97%)
+- EXTRACTED: 272 (97%)
 - INFERRED: 8 (3%)
 - AMBIGUOUS: 0 (0%)
 

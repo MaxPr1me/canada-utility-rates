@@ -1,6 +1,6 @@
 # .mark_live_parsed
 
-> 48 nodes
+> 46 nodes
 
 ## Key Concepts
 
@@ -10,7 +10,6 @@
 - **._parse_spec()** (17 connections) — `scrapers/utilities/nl_hydro.py`
 - **._parse_labrador_nonfirm()** (12 connections) — `scrapers/utilities/nl_hydro.py`
 - **_flat()** (12 connections) — `scrapers/utilities/nl_hydro.py`
-- **.parse_schedule_pages()** (11 connections) — `scrapers/utilities/nl_hydro.py`
 - **._published_sections()** (11 connections) — `scrapers/utilities/nl_hydro.py`
 - **._parse_island_industrial()** (10 connections) — `scrapers/utilities/nl_hydro.py`
 - **._parse_island_nonfirm()** (10 connections) — `scrapers/utilities/nl_hydro.py`
@@ -29,18 +28,19 @@
 - **_option_components()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_verify_nonfirm_formula()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_energy_rows()** (6 connections) — `scrapers/utilities/nl_hydro.py`
-- *... and 23 more nodes in this community*
+- **_money_rows()** (6 connections) — `scrapers/utilities/nl_hydro.py`
+- *... and 21 more nodes in this community*
 
 ## Relationships
 
-- [RateComponent](RateComponent.md) (16 shared connections)
 - [re](re.md) (15 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (13 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (11 shared connections)
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (8 shared connections)
+- [RateComponent](RateComponent.md) (14 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (12 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (12 shared connections)
+- [BaseScraper](BaseScraper.md) (11 shared connections)
+- [.fetch_page](fetch_page.md) (8 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [parse_html](parse_html.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +48,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 206 (99%)
+- EXTRACTED: 201 (99%)
 - INFERRED: 3 (1%)
 - AMBIGUOUS: 0 (0%)
 

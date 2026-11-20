@@ -1,13 +1,12 @@
 # build_ontario_market.py
 
-> 54 nodes
+> 47 nodes
 
 ## Key Concepts
 
 - **build_ontario_market.py** (59 connections) — `scripts/build_ontario_market.py`
 - **build()** (25 connections) — `scripts/build_ontario_market.py`
 - **Month** (10 connections) — `scripts/build_ontario_market.py`
-- **main()** (10 connections) — `scripts/build_ontario_market.py`
 - **hoep_energy()** (9 connections) — `scripts/build_ontario_market.py`
 - **assemble()** (8 connections) — `scripts/build_ontario_market.py`
 - **load_hoep_csv()** (8 connections) — `scripts/build_ontario_market.py`
@@ -29,20 +28,23 @@
 - **_shift()** (5 connections) — `scripts/build_ontario_market.py`
 - **.total_arithmetic()** (4 connections) — `scripts/build_ontario_market.py`
 - **_mean()** (4 connections) — `scripts/build_ontario_market.py`
-- *... and 29 more nodes in this community*
+- **describe_months()** (4 connections) — `scripts/build_ontario_market.py`
+- *... and 22 more nodes in this community*
 
 ## Relationships
 
-- [io](io.md) (11 shared connections)
-- [json](json.md) (5 shared connections)
-- [main](main.md) (5 shared connections)
+- [main](main.md) (12 shared connections)
+- [io](io.md) (7 shared connections)
 - [load_ga_reports](load_ga_reports.md) (3 shared connections)
+- [argparse](argparse.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
-- [export_ontario_totals.py](export_ontario_totals.py.md) (2 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
+- [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
 - [os](os.md) (1 shared connections)
 - [parse_html](parse_html.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
+- [_load](_load.md) (1 shared connections)
 
 ## Source Files
 
@@ -50,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 162 (99%)
+- EXTRACTED: 151 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

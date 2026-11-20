@@ -14,8 +14,8 @@
 
 ### method
 - ._build_egd_contract() `EXTRACTED`
-- ._build_un_contract() `EXTRACTED`
 - ._build_m4() `EXTRACTED`
+- ._build_un_contract() `EXTRACTED`
 - ._build_m5() `EXTRACTED`
 - ._build_general() `EXTRACTED`
 - .parse_documents() `EXTRACTED`
