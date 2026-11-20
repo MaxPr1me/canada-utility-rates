@@ -147,7 +147,7 @@ APPENDIX_A = {
         },
     },
 }
-
+
 def _quarterly_rate_end(effective: date) -> date:
     """Day before Centra's next quarterly rate date after ``effective``.
 
