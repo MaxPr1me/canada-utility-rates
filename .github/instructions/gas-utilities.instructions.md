@@ -16,6 +16,15 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
   commodity prices stay unpriced.
 - Zero federal carbon needs the CRA fuel-charge page as evidence (Enbridge, ATCO Gas, EPCOR Ontario);
   a missing or contradicting cross-check fails closed.
+- **Supply-price periods (Phase 6E, owner decision 2026-11-20):** each default supply (commodity)
+  component carries the end of the period its official source states, so an ended price stops
+  counting instead of looking current: Enbridge and EPCOR (OEB quarterly rate adjustment) the
+  calendar quarter's end; Centra the day before its next quarterly date (February, May, August or
+  November 1); Énergir supply and the Eastward General Service and Rate Class 3 gas cost recovery
+  rate the month's end, Énergir cap-and-trade its quarter's end; the Eastward residential rate the
+  end of its six-month block (January 31 or July 31); Liberty Utility Gas the month's end; ATCO Gas's
+  DERS default rate the month's end. FortisBC and SaskEnergy prices stay open-ended (they change only
+  by an approved order). A negotiated, value-less supply line carries no end date.
 
 ## Enbridge Gas (Ontario)
 

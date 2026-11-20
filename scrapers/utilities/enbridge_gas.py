@@ -24,7 +24,7 @@ import io
 import logging
 import re
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional
 from urllib.parse import urlsplit, urlunsplit
@@ -265,6 +265,19 @@ def _add(*values: Optional[Decimal]) -> Optional[Decimal]:
 
 def _dollars(cents: Decimal) -> float:
     return float(cents / 100)
+
+
+def _quarter_end(day: date) -> date:
+    """Last day of the calendar quarter containing ``day``.
+
+    The OEB's quarterly rate adjustment (QRAM) changes system-gas prices on January 1, April 1, July 1 and October 1,
+    and Enbridge states that each quarter's rates "remain in effect from Oct. 1, 2026 through Dec. 31, 2026" (rates
+    page, 2026-11-20). The gas supply commodity charge therefore ends at its quarter's end (owner decision 2026-11-20)
+    instead of looking current after the next adjustment.
+    """
+    start = 3 * ((day.month - 1) // 3) + 1
+    next_start = date(day.year + 1, 1, 1) if start == 10 else date(day.year, start + 3, 1)
+    return next_start - timedelta(days=1)
 
 
 def _long_date(text: str) -> date:
@@ -687,6 +700,8 @@ class EnbridgeGasScraper(BaseScraper):
         def make(kind: str, name: str, value: Optional[float], unit: str, page: int, **extra) -> RateComponent:
             extra.setdefault("effective_date", ctx.edition.effective.isoformat())
             extra.setdefault("source_detail", f"Rate Handbook PDF page {page}; {spec.name}")
+            if kind == "commodity" and value is not None:
+                extra.setdefault("end_date", _quarter_end(ctx.edition.effective).isoformat())
             return RateComponent(kind, name, value, unit, source_url=ctx.url, **extra)
         return make
 

@@ -22,7 +22,7 @@ import logging
 import math
 import re
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
@@ -147,6 +147,20 @@ APPENDIX_A = {
         },
     },
 }
+
+def _quarterly_rate_end(effective: date) -> date:
+    """Day before Centra's next quarterly rate date after ``effective``.
+
+    PUB Order 150/26: "Centra's Gas Commodity rate is subject to quarterly amendment every year on February 1, May 1,
+    August 1, and November 1." The commodity rate therefore ends the day before the next of those dates (owner
+    decision 2026-11-20), so an edition that is not replaced in time stops counting instead of looking current.
+    """
+    for year in (effective.year, effective.year + 1):
+        for month in (2, 5, 8, 11):
+            if date(year, month, 1) > effective:
+                return date(year, month, 1) - timedelta(days=1)
+    raise AssertionError("unreachable: a quarterly date always follows within a year")
+
 
 # Supported quarterly schedule editions. Both editions carry the same November 1, 2025
 # (Order 138/25) general pages (compared 2026-10-30). The reviewed transcription stays limited to the v0826 scanned
@@ -1004,7 +1018,8 @@ class CentraGasScraper(BaseScraper):
             source_detail=detail, notes="Published monthly basic charge")]
         if sales:
             comps.append(RateComponent(
-                "commodity", "Gas Commodity", values["commodity"], unit, effective_date=eff, source_url=url,
+                "commodity", "Gas Commodity", values["commodity"], unit, effective_date=eff,
+                end_date=_quarterly_rate_end(effective).isoformat(), source_url=url,
                 source_detail=detail + "; " + commodity_evidence,
                 notes="Manitoba Hydro default quarterly rate service, passed through without mark-up; changes "
                       "quarterly. Fixed-rate contract and marketer prices are separate and not included."))

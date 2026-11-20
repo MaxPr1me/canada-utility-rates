@@ -13743,11 +13743,11 @@ EPG_AYLMER_ORDER = "https://www.rds.oeb.ca/CMWebDrawer/Record/956907/File/docume
 EPG_SB_ORDER = "https://www.rds.oeb.ca/CMWebDrawer/Record/956917/File/document"
 EPG_CARBON = ("carbon", "Federal Carbon Charge", 0.0, "$/m³", "2025-04-01", None, None)
 EPG_TRANSPORT = ("delivery", "Transportation Charge", 0.029161, "$/m³", EPG_EFF, None, None)
-EPG_AYL_SUPPLY = [
-    ("commodity", "Gas Supply Charge — PGCVA Reference Price", 0.17444, "$/m³", EPG_EFF, None, None),
-    ("commodity", "Gas Supply Charge — GPRA Recovery Rate", -0.001408, "$/m³", EPG_EFF, None, None),
+EPG_AYL_SUPPLY = [  # the QRAM supply charge ends with its quarter (owner decision 2026-11-20)
+    ("commodity", "Gas Supply Charge — PGCVA Reference Price", 0.17444, "$/m³", EPG_EFF, EPG_END, None),
+    ("commodity", "Gas Supply Charge — GPRA Recovery Rate", -0.001408, "$/m³", EPG_EFF, EPG_END, None),
 ]
-EPG_SB_SUPPLY = ("commodity", "Gas Supply Charge", 0.151554, "$/m³", EPG_EFF, None, None)
+EPG_SB_SUPPLY = ("commodity", "Gas Supply Charge", 0.151554, "$/m³", EPG_EFF, EPG_END, None)
 
 
 def EPG__ayl_riders(wacc):

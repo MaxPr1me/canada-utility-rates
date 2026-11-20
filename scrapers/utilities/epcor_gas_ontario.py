@@ -27,7 +27,7 @@ import io
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from bs4 import Comment
@@ -226,6 +226,15 @@ def _long_date(value: str) -> Optional[date]:
 
 def _cents_to_dollars(value: float) -> float:
     return round(value / 100, 6)
+
+
+def _quarter_end(day: date) -> date:
+    """Last day of the calendar quarter containing ``day``: the OEB quarterly rate adjustment (QRAM) changes the
+    gas supply charge on January 1, April 1, July 1 and October 1, so it ends at its quarter's end (owner decision
+    2026-11-20) instead of looking current after the next adjustment."""
+    start = 3 * ((day.month - 1) // 3) + 1
+    next_start = date(day.year + 1, 1, 1) if start == 10 else date(day.year, start + 3, 1)
+    return next_start - timedelta(days=1)
 
 
 def _display(day: date) -> str:
@@ -727,6 +736,7 @@ class EPCOROntarioGasScraper(BaseScraper):
                     comps.append(comp("commodity", "Gas Supply Charge", amount, unit,
                                       market_reference="EPCOR system gas supply (OEB quarterly rate adjustment)",
                                       source_detail=page_detail + f"; OEB QRAM notice {context.notice_url}",
+                                      end_date=_quarter_end(context.effective).isoformat(),
                                       notes=self._supply_note(context)))
                 elif line.kind == "overrun_authorized":
                     comps.append(comp("delivery", "Authorized Overrun Charge (December 16 - April 30)", amount, unit,
@@ -743,13 +753,14 @@ class EPCOROntarioGasScraper(BaseScraper):
             supply = context.supply
             detail = (f"{zone.label} rates page, 'Gas supply charges' table; approved {context.case} Schedule A, "
                       f"PDF page {supply['page']}; OEB QRAM notice {context.notice_url}")
+            quarter_end = _quarter_end(context.effective).isoformat()
             comps += [
                 comp("commodity", "Gas Supply Charge — PGCVA Reference Price",
                      _cents_to_dollars(supply["reference"]), "$/m³", source_detail=detail,
                      market_reference="EPCOR system gas supply (OEB quarterly rate adjustment)",
-                     notes=self._supply_note(context)),
+                     end_date=quarter_end, notes=self._supply_note(context)),
                 comp("commodity", "Gas Supply Charge — GPRA Recovery Rate", _cents_to_dollars(supply["recovery"]),
-                     "$/m³", source_detail=detail,
+                     "$/m³", source_detail=detail, end_date=quarter_end,
                      notes=f"Gas Purchase Rebalancing Account recovery; with the PGCVA reference price it makes up "
                            f"the {supply['total']:.4f}¢/m³ total gas supply charge."),
             ]

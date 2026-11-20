@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
@@ -39,6 +39,10 @@ MONTHS = ["January", "February", "March", "April", "May", "June", "July", "Augus
           "November", "December"]
 DATE = r"([A-Z][a-z]+ \d{1,2}, \d{4})"
 RATE = r"(\d[\d,]*\.\d{2,4})"
+
+
+def _month_end(day: date) -> date:
+    return (day.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
 
 # Seed data — limited public rate information available.
 SEED_RESIDENTIAL = {
@@ -276,10 +280,12 @@ class LibertyGasNBScraper(BaseScraper):
         carbon_date, carbon_note = carbon
         comps += [
             RateComponent("commodity", "Liberty Utility Gas", supply_value, "$/GJ", effective_date=supply_date.isoformat(),
+                          end_date=_month_end(supply_date).isoformat(),
                           source_url=PAGE_URLS[supply_key], source_detail="Utility Gas Rate History ($/GJ)",
                           market_reference="Liberty Utility Gas (LUG)",
                           notes="Optional utility supply at cost, may change monthly; customers may buy from a marketer "
-                                "instead, whose price is not included."),
+                                "instead, whose price is not included. Stored for its month only (owner decision "
+                                "2026-11-20)."),
             RateComponent("carbon", "Federal Carbon Charge", 0.0, "$/GJ", effective_date=carbon_date.isoformat(),
                           source_url=PAGE_URLS["carbon"], source_detail="CRA fuel charge rates", notes=carbon_note),
         ]

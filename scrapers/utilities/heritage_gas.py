@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from scrapers.base import BaseScraper, TariffRecord, RateComponent
@@ -35,6 +35,25 @@ MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUS
           "OCTOBER", "NOVEMBER", "DECEMBER"]
 MONEY = r"\$(\d[\d,]*\.\d+)"
 DATE = r"([A-Z][a-z]+ \d{1,2}, \d{4})"
+
+
+def _month_end(day: date) -> date:
+    return (day.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+
+
+def _gcrr_end(table_month: date, residential: bool) -> date:
+    """End of the gas cost recovery rate's period (owner decision 2026-11-20).
+
+    Rate table note 3: "The Gas Cost Recovery Rate (GCRR) is reviewed monthly ... The biannual GCRR applies to
+    Residential only and is a 6-month forecast ... set on August 1st and February 1st each year, and if necessary,
+    subject to interim adjustments." General Service and Rate Class 3 therefore end with the table's month, and the
+    residential rate with its six-month block (January 31 or July 31); a later table restates it.
+    """
+    if not residential:
+        return _month_end(table_month)
+    if 2 <= table_month.month <= 7:
+        return date(table_month.year, 7, 31)
+    return date(table_month.year + (table_month.month >= 8), 1, 31)
 
 # Seed data — limited public rate information available.
 SEED_RESIDENTIAL = {
@@ -292,6 +311,7 @@ class HeritageGasScraper(BaseScraper):
             comp("transmission", "Transportation Cost Recovery Rate", values["tcrr"][2], "$/GJ", url, detail),
             comp("commodity", "Gas Cost Recovery Rate", values["gcrr"][2], "$/GJ", url, detail,
                  market_reference="Eastward Energy gas cost recovery",
+                 end_date=_gcrr_end(effective, residential=False).isoformat(),
                  notes="Reviewed monthly and adjusted to current market pricing; passed through without mark-up."),
             comp("rider", "RDA Recovery Rate", values["rda"][2], "$/GJ", url, detail,
                  notes="Recovery of deferred Revenue Deficiency Account costs"),
@@ -342,6 +362,7 @@ class HeritageGasScraper(BaseScraper):
             RateComponent("transmission", "Transportation Cost Recovery Rate", values["tcrr"][column], "$/GJ",
                           effective_date=eff, source_url=url, source_detail=detail),
             RateComponent("commodity", "Gas Cost Recovery Rate", values["gcrr"][column], "$/GJ", effective_date=eff,
+                          end_date=_gcrr_end(effective, residential).isoformat(),
                           source_url=url, source_detail=detail, market_reference="Eastward Energy gas cost recovery",
                           notes=("Biannual residential GCRR: a six-month forecast set August 1 and February 1, subject "
                                  "to interim adjustment" if residential else
