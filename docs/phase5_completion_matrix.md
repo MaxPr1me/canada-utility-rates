@@ -53,8 +53,11 @@ Second decision round (November 20), from the commercial gas research:
   heating and cooking; Alberta's Natural Gas Rebate Program is named, not modelled, below its
   $6.50/GJ trigger.
 - Owner rule: every usage level and load profile documents its decision, reason and what it
-  represents, with official and peer-reviewed sources; the approved electricity levels are being
-  documented.
+  represents, with official and peer-reviewed sources. Electricity levels documented the same day:
+  residential 1,000 kWh is the reference and 500/2,000 kWh are labelled sensitivity levels; small
+  business s1 becomes 2,000 kWh at 14 kW and s2 10,000 kWh at 40 kW (Hydro-Québec and NB Power
+  comparison levels; the OEB's standard small-business customer is 2,000 kWh); m1 and l1 stay. These
+  ship with the commercial gas model release.
 - Archetype load profiles: the owner runs BTAP commercial archetypes (Toronto and Calgary) and
   supplies simulated meter data, first for the opt-in illustrative estimate (after the commercial
   gas models are published), later for a Phase 9 archetype comparison. Simulated values stay out of
