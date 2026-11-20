@@ -60,7 +60,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>canada-utility-costs — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 2820 nodes, 8431 edges, 102 communities. Commit: be361d3</p>
+<p class="subtitle">Generated from graphify knowledge graph: 2820 nodes, 8431 edges, 102 communities. Commit: 20f8653</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
@@ -1085,6 +1085,14 @@ flowchart LR
 </tr>
 <tr>
   <td>20</td>
+  <td><code>Print a human-readable diff report.</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Design note for Print a human-readable diff report..</td>
+</tr>
+<tr>
+  <td>21</td>
   <td><code>Get all tariff snapshots for a given scrape run, keyed by tariff_id.</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
   <td><span class="tag tag-func">Concept</span></td>
   <td>External entry / no inbound edge</td>
@@ -1092,20 +1100,12 @@ flowchart LR
   <td>Design note for Get all tariff snapshots for a given scrape run, keyed by tariff_id..</td>
 </tr>
 <tr>
-  <td>21</td>
-  <td><code>Compare two scrape runs and return a diff report. Returns a dict with keys: -…</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
-  <td><span class="tag tag-func">Concept</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>Design note for Compare two scrape runs and return a diff report. Returns a dict with keys: -….</td>
-</tr>
-<tr>
   <td>22</td>
-  <td><code>Print a human-readable diff report.</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
+  <td><code>Compare two scrape runs and return a diff report. Only utilities with snapshots…</code><br><small style="color:var(--muted)">pipeline/diff_report.py</small></td>
   <td><span class="tag tag-func">Concept</span></td>
   <td>External entry / no inbound edge</td>
   <td>No direct outbound edge</td>
-  <td>Design note for Print a human-readable diff report..</td>
+  <td>Design note for Compare two scrape runs and return a diff report. Only utilities with snapshots….</td>
 </tr>
 <tr>
   <td>23</td>
@@ -2001,7 +2001,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>canada-utility-costs — Architecture Documentation</p>
-  <p>Generated: 2026-11-19 19:36 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-20 14:21 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->

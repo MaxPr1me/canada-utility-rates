@@ -1,7 +1,7 @@
-# Graph Report - canada-utility-costs  (2026-11-19)
+# Graph Report - canada-utility-costs  (2026-11-20)
 
 ## Corpus Check
-- 79 files · ~300,515 words
+- 79 files · ~301,738 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: (none) 4, .css 3)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `be361d3e`
+- Built from commit: `20f8653e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -444,10 +444,10 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `BaseScraper` be split into smaller, more focused modules?**
   _Cohesion score 0.06105006105006105 - nodes in this community are weakly interconnected._
 - **Why does `RateComponent` connect `NovaScotiaPowerScraper` to `BaseScraper`, `fortisbc_electric.py`, `epcor_energy_alberta.py`, `saint_john_energy.py`, `epcor_distribution.py`, `ntpc.py`, `EnbridgeGasScraper`, `re`, `CentraGasScraper`, `ATCOGasScraper`, `EPCOROntarioGasScraper`, `fortisalberta.py`, `enmax_power.py`, `.mark_live_parsed`, `FortisBCEnergyScraper`, `NBPowerScraper`, `RateComponent`, `.mark_fallback`, `BCHydroScraper`, `LibertyGasNBScraper`, `SaskEnergyScraper`, `EnergirScraper`, `OntarioLDCScraper`, `oeb_tariff.py`, `HeritageGasScraper`, `maritime_electric.py`, `build_demand_records`, `extract_effective_date`, `naka_power.py`, `new_westminster.py`, `parse_manual`, `parse_html`, `.__init__`, `red_deer.py`, `validation.py`, `lethbridge.py`, `re`, `parse_schedule`, `QulliqScraper`, `ATCOElectricScraper`, `._try_live_scrape`, `ENMAXEnergyScraper`, `EPCOREnergyAlbertaScraper`, `DirectEnergyRegulatedScraper`, `._parse_commercial`, `ontario_ldc.py`?**
-  _High betweenness centrality (0.088) - this node is a cross-community bridge._
+  _High betweenness centrality (0.087) - this node is a cross-community bridge._
 - **Are the 48 inferred relationships involving `RateComponent` (e.g. with `AESOScraper` and `ATCOElectricScraper`) actually correct?**
   _`RateComponent` has 48 INFERRED edges - model-reasoned connections that need verification._
 - **Should `fortisbc_electric.py` be split into smaller, more focused modules?**
   _Cohesion score 0.08449367088607596 - nodes in this community are weakly interconnected._
 - **Why does `DocumentPage` connect `fortisbc_electric.py` to `BaseScraper`, `epcor_energy_alberta.py`, `NovaScotiaPowerScraper`, `saint_john_energy.py`, `epcor_distribution.py`, `ntpc.py`, `EnbridgeGasScraper`, `re`, `ATCOGasScraper`, `EPCOROntarioGasScraper`, `fortisalberta.py`, `enmax_power.py`, `.mark_live_parsed`, `RateComponent`, `.mark_fallback`, `BCHydroScraper`, `oeb_tariff.py`, `maritime_electric.py`, `extract_effective_date`, `naka_power.py`, `extract_tariff_pages`, `new_westminster.py`, `parse_manual`, `parse_html`, `parse_tariff_pages`, `.__init__`, `red_deer.py`, `lethbridge.py`, `re`, `parse_schedule`, `ATCOElectricScraper`, `ENMAXEnergyScraper`, `EPCOREnergyAlbertaScraper`, `._parse_commercial`?**
-  _High betweenness centrality (0.076) - this node is a cross-community bridge._
+  _High betweenness centrality (0.075) - this node is a cross-community bridge._

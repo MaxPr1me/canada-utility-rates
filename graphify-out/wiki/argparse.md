@@ -28,7 +28,7 @@
 - **Connection** (2 connections)
 - **Connection** (2 connections)
 - **diff_report.py — Compare two scrape runs and report changes. This tool helps…** (1 connections) — `pipeline/diff_report.py`
-- **Get all tariff snapshots for a given scrape run, keyed by tariff_id.** (1 connections) — `pipeline/diff_report.py`
+- **Print a human-readable diff report.** (1 connections) — `pipeline/diff_report.py`
 - *... and 13 more nodes in this community*
 
 ## Relationships
