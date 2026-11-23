@@ -92,8 +92,11 @@ Decisions marked 2026-11-04 and 2026-11-19 are the owner's.
   - The brochure is read one page column at a time.
   - 1.1, 3.1 and 3.3 use the monthly default rate. The current month's row must exist and equal the
     page's "Current Electricity Rate", or the records fail closed. The rate is dated to that month.
-    The scheduled run on the 1st usually comes before the City posts the month's row, so the owner
-    starts a Medicine Hat run once it is posted (2026-11-19).
+    The run on the 1st usually comes before the City posts the month's row. Medicine Hat is in the
+    registry's `monthly_price_refresh` group, so the Monthly Scrape on the 4th stores it (owner
+    decisions 2026-11-20 and 2026-11-23, replacing the owner's monthly run of 2026-11-19). The owner
+    starts a Medicine Hat run only when the City posts later, likely when the rate is recalculated on
+    the first business day of a quarter (Monday January 4, 2027).
   - 4.1 and 5.1 use the fixed default rate for its term (to December 31, 2026) and fail closed after
     it (2026-11-19).
   - Each record ends with its shortest-lived price (the month for 1.1/3.1/3.3, the fixed rate's term

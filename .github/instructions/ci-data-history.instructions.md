@@ -33,16 +33,28 @@ snapshot rules: [scrapers.instructions.md](scrapers.instructions.md). Model expo
 
 ## Monthly Scrape (`scrape.yml`)
 
-- Runs at 08:00 UTC on the 1st and on manual dispatch with an optional `utility` or `province` input
-  (not both; the province must match `^[A-Za-z]{2}$`). Inputs reach the shell only through `env`.
-- Order: check inputs; restore and digest-check the database (initialize only a new one); run the
-  deterministic tests; scrape; `pipeline.validate`; synchronize with `git pull --ff-only origin main`;
-  `pipeline.export_json`; reject empty exports; report the coverage gate; verify the history; upload;
-  diff report; commit `site/data/` with a plain `git push`; prune backups. A queued dispatch checks
-  out its dispatch-time commit, so the sync makes the export see the previous writer's bot commit;
-  generated files are never rebased onto newer inputs, like the market workflows (issue #5; owner
-  decision 2026-11-04). A push rejected because `main` moved after the export fails the run after
-  the database is saved; start a new dispatch rather than re-running the failed job.
+- Runs at 08:00 UTC on the 1st (the full run), at 08:00 UTC on the 4th for the monthly-price group,
+  and on manual dispatch with an optional `utility` or `province` input (not both). Inputs and
+  `github.event.schedule` reach the shell only through `env`.
+- **Monthly-price run (owner decisions 2026-11-20 and 2026-11-23):** the active registry entries with
+  `monthly_price_refresh: true` (`run_scrape --monthly-price-refresh`), whose monthly price is usually
+  posted after the 1st. "Run scrapers" selects it when `$SCHEDULE` equals the cron string, which must
+  equal `MONTHLY_PRICE_CRON` in `pipeline/model_monitoring.py` (a test checks both). It uses the same
+  restore, tests, history check and publication as every run.
+- **Input check (owner decision 2026-11-20):** after the checkout and before anything is installed,
+  `python3 -m scrapers.registry --utility="$UTILITY" --province="$PROVINCE"` (the runner's own Python;
+  `scrapers/registry.py` is standard library only) rejects both inputs set, a province that is not
+  two letters (naming the utility box, and the utility when the text is one), a code with no active
+  utility (listing the valid codes) and a utility not found ignoring accents and case (naming the
+  closest registry names), each as an `::error title=Inputs::` annotation that says what to type.
+- Order: check out; check inputs; restore and digest-check the database (initialize only a new one);
+  run the deterministic tests; scrape; `pipeline.validate`; synchronize with `git pull --ff-only origin
+  main`; `pipeline.export_json`; reject empty exports; report the coverage gate; verify the history;
+  upload; diff report; commit `site/data/` with a plain `git push`; prune backups. A queued dispatch
+  checks out its dispatch-time commit, so the sync makes the export see the previous writer's bot
+  commit; generated files are never rebased onto newer inputs, like the market workflows (issue #5;
+  owner decision 2026-11-04). A push rejected because `main` moved after the export fails the run
+  after the database is saved; start a new dispatch rather than re-running the failed job.
 - The diff report (`pipeline.diff_report`) compares the newest run with the one before it, but only for
   utilities with records in the newest run (owner decision 2026-11-20). The previous run's other
   utilities are counted under "Not compared" instead of being listed as removed; a utility that
@@ -73,7 +85,11 @@ snapshot rules: [scrapers.instructions.md](scrapers.instructions.md). Model expo
 
 - `run_scrape.py` upserts with `ON CONFLICT ... DO UPDATE SET` and NULL-safe `IS` comparisons, so
   re-runs are idempotent. `--province` filters through `get_active_utilities()`, which skips merged
-  and retired entries. Locally use `--dry-run` only; `--init-db` creates an empty practice database.
+  and retired entries. `--utility` finds any registry entry ignoring accents, case and repeated spaces
+  (`scrapers.registry.find_utility`); an unknown name exits 1 naming the closest registry names.
+  `--monthly-price-refresh` (not with `--utility` or `--province`) runs `monthly_price_utilities()`
+  and exits 1 when no active entry is flagged. Locally use `--dry-run` only; `--init-db` creates an
+  empty practice database.
 - Per-run provenance summary: `tally_provenance`, `summarize_run`, `format_summary_markdown` and
   `append_step_summary` (a Markdown table in `$GITHUB_STEP_SUMMARY`; no schema change).
   `format_github_notice()`/`emit_github_notice()` print one public `::notice title=Scrape provenance::`
@@ -82,7 +98,8 @@ snapshot rules: [scrapers.instructions.md](scrapers.instructions.md). Model expo
 - `pipeline.validate` reconfigures stdout so Windows consoles do not crash on non-ASCII names.
 - `export_json.py` writes the site JSON, then the representative models.
 - `run_scrape --summary-json PATH` optionally writes the existing per-utility provenance summary
-  with expected utility names, full/targeted scope, dry-run status and run/attempt identity.
+  with expected utility names, full/targeted scope (`scope.group` is `monthly_price_refresh` for the
+  run on the 4th, otherwise null), dry-run status and run/attempt identity.
   Receipt failure is logged without changing the scrape or database behavior. Each row's
   `excluded_seed` counts the part of `seed` labelled by `mark_fallback` with
   `scrapers.base.EXCLUDED_CLASS_FALLBACK_REASON` (Ontario street lighting); public totals still
@@ -117,6 +134,17 @@ The following workflow decisions were approved on 2026-11-17.
   at the next check. Known failures are reported immediately. This grace never extends tariff
   expiry, audit/review deadlines or observed-market validity rules. Complete workflow silence
   cannot be detected until another check runs.
+- **Monthly-price schedule (owner decisions 2026-11-20 and 2026-11-23):** the full refresh's due
+  time comes from `scrape.yml`'s crons other than `MONTHLY_PRICE_CRON`, which has its own check,
+  `workflow:scrape.yml:monthly-price`: a successful full or monthly-price run after its due time
+  meets it, and it is overdue strictly more than 24 hours later. A failing source check of a
+  monthly-price utility (the registry flag, read by `main()`; an unreadable registry holds nothing)
+  seen between the full run's due time and the next monthly-price due time is held (`ok: null`, no
+  issue). A newer check replaces it, and if none arrives within 24 hours of that due time it is
+  reported. Other utilities and other days are reported at once.
+- A run stopped by its input check (outcome receipt `inputs: "failure"`; owner decision 2026-11-23)
+  is neither a failure nor a refresh: it scraped and saved nothing, and its own error says what to
+  type. Older receipts without the field are read as before.
 - Reuse the coverage gate, crosswalk coverage, reviewed block-period checks and observed-market
   reader. Missing/invalid configuration and unmapped live tariffs remain problems; a documented
   `not_computable` model is not inherently corrupt. Do not hide known coverage gaps.

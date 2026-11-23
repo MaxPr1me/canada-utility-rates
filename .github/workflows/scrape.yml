@@ -14,7 +14,8 @@
 #      download must succeed and match the asset's SHA-256 digest; only a
 #      missing release (HTTP 404) starts a new database
 #   3. Runs the tests, then the scraper against all active utilities (or one
-#      utility or one province on a manual run)
+#      utility or one province on a manual run; on the 4th, only the utilities
+#      flagged monthly_price_refresh in the registry)
 #   4. Validates the scraped data and exports JSON for the static site
 #   5. Checks the database (integrity, earlier history unchanged, nothing fewer)
 #      and only then uploads it with a dated backup
@@ -24,9 +25,13 @@
 name: Monthly Scrape
 
 on:
-  # Run on the 1st of every month at 08:00 UTC
   schedule:
+    # The full run: the 1st of every month at 08:00 UTC
     - cron: "0 8 1 * *"
+    # The monthly-price run (owner decisions 2026-11-20 and 2026-11-23): only the utilities flagged
+    # monthly_price_refresh in data/sources/registry.json, whose new month is usually posted after the
+    # 1st. "Run scrapers" below and MONTHLY_PRICE_CRON in pipeline/model_monitoring.py use this string.
+    - cron: "0 8 4 * *"
 
   # Allow manual runs from the GitHub Actions UI
   workflow_dispatch:
@@ -59,23 +64,18 @@ jobs:
   scrape:
     runs-on: ubuntu-24.04
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # Before anything is installed, the runner's own Python checks the inputs against the registry, so a
+      # mistyped input stops in seconds with what to type instead, and the outcome step can still record
+      # the stop (owner decision 2026-11-20; monitoring ignores such runs, decision 2026-11-23).
       - name: Check manual inputs
         id: inputs
         env:
           UTILITY: ${{ github.event.inputs.utility }}
           PROVINCE: ${{ github.event.inputs.province }}
-        run: |
-          if [ -n "$UTILITY" ] && [ -n "$PROVINCE" ]; then
-            echo "::error title=Inputs::Set either utility or province, not both."
-            exit 1
-          fi
-          if [ -n "$PROVINCE" ] && ! [[ "$PROVINCE" =~ ^[A-Za-z]{2}$ ]]; then
-            echo "::error title=Inputs::Province must be a two-letter code such as ON."
-            exit 1
-          fi
-
-      - name: Checkout repository
-        uses: actions/checkout@v5
+        run: python3 -m scrapers.registry --utility="$UTILITY" --province="$PROVINCE"
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -142,8 +142,11 @@ jobs:
         env:
           UTILITY: ${{ github.event.inputs.utility }}
           PROVINCE: ${{ github.event.inputs.province }}
+          SCHEDULE: ${{ github.event.schedule }}
         run: |
-          if [ -n "$UTILITY" ]; then
+          if [ "$SCHEDULE" = "0 8 4 * *" ]; then
+            python -m pipeline.run_scrape --monthly-price-refresh --summary-json source-summary.json 2>&1 | tee scrape_output.txt
+          elif [ -n "$UTILITY" ]; then
             python -m pipeline.run_scrape --utility "$UTILITY" --summary-json source-summary.json 2>&1 | tee scrape_output.txt
           elif [ -n "$PROVINCE" ]; then
             python -m pipeline.run_scrape --province "$PROVINCE" --summary-json source-summary.json 2>&1 | tee scrape_output.txt

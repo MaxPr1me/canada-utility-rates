@@ -24,7 +24,10 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
   rate the month's end, Énergir cap-and-trade its quarter's end; the Eastward residential rate the
   end of its six-month block (January 31 or July 31); Liberty Utility Gas the month's end; ATCO Gas's
   DERS default rate the month's end. FortisBC and SaskEnergy prices stay open-ended (they change only
-  by an approved order). A negotiated, value-less supply line carries no end date.
+  by an approved order). A negotiated, value-less supply line carries no end date. Énergir, Eastward
+  (registered as Heritage Gas) and Liberty usually post the new month after the 1st, so they are in
+  the registry's `monthly_price_refresh` group and the Monthly Scrape on the 4th stores it (owner
+  decisions 2026-11-20 and 2026-11-23).
 
 ## Enbridge Gas (Ontario)
 

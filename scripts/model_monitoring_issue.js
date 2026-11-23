@@ -32,6 +32,8 @@ function writeOutcome({ context, steps, workflow }) {
             workflow: context.workflow },
         publication: outcome(archive ? "market_commit" : "publish"),
         sources: outcome("scrape"),
+        // Only scrape.yml has an input check; a run it stopped is ignored (owner decision 2026-11-23).
+        inputs: outcome("inputs"),
         archive_complete: archive && ["raw", "raw_commit", "archive", "archive_commit"].every(id => outcome(id) === "success"),
         failure_reported: outcome("failure_issue") === "success",
         history_step: outcome("monitor_history"),

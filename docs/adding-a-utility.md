@@ -398,6 +398,11 @@ and the [Territories section](../.github/instructions/regional-utilities.instruc
   Enbridge's quarter, Eastward's six-month residential block); leave a price with no set period (it
   changes only when a new order is approved) open-ended. The per-utility list is in the
   [gas rules](../.github/instructions/gas-utilities.instructions.md#all-gas-utilities).
+- **A monthly price posted after the 1st joins the monthly-price run.** If the price changes every
+  month and the new month usually appears after the 1st, add `"monthly_price_refresh": true` to the
+  utility's registry entry: the Monthly Scrape then runs it again on the 4th, and model monitoring
+  waits for that run before reporting a failure from the 1st (owner decisions 2026-11-20 and
+  2026-11-23).
 - **Cross-check two official documents value by value.** The bylaw against the rate table, read by
   column position (Lethbridge); a schedule against the City's delivery page (Red Deer). A rate-update
   notice decides interim confidence (Naka Power).

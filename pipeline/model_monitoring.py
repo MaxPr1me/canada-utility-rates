@@ -18,7 +18,7 @@ import zipfile
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 logger = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +27,11 @@ MODELS_PATH = ROOT / "site" / "data" / "representative_models.json"
 SCHEMA_VERSION = 1
 MATERIAL_PERCENT = 5
 OVERDUE_GRACE = timedelta(hours=24)
+# The Monthly Scrape's monthly-price schedule (owner decisions 2026-11-20 and 2026-11-23). It scrapes only the
+# registry's monthly_price_refresh utilities, so it never counts as the full refresh and gets its own cadence
+# check. scrape.yml uses the same string in its schedule and in "Run scrapers".
+MONTHLY_PRICE_CRON = "0 8 4 * *"
+MONTHLY_PRICE_GROUP = "monthly_price_refresh"  # scrapers.registry.MONTHLY_PRICE_FLAG, the receipt's scope group
 
 MODEL_FIELDS = (
     "id", "key", "label", "state", "provenance", "cost_basis", "energy", "coverage", "buckets",
@@ -490,22 +495,35 @@ def input_checks(root: Path, now: datetime) -> list[dict]:
     return checks
 
 
-def scheduled_due(cron: str, now: datetime) -> datetime:
-    """Evaluate the repository's fixed UTC day-of-month schedules, rejecting other cron forms."""
-    minute, hour, days, month, weekday = cron.split()
-    if month != "*" or weekday != "*" or not minute.isdigit() or not hour.isdigit():
+def _monthly_occurrences(cron: str, year: int, month: int) -> list[datetime]:
+    """Occurrences in one month of the repository's fixed UTC day-of-month schedules, rejecting other cron forms."""
+    minute, hour, days, month_field, weekday = cron.split()
+    if month_field != "*" or weekday != "*" or not minute.isdigit() or not hour.isdigit():
         raise ValueError(f"unsupported monitoring schedule: {cron}")
     day_numbers = [int(day) for day in days.split(",")]
     if not day_numbers or any(day < 1 or day > 31 for day in day_numbers):
         raise ValueError(f"invalid monitoring schedule: {cron}")
+    return [datetime(year, month, day, int(hour), int(minute), tzinfo=timezone.utc)
+            for day in day_numbers if day <= calendar.monthrange(year, month)[1]]
+
+
+def scheduled_due(cron: str, now: datetime) -> datetime:
+    """The latest occurrence at or before ``now`` of a fixed UTC day-of-month schedule."""
     for offset in range(3):
         index = now.year * 12 + now.month - 1 - offset
-        year, month_number = index // 12, index % 12 + 1
-        candidates = [datetime(year, month_number, day, int(hour), int(minute), tzinfo=timezone.utc)
-                      for day in day_numbers if day <= calendar.monthrange(year, month_number)[1]]
-        candidates = [value for value in candidates if value <= now]
+        candidates = [value for value in _monthly_occurrences(cron, index // 12, index % 12 + 1) if value <= now]
         if candidates:
             return max(candidates)
+    raise ValueError(f"no occurrence found for {cron}")
+
+
+def next_scheduled(cron: str, after: datetime) -> datetime:
+    """The first occurrence strictly after ``after`` of a fixed UTC day-of-month schedule."""
+    for offset in range(3):
+        index = after.year * 12 + after.month - 1 + offset
+        candidates = [value for value in _monthly_occurrences(cron, index // 12, index % 12 + 1) if value > after]
+        if candidates:
+            return min(candidates)
     raise ValueError(f"no occurrence found for {cron}")
 
 
@@ -574,9 +592,52 @@ def _evidence(run: dict, name: str) -> dict:
     return value
 
 
-def workflow_checks(context: dict, now: datetime, manual_updates: dict[str, date] | None = None) -> list[dict]:
-    """Use completed-step evidence, including source provenance; a green badge alone is insufficient."""
+def _monthly_price_check(key: str, due: datetime, successes: list[datetime], unverified: bool,
+                         now: datetime) -> dict:
+    """The monthly-price schedule's own cadence: met by a successful full or monthly-price run after its due time."""
+    price_key = f"{key}:monthly-price"
+    if successes and not unverified:
+        return {"id": price_key, "ok": True, "details": [], "checked_at": now.isoformat(),
+                "refresh_completed_at": max(successes).isoformat()}
+    if now - due > OVERDUE_GRACE:
+        return {"id": price_key, "ok": False, "details": [
+            f"scrape.yml: the monthly-price refresh due {due.isoformat()} is over 24 hours overdue; no successful "
+            "monthly-price or full refresh since then could be verified."]}
+    return {"id": price_key, "ok": None, "details": [
+        f"scrape.yml: monthly-price refresh due {due.isoformat()}; awaiting complete evidence within the 24-hour "
+        "grace."]}
+
+
+def _held_until_monthly_price(check: dict, utilities: set[str], full_due: datetime, now: datetime) -> dict:
+    """Hold a monthly-price utility's failure seen between the full run and the next monthly-price run.
+
+    Owner decision 2026-11-23: these utilities usually fail on the 1st because their new month is posted later, so
+    the failure waits for the monthly-price run on the 4th. It is a problem when that run's own check fails, or when
+    no newer check arrives more than 24 hours after its due time. Other utilities and other days are reported as
+    soon as they are seen (the 2026-11-17 rule).
+    """
+    utility = check["id"].removeprefix("source:")
+    if check["ok"] is not False or utility not in utilities:
+        return check
+    price_due = next_scheduled(MONTHLY_PRICE_CRON, full_due)
+    if not full_due <= timestamp(check["checked_at"]) < price_due:
+        return check
+    if now - price_due > OVERDUE_GRACE:
+        return {**check, "details": [*check["details"], f"The monthly-price run due {price_due.isoformat()} did not "
+                                                        "refresh it within 24 hours."]}
+    return {**check, "ok": None, "details": [f"Awaiting the monthly-price run due {price_due.isoformat()} (owner "
+                                             "decision 2026-11-23): " + "; ".join(check["details"])]}
+
+
+def workflow_checks(context: dict, now: datetime, manual_updates: dict[str, date] | None = None,
+                    monthly_price_utilities: Iterable[str] = ()) -> list[dict]:
+    """Use completed-step evidence, including source provenance; a green badge alone is insufficient.
+
+    The Monthly Scrape's monthly-price schedule (MONTHLY_PRICE_CRON) is checked on its own and never stands in for
+    the full refresh; ``monthly_price_utilities`` (registry names) are the utilities whose failures it holds.
+    """
     checks, latest_sources = [], {}
+    full_due = None
     workflows = context["workflows"]
     parents = [run for name in ("scrape.yml", "ontario-price-archive.yml")
                for run in workflows.get(name, {}).get("runs", [])
@@ -588,12 +649,20 @@ def workflow_checks(context: dict, now: datetime, manual_updates: dict[str, date
             entry = workflows[name]
             if entry.get("error"):
                 raise ValueError(entry["error"])
-            due = (max(scheduled_due(cron, now) for cron in entry["schedules"]) if entry["schedules"] else
+            schedules, price_due = list(entry["schedules"]), None
+            if name == "scrape.yml" and MONTHLY_PRICE_CRON in schedules:
+                schedules = [cron for cron in schedules if cron != MONTHLY_PRICE_CRON]
+                if not schedules:
+                    raise ValueError("scrape.yml has no full-refresh schedule besides the monthly-price run")
+                price_due = scheduled_due(MONTHLY_PRICE_CRON, now)
+            due = (max(scheduled_due(cron, now) for cron in schedules) if schedules else
                    max((timestamp(run["updated_at"]) for run in parents), default=None))
+            if name == "scrape.yml":
+                full_due = due
             if due is None:
                 checks.append({"id": key, "ok": None, "details": ["No qualifying parent refresh was observed."]})
                 continue
-            successes, failures = [], []
+            successes, failures, price_successes = [], [], []
             latest_success, latest_unverified = None, None
             for run in entry["runs"]:
                 observed_at = timestamp(run["updated_at"])
@@ -607,12 +676,16 @@ def workflow_checks(context: dict, now: datetime, manual_updates: dict[str, date
                     elif run["status"] == "completed":
                         latest_unverified = max(latest_unverified or observed_at, observed_at)
                     continue
-                reported_elsewhere, full_refresh = False, True
+                reported_elsewhere, full_refresh, price_refresh = False, True, True
                 try:
                     outcome = _evidence(run, "monitor-status.json")
                     if (outcome.get("version") != 1 or outcome.get("kind") != "workflow_outcome"
                             or type(outcome.get("failure_reported")) is not bool):
                         raise ValueError("invalid workflow outcome")
+                    if outcome.get("inputs") == "failure":
+                        # Owner decision 2026-11-23: a manual run stopped by its input check scraped and saved
+                        # nothing, and its own error says what to type: neither a failed nor a successful refresh.
+                        continue
                     observed_at = timestamp(outcome["checked_at"])
                     reported_elsewhere = outcome["failure_reported"]
                     if name in ("scrape.yml", "source-health.yml"):
@@ -624,6 +697,7 @@ def workflow_checks(context: dict, now: datetime, manual_updates: dict[str, date
                                     **check, "reported_elsewhere": outcome.get("failure_reported", False),
                                 }
                         full_refresh = sources["scope"]["full"]
+                        price_refresh = full_refresh or sources["scope"].get("group") == MONTHLY_PRICE_GROUP
                         if outcome["sources"] != "success":
                             raise ValueError("source-check step did not complete")
                         finished = timestamp(sources["checked_at"])
@@ -641,6 +715,8 @@ def workflow_checks(context: dict, now: datetime, manual_updates: dict[str, date
                     latest_success = max(latest_success or observed_at, observed_at)
                     if full_refresh and finished >= due:
                         successes.append(finished)
+                    if price_due is not None and price_refresh and finished >= price_due:
+                        price_successes.append(finished)
                 except (ValueError, KeyError, TypeError) as exc:
                     failures.append((observed_at, reported_elsewhere, f"{run.get('html_url', run['id'])}: {exc}"))
             failure = max(failures, key=lambda item: item[0]) if failures else None
@@ -660,9 +736,15 @@ def workflow_checks(context: dict, now: datetime, manual_updates: dict[str, date
             else:
                 checks.append({"id": key, "ok": None, "details": [
                     f"{name}: refresh due {due.isoformat()}; awaiting complete evidence within the 24-hour grace."]})
+            if price_due is not None:
+                checks.append(_monthly_price_check(key, price_due, price_successes, unverified, now))
         except (ValueError, KeyError, TypeError) as exc:
             checks.append({"id": key, "ok": False, "details": [f"Cannot verify workflow freshness: {exc}"]})
-    return checks + list(latest_sources.values())
+    sources = list(latest_sources.values())
+    if full_due is not None:
+        held = set(monthly_price_utilities)
+        sources = [_held_until_monthly_price(check, held, full_due, now) for check in sources]
+    return checks + sources
 
 
 def read_evidence_archive(path: Path) -> dict:
@@ -703,7 +785,15 @@ def main(argv: list[str] | None = None) -> int:
             manual_updates = manual_update_reviews(read_json(ROOT / "data" / "sources" / "coverage_ledger.json"))
         except (OSError, ValueError):
             manual_updates = {}  # no exemption; the coverage check reports the unreadable ledger
-        report["checks"].extend(workflow_checks(read_json(args.github_context), now, manual_updates))
+        try:
+            from scrapers.registry import load_registry, monthly_price_utilities
+
+            price_utilities = {entry["name"] for entry in
+                               monthly_price_utilities(load_registry(ROOT / "data" / "sources" / "registry.json"))}
+        except (OSError, ValueError, KeyError, TypeError):
+            price_utilities = set()  # no hold: their failures are reported as soon as they are seen
+        report["checks"].extend(workflow_checks(read_json(args.github_context), now, manual_updates,
+                                                price_utilities))
     else:
         report["scope_note"] = "Local file checks only; GitHub workflow cadence was not checked."
     try:

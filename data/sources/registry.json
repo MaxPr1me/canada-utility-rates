@@ -56,6 +56,7 @@
       "scraper_module": "scrapers.utilities.energir",
       "scraper_class": "EnergirScraper",
       "status": "partial",
+      "monthly_price_refresh": true,
       "sources": [
         {
           "url": "https://energir.com/en/residential/customer-centre/billing-and-pricing/pricing",
@@ -361,6 +362,7 @@
       "scraper_module": "scrapers.utilities.heritage_gas",
       "scraper_class": "HeritageGasScraper",
       "status": "partial",
+      "monthly_price_refresh": true,
       "sources": [
         {
           "url": "https://eastwardenergy.com/for-home/rates/",
@@ -396,6 +398,7 @@
       "scraper_module": "scrapers.utilities.liberty_gas_nb",
       "scraper_class": "LibertyGasNBScraper",
       "status": "partial",
+      "monthly_price_refresh": true,
       "sources": [
         {
           "url": "https://naturalgasnb.com/en/for-home/accounts-billing/customer-rate-classes/",
@@ -2712,6 +2715,7 @@
       "scraper_module": "scrapers.utilities.medicine_hat",
       "scraper_class": "MedicineHatScraper",
       "status": "partial",
+      "monthly_price_refresh": true,
       "sources": [
         {
           "url": "https://www.medicinehat.ca/home-property-utilities/utilities/energy-plans-pricing/",

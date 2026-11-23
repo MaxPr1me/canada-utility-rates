@@ -109,6 +109,15 @@ historical checkpoint instructions it retains. To add a utility, follow
 - `scrapers/registry.py:get_active_utilities()` runs only `active` and `partial` entries. `merged`
   entries (with a `merged_into` successor) and `retired` entries are skipped by monthly runs but keep
   their history; never delete them.
+- `"monthly_price_refresh": true` marks a utility whose price changes every month and is usually
+  posted after the 1st (owner decisions 2026-11-20 and 2026-11-23; today Énergir, Heritage Gas,
+  Liberty Utilities NB and City of Medicine Hat Electric Utility). The Monthly Scrape runs these again
+  on the 4th, and model monitoring holds their failures from the 1st until then. Only a JSON boolean
+  is accepted.
+- `scrapers/registry.py` stays standard library only: the Monthly Scrape's input check
+  (`python3 -m scrapers.registry`) and the model monitor use it without the project's dependencies.
+  Names are matched ignoring accents, case and repeated spaces (`normalize_name`, `find_utility`), so
+  registry names must stay distinct after that normalization (a lookup fails closed otherwise).
 
 ## Fetching and parsing
 

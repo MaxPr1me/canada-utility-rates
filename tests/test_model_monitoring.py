@@ -333,6 +333,123 @@ def test_failed_targeted_publication_is_not_ignored(document):
     assert workflow_check(context, "2026-11-03T12:00:00Z")["ok"] is False
 
 
+# -- The monthly-price run on the 4th (owner decisions 2026-11-20 and 2026-11-23) --------------------
+
+PRICE_GROUP = {"full": False, "utility": None, "province": None, "group": monitoring.MONTHLY_PRICE_GROUP}
+
+
+def source_row(utility, ok=True):
+    if ok:
+        return {"utility": utility, "live": 3, "seed": 0, "invalid": 0, "status": "live", "error": None}
+    return {"utility": utility, "live": 0, "seed": 0, "invalid": 0, "status": "failed", "error": "month not posted"}
+
+
+def scrape_run(document, run_id, checked_at, scope=None, rows=None):
+    run = workflow_context(document, checked_at=checked_at, run_id=run_id)["workflows"]["scrape.yml"]["runs"][0]
+    source = run["evidence"]["source-summary.json"]
+    if scope is not None:
+        source["scope"] = scope
+    if rows is not None:
+        source["summary"]["rows"], source["expected_utilities"] = rows, [row["utility"] for row in rows]
+    return run
+
+
+def checks_by_id(runs, now, utilities=()):
+    context = {"workflows": {"scrape.yml": {"schedules": ["0 8 1 * *", monitoring.MONTHLY_PRICE_CRON],
+                                            "runs": runs}}}
+    return {check["id"]: check
+            for check in monitoring.workflow_checks(context, monitoring.timestamp(now), None, utilities)}
+
+
+@pytest.mark.parametrize("cron,after,expected", [
+    (monitoring.MONTHLY_PRICE_CRON, "2026-12-01T08:00:00Z", "2026-12-04T08:00:00Z"),
+    (monitoring.MONTHLY_PRICE_CRON, "2026-12-04T08:00:00Z", "2027-01-04T08:00:00Z"),
+    ("0 8 1 * *", "2026-12-31T23:00:00Z", "2027-01-01T08:00:00Z"),
+])
+def test_next_scheduled_occurrence_rolls_over_months_and_years(cron, after, expected):
+    assert monitoring.next_scheduled(cron, monitoring.timestamp(after)) == monitoring.timestamp(expected)
+
+
+def test_the_monthly_price_run_never_makes_the_full_refresh_look_overdue(document):
+    runs = [scrape_run(document, 2, "2026-11-04T09:00:00Z", PRICE_GROUP),
+            scrape_run(document, 1, "2026-11-01T09:00:00Z")]
+    checks = checks_by_id(runs, "2026-11-06T12:00:00Z")
+    assert checks["workflow:scrape.yml"]["ok"] is True
+    assert checks["workflow:scrape.yml:monthly-price"]["ok"] is True
+
+
+@pytest.mark.parametrize("later,now,expected", [
+    (None, "2026-11-04T12:00:00Z", None),  # within the 24-hour grace
+    (None, "2026-11-05T08:00:01Z", False),  # overdue
+    ({"full": False, "utility": "A", "province": None, "group": None}, "2026-11-06T12:00:00Z", False),  # targeted
+    ({"full": True}, "2026-11-06T12:00:00Z", True),  # a later full run also refreshes the monthly prices
+])
+def test_the_monthly_price_refresh_is_due_on_its_own_schedule(document, later, now, expected):
+    runs = [scrape_run(document, 1, "2026-11-01T09:00:00Z")]
+    if later is not None:
+        runs.insert(0, scrape_run(document, 2, "2026-11-04T10:00:00Z", later))
+    checks = checks_by_id(runs, now)
+    assert checks["workflow:scrape.yml:monthly-price"]["ok"] is expected
+    assert checks["workflow:scrape.yml"]["ok"] is True
+
+
+@pytest.mark.parametrize("on_the_4th,now,held_check", [
+    (None, "2026-11-02T12:00:00Z", None),  # held until the monthly-price run
+    (None, "2026-11-05T08:00:01Z", False),  # that run did not refresh it within 24 hours
+    (True, "2026-11-04T12:00:00Z", True),  # the run on the 4th stored it
+    (False, "2026-11-04T12:00:00Z", False),  # the run on the 4th failed too
+])
+def test_failures_of_monthly_price_utilities_on_the_1st_wait_for_their_run(document, on_the_4th, now, held_check):
+    runs = [scrape_run(document, 1, "2026-11-01T09:00:00Z", rows=[source_row("MH", ok=False),
+                                                                    source_row("Other", ok=False)])]
+    if on_the_4th is not None:
+        runs.insert(0, scrape_run(document, 2, "2026-11-04T09:00:00Z", PRICE_GROUP, [source_row("MH", on_the_4th)]))
+    checks = checks_by_id(runs, now, {"MH"})
+    assert checks["source:MH"]["ok"] is held_check
+    assert checks["source:Other"]["ok"] is False  # not a monthly-price utility: reported at once
+    if held_check is None:
+        assert checks["source:MH"]["details"][0].startswith("Awaiting the monthly-price run due 2026-11-04T08:00")
+    if on_the_4th is None and held_check is False:
+        assert "did not refresh it within 24 hours" in checks["source:MH"]["details"][-1]
+
+
+def test_monthly_price_failures_on_other_days_or_without_the_registry_are_reported_at_once(document):
+    later = [scrape_run(document, 1, "2026-11-15T09:00:00Z", rows=[source_row("MH", ok=False)])]
+    assert checks_by_id(later, "2026-11-15T12:00:00Z", {"MH"})["source:MH"]["ok"] is False
+    first = [scrape_run(document, 1, "2026-11-01T09:00:00Z", rows=[source_row("MH", ok=False)])]
+    assert checks_by_id(first, "2026-11-02T12:00:00Z")["source:MH"]["ok"] is False  # registry list unavailable
+
+
+@pytest.mark.parametrize("inputs,expected", [("failure", True), (None, False)])
+def test_a_run_stopped_by_its_input_check_is_neither_a_failure_nor_a_refresh(document, inputs, expected):
+    stopped = scrape_run(document, 2, "2026-11-02T10:00:00Z")
+    stopped["conclusion"] = "failure"
+    outcome = stopped["evidence"]["monitor-status.json"]
+    outcome.update(publication="skipped", sources="skipped")
+    if inputs:
+        outcome["inputs"] = inputs  # older receipts have no field: the run still counts as a failure
+    stopped["evidence"] = {"monitor-status.json": outcome}
+    runs = [stopped, scrape_run(document, 1, "2026-11-01T09:00:00Z")]
+    assert checks_by_id(runs, "2026-11-02T12:00:00Z")["workflow:scrape.yml"]["ok"] is expected
+
+
+def test_workflow_outcome_records_the_input_check(tmp_path):
+    helper = Path(__file__).resolve().parents[1] / "scripts" / "model_monitoring_issue.js"
+    script = r"""
+const {writeOutcome} = require(process.argv[1]);
+process.chdir(process.argv[2]);
+writeOutcome({context: {runId: 7, workflow: 'Monthly Scrape'}, workflow: 'scrape.yml',
+  steps: {inputs: {outcome: 'failure'}}});
+"""
+    environment = {**os.environ, "GITHUB_RUN_ATTEMPT": "1"}
+    result = subprocess.run(["node", "-e", script, str(helper), str(tmp_path)],
+                            capture_output=True, encoding="utf-8", check=False, env=environment)
+    assert result.returncode == 0, result.stdout + result.stderr
+    outcome = json.loads((tmp_path / "monitor-status.json").read_text(encoding="utf-8"))
+    assert (outcome["inputs"], outcome["sources"], outcome["publication"]) == ("failure", "not_attempted",
+                                                                               "not_attempted")
+
+
 @pytest.mark.parametrize("name,field,value", [
     ("source-summary.json", "scope", {"full": "false"}),
     ("model-generation.json", "as_of", "invalid"),

@@ -443,7 +443,7 @@ def test_scrape_restore_never_silently_starts_a_new_database():
 
 def test_scrape_verifies_history_before_uploading_with_a_dated_backup():
     steps = _steps(SCRAPE_WORKFLOW)
-    order = ["Check manual inputs", "Checkout repository", "Set up Python", "Install dependencies",
+    order = ["Checkout repository", "Check manual inputs", "Set up Python", "Install dependencies",
              "Install Playwright browser", "Restore database history", "Initialize database (first run only)",
              "Run deterministic tests before scraping", "Run scrapers", "Validate data",
              "Synchronize inputs before exporting", "Export JSON for site", "Record model change history",
@@ -502,10 +502,69 @@ def test_scrape_inputs_utility_or_province_pass_through_env():
         assert "UTILITY: ${{ github.event.inputs.utility }}" in step
         assert "PROVINCE: ${{ github.event.inputs.province }}" in step
     check_inputs = _run(_step(steps, "Check manual inputs"))
-    assert re.search(r'if \[ -n "\$UTILITY" \] && \[ -n "\$PROVINCE" \]; then\n[^\n]*\n\s*exit 1', check_inputs)
+    # The runner's own Python, before anything is installed (owner decision 2026-11-20).
+    assert check_inputs.strip() == 'python3 -m scrapers.registry --utility="$UTILITY" --province="$PROVINCE"'
     scrape = _run(_step(steps, "Run scrapers"))
     assert 'python -m pipeline.run_scrape --utility "$UTILITY" --summary-json source-summary.json 2>&1 | tee scrape_output.txt' in scrape
     assert 'python -m pipeline.run_scrape --province "$PROVINCE" --summary-json source-summary.json 2>&1 | tee scrape_output.txt' in scrape
+
+
+def test_scrape_runs_the_monthly_price_group_on_the_schedule_monitoring_expects():
+    # Owner decisions 2026-11-20 and 2026-11-23: a second run on the 4th for the registry's monthly-price
+    # utilities; model monitoring checks its cadence separately, so both must use the same cron string.
+    yaml = pytest.importorskip("yaml")
+    from pipeline.model_monitoring import MONTHLY_PRICE_CRON
+
+    scrape = yaml.safe_load(SCRAPE_WORKFLOW.read_text(encoding="utf-8"))
+    triggers = scrape.get("on", scrape.get(True))
+    assert triggers["schedule"] == [{"cron": "0 8 1 * *"}, {"cron": MONTHLY_PRICE_CRON}]
+    step = _step(_steps(SCRAPE_WORKFLOW), "Run scrapers")
+    assert "SCHEDULE: ${{ github.event.schedule }}" in step
+    assert (f'if [ "$SCHEDULE" = "{MONTHLY_PRICE_CRON}" ]; then\n            python -m pipeline.run_scrape '
+            "--monthly-price-refresh --summary-json source-summary.json 2>&1 | tee scrape_output.txt\n") in _run(step)
+
+
+INPUT_REGISTRY = [
+    {"name": "\u00c9nergir", "province": "QC", "status": "partial"},
+    {"name": "Heritage Gas", "province": "NS", "status": "partial",
+     "notes": "Eastward Energy (formerly Heritage Gas) distributes natural gas in Nova Scotia."},
+    {"name": "City of Medicine Hat Electric Utility", "province": "AB", "status": "partial"},
+    {"name": "Old Northern Power", "province": "YT", "status": "retired"},
+]
+
+
+@pytest.mark.parametrize("utility,province,message", [
+    ("", "", None),
+    ("ENERGIR", "", None),  # accents and case ignored
+    ("", "ab", None),
+    ("Heritage Gas", "NS", "Set either utility or province, not both."),
+    ("", "energir", '"\u00c9nergir" is a utility: type it in the utility box'),
+    ("", "Medicine Hat", "To scrape one utility, type its name in the utility box instead."),
+    ("", "YT", "Valid codes: AB, NS, QC."),  # a retired entry is not a valid province
+    ("Eastward Energy", "", "Closest registry names: Heritage Gas."),  # former name in the notes
+    ("Medicine Hat", "", "Closest registry names: City of Medicine Hat Electric Utility."),
+    ("NS", "", "type its two-letter code in the province box"),
+    ("Xyz Gas Co", "", "Check the spelling in data/sources/registry.json."),
+])
+def test_manual_inputs_are_checked_against_the_registry_with_what_to_type(utility, province, message):
+    from scrapers.registry import dispatch_input_errors
+
+    errors = dispatch_input_errors(utility, province, INPUT_REGISTRY)
+    if message is None:
+        assert errors == []
+    else:
+        assert len(errors) == 1 and message in errors[0], errors
+
+
+def test_input_check_prints_escaped_annotations_and_fails_the_step(monkeypatch, capsys):
+    from scrapers import registry
+
+    monkeypatch.setattr(registry, "load_registry", lambda *args: INPUT_REGISTRY)
+    assert registry.main(["--utility=energir", "--province="]) == 0
+    assert capsys.readouterr().out == ""
+    assert registry.main(["--utility=50%\nx", "--province="]) == 1
+    assert capsys.readouterr().out == ('::error title=Inputs::Utility "50%25%0Ax" is not in the registry. '
+                                       "Check the spelling in data/sources/registry.json.\n")
 
 
 def test_archive_workflow_commits_the_archive_before_building_the_market_history():

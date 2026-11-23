@@ -44,8 +44,10 @@ Second decision round (November 20), from the commercial gas research:
 - Supply prices carry their period: quarter end for Enbridge, EPCOR and Énergir cap-and-trade, the
   day before Centra's next quarterly date, month end for Énergir supply, Eastward General Service and
   Liberty, the six-month block end for Eastward residential, none for FortisBC and SaskEnergy. A
-  second scheduled Monthly Scrape (about the 4th) refreshes the monthly-priced utilities, Medicine
-  Hat included, instead of the owner's manual run.
+  second scheduled Monthly Scrape refreshes the monthly-priced utilities, Medicine Hat included,
+  instead of the owner's manual run. Decided November 23: it runs at 08:00 UTC on the 4th; model
+  monitoring holds those utilities' failures from the 1st until it; a manual run stopped by its input
+  check is not a monitoring problem.
 - Énergir's supply price is fixed first (done November 20: read monthly from Énergir's
   supply-price page, checked against its price history workbooks; stored the same day by the
   owner's Énergir Monthly Scrape, scrape run 45); its two renewable-gas socialization charges count
@@ -64,18 +66,20 @@ Second decision round (November 20), from the commercial gas research:
   gas models are published), later for a Phase 9 archetype comparison. Simulated values stay out of
   the base models.
 
-Progress at the end of November 20: the small fixes are published; Énergir's monthly supply price
-is stored (scrape run 45); Enbridge, EPCOR, Centra, Eastward and Liberty supply prices carry their
-period end from each utility's next Monthly Scrape. Next: the second scheduled Monthly Scrape on the
-4th (with clearer input checks: code checked out first, a hint to use the utility box, utility
-names matched without accents), aimed for before December 1; then the commercial gas models
-(method 7D-2) together with the electricity level changes, the site view and publication.
+Progress (November 23): the small fixes are published. Énergir's monthly supply price was stored by
+scrape run 45, and the other supply-price period ends by the owner's full run on November 20 (scrape
+run 46). The monthly-price run on the 4th is added: the registry flag `monthly_price_refresh` on
+Énergir, Eastward (Heritage Gas), Liberty and Medicine Hat, clearer input checks before anything is
+installed (utility names matched without accents or case, with the closest registry names) and its
+own monitoring check; its first run is December 4. Next: the commercial gas models (method 7D-2)
+together with the electricity level changes, the site view and publication.
 
 Dated checks (owner decisions, November 19) take priority when they fall due. Batch 18 continued
 was published on November 19 (see [Registered municipal additions](#registered-municipal-additions)),
 so every registered utility has stored live output:
-- December 1: the scheduled Monthly Scrape; Medicine Hat then needs the owner's run once the City
-  posts December's default rate (until the second scheduled run replaces it).
+- December 1: the scheduled Monthly Scrape; Medicine Hat is expected to fail closed until the City
+  posts December's default rate, and monitoring holds it for the next run.
+- December 4: the first monthly-price run (Énergir, Eastward, Liberty and Medicine Hat).
 - December 15: twelve ledger monitor reviews (Yukon Energy, ATCO Electric Yukon, NTPC, Qulliq, EPCOR
   Distribution, the three Rate of Last Resort providers, Naka Power, Medicine Hat, Lethbridge and
   Red Deer). The strict gate fails from December 16 for any not reviewed.
@@ -217,7 +221,8 @@ Owner decisions (November 19):
 - Medicine Hat 4.1/5.1 are complete records kept out of the models.
 - The Going Green surcharge is dated to the month it was read.
 - Medicine Hat's monthly row is required: the owner starts a Medicine Hat run each month once the
-  City posts it.
+  City posts it. Replaced on November 23 by the Monthly Scrape on the 4th; the owner's run is needed
+  only when the City posts later.
 - Each Medicine Hat record ends with its shortest-lived price, and models leave out records past
   their end date.
 - Medicine Hat 1.1 is flat; 3.1/3.3 are not modelled (class limits unpublished).
@@ -243,11 +248,12 @@ non-blocking model-history step exited 1 because Naka was not stored yet; the hi
 recorded.
 
 Remaining:
-- Medicine Hat each month: the scheduled run on the 1st usually comes before the City posts the
-  month's row and fails closed (a source problem in the monitoring issue); its 1.1/3.1/3.3 records
-  then end and leave the models until the owner's Medicine Hat run once the row is posted. On
-  January 1 the 4.1/5.1 fixed-rate term ends too, so until that run (and the City's 2027 rate)
-  Medicine Hat has no live record and the strict gate fails for it.
+- Medicine Hat each month: the run on the 1st usually comes before the City posts the month's row and
+  fails closed; its 1.1/3.1/3.3 records then end and leave the models until the Monthly Scrape on the
+  4th stores the row (monitoring holds the failure until then). If the City posts after that run, the
+  owner starts a Medicine Hat run. On January 1 the 4.1/5.1 fixed-rate term ends too, so until the
+  January row (and the City's 2027 rate) is stored Medicine Hat has no live record and the strict
+  gate fails for it. The City recalculates on Monday January 4, probably after the run that morning.
 - Lethbridge and Red Deer Rate of Last Resort records end December 31, 2026 with the provincial
   term; the next term is a December 15 ledger review.
 
@@ -815,7 +821,7 @@ expired rider is excluded by its date. kVA limits stay in eligibility text.
 | ENMAX Energy Corporation | 2 / Oct 9 | Rate of Last Resort for the ENMAX Power area: D100/D200 at 12.06 cents/kWh plus daily administration charges from the Interim 2026 rate schedule (medium confidence); UCA table required | Municipally set RoLR areas (Cardston, Ponoka) and D300/D310/D410 not covered; Red Deer's (provided by ENMAX Energy) is stored with the City from batch 18 continued. Next term after December 31, 2026 |
 | EPCOR Energy Alberta | 4 / Oct 9 (dry run Oct 16) | Rate of Last Resort for the EPCOR Distribution and FortisAlberta areas: residential and small business (250,000 kWh/year limit) per area at 12.01 cents/kWh plus each area's administration charge from price schedules effective July 1, 2026; UCA table required | Pages moved (the FortisAlberta-area residential page returned 404 from October 15): fixed October 16 (Lane F) with the new `.../start-services/home/compare-electricity-rates/rate-of-last-resort.html` addresses in the registry, scraper and fixture; dry run 4 live, 0 seed; stored by CI scrape run 29 (October 16). REA price schedule not covered. Next term after December 31, 2026 |
 | Alberta Electric System Operator | 0 | Seed/market reference | Dated official pool-price observations with published units and cadence (Phase 6C) |
-| City of Medicine Hat Electric Utility | 5 / Nov 19 | Bundled City records: 2026 Utility Rates brochure delivery charges (read column by column) plus the monthly default rate (current month's row required) and Going Green surcharge for 1.1/3.1/3.3, or the fixed 2025-2026 rate for 4.1/5.1; each record ends with its shortest-lived price | A Medicine Hat run each month once the City posts the month's row (the scheduled run on the 1st usually comes first and fails closed). 3.1/3.3 class limits unpublished (not modelled). Next large-customer fixed rate after December 31, 2026 |
+| City of Medicine Hat Electric Utility | 5 / Nov 19 | Bundled City records: 2026 Utility Rates brochure delivery charges (read column by column) plus the monthly default rate (current month's row required) and Going Green surcharge for 1.1/3.1/3.3, or the fixed 2025-2026 rate for 4.1/5.1; each record ends with its shortest-lived price | The Monthly Scrape on the 4th stores the month's row (the run on the 1st usually comes first and fails closed); an owner's run only if the City posts later. 3.1/3.3 class limits unpublished (not modelled). Next large-customer fixed rate after December 31, 2026 |
 | City of Lethbridge Electric Utility | 8 / Nov 19 | Bylaw 6364 rate codes 991-997 checked against the 2026 Rate Table by column; Riders B and C dated; the City's 2026 Rate of Last Resort (9.975 cents/kWh) | "RDS" price undefined (not stored); Rider A a note. Next Rate of Last Resort price after December 31, 2026 |
 | City of Red Deer Electric Light & Power | 8 / Nov 19 | Schedule A rates 61/63/64/78 matched to the delivery page; quarterly Transmission Rider; Rate of Last Resort records with the term's 12.06 cents/kWh and Schedule D's $0.3035/day administration charge | The Rate of Last Resort page still shows $0.2498/day (noted). Next term after December 31, 2026 |
 

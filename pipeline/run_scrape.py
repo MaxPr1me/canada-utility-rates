@@ -14,6 +14,9 @@ Usage:
     # Scrape all utilities in a province:
     python -m pipeline.run_scrape --province BC
 
+    # Scrape the utilities flagged monthly_price_refresh in the registry (the run on the 4th):
+    python -m pipeline.run_scrape --monthly-price-refresh
+
     # Dry run (scrape but don't save to database):
     python -m pipeline.run_scrape --dry-run
 """
@@ -38,7 +41,8 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from pipeline.export_json import derive_provenance
 from scrapers.base import BaseScraper, TariffRecord, is_excluded_class_estimate
-from scrapers.registry import load_registry, get_active_utilities
+from scrapers.registry import (MONTHLY_PRICE_FLAG, find_utility, get_active_utilities, load_registry,
+                               monthly_price_utilities)
 from scrapers.utils.logging_config import setup_logging
 from scrapers.utils.validation import validate_batch
 
@@ -396,18 +400,22 @@ def main() -> None:
         epilog=__doc__,
     )
     parser.add_argument("--init-db", action="store_true", help="Initialize the database (first time)")
-    parser.add_argument("--utility", type=str, help="Scrape a single utility by name")
+    parser.add_argument("--utility", type=str, help="Scrape a single utility by name (accents and case ignored)")
     parser.add_argument("--province", type=str, help="Scrape all utilities in a province")
+    parser.add_argument("--monthly-price-refresh", action="store_true",
+                        help=f"Scrape only the active utilities flagged {MONTHLY_PRICE_FLAG} in the registry")
     parser.add_argument("--dry-run", action="store_true", help="Scrape but don't save to database")
     parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
     parser.add_argument("--summary-json", type=Path, help="write a structured provenance receipt (no database change)")
     args = parser.parse_args()
+    if args.monthly_price_refresh and (args.utility or args.province):
+        parser.error("--monthly-price-refresh cannot be combined with --utility or --province")
 
     setup_logging(level=logging.DEBUG if args.verbose else logging.INFO)
 
     if args.init_db:
         init_db()
-        if not args.utility and not args.province:
+        if not args.utility and not args.province and not args.monthly_price_refresh:
             return
 
     # Ensure DB exists
@@ -423,15 +431,30 @@ def main() -> None:
 
     # Filter utilities
     if args.utility:
-        entries = [e for e in registry if e["name"].lower() == args.utility.lower()]
-        if not entries:
-            logger.error("Utility %r not found in registry", args.utility)
+        try:
+            entry, closest = find_utility(args.utility, registry)
+        except ValueError as exc:
+            logger.error("Utility %r cannot be looked up: %s", args.utility, exc)
             sys.exit(1)
+        if entry is None:
+            logger.error("Utility %r not found in registry%s", args.utility,
+                         f"; closest registry names: {'; '.join(closest)}" if closest else "")
+            sys.exit(1)
+        entries = [entry]
     elif args.province:
         entries = [e for e in get_active_utilities(registry)
                    if e.get("province", "").upper() == args.province.upper()]
         if not entries:
             logger.error("No utilities found for province %r", args.province)
+            sys.exit(1)
+    elif args.monthly_price_refresh:
+        try:
+            entries = monthly_price_utilities(registry)
+        except ValueError as exc:
+            logger.error("Registry error: %s", exc)
+            sys.exit(1)
+        if not entries:
+            logger.error("No active utility is flagged %s in the registry", MONTHLY_PRICE_FLAG)
             sys.exit(1)
     else:
         entries = get_active_utilities(registry)
@@ -551,7 +574,8 @@ def main() -> None:
                 "version": 1, "kind": "source_check", "checked_at": utc_now(), "run": run_identity(),
                 "dry_run": args.dry_run,
                 "scope": {"utility": args.utility, "province": args.province,
-                          "full": not args.utility and not args.province},
+                          "group": MONTHLY_PRICE_FLAG if args.monthly_price_refresh else None,
+                          "full": not (args.utility or args.province or args.monthly_price_refresh)},
                 "expected_utilities": sorted(entry["name"] for entry in entries),
                 "summary": summary,
             })

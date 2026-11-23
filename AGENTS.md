@@ -143,7 +143,7 @@ records does not prove that every building class is covered. Current figures are
 | `scrapers/utilities/epcor_gas.py` | A retired Alberta entry (EPCOR does not distribute gas in Alberta). Monthly runs skip it; its history stays. |
 | `saint_john_energy.py`, `nelson_hydro.py`, `new_westminster.py`, `penticton.py`, `grand_forks.py`, `summerland.py`, `summerside_electric.py` | Municipal utilities registered in batch 18 (November 4, 2026): Saint John (NB), five BC cities and Summerside (PE). They read council bylaw schedules or rate manuals and have no seed fallback, so a failed source returns no records. |
 | `naka_power.py`, `medicine_hat.py`, `lethbridge.py`, `red_deer.py` | Utilities registered in batch 18 continued (November 19, 2026): Naka Power (NT) and the Alberta cities Medicine Hat, Lethbridge and Red Deer. Lethbridge and Red Deer publish their own Rate of Last Resort price; Medicine Hat sells one bundled city rate. No seed fallback. |
-| `scrapers/registry.py` | Reads the list of all utilities and their scraper info. |
+| `scrapers/registry.py` | Reads the list of all utilities and their scraper info, finds a typed utility name (accents and capital letters do not matter) and checks a manual Monthly Scrape's inputs before anything is installed. |
 | `scrapers/utils/parsing.py` | HTML/PDF reading helpers, including strict checks that a value really appears in an official schedule. |
 | `scrapers/utils/change_detection.py` | Compares live-parsed rates against seed data and flags changes by severity (info/warning/critical). If critical drift is detected, the scraper rejects live data and falls back to seed. |
 | `scrapers/utils/market_pricing.py` | Reads the Ontario market history for the illustrative estimate (see the glossary). It refuses a file that was not built from real observed prices. |
@@ -207,7 +207,7 @@ The comparison policy is in the
 
 | File | What it does |
 |---|---|
-| `.github/workflows/scrape.yml` | **Monthly Scrape** (the 1st): the only writer of the database (see "How the Monthly Updates Work"). |
+| `.github/workflows/scrape.yml` | **Monthly Scrape** (the 1st, and the 4th for the monthly-price utilities): the only writer of the database (see "How the Monthly Updates Work"). |
 | `.github/workflows/source-health.yml` | **Source Health** (the 15th): a test scrape that publishes nothing. |
 | `.github/workflows/ontario-price-archive.yml` | **Ontario Price Archive** (06:00 UTC on the 1st and 15th): saves the original IESO reports, then the checked Ontario Price archive, the market history, the combined totals and the models. |
 | `.github/workflows/market-benchmarks.yml` | **Market Benchmarks**: publishes the Alberta market history and refreshes the models, without touching the database. |
@@ -315,14 +315,15 @@ of the database, and never upload a database by hand.
 
 The file `.github/workflows/scrape.yml` tells GitHub Actions to:
 
-1. **On the 1st of every month** (or when started by hand), start a computer in the cloud and
+1. **On the 1st of every month**, again **on the 4th** for a short list of utilities (see "Prices
+   posted after the 1st" below), or when started by hand, start a computer in the cloud and
    install Python, the project tools and Playwright Chromium.
 2. **Get the database** from the `data-history` GitHub Release. If the release exists, the
    download must work and its fingerprint (SHA-256) must match the one GitHub shows; otherwise
    the run stops. Only when there is no release at all does it start a new, empty database.
-3. Run the tests, then the scrape (all utilities, or the one utility or province typed in when it
-   was started by hand), the data quality checks (`python -m pipeline.validate`) and the export
-   for the website (`python -m pipeline.export_json`).
+3. Run the tests, then the scrape (all utilities; on the 4th only the monthly-price utilities; or
+   the one utility or province typed in when it was started by hand), the data quality checks
+   (`python -m pipeline.validate`) and the export for the website (`python -m pipeline.export_json`).
 4. **Check the database** with `scripts/check_db_history.py`: it must not be damaged, it must
    have at least as many snapshots, tariff versions and scrape runs as before, and every older
    snapshot must be unchanged. A public "Database history" note on the run page gives the result.
@@ -347,26 +348,35 @@ automatic trigger (`workflow_run`) only fires from the default branch.
 1. Go to the repository on GitHub.
 2. Click the **"Actions"** tab.
 3. Click **"Monthly Scrape"** on the left.
-4. Click the **"Run workflow"** button on the right. Type one utility name in the **utility** box,
-   spelled as in the registry including accents (for example `Énergir`), or one two-letter province
-   code in the **province** box (not both); leave both empty for everything. A utility name typed in
-   the province box stops the run at its input check, before anything is scraped or saved. Until a
-   planned fix moves that check after the code download, such a stopped run also opens a
-   model-monitoring issue; it closes itself after the next successful Monthly Scrape.
+4. Click the **"Run workflow"** button on the right. Type one utility name in the **utility** box
+   (accents and capital letters do not matter: `energir` finds `Énergir`), or one two-letter
+   province code in the **province** box (not both); leave both empty for everything. A mistyped
+   entry stops the run within seconds, before anything is installed, scraped or saved, and the red
+   error says what to type instead: the utility box for a utility name typed in the province box,
+   or the closest registry names for a name it does not know (Eastward Energy is registered as
+   `Heritage Gas`). Such a stopped run does not open a monitoring issue.
 
 The **Ontario Price Archive** workflow can be started the same way. The owner's computer has no
 GitHub command-line tool, so start workflows from the website. **Deploy Site** can also be run by
 hand if it did not start by itself after a successful data update.
 
-**Medicine Hat each month (owner decision, November 19, 2026):** the scheduled run starts at 08:00
-UTC on the 1st (1 a.m. in Alberta in winter), usually before the City of Medicine Hat posts the new
-month's default electricity rate. That run then stores nothing for Medicine Hat, and the
-model-monitoring issue names it. Once the new month appears on the City's
-[Energy Plans & Pricing page](https://www.medicinehat.ca/home-property-utilities/utilities/energy-plans-pricing/),
-start Monthly Scrape with the utility `City of Medicine Hat Electric Utility`. Until then its
-residential and small-business prices are left out of the Alberta models. Its fixed rate for large
-customers ends December 31, 2026, so from January 1, 2027 until that run the coverage gate also
-reports Medicine Hat as having no live rates.
+**Prices posted after the 1st (owner decisions, November 20 and 23, 2026):** Énergir, Eastward
+Energy (registered as `Heritage Gas`), Liberty Utilities NB and the City of Medicine Hat change a
+price every month and usually post the new month after the 1st. The run on the 1st then stores
+nothing new for them: Medicine Hat's monthly records fail closed, and the gas utilities' stored
+supply prices have ended, so the models leave those tariffs out. These four are marked
+`monthly_price_refresh` in `data/sources/registry.json`, and the Monthly Scrape runs again at
+08:00 UTC on the 4th (1 a.m. in Alberta in winter) for them only. Model monitoring waits for that
+run before reporting their failures from the 1st, and names them only if the run on the 4th fails
+too or has not refreshed them within a day.
+
+If the City of Medicine Hat posts its month after the run on the 4th (likely in January 2027: it
+recalculates its rate on the first business day of the quarter, Monday January 4), start Monthly
+Scrape with the utility `City of Medicine Hat Electric Utility` once the new month appears on the
+City's [Energy Plans & Pricing page](https://www.medicinehat.ca/home-property-utilities/utilities/energy-plans-pricing/).
+Until a run stores it, its residential and small-business prices are left out of the Alberta
+models. Its fixed rate for large customers ends December 31, 2026, so from January 1, 2027 until
+that run the coverage gate also reports Medicine Hat as having no live rates.
 
 ---
 
@@ -499,7 +509,10 @@ workflow does not dismiss a monitoring warning.
    A newly registered utility is named as having no live output from the first check after it is
    registered until a Monthly Scrape stores it: start that run and the issue closes itself
    (November 19, 2026).
-   Medicine Hat named after the 1st: see "Medicine Hat each month" above.
+   Énergir, Eastward (`Heritage Gas`), Liberty or Medicine Hat named after the 4th: see "Prices
+   posted after the 1st" above. A check named `workflow:scrape.yml:monthly-price` means no
+   successful run refreshed those utilities within a day of the 4th: start Monthly Scrape with both
+   boxes empty (a full run also refreshes them).
 3. The checker updates its own issue and closes it only after all recorded problems have verified
    recovery. Other issues and maintainer notes are left alone. Do not delete change history to
    silence a warning. On a data run while a problem is open, the "Record model change history" step

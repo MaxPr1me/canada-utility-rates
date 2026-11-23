@@ -14229,8 +14229,8 @@ def OPS__summary_failing_scrape():
     raise RuntimeError("source unavailable")
 
 
-def OPS__summary_run_main(monkeypatch, tmp_path, scrapers_by_name, argv, github_actions=False):
-    entries = [{"name": name, "province": "NS", "status": "partial"} for name in scrapers_by_name]
+def OPS__summary_run_main(monkeypatch, tmp_path, scrapers_by_name, argv, github_actions=False, entries=None):
+    entries = entries or [{"name": name, "province": "NS", "status": "partial"} for name in scrapers_by_name]
     monkeypatch.setattr(run_scrape, "setup_logging", lambda *args, **kwargs: None)
     monkeypatch.setattr(run_scrape, "DB_PATH", tmp_path / "rates.db")
     monkeypatch.setattr(run_scrape, "load_registry", lambda *args, **kwargs: entries)
@@ -14272,10 +14272,47 @@ def test_ops_structured_receipt_preserves_provenance_and_targeted_scope(tmp_path
     OPS__summary_run_main(monkeypatch, tmp_path, scrapers,
                           ["--dry-run", "--utility", "Example", "--summary-json", str(receipt_path)])
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
-    assert receipt["scope"] == {"full": False, "utility": "Example", "province": None}
+    assert receipt["scope"] == {"full": False, "utility": "Example", "province": None, "group": None}
     assert receipt["summary"]["rows"][0]["status"] == "seed only"
     assert receipt["summary"]["live"] == 0 and receipt["summary"]["seed"] == 1
     assert not (tmp_path / "rates.db").exists()
+
+
+def test_ops_monthly_price_refresh_scrapes_only_flagged_active_utilities(tmp_path, monkeypatch):
+    # Owner decisions 2026-11-20 and 2026-11-23: the run on the 4th covers the registry's monthly-price group.
+    receipt_path = tmp_path / "source-summary.json"
+    entries = [{"name": "Monthly Gas", "province": "NB", "status": "partial", "monthly_price_refresh": True},
+               {"name": "Steady Hydro", "province": "NB", "status": "active"},
+               {"name": "Retired Gas", "province": "NB", "status": "retired", "monthly_price_refresh": True}]
+    scraped = []
+
+    def scraper(name):
+        return SimpleNamespace(scrape=lambda: scraped.append(name) or [OPS__summary_record(name, OPS_SUMMARY_LIVE_NOTE)])
+
+    scrapers = {entry["name"]: scraper(entry["name"]) for entry in entries}
+    OPS__summary_run_main(monkeypatch, tmp_path, scrapers,
+                          ["--dry-run", "--monthly-price-refresh", "--summary-json", str(receipt_path)], entries=entries)
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    assert scraped == ["Monthly Gas"]
+    assert receipt["scope"] == {"full": False, "utility": None, "province": None, "group": "monthly_price_refresh"}
+    assert receipt["expected_utilities"] == ["Monthly Gas"]
+    with pytest.raises(SystemExit) as stopped:
+        OPS__summary_run_main(monkeypatch, tmp_path, scrapers, ["--dry-run", "--monthly-price-refresh",
+                                                                "--utility", "Monthly Gas"], entries=entries)
+    assert stopped.value.code == 2
+
+
+def test_ops_utility_names_ignore_accents_and_unknown_names_suggest_registry_names(tmp_path, monkeypatch, caplog):
+    # Owner decision 2026-11-20: "energir" finds "Énergir"; a name not in the registry names the closest ones.
+    entries = [{"name": "\u00c9nergir", "province": "QC", "status": "partial"}]
+    scraped = []
+    scrapers = {"\u00c9nergir": SimpleNamespace(scrape=lambda: scraped.append("found") or [])}
+    OPS__summary_run_main(monkeypatch, tmp_path, scrapers, ["--dry-run", "--utility", "energir"], entries=entries)
+    assert scraped == ["found"]
+    with pytest.raises(SystemExit) as stopped:
+        OPS__summary_run_main(monkeypatch, tmp_path, scrapers, ["--dry-run", "--utility", "Energie"], entries=entries)
+    assert stopped.value.code == 1
+    assert "closest registry names: \u00c9nergir" in caplog.text
 
 
 def test_ops_summarize_run_totals_problem_lists_and_problems_first_rows():

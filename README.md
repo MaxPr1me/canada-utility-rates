@@ -103,9 +103,9 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   (8) and Red Deer (8), with the history verified. The Alberta models now count each city as one
   service area: residential has 7 instead of 4 (1,000 kWh median $209.78 before tax, was $225.16).
   The model-monitoring issue opened by the registration (#7) closed itself after the second run.
-  Medicine Hat's default energy price is monthly: the owner starts a Medicine Hat run each month
-  once the City posts it, and its records drop out of the models until then (owner decisions
-  November 19).
+  Medicine Hat's default energy price is monthly: its records drop out of the models at month end
+  until a run stores the new month (owner decisions November 19). The monthly-price run on the 4th
+  (below) now stores it.
 - **Small fixes (November 20, owner decisions):** the Alberta models' coverage no longer counts
   AESO, which publishes only a market price reference (7 of 7 service areas, was 7 of 8; prices
   unchanged); the diff report compares only the utilities the newer run scraped; the console log
@@ -115,12 +115,18 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   November 1). The scraper now reads the current month from Énergir's supply-price page, checks it
   against Énergir's price history workbooks, and leaves the supply price out while a month is not
   posted yet.
-- **Gas supply-price periods (November 20, stored by each utility's next Monthly Scrape):** Enbridge,
+- **Gas supply-price periods (stored November 20 by the owner's full run, scrape run 46):** Enbridge,
   EPCOR, Centra, Eastward and Liberty supply prices now end with the period their source states
   (quarter, month or Eastward's six-month residential block); FortisBC and SaskEnergy stay
   open-ended.
-- **Latest export (November 20, scrape run 45):** 987 latest live tariffs and 482 retained
-  estimates; 1,414 stored live versions and 6,647 history snapshots. Counts include
+- **Monthly-price run (added November 23, owner decisions; first run December 4):** the Monthly
+  Scrape also runs at 08:00 UTC on the 4th for the utilities whose monthly price is usually posted
+  after the 1st (Énergir, Eastward, Liberty and Medicine Hat, flagged `monthly_price_refresh` in the
+  registry). Model monitoring holds those utilities' failures on the 1st until that run, and checks
+  its schedule apart from the full run. A manual run's inputs are now checked before anything is
+  installed: utility names ignore accents and case, and a mistyped name or code says what to type.
+- **Latest export (November 20, scrape run 46, the owner's full run):** 987 latest live tariffs and
+  484 retained estimates; 1,414 stored live versions and 7,670 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
 - **Corrections stored (verified November 4):** the targeted Monthly Scrapes stored Centra Gas
   Manitoba's 13 November records and Maritime Electric's first-20-kW-free demand tier; history
@@ -148,8 +154,9 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
 - **Phase 8 monitoring:** implemented, published and verified through the existing market workflows
   and deployment. The change log starts from its first verified baseline. Source checks ignore only
   labelled excluded-class estimates (owner decision November 18) and a ledger manual-update
-  utility's estimates until its review date (November 19).
-- **Validation:** all 2,484 tests passed on Python 3.11 using `pytest tests`.
+  utility's estimates until its review date (November 19); a monthly-price utility's failure seen
+  between the 1st and the run on the 4th waits for that run (November 23).
+- **Validation:** all 2,515 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.
@@ -406,9 +413,13 @@ exclusions. A generic verifier test or seed-only output is not a working parser.
 
 ## How Monthly Updates Work
 
-The [Monthly Scrape workflow](.github/workflows/scrape.yml) runs on the 1st at 08:00 UTC or on
-manual dispatch, with optional inputs for one `utility` or one two-letter `province` (not both;
-the inputs reach the shell through environment variables). It is the **only writer** of the
+The [Monthly Scrape workflow](.github/workflows/scrape.yml) runs on the 1st at 08:00 UTC, on the
+4th at 08:00 UTC for only the utilities flagged `monthly_price_refresh` in the registry (their
+monthly price is usually posted after the 1st; owner decisions November 20 and 23), or on manual
+dispatch, with optional inputs for one `utility` or one two-letter `province` (not both; the inputs
+reach the shell through environment variables). Before anything is installed, the runner's own
+Python checks the inputs against the registry: utility names ignore accents and case, and a
+mistyped name or code stops the run with what to type instead. It is the **only writer** of the
 history database `data/db/rates.db` (owner decision), kept as asset `rates.db` of the
 `data-history` GitHub release:
 
@@ -417,7 +428,8 @@ history database `data/db/rates.db` (owner decision), kept as asset `rates.db` o
    `scripts/check_db_history.py stats` records integrity-checked statistics right after the
    restore.
 2. **Test, scrape, validate, export:** deterministic tests, the scrape (all active utilities, one
-   utility or one province), validation, `git pull --ff-only origin main` before JSON export,
+   utility, one province or, on the 4th, the monthly-price group), validation, `git pull --ff-only
+   origin main` before JSON export,
    and a check that rejects empty exports. Synchronizing first makes queued runs use the latest
    committed inputs; generated files are never rebased onto newer inputs.
 3. **Check before upload:** `scripts/check_db_history.py verify` requires SQLite `integrity_check`
@@ -758,7 +770,7 @@ One line per phase; sub-phase detail and the work queue are in the
 
 - **Earlier phases (foundations)** — done: scraper framework, granular schema, registry, validation, history snapshots, JSON export and the website.
 - **Phase 5: Live Parser Completion** — in progress: the Batch 18 additions are published (municipal utilities in NB, BC and PE on November 18; Naka Power and the Alberta cities on November 19) and issue #6 is closed; the scoped coverage-complete claim will be drafted for owner approval after the January renewals, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
-- **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas supply-price freshness: Énergir's monthly prices and period end dates for the other gas utilities done November 20, a second scheduled Monthly Scrape for monthly prices is next).
+- **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas supply-price freshness: Énergir's monthly prices and period end dates for the other gas utilities done November 20, and the monthly-price run on the 4th added November 23 (first run December 4)).
 - **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D residential gas done as method 7D-1, in each utility's native m³ or GJ, with business gas withheld until its usage scenarios are approved). Next (owner decision, November 20): commercial gas, then models for the territories.
 - **Phase 8: Representative Model Refresh Automation** — done and verified in CI and on the deployed site. Public change history and problem-only monitoring follow the [approved policy](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
 - **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done; historical charts, AI-ready exports, a bill calculator or API and commercial/gas comparisons are planned).
