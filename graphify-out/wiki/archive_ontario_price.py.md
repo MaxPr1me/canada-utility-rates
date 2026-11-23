@@ -1,11 +1,10 @@
 # archive_ontario_price.py
 
-> 73 nodes
+> 71 nodes
 
 ## Key Concepts
 
 - **archive_ontario_price.py** (62 connections) — `scripts/archive_ontario_price.py`
-- **ReportSource** (19 connections) — `scripts/generate_market_pricing.py`
 - **update_archive()** (16 connections) — `scripts/archive_ontario_price.py`
 - **date** (16 connections)
 - **Decimal** (16 connections)
@@ -29,31 +28,30 @@
 - **_by_month()** (5 connections) — `scripts/archive_ontario_price.py`
 - **_check_days()** (5 connections) — `scripts/archive_ontario_price.py`
 - **_hour()** (5 connections) — `scripts/archive_ontario_price.py`
-- *... and 48 more nodes in this community*
+- **load_lfda()** (5 connections) — `scripts/archive_ontario_price.py`
+- *... and 46 more nodes in this community*
 
 ## Relationships
 
 - [main](main.md) (8 shared connections)
-- [_yearly_files](_yearly_files.md) (6 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (5 shared connections)
+- [_yearly_files](_yearly_files.md) (7 shared connections)
 - [re](re.md) (4 shared connections)
 - [argparse](argparse.md) (4 shared connections)
 - [os](os.md) (4 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (2 shared connections)
 - [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
 - [io](io.md) (2 shared connections)
-- [MarketDataError](MarketDataError.md) (1 shared connections)
-- [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (2 shared connections)
+- [summerland.py](summerland.py.md) (1 shared connections)
+- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (1 shared connections)
 
 ## Source Files
 
 - `scripts/archive_ontario_price.py`
-- `scripts/generate_market_pricing.py`
 
 ## Audit Trail
 
-- EXTRACTED: 224 (100%)
+- EXTRACTED: 212 (100%)
 - INFERRED: 1 (0%)
 - AMBIGUOUS: 0 (0%)
 

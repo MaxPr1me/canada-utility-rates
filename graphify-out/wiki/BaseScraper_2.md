@@ -42,7 +42,7 @@
 - [BCHydroScraper](BCHydroScraper.md) `EXTRACTED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `EXTRACTED`
 - [NBPowerScraper](NBPowerScraper.md) `EXTRACTED`
-- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `EXTRACTED`
+- NewfoundlandPowerScraper `EXTRACTED`
 - [ATCOGasScraper](ATCOGasScraper.md) `EXTRACTED`
 - HydroQuebecScraper `EXTRACTED`
 - NLHydroScraper `EXTRACTED`

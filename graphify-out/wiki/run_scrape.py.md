@@ -1,6 +1,6 @@
 # run_scrape.py
 
-> 60 nodes
+> 68 nodes
 
 ## Key Concepts
 
@@ -8,10 +8,12 @@
 - **main()** (23 connections) — `pipeline/run_scrape.py`
 - **registry.py** (20 connections) — `scrapers/registry.py`
 - **load_registry()** (13 connections) — `scrapers/registry.py`
+- **validation.py** (11 connections) — `scrapers/utils/validation.py`
 - **find_utility()** (8 connections) — `scrapers/registry.py`
 - **monthly_price_utilities()** (8 connections) — `scrapers/registry.py`
 - **get_active_utilities()** (7 connections) — `scrapers/registry.py`
 - **suggest_names()** (7 connections) — `scrapers/registry.py`
+- **validate_tariff()** (6 connections) — `scrapers/utils/validation.py`
 - **canonical_snapshot()** (6 connections) — `pipeline/run_scrape.py`
 - **store_results()** (6 connections) — `pipeline/run_scrape.py`
 - **tally_provenance()** (6 connections) — `pipeline/run_scrape.py`
@@ -27,21 +29,19 @@
 - **format_summary_markdown()** (4 connections) — `pipeline/run_scrape.py`
 - **init_db()** (4 connections) — `pipeline/run_scrape.py`
 - **summarize_run()** (4 connections) — `pipeline/run_scrape.py`
-- **is_excluded_class_estimate()** (4 connections) — `scrapers/base.py`
-- **get_utility()** (4 connections) — `scrapers/registry.py`
-- *... and 35 more nodes in this community*
+- *... and 43 more nodes in this community*
 
 ## Relationships
 
 - [argparse](argparse.md) (17 shared connections)
-- [BaseScraper](BaseScraper.md) (11 shared connections)
+- [BaseScraper](BaseScraper.md) (12 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (10 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (6 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (8 shared connections)
 - [coverage_gate.py](coverage_gate.py.md) (5 shared connections)
 - [graphify_hook.py](graphify_hook.py.md) (2 shared connections)
 - [ntpc.py](ntpc.py.md) (2 shared connections)
 - [re](re.md) (2 shared connections)
-- [validation.py](validation.py.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (2 shared connections)
 - [os](os.md) (1 shared connections)
 
 ## Source Files
@@ -55,8 +55,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 147 (96%)
-- INFERRED: 6 (4%)
+- EXTRACTED: 161 (95%)
+- INFERRED: 8 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,6 +1,6 @@
 # fortisalberta.py
 
-> 52 nodes
+> 51 nodes
 
 ## Key Concepts
 
@@ -29,19 +29,20 @@
 - **document_edition_date()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **_document()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **Match** (6 connections)
-- *... and 27 more nodes in this community*
+- *... and 26 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (13 shared connections)
-- [RateComponent](RateComponent.md) (12 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (7 shared connections)
+- [RateComponent](RateComponent.md) (11 shared connections)
+- [BaseScraper](BaseScraper.md) (10 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (7 shared connections)
 - [re](re.md) (7 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (6 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (2 shared connections)
-- [.fetch_page](fetch_page.md) (1 shared connections)
-- [._try_live_scrape](_try_live_scrape.md) (1 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [.mark_fallback](mark_fallback.md) (1 shared connections)
+- [summerland.py](summerland.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 177 (92%)
+- EXTRACTED: 176 (92%)
 - INFERRED: 16 (8%)
 - AMBIGUOUS: 0 (0%)
 

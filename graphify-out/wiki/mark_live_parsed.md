@@ -1,6 +1,6 @@
 # .mark_live_parsed
 
-> 55 nodes
+> 48 nodes
 
 ## Key Concepts
 
@@ -12,7 +12,6 @@
 - **_flat()** (12 connections) — `scrapers/utilities/nl_hydro.py`
 - **.parse_schedule_pages()** (11 connections) — `scrapers/utilities/nl_hydro.py`
 - **._published_sections()** (11 connections) — `scrapers/utilities/nl_hydro.py`
-- **._try_live_scrape()** (11 connections) — `scrapers/utilities/nl_hydro.py`
 - **._parse_island_industrial()** (10 connections) — `scrapers/utilities/nl_hydro.py`
 - **._parse_island_nonfirm()** (10 connections) — `scrapers/utilities/nl_hydro.py`
 - **_energy_components()** (10 connections) — `scrapers/utilities/nl_hydro.py`
@@ -29,18 +28,20 @@
 - **._audit_island_industrial_other()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_option_components()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_verify_nonfirm_formula()** (7 connections) — `scrapers/utilities/nl_hydro.py`
-- *... and 30 more nodes in this community*
+- **_energy_rows()** (6 connections) — `scrapers/utilities/nl_hydro.py`
+- *... and 23 more nodes in this community*
 
 ## Relationships
 
-- [RateComponent](RateComponent.md) (16 shared connections)
-- [BaseScraper](BaseScraper.md) (15 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (15 shared connections)
 - [re](re.md) (15 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (13 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (5 shared connections)
+- [RateComponent](RateComponent.md) (14 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (13 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (11 shared connections)
+- [BaseScraper](BaseScraper.md) (10 shared connections)
+- [.fetch_page](fetch_page.md) (7 shared connections)
+- [.mark_fallback](mark_fallback.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [.fetch_page](fetch_page.md) (1 shared connections)
+- [parse_html](parse_html.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +49,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 225 (99%)
+- EXTRACTED: 206 (99%)
 - INFERRED: 3 (1%)
 - AMBIGUOUS: 0 (0%)
 

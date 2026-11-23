@@ -13,10 +13,11 @@
 
 ## Relationships
 
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
+- [parse_html](parse_html.md) (1 shared connections)
 - [RateComponent](RateComponent.md) (1 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (1 shared connections)
 
 ## Source Files
 

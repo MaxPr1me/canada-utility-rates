@@ -1,6 +1,6 @@
 # epcor_distribution.py
 
-> 59 nodes
+> 58 nodes
 
 ## Key Concepts
 
@@ -29,19 +29,21 @@
 - **_Tariff** (6 connections) — `scrapers/utilities/epcor_distribution.py`
 - **._fetch_pdf_pages()** (6 connections) — `scrapers/utilities/epcor_distribution.py`
 - **.scrape()** (6 connections) — `scrapers/utilities/epcor_distribution.py`
-- *... and 34 more nodes in this community*
+- *... and 33 more nodes in this community*
 
 ## Relationships
 
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (15 shared connections)
-- [BaseScraper](BaseScraper.md) (13 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (15 shared connections)
 - [re](re.md) (12 shared connections)
+- [BaseScraper](BaseScraper.md) (10 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (7 shared connections)
-- [RateComponent](RateComponent.md) (6 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (2 shared connections)
-- [.fetch_page](fetch_page.md) (1 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (5 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [.__init__](__init__.md) (2 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
+- [.mark_fallback](mark_fallback.md) (1 shared connections)
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (1 shared connections)
+- [summerland.py](summerland.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,7 +51,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 192 (93%)
+- EXTRACTED: 191 (93%)
 - INFERRED: 14 (7%)
 - AMBIGUOUS: 0 (0%)
 

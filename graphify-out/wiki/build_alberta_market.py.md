@@ -39,12 +39,12 @@
 - [argparse](argparse.md) (4 shared connections)
 - [market_pricing.py](market_pricing.py.md) (3 shared connections)
 - [re](re.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (2 shared connections)
 - [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
 - [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
 - [parse_html](parse_html.md) (1 shared connections)
 - [io](io.md) (1 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [summerland.py](summerland.py.md) (1 shared connections)
 
 ## Source Files
 

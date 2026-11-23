@@ -1,6 +1,6 @@
 # _actual_rates
 
-> 20 nodes
+> 21 nodes
 
 ## Key Concepts
 
@@ -8,6 +8,7 @@
 - **parse_ga_deferral()** (10 connections) — `scripts/generate_market_pricing.py`
 - **parse_ga_recovery()** (10 connections) — `scripts/generate_market_pricing.py`
 - **ga_adjustments()** (8 connections) — `scripts/generate_market_pricing.py`
+- **_cell_number()** (7 connections) — `scripts/generate_market_pricing.py`
 - **_cell()** (6 connections) — `scripts/generate_market_pricing.py`
 - **_month_columns()** (6 connections) — `scripts/generate_market_pricing.py`
 - **_sheet()** (6 connections) — `scripts/generate_market_pricing.py`
@@ -27,9 +28,10 @@
 
 ## Relationships
 
-- [generate_market_pricing.py](generate_market_pricing.py.md) (19 shared connections)
-- [MarketDataError](MarketDataError.md) (9 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (20 shared connections)
+- [MarketDataError](MarketDataError.md) (8 shared connections)
 - [re](re.md) (2 shared connections)
+- [market_pricing.py](market_pricing.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -37,7 +39,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 57 (100%)
+- EXTRACTED: 61 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

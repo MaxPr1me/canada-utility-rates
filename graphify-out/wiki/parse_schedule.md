@@ -1,6 +1,6 @@
 # parse_schedule
 
-> 25 nodes
+> 24 nodes
 
 ## Key Concepts
 
@@ -19,7 +19,6 @@
 - **.scrape()** (3 connections) — `scrapers/utilities/grand_forks.py`
 - **_iso()** (3 connections) — `scrapers/utilities/grand_forks.py`
 - **.__init__()** (2 connections) — `scrapers/utilities/grand_forks.py`
-- **requests_exceptions** (2 connections)
 - **date** (1 connections)
 - **grand_forks.py — Scraper for the City of Grand Forks electrical utility…** (1 connections) — `scrapers/utilities/grand_forks.py`
 - **The six published prices of Schedule G items 1-3.** (1 connections) — `scrapers/utilities/grand_forks.py`
@@ -32,15 +31,16 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (11 shared connections)
+- [BaseScraper](BaseScraper.md) (8 shared connections)
 - [re](re.md) (7 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (5 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (4 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (2 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
 - [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [summerland.py](summerland.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +48,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 72 (95%)
+- EXTRACTED: 71 (95%)
 - INFERRED: 4 (5%)
 - AMBIGUOUS: 0 (0%)
 

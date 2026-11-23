@@ -1,6 +1,6 @@
 # graphify_hook.py
 
-> 77 nodes
+> 76 nodes
 
 ## Key Concepts
 
@@ -29,7 +29,7 @@
 - **working_changes()** (7 connections) — `scripts/graphify_hook.py`
 - **callflow_sections()** (6 connections) — `scripts/graphify_hook.py`
 - **existing_hook()** (6 connections) — `scripts/graphify_hook.py`
-- *... and 52 more nodes in this community*
+- *... and 51 more nodes in this community*
 
 ## Relationships
 
@@ -43,19 +43,17 @@
 - [run_scrape.py](run_scrape.py.md) (2 shared connections)
 - [io](io.md) (2 shared connections)
 - [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (2 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
 
 ## Source Files
 
-- `scrapers/utilities/bc_hydro.py`
 - `scrapers/utils/parsing.py`
 - `scripts/graphify_hook.py`
 
 ## Audit Trail
 
-- EXTRACTED: 232 (99%)
-- INFERRED: 3 (1%)
+- EXTRACTED: 231 (99%)
+- INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

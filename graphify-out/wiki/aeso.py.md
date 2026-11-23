@@ -27,14 +27,14 @@
 ## Relationships
 
 - [build_alberta_market.py](build_alberta_market.py.md) (13 shared connections)
-- [RateComponent](RateComponent.md) (5 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (6 shared connections)
 - [main](main.md) (5 shared connections)
 - [BaseScraper](BaseScraper.md) (5 shared connections)
 - [re](re.md) (3 shared connections)
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (3 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (2 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
 - [market_pricing.py](market_pricing.py.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (1 shared connections)
 
 ## Source Files
 

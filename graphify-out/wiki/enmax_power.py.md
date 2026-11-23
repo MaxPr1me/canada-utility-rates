@@ -1,6 +1,6 @@
 # enmax_power.py
 
-> 49 nodes
+> 51 nodes
 
 ## Key Concepts
 
@@ -24,24 +24,27 @@
 - **_money()** (6 connections) — `scrapers/utilities/enmax_power.py`
 - **_table_rows()** (6 connections) — `scrapers/utilities/enmax_power.py`
 - **_Rider** (5 connections) — `scrapers/utilities/enmax_power.py`
+- **current_tariff_link()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_log_exclusions()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_page_with()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_split_footer()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_Riders** (4 connections) — `scrapers/utilities/enmax_power.py`
-- **_component()** (4 connections) — `scrapers/utilities/enmax_power.py`
-- *... and 24 more nodes in this community*
+- *... and 26 more nodes in this community*
 
 ## Relationships
 
 - [re](re.md) (18 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (15 shared connections)
-- [BaseScraper](BaseScraper.md) (9 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (15 shared connections)
+- [BaseScraper](BaseScraper.md) (7 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (3 shared connections)
-- [._try_live_scrape](_try_live_scrape.md) (3 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
 - [main](main.md) (2 shared connections)
 - [os](os.md) (1 shared connections)
 - [io](io.md) (1 shared connections)
+- [summerland.py](summerland.py.md) (1 shared connections)
+- [ENMAXPowerScraper](ENMAXPowerScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 163 (92%)
+- EXTRACTED: 167 (92%)
 - INFERRED: 15 (8%)
 - AMBIGUOUS: 0 (0%)
 

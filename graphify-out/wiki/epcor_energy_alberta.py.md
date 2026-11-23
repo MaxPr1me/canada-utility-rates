@@ -1,6 +1,6 @@
 # epcor_energy_alberta.py
 
-> 94 nodes
+> 82 nodes
 
 ## Key Concepts
 
@@ -23,28 +23,28 @@
 - **parse_enmax_page()** (12 connections) — `scrapers/utilities/enmax_energy.py`
 - **._try_live_scrape()** (12 connections) — `scrapers/utilities/epcor_energy_alberta.py`
 - **rolr_record()** (11 connections) — `scrapers/utils/alberta_rolr.py`
-- **._try_live_scrape()** (11 connections) — `scrapers/utilities/enmax_energy.py`
 - **html_text()** (11 connections) — `scrapers/utils/alberta_rolr.py`
 - **require_current()** (11 connections) — `scrapers/utils/alberta_rolr.py`
-- **DirectEnergyRegulatedScraper** (10 connections) — `scrapers/utilities/direct_energy_regulated.py`
 - **parse_price_schedule()** (10 connections) — `scrapers/utilities/epcor_energy_alberta.py`
 - **uca_detail()** (10 connections) — `scrapers/utils/alberta_rolr.py`
-- *... and 69 more nodes in this community*
+- **RolrPeriod** (9 connections) — `scrapers/utils/alberta_rolr.py`
+- **_parse_uca_grid()** (8 connections) — `scrapers/utils/alberta_rolr.py`
+- *... and 57 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (36 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (20 shared connections)
-- [RateComponent](RateComponent.md) (17 shared connections)
-- [re](re.md) (17 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (8 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (5 shared connections)
-- [.__init__](__init__.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (27 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (16 shared connections)
+- [re](re.md) (15 shared connections)
+- [.fetch_page](fetch_page.md) (10 shared connections)
+- [RateComponent](RateComponent.md) (10 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (7 shared connections)
+- [parse_html](parse_html.md) (7 shared connections)
 - [aeso.py](aeso.py.md) (3 shared connections)
+- [DirectEnergyRegulatedScraper](DirectEnergyRegulatedScraper.md) (2 shared connections)
+- [.__init__](__init__.md) (2 shared connections)
 - [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
-- [epcor_distribution.py](epcor_distribution.py.md) (1 shared connections)
+- [summerland.py](summerland.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -55,8 +55,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 341 (95%)
-- INFERRED: 19 (5%)
+- EXTRACTED: 308 (95%)
+- INFERRED: 17 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

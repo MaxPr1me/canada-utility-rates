@@ -40,11 +40,11 @@
 - [graphify_hook.py](graphify_hook.py.md) (5 shared connections)
 - [check_db_history.py](check_db_history.py.md) (4 shared connections)
 - [io](io.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
-- [representative_models.py](representative_models.py.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (2 shared connections)
+- [representative_models.py](representative_models.py.md) (2 shared connections)
+- [build_models](build_models.md) (2 shared connections)
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (2 shared connections)
 - [parse_schedule](parse_schedule.md) (2 shared connections)
-- [market_pricing.py](market_pricing.py.md) (2 shared connections)
 
 ## Source Files
 
