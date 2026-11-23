@@ -235,6 +235,7 @@ canada-utility-costs/
 │   └── schema_diagram.md     ← Visual diagram of the schema
 │
 ├── data/                     ← Data files
+│   ├── btap/                 ← Selected BTAP configs, result mappings and timestep CSVs may be tracked; other outputs ignored
 │   ├── db/                   ← SQLite history database: read-only mirror of the CI copy (backups/ is git-ignored)
 │   ├── exports/              ← CSV/Excel exports (optional)
 │   ├── excel/                ← Audit reference files (not system of record, git-ignored)

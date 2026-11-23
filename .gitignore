@@ -32,6 +32,21 @@ data/exports/*.csv
 data/exports/*.xlsx
 !data/exports/.gitkeep
 
+# BTAP: keep only run configuration, result mapping and timestep outputs.
+# Git cannot require the two run-folder names to match.
+/data/btap/**
+!/data/btap/.gitkeep
+!/data/btap/*/
+!/data/btap/*/build_config.yml
+!/data/btap/*/input.yml
+!/data/btap/*/*/
+!/data/btap/*/*/results/
+!/data/btap/*/*/results/output.xlsx
+!/data/btap/*/*/parametric/
+!/data/btap/*/*/parametric/runs/
+!/data/btap/*/*/parametric/runs/*/
+!/data/btap/*/*/parametric/runs/*/timestep.csv
+
 # Excel audit/reference files (not system of record)
 data/excel/
 
