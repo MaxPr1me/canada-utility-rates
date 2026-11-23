@@ -2,7 +2,7 @@
 
 > God node · 239 connections · `scrapers/utils/parsing.py`
 
-**Community:** [fortisbc_electric.py](fortisbc_electric.py.md)
+**Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
 
 ## Connections by Relation
 
@@ -37,7 +37,7 @@
 - [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - grand_forks.py `EXTRACTED`
-- lethbridge.py `EXTRACTED`
+- [lethbridge.py](lethbridge.py.md) `EXTRACTED`
 - medicine_hat.py `EXTRACTED`
 - *…and 12 more `imports` connection(s) not listed (lowest-degree first to go)*
 
@@ -75,7 +75,7 @@
 - [EnbridgeGasScraper](EnbridgeGasScraper.md) `INFERRED`
 - [BCHydroScraper](BCHydroScraper.md) `INFERRED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `INFERRED`
-- NewfoundlandPowerScraper `INFERRED`
+- [NewfoundlandPowerScraper](NewfoundlandPowerScraper.md) `INFERRED`
 - [ATCOGasScraper](ATCOGasScraper.md) `INFERRED`
 - parse_tariff_pages() `INFERRED`
 - HydroQuebecScraper `INFERRED`

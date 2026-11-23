@@ -1,6 +1,6 @@
 # re
 
-> 31 nodes
+> 30 nodes
 
 ## Key Concepts
 
@@ -25,33 +25,33 @@
 - **_Column** (3 connections) — `scrapers/utilities/atco_electric.py`
 - **_iso()** (3 connections) — `scrapers/utilities/atco_electric.py`
 - **_price_region()** (3 connections) — `scrapers/utilities/atco_electric.py`
-- **value()** (3 connections) — `scrapers/utilities/bc_hydro.py`
 - **Any** (2 connections)
 - **Exception** (1 connections)
 - **atco_electric.py -- Scraper for ATCO Electric distribution rates (Alberta).…** (1 connections) — `scrapers/utilities/atco_electric.py`
-- *... and 6 more nodes in this community*
+- **A class or rider cannot be proven complete and current from the official…** (1 connections) — `scrapers/utilities/atco_electric.py`
+- *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (10 shared connections)
-- [re](re.md) (8 shared connections)
-- [ATCOElectricScraper](ATCOElectricScraper.md) (6 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (11 shared connections)
+- [re](re.md) (7 shared connections)
+- [ATCOElectricScraper](ATCOElectricScraper.md) (5 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (3 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (2 shared connections)
 - [parse_html](parse_html.md) (2 shared connections)
-- [Path](Path.md) (1 shared connections)
-- [main](main.md) (1 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
+- [.fetch_page](fetch_page.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
 
 ## Source Files
 
 - `scrapers/utilities/atco_electric.py`
-- `scrapers/utilities/bc_hydro.py`
 
 ## Audit Trail
 
-- EXTRACTED: 99 (96%)
-- INFERRED: 4 (4%)
+- EXTRACTED: 98 (97%)
+- INFERRED: 3 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -36,10 +36,10 @@
 - [RateComponent](RateComponent.md) (14 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (11 shared connections)
 - [BaseScraper](BaseScraper.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [red_deer.py](red_deer.py.md) (1 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
+- [.fetch_page](fetch_page.md) (1 shared connections)
+- [._try_live_scrape](_try_live_scrape.md) (1 shared connections)
 
 ## Source Files
 

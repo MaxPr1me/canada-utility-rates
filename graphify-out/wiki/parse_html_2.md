@@ -36,7 +36,7 @@
 - base.py `EXTRACTED`
 - [enmax_power.py](enmax_power.py.md) `EXTRACTED`
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
-- ontario_ldc.py `EXTRACTED`
+- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
 - epcor_gas_ontario.py `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
@@ -51,7 +51,7 @@
 - [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - grand_forks.py `EXTRACTED`
-- lethbridge.py `EXTRACTED`
+- [lethbridge.py](lethbridge.py.md) `EXTRACTED`
 - medicine_hat.py `EXTRACTED`
 - *…and 17 more `imports` connection(s) not listed (lowest-degree first to go)*
 

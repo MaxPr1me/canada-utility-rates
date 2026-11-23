@@ -37,12 +37,12 @@
 - [re](re.md) (9 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (5 shared connections)
 - [RateComponent](RateComponent.md) (5 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [main](main.md) (1 shared connections)
 - [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
-- [ntpc.py](ntpc.py.md) (1 shared connections)
 
 ## Source Files
 

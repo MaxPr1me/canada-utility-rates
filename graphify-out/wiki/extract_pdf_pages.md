@@ -36,7 +36,7 @@
 - base.py `EXTRACTED`
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
-- ontario_ldc.py `EXTRACTED`
+- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
@@ -47,12 +47,12 @@
 - [naka_power.py](naka_power.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - grand_forks.py `EXTRACTED`
-- lethbridge.py `EXTRACTED`
+- [lethbridge.py](lethbridge.py.md) `EXTRACTED`
 - hydro_quebec.py `EXTRACTED`
-- [saint_john_energy.py](saint_john_energy.py.md) `EXTRACTED`
+- saint_john_energy.py `EXTRACTED`
 - [red_deer.py](red_deer.py.md) `EXTRACTED`
-- new_westminster.py `EXTRACTED`
-- [summerland.py](summerland.py.md) `EXTRACTED`
+- [new_westminster.py](new_westminster.py.md) `EXTRACTED`
+- summerland.py `EXTRACTED`
 - *…and 10 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### indirect_call

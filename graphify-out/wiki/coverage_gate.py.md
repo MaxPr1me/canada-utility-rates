@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
+- **json** (60 connections)
 - **coverage_gate.py** (22 connections) — `scripts/coverage_gate.py`
 - **evaluate()** (13 connections) — `scripts/coverage_gate.py`
-- **collections** (9 connections)
 - **main()** (8 connections) — `scripts/coverage_gate.py`
 - **manual_update_review_by()** (8 connections) — `scripts/coverage_gate.py`
 - **_parse_date()** (5 connections) — `scripts/coverage_gate.py`
@@ -33,18 +33,18 @@
 
 ## Relationships
 
-- [model_monitoring.py](model_monitoring.py.md) (4 shared connections)
-- [argparse](argparse.md) (4 shared connections)
-- [main](main.md) (3 shared connections)
-- [os](os.md) (1 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
-- [representative_models.py](representative_models.py.md) (1 shared connections)
-- [enmax_power.py](enmax_power.py.md) (1 shared connections)
-- [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
+- [argparse](argparse.md) (12 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (8 shared connections)
+- [main](main.md) (8 shared connections)
+- [run_scrape.py](run_scrape.py.md) (5 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (5 shared connections)
+- [check_db_history.py](check_db_history.py.md) (4 shared connections)
+- [io](io.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (3 shared connections)
+- [representative_models.py](representative_models.py.md) (3 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (2 shared connections)
+- [parse_schedule](parse_schedule.md) (2 shared connections)
+- [market_pricing.py](market_pricing.py.md) (2 shared connections)
 
 ## Source Files
 
@@ -52,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 69 (100%)
+- EXTRACTED: 118 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

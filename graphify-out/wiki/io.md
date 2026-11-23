@@ -1,20 +1,16 @@
 # io
 
-> 22 nodes
+> 15 nodes
 
 ## Key Concepts
 
-- **io** (40 connections)
-- **csv** (22 connections)
 - **export_ontario_totals.py** (20 connections) — `scripts/export_ontario_totals.py`
+- **collections** (9 connections)
 - **main()** (7 connections) — `scripts/export_ontario_totals.py`
 - **build()** (5 connections) — `scripts/export_ontario_totals.py`
 - **check_no_loss()** (5 connections) — `scripts/export_ontario_totals.py`
-- **rate_table_words()** (4 connections) — `scrapers/utilities/lethbridge.py`
-- **read_csv_rows()** (4 connections) — `scrapers/utils/parsing.py`
-- **serialize_hoep()** (4 connections) — `scripts/build_ontario_market.py`
 - **_csv()** (4 connections) — `scripts/export_ontario_totals.py`
-- **extract_pdf_tables()** (3 connections) — `scrapers/utils/parsing.py`
+- **importlib_util** (4 connections)
 - **cents()** (3 connections) — `scripts/export_ontario_totals.py`
 - **parse_args()** (3 connections) — `scripts/export_ontario_totals.py`
 - **load_supplement()** (2 connections) — `scripts/export_ontario_totals.py`
@@ -22,36 +18,30 @@
 - **_load_market()** (1 connections) — `scripts/export_ontario_totals.py`
 - **date** (1 connections)
 - **Path** (1 connections)
-- **Words of the rate table's first page with their positions (text, x0, x1, top).** (1 connections) — `scrapers/utilities/lethbridge.py`
-- **Read an official UTF-8/UTF-8-BOM CSV into named rows.** (1 connections) — `scrapers/utils/parsing.py`
-- **Extract tables from a PDF using pdfplumber. Returns the same format as…** (1 connections) — `scrapers/utils/parsing.py`
 - **Export hourly/monthly energy + Class B GA totals in CAD cents/kWh, without…** (1 connections) — `scripts/export_ontario_totals.py`
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (8 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (7 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (7 shared connections)
-- [main](main.md) (5 shared connections)
+- [main](main.md) (6 shared connections)
 - [argparse](argparse.md) (4 shared connections)
-- [aeso.py](aeso.py.md) (4 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (3 shared connections)
-- [re](re.md) (2 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (3 shared connections)
 - [graphify_hook.py](graphify_hook.py.md) (2 shared connections)
-- [MarketDataError](MarketDataError.md) (2 shared connections)
-- [EnbridgeGasScraper](EnbridgeGasScraper.md) (2 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (2 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [representative_models.py](representative_models.py.md) (1 shared connections)
+- [enmax_power.py](enmax_power.py.md) (1 shared connections)
+- [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (1 shared connections)
 
 ## Source Files
 
-- `scrapers/utilities/lethbridge.py`
-- `scrapers/utils/parsing.py`
-- `scripts/build_ontario_market.py`
 - `scripts/export_ontario_totals.py`
 
 ## Audit Trail
 
-- EXTRACTED: 101 (100%)
+- EXTRACTED: 47 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,6 +1,6 @@
 # build_ontario_market.py
 
-> 47 nodes
+> 48 nodes
 
 ## Key Concepts
 
@@ -29,20 +29,19 @@
 - **.total_arithmetic()** (4 connections) — `scripts/build_ontario_market.py`
 - **_mean()** (4 connections) — `scripts/build_ontario_market.py`
 - **describe_months()** (4 connections) — `scripts/build_ontario_market.py`
-- *... and 22 more nodes in this community*
+- *... and 23 more nodes in this community*
 
 ## Relationships
 
-- [main](main.md) (12 shared connections)
-- [io](io.md) (7 shared connections)
+- [main](main.md) (17 shared connections)
 - [load_ga_reports](load_ga_reports.md) (3 shared connections)
 - [argparse](argparse.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
+- [io](io.md) (2 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
-- [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
 - [os](os.md) (1 shared connections)
 - [parse_html](parse_html.md) (1 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 - [_load](_load.md) (1 shared connections)
 
@@ -52,7 +51,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 151 (99%)
+- EXTRACTED: 152 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

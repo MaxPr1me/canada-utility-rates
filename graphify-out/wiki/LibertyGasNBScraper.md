@@ -1,6 +1,6 @@
 # LibertyGasNBScraper
 
-> 24 nodes
+> 25 nodes
 
 ## Key Concepts
 
@@ -20,6 +20,7 @@
 - **._num()** (3 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **_month_end()** (3 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **comp()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._norm()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **Explicit federal zero fuel charge, with New Brunswick's charge period ending…** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **Current month's Liberty Utility Gas rate from the year-column history table.** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
@@ -36,7 +37,7 @@
 - [BaseScraper](BaseScraper.md) (4 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 - [.fetch_page](fetch_page.md) (1 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
 
 ## Source Files
 
@@ -44,7 +45,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 59 (97%)
+- EXTRACTED: 60 (97%)
 - INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 

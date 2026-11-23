@@ -34,7 +34,7 @@
 - [RateComponent](RateComponent.md) (5 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
 - [.fetch_page](fetch_page.md) (1 shared connections)
 
 ## Source Files

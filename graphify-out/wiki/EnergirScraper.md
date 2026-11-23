@@ -1,6 +1,6 @@
 # EnergirScraper
 
-> 42 nodes
+> 38 nodes
 
 ## Key Concepts
 
@@ -10,7 +10,6 @@
 - **._parse_d5()** (12 connections) — `scrapers/utilities/energir.py`
 - **._monthly_prices()** (12 connections) — `scrapers/utilities/energir.py`
 - **.parse_pages()** (11 connections) — `scrapers/utilities/energir.py`
-- **._try_live_scrape()** (11 connections) — `scrapers/utilities/energir.py`
 - **._parse_d1()** (9 connections) — `scrapers/utilities/energir.py`
 - **._shared_components()** (8 connections) — `scrapers/utilities/energir.py`
 - **._build()** (7 connections) — `scrapers/utilities/energir.py`
@@ -21,24 +20,23 @@
 - **component()** (5 connections) — `scrapers/utilities/energir.py`
 - **._history_value()** (5 connections) — `scrapers/utilities/energir.py`
 - **._monthly_notes()** (5 connections) — `scrapers/utilities/energir.py`
-- **.scrape()** (5 connections) — `scrapers/utilities/energir.py`
 - **._volume()** (5 connections) — `scrapers/utilities/energir.py`
 - **_quarter_end()** (5 connections) — `scrapers/utilities/energir.py`
 - **._column_date()** (4 connections) — `scrapers/utilities/energir.py`
 - **._cst_price()** (4 connections) — `scrapers/utilities/energir.py`
 - **._long_date()** (4 connections) — `scrapers/utilities/energir.py`
-- **._seed_data()** (4 connections) — `scrapers/utilities/energir.py`
 - **_month()** (4 connections) — `scrapers/utilities/energir.py`
-- *... and 17 more nodes in this community*
+- **_month_end()** (4 connections) — `scrapers/utilities/energir.py`
+- **_quarter_start()** (4 connections) — `scrapers/utilities/energir.py`
+- **_long()** (3 connections) — `scrapers/utilities/energir.py`
+- *... and 13 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (10 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (9 shared connections)
-- [RateComponent](RateComponent.md) (7 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
+- [BaseScraper](BaseScraper.md) (9 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (8 shared connections)
+- [RateComponent](RateComponent.md) (5 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -46,7 +44,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 127 (97%)
+- EXTRACTED: 113 (97%)
 - INFERRED: 4 (3%)
 - AMBIGUOUS: 0 (0%)
 

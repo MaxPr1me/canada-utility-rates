@@ -1,6 +1,6 @@
 # QulliqScraper
 
-> 15 nodes
+> 14 nodes
 
 ## Key Concepts
 
@@ -13,7 +13,6 @@
 - **._page_text()** (3 connections) — `scrapers/utilities/qulliq.py`
 - **._parse_interim()** (3 connections) — `scrapers/utilities/qulliq.py`
 - **_iso()** (2 connections) — `scrapers/utilities/qulliq.py`
-- **.__init__()** (2 connections) — `scrapers/utilities/qulliq.py`
 - **._norm()** (2 connections) — `scrapers/utilities/qulliq.py`
 - **._parse_rates_page()** (2 connections) — `scrapers/utilities/qulliq.py`
 - **change()** (1 connections) — `scrapers/utilities/qulliq.py`
@@ -27,7 +26,7 @@
 - [RateComponent](RateComponent.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 - [.fetch_page](fetch_page.md) (1 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
 
 ## Source Files
 
@@ -35,7 +34,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 37 (95%)
+- EXTRACTED: 36 (95%)
 - INFERRED: 2 (5%)
 - AMBIGUOUS: 0 (0%)
 
