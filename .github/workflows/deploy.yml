@@ -14,6 +14,16 @@
 # market history when only its archive step fails); run this workflow by hand
 # to publish such a commit. A workflow_run deploy checks out main, which
 # includes the triggering run's commits.
+#
+# Two jobs, as in GitHub's Pages starter workflows: "build" uploads the site
+# artifact and "deploy" publishes it. In one job, deploy-pages looked the
+# artifact up a fraction of a second after the upload and sometimes found none
+# ("No artifacts named github-pages", actions/deploy-pages#451; three failures
+# on AWS-hosted runners from 2026-11-20). A failed deploy job can also be
+# re-run on its own ("Re-run failed jobs", within the artifact's one-day
+# retention): it reuses the build job's artifact, whereas re-running a single
+# upload-and-deploy job uploads a second artifact and fails on "Multiple
+# artifacts".
 
 name: Deploy Site
 
@@ -39,13 +49,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout repository
@@ -61,6 +67,15 @@ jobs:
         with:
           path: site/
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

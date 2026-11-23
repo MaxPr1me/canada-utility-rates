@@ -94,8 +94,21 @@ def test_deploy_follows_the_monthly_scrape_and_the_ontario_price_archive_by_name
 
 def test_deploy_runs_only_after_successful_runs_and_checks_out_main():
     text = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
-    assert f"\n  deploy:\n    if: {SUCCESS_ONLY}\n" in text
+    assert f"\n  build:\n    if: {SUCCESS_ONLY}\n" in text
     assert f"\n          {MAIN_CHECKOUT}\n" in text
+
+
+def test_deploy_publishes_the_artifact_in_a_later_job_than_the_upload():
+    # actions/deploy-pages#451: deploying in the upload's own job intermittently found no artifact.
+    yaml = pytest.importorskip("yaml")
+    jobs = yaml.safe_load(DEPLOY_WORKFLOW.read_text(encoding="utf-8"))["jobs"]
+
+    def uses(job):
+        return [step.get("uses", "").split("@")[0] for step in jobs[job]["steps"]]
+
+    assert "actions/upload-pages-artifact" in uses("build") and "actions/deploy-pages" not in uses("build")
+    assert uses("deploy") == ["actions/deploy-pages"]
+    assert jobs["deploy"]["needs"] == "build" and jobs["deploy"]["environment"]["name"] == "github-pages"
 
 
 def test_market_writers_serialize_and_never_rebase_generated_models():

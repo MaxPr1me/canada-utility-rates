@@ -358,7 +358,10 @@ automatic trigger (`workflow_run`) only fires from the default branch.
 
 The **Ontario Price Archive** workflow can be started the same way. The owner's computer has no
 GitHub command-line tool, so start workflows from the website. **Deploy Site** can also be run by
-hand if it did not start by itself after a successful data update.
+hand if it did not start by itself after a successful data update. If Deploy Site itself failed at
+its publishing job, open the failed run and click **"Re-run failed jobs"** within a day: only the
+publishing job runs again, using the site copy already prepared (kept for one day). After that,
+start Deploy Site again with **"Run workflow"**.
 
 **Prices posted after the 1st (owner decisions, November 20 and 23, 2026):** Énergir, Eastward
 Energy (registered as `Heritage Gas`), Liberty Utilities NB and the City of Medicine Hat change a

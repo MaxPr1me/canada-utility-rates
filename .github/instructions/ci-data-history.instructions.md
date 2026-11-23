@@ -74,7 +74,12 @@ snapshot rules: [scrapers.instructions.md](scrapers.instructions.md). Model expo
   trigger no workflows, hence `workflow_run`. A `workflow_run` deploy checks out `main`; a failed or
   cancelled run deploys nothing even if it committed data, so dispatch Deploy Site by hand to publish
   such a commit. `workflow_run` fires only from the default branch, and GitHub Pages must use GitHub
-  Actions as its source.
+  Actions as its source. A `build` job uploads the site artifact and a separate `deploy` job
+  (`needs: build`, environment `github-pages`) publishes it, as in GitHub's Pages starter workflows:
+  deploying in the upload's own job intermittently found no artifact ("No artifacts named
+  github-pages", actions/deploy-pages#451; three failures on AWS-hosted runners from 2026-11-20). A
+  failed `deploy` job can be re-run on its own within a day, reusing the build job's artifact
+  (`upload-pages-artifact` keeps it one day); later, dispatch Deploy Site.
 - The three data writers take turns through the `utility-data-updates` concurrency group (rules in
   the market-data instructions).
 - Known harmless warning: "git ... exit code 128" in the checkout post-step, because

@@ -455,7 +455,9 @@ entries. **Risk:** deleting the `data-history` release deletes `rates.db` and ev
 - [Deploy Site](.github/workflows/deploy.yml) publishes the site on push or manual dispatch,
   and by itself after each successful Monthly Scrape, Ontario Price Archive or Market Benchmarks
   run; it checks out `main`. A failed data run that still committed new data needs a manual
-  deploy.
+  deploy. A build job uploads the site and a separate deploy job publishes it (GitHub's own
+  layout; deploying in the upload's job sometimes found no upload, November 20-23), so a failed
+  deploy can be fixed with "Re-run failed jobs" within a day.
 - [Source Health](.github/workflows/source-health.yml) runs a non-blocking dry run on the 15th
   and uploads its log without publishing; it installs Playwright Chromium. Read the
   [source-health troubleshooting note](AGENTS.md#source-health-is-green-but-a-source-failed)
