@@ -167,13 +167,14 @@ records does not prove that every building class is covered. Current figures are
 
 A *representative model* is a "typical" monthly cost for a province, worked out from the middle
 value (the median) of its utilities' live rates. Electricity models exist for the ten provinces.
-Natural gas models exist for homes only, in the unit each utility bills (cubic metres or gigajoules,
-never converted); business gas and the territories come later.
+Natural gas models exist for homes and for small and mid-size commercial buildings, in the unit each
+utility bills (cubic metres or gigajoules, never converted); contract, interruptible and seasonal gas
+services and the territories come later.
 
 | File | What it does |
 |---|---|
-| `data/models/crosswalk.json` | The sorting list. Its rules are read from top to bottom; the first rule that fits puts each live tariff into a model group (province, fuel, customer type, rate structure and size) or leaves it out with a written reason. No live tariff may be left unsorted. |
-| `data/models/usage_levels.json` | The example customers, approved by the project owner: homes using 500, 1,000 or 2,000 kWh a month; small businesses (under 50 kW) using 2,000 kWh at 10 kW or 8,000 kWh at 25 kW; medium businesses (50-499 kW) using 40,000 kWh at 100 kW; large businesses (500-4,999 kW) using 500,000 kWh at 1,000 kW. For gas, homes using 100, 200 or 400 cubic metres a month, or 4, 8 or 16 GJ where gas is billed in GJ (200 m³ and 8 GJ are the reference levels; the others show the range). Also the average month (30.4375 days, for turning daily charges into monthly ones), Ontario's dated time-of-use split and the synthetic business load profile. |
+| `data/models/crosswalk.json` | The sorting list. Its rules are read from top to bottom; the first rule that fits puts each live tariff into a model group (province, fuel, customer type, rate structure and size) or leaves it out with a written reason. No live tariff may be left unsorted. It also holds the reviewed class limits that decide which tariff serves each example customer, each quoting the tariff's own words (for example whether "1,200 GJ per year or less" includes 1,200 GJ). |
+| `data/models/usage_levels.json` | The example customers, approved by the project owner: homes using 500, 1,000 or 2,000 kWh a month (1,000 kWh is the reference level); small businesses (under 50 kW) using 2,000 kWh at 14 kW or 10,000 kWh at 40 kW; medium businesses (50-499 kW) using 40,000 kWh at 100 kW; large businesses (500-4,999 kW) using 500,000 kWh at 1,000 kW. For gas, homes using 100, 200 or 400 cubic metres a month, or 4, 8 or 16 GJ where gas is billed in GJ; small commercial buildings using 500, 1,000 or 2,000 m³ (15, 30 or 60 GJ); mid-size buildings using 2,500, 5,000 or 10,000 m³ (100, 200 or 400 GJ). In each gas set the middle value is the reference level and the others show the range. Every level records who decided it, what it represents, why, and its official sources. Also the average month (30.4375 days, for turning daily charges into monthly ones), Ontario's dated time-of-use split, the synthetic business load profile, and the few reviewed rules for charges that depend on the customer (for example which of Liberty Gas NB's customer charges applies). |
 | `data/models/block_periods.json` | Reviewed notes saying whether an energy block such as "first 5,000 kWh" is per month or per two months, quoting the source. When nothing says, the tariff is left out of the model instead of guessed. |
 | `data/models/taxes.json` | Sales taxes and automatic bill rebates for every province and territory, as dated lines: for example the Ontario Electricity Rebate is 23.5% until October 31, 2026 and 15.7% from November 1, 2026 (O. Reg. 328/26). Municipal taxes and income-tested programs are left out. |
 | `pipeline/representative_models.py` | The calculator: each utility's monthly cost at each level, then the median, the spread, the utility closest to the median and any far from it (outliers), without and with tax, with a written explanation of how each number was made. |
@@ -186,7 +187,7 @@ never converted); business gas and the territories come later.
 | File | What it does |
 |---|---|
 | `site/index.html` | The page and its views: **Rate Browser**, **Market Pricing**, **Representative Models**, **Across-Canada** and **Compare** (two tariffs side by side, never a bill total). |
-| `site/js/app.js` | The main logic: loads the data, shows the newest version of each tariff, and runs the filters, rate cards, detail windows and the Market Pricing page (Ontario or Alberta). |
+| `site/js/app.js` | The main logic: loads the data, shows the newest version of each tariff, and runs the filters, rate cards, detail windows and the Market Pricing page (Ontario or Alberta). A price with an end date shows its period, and an "Ended" tag once that date has passed. |
 | `site/js/models.js` | The Representative Models page: typical monthly costs without and with tax, the method, the contributing utilities and the example customer's assumptions; a separate historical market benchmark for larger Ontario and Alberta businesses; and, only behind a checkbox, the illustrative estimate with a warning and a SYNTHETIC badge. |
 | `site/js/across-canada.js` | Residential electricity across Canada at 500, 1,000 or 2,000 kWh (default 1,000), with tax by default. It reuses the model file, never recalculates bills or uses synthetic estimates, and never turns a missing model into a zero bar. |
 | `site/css/` | How the pages look (`style.css`, `models.css`, `across-canada.css`). |
@@ -732,7 +733,8 @@ apply to all of them:
 - **A price with a period ends on time.** Gas supply prices that change monthly, quarterly or every
   six months carry the end of the period their source states (owner decision, November 20, 2026).
   After that date the next model update leaves that tariff out (it is never priced without its
-  supply price) until a Monthly Scrape stores the new price. A price with no set period, which
+  supply price) until a Monthly Scrape stores the new price, and the Rate Browser tags the price
+  "Ended" (it is never hidden; owner decision, November 23, 2026). A price with no set period, which
   changes only when a regulator approves a new one (FortisBC, SaskEnergy), stays open-ended. The
   list is in the [gas rules](.github/instructions/gas-utilities.instructions.md#all-gas-utilities).
 - **"Complete" means checked.** Completing a utility means auditing its building-related standard
@@ -776,6 +778,7 @@ The detailed rules are in the area files: [all scrapers](.github/instructions/sc
 | **Variable (market) charge** | A charge that follows a market price that changes over time (for example the Ontario Price). It is stored with a link to the market but no number, and the website shows "Variable". |
 | **Representative model** | A "typical" monthly cost for a province, built from the median of its utilities' live tariffs at set example usage levels, shown without and with tax, with a note explaining how it was made. In Alberta, one "utility" in a model is a service area: a wires company plus the Rate of Last Resort provider for its area, or one city utility (Lethbridge, Red Deer or Medicine Hat). It is a comparison aid, never a rate anyone is billed, and it never counts as live coverage. |
 | **Median** | The middle value when numbers are sorted from lowest to highest. Unlike an average, one unusually high or low utility barely moves it. |
+| **Reference level / sensitivity level** | In a representative model, the reference level is the example customer the model is built around (for example a home using 1,000 kWh a month, or a small commercial building using 1,000 m³ of gas); sensitivity levels (often half and double) show how the cost changes with use. Sensitivity levels are not "typical" customers. |
 | **Outlier** | In a representative model, a utility whose cost is far from the median (more than 30% away, or well outside the range of the middle half of the utilities). It is named with how far away it is; it is not left out. |
 | **Synthetic load profile** | A made-up pattern of when a business uses electricity, not taken from any real customer. The project's one (approved by the project owner) assumes full power on weekdays from 7 a.m. to 7 p.m. (Eastern Standard Time) and a smaller, steady amount at all other hours. It is used only for the illustrative estimate. |
 | **Illustrative estimate** | A number shown only to give a rough idea, not to be relied on: for Ontario's two larger business sizes, their delivery charges plus market energy priced with the synthetic load profile. It stays hidden until you tick "Show illustrative all-in estimate (synthetic load profile)", carries a warning and a SYNTHETIC badge, and is never used in medians, comparisons or change checks. It is not a forecast, a quote or a bill, and it needs further analysis. |

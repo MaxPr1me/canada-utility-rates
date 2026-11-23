@@ -380,7 +380,7 @@
             const compRows = components.map(c => `
                 <div class="component-row">
                     <span class="comp-name">${escapeHtml(c.component_name)}</span>
-                    <span class="comp-value">${escapeHtml(formatCharge(c))}</span>
+                    <span class="comp-value">${escapeHtml(formatCharge(c))}${endedBadge(c)}</span>
                 </div>
             `).join("");
 
@@ -483,7 +483,7 @@
                 const [type, name, unit] = key.split("|");
                 return `<tr><th scope="row"><span class="component-type">${escapeHtml(type)}</span>${escapeHtml(name)} <small>${escapeHtml(unit)}</small></th>${comparison.map(rate => {
                     const c = (rate.components || []).find(item => [item.component_type, item.component_name, item.charge_unit || "variable"].join("|") === key);
-                    return `<td>${c ? `${escapeHtml(formatCharge(c))}${c.market_reference ? ' <span class="market-ref-badge">Market-indexed</span>' : ''}<br><small>${escapeHtml(formatDetails(c))}</small>` : "—"}</td>`;
+                    return `<td>${c ? `${escapeHtml(formatCharge(c))}${c.market_reference ? ' <span class="market-ref-badge">Market-indexed</span>' : ''}${endedBadge(c)}<br><small>${escapeHtml(formatDetails(c))}</small>` : "—"}</td>`;
                 }).join("")}</tr>`;
             }).join("")}</tbody></table></div>`;
         container.querySelectorAll(".compare-remove").forEach(button => button.addEventListener("click", () => {
@@ -517,7 +517,7 @@
                         <tr>
                             <td>${escapeHtml(c.component_type || "")}</td>
                             <td>${escapeHtml(c.component_name || "")}${c.market_reference ? ` <span class="market-ref-badge">Market</span>` : ""}</td>
-                            <td>${c.charge_value == null && c.market_reference ? "<em>Variable</em>" : escapeHtml(formatCharge(c, true))}</td>
+                            <td>${c.charge_value == null && c.market_reference ? "<em>Variable</em>" : escapeHtml(formatCharge(c, true))}${endedBadge(c)}</td>
                             <td>${escapeHtml(formatDetails(c))}</td>
                         </tr>
                     `).join("")}
@@ -1806,7 +1806,51 @@
         if (comp.season) parts.push(comp.season);
         if (comp.demand_threshold_kw) parts.push(`>${comp.demand_threshold_kw} kW`);
         if (comp.market_reference) parts.push(comp.market_reference);
+        const period = componentPeriod(comp);
+        if (period) parts.push(period);
         return parts.join(" | ");
+    }
+
+    // Owner decision 34 (2026-11-23): a component with an end date shows its period, and an "Ended" tag once that
+    // date has passed by the visitor's own date (the end date is the last day the price applies). Nothing is hidden:
+    // an ended price stays visible until a newer one is stored.
+    function monthAbbr(month) {
+        return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month - 1];
+    }
+
+    function isoParts(value) {
+        const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ""));
+        return match ? { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) } : null;
+    }
+
+    function shortDate(parts, withYear) {
+        return `${monthAbbr(parts.month)} ${parts.day}${withYear ? `, ${parts.year}` : ""}`;
+    }
+
+    function componentPeriod(comp) {
+        const end = isoParts(comp.end_date);
+        if (!end) return "";
+        const start = isoParts(comp.effective_date);
+        if (!start) return `until ${shortDate(end, true)}`;
+        if (start.year === end.year && start.month === end.month) {
+            return `${monthAbbr(start.month)} ${start.day}-${end.day}, ${end.year}`;
+        }
+        return `${shortDate(start, start.year !== end.year)} - ${shortDate(end, true)}`;
+    }
+
+    function localToday() {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    }
+
+    function componentEnded(comp) {
+        return Boolean(isoParts(comp.end_date)) && String(comp.end_date).slice(0, 10) < localToday();
+    }
+
+    function endedBadge(comp) {
+        if (!componentEnded(comp)) return "";
+        return ` <span class="ended-badge" title="This price applied until ${escapeHtml(componentPeriod(comp).replace(/^until /, ""))}; `
+            + `a newer price has not been stored yet">Ended</span>`;
     }
 
     function truncateUrl(url) {

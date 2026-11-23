@@ -1,10 +1,10 @@
-"""Phase 7D residential gas models (method 7D-1, owner decision 2026-11-04).
+"""Phase 7D gas models: residential default utility supply (method 7D-1, owner decision 2026-11-04), extended by
+method 7D-2 (owner decisions 2026-11-20) to commercial general service and to Energir Rate D1 and Liberty Utility Gas.
 
-Residential default utility supply only, priced in each utility's native billing unit: m3 utilities at
-100/200/400 m3 a month and GJ utilities at 4/8/16 GJ a month, never converted or merged. Commercial, contract
-and interruptible gas models are withheld until their scenarios are approved. The inputs are frozen latest live
-records from the 2026-11-01 export (tests/fixtures/rm_records_7d_gas.json), so these tests never depend on the
-live export.
+Priced in each utility's native billing unit: m3 utilities at 100/200/400 m3 a month and GJ utilities at 4/8/16 GJ a
+month for homes, never converted or merged. The inputs are frozen latest live records from the 2026-11-01 export
+(tests/fixtures/rm_records_7d_gas.json), so these tests never depend on the live export. The commercial models are
+tested on a later fixture in tests/test_models_7d2_gas.py.
 """
 import copy
 import json
@@ -48,8 +48,11 @@ def test_gas_levels_are_the_approved_native_unit_sets():
     assert all("kwh" not in lv and "kw" not in lv for lv in levels)
     references = [lv for lv in levels if lv["role"] == "reference"]
     assert {lv["id"] for lv in references} == {"m3_reference", "gj_reference"}
-    assert all(lv["source_url"].startswith("https://") and lv["basis"] for lv in references)
+    # Documented backing (owner rule 2026-11-20): decision, what it represents and why; references cite sources.
+    assert all(lv["decided"] and lv["represents"] and lv["why"] for lv in levels)
+    assert all(src["url"].startswith("https://") and src["figure"] for lv in references for src in lv["sources"])
     assert {lv["role"] for lv in levels if lv["id"] not in ("m3_reference", "gj_reference")} == {"sensitivity"}
+    assert all("sensitivity level" in lv["why"] for lv in levels if lv["role"] == "sensitivity")
 
 
 @pytest.mark.parametrize("unit, volume, expected", [
@@ -60,7 +63,6 @@ def test_gas_levels_are_the_approved_native_unit_sets():
     ("$/m³", "GJ", None),
     ("$/kWh", "m3", None),
     ("$/m³/month", "m3", None),
-    ("$/metering device/day", "m3", None),
 ])
 def test_price_basis_accepts_only_the_models_own_volume_unit(unit, volume, expected):
     assert rm.price_basis({"charge_unit": unit}, volume_unit=volume) == expected
@@ -71,6 +73,9 @@ def test_fixed_charges_and_electricity_units_are_unchanged():
     assert rm.price_basis({"charge_unit": "$/month"}, volume_unit="m3") == ("month", 1.0, [])
     assert rm.price_basis({"charge_unit": "$/kWh"}) == ("kwh", 1.0, [])
     assert rm.price_basis({"charge_unit": "$/m³"}) is None
+    # One metering device (owner decision 8, 2026-11-20: Energir D1 basic fee).
+    assert rm.price_basis({"charge_unit": "$/metering device/day"}, volume_unit="m3") == (
+        "month", rm.DEFAULT_DAYS_PER_MONTH, ["$/metering device/day x 30.4375 (one metering device)"])
 
 
 def test_gas_volume_unit_requires_one_native_unit():
@@ -84,15 +89,18 @@ def test_gas_volume_unit_requires_one_native_unit():
 
 def test_each_province_uses_its_native_unit_levels(built):
     expected_units = {"ON": "m3", "MB": "m3", "SK": "m3", "QC": "m3", "BC": "GJ", "AB": "GJ", "NS": "GJ", "NB": "GJ"}
+    gas_levels = rm.load_usage_levels()["gas"]
     gas = [m for m in built["models"] if m["key"]["fuel"] == "gas"]
-    assert {m["key"]["province"] for m in gas} == set(expected_units)
+    assert {m["key"]["province"] for m in gas if m["key"]["sector"] == "residential"} == set(expected_units)
     for model in gas:
         unit = expected_units[model["key"]["province"]]
-        ids = M3_LEVELS if unit == "m3" else GJ_LEVELS
+        band = model["key"]["size_band"] or "residential"
+        ids = {lv["id"]: float(lv["quantity"]) for lv in gas_levels[band] if lv["unit"] == unit}
         assert {lv["id"]: lv["quantity"] for lv in model["levels"]} == ids
         assert all(lv["unit"] == unit and lv["kwh"] is None and lv["kw"] is None for lv in model["levels"])
-        first = "m3_low 100 m³/month" if unit == "m3" else "gj_low 4 GJ/month"
-        assert first in str(model["method"]) and " kWh/month" not in str(model["method"])
+        first = next(iter(ids))
+        assert f"{first} {ids[first]:,.0f} {'m³' if unit == 'm3' else 'GJ'}/month" in str(model["method"])
+        assert " kWh/month" not in str(model["method"])
 
 
 def test_saskenergy_cost_is_the_sum_of_its_published_components(built):
@@ -118,14 +126,23 @@ def test_ontario_models_follow_the_offered_structures(built):
         assert costs == sorted(costs) and all(cost > 0 for cost in costs)
 
 
-def test_unsupported_or_optional_supply_fails_closed(built):
-    quebec = _model(built, "QC|gas|residential|tiered|-")
+def test_reference_supply_and_basic_fee_bands_need_their_reviewed_rules():
+    # 7D-2 prices Liberty Utility Gas and Energir's basic-fee band only through reviewed usage_levels entries; without
+    # them both residential models fail closed again (owner decisions 7 and 8, 2026-11-20).
+    usage = copy.deepcopy(rm.load_usage_levels())
+    usage["reference_customer"] = [e for e in usage["reference_customer"] if e["id"] != "nb-liberty-utility-gas"]
+    usage["fixed_charge_variants"] = [r for r in usage["fixed_charge_variants"] if r["id"] != "qc-energir-basic-fee-band"]
+    result = rm.build_models(_records(), rm.load_crosswalk(), usage, rm.load_taxes(), provinces=None, fuels=("gas",),
+                             as_of=AS_OF, block_periods=[], market_document=None)
+    quebec = _model(result, "QC|gas|residential|tiered|-")
     assert quebec["state"] == "not_computable"
-    assert any("$/metering device/day" in str(e.get("reason")) for e in quebec["exclusions"])
-    new_brunswick = _model(built, "NB|gas|residential|flat|-")
+    assert any("annual-volume bands without a selection rule" in str(e.get("reason")) for e in quebec["exclusions"])
+    new_brunswick = _model(result, "NB|gas|residential|flat|-")
     assert new_brunswick["state"] == "not_computable"
     assert any("none is unconditional" in str(e.get("reason")) for e in new_brunswick["exclusions"])
     assert all(lv["without_tax"]["median"] is None for model in (quebec, new_brunswick) for lv in model["levels"])
+    for model_id in ("QC|gas|residential|tiered|-", "NB|gas|residential|flat|-"):
+        assert _model(_build(), model_id)["state"] == "single_source"
 
 
 def test_excluded_products_never_contribute(built):
@@ -136,11 +153,11 @@ def test_excluded_products_never_contribute(built):
                                                    r"Alternative Technology", names[i])]
 
 
-def test_commercial_gas_models_are_withheld(built):
-    assert not [m for m in built["models"] if m["key"]["fuel"] == "gas" and m["key"]["sector"] != "residential"]
+def test_commercial_gas_models_use_building_bands_and_nothing_is_withheld(built):
+    commercial = [m["key"] for m in built["models"] if m["key"]["fuel"] == "gas" and m["key"]["sector"] != "residential"]
+    assert commercial and all(k["size_band"] in ("commercial_small", "commercial_medium") for k in commercial)
     withheld = built["input"]["withheld_gas_models"]
-    assert any(label.startswith("BC|gas|commercial") for label in withheld["models"])
-    assert "2026-11-04" in withheld["reason"]
+    assert withheld["models"] == [] and "2026-11-20" in withheld["reason"]
 
 
 def test_mixed_volume_units_make_the_model_not_computable():

@@ -33,6 +33,11 @@ reading `site/data/`. Model data rules, including Across-Canada's:
 - `formatCharge()` prefixes "$" only for units starting with "$" (negatives as "-$1.85/day"); %,
   fraction and other units stay plain. Value-less market components show "Variable". Values are
   HTML-escaped, and the details modal has one "Charge" column.
+- Dated components (owner decision 34, 2026-11-23): a component with an `end_date` shows its period
+  in the details and Compare ("Nov 1-30, 2026", "until ..."), and an "Ended" tag (`.ended-badge`) on
+  the card, in the details and in Compare once the end date is before the visitor's own date (the end
+  date is the last day the price applies). Ended prices are never hidden: they stay until a newer
+  record is stored.
 
 ## Compare
 
@@ -65,9 +70,13 @@ reading `site/data/`. Model data rules, including Across-Canada's:
 - Both model views label tax-inclusive totals as "with tax and rebates". The shared
   `rebateExplanation()` uses applied rebate lines and published medians to explain a lower total
   beside the prices; never infer a rebate from a lower number alone or recalculate tax in the browser.
-- Gas models (7D-1) show levels in each utility's native unit (`quantity` + `unit`: m³ or GJ, never
-  converted) with Reference/Sensitivity tags; the reference level is highlighted like the electricity
-  typical level. Across-Canada keeps filtering to residential electricity.
+- Gas models show levels in each utility's native unit (`quantity` + `unit`: m³ or GJ, never
+  converted). Every level with a `role` gets a Reference or Sensitivity tag (residential electricity
+  too since 7D-2: 1,000 kWh is the reference level, decision 29); "Typical" remains only for an older
+  file without roles. The reference level is highlighted. Commercial gas models (7D-2) add a "Class
+  used" column to the contributors table (the tariff codes of the records used at the selected level,
+  and the elective choice with both costs) and a "Class used at each level" note with the peak-month
+  factor and elective classes. Across-Canada keeps filtering to residential electricity.
 - The synthetic 7E block is opt-in ("Show illustrative all-in estimate (synthetic load profile)"): off
   by default and reset when the model changes, with its warning, SYNTHETIC badge and fixed caveat.
 - Render `fixed_charge_variants` as always-visible reference assumptions for every supplied level,

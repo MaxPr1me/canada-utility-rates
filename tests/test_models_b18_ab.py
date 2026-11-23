@@ -109,8 +109,9 @@ def test_city_rate_of_last_resort_applies_only_below_250000_kwh():
     result = _build()
     small = _costs(_model(result, "AB|electricity|commercial|flat|commercial_small"), "s2")
     medium = _model(result, "AB|electricity|commercial|demand|commercial_medium")
-    assert small[RED_DEER] == pytest.approx((1.0151 + 1.6269 + 0.3035) * DPM + 8000 * (0.0361 + 0.0155 + 0.00131
-                                                                                        + 0.0024 + 0.1206), abs=0.01)
+    # s2 is 10,000 kWh at 40 kW since 7D-2 (owner decision 2026-11-20).
+    assert small[RED_DEER] == pytest.approx((1.0151 + 1.6269 + 0.3035) * DPM + 10000 * (0.0361 + 0.0155 + 0.00131
+                                                                                         + 0.0024 + 0.1206), abs=0.01)
     assert medium["state"] == "market_energy_pending"
     kva_days = 100 / 0.9 * DPM
     assert _costs(medium, "m1")[RED_DEER] == pytest.approx(kva_days * (0.2533 + 0.1847) + 40000 * (

@@ -14713,13 +14713,22 @@ def test_rm7a_usage_levels_hold_the_approved_values():
     assert levels["version"] == 1
     assert levels["days_per_month"] == 30.4375
     assert levels["power_factor_for_kva"] == 0.9
-    assert levels["electricity"] == {
+    values = {sector: [{k: lv[k] for k in ("id", "kwh", "kw") if k in lv} for lv in rows]
+              for sector, rows in levels["electricity"].items()}
+    assert values == {
         "residential": [{"id": "low", "kwh": 500}, {"id": "typical", "kwh": 1000}, {"id": "high", "kwh": 2000}],
-        "commercial_small": [{"id": "s1", "kwh": 2000, "kw": 10}, {"id": "s2", "kwh": 8000, "kw": 25}],
+        # Owner decisions 27 and 28 (2026-11-20): s1 at 14 kW, s2 10,000 kWh at 40 kW (were 10 kW and 8,000 kWh at 25 kW).
+        "commercial_small": [{"id": "s1", "kwh": 2000, "kw": 14}, {"id": "s2", "kwh": 10000, "kw": 40}],
         "commercial_medium": [{"id": "m1", "kwh": 40000, "kw": 100}],
         "commercial_large": [{"id": "l1", "kwh": 500000, "kw": 1000}],
         "commercial_xlarge": [],
     }
+    # Decision 29 roles and the documented backing of every level (owner rule 2026-11-20).
+    assert [lv["role"] for lv in levels["electricity"]["residential"]] == ["sensitivity", "reference", "sensitivity"]
+    for rows in levels["electricity"].values():
+        for lv in rows:
+            assert lv["decided"] and lv["represents"] and lv["why"] and lv["sources"], lv["id"]
+            assert all(src["url"].startswith("https://") and src["figure"] and src["date"] for src in lv["sources"])
     assert "Phase 7D" in levels["gas"]["note"]
     shares = levels["tou_shares"]
     assert shares["ON_RPP_TOU"]["shares"] == {"off-peak": 0.64, "mid-peak": 0.18, "on-peak": 0.18}
@@ -15370,7 +15379,8 @@ def RM7B__expected_reference(component, sector):
 
 def test_rm7b_reference_customer_entries_are_well_formed_and_frozen_in_the_fixture():
     levels = RM7B_load_usage_levels()
-    entries = levels["reference_customer"]
+    # Ontario electricity entries; the 7D-2 gas entries (Quebec, New Brunswick) are tested in test_models_7d2_gas.py.
+    entries = [e for e in levels["reference_customer"] if e["province"] == "ON"]
     assert [e["id"] for e in entries] == [CBR, GA, NON_WMP, SSS] and levels["reference_customer_basis"]
     for entry in entries:
         assert {"id", "province", "fuel", "sectors", "match", "reason", "source"} <= set(entry), entry["id"]

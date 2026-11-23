@@ -1611,8 +1611,31 @@
       "effective_date": "2008-01-01",
       "end_date": null,
       "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
-      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No PST line (medium): natural gas used for heating in buildings is PST-exempt (PST Act s.8(1)(v)(i)); PST 6% would apply to non-heating uses (e.g. process gas), not modelled.",
+      "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). PST: separate 0% line (medium confidence).",
       "confidence": "high"
+     },
+     {
+      "name": "PST",
+      "kind": "sales_tax",
+      "rate": 0.0,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "commercial_small",
+        "commercial_medium",
+        "commercial_large",
+        "commercial_xlarge"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": null,
+      "end_date": null,
+      "source_url": "https://publications.saskatchewan.ca/api/v1/products/779/formats/1196/download",
+      "source_note": "PST Act s.8(1)(v)(i) exempts natural gas used 'for the purposes of heating in homes or buildings', so the model's building gas is taxed at 0% (owner decisions 9 and 23, 2026-11-20). Medium confidence: no official text says whether commercial water heating or cooking counts as heating a building (about 107 PST bulletins checked); those uses may be taxable at 6%, which is not modelled.",
+      "confidence": "medium"
      }
     ]
    }

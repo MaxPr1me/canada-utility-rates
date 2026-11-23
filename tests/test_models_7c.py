@@ -147,7 +147,9 @@ def test_rate_of_last_resort_applies_only_below_250000_kwh_a_year():
 
 def test_atco_small_business_pair_matches_a_hand_calculation_with_per_kw_energy_blocks():
     s1 = _row(_level(_model(_build(), AB_SMALL), "s1"), ATCO)
-    assert s1["cost_without_tax"] == 542.69
+    # s1 is 2,000 kWh at 14 kW since 7D-2: the 10 kW cost (542.694475) plus 4 kW more of the distribution (0.3062) and
+    # transmission (0.3158) demand charges per kW per day; all 2,000 kWh stay in the first 200 kWh-per-kW block.
+    assert s1["cost_without_tax"] == round(542.694475 + 4 * (0.3062 + 0.3158) * DPM, 2) == 618.42
     res = _cost(_variants(3021)[0], 8000, 25, sector="commercial_small", structure="demand")
     items = {i["component"]: i for i in res["items"]}
     assert items["Distribution Energy Charge (first 200 kWh per kW of billing demand)"]["amount"] == pytest.approx(
@@ -239,7 +241,7 @@ def test_optional_time_of_use_and_peak_event_products_stay_out_of_the_medians():
 
 def test_province_labels_method_texts_and_states_are_generic():
     result = _build()
-    assert result["method_version"] == rm.METHOD_VERSION == "7D-1"
+    assert result["method_version"] == rm.METHOD_VERSION == "7D-2"
     assert result["input"]["fuels"] == ["electricity", "gas"] and result["input"]["provinces"] == sorted(PROVINCES)
     for model in result["models"]:
         province = model["key"]["province"]
@@ -317,20 +319,21 @@ def test_market_indexed_and_aeso_records_are_excluded_by_their_own_rules():
         assert any(c["charge_value"] is None and c["market_reference"] for c in record["components"]), record["name"]
 
 
-def test_only_residential_gas_is_modelled_and_territories_are_not():
+def test_gas_models_are_residential_or_commercial_building_bands_and_territories_are_not_modelled():
     records = load_rates(FIXTURES / "rm_records_sample.json") + load_rates(FIXTURES / "rm_records_b12.json")
     result = build_models(records, load_crosswalk(), load_usage_levels(), load_taxes(), provinces=None, as_of=AS_OF,
                           block_periods=None, market_document=None)
     assert {m["key"]["fuel"] for m in result["models"]} <= {"electricity", "gas"}
-    assert all(m["key"]["sector"] == "residential" for m in result["models"] if m["key"]["fuel"] == "gas")
+    gas = [m["key"] for m in result["models"] if m["key"]["fuel"] == "gas"]
+    assert all(k["sector"] == "residential" or k["size_band"] in ("commercial_small", "commercial_medium") for k in gas)
     assert not {m["key"]["province"] for m in result["models"]} & {"YT", "NT", "NU"}
-    assert "Phase 7D" in result["assumptions"]["fuels"] and "withheld" in result["assumptions"]["fuels"]
+    assert "Phase 7D" in result["assumptions"]["fuels"] and "left out" in result["assumptions"]["fuels"]
 
 
 def test_ontario_engine_fixture_keeps_its_7b_numbers():
     fx = json.loads((FIXTURES / "rm_engine_sample.json").read_text(encoding="utf-8"))
     result = build_models(fx, fx["crosswalk"], fx["usage_levels"], fx["taxes"], as_of="2026-10-09")
-    assert result["version"] == 1 and result["method_version"] == "7D-1" and result["as_of"] == "2026-10-09"
+    assert result["version"] == 1 and result["method_version"] == "7D-2" and result["as_of"] == "2026-10-09"
     assert result["input"]["records_considered"] == 36 and result["input"]["rates_generated_at"] == "2026-10-08T15:23:54Z"
     assert all(m["state"] in STATES and m["provenance"] == "modeled" for m in result["models"])
     typical = _level(_model(result, "ON|electricity|residential|tou|-"), "typical")
@@ -356,7 +359,7 @@ def test_export_hook_writes_compact_all_province_models_and_keeps_the_previous_f
     written = json.loads(text)
     assert text == json.dumps(written, separators=(",", ":"), ensure_ascii=False) + "\n"
     assert written["input"]["provinces"] == sorted(PROVINCES) and written["input"]["fuels"] == ["electricity", "gas"]
-    assert written["method_version"] == "7D-1" and AB_RES in {m["id"] for m in result["models"]}
+    assert written["method_version"] == "7D-2" and AB_RES in {m["id"] for m in result["models"]}
     previous = out.read_bytes()
 
     def broken(*args, **kwargs):

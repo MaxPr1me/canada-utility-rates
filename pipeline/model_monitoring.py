@@ -47,12 +47,15 @@ ASSUMPTION_FIELDS = (
     "statistics", "closest_utility", "outliers", "component_rules", "reference_customer",
     "fixed_charge_variants", "buckets", "pairs", "block_periods", "required_contributors",
     "usage_bounds", "taxes",
+    # Method 7D-2 selection inputs (owner decisions 2026-11-20).
+    "peak_month_factors", "elective_classes", "demand_bounds",
 )
 INPUT_FIELDS = {
-    "crosswalk": ("vocabulary", "pairs", "required_contributors", "usage_bounds", "rules"),
+    "crosswalk": ("vocabulary", "pairs", "required_contributors", "usage_bounds", "rules", "elective_classes",
+                  "demand_bounds"),
     "usage_levels": (
         "days_per_month", "power_factor_for_kva", "market_benchmarks", "electricity", "gas",
-        "tou_shares", "seasons", "reference_customer", "fixed_charge_variants",
+        "tou_shares", "seasons", "reference_customer", "fixed_charge_variants", "peak_month_factors",
     ),
     "taxes": ("sectors", "jurisdictions"),
     "block_periods": ("entries",),

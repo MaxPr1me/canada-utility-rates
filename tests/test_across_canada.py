@@ -47,12 +47,13 @@ def payload(model_template):
 def open_site(browser):
     contexts = []
 
-    def open_page(payload, failures=(), width=1280, markets=None, chart_stub=None, history=None):
+    def open_page(payload, failures=(), width=1280, markets=None, chart_stub=None, history=None, rates=None):
         context = browser.new_context(viewport={"width": width, "height": 900})
         contexts.append(context)
         requests, errors = [], []
         failures = iter(failures)
-        rates = load_rates(SITE.parent / "tests" / "fixtures" / "rm_records_sample.json")[:2]
+        if rates is None:
+            rates = load_rates(SITE.parent / "tests" / "fixtures" / "rm_records_sample.json")[:2]
 
         def route(request):
             path = urlparse(request.request.url).path.lstrip("/")
@@ -322,6 +323,71 @@ def test_assumptions_both_levels_and_safe_text(open_site, payload):
     expect(page.locator(".rm-fixed-assumptions")).to_contain_text("user 2026-10-30")
     assert page.locator(".rm-fixed-assumptions img").count() == 0
     assert "Chosen " in page.locator("#models-notes").inner_text()
+    assert not errors
+
+
+def test_residential_levels_show_reference_and_sensitivity_tags(open_site, payload):
+    # Owner decision 29 (2026-11-20): 1,000 kWh is the reference level, 500 and 2,000 kWh are sensitivity levels.
+    page, _, errors = open_site(payload)
+    page.locator('[data-view="models"]').click()
+    rows = page.locator("#models-table-wrap tbody tr th")
+    expect(rows.nth(0)).to_contain_text("500 kWh")
+    expect(rows.nth(0)).to_contain_text("Sensitivity")
+    expect(rows.nth(1)).to_contain_text("Reference")
+    expect(rows.nth(2)).to_contain_text("Sensitivity")
+    assert "Typical" not in page.locator("#models-table-wrap").inner_text()
+    assert not errors
+
+
+def test_commercial_gas_models_name_the_class_used_at_each_level(open_site, payload):
+    from tests.test_models_7d2_gas import _build as build_gas
+
+    gas = build_gas()
+    payload["models"] += [m for m in gas["models"] if m["id"] in (
+        "MB|gas|commercial|flat|commercial_small", "NB|gas|commercial|tiered|commercial_medium")]
+    page, _, errors = open_site(payload)
+    page.locator('[data-view="models"]').click()
+    page.select_option("#models-province", "MB")
+    page.select_option("#models-fuel", "gas")
+    page.select_option("#models-segment", "commercial|commercial_small")
+    expect(page.locator("#models-title")).to_have_text("Manitoba gas - commercial small building - flat-rate")
+    table = page.locator("#models-table-wrap")
+    expect(table).to_contain_text("1,000 m³")
+    expect(table.locator("tbody tr").nth(1)).to_contain_text("Reference")
+    notes = page.locator("#models-notes")
+    expect(notes.locator(".rm-class-selection")).to_contain_text(
+        "Centra Gas Manitoba: customers may elect COM-SGS or COM-LGS; the cheaper is used at each level")
+    contributors = notes.locator(".rm-details").first
+    contributors.locator("summary").click()
+    expect(contributors).to_contain_text("Class used")
+    expect(contributors).to_contain_text("COM-SGS; cheaper of COM-SGS $230.65 and COM-LGS $248.70")
+    page.select_option("#models-province", "NB")
+    page.select_option("#models-segment", "commercial|commercial_medium")
+    expect(notes.locator(".rm-class-selection")).to_contain_text("Peak month: 1.85 x the level")
+    expect(notes.locator(".rm-fixed-assumptions")).to_contain_text("peak month = 1.85 x the level")
+    assert not errors
+
+
+def test_rate_browser_shows_component_periods_and_tags_ended_prices(open_site, payload):
+    # Owner decision 34 (2026-11-23): dated components show their period; ended ones are tagged, never hidden.
+    import json
+
+    fixture = SITE.parent / "tests" / "fixtures" / "rm_records_7d2_gas.json"
+    rates = [r for r in json.loads(fixture.read_text(encoding="utf-8"))["records"]
+             if r["utility_name"] == "SaskEnergy"]
+    ended, current = rates[0]["components"][0], rates[0]["components"][1]
+    ended.update(effective_date="2000-01-01", end_date="2000-01-31")
+    current.update(effective_date="2000-01-01", end_date="2999-12-31")
+    for component in rates[0]["components"][2:] + rates[1]["components"]:
+        component["end_date"] = None
+    page, _, errors = open_site(payload, rates=rates)
+    card = page.locator(".rate-card").filter(has_text=rates[0]["name"]).first
+    expect(card.locator(".ended-badge")).to_have_count(1)
+    card.locator(".card-title").click()
+    modal = page.locator("#modal-content")
+    expect(modal).to_contain_text("Jan 1-31, 2000")
+    expect(modal).to_contain_text("Jan 1, 2000 - Dec 31, 2999")
+    expect(modal.locator(".ended-badge")).to_have_count(1)
     assert not errors
 
 

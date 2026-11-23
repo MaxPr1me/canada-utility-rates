@@ -1,8 +1,8 @@
 {
   "version": 1,
   "phase": "7A",
-  "updated": "2026-11-02",
-  "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list. A SYNTHETIC business-hours load profile ('synthetic_profiles') was added October 16, 2026 (user-approved) for the Phase 7E illustrative estimate only; it never changes a model's own numbers.   Reference-customer rules for fixed charges published as phase or amperage variants ('fixed_charge_variants') added October 30, 2026 (user decision). Historical market benchmarks ('market_benchmarks') approved November 2, 2026: 60 equal-weight monthly arithmetic prices, Ontario with Class B GA and Alberta pool energy only, maximum window lag four months. These are separate from base medians and synthetic estimates, not customer-weighted bills.",
+  "updated": "2026-11-23",
+  "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list. A SYNTHETIC business-hours load profile ('synthetic_profiles') was added October 16, 2026 (user-approved) for the Phase 7E illustrative estimate only; it never changes a model's own numbers.   Reference-customer rules for fixed charges published as phase or amperage variants ('fixed_charge_variants') added October 30, 2026 (user decision). Historical market benchmarks ('market_benchmarks') approved November 2, 2026: 60 equal-weight monthly arithmetic prices, Ontario with Class B GA and Alberta pool energy only, maximum window lag four months. These are separate from base medians and synthetic estimates, not customer-weighted bills. Method 7D-2 (owner decisions November 20, 2026): commercial gas levels for small and mid-size buildings, the s1/s2 small-business levels at 14 and 40 kW, documented backing for every level, Liberty Gas NB's peak-month factor and customer-charge rules, Energir's basic-fee band rule, and reference-customer entries for Energir's load balancing and renewable-gas socialization charges and Liberty Utility Gas.",
   "days_per_month": 30.4375,
   "hours_per_month": 730.5,
   "power_factor_for_kva": 0.9,
@@ -12,31 +12,604 @@
   },
   "electricity": {
     "residential": [
-      {"id": "low", "kwh": 500},
-      {"id": "typical", "kwh": 1000},
-      {"id": "high", "kwh": 2000}
+      {
+        "id": "low",
+        "kwh": 500,
+        "role": "sensitivity",
+        "decided": "owner 2026-10-09 (value); low-use sensitivity level, owner 2026-11-20",
+        "represents": "Whole-home electricity of one low-use household in an average month (30.4375 days): an apartment or small home without electric space heating; 6,000 kWh a year.",
+        "why": "Half the 1,000 kWh reference, at the low end of household use: of the order of the Alberta average household (539-600 kWh a month) and of Canadian apartments (549-618), and inside the Alberta UCA low-medium band. A sensitivity level, not a published typical value: no official level set uses 500 kWh (the OEB standard is 750; the CER uses 750, 1,000 and 1,500), and it is below the household average of every province except Alberta.",
+        "sources": [
+          {
+            "title": "Statistics Canada Table 25-10-0060-01, Household energy consumption, Canada and provinces (2021)",
+            "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006001",
+            "date": "2024-03-19",
+            "figure": "Alberta electricity 23.3 GJ per household a year (539 kWh a month, computed)"
+          },
+          {
+            "title": "Natural Resources Canada, 2019 Survey of Household Energy Use, Table 3.5a",
+            "url": "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=SH&sector=aaa&juris=ca&year=2019&rn=15&page=1",
+            "date": "2019 survey",
+            "figure": "Canada low-rise apartment 26.7 GJ and high-rise apartment 23.7 GJ a year (618 and 549 kWh a month, computed)"
+          },
+          {
+            "title": "Alberta Utilities Consumer Advocate, Cost Comparison Tool",
+            "url": "https://ucahelps.alberta.ca/cost-comparison-tool/",
+            "date": "read 2026-11-20",
+            "figure": "\"Low–Medium Usage 350–575 kWh per month\""
+          },
+          {
+            "title": "ENMAX, A breakdown of your bill",
+            "url": "https://www.enmax.com/customer-support/for-my-home/a-breakdown-of-your-bill",
+            "date": "read 2026-11-20",
+            "figure": "\"The average home in Alberta uses around 600 kilowatt hours every month.\""
+          }
+        ]
+      },
+      {
+        "id": "typical",
+        "kwh": 1000,
+        "role": "reference",
+        "decided": "owner 2026-10-09 (value); reference level, owner 2026-11-20",
+        "represents": "Whole-home electricity of one household in an average month, any heating fuel: a national reference household; 12,000 kWh a year.",
+        "why": "Hydro-Québec's headline residential comparison level (2023 to 2025 editions) and a CER representative level; Manitoba Hydro's average for homes without electric heat; the OEB's standard before late 2009. Close to the Canadian mean household (905-941 kWh a month, computed). Above the provincial means of Alberta, Saskatchewan, Ontario and BC (539-792); below those of Manitoba, New Brunswick, Quebec and Newfoundland and Labrador (1,236-1,445).",
+        "sources": [
+          {
+            "title": "Hydro-Québec, Comparison of Electricity Prices in Major North American Cities 2025 (rates in effect April 1, 2025)",
+            "url": "https://www.hydroquebec.com/data/documents-donnees/pdf/comparaison-prix-2025-en.pdf",
+            "date": "2025-10-15",
+            "figure": "\"For customers whose monthly consumption is 1,000 kilowatthours (kWh), Montréal is once again in first place.\" (PDF p. 10)"
+          },
+          {
+            "title": "Canada Energy Regulator, Market Snapshot: How much do your neighbours across Canada pay for electricity?",
+            "url": "https://www.cer-rec.gc.ca/en/data-analysis/energy-markets/market-snapshots/2026/market-snapshot-how-much-do-your-neighbours-across-canada-pay-for-electricity.html",
+            "date": "2026-03-04",
+            "figure": "\"For a household consuming 1,000 kWh per month\""
+          },
+          {
+            "title": "Manitoba Hydro, Rates & charges",
+            "url": "https://www.hydro.mb.ca/account/rates/",
+            "date": "rates effective 2026-01-01; read 2026-11-20",
+            "figure": "\"Customers in the Residential class without electric heat using an average of 1,000 kilowatt hours per month\""
+          },
+          {
+            "title": "Statistics Canada Table 25-10-0060-01, Household energy consumption, Canada and provinces (2021)",
+            "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006001",
+            "date": "2024-03-19",
+            "figure": "Canada electricity 39.1 GJ per household a year (905 kWh a month, computed)"
+          }
+        ]
+      },
+      {
+        "id": "high",
+        "kwh": 2000,
+        "role": "sensitivity",
+        "decided": "owner 2026-10-09 (value); high-use sensitivity level, owner 2026-11-20",
+        "represents": "A high-use household in an average month: an electrically heated detached home; 24,000 kWh a year.",
+        "why": "Manitoba Hydro's average for homes with electric space heat and a Hydro-Québec comparison level; close to the Quebec detached-house average (1,889 kWh a month, computed). Above every province's household average and Newfoundland Power's electrically heated home (1,413 kWh), so a sensitivity level, not typical.",
+        "sources": [
+          {
+            "title": "Manitoba Hydro, Rates & charges",
+            "url": "https://www.hydro.mb.ca/account/rates/",
+            "date": "rates effective 2026-01-01; read 2026-11-20",
+            "figure": "\"Residential customers with electric space heat using an average of 2,000 kilowatt hours per month\""
+          },
+          {
+            "title": "Hydro-Québec, Comparison of Electricity Prices in Major North American Cities 2025 (rates in effect April 1, 2025)",
+            "url": "https://www.hydroquebec.com/data/documents-donnees/pdf/comparaison-prix-2025-en.pdf",
+            "date": "2025-10-15",
+            "figure": "residential levels 625, 750, 1,000, 2,000 and 3,000 kWh a month (PDF p. 26)"
+          },
+          {
+            "title": "Natural Resources Canada, 2019 Survey of Household Energy Use, Table 3.5a",
+            "url": "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=SH&sector=aaa&juris=ca&year=2019&rn=15&page=1",
+            "date": "2019 survey",
+            "figure": "Quebec single detached house 81.6 GJ a year (1,889 kWh a month, computed)"
+          }
+        ]
+      }
     ],
     "commercial_small": [
-      {"id": "s1", "kwh": 2000, "kw": 10},
-      {"id": "s2", "kwh": 8000, "kw": 25}
+      {
+        "id": "s1",
+        "kwh": 2000,
+        "kw": 14,
+        "decided": "owner 2026-10-09 (2,000 kWh); 14 kW owner 2026-11-20 (replaces 10 kW)",
+        "represents": "A small business under 50 kW (a shop, office or warehouse unit of roughly 125-170 m²) using 2,000 kWh in an average month at 14 kW billing demand, single-phase service: load factor 19.6% at 730.5 hours; 24,000 kWh a year.",
+        "why": "2,000 kWh is the OEB's standard general service under 50 kW customer for bill impacts and a Hydro-Québec small-power comparison level, which Hydro-Québec prints at 14 kW. Measured class averages are of the same order: Ontario GS < 50 kW 2,313-2,513 kWh a month and SaskPower urban small commercial 2,685.",
+        "sources": [
+          {
+            "title": "Ontario Energy Board, Filing Requirements for Electricity Distribution Rate Applications, Chapter 2 (2027 rates), section 2.8.11",
+            "url": "https://www.oeb.ca/sites/default/files/OEB%20Filing%20Reqs_Chapter%202_2027_20251216.pdf",
+            "date": "2025-12-16",
+            "figure": "\"a general service customer consuming 2,000 kWh per month and having a monthly demand of less than 50 kW\" (p. 60)"
+          },
+          {
+            "title": "Hydro-Québec, Comparison of Electricity Prices in Major North American Cities 2025 (rates in effect April 1, 2025)",
+            "url": "https://www.hydroquebec.com/data/documents-donnees/pdf/comparaison-prix-2025-en.pdf",
+            "date": "2025-10-15",
+            "figure": "small power: power demand 14 kW, consumption 2,000 kWh, load factor 20% (PDF p. 30)"
+          },
+          {
+            "title": "Ontario Energy Board, Yearbook of Electricity Distributors, Statistics by Customer Class 2021",
+            "url": "https://www.oeb.ca/sites/default/files/yearbook-Statistics-by-Customer-Class-2021.xlsx",
+            "date": "2022-11-25",
+            "figure": "General Service < 50 kW: 463,628 customers, 2,313 kWh per customer-month (computed from the published totals)"
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "kwh": 10000,
+        "kw": 40,
+        "decided": "owner 2026-11-20 (replaces 8,000 kWh at 25 kW, approved 2026-10-09)",
+        "represents": "The upper end of small business under 50 kW (an office, retail unit or bank branch of roughly 600-850 m² at national average electricity intensities) using 10,000 kWh in an average month at 40 kW, three-phase service: load factor 34.2% at 730.5 hours; 120,000 kWh a year. In BC a 40 kW customer is on BC Hydro Medium General Service (35 to 150 kW).",
+        "why": "Hydro-Québec's small-power comparison level (10,000 kWh at 40 kW), which NB Power also uses for its business rate comparison (read from the page's image descriptions only). Larger than the average small business: Manitoba Hydro's General Service Small Demand class averages 12,547 kWh a month.",
+        "sources": [
+          {
+            "title": "Hydro-Québec, Comparison of Electricity Prices in Major North American Cities 2025 (rates in effect April 1, 2025)",
+            "url": "https://www.hydroquebec.com/data/documents-donnees/pdf/comparaison-prix-2025-en.pdf",
+            "date": "2025-10-15",
+            "figure": "\"Power demand 40 kW ... Consumption ... 10,000 kWh ... Load factor 35%\" (PDF p. 18; detailed levels PDF p. 30)"
+          },
+          {
+            "title": "BC Hydro, General service rates",
+            "url": "https://app.bchydro.com/accounts-billing/rates-energy-use/electricity-rates/non-residential-rates/general-service-rates.html",
+            "date": "read 2026-11-20",
+            "figure": "Medium General Service: \"between 35 and 150 kW, and that use less than 550,000 kWh of electricity per year\""
+          },
+          {
+            "title": "Manitoba Hydro 2026-28 General Rate Application, Appendix 4.2 Load Research Report 2022/23, Table 2.1",
+            "url": "https://www.hydro.mb.ca/docs/regulatory_affairs/pdf/electric/gra_2026_2028/04-2_appendix_4-2_load_research_report.pdf",
+            "date": "2025-03-28",
+            "figure": "General Service Small Demand: 150,560 kWh per customer-year (12,547 kWh a month, computed)"
+          }
+        ]
+      }
     ],
     "commercial_medium": [
-      {"id": "m1", "kwh": 40000, "kw": 100}
+      {
+        "id": "m1",
+        "kwh": 40000,
+        "kw": 100,
+        "decided": "owner 2026-10-09 (value); documented 2026-11-20",
+        "represents": "A medium business of 50 to 499 kW (an office, retail or warehouse building of roughly 2,500-3,400 m²) using 40,000 kWh in an average month at 100 kW: load factor 54.8% at 730.5 hours; 480,000 kWh a year.",
+        "why": "Printed exactly as Essex Powerlines' 2027 bill-impact customer for General Service 50 to 4,999 kW. Its 400 kWh per kW matches six of 21 Ontario distributors' typical customers and the Ontario GS >= 50 kW class aggregate (390.7 kWh per billed kW-month). Many Ontario typical customers are larger (median 60,000 kWh at 175 kW).",
+        "sources": [
+          {
+            "title": "Essex Powerlines 2027 IRM Rate Generator Model (OEB RDS record 957109), tab 21 Bill Impacts",
+            "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/957109/File/document",
+            "date": "revised 2026-08-17",
+            "figure": "GENERAL SERVICE 50 to 4,999 kW: Consumption (kWh) 40000, Demand kW 100"
+          },
+          {
+            "title": "Ontario Energy Board, Yearbook of Electricity Distributors, Statistics by Customer Class 2021",
+            "url": "https://www.oeb.ca/sites/default/files/yearbook-Statistics-by-Customer-Class-2021.xlsx",
+            "date": "2022-11-25",
+            "figure": "General Service >= 50 kW: 75,960 kWh per customer-month and 390.7 kWh per billed kW-month (computed from the published totals)"
+          }
+        ]
+      }
     ],
     "commercial_large": [
-      {"id": "l1", "kwh": 500000, "kw": 1000}
+      {
+        "id": "l1",
+        "kwh": 500000,
+        "kw": 1000,
+        "decided": "owner 2026-10-09 (value); documented 2026-11-20",
+        "represents": "A large business or institution of 500 to 4,999 kW (a mall, office tower, hotel or hospital wing of roughly 30,000-45,000 m²) using 500,000 kWh in an average month at 1,000 kW: load factor 68.4% at 730.5 hours; 6,000,000 kWh a year. At exactly 1 MW the customer stays IESO Class B.",
+        "why": "500,000 kWh is printed by Oshawa PUC for its General Service 1,000 to 4,999 kW customer (at 1,250 kW); 500 kWh per kW matches the Ontario Large User class (506-520 kWh per billed kW-month). 1,000 kW is below every Ontario distributor's typical customer at or above 1,000 kW (median 1,925 kW).",
+        "sources": [
+          {
+            "title": "Oshawa PUC 2026 Tariff Schedule and Bill Impact Model (OEB RDS record 946679), tab 6 Bill Impacts",
+            "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/946679/File/document",
+            "date": "2026-06-26",
+            "figure": "GENERAL SERVICE 1,000 TO 4,999 KW: 500,000 kWh at 1,250 kW"
+          },
+          {
+            "title": "Ontario Energy Board, Yearbook of Electricity Distributors, Statistics by Customer Class 2021",
+            "url": "https://www.oeb.ca/sites/default/files/yearbook-Statistics-by-Customer-Class-2021.xlsx",
+            "date": "2022-11-25",
+            "figure": "Large User: 506.5 kWh per billed kW-month in 2021 and 520.0 in 2019 (computed from the published totals)"
+          },
+          {
+            "title": "IESO, Global Adjustment Class A Eligibility",
+            "url": "https://www.ieso.ca/Sector-Participants/Settlements/Global-Adjustment-Class-A-Eligibility",
+            "date": "read 2026-11-20",
+            "figure": "customers \"greater than 1 MW but less than or equal to 5 MW\" may opt in to Class A"
+          }
+        ]
+      }
     ],
     "commercial_xlarge": []
   },
   "gas": {
-    "note": "Phase 7D (owner decision 2026-11-04): residential default utility supply only, priced in each utility's native billing unit. The m3 and GJ tracks are never converted or merged; a future cross-unit comparison converts toward m3 at 100/200/400 m3, with its heating-value source chosen then. The 100/400 m3 and 4/16 GJ levels are labelled sensitivity levels, not utility-published typical values; none is a Canada-wide average or an observed winter month. Commercial, contract and interruptible gas stay withheld until their scenarios are approved.",
+    "note": "Phase 7D (owner decisions 2026-11-04 and 2026-11-20): default utility supply priced in each utility's native billing unit. Residential levels since 7D-1; commercial general-service levels for two building sizes since 7D-2, each with a reference level and x0.5 and x2 sensitivity levels. A level is an average month: annual use = 12 x the level, which selects each utility's class (published annual limits) unless a peak_month_factors entry applies. The m3 and GJ tracks are never converted or merged; a future cross-unit comparison converts toward m3, with its heating-value source chosen then. Contract-demand, interruptible, seasonal and peaking classes are not modelled yet (owner decision 2026-11-20).",
     "residential": [
-      {"id": "m3_low", "quantity": 100, "unit": "m3", "role": "sensitivity"},
-      {"id": "m3_reference", "quantity": 200, "unit": "m3", "role": "reference", "basis": "OEB Enbridge Gas QRAM backgrounder, October 2026, p. 1: residential example of 2,400 m3 a year in the EGD rate zone; 2,400 / 12 = 200 m3 a month", "source_url": "https://www.oeb.ca/sites/default/files/ENBRIDGE-QRAM%20BG-OCTOBER%202026_FINAL.pdf"},
-      {"id": "m3_high", "quantity": 400, "unit": "m3", "role": "sensitivity"},
-      {"id": "gj_low", "quantity": 4, "unit": "GJ", "role": "sensitivity"},
-      {"id": "gj_reference", "quantity": 8, "unit": "GJ", "role": "reference", "basis": "FortisBC residential bill example: 8 GJ a month (Mainland and Vancouver Island; Fort Nelson's example is 10 GJ)", "source_url": "https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/residential-rates"},
-      {"id": "gj_high", "quantity": 16, "unit": "GJ", "role": "sensitivity"}
+      {
+        "id": "m3_low",
+        "quantity": 100,
+        "unit": "m3",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-04",
+        "represents": "A smaller gas-heated home in an average month (annual use / 12; January is about twice and July about a third of it); 1,200 m³ a year.",
+        "why": "A sensitivity level (x0.5 or x2 of the reference level), not a utility-published typical value; none of the gas levels is a Canada-wide average or an observed winter month.",
+        "sources": []
+      },
+      {
+        "id": "m3_reference",
+        "quantity": 200,
+        "unit": "m3",
+        "role": "reference",
+        "decided": "owner 2026-11-04",
+        "represents": "A gas-heated home in an average month (annual use / 12; January is about twice and July about a third of it); 2,400 m³ a year.",
+        "why": "The OEB's residential example for Enbridge's EGD rate zone: 2,400 m³ a year / 12 = 200 m³ a month.",
+        "sources": [
+          {
+            "title": "Ontario Energy Board, Enbridge Gas QRAM backgrounder, October 2026 (EB-2026-0221)",
+            "url": "https://www.oeb.ca/sites/default/files/ENBRIDGE-QRAM%20BG-OCTOBER%202026_FINAL.pdf",
+            "date": "2026-09-24",
+            "figure": "residential example of 2,400 m³ a year in the EGD rate zone (p. 1)"
+          }
+        ]
+      },
+      {
+        "id": "m3_high",
+        "quantity": 400,
+        "unit": "m3",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-04",
+        "represents": "A larger gas-heated home in an average month (annual use / 12; January is about twice and July about a third of it); 4,800 m³ a year.",
+        "why": "A sensitivity level (x0.5 or x2 of the reference level), not a utility-published typical value; none of the gas levels is a Canada-wide average or an observed winter month.",
+        "sources": []
+      },
+      {
+        "id": "gj_low",
+        "quantity": 4,
+        "unit": "GJ",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-04",
+        "represents": "A smaller gas-heated home in an average month (annual use / 12; January is about twice and July about a third of it); 48 GJ a year.",
+        "why": "A sensitivity level (x0.5 or x2 of the reference level), not a utility-published typical value; none of the gas levels is a Canada-wide average or an observed winter month.",
+        "sources": []
+      },
+      {
+        "id": "gj_reference",
+        "quantity": 8,
+        "unit": "GJ",
+        "role": "reference",
+        "decided": "owner 2026-11-04",
+        "represents": "A gas-heated home in an average month (annual use / 12; January is about twice and July about a third of it); 96 GJ a year.",
+        "why": "FortisBC's residential bill example: 8 GJ a month (Mainland and Vancouver Island; Fort Nelson's example is 10 GJ).",
+        "sources": [
+          {
+            "title": "FortisBC, Residential natural gas rates",
+            "url": "https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/residential-rates",
+            "date": "read for the owner decision of 2026-11-04",
+            "figure": "bill example at 8 GJ a month (Mainland and Vancouver Island)"
+          }
+        ]
+      },
+      {
+        "id": "gj_high",
+        "quantity": 16,
+        "unit": "GJ",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-04",
+        "represents": "A larger gas-heated home in an average month (annual use / 12; January is about twice and July about a third of it); 192 GJ a year.",
+        "why": "A sensitivity level (x0.5 or x2 of the reference level), not a utility-published typical value; none of the gas levels is a Canada-wide average or an observed winter month.",
+        "sources": []
+      }
+    ],
+    "commercial_small": [
+      {
+        "id": "m3_small_low",
+        "quantity": 500,
+        "unit": "m3",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A small shop or retail unit in an average month (annual use / 12; January is about twice and July about a third of it); 6,000 m³ a year.",
+        "why": "x0.5 sensitivity level of the small-building reference; near Enbridge's Rate 6 small customer (5,048 m³ a year) and Énergir's small retail case (5,209 m³).",
+        "sources": [
+          {
+            "title": "Enbridge Gas, EB-2026-0221 October 1, 2026 QRAM Application and Evidence, Exhibit F, Appendix D (Bill Impacts for Typical Customers)",
+            "url": "https://www.enbridgegas.com/-/media/Extranet-Pages/Regulatory-Filings/RateCases/Rate-Cases-and-QRAM/2026-Rates-Application/EB-2026-0221-October-1-2026-QRAM/Application-and-Evidence.pdf?rev=113a17e3360645a29aca553eb2ab619a",
+            "date": "2026-09-08",
+            "figure": "\"Rate 6 - Small Customer Annual Volume 5,048m3\""
+          },
+          {
+            "title": "Énergir, R-4334-2026, Énergir-H Document 2, Tableau 13 (Marché affaires, cas types)",
+            "url": "https://www.regie-energie.qc.ca/fr/participants/dossiers/R-4334-2026/doc/R-4334-2026-B-0008-Dem-Piece-2026_04_15.pdf",
+            "date": "2026-03-31 (filed 2026-04-15)",
+            "figure": "\"Petit commerce de détail\": 5 209 m³ a year"
+          }
+        ]
+      },
+      {
+        "id": "m3_small_reference",
+        "quantity": 1000,
+        "unit": "m3",
+        "role": "reference",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A small commercial or institutional building (roughly 600-1,000 m²: a small office, library, fire station or shop) in an average month (annual use / 12; January is about twice and July about a third of it); 12,000 m³ a year.",
+        "why": "The small-commercial volume most often published: SaskEnergy's typical Commercial Small customer (12,192 m³ a year), Énergir's commercial office case (10,812 m³), Centra's largest Small General Service bill example (11.33 thousand m³) and Ontario municipal offices, libraries and fire stations (medians 10,015-13,332 m³ at 613-970 m²).",
+        "sources": [
+          {
+            "title": "Saskatchewan Rate Review Panel 2023, SaskEnergy response Q19, Typical Customer Bill Impact Calculator",
+            "url": "https://saskratereview.ca/storage/160/01JHRBZG7DMZKS5NNC246MFQ5E.pdf",
+            "date": "2023-07-24",
+            "figure": "\"Commercial Small ... Typical 12,192\" (annual usage, m³ a year; p. 14)"
+          },
+          {
+            "title": "Énergir, R-4334-2026, Énergir-H Document 2, Tableau 13 (Marché affaires, cas types)",
+            "url": "https://www.regie-energie.qc.ca/fr/participants/dossiers/R-4334-2026/doc/R-4334-2026-B-0008-Dem-Piece-2026_04_15.pdf",
+            "date": "2026-03-31 (filed 2026-04-15)",
+            "figure": "\"Bureau commercial\": 10 812 m³ a year"
+          },
+          {
+            "title": "Centra Gas Manitoba, compliance filing to Order 120/25, Schedule 10.1.2 (Bill Impact Comparison)",
+            "url": "https://www.hydro.mb.ca/docs/regulatory_affairs/pdf/natural_gas/gra_2024_2025/compliance_filing_fiscal_2025_gra_final_order.pdf",
+            "date": "2025-10-15",
+            "figure": "Small General Service bill-impact example 11.33 (10³m³ a year; PDF p. 71)"
+          },
+          {
+            "title": "Ontario, Energy use and greenhouse gas emissions for the broader public sector, 2019 data set",
+            "url": "https://data.ontario.ca/dataset/energy-use-and-greenhouse-gas-emissions-for-the-broader-public-sector",
+            "date": "2019 reporting year",
+            "figure": "medians of facilities using gas: public libraries 10,015 m³ at 694 m²; administrative offices 12,997 m³ at 970 m²; fire stations 13,332 m³ at 613 m² (computed)"
+          }
+        ]
+      },
+      {
+        "id": "m3_small_high",
+        "quantity": 2000,
+        "unit": "m3",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A larger small commercial building (an office of about 1,800 m²) in an average month (annual use / 12; January is about twice and July about a third of it); 24,000 m³ a year.",
+        "why": "x2 sensitivity level of the small-building reference; near Enbridge's Rate 6 average customer (22,606 m³ a year) and the Ontario commercial and institutional mean (23,223 m³ per customer in 2025).",
+        "sources": [
+          {
+            "title": "Enbridge Gas, EB-2026-0221 October 1, 2026 QRAM Application and Evidence, Exhibit F, Appendix D (Bill Impacts for Typical Customers)",
+            "url": "https://www.enbridgegas.com/-/media/Extranet-Pages/Regulatory-Filings/RateCases/Rate-Cases-and-QRAM/2026-Rates-Application/EB-2026-0221-October-1-2026-QRAM/Application-and-Evidence.pdf?rev=113a17e3360645a29aca553eb2ab619a",
+            "date": "2026-09-08",
+            "figure": "\"Rate 6 - Average Customer Annual Volume 22,606m3\""
+          },
+          {
+            "title": "Statistics Canada Table 25-10-0059-01, Canadian monthly natural gas distribution, Canada and provinces",
+            "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510005901",
+            "date": "2026-02-23 (data to December 2025)",
+            "figure": "Ontario deliveries to commercial and institutional consumers, 2025: 6,780,478 thousand m³ to 291,970 customers on average, 23,223 m³ per customer (computed)"
+          },
+          {
+            "title": "Ontario, Energy use and greenhouse gas emissions for the broader public sector, 2019 data set",
+            "url": "https://data.ontario.ca/dataset/energy-use-and-greenhouse-gas-emissions-for-the-broader-public-sector",
+            "date": "2019 reporting year",
+            "figure": "administrative offices and related facilities using gas: median 22,210 m³ a year at 1,849 m² (computed)"
+          }
+        ]
+      },
+      {
+        "id": "gj_small_low",
+        "quantity": 15,
+        "unit": "GJ",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A small commercial building in a low-use month or a very small one in an average month (annual use / 12; January is about twice and July about a third of it); 180 GJ a year.",
+        "why": "x0.5 sensitivity level of the small-building reference; the summer month of the Alberta UCA small-business profile.",
+        "sources": [
+          {
+            "title": "Alberta Utilities Consumer Advocate, Small business natural gas delivery charges",
+            "url": "https://ucahelps.alberta.ca/small-business/natural-gas/small-business-natural-gas-delivery-charges/",
+            "date": "undated; read 2026-11-20",
+            "figure": "\"their consumption profile ranges from 15 GJs in the summer months to 115 GJs in the winter months\""
+          }
+        ]
+      },
+      {
+        "id": "gj_small_reference",
+        "quantity": 30,
+        "unit": "GJ",
+        "role": "reference",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A small commercial building (roughly 600-1,300 m²) in an average month (annual use / 12; January is about twice and July about a third of it); 360 GJ a year.",
+        "why": "FortisBC's Rate 2 bill example (30 GJ a month); FortisBC's average Rate 2 customer uses 322 GJ a year and Liberty's Mid-General Service profile is 408 GJ; Ontario public-sector offices' median is 480 GJ at 1,270 m².",
+        "sources": [
+          {
+            "title": "FortisBC, Business natural gas rates (Mainland and Vancouver Island)",
+            "url": "https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/business-rates",
+            "date": "rates effective 2026-07-01; read 2026-11-20",
+            "figure": "Rate 2: \"Average monthly consumption 30 GJ ... Total monthly bill $ 345.26\""
+          },
+          {
+            "title": "FortisBC Energy, 2023 Cost of Service Allocation and Rate Design Application",
+            "url": "https://www.cdn.fortisbc.com/libraries/docs/default-source/about-us-documents/regulatory-affairs-documents/gas-utility/230720-fei-2023-cosa-and-revenue-rebalancing-appl-ff.pdf?sfvrsn=e05a05ab_1",
+            "date": "2023-07-20",
+            "figure": "\"an average RS 2 customer consuming 322 GJ annually\""
+          },
+          {
+            "title": "Liberty Utilities (Gas New Brunswick), 2024 rate application, Section 2.0 Summary of Evidence, Table 1",
+            "url": "https://naturalgasnb.com/files/regulatory_documents/Section_2.0_-_Summary_of_Evidence_-_REDACTED.pdf",
+            "date": "2024-04-18",
+            "figure": "\"Customer Profile (Annual GJs)\": Mid General Service 408"
+          },
+          {
+            "title": "Ontario, Energy use and greenhouse gas emissions for the broader public sector, 2024 data set",
+            "url": "https://data.ontario.ca/dataset/energy-use-and-greenhouse-gas-emissions-for-the-broader-public-sector",
+            "date": "2024 reporting year",
+            "figure": "office facilities using gas: median 480.4 GJ a year at 1,270 m² (computed)"
+          }
+        ]
+      },
+      {
+        "id": "gj_small_high",
+        "quantity": 60,
+        "unit": "GJ",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A larger small commercial building (an average office building) in an average month (annual use / 12; January is about twice and July about a third of it); 720 GJ a year.",
+        "why": "x2 sensitivity level of the small-building reference; about the national average office building's gas use (56 GJ a month).",
+        "sources": [
+          {
+            "title": "Natural Resources Canada, Survey of Commercial and Institutional Energy Use 2019, Tables 1 and 7.1",
+            "url": "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/scieu/2019/tables.cfm",
+            "date": "2022-08-05",
+            "figure": "office buildings excluding medical: 78,755 buildings, 52.8 PJ of natural gas, about 670 GJ a year (56 GJ a month) per building (computed)"
+          }
+        ]
+      }
+    ],
+    "commercial_medium": [
+      {
+        "id": "m3_medium_low",
+        "quantity": 2500,
+        "unit": "m3",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A smaller mid-size building in an average month (annual use / 12; January is about twice and July about a third of it); 30,000 m³ a year.",
+        "why": "x0.5 sensitivity level of the mid-size reference; near the Quebec and Alberta commercial and institutional means per customer (30,405 and 29,868 m³ a year in 2025).",
+        "sources": [
+          {
+            "title": "Statistics Canada Table 25-10-0059-01, Canadian monthly natural gas distribution, Canada and provinces",
+            "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510005901",
+            "date": "2026-02-23 (data to December 2025)",
+            "figure": "deliveries to commercial and institutional consumers, 2025: Quebec 30,405 and Alberta 29,868 m³ per customer (computed)"
+          }
+        ]
+      },
+      {
+        "id": "m3_medium_reference",
+        "quantity": 5000,
+        "unit": "m3",
+        "role": "reference",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A mid-size institutional or commercial building (roughly 3,000-4,500 m²: a school or institutional office) in an average month (annual use / 12; January is about twice and July about a third of it); 60,000 m³ a year.",
+        "why": "Enbridge's small Rate 10 and M2 customer (exactly 60,000 m³ a year), between Énergir's primary school (49,963 m³) and institutional office (76,018 m³) cases; Ontario schools' median is 46,276 m³ at 4,442 m².",
+        "sources": [
+          {
+            "title": "Enbridge Gas, EB-2026-0221 October 1, 2026 QRAM Application and Evidence, Exhibit F, Appendix D (Bill Impacts for Typical Customers)",
+            "url": "https://www.enbridgegas.com/-/media/Extranet-Pages/Regulatory-Filings/RateCases/Rate-Cases-and-QRAM/2026-Rates-Application/EB-2026-0221-October-1-2026-QRAM/Application-and-Evidence.pdf?rev=113a17e3360645a29aca553eb2ab619a",
+            "date": "2026-09-08",
+            "figure": "\"Rate 10 - Small Customer Annual Volume 60,000m3\" and \"Rate M2 - Small Customer Annual Volume 60,000m3\""
+          },
+          {
+            "title": "Énergir, R-4334-2026, Énergir-H Document 2, Tableau 13 (Marché affaires, cas types)",
+            "url": "https://www.regie-energie.qc.ca/fr/participants/dossiers/R-4334-2026/doc/R-4334-2026-B-0008-Dem-Piece-2026_04_15.pdf",
+            "date": "2026-03-31 (filed 2026-04-15)",
+            "figure": "\"École primaire\" 49 963 m³ and \"Bureau institutionnel\" 76 018 m³ a year"
+          },
+          {
+            "title": "Ontario, Energy use and greenhouse gas emissions for the broader public sector, 2019 data set",
+            "url": "https://data.ontario.ca/dataset/energy-use-and-greenhouse-gas-emissions-for-the-broader-public-sector",
+            "date": "2019 reporting year",
+            "figure": "schools using gas: median 46,276 m³ a year at 4,442 m² (computed)"
+          }
+        ]
+      },
+      {
+        "id": "m3_medium_high",
+        "quantity": 10000,
+        "unit": "m3",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A larger mid-size building in an average month (annual use / 12; January is about twice and July about a third of it); 120,000 m³ a year.",
+        "why": "x2 sensitivity level of the mid-size reference; between Enbridge's Rate 10 and M2 average customers (93,000 and 73,000 m³ a year) and SaskEnergy's typical Commercial Large customer (156,882 m³); no published value matches it.",
+        "sources": [
+          {
+            "title": "Enbridge Gas, EB-2026-0221 October 1, 2026 QRAM Application and Evidence, Exhibit F, Appendix D (Bill Impacts for Typical Customers)",
+            "url": "https://www.enbridgegas.com/-/media/Extranet-Pages/Regulatory-Filings/RateCases/Rate-Cases-and-QRAM/2026-Rates-Application/EB-2026-0221-October-1-2026-QRAM/Application-and-Evidence.pdf?rev=113a17e3360645a29aca553eb2ab619a",
+            "date": "2026-09-08",
+            "figure": "\"Rate 10 - Average Customer Annual Volume 93,000m3\"; \"Rate M2 - Average Customer Annual Volume 73,000m3\""
+          },
+          {
+            "title": "Saskatchewan Rate Review Panel 2023, SaskEnergy response Q19, Typical Customer Bill Impact Calculator",
+            "url": "https://saskratereview.ca/storage/160/01JHRBZG7DMZKS5NNC246MFQ5E.pdf",
+            "date": "2023-07-24",
+            "figure": "\"Commercial Large ... Typical 156,882\" (m³ a year)"
+          }
+        ]
+      },
+      {
+        "id": "gj_medium_low",
+        "quantity": 100,
+        "unit": "GJ",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A smaller mid-size building in an average month (annual use / 12; January is about twice and July about a third of it); 1,200 GJ a year.",
+        "why": "x0.5 sensitivity level of the mid-size reference; exactly ATCO Gas's Low Use limit (\"1,200 GJ per year or less\"), so ATCO prices it on Low Use; near the Alberta commercial and institutional mean (1,179 GJ per customer in 2025).",
+        "sources": [
+          {
+            "title": "ATCO Gas North, Rate schedules (Low Use and Mid Use Delivery Service)",
+            "url": "https://gas.atco.com/content/dam/atco-gas-website/en-ca/assets/understanding-rates/documents/north-rate-schedule.pdf",
+            "date": "schedules effective 2026-01-01",
+            "figure": "Low Use: \"1,200 GJ per year or less\"; Mid Use: \"more than 1,200 GJ per year but no more than 8,000 GJ annually\""
+          },
+          {
+            "title": "Statistics Canada Table 25-10-0059-01, Canadian monthly natural gas distribution, Canada and provinces",
+            "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510005901",
+            "date": "2026-02-23 (data to December 2025)",
+            "figure": "Alberta deliveries to commercial and institutional consumers, 2025: 1,179.0 GJ per customer (computed)"
+          }
+        ]
+      },
+      {
+        "id": "gj_medium_reference",
+        "quantity": 200,
+        "unit": "GJ",
+        "role": "reference",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A mid-size commercial or institutional building (roughly 2,000-4,600 m²: a school or office) in an average month (annual use / 12; January is about twice and July about a third of it); 2,400 GJ a year.",
+        "why": "FortisBC's Rate 3 bill example (200 GJ a month); ATCO Gas Mid Use commercial customers averaged 2,839-2,942 GJ a year (2019) and Liberty's Large General Service median is 2,343 GJ; the national average school uses about 180 GJ a month.",
+        "sources": [
+          {
+            "title": "FortisBC, Business natural gas rates (Mainland and Vancouver Island)",
+            "url": "https://www.fortisbc.com/accounts/billing-rates/natural-gas-rates/business-rates",
+            "date": "rates effective 2026-07-01; read 2026-11-20",
+            "figure": "Rate 3: \"Average monthly consumption 200 GJ ... Total monthly bill $ 1,995.93\""
+          },
+          {
+            "title": "ATCO Gas North, 2019 Aggregated Monthly Consumption (GJ) by rate class",
+            "url": "https://gas.atco.com/content/dam/atco-gas-website/en-ca/assets/understanding-rates/documents/north-aggregated-consumption-rate-class.pdf",
+            "date": "2020-03-02 (2019 data)",
+            "figure": "\"Mid Use Commercial ... 2,839.3\" GJ per customer a year (North, 2019 data)"
+          },
+          {
+            "title": "Liberty Utilities (Gas New Brunswick), Schedule 8.7 Consumption Data (2024 rate application)",
+            "url": "https://naturalgasnb.com/files/documents/Schedule_8.7_-_Consumption_Data_(2024).xlsx",
+            "date": "2024-04-24",
+            "figure": "Large General Service: median 2,343 GJ a year over 457 customers (computed)"
+          },
+          {
+            "title": "Natural Resources Canada, Survey of Commercial and Institutional Energy Use 2019, Tables 1 and 7.1",
+            "url": "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/scieu/2019/tables.cfm",
+            "date": "2022-08-05",
+            "figure": "primary or secondary schools: 18,117 buildings, 39.1 PJ of natural gas, about 2,158 GJ a year (180 GJ a month) per building (computed)"
+          }
+        ]
+      },
+      {
+        "id": "gj_medium_high",
+        "quantity": 400,
+        "unit": "GJ",
+        "role": "sensitivity",
+        "decided": "owner 2026-11-20 (commercial gas levels)",
+        "represents": "A larger mid-size building in an average month (annual use / 12; January is about twice and July about a third of it); 4,800 GJ a year.",
+        "why": "x2 sensitivity level of the mid-size reference; near Liberty's Large General Service profile (4,247 GJ a year) and FortisBC's average Rate 3 customer (3,650 GJ).",
+        "sources": [
+          {
+            "title": "Liberty Utilities (Gas New Brunswick), 2024 rate application, Section 2.0 Summary of Evidence, Table 1",
+            "url": "https://naturalgasnb.com/files/regulatory_documents/Section_2.0_-_Summary_of_Evidence_-_REDACTED.pdf",
+            "date": "2024-04-18",
+            "figure": "\"Customer Profile (Annual GJs)\": Large General Service 4,247"
+          },
+          {
+            "title": "FortisBC Energy, 2023 Cost of Service Allocation and Rate Design Application",
+            "url": "https://www.cdn.fortisbc.com/libraries/docs/default-source/about-us-documents/regulatory-affairs-documents/gas-utility/230720-fei-2023-cosa-and-revenue-rebalancing-appl-ff.pdf?sfvrsn=e05a05ab_1",
+            "date": "2023-07-20",
+            "figure": "\"an average RS 3/23 customer consuming 3,650 GJ annually\""
+          }
+        ]
+      }
     ]
   },
   "tou_shares": {
@@ -203,9 +776,65 @@
         "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
         "note": "Applicability from each OEB-approved tariff: 'Standard Supply Service - Administrative Charge (if applicable)'. Prototype: condition_kind 'sss_admin'."
       }
+    },
+    {
+      "id": "qc-energir-renewable-gas-socialization",
+      "province": "QC",
+      "fuel": "gas",
+      "sectors": ["residential", "commercial_small", "commercial_medium"],
+      "match": {
+        "notes_regex": "^Applies to traditional gas when renewable-gas purchases (?:are|were) below .*$",
+        "name_regex": "^Renewable Gas Socialization (?:Cost|Rider)$"
+      },
+      "reason": "Energir's two renewable-gas socialization charges apply to each m³ of traditional gas withdrawn by a customer whose renewable-gas purchases are below 5%. The default (reference) Rate D1 customer buys no renewable gas, so both apply (owner decision 22, 2026-11-20).",
+      "source": {
+        "title": "Energir, Conditions of Service and Tariff in force October 1, 2026, sections 11.4.2.1 and 11.4.2.2",
+        "url": "https://energir.com/files/energir_common/import/Fichiers/Affaires/Tarif/CST-EN-1oct2026.pdf",
+        "note": "'A price of 2.706¢/m³ applies to each m³ of traditional natural gas withdrawn by a customer whose purchase of gas from renewable source is less than the percentage prescribed' (5% from October 1, 2025); 'A price of 1.349¢/m³ applies ... by a customer whose purchase of gas from renewable gas is less than 5% for the year ending September 30, 2026.'"
+      }
+    },
+    {
+      "id": "qc-energir-load-balancing",
+      "province": "QC",
+      "fuel": "gas",
+      "sectors": ["residential", "commercial_small", "commercial_medium"],
+      "match": {
+        "notes_regex": "^Applies to customers whose annual volume is less than 75,000 m(?:³|3); .*$",
+        "name_regex": "^Load Balancing$"
+      },
+      "annual_volume": {
+        "max": 75000,
+        "max_inclusive": false,
+        "unit": "m3",
+        "otherwise": "at 75,000 m³ a year or more Energir prices load balancing with a load-factor formula that the model cannot compute, so the record is not computable there",
+        "quote": "Price for Customers whose Annual Volume is Less than 75,000 m³: For each m³ of volume withdrawn, the unit price is 7.273¢/m³."
+      },
+      "reason": "Customers on Energir's supply use its load balancing service; below 75,000 m³ a year it is a price per m³ (owner decision 8, 2026-11-20: annual volume = 12 x the level). A level at 75,000 m³ a year or more is not computable.",
+      "source": {
+        "title": "Energir, Conditions of Service and Tariff in force October 1, 2026, sections 10.3, 13.1.2.1 and 13.1.2.2",
+        "url": "https://energir.com/files/energir_common/import/Fichiers/Affaires/Tarif/CST-EN-1oct2026.pdf",
+        "note": "Section 13.1.2.1 (p. 48) prices load balancing for customers below 75,000 m³ a year; section 13.1.2.2 sets a load-factor formula price for the others."
+      }
+    },
+    {
+      "id": "nb-liberty-utility-gas",
+      "province": "NB",
+      "fuel": "gas",
+      "sectors": ["residential", "commercial_small", "commercial_medium"],
+      "exclusion": "optional",
+      "match": {
+        "notes_regex": "^Optional utility supply at cost\\b.*$",
+        "name_regex": "^Liberty Utility Gas$"
+      },
+      "reason": "Liberty Utility Gas, Liberty's standard supply offering sold at cost without mark-up under a yearly contract, is New Brunswick's reference supply (owner decision 7, 2026-11-20); customers may instead buy from a licensed marketer, whose price is not included. Nothing official says it is assigned automatically to a customer without a marketer.",
+      "source": {
+        "title": "Liberty Utilities (Gas New Brunswick), Our product offering",
+        "url": "https://naturalgasnb.com/en/for-business/accounts-and-billing/our-product-offering/",
+        "note": "'When you choose to purchase natural gas from Liberty, you pay the same price as the utility, without a mark-up or premium. This standard offering is called Liberty Utility Gas (LUG).' The stored price covers its month only."
+      }
     }
   ],
-  "fixed_charge_variants_basis": "A fixed charge published as variants of one charge by phase or service size (amperage), either as unconditional variants such as 'Basic Customer Charge (Single Phase)' / 'Basic Customer Charge (Three Phase)' or as alternatives marked 'Alternative: applies only to ...', is priced for the reference customer of the usage level (user decision, October 30, 2026): homes are single-phase service of 200 A; small businesses (commercial under 50 kW) are single-phase at the 10 kW level (s1) and three-phase at the 25 kW level (s2). For each such group, the rule of the model's fuel, sector and level selects the variant whose component name fully matches match.name_regex (Python re.fullmatch). Exactly one matching variant with a value per month is priced and itemized with reason 'fixed_charge_variant:<id>'; no match or more than one leaves the record not computable at that level with the existing reason. Other sectors and levels have no rule, so their variants stay not computable.",
+  "fixed_charge_variants_basis": "A fixed charge published as variants of one charge, either as unconditional variants such as 'Basic Customer Charge (Single Phase)' / 'Basic Customer Charge (Three Phase)', as alternatives marked 'Alternative: applies ...', or as bands of annual volume of which one applies, is priced for the reference customer of the usage level. Rules select by level (user decision, October 30, 2026: homes are single-phase service of 200 A; small businesses are single-phase at s1 and three-phase at s2, now 14 kW and 40 kW, owner decision 2026-11-20), by the level's monthly peak (a 'peak_month' range tested on the level x its peak_month_factors entry: Liberty Gas NB customer charges, owner decision 17, 2026-11-20) or by annual-volume band ('select': 'annual_volume_band': the band whose published annual window strictly contains 12 x the level; Energir's basic fee per metering device, owner decision 8, 2026-11-20). A rule applies to its fuel, sectors and, when given, province, utility and tariff_code; the variant whose component name fully matches match.name_regex (Python re.fullmatch) is priced. Exactly one matching variant with a value per month is priced and itemized with reason 'fixed_charge_variant:<id>'; no match or more than one leaves the record not computable at that level with the existing reason.",
   "fixed_charge_variants": [
     {
       "id": "home-single-phase-200a",
@@ -218,24 +847,100 @@
       "note": "Selects the variant whose range covers a 200 A single-phase home. Live variants on 2026-10-30: Newfoundland Power 1.1 and NL Hydro 1.1 'Basic Customer Charge (Not Exceeding 200 Amp Service)' (not '(Exceeding 200 Amp Service)')."
     },
     {
-      "id": "small-business-single-phase-10kw",
+      "id": "small-business-single-phase-14kw",
       "fuel": "electricity",
       "sectors": ["commercial_small"],
       "levels": ["s1"],
-      "reference": "single-phase service at the 10 kW level (s1: 2,000 kWh at 10 kW)",
+      "reference": "single-phase service at the 14 kW level (s1: 2,000 kWh at 14 kW)",
       "match": {"name_regex": "^(?i:.*\\(single[- ]phase\\))$"},
-      "decided": "user 2026-10-30",
-      "note": "Live variants on 2026-10-30: 'Basic Customer Charge (Single Phase)' (Newfoundland Power 2.1; NL Hydro 2.1, 2.1L, 2.2L) and Manitoba Hydro General Service Small 'Basic Charge (single phase)'; '(Unmetered)' and '(Three Phase)' are not selected."
+      "decided": "user 2026-10-30 (single phase at s1); 14 kW owner 2026-11-20",
+      "note": "Replaces small-business-single-phase-10kw (s1 was 2,000 kWh at 10 kW). Live variants on 2026-10-30: 'Basic Customer Charge (Single Phase)' (Newfoundland Power 2.1; NL Hydro 2.1, 2.1L, 2.2L) and Manitoba Hydro General Service Small 'Basic Charge (single phase)'; '(Unmetered)' and '(Three Phase)' are not selected."
     },
     {
-      "id": "small-business-three-phase-25kw",
+      "id": "small-business-three-phase-40kw",
       "fuel": "electricity",
       "sectors": ["commercial_small"],
       "levels": ["s2"],
-      "reference": "three-phase service at the 25 kW level (s2: 8,000 kWh at 25 kW)",
+      "reference": "three-phase service at the 40 kW level (s2: 10,000 kWh at 40 kW)",
       "match": {"name_regex": "^(?i:.*\\(three[- ]phase\\))$"},
-      "decided": "user 2026-10-30",
-      "note": "Live variants on 2026-10-30: 'Basic Customer Charge (Three Phase)' / '(Three phase)' (NL Hydro 2.1, 2.1L, 2.2L; Newfoundland Power 2.1) and Manitoba Hydro General Service Small 'Basic Charge (three phase)'."
+      "decided": "user 2026-10-30 (three phase at s2); 40 kW owner 2026-11-20",
+      "note": "Replaces small-business-three-phase-25kw (s2 was 8,000 kWh at 25 kW). Live variants on 2026-10-30: 'Basic Customer Charge (Three Phase)' / '(Three phase)' (NL Hydro 2.1, 2.1L, 2.2L; Newfoundland Power 2.1) and Manitoba Hydro General Service Small 'Basic Charge (three phase)'."
+    },
+    {
+      "id": "nb-liberty-mgs-customer-charge",
+      "fuel": "gas",
+      "province": "NB",
+      "utility": "Liberty Utilities Gas NB",
+      "sectors": ["commercial_small", "commercial_medium"],
+      "peak_month": {"max": 60, "max_inclusive": true},
+      "reference": "Mid-General Service customer charge for a maximum monthly consumption up to 60 GJ (peak month = 1.85 x the level)",
+      "match": {"tariff_code": "MGS", "name_regex": "^Monthly Distribution Customer Charge$"},
+      "decided": "owner 2026-11-20 (decision 17)",
+      "note": "Stored wording: 'Alternative: applies when maximum monthly consumption is up to 60 GJ'."
+    },
+    {
+      "id": "nb-liberty-mgs-customer-charge-higher",
+      "fuel": "gas",
+      "province": "NB",
+      "utility": "Liberty Utilities Gas NB",
+      "sectors": ["commercial_small", "commercial_medium"],
+      "peak_month": {"min": 60, "min_inclusive": false},
+      "reference": "Mid-General Service customer charge for a maximum monthly consumption above 60 GJ (peak month = 1.85 x the level)",
+      "match": {"tariff_code": "MGS", "name_regex": "^Monthly Distribution Customer Charge \\(higher consumption\\)$"},
+      "decided": "owner 2026-11-20 (decision 17)",
+      "note": "Stored wording: 'Alternative: applies when maximum monthly consumption is greater than 60 GJ'."
+    },
+    {
+      "id": "nb-liberty-lgs-customer-charge",
+      "fuel": "gas",
+      "province": "NB",
+      "utility": "Liberty Utilities Gas NB",
+      "sectors": ["commercial_small", "commercial_medium"],
+      "peak_month": {"max": 650, "max_inclusive": true},
+      "reference": "Large General Service customer charge for a maximum monthly consumption up to 650 GJ (peak month = 1.85 x the level)",
+      "match": {"tariff_code": "LGS", "name_regex": "^Monthly Distribution Customer Charge$"},
+      "decided": "owner 2026-11-20 (decision 17)",
+      "note": "Stored wording: 'Alternative: applies when maximum monthly consumption is up to 650 GJ'."
+    },
+    {
+      "id": "nb-liberty-lgs-customer-charge-higher",
+      "fuel": "gas",
+      "province": "NB",
+      "utility": "Liberty Utilities Gas NB",
+      "sectors": ["commercial_small", "commercial_medium"],
+      "peak_month": {"min": 650, "min_inclusive": false},
+      "reference": "Large General Service customer charge for a maximum monthly consumption above 650 GJ (peak month = 1.85 x the level)",
+      "match": {"tariff_code": "LGS", "name_regex": "^Monthly Distribution Customer Charge \\(higher consumption\\)$"},
+      "decided": "owner 2026-11-20 (decision 17)",
+      "note": "Stored wording: 'Alternative: applies when maximum monthly consumption is greater than 650 GJ'."
+    },
+    {
+      "id": "qc-energir-basic-fee-band",
+      "fuel": "gas",
+      "province": "QC",
+      "utility": "Energir",
+      "sectors": ["residential", "commercial_small", "commercial_medium"],
+      "select": "annual_volume_band",
+      "reference": "one metering device; the basic-fee band whose annual volume contains 12 x the level",
+      "match": {"name_regex": "^Basic Fee \\u2014 Band [1-7]$"},
+      "decided": "owner 2026-11-20 (decision 8)",
+      "note": "Conditions of Service and Tariff, section 14.2.2.1: 'The basic fees per metering device depend on annual volume withdrawn' (seven bands from 0-10,950 m³ a year). The tariff does not say which band owns a shared boundary, so a level exactly on one is not computable; no approved level is."
+    }
+  ],
+  "peak_month_factors_basis": "Some classes and charges follow a customer's monthly peak rather than its average month. An entry gives the ratio of the peak month to the average month for a province, fuel and sectors; the engine multiplies the level by it wherever a crosswalk usage_bounds entry (basis 'peak_month') or a fixed_charge_variants 'peak_month' rule applies.",
+  "peak_month_factors": [
+    {
+      "id": "nb-commercial-gas-january",
+      "province": "NB",
+      "fuel": "gas",
+      "sectors": ["commercial_small", "commercial_medium"],
+      "factor": 1.85,
+      "decided": "owner 2026-11-20 (decision 17)",
+      "basis": "Liberty Gas NB places a customer in Mid-General Service (under 250 GJ) or Large General Service (250 GJ and over) by its 'Monthly Demand Peak' over the last 12 months, and its customer charges change at 60 GJ (MGS) and 650 GJ (LGS) of maximum monthly consumption. The peak month of an average-month level is taken as January: New Brunswick's commercial and institutional customers used 1.85 times their average month in January 2025. Liberty's own 2024 class data give about 2.0 (MGS) and 1.7 (LGS).",
+      "sources": [
+        {"title": "Statistics Canada Table 25-10-0059-01, Canadian monthly natural gas distribution, Canada and provinces", "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510005901", "date": "2026-02-23 (data to December 2025)", "figure": "New Brunswick deliveries to commercial and institutional consumers, 2025: 3,599 m³ per customer in January against 1,941 m³ per customer in an average month (computed; ratio 1.85)"},
+        {"title": "Liberty Utilities (Gas New Brunswick), Customer rate classes", "url": "https://naturalgasnb.com/en/for-home/accounts-billing/customer-rate-classes/", "date": "rates effective 2025-01-01", "figure": "Mid-General Service 'Max Consumption (Monthly Demand Peak)' '< 250 GJ'; Large General Service 'Min Consumption (Monthly Demand Peak)' '250 GJ'; classes set by 'monthly consumption patterns over the last 12 months'"}
+      ]
     }
   ],
   "synthetic_profiles": {
@@ -252,5 +957,5 @@
       "caveat": "Built from a made-up business-hours load profile, not from any real customer's data. Representative only: not a forecast, a quote or a bill, and not a basis for decisions. Needs further analysis."
     }
   },
-  "basis": "Monthly usage levels approved by the user on October 9, 2026: residential 500/1,000/2,000 kWh; commercial under 50 kW at 2,000 kWh with 10 kW and 8,000 kWh with 25 kW; 50-499 kW at 40,000 kWh with 100 kW; 500-4,999 kW at 500,000 kWh with 1,000 kW; no level yet for 5,000 kW and over. Daily charges convert to monthly at 30.4375 days (365.25 / 12); hours per month 730.5. kVA demand is derived from kW at the disclosed 0.9 power factor (kVA = kW / 0.9) and never treated as kW. Implied load factors (kWh / (kW x 730.5)): s1 27.4%, s2 43.8%, m1 54.8%, l1 68.4%. Levels are comparison points for modeled costs, not a load profile of any customer."
+  "basis": "Monthly usage levels: electricity residential 500/1,000/2,000 kWh (approved October 9, 2026; 1,000 kWh is the reference level and 500/2,000 are sensitivity levels, owner decision November 20, 2026); commercial under 50 kW s1 = 2,000 kWh at 14 kW and s2 = 10,000 kWh at 40 kW (owner decision November 20, 2026, replacing 2,000 kWh at 10 kW and 8,000 kWh at 25 kW); 50-499 kW m1 = 40,000 kWh at 100 kW; 500-4,999 kW l1 = 500,000 kWh at 1,000 kW; no level yet for 5,000 kW and over. Gas levels are in the gas section (native m3 or GJ, residential and commercial). Each level records its decision, what it represents, why it was chosen and its sources (owner rule November 20, 2026). Daily charges convert to monthly at 30.4375 days (365.25 / 12); hours per month 730.5. kVA demand is derived from kW at the disclosed 0.9 power factor (kVA = kW / 0.9) and never treated as kW. Implied load factors (kWh / (kW x 730.5)): s1 19.6%, s2 34.2%, m1 54.8%, l1 68.4%. Levels are comparison points for modeled costs, not a load profile of any customer."
 }

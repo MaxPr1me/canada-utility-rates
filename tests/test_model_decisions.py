@@ -25,7 +25,7 @@ AS_OF = "2026-10-16"
 PROVINCES = ("ON", "AB", "BC", "MB", "NB", "NL", "NS", "PE", "QC", "SK")
 NL_RES = "NL|electricity|residential|flat|-"
 NL_SMALL = "NL|electricity|commercial|demand|commercial_small"
-HOME, SINGLE, THREE = "home-single-phase-200a", "small-business-single-phase-10kw", "small-business-three-phase-25kw"
+HOME, SINGLE, THREE = "home-single-phase-200a", "small-business-single-phase-14kw", "small-business-three-phase-40kw"
 NOT_EXCEEDING = "Basic Customer Charge (Not Exceeding 200 Amp Service)"
 
 
@@ -115,10 +115,10 @@ def test_maritime_published_free_demand_block_prices_only_balance(kwh, kw, level
 
 
 @pytest.mark.parametrize("fixed, unchosen", [(PHASES, "variant_not_selected"), (PHASE_ALTERNATIVES, "alternative")])
-def test_small_business_levels_pick_single_phase_at_10_kw_and_three_phase_at_25_kw(fixed, unchosen):
+def test_small_business_levels_pick_single_phase_at_14_kw_and_three_phase_at_40_kw(fixed, unchosen):
     record = _rec(fixed + [ENERGY])
-    for level, kwh, kw, value, rule, picked in (("s1", 2000, 10, 22.0, SINGLE, "Single Phase"),
-                                                ("s2", 8000, 25, 34.0, THREE, "Three")):
+    for level, kwh, kw, value, rule, picked in (("s1", 2000, 14, 22.0, SINGLE, "Single Phase"),
+                                                ("s2", 10000, 40, 34.0, THREE, "Three")):
         res = _cost(record, kwh, kw, level=level)
         assert res["status"] == "ok" and res["cost"] == pytest.approx(value + 0.10 * kwh), level
         fixed_items = {name: item for name, item in _items(res).items() if item["type"] == "fixed"}
@@ -230,7 +230,7 @@ def test_variants_that_differ_by_level_stay_out_of_the_component_buckets():
     record = _rec(PHASES + [ENERGY], utility="Newfoundland Power", code="2.1", rid=51)
     model = _model(_build([record]), NL_SMALL)
     assert model["state"] == "single_source"
-    assert [(lv["id"], lv["without_tax"]["median"]) for lv in model["levels"]] == [("s1", 222.0), ("s2", 834.0)]
+    assert [(lv["id"], lv["without_tax"]["median"]) for lv in model["levels"]] == [("s1", 222.0), ("s2", 1034.0)]
     assert [e["id"] for e in model["fixed_charge_variants"]] == [SINGLE, THREE]
     assert not [b for b in model["buckets"] if b["bucket"] == "fixed"]
     assert "component buckets include a variant only when the same one applies at every level" in model["method"]
@@ -247,7 +247,7 @@ def test_manitoba_general_service_small_phase_alternatives_from_the_frozen_page(
                   structure="tiered")
     record["name"] = small.tariff_name
     periods = load_block_periods()
-    for level, kwh, kw, value, rule in (("s1", 2000, 10, 21.57, SINGLE), ("s2", 8000, 25, 35.04, THREE)):
+    for level, kwh, kw, value, rule in (("s1", 2000, 14, 21.57, SINGLE), ("s2", 10000, 40, 35.04, THREE)):
         res = _cost(record, kwh, kw, level=level, block_periods=periods)
         assert res["status"] == "ok", res["reasons"]
         chosen = [i for i in res["items"] if (i.get("reason") or "").startswith("fixed_charge_variant:")]
@@ -286,18 +286,21 @@ def test_billing_period_entries_cite_monthly_billing_terms():
 def test_rules_and_method_text_are_disclosed():
     result = _build([_b14(50)])
     assumptions = result["assumptions"]
-    assert [r["id"] for r in assumptions["fixed_charge_variants"]] == [HOME, SINGLE, THREE]
-    assert all(r["decided"] == "user 2026-10-30" for r in assumptions["fixed_charge_variants"])
+    electricity = [r for r in assumptions["fixed_charge_variants"] if r["fuel"] == "electricity"]
+    assert [r["id"] for r in electricity] == [HOME, SINGLE, THREE]
+    assert electricity[0]["decided"] == "user 2026-10-30"
+    assert all(r["decided"].startswith("user 2026-10-30") and "owner 2026-11-20" in r["decided"] for r in electricity[1:])
     assert "single-phase service of 200 A" in assumptions["fixed_charge_variants_basis"]
     rules = " ".join(assumptions["component_rules"])
     assert "'fixed_charge_variants' rule" in rules and "fixed_charge_variant:<id>" in rules
     assert "without a selection rule" not in rules
     usage = load_usage_levels()
-    assert [(r["sectors"], r["levels"]) for r in usage["fixed_charge_variants"]] == [
+    assert [(r["sectors"], r["levels"]) for r in usage["fixed_charge_variants"] if r["fuel"] == "electricity"] == [
         (["residential"], ["low", "typical", "high"]), (["commercial_small"], ["s1"]), (["commercial_small"], ["s2"])]
     levels = {sector: [lv["id"] for lv in usage["electricity"][sector]] for sector in ("residential", "commercial_small")}
     assert levels == {"residential": ["low", "typical", "high"], "commercial_small": ["s1", "s2"]}
-    assert [(lv["kwh"], lv["kw"]) for lv in usage["electricity"]["commercial_small"]] == [(2000, 10), (8000, 25)]
+    # Owner decisions 27 and 28 (2026-11-20): s1 2,000 kWh at 14 kW, s2 10,000 kWh at 40 kW.
+    assert [(lv["kwh"], lv["kw"]) for lv in usage["electricity"]["commercial_small"]] == [(2000, 14), (10000, 40)]
     assert rm.fixed_charge_variant_rules(usage, "gas", "residential") == []
     assert rm.fixed_charge_variant_rules({"fixed_charge_variants": [{"id": "x", "sectors": ["residential"],
                                                                       "levels": ["low"], "match": {"notes_regex": "."}}]},

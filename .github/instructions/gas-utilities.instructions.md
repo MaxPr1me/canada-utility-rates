@@ -28,6 +28,15 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
   (registered as Heritage Gas) and Liberty usually post the new month after the 1st, so they are in
   the registry's `monthly_price_refresh` group and the Monthly Scrape on the 4th stores it (owner
   decisions 2026-11-20 and 2026-11-23).
+- **Representative models depend on some stored wording (method 7D-2):** reviewed entries in
+  `data/models/usage_levels.json` match component names and notes, and `data/models/crosswalk.json`
+  `usage_bounds` restate the class limits. Keep them in step when a scraper changes: Liberty Utility
+  Gas ("Optional utility supply at cost ...") and Liberty's two customer charges ("Monthly
+  Distribution Customer Charge" and "... (higher consumption)" per class); Énergir's "Load Balancing"
+  ("Applies to customers whose annual volume is less than 75,000 m³; ..."), its two "Renewable Gas
+  Socialization" charges and its seven "Basic Fee — Band n" components with their annual thresholds;
+  and the annual or monthly class limits stored as `usage_min`/`usage_max`. A mismatch fails closed:
+  the class or charge becomes not computable in the models until the entry is reviewed.
 
 ## Enbridge Gas (Ontario)
 

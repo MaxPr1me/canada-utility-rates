@@ -647,6 +647,22 @@ header h1 {
     margin-left: 0.25rem;
 }
 
+/* A dated price whose end date has passed (owner decision 34, 2026-11-23); it stays visible until a newer one is
+   stored. Dark text on a pale red keeps the contrast above 4.5:1. */
+.ended-badge {
+    display: inline-block;
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #fde8e8;
+    color: #8a1c1c;
+    border: 1px solid #f5c2c2;
+    vertical-align: middle;
+    margin-left: 0.25rem;
+}
+
 /* ── Market callout ───────────────────────────────────────── */
 
 .market-callout {

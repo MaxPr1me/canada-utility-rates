@@ -12,7 +12,8 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 
 - Every export carries `method_version` from `METHOD_VERSION`. Each owner-approved method change has
   received a new version (7C-3: decisions of 2026-10-30; 7C-4: market benchmark sidecars,
-  2026-11-02; 7D-1: residential gas models, 2026-11-04); update the tests that assert it.
+  2026-11-02; 7D-1: residential gas models, 2026-11-04; 7D-2: commercial gas, reviewed class bounds
+  and the s1/s2 levels, decisions of 2026-11-20); update the tests that assert it.
 - `export_json.export_all()` calls `export_representative_models()` after the other exports
   (`MODEL_PROVINCES` = ON, AB, BC, MB, NB, NL, NS, PE, QC, SK; `zone_policy="median_of_zones"`). The
   hook imports lazily and writes `site/data/representative_models.json` through a temporary file and
@@ -23,8 +24,8 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   from 3.11 and once moved a median by a cent.
 - Tests use frozen record fixtures (`tests/fixtures/rm_records_sample.json`, `rm_engine_sample.json`,
   `rm_records_b12.json`, `rm_records_b14.json`, `rm_records_ws_6d.json`, `rm_records_7d_gas.json`,
-  `rm_records_b18.json`, `rm_records_b18_ab.json`), so the pre-scrape CI tests never depend on the
-  live export.
+  `rm_records_7d2_gas.json`, `rm_records_b18.json`, `rm_records_b18_ab.json`), so the pre-scrape CI
+  tests never depend on the live export.
 - The export and model CLI accept `--generation-receipt PATH`. This optional record distinguishes
   successful unchanged generation from failure retaining an old file; monitoring defects cannot
   break the primary export. The CLI requires `--build --output` when requesting a receipt.
@@ -57,26 +58,46 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   [CI rules](ci-data-history.instructions.md#model-monitoring); optional history display belongs
   to the [website rules](website.instructions.md#representative-models-sitejsmodelsjs).
 
-## Gas models (Phase 7D first slice, method 7D-1, owner decision 2026-11-04)
+## Gas models (Phase 7D: method 7D-1, owner decision 2026-11-04; method 7D-2, owner decisions 2026-11-20)
 
-- `MODEL_FUELS` = electricity and gas, but gas models are built only for `GAS_MODEL_SECTORS`
-  (residential). Commercial, contract and interruptible gas keys are withheld and listed in
-  `input.withheld_gas_models` until their scenarios are approved.
-- Residential default utility supply only. Propane, optional RNG, Customer Choice/marketer and
-  delivery-only products are crosswalk exclusions; an optional utility supply (Liberty NB) is not
-  included, so that model is not computable rather than assumed.
+- `MODEL_FUELS` = electricity and gas; gas models are built for `GAS_MODEL_SECTORS` (residential and
+  commercial). Any other gas key would be withheld and listed in `input.withheld_gas_models` (none
+  today). Contract-demand, interruptible, seasonal, peaking and load-factor classes are crosswalk
+  exclusions (`gas_models_phase_7d`) until their own decision (decision 4, 2026-11-20).
+- Default utility supply only. Propane, optional RNG, Customer Choice/marketer and delivery-only
+  products are crosswalk exclusions. Liberty Utility Gas (an optional supply at cost) is the New
+  Brunswick reference supply through a reviewed `reference_customer` entry (decision 7); without it
+  the NB models fail closed.
 - Native units, never converted or merged: a gas model's records must price exactly one volume unit
   (`gas_volume_unit`: `$/m³` -> m3, `$/GJ` -> GJ); mixed or missing units leave the model with no
-  level. m3 utilities are evaluated at `gas.residential` levels 100/200/400 m3 and GJ utilities at
-  4/8/16 GJ (reference levels sourced; the others are labelled sensitivity levels). Level output
-  carries `quantity`, `unit` and `role`, with `kwh`/`kw` null. A future cross-unit comparison converts
-  toward m3 at 100/200/400 m3, with its heating-value source decided then.
-- `price_basis(..., volume_unit=...)` accepts only the model's own volume unit; gas tier thresholds
-  must be monthly volumes in that unit (`m³/month`). Daily or annual gas thresholds, per-metering-device
-  fees and `$/m³/month` demand charges are unsupported (fail closed, e.g. Energir D1). `commodity`
-  components count as energy. Tax thresholds in kWh never apply to gas.
-- The Representative Models page shows gas levels in m³ or GJ with Reference/Sensitivity tags;
-  Across-Canada stays residential electricity only.
+  level. Homes use `gas.residential` (100/200/400 m3 or 4/8/16 GJ); commercial models use the
+  building-size bands `commercial_small` (500/1,000/2,000 m3 or 15/30/60 GJ) and `commercial_medium`
+  (2,500/5,000/10,000 m3 or 100/200/400 GJ), each a reference level with x0.5 and x2 sensitivity
+  levels (decision 16). Level output carries `quantity`, `unit` and `role`, with `kwh`/`kw` null. A
+  future cross-unit comparison converts toward m3, with its heating-value source decided then.
+- Class selection (decision 16): every general-service class of a utility lists both building bands,
+  and at each level the engine uses the class whose published limits contain the level's annual
+  volume (12 x the level). Reviewed crosswalk `usage_bounds` gas entries quote the wording that says
+  whether a limit itself is included (ATCO 100 GJ/month = 1,200 GJ/yr is Low Use, "or less"); an
+  entry whose numbers differ from the stored bounds, or a level exactly on a stored bound without
+  an entry, is not computable. Liberty's classes and customer charges follow the monthly peak, the
+  level x the `peak_month_factors` entry (1.85, decision 17). Union Rate 01/M1 and ATCO Low Use
+  (stored as residential) also serve the commercial models through the rule's `model.also`, with
+  commercial taxes (decision 18). Centra's elective Small and Large General Service count once, as
+  the cheaper at each level, named (`elective_classes`, decision 19).
+- Energir Rate D1 (decision 8): one metering device (`$/metering device/day` x 30.4375); the
+  basic-fee band whose annual window strictly contains 12 x the level (`fixed_charge_variants` rule
+  `qc-energir-basic-fee-band`; a level on a band boundary is not computable); daily blocks
+  (`m³/day`) x 30.4375; load balancing below 75,000 m3 a year only (a `reference_customer` entry
+  with an annual limit, so 10,000 m3/month is not computable); both renewable-gas socialization
+  charges included (decision 22).
+- `price_basis(..., volume_unit=...)` accepts only the model's own volume unit; gas block thresholds
+  are monthly or daily volumes in that unit. Annual thresholds only select bands or classes, never
+  blocks; `$/m³/month` demand charges are unsupported. `commodity` components count as energy. Tax
+  thresholds in kWh never apply to gas. Heritage Gas's municipal riders A and B are percentages,
+  disclosed but not applied, as for homes.
+- The Representative Models page shows gas levels in m³ or GJ with Reference/Sensitivity tags and
+  the class used at each level; Across-Canada stays residential electricity only.
 
 ## Inputs and crosswalk (`data/models/crosswalk.json`)
 
@@ -84,8 +105,9 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 - Rules are ordered and the first match wins: each record maps to {province, fuel, sector, structure,
   size band} or to an exclusion reason. Require 0 unmapped (`--coverage`); the coverage report lists
   the intentional rule overrides.
-- Exclusion reasons include `gas_models_phase_7d` (ON/AB gas records outside the residential
-  first slice), `territory_planned_later`,
+- Exclusion reasons include `gas_models_phase_7d` (gas classes outside the Phase 7D models:
+  contract-demand, interruptible, seasonal, peaking and load-factor services in every province),
+  `territory_planned_later`,
   `paired_retail_component` (Alberta RoLR records), `no_reference_level` (a class whose printed
   eligibility fits no usage level: Lethbridge 992 and 995), `eligibility_unpublished` (class size
   limits not published: Medicine Hat 3.1 and 3.3, owner decision 2026-11-19) and, for AESO and the
@@ -113,7 +135,21 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   - Every Alberta unit is a service area: `coverage.contributor_noun` is "service area(s)".
 - `required_contributors`: withhold a level (reason `withheld`, state `not_computable`) when a listed
   utility is not computable there (NL residential needs Newfoundland Power).
-- `usage_bounds`: quoted annual-use eligibility limits, applied as the level's kWh x 12.
+- `usage_bounds`: quoted eligibility limits. Electricity entries (`min_annual_kwh`/`max_annual_kwh`)
+  apply as the level's kWh x 12 when the record publishes them only in text. Gas entries (`unit`
+  m3/GJ, `basis` annual or peak_month, `min`/`max` with `min_inclusive`/`max_inclusive`, `quote`,
+  `source`) decide class selection (see Gas models).
+- `demand_bounds`: reviewed inclusivity of a kW class limit where the published wording differs from
+  the engine default `[min, max)` (FortisBC Electric Rate 20 "not more than 40 kW", so s2 at 40 kW
+  stays on Rate 20; Rate 21 is "greater than 40 kW"). Different stored numbers fail closed.
+- A rule's `model.also` lists further {sector, structure, size_band} targets that the same record
+  serves (decision 18: Union 01/M1 and ATCO Low Use in the commercial gas models).
+- `elective_classes`: classes open to the same customers, of which the model prices the cheapest at
+  each level and names it in the utility row (`elective_classes` notes) and the model (Centra Small
+  and Large General Service, decision 19).
+- Classes whose kW limits cross a reference level were re-checked when s2 moved to 40 kW
+  (2026-11-23): BC Hydro Rate 1500 (35-150 kW) also lists the small band, so BC Hydro is priced on it
+  at s2 (decision 28); no other class limit lies at 14 or 40 kW.
 
 ## Usage levels and reference customer (`data/models/usage_levels.json`)
 
@@ -123,10 +159,14 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   size, period and units). Back it with official sources (utilities, regulators, statistical
   agencies, government programs) and, where they exist, peer-reviewed research data, each cited
   with its title, URL or DOI, date and the exact figure used. A sensitivity level or a simulated
-  or made-up profile says so; never present one as typical or observed.
-- Owner-approved levels: residential 500, 1,000 and 2,000 kWh; commercial under 50 kW 2,000 kWh at
-  10 kW (s1) and 8,000 kWh at 25 kW (s2); 50-499 kW 40,000 kWh at 100 kW (m1); 500-4,999 kW
-  500,000 kWh at 1,000 kW (l1). There is no 5,000 kW+ level (those models report buckets only).
+  or made-up profile says so; never present one as typical or observed. In `usage_levels.json` each
+  level carries `decided`, `represents`, `why` and `sources` (title, url, date, figure; "computed"
+  marks arithmetic on published cells); sensitivity levels may have no source and say so in `why`.
+- Owner-approved levels: residential 500, 1,000 and 2,000 kWh (1,000 is the reference level, 500
+  and 2,000 sensitivity levels, decision 29); commercial under 50 kW 2,000 kWh at 14 kW (s1) and
+  10,000 kWh at 40 kW (s2, three phase; decisions 27-28 of 2026-11-20 replaced 10 kW and 8,000 kWh
+  at 25 kW); 50-499 kW 40,000 kWh at 100 kW (m1); 500-4,999 kW 500,000 kWh at 1,000 kW (l1). There
+  is no 5,000 kW+ level (those models report buckets only). Gas levels: see Gas models.
 - A month is 30.4375 days everywhere (owner decision 2026-10-30), although Hydro-Quebec and Manitoba
   Hydro define a month as 30 days. kVA uses power factor 0.9.
 - TOU/ULO shares are dated sets (`effective_date`/`end_date`), one per OEB RPP price period.
@@ -140,13 +180,21 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   October 16, 2026).
 - `reference_customer` lists the reviewed conditional charges a typical customer does pay: Ontario
   Class B CBR riders, non-RPP Class B GA riders for demand sectors, non-wholesale-market-participant
-  riders and the SSS administration charge.
+  riders and the SSS administration charge; Energir's renewable-gas socialization charges and load
+  balancing (with `annual_volume` below 75,000 m3; outside it the record is not computable). An entry
+  with `exclusion: "optional"` unlocks an optional component instead (Liberty Utility Gas).
 - `fixed_charge_variants` (owner decision 2026-10-30): fixed charges published as phase or amperage
   variants (alternatives or unmarked variants) are never summed. A rule prices exactly one variant per
   level: homes at single-phase 200 A; commercial under 50 kW single phase at s1 and three phase at
-  s2. Reason `fixed_charge_variant:<id>`, disclosed per model and per utility row. No match or more
-  than one match leaves that utility not computable at that level; Manitoba GS Small (Demand) (50-499
-  kW, no variant rule) stays unavailable without phase/history assumptions.
+  s2. Since 7D-2 a rule may instead select by the level's monthly peak (`peak_month` range, Liberty's
+  customer charges) or by annual-volume band (`select: annual_volume_band`, Energir's basic fee), and
+  may name a `province`, `utility` and `tariff_code`. Reason `fixed_charge_variant:<id>`, disclosed per
+  model and per utility row. No match or more than one match leaves that utility not computable at
+  that level; Manitoba GS Small (Demand) (50-499 kW, no variant rule) stays unavailable without
+  phase/history assumptions.
+- `peak_month_factors`: the peak month as a multiple of the average month for a province, fuel and
+  sectors (NB commercial gas 1.85: Statistics Canada NB commercial deliveries, January 2025 against the
+  average month; decision 17), disclosed as the model's `peak_month_factor`.
 
 ## Block periods and unit conversions
 
@@ -161,8 +209,11 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   is per two-month billing period (`two_months`, like BC Hydro 1101).
 - Only these conversions are allowed: $/day x 30.4375; $/30 days x 30.4375/30; "$/two months" / 2 for
   charges printed per two-month billing period (FortisBC; batch 18: Nelson Hydro and New Westminster
-  bi-monthly basic charges); per-day energy blocks x 30.4375 (Hydro-Quebec Rate D 40 kWh/day); kVA at
-  PF 0.9. Never assume any other conversion.
+  bi-monthly basic charges); per-day energy blocks x 30.4375 (Hydro-Quebec Rate D 40 kWh/day; Energir
+  D1 m³/day, 7D-2); $/metering device/day x 30.4375 for one metering device (Energir D1, decision 8);
+  kVA at PF 0.9. Never assume any other conversion.
+- An unseasoned first block followed by seasonal blocks applies in every season (Liberty LGS: block 1
+  all year, block 2 Sep-Apr and May-Aug); its bounds must agree across seasons.
 - Municipal utilities registered in batch 18 join their province's medians like any registered utility
   (owner decision 2026-11-04); their percentage riders of the billed amount (New Westminster) are
   disclosed but not applied, like every percentage adjustment (retained for this milestone by the
@@ -212,6 +263,11 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 - Accepted defaults: Manitoba residential is a gas-heated home; municipal taxes and surcharges are
   excluded; commercial tax is shown as billed, without input tax credits; income-tested programs are
   excluded.
+- Commercial gas (decision 23, 2026-11-20): Saskatchewan shows a PST line at 0% with medium
+  confidence (the building-heating exemption; commercial water heating and cooking may be taxable at
+  6%, not modelled); the Alberta Natural Gas Rebate Program is named in the Alberta gas methods
+  (`NOT_APPLIED`), with no line while the price is below its $6.50/GJ trigger; claim-based rebates
+  are left out; BC PST and ICE stay separate lines.
 
 ## 7E illustrative sidecar (synthetic load profile)
 

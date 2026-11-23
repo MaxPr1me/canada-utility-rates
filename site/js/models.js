@@ -190,10 +190,11 @@
         return parts.length ? parts.join(" at ") : `Level ${level.id || "?"}`;
     }
 
-    // " (typical)" for the electricity default level, " (reference)" for a gas reference level.
+    // " (reference)" for a reference level (residential electricity since 7D-2 and every gas set), " (typical)" for the
+    // electricity default level of a file without roles.
     function levelSuffix(level) {
-        if (level.id === DEFAULT_LEVEL_ID) return " (typical)";
-        return level.role === "reference" ? " (reference)" : "";
+        if (level.role === "reference") return " (reference)";
+        return level.id === DEFAULT_LEVEL_ID && !level.role ? " (typical)" : "";
     }
 
     // ── Loading ───────────────────────────────────────────────
@@ -585,9 +586,10 @@
         const row = el("tr", highlighted ? "rm-row-highlight" : null);
         const usage = el("th", null, usageText(level));
         usage.scope = "row";
-        if (level.id === DEFAULT_LEVEL_ID) usage.append(" ", el("span", "rm-tag", "Typical"));
-        else if (level.role === "reference") usage.append(" ", el("span", "rm-tag", "Reference"));
+        // Owner decision 29 (2026-11-20): reference and sensitivity tags for every level that has a role.
+        if (level.role === "reference") usage.append(" ", el("span", "rm-tag", "Reference"));
         else if (level.role === "sensitivity") usage.append(" ", el("span", "rm-tag", "Sensitivity"));
+        else if (level.id === DEFAULT_LEVEL_ID) usage.append(" ", el("span", "rm-tag", "Typical"));
         const range = cell(moneyRange(without.min, without.max), "rm-num");
         const bar = rangeBar(without);
         if (bar) range.append(bar);
@@ -646,6 +648,8 @@
             illustrativeControls(model)].filter(Boolean));
         const assumptions = fixedChargeAssumptions(model);
         if (assumptions) box.append(assumptions);
+        const classes = classSelectionNote(model);
+        if (classes) box.append(classes);
         if (level) box.append(...taxBlock(level));
         box.append(el("h3", null, "Method"),
             el("p", "methodology-summary rm-text", model.method || "No method text was published for this model."));
@@ -681,6 +685,43 @@
         });
         section.append(entries);
         return section;
+    }
+
+    function isCommercialGas(model) {
+        return model.key.fuel === "gas" && model.key.sector === "commercial";
+    }
+
+    // Method 7D-2: a utility's commercial gas classes share one model; the class used depends on the level.
+    function classSelectionNote(model) {
+        if (!isCommercialGas(model)) return null;
+        const section = el("section", "rm-class-selection");
+        section.append(el("h3", null, "Class used at each level"));
+        const lines = ["Each utility is priced on its general-service class whose published limits contain the "
+            + "level: the level's annual volume (12 x the monthly level), or its peak month where the class "
+            + "follows the monthly peak. The contributing table names the class used at the selected level."];
+        const peak = model.peak_month_factor;
+        if (peak && isNum(peak.factor)) {
+            lines.push(`Peak month: ${numberFormat.format(peak.factor)} x the level`
+                + (peak.decided ? `; decided ${peak.decided}` : "") + ".");
+        }
+        list(model.elective_classes).filter(entry => entry && entry.utility).forEach(entry => {
+            lines.push(`${entry.utility}: customers may elect ${list(entry.tariff_codes).join(" or ")}; the cheaper `
+                + "is used at each level" + (entry.decided ? `; decided ${entry.decided}` : "") + ".");
+        });
+        lines.forEach(text => section.append(el("p", "rm-text", text)));
+        return section;
+    }
+
+    // Tariff codes of the records a utility row used at the level, with the elective choice when there was one.
+    function classUsedText(model, row) {
+        const briefs = new Map();
+        list(model.utilities).forEach(entry => list(entry.records).forEach(record => {
+            if (record && record.record_id != null) briefs.set(record.record_id, record.tariff_code || record.name);
+        }));
+        const codes = [...new Set(list(row.records).map(id => briefs.get(id)).filter(Boolean))];
+        const notes = list(row.elective_classes).filter(note => note && note.chosen).map(note =>
+            `cheaper of ${list(note.costs).map(item => `${item.tariff_code} ${money(item.cost_without_tax)}`).join(" and ")}`);
+        return [codes.join(", "), ...notes].filter(Boolean).join("; ") || DASH;
     }
 
     function benchmarkBlock(model, level) {
@@ -823,7 +864,9 @@
         table.append(el("caption", null, `Modeled monthly cost for ${usageText(level)}`));
         const headRow = el("tr");
         const hasVariants = [...rows.values()].some(row => list(row.fixed_charge_variants).length);
+        const showClass = isCommercialGas(model);
         const headings = [sentenceCase(noun.singular), "Before tax and rebates", "With tax and rebates"];
+        if (showClass) headings.push("Class used");
         if (hasVariants) headings.push("Selected fixed charge (model assumption)");
         headings.forEach(text => {
             const th = el("th", null, text);
@@ -839,6 +882,7 @@
             const th = el("th", null, name);
             th.scope = "row";
             tr.append(th, cell(money(row.cost_without_tax), "rm-num"), cell(money(row.cost_with_tax), "rm-num"));
+            if (showClass) tr.append(cell(row.records ? classUsedText(model, row) : DASH));
             if (hasVariants) {
                 const chosen = list(row.fixed_charge_variants).map(item => item.component).filter(Boolean);
                 tr.append(cell(chosen.join("; ") || DASH));

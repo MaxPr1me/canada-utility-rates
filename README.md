@@ -156,7 +156,14 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   labelled excluded-class estimates (owner decision November 18) and a ledger manual-update
   utility's estimates until its review date (November 19); a monthly-price utility's failure seen
   between the 1st and the run on the 4th waits for that run (November 23).
-- **Validation:** all 2,515 tests passed on Python 3.11 using `pytest tests`.
+- **Commercial gas models (method 7D-2, owner decisions November 20 and 23):** small and mid-size
+  commercial buildings in all eight gas provinces, in each utility's own unit (m³ or GJ), each
+  utility priced on the class whose published limits contain the example customer (Liberty Gas NB
+  by its peak month; Centra on the cheaper of its two elective classes). Énergir and Liberty homes
+  are now modelled too. Small businesses are modelled at 2,000 kWh with 14 kW and 10,000 kWh with
+  40 kW, and every usage level records its decision, what it represents and its sources. The Rate
+  Browser shows a dated price's period and tags it "Ended" once that date has passed.
+- **Validation:** all 2,541 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.
@@ -169,7 +176,7 @@ The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; th
 2. **Stores** everything in a normalized SQLite database that preserves every rate detail — not just a single "cost per kWh" number.
 3. **Tracks history** — each stored scrape appends snapshots. Only the Monthly Scrape workflow stores scrapes: it keeps `data/db/rates.db` in the `data-history` GitHub release with dated backups and checks that history only grows; local copies are read-only mirrors (`python scripts/pull_history_db.py`).
 4. **Exports** the data as JSON for the GitHub Pages static site.
-5. **Serves** a browsable web interface with five views: **Rate Browser** (multi-select filters, confidence indicators and source attribution), **Market Pricing** (observed Ontario and Alberta market history with a monthly chart, table and heatmap), **Representative Models** (typical monthly electricity costs for the ten provinces and residential natural gas costs in each utility's m³ or GJ, without and with tax), **Across-Canada** (residential electricity compared by province) and **Compare** (two tariffs side by side, never a bill total).
+5. **Serves** a browsable web interface with five views: **Rate Browser** (multi-select filters, confidence indicators and source attribution), **Market Pricing** (observed Ontario and Alberta market history with a monthly chart, table and heatmap), **Representative Models** (typical monthly electricity costs for the ten provinces, and natural gas costs for homes and small and mid-size commercial buildings in each utility's m³ or GJ, without and with tax), **Across-Canada** (residential electricity compared by province) and **Compare** (two tariffs side by side, never a bill total).
 6. **Provides automation** through monthly scraping, separate Pages deployment, non-blocking source-health runs, a twice-monthly Ontario Price archive and market history update, and Alberta market history and model refreshes.
 
 **Scope: building energy costs.** The work supports building energy-cost analysis, including
@@ -773,7 +780,7 @@ One line per phase; sub-phase detail and the work queue are in the
 - **Earlier phases (foundations)** — done: scraper framework, granular schema, registry, validation, history snapshots, JSON export and the website.
 - **Phase 5: Live Parser Completion** — in progress: the Batch 18 additions are published (municipal utilities in NB, BC and PE on November 18; Naka Power and the Alberta cities on November 19) and issue #6 is closed; the scoped coverage-complete claim will be drafted for owner approval after the January renewals, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas supply-price freshness: Énergir's monthly prices and period end dates for the other gas utilities done November 20, and the monthly-price run on the 4th added November 23 (first run December 4)).
-- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D residential gas done as method 7D-1, in each utility's native m³ or GJ, with business gas withheld until its usage scenarios are approved). Next (owner decision, November 20): commercial gas, then models for the territories.
+- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D gas done in each utility's native m³ or GJ: homes as method 7D-1 and commercial general service for small and mid-size buildings as method 7D-2, November 23; contract, interruptible and seasonal gas classes come later with their own decision). Next (owner decision, November 20): models for the territories.
 - **Phase 8: Representative Model Refresh Automation** — done and verified in CI and on the deployed site. Public change history and problem-only monitoring follow the [approved policy](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
 - **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done; historical charts, AI-ready exports, a bill calculator or API and commercial/gas comparisons are planned).
 

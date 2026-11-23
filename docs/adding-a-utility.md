@@ -256,15 +256,18 @@ not modelled:
   a listed utility is not computable there, instead of showing the others alone (Newfoundland
   Power for the Newfoundland and Labrador residential model).
 - **Units:** only disclosed conversions are used ($/day x 30.4375; FortisBC $/two months / 2;
-  per-day energy blocks x 30.4375; kVA = kW / 0.9). Fixed charges published per phase or service
-  size are never summed: a `usage_levels.json` `fixed_charge_variants` rule prices exactly one
-  version per level (homes single-phase 200 A; under 50 kW single phase at 10 kW and three phase
-  at 25 kW), so name the variants as printed, e.g. "Basic Charge (Single Phase)". Unmatched
-  variants and
+  per-day energy or gas blocks x 30.4375; $/metering device/day for one meter; kVA = kW / 0.9).
+  Fixed charges published per phase, service size, monthly peak or annual-volume band are never
+  summed: a `usage_levels.json` `fixed_charge_variants` rule prices exactly one version per level
+  (homes single-phase 200 A; under 50 kW single phase at 14 kW and three phase at 40 kW), so name
+  the variants as printed, e.g. "Basic Charge (Single Phase)". Unmatched variants and
   any other unit needing an assumed conversion leave the record not computable, with the reason
-  listed. A market-priced energy charge makes the model *market energy pending*; the 7E
-  illustrative (synthetic-profile) estimate is never an input to medians, change detection or
-  comparisons.
+  listed. A class limit stored as `usage_min`/`usage_max` or `demand_min_kw`/`demand_max_kw` decides
+  which class serves each level; when the tariff's wording makes a limit itself included or
+  excluded differently from the default, add a reviewed crosswalk `usage_bounds` (gas) or
+  `demand_bounds` (kW) entry quoting it. A market-priced energy charge makes the model *market
+  energy pending*; the 7E illustrative (synthetic-profile) estimate is never an input to medians,
+  change detection or comparisons.
 - The model tests use frozen fixtures (`tests/fixtures/rm_*.json`, including `rm_records_b14.json`
   for the other provinces and Alberta), so live data never breaks the tests that run before the
   monthly scrape. Those tests do not see a new utility's records; the coverage command is the
