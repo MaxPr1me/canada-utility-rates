@@ -1,28 +1,38 @@
 # .parse_pages
 
-> 12 nodes
+> 21 nodes
 
 ## Key Concepts
 
+- **LibertyGasNBScraper** (19 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **.parse_pages()** (12 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._build()** (7 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **date** (6 connections)
 - **._carbon()** (5 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **._class_values()** (5 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **._ops_values()** (5 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._commodity()** (4 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._long_date()** (4 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **._detail()** (3 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **._num()** (3 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **_month_end()** (3 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **comp()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._norm()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **Explicit federal zero fuel charge, with New Brunswick's charge period ending…** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **Current month's Liberty Utility Gas rate from the year-column history table.** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **Summary-table values for one class, confirmed by its own rate-schedule section.** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **Off-Peak summary row, confirmed by its own rate-schedule section (which may be…** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **Build SGS/MGS/LGS/OPS from texts keyed…** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **Scrape Liberty Utilities natural gas rates for New Brunswick.** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
 
 ## Relationships
 
-- [LibertyGasNBScraper](LibertyGasNBScraper.md) (9 shared connections)
-- [RateComponent](RateComponent.md) (2 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (2 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (5 shared connections)
+- [BaseScraper](BaseScraper.md) (3 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
 
@@ -30,8 +40,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 31 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 49 (96%)
+- INFERRED: 2 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

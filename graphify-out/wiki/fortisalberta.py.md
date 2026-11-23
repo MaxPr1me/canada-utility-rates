@@ -33,16 +33,16 @@
 
 ## Relationships
 
-- [RateComponent](RateComponent.md) (11 shared connections)
+- [RateComponent](RateComponent.md) (12 shared connections)
 - [BaseScraper](BaseScraper.md) (10 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (7 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (7 shared connections)
 - [re](re.md) (7 shared connections)
 - [BCHydroScraper](BCHydroScraper.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (4 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
 - [parse_html](parse_html.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [.mark_fallback](mark_fallback.md) (1 shared connections)
-- [summerland.py](summerland.py.md) (1 shared connections)
+- [ENMAXPowerScraper](ENMAXPowerScraper.md) (1 shared connections)
+- [new_westminster.py](new_westminster.py.md) (1 shared connections)
 
 ## Source Files
 

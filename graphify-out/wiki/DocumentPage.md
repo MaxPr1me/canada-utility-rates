@@ -1,8 +1,8 @@
 # DocumentPage
 
-> God node · 239 connections · `scrapers/utils/parsing.py`
+> God node · 241 connections · `scrapers/utils/parsing.py`
 
-**Community:** [fortisbc_electric.py](fortisbc_electric.py.md)
+**Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
 
 ## Connections by Relation
 
@@ -61,14 +61,14 @@
 - .parse_schedule_pages() `EXTRACTED`
 - ._published_sections() `EXTRACTED`
 - ._order_context() `EXTRACTED`
+- ._parse_industrial_tariff() `EXTRACTED`
 - ._parse_residential_tariffs() `EXTRACTED`
 - ._interruptible() `EXTRACTED`
 - ._parse_business_tariff() `EXTRACTED`
 - ._current_schedule() `EXTRACTED`
 - ._parse_island_industrial() `EXTRACTED`
 - ._parse_island_nonfirm() `EXTRACTED`
-- ._parse_industrial_tariff() `EXTRACTED`
-- *…and 69 more `references` connection(s) not listed (lowest-degree first to go)*
+- *…and 70 more `references` connection(s) not listed (lowest-degree first to go)*
 
 ### uses
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) `INFERRED`
@@ -88,10 +88,10 @@
 - _schedule_page() `INFERRED`
 - SaskPowerScraper `INFERRED`
 - parse_manual() `INFERRED`
-- ManitobaHydroScraper `INFERRED`
+- [ManitobaHydroScraper](ManitobaHydroScraper.md) `INFERRED`
 - parse_tariff_pages() `INFERRED`
 - _parse_commercial() `INFERRED`
-- *…and 88 more `uses` connection(s) not listed (lowest-degree first to go)*
+- *…and 89 more `uses` connection(s) not listed (lowest-degree first to go)*
 
 ---
 

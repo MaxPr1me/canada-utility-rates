@@ -50,9 +50,9 @@
 - [SaskEnergyScraper](SaskEnergyScraper.md) `EXTRACTED`
 - YukonEnergyScraper `EXTRACTED`
 - [HeritageGasScraper](HeritageGasScraper.md) `EXTRACTED`
-- [LibertyGasNBScraper](LibertyGasNBScraper.md) `EXTRACTED`
+- LibertyGasNBScraper `EXTRACTED`
 - SaskPowerScraper `EXTRACTED`
-- ManitobaHydroScraper `EXTRACTED`
+- [ManitobaHydroScraper](ManitobaHydroScraper.md) `EXTRACTED`
 - *…and 26 more `inherits` connection(s) not listed (lowest-degree first to go)*
 
 ### method

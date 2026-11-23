@@ -100,7 +100,7 @@
 - [SaskEnergyScraper](SaskEnergyScraper.md) `INFERRED`
 - YukonEnergyScraper `INFERRED`
 - [HeritageGasScraper](HeritageGasScraper.md) `INFERRED`
-- [LibertyGasNBScraper](LibertyGasNBScraper.md) `INFERRED`
+- LibertyGasNBScraper `INFERRED`
 - parse_sources() `INFERRED`
 - *…and 57 more `uses` connection(s) not listed (lowest-degree first to go)*
 

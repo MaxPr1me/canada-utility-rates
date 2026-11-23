@@ -1,6 +1,6 @@
 # NovaScotiaPowerScraper
 
-> God node · 39 connections · `scrapers/utilities/nova_scotia_power.py`
+> God node · 40 connections · `scrapers/utilities/nova_scotia_power.py`
 
 **Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
 
@@ -13,16 +13,16 @@
 - [BaseScraper](BaseScraper.md) `EXTRACTED`
 
 ### method
+- ._parse_industrial_tariff() `EXTRACTED`
 - ._order_context() `EXTRACTED`
 - ._parse_residential_tariffs() `EXTRACTED`
-- ._parse_industrial_tariff() `EXTRACTED`
+- ._parse_business_tariff() `EXTRACTED`
 - ._parse_business_pilot() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._seed_data() `EXTRACTED`
 - ._continuous_pages() `EXTRACTED`
 - ._try_live_commercial() `EXTRACTED`
 - ._business_rider_components() `EXTRACTED`
-- ._parse_business_tariff() `EXTRACTED`
 - ._parse_industrial_tariffs() `EXTRACTED`
 - ._parse_rtp_tariff() `EXTRACTED`
 - ._parse_rtp_tariffs() `EXTRACTED`
@@ -33,7 +33,7 @@
 - ._footer_effective_date() `EXTRACTED`
 - ._murb_rider_components() `EXTRACTED`
 - ._parse_murb_tariff() `EXTRACTED`
-- *…and 13 more `method` connection(s) not listed (lowest-degree first to go)*
+- *…and 14 more `method` connection(s) not listed (lowest-degree first to go)*
 
 ### rationale_for
 - Scrape Nova Scotia Power electricity rates. `EXTRACTED`

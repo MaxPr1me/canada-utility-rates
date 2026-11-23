@@ -33,17 +33,16 @@
 
 ## Relationships
 
-- [main](main.md) (8 shared connections)
+- [aeso.py](aeso.py.md) (8 shared connections)
 - [_yearly_files](_yearly_files.md) (7 shared connections)
 - [re](re.md) (4 shared connections)
-- [argparse](argparse.md) (4 shared connections)
+- [run_scrape.py](run_scrape.py.md) (4 shared connections)
 - [os](os.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (3 shared connections)
 - [generate_market_pricing.py](generate_market_pricing.py.md) (2 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
+- [main](main.md) (2 shared connections)
 - [io](io.md) (2 shared connections)
-- [BaseScraper](BaseScraper.md) (2 shared connections)
-- [summerland.py](summerland.py.md) (1 shared connections)
-- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (1 shared connections)
+- [new_westminster.py](new_westminster.py.md) (1 shared connections)
 
 ## Source Files
 

@@ -34,13 +34,13 @@
 ## Relationships
 
 - [run_scrape.py](run_scrape.py.md) (10 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (8 shared connections)
 - [market_pricing.py](market_pricing.py.md) (6 shared connections)
-- [argparse](argparse.md) (5 shared connections)
-- [main](main.md) (3 shared connections)
+- [main](main.md) (5 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (4 shared connections)
+- [build_models](build_models.md) (4 shared connections)
+- [registry.py](registry.py.md) (4 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
 - [graphify_hook.py](graphify_hook.py.md) (2 shared connections)
-- [build_models](build_models.md) (2 shared connections)
 - [parse_html](parse_html.md) (2 shared connections)
 - [re](re.md) (2 shared connections)
 - [os](os.md) (2 shared connections)

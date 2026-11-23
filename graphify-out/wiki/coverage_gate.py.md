@@ -1,10 +1,9 @@
 # coverage_gate.py
 
-> 29 nodes
+> 28 nodes
 
 ## Key Concepts
 
-- **json** (60 connections)
 - **coverage_gate.py** (22 connections) — `scripts/coverage_gate.py`
 - **evaluate()** (13 connections) — `scripts/coverage_gate.py`
 - **main()** (8 connections) — `scripts/coverage_gate.py`
@@ -29,22 +28,17 @@
 - **Validate one ledger entry or group; an entry without its own audit must inherit…** (1 connections) — `scripts/coverage_gate.py`
 - **The ledger entry for a utility with its group's audit and lists folded in (None…** (1 connections) — `scripts/coverage_gate.py`
 - **Check every active utility and return findings per utility plus global findings.** (1 connections) — `scripts/coverage_gate.py`
-- *... and 4 more nodes in this community*
+- **One line for the public notice and the console.** (1 connections) — `scripts/coverage_gate.py`
+- *... and 3 more nodes in this community*
 
 ## Relationships
 
-- [argparse](argparse.md) (12 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (8 shared connections)
-- [main](main.md) (8 shared connections)
-- [run_scrape.py](run_scrape.py.md) (5 shared connections)
-- [graphify_hook.py](graphify_hook.py.md) (5 shared connections)
-- [check_db_history.py](check_db_history.py.md) (4 shared connections)
-- [io](io.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (2 shared connections)
-- [representative_models.py](representative_models.py.md) (2 shared connections)
-- [build_models](build_models.md) (2 shared connections)
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (2 shared connections)
-- [parse_schedule](parse_schedule.md) (2 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (4 shared connections)
+- [run_scrape.py](run_scrape.py.md) (4 shared connections)
+- [main](main.md) (3 shared connections)
+- [os](os.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -52,7 +46,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 118 (100%)
+- EXTRACTED: 61 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

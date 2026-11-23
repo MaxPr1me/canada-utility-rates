@@ -52,7 +52,7 @@
 - saint_john_energy.py `EXTRACTED`
 - [red_deer.py](red_deer.py.md) `EXTRACTED`
 - [new_westminster.py](new_westminster.py.md) `EXTRACTED`
-- [summerland.py](summerland.py.md) `EXTRACTED`
+- summerland.py `EXTRACTED`
 - *…and 10 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### indirect_call

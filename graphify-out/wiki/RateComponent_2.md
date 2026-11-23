@@ -1,105 +1,65 @@
 # RateComponent
 
-> God node · 287 connections · `scrapers/base.py`
+> 48 nodes
 
-**Community:** [RateComponent](RateComponent.md)
+## Key Concepts
 
-## Connections by Relation
+- **RateComponent** (287 connections) — `scrapers/base.py`
+- **NewfoundlandPowerScraper** (24 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._try_live_scrape()** (14 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._parse_pages()** (11 connections) — `scrapers/utilities/newfoundland_power.py`
+- **AESOScraper** (10 connections) — `scrapers/utilities/aeso.py`
+- **parse_appendix()** (10 connections) — `scrapers/utilities/penticton.py`
+- **._find_page()** (9 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._page_date()** (9 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._net_metering_domestic()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._primary_voltage_discount()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._prompt_payment()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._seasonal_domestic()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._annotate_base()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._curtailable()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._parse_ratebook()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._service_fees()** (6 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._parse_residential()** (6 connections) — `scrapers/utilities/nova_scotia_power.py`
+- **.scrape()** (6 connections) — `scrapers/utilities/newfoundland_power.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/aeso.py`
+- **._parse_components()** (5 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._seed_data()** (5 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._seed_data()** (5 connections) — `scrapers/utilities/ontario_ldc.py`
+- **._market_reference()** (4 connections) — `scrapers/utilities/aeso.py`
+- **._seed_data()** (4 connections) — `scrapers/utilities/aeso.py`
+- **._rate_section()** (3 connections) — `scrapers/utilities/newfoundland_power.py`
+- *... and 23 more nodes in this community*
 
-### calls
-- ._build() `EXTRACTED`
-- _parse_class() `EXTRACTED`
-- ._schedule_record() `EXTRACTED`
-- ._parse_building_extras() `EXTRACTED`
-- parse_sources() `EXTRACTED`
-- parse_sources() `EXTRACTED`
-- parse_manual() `EXTRACTED`
-- ._parse_residential_pdfs() `EXTRACTED`
-- _parse_interruptible() `EXTRACTED`
-- parse_schedule() `EXTRACTED`
-- ._build() `EXTRACTED`
-- _component() `EXTRACTED`
-- energy_component() `EXTRACTED`
-- make() `EXTRACTED`
-- parse_schedule() `EXTRACTED`
-- ._parse_optional_domestic_rates() `EXTRACTED`
-- ._parse_labrador_nonfirm() `EXTRACTED`
-- _base_rider() `EXTRACTED`
-- _charge() `EXTRACTED`
-- ._transport() `EXTRACTED`
-- *…and 151 more `calls` connection(s) not listed (lowest-degree first to go)*
+## Relationships
 
-### contains
-- base.py `EXTRACTED`
+- [BCHydroScraper](BCHydroScraper.md) (47 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (32 shared connections)
+- [BaseScraper](BaseScraper.md) (26 shared connections)
+- [RateComponent](RateComponent.md) (20 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (15 shared connections)
+- [FortisBCEnergyScraper](FortisBCEnergyScraper.md) (13 shared connections)
+- [fortisalberta.py](fortisalberta.py.md) (11 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (9 shared connections)
+- [re](re.md) (8 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (8 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (8 shared connections)
+- [EnbridgeGasScraper](EnbridgeGasScraper.md) (6 shared connections)
 
-### imports
-- [oeb_tariff.py](oeb_tariff.py.md) `EXTRACTED`
-- [enmax_power.py](enmax_power.py.md) `EXTRACTED`
-- [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
-- [fortisbc_electric.py](fortisbc_electric.py.md) `EXTRACTED`
-- [ntpc.py](ntpc.py.md) `EXTRACTED`
-- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
-- [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- epcor_gas_ontario.py `EXTRACTED`
-- nl_hydro.py `EXTRACTED`
-- atco_electric.py `EXTRACTED`
-- enbridge_gas.py `EXTRACTED`
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- atco_gas.py `EXTRACTED`
-- enmax_energy.py `EXTRACTED`
-- alberta_rolr.py `EXTRACTED`
-- manitoba_hydro.py `EXTRACTED`
-- [naka_power.py](naka_power.py.md) `EXTRACTED`
-- nb_power.py `EXTRACTED`
-- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
-- yukon_energy.py `EXTRACTED`
-- *…and 28 more `imports` connection(s) not listed (lowest-degree first to go)*
+## Source Files
 
-### rationale_for
-- One individual charge line within a tariff. `EXTRACTED`
+- `scrapers/base.py`
+- `scrapers/utilities/aeso.py`
+- `scrapers/utilities/newfoundland_power.py`
+- `scrapers/utilities/nova_scotia_power.py`
+- `scrapers/utilities/ontario_ldc.py`
+- `scrapers/utilities/penticton.py`
 
-### references
-- ._rider_components() `EXTRACTED`
-- ._record() `EXTRACTED`
-- ._rider() `EXTRACTED`
-- ._business_rider_components() `EXTRACTED`
-- ._shared_components() `EXTRACTED`
-- ._new_record() `EXTRACTED`
-- ._nonfirm_record() `EXTRACTED`
-- ._murb_rider_components() `EXTRACTED`
-- ._rtp_rider_components() `EXTRACTED`
-- ._general_service_records() `EXTRACTED`
-- ._supply() `EXTRACTED`
-- ._pdf_parts() `EXTRACTED`
-- ._parse_component_line() `EXTRACTED`
-- ._parse_components() `EXTRACTED`
-- ._rpp_components() `EXTRACTED`
-- ._page_component() `EXTRACTED`
-- ._tariff_component() `EXTRACTED`
-- ._copy_components() `EXTRACTED`
+## Audit Trail
 
-### uses
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) `INFERRED`
-- [EnbridgeGasScraper](EnbridgeGasScraper.md) `INFERRED`
-- [CentraGasScraper](CentraGasScraper.md) `INFERRED`
-- [OntarioLDCScraper](OntarioLDCScraper.md) `INFERRED`
-- [FortisBCEnergyScraper](FortisBCEnergyScraper.md) `INFERRED`
-- [EnergirScraper](EnergirScraper.md) `INFERRED`
-- [BCHydroScraper](BCHydroScraper.md) `INFERRED`
-- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `INFERRED`
-- [NBPowerScraper](NBPowerScraper.md) `INFERRED`
-- NewfoundlandPowerScraper `INFERRED`
-- [ATCOGasScraper](ATCOGasScraper.md) `INFERRED`
-- HydroQuebecScraper `INFERRED`
-- NLHydroScraper `INFERRED`
-- MaritimeElectricScraper `INFERRED`
-- _build_record() `INFERRED`
-- [SaskEnergyScraper](SaskEnergyScraper.md) `INFERRED`
-- YukonEnergyScraper `INFERRED`
-- [HeritageGasScraper](HeritageGasScraper.md) `INFERRED`
-- [LibertyGasNBScraper](LibertyGasNBScraper.md) `INFERRED`
-- _tariff() `INFERRED`
-- *…and 28 more `uses` connection(s) not listed (lowest-degree first to go)*
+- EXTRACTED: 365 (88%)
+- INFERRED: 52 (12%)
+- AMBIGUOUS: 0 (0%)
 
 ---
 

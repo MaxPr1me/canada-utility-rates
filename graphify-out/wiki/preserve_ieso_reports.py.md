@@ -33,12 +33,12 @@
 
 ## Relationships
 
-- [argparse](argparse.md) (4 shared connections)
+- [run_scrape.py](run_scrape.py.md) (4 shared connections)
 - [os](os.md) (3 shared connections)
 - [graphify_hook.py](graphify_hook.py.md) (2 shared connections)
 - [_yearly_files](_yearly_files.md) (1 shared connections)
 - [io](io.md) (1 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
+- [main](main.md) (1 shared connections)
 - [re](re.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 

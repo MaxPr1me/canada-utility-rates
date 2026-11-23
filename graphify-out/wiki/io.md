@@ -1,6 +1,6 @@
 # io
 
-> 15 nodes
+> 13 nodes
 
 ## Key Concepts
 
@@ -8,7 +8,6 @@
 - **collections** (9 connections)
 - **main()** (7 connections) — `scripts/export_ontario_totals.py`
 - **build()** (5 connections) — `scripts/export_ontario_totals.py`
-- **check_no_loss()** (5 connections) — `scripts/export_ontario_totals.py`
 - **_csv()** (4 connections) — `scripts/export_ontario_totals.py`
 - **importlib_util** (4 connections)
 - **cents()** (3 connections) — `scripts/export_ontario_totals.py`
@@ -17,15 +16,14 @@
 - **Decimal** (2 connections)
 - **_load_market()** (1 connections) — `scripts/export_ontario_totals.py`
 - **date** (1 connections)
-- **Path** (1 connections)
 - **Export hourly/monthly energy + Class B GA totals in CAD cents/kWh, without…** (1 connections) — `scripts/export_ontario_totals.py`
 
 ## Relationships
 
-- [main](main.md) (6 shared connections)
-- [argparse](argparse.md) (4 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (3 shared connections)
+- [aeso.py](aeso.py.md) (6 shared connections)
+- [run_scrape.py](run_scrape.py.md) (4 shared connections)
 - [graphify_hook.py](graphify_hook.py.md) (2 shared connections)
+- [main](main.md) (2 shared connections)
 - [archive_ontario_price.py](archive_ontario_price.py.md) (2 shared connections)
 - [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
@@ -33,7 +31,7 @@
 - [enmax_power.py](enmax_power.py.md) (1 shared connections)
 - [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -41,7 +39,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 47 (100%)
+- EXTRACTED: 44 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

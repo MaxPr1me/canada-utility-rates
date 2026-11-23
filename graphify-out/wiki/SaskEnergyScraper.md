@@ -1,6 +1,6 @@
 # SaskEnergyScraper
 
-> 23 nodes
+> 22 nodes
 
 ## Key Concepts
 
@@ -14,12 +14,11 @@
 - **._carbon()** (5 connections) — `scrapers/utilities/saskenergy.py`
 - **._industrial_rows()** (5 connections) — `scrapers/utilities/saskenergy.py`
 - **._num()** (5 connections) — `scrapers/utilities/saskenergy.py`
-- **.scrape()** (5 connections) — `scrapers/utilities/saskenergy.py`
 - **._effective()** (4 connections) — `scrapers/utilities/saskenergy.py`
-- **._seed_data()** (4 connections) — `scrapers/utilities/saskenergy.py`
 - **._norm()** (3 connections) — `scrapers/utilities/saskenergy.py`
 - **._page_text()** (3 connections) — `scrapers/utilities/saskenergy.py`
 - **._service_rows()** (3 connections) — `scrapers/utilities/saskenergy.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/saskenergy.py`
 - **confirmed()** (1 connections) — `scrapers/utilities/saskenergy.py`
 - **Parse the closed Small Industrial full-service row with its monthly delivery…** (1 connections) — `scrapers/utilities/saskenergy.py`
 - **Return (effective date, note) only for an explicit, current, zero published…** (1 connections) — `scrapers/utilities/saskenergy.py`
@@ -30,13 +29,12 @@
 
 ## Relationships
 
-- [BCHydroScraper](BCHydroScraper.md) (7 shared connections)
-- [RateComponent](RateComponent.md) (4 shared connections)
+- [BCHydroScraper](BCHydroScraper.md) (8 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
 - [BaseScraper](BaseScraper.md) (2 shared connections)
 - [.fetch_page](fetch_page.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 - [parse_html](parse_html.md) (1 shared connections)
-- [.mark_fallback](mark_fallback.md) (1 shared connections)
 
 ## Source Files
 
@@ -44,7 +42,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 63 (97%)
+- EXTRACTED: 59 (97%)
 - INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 

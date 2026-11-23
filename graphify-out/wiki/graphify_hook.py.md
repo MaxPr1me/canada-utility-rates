@@ -34,13 +34,12 @@
 ## Relationships
 
 - [os](os.md) (7 shared connections)
+- [run_scrape.py](run_scrape.py.md) (6 shared connections)
 - [BaseScraper](BaseScraper.md) (5 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (5 shared connections)
+- [main](main.md) (5 shared connections)
 - [re](re.md) (4 shared connections)
-- [argparse](argparse.md) (4 shared connections)
 - [check_db_history.py](check_db_history.py.md) (3 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
-- [run_scrape.py](run_scrape.py.md) (2 shared connections)
 - [io](io.md) (2 shared connections)
 - [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (2 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
