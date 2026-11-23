@@ -9,9 +9,14 @@ Official sources:
     (rural) print each class once per year, headed for example "A1: Residential Rate Urban (2026)". The
     bylaw also carries an older, unlabelled rural schedule, which is never read.
 
-The page's effective year selects the bylaw schedules; the year must be the current year and the page's
-four values must equal the bylaw's, or the run fails closed. The rates are interim (BCUC-regulated for
-rural customers), so records carry medium confidence.
+The bylaw schedules labelled with the current year apply from January 1 of that year (owner decision 2026-11-23).
+The rates page is compared only when it shows the current year: its effective date is then the records' date
+and its four values must equal the bylaw's, or the run fails closed. While the page still shows another year
+(for example 2026 in early January 2027), the bylaw's current-year schedules are read without the comparison
+and dated January 1. Each year's prices end on December 31 of that year (owner decision 2026-11-23: a price
+whose source labels it with a year ends with it), so a year the bylaw does not print fails closed and the
+previous year's prices stop counting. The rates are interim (BCUC-regulated for rural customers), so records
+carry medium confidence.
 
 Scope: A1/A3 residential and B1/B4 small commercial (loads up to 25 kVA without a demand meter), urban and
 rural, billed every two months. The residential demand charge for demand above 20 kW per period is stored
@@ -82,15 +87,31 @@ def _schedule(pages: list[DocumentPage], code: str, year: int) -> tuple[str, int
     raise ValueError(f"bylaw schedule {code} ({year}) not found")
 
 
+def _schedule_years(pages: list[DocumentPage], code: str) -> list[int]:
+    """The years for which the bylaw prints a schedule of this class."""
+    heading = re.compile(rf"{code}: {re.escape(CLASSES[code][3])} \((\d{{4}})\)")
+    return sorted({int(found) for page in pages for found in heading.findall(page.text)})
+
+
 def parse_rates(page_html: str, pages: list[DocumentPage], bylaw_url: str, today: Optional[date] = None,
                 discovery_note: str = "") -> list[TariffRecord]:
-    """Build A1/A3/B1/B4 from the bylaw schedules of the page's effective year; raise ValueError (fail closed)
-    when the year is not the current one, a schedule is missing or the page and bylaw disagree."""
+    """Build A1/A3/B1/B4 from the bylaw schedules labelled with the current year, ending December 31; raise
+    ValueError (fail closed) when a schedule is missing or changed, or when the page shows the current year and
+    disagrees with the bylaw (owner decisions 2026-11-23, see the module docstring)."""
     today = today or date.today()
-    effective, page_values, _ = parse_rates_page(page_html)
-    year = int(effective[:4])
-    if date.fromisoformat(effective) > today or year != today.year:
-        raise ValueError(f"rates page effective {effective} is not current for {today.isoformat()}")
+    page_effective, page_values, _ = parse_rates_page(page_html)
+    year = today.year
+    page_is_current = int(page_effective[:4]) == year
+    if page_is_current:
+        if date.fromisoformat(page_effective) > today:
+            raise ValueError(f"rates page effective {page_effective} is after {today.isoformat()}")
+        effective = page_effective
+        check = f"cross-checked against the Electrical Rates page (effective {page_effective})"
+    else:
+        effective = date(year, 1, 1).isoformat()
+        check = (f"not compared with the Electrical Rates page, which shows the rates effective {page_effective} "
+                 f"rather than {year}'s")
+    end = date(year, 12, 31).isoformat()
     records = []
     for code, (name, customer_class, sub_class, _) in CLASSES.items():
         text, page_number = _schedule(pages, code, year)
@@ -102,14 +123,13 @@ def parse_rates(page_html: str, pages: list[DocumentPage], bylaw_url: str, today
         if not basic or not energy:
             raise ValueError(f"{code} ({year}) basic or energy charge missing")
         values = (float(basic.group(1)), float(energy.group(1)))
-        if values != page_values[code]:
+        if page_is_current and values != page_values[code]:
             raise ValueError(f"{code} bylaw values {values} differ from the rates page {page_values[code]}")
         detail = (f"Hydro Services Bylaw No. 3608 (consolidated), Schedule {'B' if code in ('A1', 'B1') else 'C'} "
-                  f"{code} ({year}), PDF page {page_number}; cross-checked against the Electrical Rates page "
-                  f"(effective {effective})")
+                  f"{code} ({year}), PDF page {page_number}; {check}")
 
         def comp(**fields) -> RateComponent:
-            return RateComponent(effective_date=effective, source_url=bylaw_url, source_detail=detail,
+            return RateComponent(effective_date=effective, end_date=end, source_url=bylaw_url, source_detail=detail,
                                  confidence="medium", **fields)
 
         components = [
@@ -131,15 +151,19 @@ def parse_rates(page_html: str, pages: list[DocumentPage], bylaw_url: str, today
                        f"period; the first {demand.group(1)} kW are not charged.")))
         elif "Surcharge percentages may apply as per Section 4.9" in body:
             components[-1].notes += " A power factor surcharge may apply (bylaw Section 4.9)."
-        notes = (f"Nelson Hydro {code}. Interim approved {year} rates (the bylaw also prints {year + 1} rates); "
-                 "billed every two months.")
+        printed = ", ".join(str(y) for y in _schedule_years(pages, code))
+        notes = (f"Nelson Hydro {code}. Interim approved {year} rates, in force January 1 to December 31, {year} "
+                 f"(the bylaw prints this class for {printed}); billed every two months.")
+        if not page_is_current:
+            notes += (f" The rates page shows the rates effective {page_effective}; the bylaw's {year} schedule "
+                      f"applies from January 1, {year} (owner decision 2026-11-23).")
         if discovery_note:
             notes += " " + discovery_note
         records.append(TariffRecord(
             utility_name=UTILITY, province="BC", utility_type="electricity", tariff_name=name, tariff_code=code,
             customer_class=customer_class, sub_class=sub_class, demand_max_kw=None, rate_structure="flat",
-            pricing_method="regulated", effective_date=effective, source_url=bylaw_url, source_page=detail,
-            confidence="medium", notes=notes, components=components))
+            pricing_method="regulated", effective_date=effective, end_date=end, source_url=bylaw_url,
+            source_page=detail, confidence="medium", notes=notes, components=components))
     return records
 
 

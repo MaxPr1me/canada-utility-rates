@@ -471,6 +471,16 @@ class NovaScotiaPowerScraper(BaseScraper):
             raise ValueError("Missing or inconsistent rider effective date")
         return next(iter(dates))
 
+    @staticmethod
+    def _book_label(pages: list[DocumentPage]) -> str:
+        """The tariff book's cover month and year ("May 2026"), cited in record notes (owner decision 2026-11-23:
+        citations come from the document); _order_context has already checked the cover."""
+        for page in pages:
+            cover = re.match(r"Tariffs\s+([A-Za-z]+)\s+(\d{4})", page.text)
+            if cover:
+                return f"{cover.group(1)} {cover.group(2)}"
+        raise ValueError("Tariff book cover missing")
+
     def _murb_rider_components(
         self, pages: list[DocumentPage], year: int, effective: str, year_end: str, source_url: str,
     ) -> list[RateComponent]:
@@ -973,9 +983,9 @@ class NovaScotiaPowerScraper(BaseScraper):
             rate_structure=spec[4], effective_date=effective, end_date=year_end, source_url=source_url, source_page=detail,
             eligibility=re.sub(r"\s+", " ", availability.group(1)).strip(),
             notes=(
-                f"NS Power Rate {code}; first published column of the approved May 2026 book (Board-order date verified on the residential rate pages; "
-                f"the {year + 1} column is not used). Base charges and the mandatory FAM, DSM and storm riders are separate; "
-                "no bill total is calculated. " + conditions
+                f"NS Power Rate {code}; first published column of the approved {self._book_label(pages)} book (Board-order "
+                f"date verified on the residential rate pages; the {year + 1} column is not used). Base charges and the "
+                "mandatory FAM, DSM and storm riders are separate; no bill total is calculated. " + conditions
             ),
             components=components + riders,
         )
@@ -1160,9 +1170,10 @@ class NovaScotiaPowerScraper(BaseScraper):
             rate_structure="demand", effective_date=effective, end_date=year_end, source_url=source_url, source_page=detail,
             eligibility=eligibility,
             notes=(
-                f"NS Power Rate {code}; first published column of the approved May 2026 book (Board-order date verified on the residential rate pages; "
-                f"the {year + 1} column is not used). Base charges, conditional credits and the mandatory FAM, DSM and storm riders are separate; "
-                "no bill total is calculated. " + conditions
+                f"NS Power Rate {code}; first published column of the approved {self._book_label(pages)} book (Board-order "
+                f"date verified on the residential rate pages; the {year + 1} column is not used). Base charges, "
+                "conditional credits and the mandatory FAM, DSM and storm riders are separate; no bill total is "
+                "calculated. " + conditions
             ),
             components=components + riders,
         )
@@ -1281,7 +1292,9 @@ class NovaScotiaPowerScraper(BaseScraper):
             effective_date=max(adders_date, effective, *(c.effective_date for c in riders)), end_date=year_end,
             source_url=source_url, source_page=detail, confidence="medium",
             notes=(
-                f"NS Power {spec['title']} ({spec['schedule']} of the approved April 1, 2026 tariff book): optional firm service for loads of "
+                f"NS Power {spec['title']} ({spec['schedule']} of the approved tariff book, effective "
+                f"{datetime.strptime(adders_date, '%Y-%m-%d'):%B} {int(adders_date[8:])}, {adders_date[:4]}): "
+                "optional firm service for loads of "
                 "2,000 kVA or 1,800 kW and over, " + spec["voltage"] + ". Demand charge: nil. The energy price is NSPI's actual hourly marginal "
                 "energy cost (value-less 'Variable' line; nothing is estimated) plus fixed on-peak and off-peak cost adders and the DSM and storm "
                 "riders, each shown separately; no bill total is calculated. No FAM rate is shown: the approved FAM tariff's rate table has no "

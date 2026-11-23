@@ -97,7 +97,13 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
   replacement household energy prices. Optional solar credits apply to subscriber generation, never
   to household consumption or a guessed bill offset.
 - November prices are date-gated; dates past the supported tariff/rider year (such as 2027) fail
-  closed.
+  closed. The book is accepted only while today is inside its cover year and the product pages'
+  "Rates updated as of" month equals its cover month. **January 2027 (owner decision 2026-11-23):**
+  keep failing closed. The May 2026 book prints the January 1, 2027 base prices and a 2027 FAM table
+  but no 2027 DSM or storm rider (NS Power applies for the DSM rider separately, and its DCRR web page
+  lags by about a year), so NS Power returns estimates from January 1 until a book with every 2027
+  charge is posted; then adapt the parser if the new book's layout differs. Record notes cite the
+  book's cover month and the RTP schedules' own effective date.
 
 ## Maritime Electric
 
@@ -193,10 +199,13 @@ known copies, decided 2026-11-18, have a note but no review date.)
   Require the exact Bylaw No. 6502, 1998 label and supported document link; a generic media link is
   not enough.
 - Dates: use the schedule's own date. Penticton prints only year columns ("Effective 2026"): use the
-  current year's column dated January 1 and fail closed when that column is missing. Nelson's rates page
-  year selects the bylaw's year-labelled schedules and must equal the current year; its 2026/2027 rates
-  are interim (medium confidence). Grand Forks is dated by the amending bylaw named in Schedule G, whose
-  prices must match the consolidation.
+  current year's column dated January 1 and fail closed when that column is missing. Nelson Hydro
+  reads the bylaw schedules labelled with the current year: from January 1 they apply even while the
+  rates page still shows the previous year's rates, and the page (its date and four values) is
+  compared only when it shows the current year (owner decision 2026-11-23); its 2026/2027 rates are
+  interim (medium confidence). Nelson's and Penticton's year-labelled prices end December 31 of their
+  year, on the record and each component (owner decision 2026-11-23). Grand Forks is dated by the
+  amending bylaw named in Schedule G, whose prices must match the consolidation.
 - Saint John Energy: keep Base Rate and Rate Rider separate and require base + rider = printed total.
   sjenergy.ca serves an incomplete certificate chain: discover the manual with headless Chromium; never
   disable TLS verification.

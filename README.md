@@ -120,11 +120,18 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   (quarter, month or Eastward's six-month residential block); FortisBC and SaskEnergy stay
   open-ended.
 - **Monthly-price run (added November 23, owner decisions; first run December 4):** the Monthly
-  Scrape also runs at 08:00 UTC on the 4th for the utilities whose monthly price is usually posted
-  after the 1st (Énergir, Eastward, Liberty and Medicine Hat, flagged `monthly_price_refresh` in the
-  registry). Model monitoring holds those utilities' failures on the 1st until that run, and checks
-  its schedule apart from the full run. A manual run's inputs are now checked before anything is
-  installed: utility names ignore accents and case, and a mistyped name or code says what to type.
+  Scrape also runs at 08:00 UTC on the 4th for the utilities whose monthly price is often posted
+  after the 1st (Énergir, Eastward, Liberty, Medicine Hat and ATCO Gas's default gas rate, flagged
+  `monthly_price_refresh` in the registry). Model monitoring holds those utilities' failures on the
+  1st until that run, and checks its schedule apart from the full run. A manual run's inputs are
+  now checked before anything is installed: utility names ignore accents and case, and a mistyped
+  name or code says what to type.
+- **January 1 readiness (November 23, owner decisions):** Nelson Hydro reads its bylaw's 2027
+  schedules from January 1 even if its rates page still shows 2026; Nelson's and Penticton's yearly
+  prices end December 31. NS Power's 2026 prices also end then and its 2027 riders are not published
+  yet, so it is expected to return estimates (and the Nova Scotia models to be left out) until NS
+  Power posts a complete 2027 book; the owner then starts its run (see AGENTS.md, "How the Monthly
+  Updates Work").
 - **Latest export (November 20, scrape run 46, the owner's full run):** 987 latest live tariffs and
   484 retained estimates; 1,414 stored live versions and 7,670 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
@@ -163,7 +170,7 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   are now modelled too. Small businesses are modelled at 2,000 kWh with 14 kW and 10,000 kWh with
   40 kW, and every usage level records its decision, what it represents and its sources. The Rate
   Browser shows a dated price's period and tags it "Ended" once that date has passed.
-- **Validation:** all 2,541 tests passed on Python 3.11 using `pytest tests`.
+- **Validation:** all 2,543 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.

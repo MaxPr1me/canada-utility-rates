@@ -25,9 +25,10 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
   end of its six-month block (January 31 or July 31); Liberty Utility Gas the month's end; ATCO Gas's
   DERS default rate the month's end. FortisBC and SaskEnergy prices stay open-ended (they change only
   by an approved order). A negotiated, value-less supply line carries no end date. Énergir, Eastward
-  (registered as Heritage Gas) and Liberty usually post the new month after the 1st, so they are in
-  the registry's `monthly_price_refresh` group and the Monthly Scrape on the 4th stores it (owner
-  decisions 2026-11-20 and 2026-11-23).
+  (registered as Heritage Gas), Liberty and ATCO Gas's DERS default rate (which must also be in the
+  UCA table) are often posted after the 1st, so they are in the registry's `monthly_price_refresh`
+  group and the Monthly Scrape on the 4th stores them (owner decisions 2026-11-20 and 2026-11-23;
+  ATCO Gas added 2026-11-23).
 - **Representative models depend on some stored wording (method 7D-2):** reviewed entries in
   `data/models/usage_levels.json` match component names and notes, and `data/models/crosswalk.json`
   `usage_bounds` restate the class limits. Keep them in step when a scraper changes: Liberty Utility
@@ -65,7 +66,9 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
   carbon is required.
 - Commodity (owner decision 2026-10-09): Direct Energy Regulated Services' monthly Default Rate
   Tariff, on Low, Mid and High Use only. It must match the Utilities Consumer Advocate (UCA)
-  default-rates table.
+  default-rates table, whose current-year table must show the current month; otherwise every class
+  priced with it fails closed. ATCO Gas is therefore in the `monthly_price_refresh` group (owner
+  decision 2026-11-23): the run on the 4th catches a rate posted after the 1st.
 
 ## FortisBC Energy
 
@@ -124,7 +127,10 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
 - **PDF authority (owner decision 2026-11-02):** the approved current quarterly PDF is the price
   authority, not stale website headings. `SCHEDULE_EDITIONS` requires the current quarterly period
   (February, May, August or November), not a commercial HTML headline. A new edition needs a
-  `SCHEDULE_EDITIONS` entry.
+  `SCHEDULE_EDITIONS` entry. Its `general_pages` names the date and Board order its class-definition
+  pages print (November 1, 2025, Order 138/25 in both supported editions): the check requires them and
+  record notes cite them, while the prices cite the edition's own Appendix A order (owner decision
+  2026-11-23: citations come from the edition).
 - v1126 (PUB Order 150/26) supplies every scoped record from the Appendix A text tables on pages 81
   and 82 at high confidence, including Mainline Interruptible (owner decision 2026-10-30); base page
   80 is checked but not added.

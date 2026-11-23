@@ -1,4 +1,5 @@
-"""Nelson Hydro (BC) parser tests on the Hydro Services Bylaw 2026/2027 schedules and the rates page."""
+"""Nelson Hydro (BC) parser tests on the Hydro Services Bylaw 2026/2027 schedules and the rates page
+(year selection and December 31 end dates: owner decisions 2026-11-23)."""
 
 import json
 from datetime import date
@@ -26,10 +27,13 @@ def _parse(html=HTML, pages=None, today=TODAY):
 def test_page_values_select_and_match_the_2026_bylaw_schedules():
     records = _parse()
     assert list(records) == ["A1", "A3", "B1", "B4"]
-    assert {(r.effective_date, r.confidence) for r in records.values()} == {("2026-01-01", "medium")}
+    assert {(r.effective_date, r.end_date, r.confidence) for r in records.values()} == {
+        ("2026-01-01", "2026-12-31", "medium")}
+    assert {c.end_date for r in records.values() for c in r.components} == {"2026-12-31"}
     assert [(c.charge_value, c.charge_unit) for c in records["B4"].components] == [
         (59.06, "$/two months"), (0.1902, "$/kWh")]
     assert "Schedule C B4 (2026), PDF page 61" in records["B4"].source_page
+    assert "for 2026, 2027" in records["B4"].notes
 
 
 def test_residential_demand_above_20_kw_is_conditional():
@@ -49,9 +53,27 @@ def test_unlabelled_older_rural_schedule_is_never_read():
         _parse(pages=_pages(drop=(59,)))
 
 
-def test_stale_page_year_fails_closed_in_a_new_year():
-    with pytest.raises(ValueError, match="not current"):
-        _parse(today=date(2027, 1, 5))
+def test_new_year_reads_the_bylaw_schedules_while_the_page_still_shows_the_old_year():
+    # Owner decision 2026-11-23: the bylaw's (2027) schedules apply from January 1 without the page comparison.
+    records = _parse(today=date(2027, 1, 2))
+    assert {(r.effective_date, r.end_date) for r in records.values()} == {("2027-01-01", "2027-12-31")}
+    assert [(c.charge_value, c.end_date) for c in records["B4"].components] == [
+        (61.28, "2027-12-31"), (0.1974, "2027-12-31")]
+    assert [c.charge_value for c in records["A3"].components] == [25.95, 0.1681, 11.78]
+    assert "Schedule C B4 (2027), PDF page 62; not compared" in records["B4"].source_page
+    assert "rates effective 2026-01-01" in records["A1"].notes
+
+
+def test_a_year_the_bylaw_does_not_print_fails_closed():
+    with pytest.raises(ValueError, match=r"A1 \(2028\) not found"):
+        _parse(today=date(2028, 1, 3))
+
+
+def test_page_already_showing_next_year_is_not_compared_in_december():
+    html = HTML.replace("Effective January 1, 2026", "Effective January 1, 2027").replace("$0.1379/kWh", "$0.1419/kWh")
+    records = _parse(html=html, today=date(2026, 12, 10))
+    assert {(r.effective_date, r.end_date) for r in records.values()} == {("2026-01-01", "2026-12-31")}
+    assert records["A1"].components[1].charge_value == 0.1379
 
 
 def test_large_commercial_and_other_classes_are_not_emitted():

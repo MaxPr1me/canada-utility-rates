@@ -163,14 +163,18 @@ def _quarterly_rate_end(effective: date) -> date:
 
 
 # Supported quarterly schedule editions. Both editions carry the same November 1, 2025
-# (Order 138/25) general pages (compared 2026-10-30). The reviewed transcription stays limited to the v0826 scanned
+# (Order 138/25) general pages (compared 2026-10-30); "general_pages" names the date and Board order those class
+# definition pages must print, and the records cite them (owner decisions 2026-11-23: citations come from the
+# edition, so a new edition is a one-entry update). The reviewed transcription stays limited to the v0826 scanned
 # pages (user decision 2026-10-30); text-layer Appendix A values are high confidence.
+GENERAL_PAGES_2025 = {"effective": "November 1, 2025", "board_order": "138/25"}
 SCHEDULE_EDITIONS = {
-    date(2026, 8, 1): {"url": PAGE_URLS["schedule"], "appendix": "transcription"},
+    date(2026, 8, 1): {"url": PAGE_URLS["schedule"], "appendix": "transcription", "general_pages": GENERAL_PAGES_2025},
     date(2026, 11, 1): {
         "url": "https://www.hydro.mb.ca/docs/billing/schedule-of-sales-and-transportation-services-and-rates-v1126.pdf",
         "appendix": "text",
         "board_order": "150/26",
+        "general_pages": GENERAL_PAGES_2025,
         "pages": {
             80: ("Page 2 of 4", "INTERRUPTIBLE SALES AND DELIVERY SERVICES RATES SCHEDULES (BASE RATES ONLY - NO RIDERS)"),
             81: ("Page 3 of 4", "FIRM SALES AND DELIVERY SERVICES RATES SCHEDULES (BASE RATES PLUS RIDERS)"),
@@ -459,7 +463,7 @@ class CentraGasScraper(BaseScraper):
             values = self._table_values(section, True, False, False)
             values["commodity"] = sales_commodity(headline, values["commodity"])
             condition, usage_min, usage_max, schedule_detail = self._schedule_conditions(
-                schedule, "SGS")
+                schedule, "SGS", edition)
             build(name=SEED_RESIDENTIAL_NAME, code="SGS", customer_class="residential", sub_class=None,
                   eligibility=condition, usage_min=usage_min, usage_max=usage_max, values=values, sales=True,
                   effective=headline[0], url=PAGE_URLS["residential"], has_demand=False, alternate=False,
@@ -481,7 +485,7 @@ class CentraGasScraper(BaseScraper):
                 headline = headline_for("commercial")
                 eligibility, usage_min, usage_max = self._eligibility(commercial, spec.option_label)
                 condition, usage_min, usage_max, schedule_detail = self._schedule_conditions(
-                    schedule, spec.tariff_code)
+                    schedule, spec.tariff_code, edition)
                 if usage_min is not None:
                     eligibility = re.sub(r"^More than [\d,]+ m³", f"At least {usage_min:,.0f} m³", eligibility)
                 else:
@@ -656,7 +660,7 @@ class CentraGasScraper(BaseScraper):
             if key not in rows:
                 continue
             try:
-                condition, usage_min, usage_max, detail = self._schedule_conditions(schedule, spec.tariff_code)
+                condition, usage_min, usage_max, detail = self._schedule_conditions(schedule, spec.tariff_code, edition)
                 values = self._pdf_values(rows[key], spec.sales_service, spec.has_demand, spec.has_alternate_supply)
                 common = dict(
                     customer_class="residential" if spec is residential else "commercial",
@@ -820,7 +824,7 @@ class CentraGasScraper(BaseScraper):
             ("transport", "transport"), ("distribution", "distribution"), ("delivery", "delivery"),
             ("demand_transport", "demand_transport"), ("demand_distribution", "demand_distribution"),
             ("demand", "demand_delivery"), ("alternate", "alternate_delivery"))})
-        condition, usage_min, _, schedule_detail = self._schedule_conditions(schedule, "COM-MFS-S")
+        condition, usage_min, _, schedule_detail = self._schedule_conditions(schedule, "COM-MFS-S", edition)
         eligibility = (
             condition + " Mainline customer electing Interruptible Sales Service in conjunction with Firm Delivery "
             "Service (PUB schedule page 18). Section VI interruptible sales terms (page 49): one-year contract, "
@@ -921,7 +925,8 @@ class CentraGasScraper(BaseScraper):
             raise ValueError("non-positive annual-volume limit")
         return eligibility, (limit if volume.group(1) == "More" else None), (limit if volume.group(1) == "Less" else None)
 
-    def _schedule_conditions(self, text: str, code: str) -> tuple[str, Optional[float], Optional[float], str]:
+    def _schedule_conditions(self, text: str, code: str, edition: dict
+                             ) -> tuple[str, Optional[float], Optional[float], str]:
         pages = {}
         for number in (14, 17, 18, 19, 34, 44, 51):
             match = re.search(rf"PDF page {number} (.*?)(?=PDF page \d+ |$)", text)
@@ -935,9 +940,11 @@ class CentraGasScraper(BaseScraper):
             required.add(51)
         if any(class_code in code for class_code in ("HVF", "MFS", "-IS")):
             required.add(14)
-        if not all("November 1, 2025" in pages[number] and "Order 138/25" in pages[number]
+        general = edition["general_pages"]
+        if not all(general["effective"] in pages[number] and f"Order {general['board_order']}" in pages[number]
                    for number in required):
             raise ValueError("approved Centra schedule context missing")
+        approved = f"class definitions approved {general['effective']}, PUB Order {general['board_order']}"
         if code in ("SGS", "SGS-MKT", "COM-SGS", "COM-SGS-MKT", "COM-LGS", "COM-LGS-MKT"):
             section = pages[17]
             heading = "Small General Class" if "SGS" in code else "Large General Class"
@@ -952,7 +959,7 @@ class CentraGasScraper(BaseScraper):
                 if not re.search(r"each election must remain effective for a minimum of one year", pages[17] + " " + pages[18]):
                     raise ValueError("SGC/LGC election term missing")
                 condition += " SGC/LGC class elections last at least one year."
-            return condition, None, limit, "PDF page 17 (schedule page 16)"
+            return condition, None, limit, f"PDF page 17 (schedule page 16); {approved}"
 
         number = 18 if "HVF" in code else 19
         section = pages[number]
@@ -998,7 +1005,7 @@ class CentraGasScraper(BaseScraper):
             condition += (" Alternate supply during curtailment has a pass-through commodity/transport price plus "
                           "the published alternate delivery rate; it is not the default commodity price.")
         return condition, limit, None, (f"PDF page {number} (schedule page {number - 1}); "
-                        "PDF page 14 (schedule page 13); PDF page 34 (schedule page 33)")
+                        f"PDF page 14 (schedule page 13); PDF page 34 (schedule page 33); {approved}")
 
     def _build(
         self, *, name: str, code: str, customer_class: str, sub_class: Optional[str],
@@ -1079,7 +1086,7 @@ class CentraGasScraper(BaseScraper):
             rate_structure="demand" if has_demand else "flat", pricing_method="regulated",
             effective_date=max(effective, carbon_date).isoformat(), source_url=url, source_page=detail,
             confidence="high",
-                 notes=(supply_note + f" Approved schedule {schedule_detail} (November 1, 2025, PUB Order 138/25): "
+                 notes=(supply_note + f" Approved schedule {schedule_detail}: "
                      f"{schedule_url}. Published in cents per m³ and stored as $/m³. Regulated by the Public Utilities "
                    "Board of Manitoba. Taxes are not published on these pages and are not included."),
             components=comps,

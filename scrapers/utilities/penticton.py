@@ -11,8 +11,9 @@ Official sources:
 
 The current year's column is used; a document without a column for the current year fails closed (no
 stale column is carried into a new year). The bylaw prints only the year, so records are dated January 1
-of that year with a note (owner confirmed 2026-11-17). Council sets these rates; the BCUC
-does not regulate them.
+of that year with a note (owner confirmed 2026-11-17) and end December 31 of it (owner decision 2026-11-23:
+a price whose source labels it with a year ends with it), so the previous year's prices stop counting when
+no new column is published. Council sets these rates; the BCUC does not regulate them.
 
 Scope: Rate Code 10 Residential and the general service codes 20 (secondary metered, City-owned
 transformation), 25 (primary metered, City-owned), 30 (secondary, customer-owned) and 35 (primary,
@@ -90,6 +91,7 @@ def parse_appendix(pages: list[DocumentPage], source_url: str, accounts_text: st
         raise ValueError(f"no {today.year} column (columns {columns[0]} and {columns[1]})")
     column = columns.index(today.year)
     effective = f"{today.year}-01-01"
+    year_end = f"{today.year}-12-31"
     text = re.sub(r"\s+", " ", "\n".join(p.text for p in electric))
     numbers = [p.page_number for p in electric]
     detail = (f"Fees and Charges Bylaw No. 2014-07 (consolidated), Schedule A Appendix 7 Electric, {today.year} column, "
@@ -107,7 +109,7 @@ def parse_appendix(pages: list[DocumentPage], source_url: str, accounts_text: st
         name, customer_class, sub_class, _ = CODES[code]
 
         def comp(**fields) -> RateComponent:
-            return RateComponent(effective_date=effective, source_url=source_url,
+            return RateComponent(effective_date=effective, end_date=year_end, source_url=source_url,
                                  source_detail=f"{detail}, Rate Code {code}", confidence="high", **fields)
 
         basic = _pair(_P + r" per billing plus " + _P + r" per billing plus", body, f"Rate Code {code} basic charge")
@@ -154,14 +156,14 @@ def parse_appendix(pages: list[DocumentPage], source_url: str, accounts_text: st
             ]
             structure = "demand"
         notes = (f"City of Penticton Rate Code {code}. Council-set rates. The bylaw column is headed only "
-                 f"'{today.year}' (no day), so the rates are dated January 1, {today.year}.")
+                 f"'{today.year}' (no day), so the rates are dated January 1 to December 31, {today.year}.")
         if discovery_note:
             notes += " " + discovery_note
         records.append(TariffRecord(
             utility_name=UTILITY, province="BC", utility_type="electricity", tariff_name=name, tariff_code=code,
             customer_class=customer_class, sub_class=sub_class, rate_structure=structure, pricing_method="municipal",
-            effective_date=effective, source_url=source_url, source_page=detail, confidence="high", notes=notes,
-            components=components))
+            effective_date=effective, end_date=year_end, source_url=source_url, source_page=detail, confidence="high",
+            notes=notes, components=components))
     return records
 
 

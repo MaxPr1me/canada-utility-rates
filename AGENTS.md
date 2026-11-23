@@ -365,10 +365,11 @@ publishing job runs again, using the site copy already prepared (kept for one da
 start Deploy Site again with **"Run workflow"**.
 
 **Prices posted after the 1st (owner decisions, November 20 and 23, 2026):** Énergir, Eastward
-Energy (registered as `Heritage Gas`), Liberty Utilities NB and the City of Medicine Hat change a
-price every month and usually post the new month after the 1st. The run on the 1st then stores
+Energy (registered as `Heritage Gas`), Liberty Utilities NB, the City of Medicine Hat and ATCO Gas's
+default gas rate (Direct Energy Regulated Services, which must match the Utilities Consumer Advocate
+table) change a price every month and are often posted after the 1st. The run on the 1st then stores
 nothing new for them: Medicine Hat's monthly records fail closed, and the gas utilities' stored
-supply prices have ended, so the models leave those tariffs out. These four are marked
+supply prices have ended, so the models leave those tariffs out. These five are marked
 `monthly_price_refresh` in `data/sources/registry.json`, and the Monthly Scrape runs again at
 08:00 UTC on the 4th (1 a.m. in Alberta in winter) for them only. Model monitoring waits for that
 run before reporting their failures from the 1st, and names them only if the run on the 4th fails
@@ -381,6 +382,18 @@ City's [Energy Plans & Pricing page](https://www.medicinehat.ca/home-property-ut
 Until a run stores it, its residential and small-business prices are left out of the Alberta
 models. Its fixed rate for large customers ends December 31, 2026, so from January 1, 2027 until
 that run the coverage gate also reports Medicine Hat as having no live rates.
+
+**Nova Scotia Power in January 2027 (owner decision, November 23, 2026):** every NS Power base
+tariff stored today ends December 31, 2026. Its approved tariff book already lists the January 1,
+2027 base prices and fuel adjustment, but not the 2027 energy-efficiency (DSM) and storm riders,
+which NS Power publishes later (in 2026 its new book arrived in May). Until NS Power posts a book
+with every 2027 charge, its runs return estimates, the Nova Scotia electricity models are left out,
+and the coverage gate and model monitoring report it: this gap is expected. Once the new book is
+linked from NS Power's [residential rates page](https://www.nspower.ca/your-home/residential-rates/standard-residential),
+start Monthly Scrape with the utility `Nova Scotia Power`; if that run still returns estimates, the
+scraper needs updating for the new book. Similarly, Nelson Hydro's 2027 prices come from its bylaw
+from January 1, while the City of Penticton's 2027 prices count only once its fees bylaw prints a
+2027 column (its 2026 prices end December 31); the next Monthly Scrape stores them.
 
 ---
 
@@ -513,8 +526,8 @@ workflow does not dismiss a monitoring warning.
    A newly registered utility is named as having no live output from the first check after it is
    registered until a Monthly Scrape stores it: start that run and the issue closes itself
    (November 19, 2026).
-   Énergir, Eastward (`Heritage Gas`), Liberty or Medicine Hat named after the 4th: see "Prices
-   posted after the 1st" above. A check named `workflow:scrape.yml:monthly-price` means no
+   Énergir, Eastward (`Heritage Gas`), Liberty, Medicine Hat or ATCO Gas named after the 4th: see
+   "Prices posted after the 1st" above. A check named `workflow:scrape.yml:monthly-price` means no
    successful run refreshed those utilities within a day of the 4th: start Monthly Scrape with both
    boxes empty (a full run also refreshes them).
 3. The checker updates its own issue and closes it only after all recorded problems have verified
@@ -731,12 +744,20 @@ apply to all of them:
   pays. Different kinds of sources (Alberta wires, Alberta default retail, AESO, gas and northern
   utilities) stay separate.
 - **A price with a period ends on time.** Gas supply prices that change monthly, quarterly or every
-  six months carry the end of the period their source states (owner decision, November 20, 2026).
-  After that date the next model update leaves that tariff out (it is never priced without its
-  supply price) until a Monthly Scrape stores the new price, and the Rate Browser tags the price
-  "Ended" (it is never hidden; owner decision, November 23, 2026). A price with no set period, which
-  changes only when a regulator approves a new one (FortisBC, SaskEnergy), stays open-ended. The
-  list is in the [gas rules](.github/instructions/gas-utilities.instructions.md#all-gas-utilities).
+  six months carry the end of the period their source states (owner decision, November 20, 2026),
+  and a price its source labels with a year (Nelson Hydro's and Penticton's yearly schedules) ends on
+  December 31 of that year (owner decision, November 23, 2026). After that date the next model update
+  leaves that tariff out (a tariff is never priced without one of its required prices) until a
+  Monthly Scrape stores the new price, and the Rate Browser tags the price "Ended" (it is never hidden;
+  owner decision, November 23, 2026). A price with no set period, which changes only when a regulator
+  approves a new one (FortisBC, SaskEnergy), stays open-ended. The gas list is in the
+  [gas rules](.github/instructions/gas-utilities.instructions.md#all-gas-utilities).
+- **Up to date within months; a year is the alarm (owner decision, November 23, 2026).** Rates
+  should be kept up to date, but being a few months behind (for example a utility posting its
+  January prices late) is acceptable. Data that has not been updated in a year is the real problem.
+  Scrapers should find new documents, editions and years by themselves, and a flagged error should
+  name what changed so it is quick to fix. Details: the
+  [scraper rules](.github/instructions/scrapers.instructions.md#freshness-and-maintenance).
 - **"Complete" means checked.** Completing a utility means auditing its building-related standard
   published classes, not just replacing old estimates. Some products are left out on purpose;
   exclusions and remaining gaps are listed in the [parser gap report](docs/live_parser_gap_report.md)

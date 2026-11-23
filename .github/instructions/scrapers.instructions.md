@@ -82,6 +82,28 @@ historical checkpoint instructions it retains. To add a utility, follow
   value.
 - Keep different kinds of sources separate (Alberta wires, Alberta default retail, AESO, gas and
   northern utilities), with their published classes, communities, tiers and units.
+- A price whose source labels it with a year (a bylaw schedule headed "(2026)", a year column) ends on
+  December 31 of that year, on the record and on each component (owner decision 2026-11-23), so it
+  stops counting when no newer price is read. Gas supply periods follow the
+  [gas rules](gas-utilities.instructions.md#all-gas-utilities); prices that change only by an approved
+  order stay open-ended.
+
+## Freshness and maintenance
+
+Owner decisions 2026-11-23:
+
+- Keep the rates updated, but being out of sync for a few months is acceptable (for example a
+  utility that posts its January prices weeks later). The key concern is data that has not been
+  updated in a year.
+- Scrapers find new editions, years and documents themselves: discover links from the official page,
+  select the year or edition from the document, and keep a last known address only as a fallback.
+- Never hard-code a year, date, edition or order number in a check, a record note or a source detail.
+  Take it from the document, or keep it as one data entry per edition (for example Centra's
+  `SCHEDULE_EDITIONS`, whose `general_pages` names the date and Board order its class-definition pages
+  print), so that a new edition is a one-entry update.
+- A failure message names what changed (the document, year, edition, class or value), so a flagged
+  error is quick to fix. A missing new year or edition still fails closed; an old price is never
+  extended.
 
 ## Completeness
 
@@ -111,9 +133,10 @@ historical checkpoint instructions it retains. To add a utility, follow
   their history; never delete them.
 - `"monthly_price_refresh": true` marks a utility whose price changes every month and is usually
   posted after the 1st (owner decisions 2026-11-20 and 2026-11-23; today Énergir, Heritage Gas,
-  Liberty Utilities NB and City of Medicine Hat Electric Utility). The Monthly Scrape runs these again
-  on the 4th, and model monitoring holds their failures from the 1st until then. Only a JSON boolean
-  is accepted.
+  Liberty Utilities NB, City of Medicine Hat Electric Utility and ATCO Gas, whose Direct Energy
+  Regulated Services default gas rate must also be in the Utilities Consumer Advocate table). The
+  Monthly Scrape runs these again on the 4th, and model monitoring holds their failures from the 1st
+  until then. Only a JSON boolean is accepted.
 - `scrapers/registry.py` stays standard library only: the Monthly Scrape's input check
   (`python3 -m scrapers.registry`) and the model monitor use it without the project's dependencies.
   Names are matched ignoring accents, case and repeated spaces (`normalize_name`, `find_utility`), so

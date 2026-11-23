@@ -88,7 +88,8 @@ def test_fixture_excerpt_matches_the_edition_table():
         label, title = edition["pages"][int(number)]
         assert page["label"] == label and label in page["text"] and title in page["text"]
         assert "Approved by Board Order: 150/26" in page["text"] and "Effective from: November 1, 2026" in page["text"]
-    assert centra_gas.SCHEDULE_EDITIONS[date(2026, 8, 1)] == {"url": PAGE_URLS["schedule"], "appendix": "transcription"}
+    assert centra_gas.SCHEDULE_EDITIONS[date(2026, 8, 1)] == {
+        "url": PAGE_URLS["schedule"], "appendix": "transcription", "general_pages": centra_gas.GENERAL_PAGES_2025}
 
 
 def test_edition_follows_the_current_supported_quarter_not_stale_html():

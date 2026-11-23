@@ -27,7 +27,8 @@ def _parse(pages=None, accounts=ACCOUNTS, today=TODAY):
 def test_uses_the_current_year_column_dated_january_first():
     records = _parse()
     assert list(records) == ["10", "20", "25", "30", "35"]
-    assert {r.effective_date for r in records.values()} == {"2026-01-01"}
+    assert {(r.effective_date, r.end_date) for r in records.values()} == {("2026-01-01", "2026-12-31")}
+    assert {c.end_date for r in records.values() for c in r.components} == {"2026-12-31"}
     assert [(c.charge_value, c.charge_unit) for c in records["10"].components] == [(24.94, "$/month"), (0.1438, "$/kWh")]
     assert "no day" in records["10"].notes
 
@@ -44,7 +45,7 @@ def test_general_service_blocks_and_demand_above_45_kva():
 
 def test_previous_year_column_is_used_only_in_that_year():
     records = _parse(today=date(2025, 6, 1))
-    assert records["10"].effective_date == "2025-01-01"
+    assert (records["10"].effective_date, records["10"].end_date) == ("2025-01-01", "2025-12-31")
     assert records["10"].components[0].charge_value == 21.81
 
 

@@ -9,7 +9,29 @@ history publication, monitoring and the deployed desktop/mobile views are verifi
 and [workflow rules](../.github/instructions/ci-data-history.instructions.md#model-monitoring).
 This does not waive source checks or authorize a Monthly Scrape merely to test monitoring.
 
-## Current milestone - Phase 7 gas, then territorial models, then Phase 9
+## Current milestone - January 1 readiness, then the one-year check, then territorial models
+
+Owner decisions (November 23): with the Phase 7 gas models published, the order of work is January 1
+readiness, then a check for data that has not been updated in a year, then models for the
+territories, then Phase 9 after the coverage-complete claim. January 1 readiness:
+- ATCO Gas joins the monthly-price run on the 4th (its default gas rate must also be in the UCA
+  table, which may post the month after the run on the 1st);
+- Nelson Hydro reads its bylaw's current-year schedules from January 1, even while its rates page
+  still shows the previous year; prices labelled with a year (Nelson, Penticton) end December 31;
+- NS Power keeps failing closed: its 2027 DSM and storm riders are not published yet, so the Nova
+  Scotia models are expected to be missing from January 1 until NS Power posts a complete 2027 book
+  (in 2026 its book came in May); the owner then starts its run;
+- record notes take dates and orders from the documents (NS Power's book, Centra's class-definition
+  pages, Medicine Hat's brochure).
+
+Standing guidance (owner, November 23): keep the rates up to date, but a lag of a few months is
+acceptable; data not updated in a year is the key concern; scrapers should find new editions by
+themselves and a flagged error should be quick to fix. The one-year check (next) remembers each
+utility's update date and flags it when no newer price arrives by the same date a year later, or
+when its values have not changed in a year: a coverage-gate warning and a model-monitoring list,
+cleared for a year by a dated ledger review note.
+
+### Phase 7 gas (done November 23)
 
 Owner decisions (November 20): the order of work is Phase 7 commercial gas, then models for the
 territories, then Phase 9 after the coverage-complete claim. Phase 6E (gas supply-price freshness)
@@ -69,7 +91,8 @@ Second decision round (November 20), from the commercial gas research:
 Progress (November 23): the small fixes are published. Énergir's monthly supply price was stored by
 scrape run 45, and the other supply-price period ends by the owner's full run on November 20 (scrape
 run 46). The monthly-price run on the 4th is added: the registry flag `monthly_price_refresh` on
-Énergir, Eastward (Heritage Gas), Liberty and Medicine Hat, clearer input checks before anything is
+Énergir, Eastward (Heritage Gas), Liberty and Medicine Hat (ATCO Gas added later the same day),
+clearer input checks before anything is
 installed (utility names matched without accents or case, with the closest registry names) and its
 own monitoring check; its first run is December 4.
 
@@ -82,21 +105,23 @@ are priced, so Québec and New Brunswick homes are modelled too; the small-busin
 moved to 14 and 40 kW (BC Hydro is priced on Rate 1500 at 40 kW; FortisBC Electric Rate 20 is "not
 more than 40 kW"). Owner decision November 23: the Rate Browser shows a dated price's period and an
 "Ended" tag once it has passed. The model preview against the published models showed only these
-intended changes. Next: models for the territories.
+intended changes. Next: January 1 readiness and the one-year check (above), then models for the
+territories.
 
 Dated checks (owner decisions, November 19) take priority when they fall due. Batch 18 continued
 was published on November 19 (see [Registered municipal additions](#registered-municipal-additions)),
 so every registered utility has stored live output:
 - December 1: the scheduled Monthly Scrape; Medicine Hat is expected to fail closed until the City
   posts December's default rate, and monitoring holds it for the next run.
-- December 4: the first monthly-price run (Énergir, Eastward, Liberty and Medicine Hat).
+- December 4: the first monthly-price run (Énergir, Eastward, Liberty, Medicine Hat and ATCO Gas).
 - December 15: twelve ledger monitor reviews (Yukon Energy, ATCO Electric Yukon, NTPC, Qulliq, EPCOR
   Distribution, the three Rate of Last Resort providers, Naka Power, Medicine Hat, Lethbridge and
   Red Deer). The strict gate fails from December 16 for any not reviewed.
 - December 31: the Alberta Rate of Last Resort term ends (no 2027 term published yet), with the
   Lethbridge and Red Deer city prices and Medicine Hat's large-customer fixed rate.
 - January: other January editions, and the Ontario January rate orders (added once in effect, then
-  one Ontario Monthly Scrape).
+  one Ontario Monthly Scrape). NS Power is expected to return estimates from January 1 until it posts
+  a complete 2027 book; Penticton's 2027 prices count once its fees bylaw prints a 2027 column.
 - Ledger audits expire February 4 (14) and February 27 (62) under the gate's 120-day rule.
 
 ## Completed - source reliability and Batch 18 publication (November 17-19)
@@ -517,7 +542,7 @@ building coverage; counts include optional adjustments and reference records.
 | Done (October 30, batch 16; pushed October 30) | W1 Yukon book discovery through the page model JSON; W2 Centra schedule edition by rates date and the v1126 text Appendix A (high confidence); W3 dead seed citations kept with notes (`KEPT_DEAD`), inventory and AESO pool-price links fixed, guard scans reference data; W4 local check kit (`logs/_b16_kit_*`, untracked); W5 model decisions (method 7C-3) | 2,090 tests across 27 modules. Dry runs: Yukon 20 and 20, Centra 13, Alberta 2/4/5/2 live. Gate 77 of 78 on the committed export (AESO, stored by the next Monthly Scrape) |
 | Done (October 15-16) | Lane B (7F site view, October 15); Lane F (EPCOR Energy Alberta's moved pages), CI as the only database writer (first stored run: Monthly Scrape #11, scrape run 29), the Ontario market continuation (rolling 60-month history), Lane A (7C, all ten provinces) and the 7E illustrative sidecar (all October 16) | See Next Batches item 0 |
 | Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones; the 7E synthetic profile (Monday-Friday hours beginning 7-18 EST). | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
-| Planned (order decided November 20) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); then territorial models; then Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses illustrative values) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
+| Planned (order decided November 20, updated November 23) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); January 1 readiness and the one-year check (November 23); then territorial models; then Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses illustrative values) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11) while the rate pages show August 1, 2026 rates; from the November 1, 2026 rates the v1126 text Appendix A is parsed at high confidence (batch 16, row 1b) |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Checked October 30 (ledger notes): Qulliq, NTPC Snare, EPCOR Distribution (2026 tariffs still interim) and the next Rate of Last Resort term (the UCA table shows only the 2025-2026 term) unchanged, next review December 15; Centra and Yukon changed (row 1b); the Centra monitor was closed November 18 (owner decision) and Yukon's review is December 15. Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |

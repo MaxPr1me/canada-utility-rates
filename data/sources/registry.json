@@ -145,6 +145,7 @@
       "scraper_module": "scrapers.utilities.atco_gas",
       "scraper_class": "ATCOGasScraper",
       "status": "partial",
+      "monthly_price_refresh": true,
       "sources": [
         {
           "url": "https://gas.atco.com/content/dam/atco-gas-website/en-ca/assets/understanding-rates/documents/north-rate-schedule.pdf",

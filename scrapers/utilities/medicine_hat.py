@@ -220,7 +220,7 @@ def parse_rates(pages: list[DocumentPage], energy: dict, source_url: str, today:
                           energy["large"]["start"] <= today.isoformat() <= energy["large"]["end"]):
             rejections[code] = "no Large Commercial/Industrial default energy rate in effect today"
             continue
-        detail = f"2026 Utility Rates brochure, rate {code} ({block['heading']}), PDF page {block['page']}"
+        detail = f"{effective[:4]} Utility Rates brochure, rate {code} ({block['heading']}), PDF page {block['page']}"
         components: list[RateComponent] = []
         for label in required:
             value, unit = prices[label]
