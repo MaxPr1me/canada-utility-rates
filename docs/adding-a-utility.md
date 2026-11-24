@@ -242,6 +242,13 @@ not modelled:
   the models; add an entry that quotes what the percentage applies to. Subsidy prices are read through
   `data/models/subsidies.json`, which matches component names, so keep those names stable or update
   the list in the same change.
+- **Rate History series:** `site/data/rate_history_series.json` charts the regulated and default
+  prices (Ontario's Regulated Price Plan, the Alberta Rate of Last Resort areas, each gas utility's
+  default supply price) by matching stored component names. A new utility with such a price needs a
+  reviewed series entry, and a scraper that renames a matched line must update the list in the same
+  change: `tests/test_rate_history_lists.py` checks every series against frozen live records
+  (`tests/fixtures/rate_history_records.json`; add the new records there), and after each data run
+  model monitoring reports a series line that no current live price carries (`rate_history_series`).
 - **Block periods:** an energy block threshold printed in kWh without a period ("first 5,000 kWh")
   needs a reviewed entry in `data/models/block_periods.json` that quotes the tariff and records
   its `threshold_period` (for example `month` or `two_months`). When neither the tariff nor the

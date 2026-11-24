@@ -73,9 +73,9 @@ if the optional history panel is unavailable.
 python -m http.server --directory site 8000
 ```
 
-Open http://localhost:8000 (pick another free port if 8000 is busy) to see five views: Rate
-Browser, Market Pricing, Representative Models, Across-Canada and Compare. Opening the HTML file
-directly (`file://`) does not load the data reliably. Press `Ctrl + C` to stop the server.
+Open http://localhost:8000 (pick another free port if 8000 is busy) to see six views: Rate
+Browser, Rate History, Market Pricing, Representative Models, Across-Canada and Compare. Opening the
+HTML file directly (`file://`) does not load the data reliably. Press `Ctrl + C` to stop the server.
 
 **Important limitations:**
 
@@ -148,6 +148,14 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   (1,000 kWh: Yukon $323.62 before and $253.66 after; Northwest Territories $542.73 and $429.16);
   Nunavut is shown before subsidy only, because its subsidised price is not published. The ten
   provinces' 85 models are unchanged.
+- **Rate History tab (November 24, owner decisions 44-57 and 80-84):** a sixth view charts how stored
+  prices changed: each live tariff's price periods (bars as wide as each period lasts) since
+  collection began on September 29, 2026; the regulated and default prices (Ontario's Regulated Price
+  Plan, Alberta's Rate of Last Resort areas, the default gas supply prices); quarterly Ontario and
+  Alberta market averages from the stored history; and quarterly model costs. It opens on the recent
+  price changes (November 1 so far). Estimates are never charted, ended prices are never extended,
+  charges are never added together, and regulator decisions are marked with their official sources.
+  Its quarterly market and model files and its correction notes appear after the next data runs.
 - **Latest export (November 20, scrape run 46, the owner's full run):** 987 latest live tariffs and
   484 retained estimates; 1,414 stored live versions and 7,670 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
@@ -186,7 +194,7 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   are now modelled too. Small businesses are modelled at 2,000 kWh with 14 kW and 10,000 kWh with
   40 kW, and every usage level records its decision, what it represents and its sources. The Rate
   Browser shows a dated price's period and tags it "Ended" once that date has passed.
-- **Validation:** all 2,583 tests passed on Python 3.11 using `pytest tests`.
+- **Validation:** all 2,680 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.
@@ -199,7 +207,7 @@ The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; th
 2. **Stores** everything in a normalized SQLite database that preserves every rate detail — not just a single "cost per kWh" number.
 3. **Tracks history** — each stored scrape appends snapshots. Only the Monthly Scrape workflow stores scrapes: it keeps `data/db/rates.db` in the `data-history` GitHub release with dated backups and checks that history only grows; local copies are read-only mirrors (`python scripts/pull_history_db.py`).
 4. **Exports** the data as JSON for the GitHub Pages static site.
-5. **Serves** a browsable web interface with five views: **Rate Browser** (multi-select filters, confidence indicators and source attribution), **Market Pricing** (observed Ontario and Alberta market history with a monthly chart, table and heatmap), **Representative Models** (typical monthly electricity costs for the ten provinces and the three territories, the territories also after automatic subsidies, and natural gas costs for homes and small and mid-size commercial buildings in each utility's m³ or GJ, without and with tax), **Across-Canada** (residential electricity compared by province and territory) and **Compare** (two tariffs side by side, never a bill total).
+5. **Serves** a browsable web interface with six views: **Rate Browser** (multi-select filters, confidence indicators and source attribution), **Rate History** (bar charts of how stored prices changed: tariff and regulated or default prices collected since September 29, 2026, quarterly market averages since 2020 and quarterly model costs; never estimates), **Market Pricing** (observed Ontario and Alberta market history with a monthly chart, table and heatmap), **Representative Models** (typical monthly electricity costs for the ten provinces and the three territories, the territories also after automatic subsidies, and natural gas costs for homes and small and mid-size commercial buildings in each utility's m³ or GJ, without and with tax), **Across-Canada** (residential electricity compared by province and territory) and **Compare** (two tariffs side by side, never a bill total).
 6. **Provides automation** through monthly scraping, separate Pages deployment, non-blocking source-health runs, a twice-monthly Ontario Price archive and market history update, and Alberta market history and model refreshes.
 
 **Scope: building energy costs.** The work supports building energy-cost analysis, including
@@ -307,22 +315,30 @@ canada-utility-costs/
 │   └── inventory/            ← Full utility inventory
 │
 ├── site/                     ← Static website (deployed to GitHub Pages)
-│   ├── index.html            ← Five views, including separate Across-Canada and two-tariff Compare
+│   ├── index.html            ← Six views, including Rate History, Across-Canada and two-tariff Compare
 │   ├── css/style.css         ← Styles inc. multi-select filters, heatmap, confidence
 │   ├── css/models.css        ← Representative Models styles, incl. the illustrative (synthetic) block
 │   ├── css/across-canada.css ← Residential national comparison table
+│   ├── css/rate-history.css  ← Rate History charts, tables and phone layout
 │   ├── js/app.js             ← SPA logic: filters, cards, modal, market viz
 │   ├── js/models.js          ← Representative Models, assumptions and shared lazy data loader
 │   ├── js/across-canada.js   ← Residential comparisons using published model totals only
-│   └── data/                 ← Six pipeline exports plus separately maintained market/audit data
+│   ├── js/rate-history.js    ← Rate History: recent changes and hand-built SVG history charts
+│   └── data/                 ← Seven pipeline exports plus separately maintained market/audit data
 │       ├── rates.json        ← All tariff/component data
 │       ├── utilities.json    ← Utility metadata
 │       ├── summary.json      ← Provincial summaries
 │       ├── missing.json      ← Known data gaps
 │       ├── missing_classes_report.json  ← Customer class coverage audit
 │       ├── representative_models.json   ← Phase 7 models (provinces and territories; Representative Models tab)
+│       ├── model_change_history.json    ← Public model change log (pipeline/model_monitoring.py --record)
+│       ├── model_cost_quarterly.json    ← Quarter-end model costs for Rate History, rebuilt from the change log
+│       ├── rate_history_revisions.json  ← Same-date price corrections found in the database snapshots (export)
+│       ├── rate_history_series.json     ← Reviewed regulated and default price series for Rate History
+│       ├── rate_history_events.json     ← Reviewed regulator and government decisions marked on its charts
 │       ├── market_pricing_ontario.json  ← Rolling 60-month market history + observed-hours bins (scripts/build_ontario_market.py)
 │       ├── market_pricing_alberta.json  ← Alberta market history + observed-hours bins (scripts/build_alberta_market.py)
+│       ├── market_quarterly_ontario.json, market_quarterly_alberta.json ← Complete-quarter market averages (the same builders)
 │       ├── market_structure_notes.json  ← All-province market research
 │       └── source_review_report.json    ← Source URL audit report
 │
@@ -332,6 +348,7 @@ canada-utility-costs/
 │   ├── preserve_ieso_reports.py  ← Saves raw IESO reports before any price-validation failure
 │   ├── export_ontario_totals.py  ← Combines hourly/monthly energy + Class B GA without filling gaps
 │   ├── build_alberta_market.py    ← Alberta AESO market history, checked against monthly summaries (Market Benchmarks workflow)
+│   ├── market_quarterly.py        ← Shared complete-quarter averages that both market builders write for Rate History
 │   ├── generate_market_pricing.py ← Legacy 6A HOEP 2020-2024 surface (manual; its readers are reused by the builder)
 │   ├── check_db_history.py        ← Monthly Scrape check: database integrity, history only grows
 │   ├── coverage_gate.py           ← Live-rate coverage gate: live output, audit ledger, deferred and monitored items (Monthly Scrape reports it)
@@ -811,7 +828,7 @@ One line per phase; sub-phase detail and the work queue are in the
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas supply-price freshness: Énergir's monthly prices and period end dates for the other gas utilities done November 20, and the monthly-price run on the 4th added November 23 (first run December 4)).
 - **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D gas done in each utility's native m³ or GJ: homes as method 7D-1 and commercial general service for small and mid-size buildings as method 7D-2, November 23; contract, interruptible and seasonal gas classes come later with their own decision; the territories were added November 24 as method 7T-1, homes and small businesses, before and after automatic subsidies). The check for rates not updated in a year was added November 24.
 - **Phase 8: Representative Model Refresh Automation** — done and verified in CI and on the deployed site. Public change history and problem-only monitoring follow the [approved policy](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
-- **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done). Planned: a Rate History tab of historical charts (designed November 23; next, now that the territorial models are built; collected data since September 29, 2026 plus the stored market history), then AI-ready exports, a bill calculator or API and commercial/gas comparisons.
+- **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done; the Rate History tab of historical charts built November 24, using data collected since September 29, 2026 plus the stored market history). Planned: AI-ready exports, a bill calculator or API and commercial/gas comparisons.
 
 ---
 

@@ -1,19 +1,20 @@
 ---
-description: "Use when changing the static website under site/: index.html, css/, js/app.js (Rate Browser, Market Pricing, Compare), js/models.js (Representative Models), js/across-canada.js and the site/data/ JSON it reads. Covers the five views, hiding seed (estimated) rates by default, filterState Sets, the province-to-utility cascade, dedupe by effective date, formatCharge, Compare never totalling, the Ontario/Alberta market dashboard, the window.CanadaUtilityModels API and shared lazy load, safe DOM building, failure notices, the opt-in synthetic block and offline browser tests."
+description: "Use when changing the static website under site/: index.html, css/, js/app.js (Rate Browser, Market Pricing, Compare), js/models.js (Representative Models), js/across-canada.js, js/rate-history.js (Rate History) and the site/data/ JSON it reads. Covers the six views, hiding seed (estimated) rates by default, filterState Sets, the province-to-utility cascade, dedupe by effective date, formatCharge, Compare never totalling, the Ontario/Alberta market dashboard, the window.CanadaUtilityModels API and shared lazy load, the Rate History periods, reviewed series and event lists and hand-built SVG charts, safe DOM building, failure notices, the opt-in synthetic block and offline browser tests."
 applyTo: "site/**"
 ---
 # Static website
 
 A plain HTML, CSS and JavaScript single-page app (Chart.js from a CDN), deployed to GitHub Pages and
-reading `site/data/`. Model data rules, including Across-Canada's:
-[representative-models.instructions.md](representative-models.instructions.md). Market file rules:
-[market-data.instructions.md](market-data.instructions.md).
+reading `site/data/`. The Rate History charts are hand-built SVG instead: Chart.js cannot draw a bar as
+wide as a price period, and SVG keeps working if the CDN fails. Model data rules, including
+Across-Canada's: [representative-models.instructions.md](representative-models.instructions.md). Market
+file rules: [market-data.instructions.md](market-data.instructions.md).
 
 ## Views
 
-- Five views: **Rate Browser** (filters, cards, details), **Market Pricing**, **Representative
-  Models**, **Across-Canada** (residential comparison) and **Compare** (two tariffs). Across-Canada and
-  Compare stay separate.
+- Six views: **Rate Browser** (filters, cards, details), **Rate History** (how stored prices changed),
+  **Market Pricing**, **Representative Models**, **Across-Canada** (residential comparison) and
+  **Compare** (two tariffs). Across-Canada and Compare stay separate.
 - Test over HTTP (`python -m http.server --directory site 8000`); opening the HTML file directly does
   not reliably load the JSON.
 
@@ -108,6 +109,79 @@ reading `site/data/`. Model data rules, including Across-Canada's:
 - Territories with a model show their before-subsidy totals labelled "before subsidies" (status and
   chart label, plus a note under the chart) and, in the row, the published after-subsidy median before
   tax or the reason none is shown; a territory without a model keeps "Not modelled yet".
+
+## Rate History (`site/js/rate-history.js`, `site/css/rate-history.css`)
+
+Owner decisions 44-57 (2026-11-23) and 80-84 (2026-11-24).
+
+- Inputs, loaded the first time the view opens:
+  - every stored tariff version, through `window.CanadaUtilitySite.rates()` (`app.js` keeps the raw array
+    before its newest-only deduplication);
+  - the reviewed lists `rate_history_series.json` and `rate_history_events.json`;
+  - `rate_history_revisions.json` (Monthly Scrape export), `market_quarterly_ontario.json`,
+    `market_quarterly_alberta.json` and `model_cost_quarterly.json`;
+  - model labels and selector order from the shared `CanadaUtilityModels.load()`.
+
+  A missing or broken optional file shows a notice in its own part only.
+- Opening the view shows "Recent price changes", with the chart of the newest item below it and the
+  four sub-tab buttons above with none selected (Tariff prices, Regulated & default, Market, Model
+  costs). The list holds:
+  - real changes whose effective date is within the last 90 days, up to the visitor's own date (a
+    future change joins only on its date), newest first;
+  - tariff and regulated/default prices only, never corrections;
+  - identical changes as one line, grouped by their regulated series line when they have one;
+  - 20 lines, then "Show more".
+
+  A list item opens its chart in the sub-tab it belongs to.
+- Choosing a chart:
+  - province, utility, tariff and price-line drop-downs, plus a utility-name search that ignores
+    accents and capital letters;
+  - the Rate Browser detail window's "History" button, on live tariffs only, opens that tariff.
+- Price periods. A price line is component type, name, unit, tier, tier threshold, time-of-use
+  period, season, sub-component and demand threshold; a change of unit, tier or period starts a new
+  line and is never converted. A line's period:
+  - starts at its effective date (else its tariff's);
+  - ends at the earliest of its own end date, its tariff version's end date and the next period's
+    start, and a line missing from the newest version ends where that version starts;
+  - takes its value from the newest version carrying the same start;
+  - prices equal within floating-point tolerance are the same price (as in `export_json`).
+
+  Display rules:
+  - an ended price with no newer price leaves a "No current price stored" gap and is never extended;
+  - future periods are drawn after a "today" marker;
+  - value-less market prices are listed as "Variable" with a link to the Market sub-tab;
+  - lines repeated within one version are listed as not charted;
+  - a same-date correction shows "revised on <date>" from the revisions file;
+  - estimates are never charted.
+- Price charts:
+  - one bar per period, as wide as the period lasts; a tariff's lines side by side, never stacked or
+    added, each switchable from the legend;
+  - different units in separate panels;
+  - up to 5 same-unit comparison lines in the province hues;
+  - per-kWh electricity prices in cents/kWh (display only), other units as published;
+  - a "% change since the first period shown" toggle;
+  - the default range starts September 29, 2026 (collection began), with 1Y, 5Y and All buttons only
+    when bars start earlier.
+- Market and model charts use quarterly bars:
+  - **Market:** opens on all stored history; Ontario shows energy, Class B GA and the published total
+    side by side, and Alberta shows pool energy.
+  - **Model costs:** the saved quarter-end medians with a "Before tax and rebates" / "With tax and
+    rebates" toggle (default with tax, like Across-Canada; owner decision 85, 2026-11-24); the current
+    quarter is labelled "quarter in progress".
+  - `break_before` draws a "method changed" gap with its reasons, and the % change restarts after it.
+  - Recording gaps are noted, and market benchmarks are their own line.
+  - The synthetic estimate is never charted.
+- Event markers come only from `rate_history_events.json` (regulator or government decisions, each with
+  its official source and checked quote), shown on charts whose family, province and fuel match.
+  `site/data/rate_history_series.json` selects records and price lines by stored component names with
+  full-match regexes (`pipeline/rate_history.py` holds the same rules in Python). A scraper change that
+  renames a matched line must update the list: `tests/test_rate_history_lists.py` checks every series
+  against frozen live records, and model monitoring's `rate_history_series` check reports any series
+  line that no tariff's newest live version carries after a data run. Where the records carrying a
+  series line disagree, each value is drawn with its tariff count; none is picked.
+- Every chart has a data table (it scrolls sideways on phones) and a CSV download (cells that could
+  start a spreadsheet formula are escaped). The address (`#rate-history/...`) remembers the chart.
+  Build with `createElement`/`createElementNS` and `textContent` only, and link only http(s) URLs.
 
 ## Tests
 

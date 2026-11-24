@@ -1,0 +1,239 @@
+{
+  "version": 1,
+  "kind": "rate_history_events",
+  "reviewed": "2026-11-24",
+  "decided": "owner decision 53 (2026-11-23)",
+  "rule": "Markers only for regulator or government decisions (OEB price periods, Ontario Electricity Rebate changes, the IESO market renewal, Alberta Rate of Last Resort terms and Manitoba PUB quarterly orders), each with its official source and the sentence checked on the 'verified' date. A single utility's routine monthly price gets no marker. 'applies_to' names the provinces, fuels and chart families (tariff, regulated, market, model) that show the marker.",
+  "events": [
+    {
+      "id": "ab-rolr-replaces-rro",
+      "date": "2025-01-01",
+      "label": "Rate of Last Resort replaces the RRO",
+      "detail": "Alberta's default electricity rate became the Rate of Last Resort, fixed for January 1, 2025 to December 31, 2026.",
+      "applies_to": {
+        "provinces": [
+          "AB"
+        ],
+        "fuels": [
+          "electricity"
+        ],
+        "families": [
+          "tariff",
+          "regulated"
+        ]
+      },
+      "sources": [
+        {
+          "label": "Utilities Consumer Advocate (Government of Alberta), The Rate of Last Resort",
+          "url": "https://ucahelps.alberta.ca/utility-choices/current-rates-and-pricing/rate-of-last-resort/",
+          "quote": "The Rate of Last Resort (RoLR) replaced the Regulated Rate Option (RRO) in Alberta for electricity consumers effective January 1, 2025.",
+          "verified": "2026-11-24"
+        }
+      ]
+    },
+    {
+      "id": "on-market-renewal",
+      "date": "2025-05-01",
+      "label": "IESO market renewal: the Ontario Electricity Market Price replaces the HOEP",
+      "detail": "Ontario's hourly wholesale price became the day-ahead Ontario zonal price plus the load forecast deviation adjustment.",
+      "applies_to": {
+        "provinces": [
+          "ON"
+        ],
+        "fuels": [
+          "electricity"
+        ],
+        "families": [
+          "market"
+        ]
+      },
+      "sources": [
+        {
+          "label": "Independent Electricity System Operator, Market Renewal",
+          "url": "https://www.ieso.ca/en/Market-Renewal",
+          "quote": "the transition to the Renewed Market on May 1, 2025",
+          "verified": "2026-11-24"
+        }
+      ]
+    },
+    {
+      "id": "on-rpp-2025-11-01",
+      "date": "2025-11-01",
+      "label": "OEB Regulated Price Plan prices change",
+      "detail": "New Time-of-Use, Ultra-Low Overnight and Tiered prices from November 1, 2025.",
+      "applies_to": {
+        "provinces": [
+          "ON"
+        ],
+        "fuels": [
+          "electricity"
+        ],
+        "families": [
+          "tariff",
+          "regulated"
+        ]
+      },
+      "sources": [
+        {
+          "label": "Ontario Energy Board news release, October 17, 2025",
+          "url": "https://www.oeb.ca/newsroom/2025/ontario-energy-board-announces-changes-electricity-prices-households-small-businesses",
+          "quote": "Electricity prices for households, small business and farms will change as of November 1, 2025.",
+          "verified": "2026-11-24"
+        }
+      ]
+    },
+    {
+      "id": "on-oer-2025-11-01",
+      "date": "2025-11-01",
+      "label": "Ontario Electricity Rebate changes to 23.5%",
+      "detail": "The provincial rebate on eligible electricity bills changed to 23.5% from November 1, 2025.",
+      "applies_to": {
+        "provinces": [
+          "ON"
+        ],
+        "fuels": [
+          "electricity"
+        ],
+        "families": [
+          "model"
+        ]
+      },
+      "sources": [
+        {
+          "label": "Ontario Energy Board news release, October 17, 2025",
+          "url": "https://www.oeb.ca/newsroom/2025/ontario-energy-board-announces-changes-electricity-prices-households-small-businesses",
+          "quote": "Also, effective November 1, 2025, the Ontario government's Ontario Electricity Rebate (OER) will change to 23.5%.",
+          "verified": "2026-11-24"
+        }
+      ]
+    },
+    {
+      "id": "on-gas-qram-2026-10-01",
+      "date": "2026-10-01",
+      "label": "OEB quarterly gas prices (QRAM)",
+      "detail": "The Ontario Energy Board approved new quarterly gas supply prices for Enbridge Gas (interim) and EPCOR Natural Gas (Aylmer and Southern Bruce) from October 1, 2026.",
+      "applies_to": {
+        "provinces": [
+          "ON"
+        ],
+        "fuels": [
+          "gas"
+        ],
+        "families": [
+          "tariff",
+          "regulated"
+        ]
+      },
+      "sources": [
+        {
+          "label": "Ontario Energy Board backgrounder, Enbridge Gas EB-2026-0221 (September 24, 2026)",
+          "url": "https://www.oeb.ca/sites/default/files/ENBRIDGE-QRAM%20BG-OCTOBER%202026_FINAL.pdf",
+          "quote": "The Ontario Energy Board (OEB) has approved new interim natural gas prices for Enbridge Gas Inc. (Enbridge) to take effect October 1, 2026.",
+          "verified": "2026-11-24"
+        },
+        {
+          "label": "Ontario Energy Board notice, EPCOR Aylmer, October 1, 2026 (EB-2026-0225)",
+          "url": "https://www.oeb.ca/sites/default/files/qram-epcor-aylmer-20261001-en.pdf",
+          "quote": "The OEB approved the following commodity rates effective Oct 1, 2026.",
+          "verified": "2026-11-24"
+        },
+        {
+          "label": "Ontario Energy Board notice, EPCOR Southern Bruce, October 1, 2026 (EB-2026-0226)",
+          "url": "https://www.oeb.ca/sites/default/files/qram-epcor-sb-20261001-en.pdf",
+          "quote": "EPCOR applied to the OEB to change the prices it will charge customers in Southern Bruce effective October 1, 2026.",
+          "verified": "2026-11-24"
+        }
+      ]
+    },
+    {
+      "id": "on-rpp-2026-11-01",
+      "date": "2026-11-01",
+      "label": "OEB Regulated Price Plan prices change",
+      "detail": "New Time-of-Use, Ultra-Low Overnight and Tiered prices from November 1, 2026.",
+      "applies_to": {
+        "provinces": [
+          "ON"
+        ],
+        "fuels": [
+          "electricity"
+        ],
+        "families": [
+          "tariff",
+          "regulated"
+        ]
+      },
+      "sources": [
+        {
+          "label": "Ontario Energy Board news release, October 16, 2026",
+          "url": "https://www.oeb.ca/newsroom/2026/ontario-energy-board-announces-changes-electricity-prices-households-small-businesses",
+          "quote": "Electricity prices for households, small business and farms will change as of November 1, 2026.",
+          "verified": "2026-11-24"
+        },
+        {
+          "label": "Ontario Energy Board, Electricity rates",
+          "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates",
+          "quote": "The TOU, ULO and Tiered prices set by the OEB for November 1, 2026, are shown in the table below.",
+          "verified": "2026-11-24"
+        }
+      ]
+    },
+    {
+      "id": "on-oer-2026-11-01",
+      "date": "2026-11-01",
+      "label": "Ontario Electricity Rebate changes to 15.7%",
+      "detail": "O. Reg. 328/26 changed the rebate on eligible electricity bills from 23.5% to 15.7% from November 1, 2026.",
+      "applies_to": {
+        "provinces": [
+          "ON"
+        ],
+        "fuels": [
+          "electricity"
+        ],
+        "families": [
+          "model"
+        ]
+      },
+      "sources": [
+        {
+          "label": "Ontario Energy Board news release, October 16, 2026",
+          "url": "https://www.oeb.ca/newsroom/2026/ontario-energy-board-announces-changes-electricity-prices-households-small-businesses",
+          "quote": "Also, effective November 1, 2026, the Ontario government's Ontario Electricity Rebate (OER) will change to 15.7%.",
+          "verified": "2026-11-24"
+        },
+        {
+          "label": "Ontario Regulation 328/26 (e-Laws)",
+          "url": "https://www.ontario.ca/laws/regulation/R26328",
+          "quote": "Section 2 of Ontario Regulation 363/16 is amended by striking out \"23.5 per cent\" and substituting \"15.7 per cent\".",
+          "verified": "2026-10-30",
+          "note": "Text read on 2026-10-30 (data/models/taxes.json); the page answered on 2026-11-24, but e-Laws renders its text with JavaScript."
+        }
+      ]
+    },
+    {
+      "id": "mb-centra-2026-11-01",
+      "date": "2026-11-01",
+      "label": "Manitoba PUB Board Order 150/26 (Centra gas rates)",
+      "detail": "New Centra gas commodity and delivery rates for gas consumed on and after November 1, 2026.",
+      "applies_to": {
+        "provinces": [
+          "MB"
+        ],
+        "fuels": [
+          "gas"
+        ],
+        "families": [
+          "tariff",
+          "regulated"
+        ]
+      },
+      "sources": [
+        {
+          "label": "Centra Gas Manitoba, Schedule of Sales and Transportation Services and Rates, Appendix A (PDF page 79)",
+          "url": "https://www.hydro.mb.ca/docs/billing/schedule-of-sales-and-transportation-services-and-rates-v1126.pdf",
+          "quote": "Approved by Board Order: 150/26 Supersedes Board Order: 111/26 Effective from: November 1, 2026",
+          "verified": "2026-11-24"
+        }
+      ]
+    }
+  ]
+}

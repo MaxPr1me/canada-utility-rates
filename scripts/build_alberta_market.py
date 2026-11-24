@@ -3,12 +3,15 @@
 The hourly ETS report is checked against each official Pool Monthly Summary.
 Only complete, fully observed months enter the rolling 60-month view. Historical
 corrections require review: no unverified AESO revision deadline is assumed.
+Every complete calendar quarter of the monthly history is also written for the
+Rate History tab (owner decision 50, 2026-11-23; --quarterly-output).
 """
 from __future__ import annotations
 
 import argparse
 import csv
 import hashlib
+import importlib.util
 import io
 import json
 import math
@@ -20,6 +23,7 @@ from calendar import monthrange
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -32,10 +36,26 @@ from scrapers.utilities.aeso import (
     parse_pool_price_csv, report_csv_url,
 )
 
+
+def _load(name: str):
+    """A sibling script loaded once and shared, as build_ontario_market.py loads its siblings."""
+    if name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(name, Path(__file__).with_name(f"{name}.py"))
+        if spec is None or spec.loader is None:
+            raise ImportError(f"cannot load {name}")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    return sys.modules[name]
+
+
+mq = _load("market_quarterly")
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "site" / "data" / "market_pricing_alberta.json"
 DEFAULT_HOURLY = ROOT / "data" / "market" / "alberta_pool_hourly.csv"
 DEFAULT_MONTHLY = ROOT / "data" / "market" / "alberta_market_monthly.csv"
+DEFAULT_QUARTERLY = ROOT / "site" / "data" / "market_quarterly_alberta.json"
 SUMMARY_BASE = "http://ets.aeso.ca/Market/Reports/Manual/PoolMonthlySummary/"
 METHOD = "observed_rolling_60m_aeso_pool"
 WINDOW_MONTHS = 60
@@ -52,6 +72,11 @@ REVISION_POLICY = (
     "All archived months are re-downloaded and cross-checked on each run. "
     "An already archived hourly price or monthly value that changes stops publication "
     "for review; no AESO correction deadline is assumed. History is never shortened."
+)
+QUARTERLY_SOURCE = "data/market/alberta_market_monthly.csv"
+QUARTERLY_WEIGHTING = (
+    "Each month is weighted by its observed AESO pool-price hours, counted in Alberta local time with the "
+    "daylight-saving change (one hour fewer in March, one more in November than days x 24)."
 )
 
 
@@ -303,7 +328,42 @@ def csv_bytes(fields: tuple[str, ...], rows: list[dict]) -> bytes:
     return stream.getvalue().encode("utf-8")
 
 
-def output_bytes(document: dict, hours: dict, monthly: list[dict], output: Path, hourly: Path, month_csv: Path) -> dict:
+def quarterly_document(monthly: list[dict]) -> dict:
+    """Every complete calendar quarter of the permanent monthly history: pool energy only, in $/kWh.
+
+    Owner decision 50 (2026-11-23). build() keeps only complete months (every hour observed and each month checked
+    against its official Pool Monthly Summary), so a quarter needs only its three months present. Each month weighs
+    its observed hours, which are Alberta local-time hours including the daylight-saving change; a count other than
+    days x 24 or one hour either side cannot be a whole month and stops publication.
+    """
+    rows: dict[str, tuple[Decimal, int, str]] = {}
+    for row in monthly:
+        month = row.get("month")
+        if not isinstance(month, str) or not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", month) or month in rows:
+            raise MarketDataError(f"quarterly history: invalid or repeated month {month!r}")
+        try:
+            energy, hours = Decimal(str(row["energy_arithmetic"])), int(str(row["observed_hours"]))
+            url = row["source_url"]
+        except (KeyError, ValueError, ArithmeticError) as exc:
+            raise MarketDataError(f"quarterly history {month}: malformed row ({exc!r})") from None
+        if not energy.is_finite() or not isinstance(url, str) or not url:
+            raise MarketDataError(f"quarterly history {month}: non-finite energy or missing source URL")
+        calendar_hours = monthrange(int(month[:4]), int(month[5:]))[1] * 24
+        if hours not in (calendar_hours - 1, calendar_hours, calendar_hours + 1):
+            raise MarketDataError(f"quarterly history {month}: {hours} observed hours is not a whole month of Alberta "
+                                  f"local time ({calendar_hours} +/- 1)")
+        rows[month] = (energy, hours, url)
+    try:
+        return mq.build_document(rows, province="AB", source=QUARTERLY_SOURCE, weighting=QUARTERLY_WEIGHTING,
+                                 measures={"energy": lambda record: record[0]}, hours=lambda _month, record: record[1],
+                                 details=lambda records: {"source_urls": [record[2] for record in records]})
+    except mq.QuarterlyError as exc:
+        raise MarketDataError(f"quarterly history: {exc}") from None
+
+
+def output_bytes(document: dict, hours: dict, monthly: list[dict], output: Path, hourly: Path, month_csv: Path,
+                 quarterly: Path | None = None) -> dict:
+    """Every output's bytes, built only after the archived months passed review; quarterly when its path is given."""
     if month_csv.exists():
         with month_csv.open(encoding="utf-8", newline="") as stream:
             reader = csv.DictReader(stream)
@@ -327,8 +387,11 @@ def output_bytes(document: dict, hours: dict, monthly: list[dict], output: Path,
             comparable["metadata"][key] = old.get("metadata", {}).get(key)
         if old == comparable:
             doc = old
-    return {hourly: csv_bytes(FIELDS, raw), month_csv: csv_bytes(MONTHLY_FIELDS, monthly),
-            output: (json.dumps(doc, ensure_ascii=True, separators=(",", ":"), allow_nan=False) + "\n").encode()}
+    outputs = {hourly: csv_bytes(FIELDS, raw), month_csv: csv_bytes(MONTHLY_FIELDS, monthly),
+               output: (json.dumps(doc, ensure_ascii=True, separators=(",", ":"), allow_nan=False) + "\n").encode()}
+    if quarterly is not None:
+        outputs[quarterly] = mq.render(quarterly_document(monthly), indent=None, ensure_ascii=True)
+    return outputs
 
 
 def write_outputs(outputs: dict[Path, bytes]) -> None:
@@ -353,20 +416,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--hourly-csv", type=Path, default=DEFAULT_HOURLY)
     parser.add_argument("--monthly-csv", type=Path, default=DEFAULT_MONTHLY)
+    parser.add_argument("--quarterly-output", type=Path, default=DEFAULT_QUARTERLY)
     parser.add_argument("--cache-dir", type=Path)
     parser.add_argument("--as-of", type=date.fromisoformat, default=datetime.now(timezone.utc).date())
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
     try:
-        if len({p.resolve() for p in (args.output, args.hourly_csv, args.monthly_csv)}) != 3:
+        paths = (args.output, args.hourly_csv, args.monthly_csv, args.quarterly_output)
+        if len({p.resolve() for p in paths}) != len(paths):
             raise MarketDataError("output paths must be different")
         doc, hours, monthly = build(Source(args.cache_dir), args.as_of, read_archive(args.hourly_csv))
-        outputs = output_bytes(doc, hours, monthly, args.output, args.hourly_csv, args.monthly_csv)
+        outputs = output_bytes(doc, hours, monthly, args.output, args.hourly_csv, args.monthly_csv,
+                               args.quarterly_output)
         if not args.dry_run:
             write_outputs(outputs)
         meta = doc["metadata"]
+        quarters = json.loads(outputs[args.quarterly_output])["quarters"]
         print(f"{'Dry run' if args.dry_run else 'Saved'}: {meta['window']}; {len(hours):,} archived hours; "
               f"{meta['coverage']['observed_hours']:,} window hours; {len(doc['hourly_surface'])} observed bins; "
+              f"{len(quarters)} complete quarters {quarters[0]['quarter']}..{quarters[-1]['quarter']}; "
               f"cross-check {meta['cross_check']}")
         for item in meta["incomplete_months"]:
             print(f"Not complete: {item['month']}: {item['reason']}")

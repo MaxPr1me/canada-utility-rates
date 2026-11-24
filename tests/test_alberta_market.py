@@ -197,13 +197,15 @@ def test_older_workbook_link_uses_published_content_edition():
 
 
 def test_cli_dry_run_and_failure_preserve_outputs(built, tmp_path, monkeypatch, capsys):
-    output, hourly, monthly = (tmp_path / name for name in ("market.json", "hourly.csv", "monthly.csv"))
-    args = ["--output", str(output), "--hourly-csv", str(hourly), "--monthly-csv", str(monthly)]
+    output, hourly, monthly, quarterly = (tmp_path / name for name in ("market.json", "hourly.csv", "monthly.csv",
+                                                                       "quarterly.json"))
+    args = ["--output", str(output), "--hourly-csv", str(hourly), "--monthly-csv", str(monthly),
+            "--quarterly-output", str(quarterly)]
     monkeypatch.setattr(bam, "build", lambda *args: built[:3])
     assert bam.main(args + ["--dry-run"]) == 0
     assert not list(tmp_path.iterdir())
     assert bam.main(args) == 0
-    before = {path: path.read_bytes() for path in (output, hourly, monthly)}
+    before = {path: path.read_bytes() for path in (output, hourly, monthly, quarterly)}
 
     def failed(*args):
         raise bam.MarketDataError("independent average mismatch")

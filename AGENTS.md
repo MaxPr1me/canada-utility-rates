@@ -95,8 +95,9 @@ It works in three stages:
 2. **Store** — That information gets organized into a database (a structured file, kept safely on GitHub).
 3. **Display** — A simple website reads the database and shows the rates in a browsable format.
 
-The website also shows real market prices for Ontario and Alberta, and "representative models":
-typical monthly costs for comparison (see the glossary). GitHub Actions (GitHub's cloud
+The website also shows real market prices for Ontario and Alberta, "representative models":
+typical monthly costs for comparison (see the glossary), and a Rate History tab with charts of how
+stored prices changed. GitHub Actions (GitHub's cloud
 computers) runs the updates on a schedule (see "How the Monthly Updates Work").
 
 Having a utility in the registry is not the same as having live rates for it, and a count of live
@@ -159,6 +160,8 @@ records does not prove that every building class is covered. Current figures are
 | `data/excel/old_urls.xlsm` | **Audit reference only:** historical URLs and rate data. NO scraper reads this file. It is git-ignored. |
 | `site/data/rates.json` | The rates the website reads, created by the export script. |
 | `site/data/market_pricing_ontario.json`, `market_pricing_alberta.json` | What the Market Pricing page reads: the latest 60 complete months and a heatmap built only from real observed hours. |
+| `site/data/rate_history_series.json`, `rate_history_events.json` | Two reviewed lists for the Rate History tab: the regulated and default prices it charts (Ontario's Regulated Price Plan, Alberta's Rate of Last Resort areas, the default gas supply prices) and the regulator and government decisions it marks, each with its official source. |
+| `site/data/rate_history_revisions.json`, `market_quarterly_ontario.json`, `market_quarterly_alberta.json`, `model_cost_quarterly.json` | What the Rate History tab reads besides the rates: stored prices that were corrected later for the same date (written by the Monthly Scrape's export), complete-quarter market averages (written by the market history builders) and the model costs at each quarter's end (written when the model change log is recorded). |
 | `data/market/` | Permanent market history for Ontario and Alberta, the project's own hourly Ontario Price archive, and ready-to-use Ontario totals (`ontario_total_*`: energy plus Class B GA in cents/kWh; a missing hour stays blank, never zero, and monthly averages never stand in for it). |
 | `data/market/ieso_raw/` | Saved copies of the original IESO reports, kept before any price check. They are unverified evidence, not rates; old copies are never replaced. |
 | Other files in `site/data/` | Research notes on each province's market structure, and audit reports of missing customer classes and source URLs. |
@@ -192,18 +195,19 @@ Power) are labelled.
 | `data/models/taxes.json` | Sales taxes and automatic bill rebates for every province and territory, as dated lines: for example the Ontario Electricity Rebate is 23.5% until October 31, 2026 and 15.7% from November 1, 2026 (O. Reg. 328/26). Municipal taxes and income-tested programs are left out. |
 | `pipeline/representative_models.py` | The calculator: each utility's monthly cost at each level, then the median, the spread, the utility closest to the median and any far from it (outliers), without and with tax, with a written explanation of how each number was made. |
 | `site/data/representative_models.json` | The results, rewritten by every export (if the calculation fails, the previous file is kept). These are comparison aids, never rates anyone is billed. |
-| `pipeline/model_monitoring.py` | Compares successful model refreshes and checks whether their saved inputs are usable. It does not calculate bills or write the database. |
+| `pipeline/model_monitoring.py` | Compares successful model refreshes, checks whether their saved inputs are usable (including the Rate History list of regulated and default prices) and, when it records the change log, writes the quarter-end model costs that Rate History charts. It does not calculate bills or write the database. |
 | `site/data/model_change_history.json` | The public change log, created by a verified automated refresh. Its first entry starts tracking; it does not invent earlier history. |
 
 ### Where the website lives
 
 | File | What it does |
 |---|---|
-| `site/index.html` | The page and its views: **Rate Browser**, **Market Pricing**, **Representative Models**, **Across-Canada** and **Compare** (two tariffs side by side, never a bill total). |
-| `site/js/app.js` | The main logic: loads the data, shows the newest version of each tariff, and runs the filters, rate cards, detail windows and the Market Pricing page (Ontario or Alberta). A price with an end date shows its period, and an "Ended" tag once that date has passed. |
+| `site/index.html` | The page and its views: **Rate Browser**, **Rate History**, **Market Pricing**, **Representative Models**, **Across-Canada** and **Compare** (two tariffs side by side, never a bill total). |
+| `site/js/app.js` | The main logic: loads the data, shows the newest version of each tariff, and runs the filters, rate cards, detail windows and the Market Pricing page (Ontario or Alberta). A price with an end date shows its period, and an "Ended" tag once that date has passed. A live tariff's detail window has a "History" button that opens it in Rate History. |
+| `site/js/rate-history.js` | The Rate History page: the recent price changes, then bar charts of each stored price period (as wide as the period lasts), of the regulated and default prices, of quarterly market averages and of quarterly model costs, each with a table, a CSV download and a shareable link. It charts only live prices collected since September 29, 2026 (the market history goes back further), never estimates, never adds charges together and never extends a price that has ended. |
 | `site/js/models.js` | The Representative Models page: typical monthly costs without and with tax, the method, the contributing utilities and the example customer's assumptions; for the territories, the cost after automatic subsidies (before tax) and an "Interim rates" label; a separate historical market benchmark for larger Ontario and Alberta businesses; and, only behind a checkbox, the illustrative estimate with a warning and a SYNTHETIC badge. |
 | `site/js/across-canada.js` | Residential electricity across Canada at 500, 1,000 or 2,000 kWh (default 1,000), with tax by default. It reuses the model file, never recalculates bills or uses synthetic estimates, and never turns a missing model into a zero bar. Territorial bars are labelled "before subsidies"; each territory's row gives its cost after automatic subsidies, before tax. |
-| `site/css/` | How the pages look (`style.css`, `models.css`, `across-canada.css`). |
+| `site/css/` | How the pages look (`style.css`, `models.css`, `across-canada.css`, `rate-history.css`). |
 
 The model views label totals **"Before tax and rebates"** and **"With tax and rebates"**.
 The second can be lower when an automatic rebate exceeds sales tax (for example Ontario's
@@ -543,6 +547,10 @@ workflow does not dismiss a monitoring warning.
    "Prices posted after the 1st" above. A check named `workflow:scrape.yml:monthly-price` means no
    successful run refreshed those utilities within a day of the 4th: start Monthly Scrape with both
    boxes empty (a full run also refreshes them).
+   A check named `rate_history_series` means a regulated or default price charted on the Rate History
+   tab no longer matches a current stored price, usually because a scraper renamed it: update its
+   entry in `site/data/rate_history_series.json` (and the test records in
+   `tests/fixtures/rate_history_records.json`), then push; the next check closes it.
 3. The checker updates its own issue and closes it only after all recorded problems have verified
    recovery. Other issues and maintainer notes are left alone. Do not delete change history to
    silence a warning. On a data run while a problem is open, the "Record model change history" step
@@ -663,6 +671,16 @@ computer without saving anything, run `python scripts/build_alberta_market.py --
 2. Make sure you've exported: `python -m pipeline.export_json`
 3. Check that `site/data/rates.json` exists and is not empty.
 4. Serve the site over HTTP using the command above.
+
+### Rate History says a chart's data is "not available yet"
+
+**What happened:** that part's file has not been written yet. The quarterly market files appear after
+the next Ontario Price Archive or Market Benchmarks run, the quarterly model costs after the next run
+that records the model change log, and the correction notes after the next Monthly Scrape.
+
+**What to do:** wait for that run (or start it by hand on GitHub). The other parts of the tab keep
+working. If the note stays after a successful run, read that run's log: a failed quarterly file is
+logged there and the previous file is kept.
 
 ### Python cannot find pytest, requests, or the browser
 
@@ -832,6 +850,7 @@ The detailed rules are in the area files: [all scrapers](.github/instructions/sc
 | **Scraper** | A program that visits a website and extracts data from it automatically. |
 | **Dry run** | A trial scrape that reads the official sources but saves nothing. |
 | **Seed value (estimate)** | A hand-entered fallback rate, used only when the official source cannot be read. It is labelled "Estimated" and hidden on the website by default. |
+| **Same-date correction** | A stored price that was fixed later for the same effective date (for example after a scraper fix). Rate History shows the latest value with a "revised on" note; it never counts as a price change. |
 | **Fail closed** | When a source is doubtful, reject it instead of guessing. |
 | **Fixture** | A small saved excerpt of an official page or file that the tests read instead of going online. |
 | **Database** | A structured file that stores information in tables (like a spreadsheet, but more organized). |

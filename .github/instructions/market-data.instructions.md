@@ -1,6 +1,6 @@
 ---
-description: "Use when changing market price history, archives or market workflows: scripts/build_ontario_market.py, scripts/archive_ontario_price.py, scripts/preserve_ieso_reports.py, scripts/export_ontario_totals.py, scripts/generate_market_pricing.py, scripts/build_alberta_market.py, scrapers/utils/market_pricing.py, data/market/, site/data/market_pricing_ontario.json, site/data/market_pricing_alberta.json, ontario-price-archive.yml and market-benchmarks.yml. Covers HOEP, the Ontario Price (OEMP = DA-OZP + LFDA), Class B Global Adjustment, the rolling 60-month window, observed-hours heatmaps, raw IESO preservation, combined totals, AESO pool history, validation tolerances, fail-closed and never-fill-gaps rules."
-applyTo: "scripts/build_ontario_market.py, scripts/archive_ontario_price.py, scripts/generate_market_pricing.py, scripts/preserve_ieso_reports.py, scripts/export_ontario_totals.py, scripts/build_alberta_market.py, scrapers/utils/market_pricing.py, data/market/**, site/data/market_pricing_ontario.json, site/data/market_pricing_alberta.json, .github/workflows/ontario-price-archive.yml, .github/workflows/market-benchmarks.yml"
+description: "Use when changing market price history, archives or market workflows: scripts/build_ontario_market.py, scripts/archive_ontario_price.py, scripts/preserve_ieso_reports.py, scripts/export_ontario_totals.py, scripts/generate_market_pricing.py, scripts/build_alberta_market.py, scripts/market_quarterly.py, scrapers/utils/market_pricing.py, data/market/, site/data/market_pricing_ontario.json, site/data/market_pricing_alberta.json, site/data/market_quarterly_ontario.json, site/data/market_quarterly_alberta.json, ontario-price-archive.yml and market-benchmarks.yml. Covers HOEP, the Ontario Price (OEMP = DA-OZP + LFDA), Class B Global Adjustment, the rolling 60-month window, observed-hours heatmaps, raw IESO preservation, combined totals, AESO pool history, the Rate History quarterly files, validation tolerances, fail-closed and never-fill-gaps rules."
+applyTo: "scripts/build_ontario_market.py, scripts/archive_ontario_price.py, scripts/generate_market_pricing.py, scripts/preserve_ieso_reports.py, scripts/export_ontario_totals.py, scripts/build_alberta_market.py, scripts/market_quarterly.py, scrapers/utils/market_pricing.py, data/market/**, site/data/market_pricing_ontario.json, site/data/market_pricing_alberta.json, site/data/market_quarterly_ontario.json, site/data/market_quarterly_alberta.json, .github/workflows/ontario-price-archive.yml, .github/workflows/market-benchmarks.yml"
 ---
 # Market data (Ontario IESO and Alberta AESO)
 
@@ -152,6 +152,25 @@ them: [website.instructions.md](website.instructions.md).
 - The owner confirmed permission to publish raw archives and derived charts and benchmarks; the grant
   itself has not been independently inspected.
 
+## Quarterly files for Rate History (`scripts/market_quarterly.py`, owner decision 50, 2026-11-23)
+
+- Each builder also writes its quarterly file from its own permanent monthly history:
+  `site/data/market_quarterly_ontario.json` from `ontario_market_monthly.csv` and
+  `site/data/market_quarterly_alberta.json` from `alberta_market_monthly.csv` (`--quarterly-output`).
+  It is built only after all of the builder's checks pass and written in the same atomic batch as its
+  other files; a failure writes nothing and exits non-zero, `--dry-run` writes nothing, and unchanged
+  history gives byte-identical files.
+- A quarter (Q1 = January-March) is published only when all three of its months are in the monthly
+  history; a missing month leaves the quarter out, never filled. Each measure is the hour-weighted mean
+  of the three monthly values, in $/kWh rounded to six decimals. Ontario weights are calendar hours in
+  EST (months taken from the IESO monthly table have no observed hours); Alberta weights are the
+  observed local hours including the daylight-saving hour (each must be days x 24 or one hour more or
+  less).
+- Ontario publishes energy, Class B GA and total (each rounded separately, within 0.000001 of energy +
+  GA); Alberta publishes pool energy only, never Ontario's GA or eras. Quarters come from the published
+  monthly values, which Ontario stores to 0.01 $/MWh, so an Ontario quarter can differ from the mean of
+  its hourly prices by a few millionths of a dollar per kWh.
+
 ## Workflows
 
 - **Ontario Price Archive** (`ontario-price-archive.yml`): 06:00 UTC on the 1st and 15th (the owner
@@ -159,13 +178,15 @@ them: [website.instructions.md](website.instructions.md).
   preserve raw reports; commit them even after a partial capture failure, before strict validation;
   update and commit the archive (`--no-site-api --raw-dir data/market/ieso_raw`); synchronize; build
   the market history (also when the archive step failed, using the committed archive, but not after a
-  failed install or a failed archive commit); export totals; refresh models; commit. Each commit step
+  failed install or a failed archive commit); export totals; refresh models; commit (with the Ontario
+  quarterly file and the model quarterly file when present). Each commit step
   sets its own git identity. On failure it keeps an `ieso-raw-recovery` artifact for 90 days and
   opens an issue titled by the failing part.
 - **Market Benchmarks** (`market-benchmarks.yml`): runs after each successful Monthly Scrape, after
   every Ontario Price Archive run (also a failed one, to isolate Alberta), after relevant code and
   model-input pushes and on dispatch. It tests, builds the Alberta history and refreshes the models
-  without writing the database; a failure opens an issue and the site keeps its published files.
+  without writing the database, committing the Alberta quarterly file and the model quarterly file
+  with them; a failure opens an issue and the site keeps its published files.
 - The three data writers (Monthly Scrape, Ontario Price Archive, Market Benchmarks) take turns through
   the `utility-data-updates` concurrency group. All three synchronize with `git pull --ff-only`
   before calculating or exporting and never rebase generated files onto newer inputs (the Monthly

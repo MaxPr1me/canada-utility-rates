@@ -585,8 +585,10 @@ def test_archive_workflow_commits_the_archive_before_building_the_market_history
     market_commit = _run(_step(steps, "Commit updated market history"))
     assert re.findall(r"git add [^\n]+", market_commit) == [
         "git add site/data/market_pricing_ontario.json data/market/ontario_market_monthly.csv",
+        "git add site/data/market_quarterly_ontario.json; fi",
         "git add site/data/representative_models.json",
         "git add site/data/model_change_history.json; fi",
+        "git add site/data/model_cost_quarterly.json; fi",
         "git add data/market/ontario_total_hourly.csv data/market/ontario_total_hourly_2020_2025.csv",
         "git add data/market/ontario_total_monthly.csv data/market/ontario_total_metadata.json"]
     assert 'git commit -m "data: Ontario market history update $(date +%Y-%m-%d)"' in market_commit

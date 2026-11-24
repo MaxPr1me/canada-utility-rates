@@ -27,6 +27,10 @@
     let utilityProvinceMap = {};
     let showEstimated = false;
     const comparison = [];
+    // Every stored tariff version as exported (before the newest-only deduplication), for the Rate History view
+    // (owner decision 48, 2026-11-23). It always resolves, with an empty array when rates.json cannot be read.
+    let resolveRawRates;
+    const rawRatesPromise = new Promise(resolve => { resolveRawRates = resolve; });
 
     // Multi-select filter state: each key holds a Set of selected values
     const filterState = {
@@ -78,6 +82,7 @@
             marketPricingON = marketRes.status === "fulfilled" ? marketRes.value : {};
             marketPricingAB = albertaRes.status === "fulfilled" ? albertaRes.value : {};
             if (currentView === "market") renderMarketPricing();
+            resolveRawRates(Array.isArray(allRates) ? allRates : []);
 
             // Deduplicate: keep only the most recent effective_date per utility+tariff
             allRates = deduplicateRates(allRates);
@@ -106,6 +111,7 @@
             showMissingNotice();
         } catch (err) {
             console.error("Failed to load data:", err);
+            resolveRawRates([]);
             document.getElementById("results-count").textContent =
                 "Error loading data. Check the browser console for details.";
         }
@@ -547,10 +553,15 @@
         const estimatedNotice = (rate.provenance || "seed") !== "live"
             ? `<div class="modal-estimated-callout"><strong>Estimated \u2014 not live-verified.</strong> These values are reference defaults that could not be confirmed against a live official source. Verify with the utility before relying on them.</div>`
             : "";
+        // Owner decision 48 (2026-11-23): every live tariff opens its price history; estimates are never charted.
+        const historyButton = (rate.provenance || "seed") === "live"
+            ? `<button type="button" class="btn-secondary btn-rate-history" title="Open this tariff's price lines in the Rate History view">History</button>`
+            : "";
 
         content.innerHTML = `
             <h2>${escapeHtml(rate.name || rate.tariff_name || "Tariff Details")}</h2>
             <p class="modal-subtitle">${escapeHtml(rate.utility_name || "")} \u2014 ${PROVINCE_NAMES[rate.province] || rate.province || ""}</p>
+            ${historyButton}
 
             <div class="meta-grid">
                 <span class="meta-label">Fuel Type</span>
@@ -589,6 +600,14 @@
                 e.preventDefault();
                 hideModal();
                 switchView("market");
+            });
+        }
+
+        const historyLink = content.querySelector(".btn-rate-history");
+        if (historyLink) {
+            historyLink.addEventListener("click", () => {
+                hideModal();
+                if (window.CanadaUtilityRateHistory) window.CanadaUtilityRateHistory.openTariff(rate);
             });
         }
 
@@ -1901,6 +1920,9 @@
         renderMarketPricing();
     });
     document.getElementById("market-display").addEventListener("change", renderMarketPricing);
+
+    // The Rate History view (site/js/rate-history.js) reads every stored version and switches views through this API.
+    window.CanadaUtilitySite = Object.freeze({ rates: () => rawRatesPromise, switchView });
 
     // ── Initialize ────────────────────────────────────────────
     loadData();

@@ -1,6 +1,6 @@
 ---
-description: "Use when changing representative models, model change monitoring, their inputs or the views that read them. Covers crosswalk rules, required contributors, usage, taxes, block periods, model states, separate synthetic/observed sidecars, semantic change history, METHOD_VERSION and Across-Canada constraints."
-applyTo: "pipeline/representative_models.py, pipeline/model_monitoring.py, tests/test_model_monitoring.py, data/models/**, site/js/models.js, site/js/across-canada.js, site/css/models.css, site/css/across-canada.css, site/data/representative_models.json, site/data/model_change_history.json"
+description: "Use when changing representative models, model change monitoring, their inputs or the views that read them. Covers crosswalk rules, required contributors, usage, taxes, block periods, model states, separate synthetic/observed sidecars, semantic change history, the quarter-end model costs for Rate History, METHOD_VERSION and Across-Canada constraints."
+applyTo: "pipeline/representative_models.py, pipeline/model_monitoring.py, tests/test_model_monitoring.py, tests/test_model_cost_quarterly.py, data/models/**, site/js/models.js, site/js/across-canada.js, site/css/models.css, site/css/across-canada.css, site/data/representative_models.json, site/data/model_change_history.json, site/data/model_cost_quarterly.json"
 ---
 # Representative models
 
@@ -56,6 +56,20 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   contacting GitHub. Only explicit `--record --receipt PATH` records a generation; `--report PATH`
   writes diagnostics. A receipt must match the model fingerprint, generation date, as-of and
   method. Missing, failed or malformed evidence is not success.
+- Quarter-end costs for the Rate History tab (owner decisions 50, 55 and 57 of 2026-11-23 and 80 of
+  2026-11-24): after `--record` has written the history, it rewrites `site/data/model_cost_quarterly.json`
+  (`--quarterly PATH`; default next to `--history`) from that history alone. A quarter shows the
+  published medians before and with tax and rebates in effect at its end: the state after the last
+  recorded refresh generated (UTC date) on or before its last day; the current quarter is labelled in
+  progress. `history_states()` rebuilds earlier states backwards from the latest snapshot and refuses a
+  history that does not reproduce its own recorded changes. An unavailable level has no cost (a gap,
+  never zero); `recording_gap` marks a completed quarter whose next recorded refresh followed an
+  unrecorded one; base levels and observed benchmarks are separate series. `break_before` marks a
+  change of the model's cost basis or of the level's example customer (kWh, kW, quantity, unit) between
+  two points, including a level removed and added again, and a whole model removed and added again
+  (its earlier cost basis is not recorded; decision 84, 2026-11-24); a label-only change (the
+  Reference/Sensitivity role) or a method-version bump alone never breaks a series. A failure is logged
+  and keeps the previous file without changing the history, its checks or the exit status.
 - Freshness, workflow evidence and issue recovery belong to the
   [CI rules](ci-data-history.instructions.md#model-monitoring); optional history display belongs
   to the [website rules](website.instructions.md#representative-models-sitejsmodelsjs).

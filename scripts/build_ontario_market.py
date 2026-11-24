@@ -9,14 +9,17 @@ monthly Class B rate, so energy + GA is what a market-billed Class B customer pa
 * data/market/ontario_market_monthly.csv: permanent monthly history since 2020-01, never trimmed; a month that changes
   is accepted (and reported) only if it ended within 6 months of the as-of date;
 * site/data/market_pricing_ontario.json (schema 2): the latest 60 consecutive complete months and 576 heatmap bins
-  built from observed hours only (legacy HOEP hours plus archived Ontario Price hours, never modelled hours).
+  built from observed hours only (legacy HOEP hours plus archived Ontario Price hours, never modelled hours);
+* site/data/market_quarterly_ontario.json: every complete calendar quarter of the monthly history for the Rate History
+  tab, each value the mean of its three months weighted by their EST calendar hours (owner decision 50, 2026-11-23).
 
 A month is complete when it has ended, its energy value is validated and its Class B GA actual rate is published.
 The run fails closed: on any missing, malformed or inconsistent input it prints the reason, writes nothing and exits
 with status 1. A run without new data leaves every file byte-identical.
 
     python scripts/build_ontario_market.py [--output PATH] [--monthly-csv PATH] [--hoep-csv PATH] [--archive PATH]
-                                           [--cache-dir DIR] [--as-of YYYY-MM-DD] [--dry-run] [--refresh-hoep]
+                                           [--quarterly-output PATH] [--cache-dir DIR] [--as-of YYYY-MM-DD]
+                                           [--dry-run] [--refresh-hoep]
 """
 import argparse
 import copy
@@ -29,6 +32,7 @@ import re
 import sys
 from calendar import monthrange
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
@@ -51,6 +55,7 @@ def _load(name: str):
 
 gmp = _load("generate_market_pricing")
 arc = _load("archive_ontario_price")
+mq = _load("market_quarterly")
 MarketDataError = gmp.MarketDataError
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -58,6 +63,7 @@ DEFAULT_OUTPUT = PROJECT_ROOT / "site" / "data" / "market_pricing_ontario.json"
 DEFAULT_MONTHLY = PROJECT_ROOT / "data" / "market" / "ontario_market_monthly.csv"
 DEFAULT_HOEP = PROJECT_ROOT / "data" / "market" / "hoep_hourly.csv"
 DEFAULT_ARCHIVE = arc.DEFAULT_OUTPUT
+DEFAULT_QUARTERLY = PROJECT_ROOT / "site" / "data" / "market_quarterly_ontario.json"
 
 WINDOW_MONTHS = 60
 FIRST_MONTH = "2020-01"
@@ -138,6 +144,12 @@ COMPLETE_RULE = (
     "and within 0.01 $/MWh of the hourly archive when the archive covers the whole month) and its Class B Global "
     "Adjustment actual rate is published. The window is the latest 60 consecutive complete months."
 )
+QUARTERLY_SOURCE = "data/market/ontario_market_monthly.csv"
+QUARTERLY_WEIGHTING = (
+    "Each month is weighted by its calendar hours in Eastern Standard Time (days x 24), the IESO's hour-ending "
+    "convention with no daylight-saving shift, not by its observed hours (months taken from the IESO monthly tables "
+    "have none)."
+)
 SOURCES = [
     {"name": "Project archive of the legacy hourly HOEP (data/market/hoep_hourly.csv), imported from the IESO Yearly "
              "Hourly HOEP OR Predispatch Reports", "url": gmp.HOEP_DIR, "type": "hourly_price"},
@@ -180,6 +192,7 @@ class Build:
     hoep: dict | None
     revisions: list[dict] = field(default_factory=list)
     incomplete: dict[str, str] = field(default_factory=dict)
+    quarterly: dict = field(default_factory=dict)
 
 
 # -- small helpers ---------------------------------------------------------------------------------
@@ -613,6 +626,37 @@ def choose_window(rows: dict[str, Month], last_ended: str, size: int) -> list[st
                           f"({len(complete)} complete months)")
 
 
+# -- quarterly history -----------------------------------------------------------------------------
+
+def quarterly_document(months: Iterable[Month]) -> dict:
+    """Every complete calendar quarter of the permanent monthly history, in $/kWh (owner decision 50, 2026-11-23).
+
+    Every month in the history is complete (it has ended, its energy is validated and its Class B GA actual rate is
+    published: see assemble), so a quarter needs only its three months present. Each month weighs its calendar hours
+    in EST, the IESO hour convention, not observed_hours: months taken from the IESO monthly table have no archived
+    hours (0) and July 2026 only part of the month, yet each monthly value is the mean of every hour of its month.
+    """
+    rows = {month.month: month for month in months}
+    try:
+        document = mq.build_document(
+            rows, province="ON", source=QUARTERLY_SOURCE, weighting=QUARTERLY_WEIGHTING,
+            measures={"energy": lambda month: month.energy_arithmetic / THOUSAND,
+                      "ga_class_b": lambda month: month.ga_class_b / THOUSAND,
+                      "total": lambda month: month.total_arithmetic / THOUSAND},
+            hours=lambda key, _month: _month_end(key).day * 24,
+            details=lambda records: {"eras": sorted({month.era for month in records}),
+                                     "energy_sources": sorted({month.energy_source for month in records}),
+                                     "ga_sources": sorted({month.ga_source for month in records})})
+    except mq.QuarterlyError as exc:
+        raise MarketDataError(f"quarterly history: {exc}") from None
+    for entry in document["quarters"]:
+        # Each value is rounded on its own, so the total may differ from energy + GA by one millionth, never more.
+        if abs(entry["total"] - entry["energy"] - entry["ga_class_b"]) > MICRO:
+            raise MarketDataError(f"quarterly history {entry['quarter']}: total {entry['total']} is not energy "
+                                  f"{entry['energy']} + Class B GA {entry['ga_class_b']}")
+    return document
+
+
 # -- heatmap bins ----------------------------------------------------------------------------------
 
 def build_bins(window: list[str], rows: dict[str, Month], hoep: dict, archive: dict) -> list[dict]:
@@ -866,8 +910,9 @@ def build(source, *, hoep_content: bytes | None, monthly_content: bytes | None, 
         "hourly_surface": surface,
     }
     validate_document(document, window_months)
+    quarterly = quarterly_document(rows.values())
     return Build(document, [rows[key] for key in sorted(rows)], window, hoep if refresh_hoep else None, revisions,
-                 incomplete)
+                 incomplete, quarterly)
 
 
 # -- run -------------------------------------------------------------------------------------------
@@ -915,6 +960,8 @@ def summary_lines(result: Build, downloads: int) -> list[str]:
                                                                           "total_arithmetic")}
     lines = [
         f"Monthly history: {len(result.months)} months {result.months[0].month}..{result.months[-1].month}",
+        f"Quarters: {len(result.quarterly['quarters'])} complete, {result.quarterly['first_quarter']}.."
+        f"{result.quarterly['last_quarter']}",
         f"Window: {result.window[0]}..{result.window[-1]} ({len(result.window)} months: {len(eras['hoep'])} legacy HOEP, "
         f"{len(eras['oemp'])} Ontario Price)",
         f"Window means ($/MWh, arithmetic): energy {mean['energy_arithmetic']:.2f} + GA {mean['ga_class_b']:.2f} = "
@@ -948,6 +995,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
                         help="hourly legacy HOEP archive (default: data/market/hoep_hourly.csv)")
     parser.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE,
                         help="hourly Ontario Price archive (default: data/market/ontario_price_hourly.csv)")
+    parser.add_argument("--quarterly-output", type=Path, default=DEFAULT_QUARTERLY,
+                        help="Rate History quarterly JSON (default: site/data/market_quarterly_ontario.json)")
     parser.add_argument("--cache-dir", type=Path, default=None, help="optional cache of downloaded IESO files")
     parser.add_argument("--as-of", type=date.fromisoformat, default=None,
                         help="date the months must have ended before (default: today, UTC)")
@@ -971,6 +1020,9 @@ def main(argv: list[str] | None = None, *, fetch=None, generated_at: datetime | 
     as_of = args.as_of or today
     source = gmp.ReportSource(args.cache_dir, today, fetch=fetch or gmp.http_get)
     try:
+        others = {path.resolve() for path in (args.output, args.monthly_csv, args.hoep_csv, args.archive)}
+        if args.quarterly_output.resolve() in others:
+            raise MarketDataError(f"--quarterly-output {args.quarterly_output} must differ from the other files")
         archive = _read(args.archive)
         if archive is None:
             raise MarketDataError(f"the hourly Ontario Price archive {args.archive} is missing")
@@ -987,6 +1039,7 @@ def main(argv: list[str] | None = None, *, fetch=None, generated_at: datetime | 
     planned = [(args.monthly_csv, serialize_monthly(result.months))]
     if result.hoep is not None:
         planned.append((args.hoep_csv, serialize_hoep(result.hoep)))
+    planned.append((args.quarterly_output, mq.render(result.quarterly, indent=2, ensure_ascii=False)))
     outputs = [(path, content) for path, content in planned
                if (_read(path) or b"").replace(b"\r\n", b"\n") != content]
     document = render_document(result.document, args.output)

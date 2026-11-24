@@ -101,7 +101,12 @@ snapshot rules: [scrapers.instructions.md](scrapers.instructions.md). Model expo
   annotation (live, seed and invalid totals; failed, no-valid and seed-only utilities), escaping `%`,
   CR and LF, only when `GITHUB_ACTIONS == "true"`. Tests that call `main()` set or clear that variable.
 - `pipeline.validate` reconfigures stdout so Windows consoles do not crash on non-ASCII names.
-- `export_json.py` writes the site JSON, then the representative models.
+- `export_json.py` writes the site JSON, then the representative models. Right after `rates.json` it
+  writes `rate_history_revisions.json` for the Rate History tab (owner decision 55, 2026-11-23): the
+  same-date corrections found in `historical_snapshots`, which `rates.json` cannot show because a stored
+  version keeps only its latest values. Only live snapshots count, floating-point noise is not a
+  correction, a line repeated within one snapshot is left out and a tariff version whose newest snapshot
+  is not live is skipped. A failure is logged and keeps the previous file.
 - `run_scrape --summary-json PATH` optionally writes the existing per-utility provenance summary
   with expected utility names, full/targeted scope (`scope.group` is `monthly_price_refresh` for the
   run on the 4th, otherwise null), dry-run status and run/attempt identity.
@@ -117,7 +122,9 @@ Comparison/history policy is in the
 The following workflow decisions were approved on 2026-11-17.
 
 - Reuse the existing model build in each data writer. Record history after generation and stage it
-  with the models in the same publication step. Never add a build or database writer for monitoring.
+  with the models in the same publication step (with `model_cost_quarterly.json`, which `--record`
+  derives from it; the Monthly Scrape stages all of `site/data/`). Never add a build or database writer
+  for monitoring.
 - `scripts/model_monitoring_issue.js` captures actual step outcomes and collects run/attempt-bound
   generation, source and publication receipts. A green workflow or an unchanged file proves
   neither source health nor a successful model generation. A partial scrape cannot satisfy a
@@ -154,6 +161,11 @@ The following workflow decisions were approved on 2026-11-17.
   checks (the last two since method 7T-1, 2026-11-24) and the observed-market reader. Missing/invalid
   configuration and unmapped live tariffs remain problems; a documented
   `not_computable` model is not inherently corrupt. Do not hide known coverage gaps.
+- `rate_history_series` (Rate History, 2026-11-24) checks `site/data/rate_history_series.json`
+  against the current `rates.json` with `pipeline/rate_history.series_problems`: a series that no
+  current live tariff matches, or a line that no tariff's newest live version carries (usually a
+  renamed or dropped component), is a problem until the reviewed list is updated. An unreadable list
+  is a problem too.
 - Keep one bot-owned, marked monitoring issue for input/refresh problems, never ordinary price
   changes. Preserve unchecked problems and maintainer text, reject older recovery evidence and
   avoid duplicating a failure already reported by its workflow. Only monitoring-owned issues are

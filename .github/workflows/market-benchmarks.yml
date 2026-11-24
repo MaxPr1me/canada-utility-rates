@@ -82,7 +82,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/market/alberta_pool_hourly.csv data/market/alberta_market_monthly.csv site/data/market_pricing_alberta.json site/data/representative_models.json
+          if [ -f site/data/market_quarterly_alberta.json ]; then git add site/data/market_quarterly_alberta.json; fi
           if [ -f site/data/model_change_history.json ]; then git add site/data/model_change_history.json; fi
+          if [ -f site/data/model_cost_quarterly.json ]; then git add site/data/model_cost_quarterly.json; fi
           if git diff --staged --quiet; then
             echo "No market changes to commit."
           else

@@ -155,8 +155,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add site/data/market_pricing_ontario.json data/market/ontario_market_monthly.csv
+          if [ -f site/data/market_quarterly_ontario.json ]; then git add site/data/market_quarterly_ontario.json; fi
           git add site/data/representative_models.json
           if [ -f site/data/model_change_history.json ]; then git add site/data/model_change_history.json; fi
+          if [ -f site/data/model_cost_quarterly.json ]; then git add site/data/model_cost_quarterly.json; fi
           git add data/market/ontario_total_hourly.csv data/market/ontario_total_hourly_2020_2025.csv
           git add data/market/ontario_total_monthly.csv data/market/ontario_total_metadata.json
           if git diff --staged --quiet; then

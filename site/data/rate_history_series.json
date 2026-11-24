@@ -1,0 +1,561 @@
+{
+  "version": 1,
+  "kind": "rate_history_series",
+  "reviewed": "2026-11-24",
+  "decided": "owner decisions 45, 55 and 56 (2026-11-23)",
+  "rule": "Each series reads only live stored records (estimates are never charted). 'match' selects records: province and utility_type, optionally utility_name (exact), plus 'requires' and 'excludes' component patterns (component_type, tou_period, name_regex). Each line selects components by component_type, name_regex, optional tariff_code_regex and tou_period. Every *_regex is a full match. A series is shown once: when several records carry a line, they must show the same value for each effective date; where they differ, the chart shows each value separately with how many tariffs carry it and never picks one. Medicine Hat's monthly rate is not a series (decision 56).",
+  "series": [
+    {
+      "id": "on-rpp-tou",
+      "family": "regulated",
+      "group": "Ontario Regulated Price Plan",
+      "label": "Time-of-Use",
+      "province": "ON",
+      "fuel": "electricity",
+      "match": {
+        "province": "ON",
+        "utility_type": "electricity",
+        "requires": [
+          {
+            "component_type": "energy",
+            "tou_period": "on-peak"
+          }
+        ],
+        "excludes": [
+          {
+            "tou_period": "ultra-low-overnight"
+          }
+        ]
+      },
+      "lines": [
+        {
+          "id": "off-peak",
+          "label": "Off-peak",
+          "component_type": "energy",
+          "name_regex": "^Off-Peak Energy$",
+          "tou_period": "off-peak"
+        },
+        {
+          "id": "mid-peak",
+          "label": "Mid-peak",
+          "component_type": "energy",
+          "name_regex": "^Mid-Peak Energy$",
+          "tou_period": "mid-peak"
+        },
+        {
+          "id": "on-peak",
+          "label": "On-peak",
+          "component_type": "energy",
+          "name_regex": "^On-Peak Energy$",
+          "tou_period": "on-peak"
+        }
+      ],
+      "note": "Set by the Ontario Energy Board and identical at every Ontario distributor's Time-of-Use tariffs."
+    },
+    {
+      "id": "on-rpp-ulo",
+      "family": "regulated",
+      "group": "Ontario Regulated Price Plan",
+      "label": "Ultra-Low Overnight",
+      "province": "ON",
+      "fuel": "electricity",
+      "match": {
+        "province": "ON",
+        "utility_type": "electricity",
+        "requires": [
+          {
+            "component_type": "energy",
+            "tou_period": "ultra-low-overnight"
+          }
+        ]
+      },
+      "lines": [
+        {
+          "id": "ultra-low-overnight",
+          "label": "Ultra-low overnight",
+          "component_type": "energy",
+          "name_regex": "^Ultra-Low Overnight Energy$",
+          "tou_period": "ultra-low-overnight"
+        },
+        {
+          "id": "weekend-off-peak",
+          "label": "Weekend off-peak",
+          "component_type": "energy",
+          "name_regex": "^Weekend Off-Peak Energy$"
+        },
+        {
+          "id": "mid-peak",
+          "label": "Mid-peak",
+          "component_type": "energy",
+          "name_regex": "^Mid-Peak Energy$",
+          "tou_period": "mid-peak"
+        },
+        {
+          "id": "on-peak",
+          "label": "On-peak",
+          "component_type": "energy",
+          "name_regex": "^On-Peak Energy$",
+          "tou_period": "on-peak"
+        }
+      ],
+      "note": "Set by the Ontario Energy Board and identical at every Ontario distributor's Ultra-Low Overnight tariffs; its on-peak price differs from the Time-of-Use on-peak price."
+    },
+    {
+      "id": "on-rpp-tiered",
+      "family": "regulated",
+      "group": "Ontario Regulated Price Plan",
+      "label": "Tiered",
+      "province": "ON",
+      "fuel": "electricity",
+      "match": {
+        "province": "ON",
+        "utility_type": "electricity",
+        "requires": [
+          {
+            "component_type": "energy",
+            "name_regex": "^Tier 1 Energy( \\((Winter|Summer)\\))?$"
+          }
+        ]
+      },
+      "lines": [
+        {
+          "id": "tier-1",
+          "label": "Tier 1",
+          "component_type": "energy",
+          "name_regex": "^Tier 1 Energy( \\((Winter|Summer)\\))?$"
+        },
+        {
+          "id": "tier-2",
+          "label": "Tier 2",
+          "component_type": "energy",
+          "name_regex": "^Tier 2 Energy( \\((Winter|Summer)\\))?$"
+        }
+      ],
+      "note": "Set by the Ontario Energy Board; the tier prices are the same in winter and summer and at every distributor (the tier thresholds differ by season and customer class)."
+    },
+    {
+      "id": "ab-rolr-ders",
+      "family": "regulated",
+      "group": "Alberta Rate of Last Resort",
+      "label": "Direct Energy Regulated Services (ATCO Electric area)",
+      "province": "AB",
+      "fuel": "electricity",
+      "match": {
+        "province": "AB",
+        "utility_type": "electricity",
+        "utility_name": "Direct Energy Regulated Services"
+      },
+      "lines": [
+        {
+          "id": "energy",
+          "label": "RoLR energy charge",
+          "component_type": "energy",
+          "name_regex": "^RoLR Energy Charge$"
+        }
+      ],
+      "note": "The default electricity price for residential and small business sites in the ATCO Electric area, fixed for the two-year term."
+    },
+    {
+      "id": "ab-rolr-enmax",
+      "family": "regulated",
+      "group": "Alberta Rate of Last Resort",
+      "label": "ENMAX Energy (ENMAX Power area)",
+      "province": "AB",
+      "fuel": "electricity",
+      "match": {
+        "province": "AB",
+        "utility_type": "electricity",
+        "utility_name": "ENMAX Energy Corporation"
+      },
+      "lines": [
+        {
+          "id": "energy",
+          "label": "RoLR energy charge",
+          "component_type": "energy",
+          "name_regex": "^RoLR Energy Charge$"
+        }
+      ],
+      "note": "The default electricity price for residential and small business sites in the ENMAX Power area, fixed for the two-year term."
+    },
+    {
+      "id": "ab-rolr-epcor",
+      "family": "regulated",
+      "group": "Alberta Rate of Last Resort",
+      "label": "EPCOR Energy (EPCOR Distribution and FortisAlberta areas)",
+      "province": "AB",
+      "fuel": "electricity",
+      "match": {
+        "province": "AB",
+        "utility_type": "electricity",
+        "utility_name": "EPCOR Energy Alberta"
+      },
+      "lines": [
+        {
+          "id": "energy",
+          "label": "RoLR energy charge",
+          "component_type": "energy",
+          "name_regex": "^RoLR Energy Charge$"
+        }
+      ],
+      "note": "The default electricity price for residential and small business sites in the EPCOR Distribution and FortisAlberta areas, fixed for the two-year term."
+    },
+    {
+      "id": "ab-rolr-lethbridge",
+      "family": "regulated",
+      "group": "Alberta Rate of Last Resort",
+      "label": "City of Lethbridge",
+      "province": "AB",
+      "fuel": "electricity",
+      "match": {
+        "province": "AB",
+        "utility_type": "electricity",
+        "utility_name": "City of Lethbridge Electric Utility"
+      },
+      "lines": [
+        {
+          "id": "energy",
+          "label": "RoLR energy charge",
+          "component_type": "energy",
+          "name_regex": "^RoLR Energy Charge$"
+        }
+      ],
+      "note": "The Rate of Last Resort price the City of Lethbridge publishes for its own service area."
+    },
+    {
+      "id": "ab-rolr-red-deer",
+      "family": "regulated",
+      "group": "Alberta Rate of Last Resort",
+      "label": "City of Red Deer",
+      "province": "AB",
+      "fuel": "electricity",
+      "match": {
+        "province": "AB",
+        "utility_type": "electricity",
+        "utility_name": "City of Red Deer Electric Light & Power"
+      },
+      "lines": [
+        {
+          "id": "energy",
+          "label": "RoLR energy charge",
+          "component_type": "energy",
+          "name_regex": "^RoLR Energy Charge$"
+        }
+      ],
+      "note": "The Rate of Last Resort price the City of Red Deer publishes for its own service area."
+    },
+    {
+      "id": "ab-gas-default-ders",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "Alberta default gas rate: Direct Energy Regulated Services (ATCO Gas area)",
+      "province": "AB",
+      "fuel": "gas",
+      "match": {
+        "province": "AB",
+        "utility_type": "gas",
+        "utility_name": "ATCO Gas"
+      },
+      "lines": [
+        {
+          "id": "supply",
+          "label": "Default supply gas charge (Rider F)",
+          "component_type": "commodity",
+          "name_regex": "^Default Supply Gas Charge \\(DERS Rider F\\)$"
+        }
+      ],
+      "note": "The monthly Default Rate Tariff gas price for customers without a retail contract in the ATCO Gas area, stored with ATCO Gas's delivery tariffs."
+    },
+    {
+      "id": "on-gas-enbridge-egd",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "Enbridge Gas, EGD rate zone",
+      "province": "ON",
+      "fuel": "gas",
+      "match": {
+        "province": "ON",
+        "utility_type": "gas",
+        "utility_name": "Enbridge Gas"
+      },
+      "lines": [
+        {
+          "id": "rate-1",
+          "label": "Rate 1 (residential)",
+          "component_type": "commodity",
+          "name_regex": "^Gas Supply Commodity Charge$",
+          "tariff_code_regex": "^EGD-1$"
+        },
+        {
+          "id": "rate-6",
+          "label": "Rate 6 (general service)",
+          "component_type": "commodity",
+          "name_regex": "^Gas Supply Commodity Charge$",
+          "tariff_code_regex": "^EGD-6$"
+        }
+      ],
+      "note": "Enbridge's quarterly (QRAM) system-gas commodity price for its general service classes; contract classes have their own prices and stay in the Tariff prices charts."
+    },
+    {
+      "id": "on-gas-enbridge-union-south",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "Enbridge Gas, Union South rate zone",
+      "province": "ON",
+      "fuel": "gas",
+      "match": {
+        "province": "ON",
+        "utility_type": "gas",
+        "utility_name": "Enbridge Gas"
+      },
+      "lines": [
+        {
+          "id": "m1-m2",
+          "label": "Rates M1 and M2 (general service)",
+          "component_type": "commodity",
+          "name_regex": "^Gas Supply Commodity Charge$",
+          "tariff_code_regex": "^US-M[12]$"
+        }
+      ],
+      "note": "Enbridge's quarterly (QRAM) system-gas commodity price for its general service classes."
+    },
+    {
+      "id": "on-gas-enbridge-union-north-east",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "Enbridge Gas, Union North East zone",
+      "province": "ON",
+      "fuel": "gas",
+      "match": {
+        "province": "ON",
+        "utility_type": "gas",
+        "utility_name": "Enbridge Gas"
+      },
+      "lines": [
+        {
+          "id": "rates-01-10",
+          "label": "Rates 01 and 10 (general service)",
+          "component_type": "commodity",
+          "name_regex": "^Gas Supply Commodity Charge$",
+          "tariff_code_regex": "^UNE-(01|10)$"
+        }
+      ],
+      "note": "Enbridge's quarterly (QRAM) system-gas commodity price for its general service classes."
+    },
+    {
+      "id": "on-gas-enbridge-union-north-west",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "Enbridge Gas, Union North West zone",
+      "province": "ON",
+      "fuel": "gas",
+      "match": {
+        "province": "ON",
+        "utility_type": "gas",
+        "utility_name": "Enbridge Gas"
+      },
+      "lines": [
+        {
+          "id": "rates-01-10",
+          "label": "Rates 01 and 10 (general service)",
+          "component_type": "commodity",
+          "name_regex": "^Gas Supply Commodity Charge$",
+          "tariff_code_regex": "^UNW-(01|10)$"
+        }
+      ],
+      "note": "Enbridge's quarterly (QRAM) system-gas commodity price for its general service classes."
+    },
+    {
+      "id": "on-gas-epcor-aylmer",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "EPCOR Natural Gas, Aylmer",
+      "province": "ON",
+      "fuel": "gas",
+      "match": {
+        "province": "ON",
+        "utility_type": "gas",
+        "utility_name": "EPCOR Natural Gas (Ontario)"
+      },
+      "lines": [
+        {
+          "id": "pgcva-reference",
+          "label": "Gas supply: PGCVA reference price",
+          "component_type": "commodity",
+          "name_regex": "^Gas Supply Charge — PGCVA Reference Price$",
+          "tariff_code_regex": "^AYL-1-(RES|GS)$"
+        },
+        {
+          "id": "gpra-recovery",
+          "label": "Gas supply: GPRA recovery rate",
+          "component_type": "commodity",
+          "name_regex": "^Gas Supply Charge — GPRA Recovery Rate$",
+          "tariff_code_regex": "^AYL-1-(RES|GS)$"
+        }
+      ],
+      "note": "EPCOR's quarterly (QRAM) gas supply charge in Aylmer, published as a reference price and a recovery rate; the two lines are shown side by side, never added."
+    },
+    {
+      "id": "on-gas-epcor-southern-bruce",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "EPCOR Natural Gas, Southern Bruce",
+      "province": "ON",
+      "fuel": "gas",
+      "match": {
+        "province": "ON",
+        "utility_type": "gas",
+        "utility_name": "EPCOR Natural Gas (Ontario)"
+      },
+      "lines": [
+        {
+          "id": "supply",
+          "label": "Gas supply charge",
+          "component_type": "commodity",
+          "name_regex": "^Gas Supply Charge$",
+          "tariff_code_regex": "^SB-1$"
+        }
+      ],
+      "note": "EPCOR's quarterly (QRAM) gas supply charge in Southern Bruce."
+    },
+    {
+      "id": "mb-gas-centra",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "Centra Gas Manitoba",
+      "province": "MB",
+      "fuel": "gas",
+      "match": {
+        "province": "MB",
+        "utility_type": "gas",
+        "utility_name": "Centra Gas Manitoba"
+      },
+      "lines": [
+        {
+          "id": "commodity",
+          "label": "Gas commodity (primary gas)",
+          "component_type": "commodity",
+          "name_regex": "^Gas Commodity$"
+        }
+      ],
+      "note": "Centra's quarterly gas commodity price, approved by the Manitoba Public Utilities Board."
+    },
+    {
+      "id": "qc-gas-energir",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "Énergir",
+      "province": "QC",
+      "fuel": "gas",
+      "match": {
+        "province": "QC",
+        "utility_type": "gas",
+        "utility_name": "Energir"
+      },
+      "lines": [
+        {
+          "id": "supply",
+          "label": "Natural gas supply",
+          "component_type": "commodity",
+          "name_regex": "^Natural Gas Supply$"
+        }
+      ],
+      "note": "Énergir's monthly natural gas supply price."
+    },
+    {
+      "id": "ns-gas-eastward",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "Eastward Energy (registered as Heritage Gas)",
+      "province": "NS",
+      "fuel": "gas",
+      "match": {
+        "province": "NS",
+        "utility_type": "gas",
+        "utility_name": "Heritage Gas"
+      },
+      "lines": [
+        {
+          "id": "residential",
+          "label": "Residential",
+          "component_type": "commodity",
+          "name_regex": "^Gas Cost Recovery Rate$",
+          "tariff_code_regex": "^Residential$"
+        },
+        {
+          "id": "commercial",
+          "label": "General Service and Rate Class 3",
+          "component_type": "commodity",
+          "name_regex": "^Gas Cost Recovery Rate$",
+          "tariff_code_regex": "^(GS|RC3)$"
+        }
+      ],
+      "note": "Eastward's gas cost recovery rate: residential is set quarterly, the commercial classes monthly."
+    },
+    {
+      "id": "nb-gas-liberty",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "Liberty Utilities (Gas New Brunswick)",
+      "province": "NB",
+      "fuel": "gas",
+      "match": {
+        "province": "NB",
+        "utility_type": "gas",
+        "utility_name": "Liberty Utilities Gas NB"
+      },
+      "lines": [
+        {
+          "id": "supply",
+          "label": "Liberty utility gas",
+          "component_type": "commodity",
+          "name_regex": "^Liberty Utility Gas$"
+        }
+      ],
+      "note": "Liberty's monthly utility gas price."
+    },
+    {
+      "id": "sk-gas-saskenergy",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "SaskEnergy",
+      "province": "SK",
+      "fuel": "gas",
+      "match": {
+        "province": "SK",
+        "utility_type": "gas",
+        "utility_name": "SaskEnergy"
+      },
+      "lines": [
+        {
+          "id": "commodity",
+          "label": "Commodity charge",
+          "component_type": "commodity",
+          "name_regex": "^Commodity Charge$"
+        }
+      ],
+      "note": "SaskEnergy's commodity rate, changed only by an approved rate application."
+    },
+    {
+      "id": "bc-gas-fortisbc",
+      "family": "regulated",
+      "group": "Default gas supply prices",
+      "label": "FortisBC Energy",
+      "province": "BC",
+      "fuel": "gas",
+      "match": {
+        "province": "BC",
+        "utility_type": "gas",
+        "utility_name": "FortisBC Energy"
+      },
+      "lines": [
+        {
+          "id": "cost-of-gas",
+          "label": "Cost of gas",
+          "component_type": "commodity",
+          "name_regex": "^Cost of Gas$"
+        }
+      ],
+      "note": "FortisBC's cost of gas (commodity) for its natural gas service areas, changed only by an approved application."
+    }
+  ]
+}

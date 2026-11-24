@@ -559,14 +559,16 @@ def test_metadata_keeps_the_legacy_keys_and_describes_the_rolling_history():
 # -- command line ------------------------------------------------------------------------------------
 
 def _paths(tmp_path):
-    paths = {name: tmp_path / name for name in ("market.json", "monthly.csv", "hoep.csv", "archive.csv")}
+    paths = {name: tmp_path / name for name in ("market.json", "monthly.csv", "hoep.csv", "archive.csv",
+                                                "quarterly.json")}
     paths["archive.csv"].write_bytes(ARCHIVE_CSV)
     return paths
 
 
 def _args(paths, *extra):
     return ["--output", str(paths["market.json"]), "--monthly-csv", str(paths["monthly.csv"]), "--hoep-csv",
-            str(paths["hoep.csv"]), "--archive", str(paths["archive.csv"]), "--as-of", "2025-10-16", *extra]
+            str(paths["hoep.csv"]), "--archive", str(paths["archive.csv"]), "--quarterly-output",
+            str(paths["quarterly.json"]), "--as-of", "2025-10-16", *extra]
 
 
 def test_main_writes_nothing_on_failure_and_everything_after_all_checks(tmp_path, capsys):

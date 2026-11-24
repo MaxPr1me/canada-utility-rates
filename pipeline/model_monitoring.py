@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[1]
 HISTORY_PATH = ROOT / "site" / "data" / "model_change_history.json"
 MODELS_PATH = ROOT / "site" / "data" / "representative_models.json"
+QUARTERLY_PATH = ROOT / "site" / "data" / "model_cost_quarterly.json"
 SCHEMA_VERSION = 1
 MATERIAL_PERCENT = 5
 OVERDUE_GRACE = timedelta(hours=24)
@@ -109,11 +110,15 @@ def read_json(path: Path) -> Any:
 
 def write_json(path: Path, value: Any) -> None:
     """Replace only a complete JSON document; retain earlier history on failure."""
-    text = _json(value) + "\n"
+    _replace_text(path, _json(value) + "\n")
+
+
+def _replace_text(path: Path, text: str, newline: str | None = None) -> None:
+    """Replace only a complete file; retain the earlier file on failure."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
     try:
-        temporary.write_text(text, encoding="utf-8")
+        temporary.write_text(text, encoding="utf-8", newline=newline)
         os.replace(temporary, path)
     finally:
         try:
@@ -453,6 +458,188 @@ def record_refresh(history: dict | None, document: dict, receipt: dict) -> dict:
     return result
 
 
+# Quarter-end model costs for the Rate History tab (owner decisions 50, 55 and 57 of 2026-11-23, 80 and 84 of
+# 2026-11-24).
+QUARTERLY_RULE = (
+    "Each quarter shows the published medians before and with tax and rebates in effect at its end: the state after "
+    "the last recorded refresh generated (UTC date) on or before the quarter's last day, the current quarter showing "
+    "the latest recorded state as in progress; an unavailable level has no cost (a gap, never zero), and "
+    "recording_gap marks a completed quarter whose next recorded refresh followed an unrecorded one (owner decisions "
+    "50, 55 and 57, 2026-11-23). break_before marks a change of the model's cost basis or of the level's example "
+    "customer between two points, never a label-only or method-version-only change (owner decision 80, 2026-11-24), "
+    "and a model removed and added again between them, whose earlier cost basis was not recorded (owner decision 84, "
+    "2026-11-24)."
+)
+# Decision 80: these define a level's example customer; its id and Reference/Sensitivity role are only labels.
+EXAMPLE_CUSTOMER_FIELDS = ("kwh", "kw", "quantity", "unit")
+UNIT_LABELS = {"m3": "m\u00b3"}
+
+
+def _example_customer(summary: dict) -> dict:
+    return {field: summary.get(field) for field in EXAMPLE_CUSTOMER_FIELDS}
+
+
+def _quarter_values(summary: dict | None) -> dict | None:
+    """A level's published availability, medians and example customer, copied from a recorded summary.
+
+    Base levels carry no ``available`` flag, so a missing median makes them unavailable; an unavailable level never
+    carries a cost (decision 55: the chart shows a gap, never zero).
+    """
+    if summary is None:
+        return None
+    medians = {field: None if summary.get(field) is None else _median(summary[field])
+               for field in ("without_tax", "with_tax")}
+    available = summary.get("available") is not False and None not in medians.values()
+    return {"available": available, **{field: value if available else None for field, value in medians.items()},
+            "usage": _example_customer(summary)}
+
+
+def history_states(history: dict) -> list[dict[tuple[str, str, str], dict]]:
+    """Level summaries of a validated history after each recorded event, oldest first.
+
+    Keys are (model_id, kind, level_id), kind being "base" or "benchmark". The history keeps only its latest snapshot,
+    so earlier states are rebuilt backwards by undoing each later event with its recorded ``before`` summaries. A
+    chain whose events do not reproduce their own recorded ``after`` values is refused rather than published.
+    """
+    state = {(model_id, kind, level_id): _level_summary(level)
+             for model_id, model in history["baseline"]["snapshot"]["models"].items()
+             for kind in ("base", "benchmark") for level_id, level in model[kind]["levels"].items()}
+    states = []
+    for event in reversed(history["events"]):
+        states.append(state)
+        state = dict(state)
+        for change in event["changes"]:
+            if change["category"] != "level":
+                continue
+            key = (change["model_id"], change["kind"], change["level_id"])
+            if _quarter_values(state.get(key)) != _quarter_values(change["after"]):
+                raise ValueError(f"model change history does not rebuild consistently: {' '.join(key)} after event "
+                                 f"{event['id']}")
+            if change["before"] is None:
+                state.pop(key, None)
+            else:
+                state[key] = change["before"]
+    states.reverse()
+    return states
+
+
+def _quarter(day: date) -> tuple[int, int]:
+    return day.year, (day.month - 1) // 3 + 1
+
+
+def _quarter_end(quarter: tuple[int, int]) -> date:
+    year, number = quarter
+    return date(year, 3 * number, calendar.monthrange(year, 3 * number)[1])
+
+
+def _usage_text(summary: dict) -> str:
+    """The example customer as a reader sees it, e.g. "40 kW and 10,000 kWh" or "200 m\u00b3"."""
+    parts = [f"{summary[field]:,} {unit}" for field, unit in (("kw", "kW"), ("kwh", "kWh"))
+             if summary.get(field) is not None]
+    if summary.get("quantity") is not None:
+        unit = summary.get("unit")
+        parts.append(f"{summary['quantity']:,} {UNIT_LABELS.get(unit, unit)}" if unit else f"{summary['quantity']:,}")
+    return " and ".join(parts) or "no example usage"
+
+
+def _break_reasons(events: list[dict], key: tuple[str, str, str], before: dict, after: dict) -> list[str]:
+    """Why a series breaks between two points (owner decisions 80 and 84, 2026-11-24).
+
+    Decision 80: only a changed cost basis or example customer breaks a series, never a label or method version.
+    ``events`` are those recorded between the points; ``before`` and ``after`` are the example customers of the two
+    points a chart joins. Comparing those directly also catches a level removed and re-added with another example
+    customer, which no single recorded change shows on both sides. Decision 84: a model removed and added again keeps
+    no record of its earlier cost basis, so that breaks every series of the model, base and benchmark.
+    """
+    reasons, removed = [], False
+    for event in events:
+        for change in event["changes"]:
+            if change["model_id"] != key[0]:
+                continue
+            if change["category"] == "model_removed":
+                removed = True
+            elif change["category"] == "model_added" and removed:
+                reasons.append("the model was removed and added again; its earlier cost basis was not recorded")
+            elif (change["category"] == "structure" and change.get("kind") == "base"
+                  and "cost_basis" in change["fields"]):
+                old, new = (change[side].get("cost_basis") for side in ("before", "after"))
+                reasons.append("cost basis changed: " + (old if isinstance(old, str) else _json(old)) + " -> "
+                               + (new if isinstance(new, str) else _json(new)))
+            elif (change["category"] == "level" and (change["kind"], change["level_id"]) == key[1:]
+                  and change["before"] is not None and change["after"] is not None
+                  and _example_customer(change["before"]) != _example_customer(change["after"])):
+                reasons.append(f"example customer changed: {_usage_text(change['before'])} -> "
+                               f"{_usage_text(change['after'])}")
+    if before != after:
+        reasons.append(f"example customer changed: {_usage_text(before)} -> {_usage_text(after)}")
+    return list(dict.fromkeys(reasons))
+
+
+def model_cost_quarterly(history: dict) -> dict:
+    """Quarter-end costs of every recorded model level, rebuilt only from the recorded change history.
+
+    Owner decisions 50, 55 and 57 (2026-11-23) and 80 and 84 (2026-11-24), stated in QUARTERLY_RULE: the website shows
+    only amounts the history saved. Quarters run from the first event's quarter to the quarter of the last refresh;
+    the wall clock is never read, so a given history always gives the same document. Base levels and observed market
+    benchmarks are separate series; synthetic estimates never enter the history.
+    """
+    validate_history(history)
+    events = history["events"]
+    generated = [timestamp(event["generated_at"]) for event in events]
+    last_generated = timestamp(history["last_refresh"]["generated_at"])
+    if any(later < earlier for earlier, later in zip(generated, generated[1:])) or generated[-1] > last_generated:
+        raise ValueError("model change history events are not in generation order")
+    states = history_states(history)
+    days = [value.date() for value in generated]
+    current = _quarter(last_generated.date())
+    quarter, index, points = _quarter(days[0]), 0, {}
+    while quarter <= current:
+        end = _quarter_end(quarter)
+        while index + 1 < len(events) and days[index + 1] <= end:
+            index += 1
+        in_progress = quarter == current
+        # An unrecorded generation before the next recorded refresh may have changed a value before the quarter ended.
+        gap = not in_progress and index + 1 < len(events) and events[index + 1]["history_gap"] is True
+        for key, summary in states[index].items():
+            points.setdefault(key, []).append((index, {
+                "quarter": f"{quarter[0]}Q{quarter[1]}", "in_progress": in_progress, **_quarter_values(summary),
+                "recorded_at": events[index]["recorded_at"], "recording_gap": gap, "break_before": None,
+            }))
+        quarter = (quarter[0] + quarter[1] // 4, quarter[1] % 4 + 1)
+    series = []
+    for key in sorted(points):
+        for (earlier, previous), (later, point) in zip(points[key], points[key][1:]):
+            reasons = _break_reasons(events[earlier + 1:later + 1], key, previous["usage"], point["usage"])
+            if reasons:
+                point["break_before"] = {"reasons": reasons}
+        series.append({"model_id": key[0], "kind": key[1], "level_id": key[2],
+                       "points": [point for _, point in points[key]]})
+    return {
+        "version": 1, "kind": "model_cost_quarterly", "tracking_started_at": history["tracking_started_at"],
+        "last_refresh": {key: history["last_refresh"][key] for key in ("generated_at", "as_of", "method_version")},
+        "last_event": events[-1]["id"], "rule": QUARTERLY_RULE, "current_quarter": f"{current[0]}Q{current[1]}",
+        "series": series,
+    }
+
+
+def save_cost_quarterly(path: Path, history: dict) -> bool:
+    """Rewrite the quarter-end model costs from a recorded history; True when the file was replaced.
+
+    The file is derived from the history, so a failure is logged and keeps the previous file without undoing or
+    blocking the recorded history: reporting failures cannot block valid publication.
+    """
+    try:
+        document = model_cost_quarterly(history)
+        # The listed key order (not write_json's sorted keys) and LF line endings on every platform.
+        text = json.dumps(document, ensure_ascii=False, separators=(",", ":"), allow_nan=False) + "\n"
+        _replace_text(path, text, newline="\n")
+    except Exception:
+        logger.exception("Quarterly model costs were not updated; the change history was recorded and the previous "
+                         "%s is kept", path)
+        return False
+    return True
+
+
 def input_checks(root: Path, now: datetime) -> list[dict]:
     """Reuse coverage and observed-market validity rules; a documented missing model is not corrupt data."""
     from scripts.coverage_gate import evaluate
@@ -513,6 +700,17 @@ def input_checks(root: Path, now: datetime) -> list[dict]:
         except (OSError, ValueError, KeyError, TypeError) as exc:
             checks.append({"id": f"market:{province}", "ok": False,
                            "details": [f"Observed {province} market history cannot be used: {exc}"]})
+    try:
+        # Rate History (owner decisions 55 and 56, 2026-11-23): the reviewed series match stored component names, so a
+        # scraper that renames or drops a matched line is reported here instead of leaving its chart empty.
+        from pipeline.rate_history import series_problems
+
+        problems = series_problems(read_json(root / "site" / "data" / "rate_history_series.json"),
+                                   read_json(root / "site" / "data" / "rates.json"))
+        checks.append({"id": "rate_history_series", "ok": not problems, "details": problems})
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        checks.append({"id": "rate_history_series", "ok": False,
+                       "details": [f"Rate History series cannot be checked: {exc}"]})
     return checks
 
 
@@ -836,6 +1034,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--history", type=Path, default=HISTORY_PATH)
     parser.add_argument("--receipt", type=Path)
     parser.add_argument("--record", action="store_true", help="explicitly write history from a generation receipt")
+    parser.add_argument("--quarterly", type=Path,
+                        help="with --record: the quarter-end model costs to rewrite (default: "
+                             f"{QUARTERLY_PATH.name} next to --history)")
     parser.add_argument("--dry-run", action="store_true", help="check only; never write history")
     parser.add_argument("--report", type=Path, help="explicitly write a diagnostic report")
     parser.add_argument("--github-context", type=Path, help="verified Actions run metadata and receipts")
@@ -846,6 +1047,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.record and (args.dry_run or args.receipt is None):
         parser.error("--record requires --receipt and cannot be combined with --dry-run")
+    if args.quarterly is not None and not args.record:
+        parser.error("--quarterly requires --record")
     now = datetime.now(timezone.utc)
     report = {"version": SCHEMA_VERSION, "checked_at": now.isoformat(), "run": run_identity(),
               "checks": input_checks(ROOT, now)}
@@ -869,6 +1072,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         report["scope_note"] = "Local file checks only; GitHub workflow cadence was not checked."
     report["freshness"] = freshness_report(freshness, context, now, report["run"]["id"])
+    quarterly = None
     try:
         document = read_json(args.models)
         semantic_models(document)
@@ -896,6 +1100,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("published models do not match the last recorded generation")
         if args.record:
             write_json(args.history, history)
+            # Only after the history was written; a failure is logged and changes neither the history nor the checks.
+            quarterly = save_cost_quarterly(args.quarterly or args.history.with_name(QUARTERLY_PATH.name), history)
         report["checks"].append({"id": "model_history", "ok": True, "details": []})
         report["refresh"] = history["last_refresh"]
     except (OSError, ValueError, KeyError, TypeError) as exc:
@@ -906,6 +1112,9 @@ def main(argv: list[str] | None = None) -> int:
     failed = [check for check in report["checks"] if check["ok"] is False]
     print(f"Model monitoring: {len(failed)} problem check(s); "
           f"{'history write requested' if args.record else 'read-only check'}.")
+    if quarterly is not None:
+        print("Quarterly model costs: " + ("rewritten." if quarterly else
+                                           "NOT updated (error logged above); the change history was recorded."))
     for check in failed:
         print(f"{check['id']}: " + "; ".join(check["details"]))
     if report["freshness"] is not None:
