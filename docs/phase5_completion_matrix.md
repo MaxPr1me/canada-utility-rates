@@ -56,6 +56,16 @@ The one-year check (built November 24; design approved November 23, build detail
   source and dry run; the dated ledger notes clear them for a year (the three Rate of Last Resort
   providers until December 31, the end of their term).
 
+Territorial models (decided November 24, being built): Yukon (the joint rate book of Yukon Energy and
+ATCO Electric Yukon, counted once), the Northwest Territories (NTPC and Naka Power, each the median of
+its zones) and Nunavut (Qulliq, interim rates labelled), for homes and small businesses. Percentage
+riders of the base charges (Yukon's Riders R, J and J1; Naka's Riders R, E and H) will be applied
+through a reviewed list, never guessed; government rates stay out of the medians. Each territory
+shows its cost before and after automatic subsidies (the NWT power support program's Yellowknife-rate
+first block, month-weighted by season; Yukon's dated affordability relief); Nunavut is shown before
+subsidy only, because the subsidised price is not published. GST is added to before-subsidy figures;
+after-subsidy figures stay before tax until the tax base on subsidised bills is confirmed.
+
 The Rate History tab (planned; owner decisions November 23, built after the one-year check and the
 territorial models): a sixth view with four sub-tabs (tariff prices, regulated and default prices,
 market prices, model costs). It shows only data the project has collected since September 29, 2026,
