@@ -135,11 +135,12 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
 - **One-year check (November 24, owner decisions November 23 and 24):** the coverage gate now warns,
   without failing, when an official document behind a utility's live prices has not changed for more
   than a year, and the first successful full Monthly Scrape of each quarter opens a "Rates not
-  updated in a year" issue (first report January 2027). On November 24 it flags 8 utilities: the
+  updated in a year" issue (first report January 2027). On November 24 it flagged 8 utilities: the
   three Alberta Rate of Last Resort providers (fixed 2025-2026 term), SaskEnergy, Qulliq, Liberty NB
-  (distribution charges) and the two Yukon utilities (base rates adjusted through riders); their
-  first review is due before January. AESO and Maritime Electric are exempt (see AGENTS.md, "Rates
-  not updated in a year").
+  (distribution charges) and the two Yukon utilities (base rates adjusted through riders). The owner
+  reviewed all eight the same day (all legitimate; dated notes in the coverage ledger), so none is
+  flagged now. AESO and Maritime Electric are exempt (see AGENTS.md, "Rates not updated in a
+  year").
 - **Latest export (November 20, scrape run 46, the owner's full run):** 987 latest live tariffs and
   484 retained estimates; 1,414 stored live versions and 7,670 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.

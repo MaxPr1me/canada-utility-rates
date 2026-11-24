@@ -67,7 +67,8 @@
     "SaskEnergy": {
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
       "excluded": ["SI delivery-only (not offered)", "TransGas firm delivery"],
-      "source_blocked": ["Municipal payments"]
+      "source_blocked": ["Municipal payments"],
+      "freshness_review": {"reviewed": "2026-11-24", "finding": "legitimate", "basis": "Rates unchanged (owner decision 2026-11-24): the residential and business rate pages, checked 2026-11-24, say 'Effective as of October 1, 2023'; the Saskatchewan Rate Review Panel's latest SaskEnergy review is the completed 2023 Commodity and Delivery Rate Application; the Terms & Conditions of Service Schedule (pages 45-46) still prints the March 1, 2018 service fees. Dry run 8 live, 0 seed, 0 invalid."}
     },
     "Centra Gas Manitoba": {
       "audit": {"date": "2026-11-02", "basis": "Batch 11 scoped classes rechecked against v1126 approved PDF pages 80-82 and retained eligibility/carbon/marketer evidence; dry run 13 live, 0 seed, 0 invalid", "source": "docs/phase5_completion_matrix.md; tests/test_centra_v1126.py"},
@@ -93,13 +94,15 @@
       "stored_name": "Liberty Utilities Gas NB",
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
       "excluded": ["CGS/ICGS process loads"],
-      "source_blocked": ["Marketer prices"]
+      "source_blocked": ["Marketer prices"],
+      "freshness_review": {"reviewed": "2026-11-24", "finding": "legitimate", "basis": "Distribution rates unchanged (owner decision 2026-11-24): the Customer Rate Classes page, checked 2026-11-24, says the distribution rates and charges are 'effective as of January 1, 2025'; the monthly Liberty Utility Gas price is current (November 2026). Dry run 4 live, 0 seed, 0 invalid."}
     },
     "Yukon Energy": {
       "audit": {"date": "2026-10-07", "basis": "Class-level reconciliation of every recorded published class (batch 11)", "source": "docs/phase5_completion_matrix.md, Class-Level Reconciliation"},
       "excluded": ["Lighting", "Rates 32/39/42/43"],
       "source_blocked": ["Riders R1/S/E (published at zero)", "winter rebate (replaced by Affordability Rate Relief)"],
       "monitor": [{"item": "Joint rate book found through the page model JSON: confirm a stored run uses a newer monthly edition", "review_by": "2026-12-15"}],
+      "freshness_review": {"reviewed": "2026-11-24", "finding": "legitimate", "basis": "Base charges adjusted only through riders (owner decision 2026-11-24): the joint Rate Schedules book (October 2026 edition) still prints the 2011 base charges, while general rate changes come through riders in their own current documents: Rider J 100.23% from April 1, 2026 and Rider R (Base Rates with R and J Cross-Reference), Rider J1 (April 1, 2026), Rider F and the Affordability Rate Relief (October 1, 2026). Dry run 20 live, 0 seed, 0 invalid on 2026-11-24."},
       "notes": "Checked 2026-11-04: the official page model JSON still advertises only the October joint book (yecl-yec-rate-schedules-10-2026.pdf, last modified 2026-10-01); the 11-2026 and 12-2026 addresses return 404. Dry run 20 live, 0 seed, 0 invalid from that book; run 30 stored 20 October-dated live records. No newer advertised edition or demonstrated discovery defect; keep the December 15 monitor open. Since batch 16 the scraper reads understanding-rates.model.json and selects the newest eligible monthly book (then page link, then the last known October link). Historical October 30 dry run: 20 live, 0 seed; old August/September addresses returned 404."
     },
     "Yukon Electrical Company": {
@@ -107,6 +110,7 @@
       "excluded": ["Same 20 joint schedules as Yukon Energy: lighting; Rates 32/39/42/43"],
       "source_blocked": ["Same as Yukon Energy: riders R1/S/E (published at zero); winter rebate (replaced)"],
       "monitor": [{"item": "Joint rate book found through the page model JSON: confirm a stored run uses a newer monthly edition", "review_by": "2026-12-15"}],
+      "freshness_review": {"reviewed": "2026-11-24", "finding": "legitimate", "basis": "Base charges adjusted only through riders (owner decision 2026-11-24): same joint Rate Schedules book as Yukon Energy (October 2026 edition, 2011 base charges); general rate changes come through Riders J, R, J1 and F and the Affordability Rate Relief, each from its own current document. Checked 2026-11-24."},
       "notes": "Checked 2026-11-04: same official October joint book as Yukon Energy (the 11-2026 and 12-2026 addresses return 404); dry run 20 live, 0 seed, 0 invalid; run 30 stored 20 live records. The model-JSON discovery code needs no demonstrated repair, but a stored newer edition has not been observed. Keep the December 15 monitor open; do not count these joint schedules as another 20 distinct classes."
     },
     "Northwest Territories Power Corporation": {
@@ -121,6 +125,7 @@
       "excluded": ["Streetlights", "standby"],
       "source_blocked": ["Government/municipal commercial base charges", "fuel rider"],
       "monitor": [{"item": "Final 2025/26 GRA instruction (rates are interim, medium confidence)", "review_by": "2026-12-15"}],
+      "freshness_review": {"reviewed": "2026-11-24", "finding": "legitimate", "basis": "Interim rates still in force (owner decision 2026-11-24): QEC's notice, checked 2026-11-24, says the URRC authorized interim rates effective April 1, 2025 that 'will remain in place until final rates are approved'; the GRA page names only the 2025/26 application, with no final decision. The final rates are tracked by the monitor above. Dry run 6 live, 0 seed, 0 invalid."},
       "notes": "Checked 2026-11-04 (as on 2026-10-30): still interim. QEC's notice still says 'The interim rates will remain in place until final rates are approved' and its GRA page names only the April 1, 2025 application; the URRC reports page lists no newer item than the 2025 annual report (February 6, 2026). Dry run 6 live, 0 seed, 0 invalid."
     },
     "ENMAX Power": {
@@ -148,6 +153,7 @@
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 2 live Rate of Last Resort records (residential, small business) at 12.02 cents/kWh, fixed to 2026-12-31 and matched to the UCA table", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
       "excluded": ["Daily administration charge not emitted: the website value is undated and the last dated schedule differs (user decision 2026-10-30)"],
       "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}],
+      "freshness_review": {"reviewed": "2026-11-24", "finding": "legitimate", "basis": "Fixed two-year term (owner decision 2026-11-24): the UCA default-rates table, checked 2026-11-24, shows 12.02 cents/kWh in the ATCO Electric area for January 1, 2025 - December 31, 2026 and no 2027 term; the provider's residential and commercial pages show the same fixed price. The note ends with the term.", "review_by": "2026-12-31"},
       "notes": "Checked 2026-11-04: no next term yet. The UCA table still shows only January 1, 2025 - December 31, 2026; the UCA RoLR page says the AUC re-evaluates the rate every two years and proposed adjustments cannot normally exceed 10% of the existing rate. DERS's regulated residential and commercial rate pages do not mention 2027; AUC proceedings were not reachable outside its eFiling application. Checked 2026-10-30: no next term yet. The UCA table still shows only January 1, 2025 - December 31, 2026 ('The RoLR will be in place until December 31, 2026'; ATCO Electric area 12.02); the provider page states 12.02 cents/kWh to December 31, 2026. Dry run 2 live, 0 seed."
     },
     "ENMAX Energy Corporation": {
@@ -155,12 +161,14 @@
       "excluded": ["D300/D310/D410 (not covered)"],
       "source_blocked": ["Municipally set Rate of Last Resort areas (Red Deer, Cardston, Ponoka) not covered"],
       "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}],
+      "freshness_review": {"reviewed": "2026-11-24", "finding": "legitimate", "basis": "Fixed two-year term (owner decision 2026-11-24): the UCA default-rates table, checked 2026-11-24, shows 12.06 cents/kWh in the ENMAX Power area for January 1, 2025 - December 31, 2026 and no 2027 term; ENMAX's rate sheet carries the same price and its daily administration charges. The note ends with the term.", "review_by": "2026-12-31"},
       "notes": "Checked 2026-11-04: no next term yet. The UCA table still shows only the 2025-2026 term; the UCA RoLR page says the AUC re-evaluates the rate every two years and proposed adjustments cannot normally exceed 10% of the existing rate. ENMAX's Rate of Last Resort page does not mention 2027. Checked 2026-10-30: no next term yet. The UCA table shows only the 2025-2026 term (ENMAX Power area 12.06); ENMAX's page: fixed 'beginning January 1, 2025, and is expected to remain unchanged until December 31, 2026'. Dry run 2 live, 0 seed."
     },
     "EPCOR Energy Alberta": {
       "audit": {"date": "2026-10-30", "basis": "Dry run 2026-10-30: 4 live Rate of Last Resort records (residential and small business for the EPCOR Distribution and FortisAlberta areas), matched to the UCA table", "source": "docs/phase5_completion_matrix.md, Alberta Electricity"},
       "source_blocked": ["REA price schedule not covered"],
       "monitor": [{"item": "Next Rate of Last Resort term after 2026-12-31: check the UCA default-rates table", "review_by": "2026-12-15"}],
+      "freshness_review": {"reviewed": "2026-11-24", "finding": "legitimate", "basis": "Fixed two-year term (owner decision 2026-11-24): the UCA default-rates table, checked 2026-11-24, shows 12.01 cents/kWh in the EPCOR Distribution and FortisAlberta areas for January 1, 2025 - December 31, 2026 and no 2027 term; EPCOR's July 2026 regulated rate tariffs (administration charges) are current. The note ends with the term.", "review_by": "2026-12-31"},
       "notes": "Checked 2026-11-04: no next term yet. The UCA table still shows only the 2025-2026 term; the UCA RoLR page says the AUC re-evaluates the rate every two years and proposed adjustments cannot normally exceed 10% of the existing rate. Checked 2026-10-30: no next term yet. The UCA table shows only the 2025-2026 term (12.01 in the EPCOR Distribution and FortisAlberta areas); both EPCOR pages: 'set at a fixed rate from January 1, 2025 to December 31, 2026'. Dry run 4 live, 0 seed."
     },
     "Alberta Electric System Operator": {
