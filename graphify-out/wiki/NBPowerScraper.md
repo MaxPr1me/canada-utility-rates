@@ -1,9 +1,10 @@
 # NBPowerScraper
 
-> 45 nodes
+> 52 nodes
 
 ## Key Concepts
 
+- **nb_power.py** (28 connections) — `scrapers/utilities/nb_power.py`
 - **NBPowerScraper** (24 connections) — `scrapers/utilities/nb_power.py`
 - **._try_live_scrape()** (19 connections) — `scrapers/utilities/nb_power.py`
 - **_clean()** (11 connections) — `scrapers/utilities/nb_power.py`
@@ -14,6 +15,7 @@
 - **clean_currency()** (8 connections) — `scrapers/utils/parsing.py`
 - **._parse_residential()** (7 connections) — `scrapers/utilities/nb_power.py`
 - **_cents_total()** (7 connections) — `scrapers/utilities/nb_power.py`
+- **extract_tables()** (7 connections) — `scrapers/utils/parsing.py`
 - **._parse_fast_charging()** (6 connections) — `scrapers/utilities/nb_power.py`
 - **._parse_large_industrial()** (6 connections) — `scrapers/utilities/nb_power.py`
 - **._parse_recreational_lighting()** (6 connections) — `scrapers/utilities/nb_power.py`
@@ -27,19 +29,20 @@
 - **_table_after()** (6 connections) — `scrapers/utilities/nb_power.py`
 - **._seed_data_gs1()** (5 connections) — `scrapers/utilities/nb_power.py`
 - **._seed_data_residential()** (5 connections) — `scrapers/utilities/nb_power.py`
-- **._seed_data_small_industrial()** (5 connections) — `scrapers/utilities/nb_power.py`
-- **._get_business_sections()** (5 connections) — `scrapers/utilities/nb_power.py`
-- *... and 20 more nodes in this community*
+- *... and 27 more nodes in this community*
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (18 shared connections)
-- [parsing.py](parsing.py.md) (17 shared connections)
-- [RateComponent](RateComponent.md) (10 shared connections)
-- [re](re.md) (7 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
+- [TariffRecord](TariffRecord.md) (19 shared connections)
+- [BaseScraper](BaseScraper.md) (12 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (9 shared connections)
+- [re](re.md) (8 shared connections)
+- [bc_hydro.py](bc_hydro.py.md) (7 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (2 shared connections)
+- [run_scrape.py](run_scrape.py.md) (1 shared connections)
+- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +51,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 139 (99%)
+- EXTRACTED: 164 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

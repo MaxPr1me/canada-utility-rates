@@ -2,7 +2,7 @@
 
 > God node · 287 connections · `scrapers/base.py`
 
-**Community:** [RateComponent](RateComponent.md)
+**Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
 
 ## Connections by Relation
 

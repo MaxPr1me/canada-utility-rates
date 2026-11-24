@@ -1,6 +1,6 @@
 # EnbridgeGasScraper
 
-> 60 nodes
+> 62 nodes
 
 ## Key Concepts
 
@@ -29,20 +29,19 @@
 - **Edition** (8 connections) — `scrapers/utilities/enbridge_gas.py`
 - **._value()** (8 connections) — `scrapers/utilities/enbridge_gas.py`
 - **check_complete()** (8 connections) — `scrapers/utilities/enbridge_gas.py`
-- *... and 35 more nodes in this community*
+- *... and 37 more nodes in this community*
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (10 shared connections)
+- [TariffRecord](TariffRecord.md) (12 shared connections)
+- [BaseScraper](BaseScraper.md) (10 shared connections)
 - [DocumentPage](DocumentPage.md) (10 shared connections)
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [RateComponent](RateComponent.md) (8 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (7 shared connections)
+- [.fetch_page](fetch_page.md) (6 shared connections)
 - [re](re.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (4 shared connections)
 - [io](io.md) (2 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [parse_html](parse_html.md) (1 shared connections)
-- [parsing.py](parsing.py.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (1 shared connections)
+- [run_scrape.py](run_scrape.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -50,7 +49,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 272 (97%)
+- EXTRACTED: 278 (97%)
 - INFERRED: 8 (3%)
 - AMBIGUOUS: 0 (0%)
 

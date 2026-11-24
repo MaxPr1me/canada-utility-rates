@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **math** (24 connections)
+- **math** (25 connections)
 - **market_pricing.py** (18 connections) — `scrapers/utils/market_pricing.py`
 - **historical_market_price()** (12 connections) — `scrapers/utils/market_pricing.py`
 - **synthetic_profile_price()** (10 connections) — `scrapers/utils/market_pricing.py`
@@ -31,18 +31,18 @@
 
 ## Relationships
 
-- [model_monitoring.py](model_monitoring.py.md) (6 shared connections)
-- [representative_models.py](representative_models.py.md) (6 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (4 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
+- [representative_models.py](representative_models.py.md) (7 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (5 shared connections)
+- [run_scrape.py](run_scrape.py.md) (4 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (3 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (3 shared connections)
+- [main](main.md) (2 shared connections)
 - [re](re.md) (2 shared connections)
-- [check_db_history.py](check_db_history.py.md) (2 shared connections)
+- [BaseScraper](BaseScraper.md) (2 shared connections)
 - [aeso.py](aeso.py.md) (2 shared connections)
 - [MarketDataError](MarketDataError.md) (2 shared connections)
-- [_build_model](_build_model.md) (1 shared connections)
-- [Any](Any.md) (1 shared connections)
-- [run_scrape.py](run_scrape.py.md) (1 shared connections)
+- [_prepare](_prepare.md) (1 shared connections)
+- [_price](_price.md) (1 shared connections)
 
 ## Source Files
 
@@ -50,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 75 (100%)
+- EXTRACTED: 76 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

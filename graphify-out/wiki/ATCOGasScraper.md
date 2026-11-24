@@ -1,10 +1,9 @@
 # ATCOGasScraper
 
-> 53 nodes
+> 52 nodes
 
 ## Key Concepts
 
-- **atco_gas.py** (34 connections) — `scrapers/utilities/atco_gas.py`
 - **ATCOGasScraper** (23 connections) — `scrapers/utilities/atco_gas.py`
 - **_date()** (15 connections) — `scrapers/utilities/atco_gas.py`
 - **._build()** (13 connections) — `scrapers/utilities/atco_gas.py`
@@ -29,20 +28,20 @@
 - **._today()** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **_soup_text()** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **ClassSpec** (3 connections) — `scrapers/utilities/atco_gas.py`
-- *... and 28 more nodes in this community*
+- **Commodity** (3 connections) — `scrapers/utilities/atco_gas.py`
+- *... and 27 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [TariffRecord](TariffRecord.md) (7 shared connections)
-- [RateComponent](RateComponent.md) (6 shared connections)
-- [DocumentPage](DocumentPage.md) (5 shared connections)
-- [parse_html](parse_html.md) (4 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [re](re.md) (2 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [check_db_history.py](check_db_history.py.md) (1 shared connections)
-- [parsing.py](parsing.py.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (24 shared connections)
+- [TariffRecord](TariffRecord.md) (6 shared connections)
+- [DocumentPage](DocumentPage.md) (4 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
+- [ntpc.py](ntpc.py.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (1 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
+- [re](re.md) (1 shared connections)
 
 ## Source Files
 
@@ -50,7 +49,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 155 (98%)
+- EXTRACTED: 141 (98%)
 - INFERRED: 3 (2%)
 - AMBIGUOUS: 0 (0%)
 

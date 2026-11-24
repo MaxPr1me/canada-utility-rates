@@ -1,6 +1,6 @@
 # .parse_pages
 
-> 24 nodes
+> 25 nodes
 
 ## Key Concepts
 
@@ -20,6 +20,7 @@
 - **._num()** (3 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **_month_end()** (3 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **comp()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._norm()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **Explicit federal zero fuel charge, with New Brunswick's charge period ending…** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **Current month's Liberty Utility Gas rate from the year-column history table.** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
@@ -32,11 +33,11 @@
 ## Relationships
 
 - [TariffRecord](TariffRecord.md) (6 shared connections)
-- [RateComponent](RateComponent.md) (5 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (4 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
 - [.fetch_page](fetch_page.md) (2 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [parse_html](parse_html.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (1 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
 
 ## Source Files
 
@@ -44,7 +45,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 59 (97%)
+- EXTRACTED: 60 (97%)
 - INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 

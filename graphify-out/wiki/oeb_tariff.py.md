@@ -1,16 +1,14 @@
 # oeb_tariff.py
 
-> 18 nodes
+> 16 nodes
 
 ## Key Concepts
 
 - **oeb_tariff.py** (67 connections) — `scrapers/utils/oeb_tariff.py`
 - **_new_charge()** (10 connections) — `scrapers/utils/oeb_tariff.py`
-- **collections** (9 connections)
 - **extract_tariff_pages()** (5 connections) — `scrapers/utils/oeb_tariff.py`
 - **market_energy_component()** (4 connections) — `scrapers/utils/oeb_tariff.py`
 - **_cls_title()** (4 connections) — `scrapers/utils/oeb_tariff.py`
-- **connection_not_printed_note()** (3 connections) — `scrapers/utils/oeb_tariff.py`
 - **normalize_tariff_text()** (3 connections) — `scrapers/utils/oeb_tariff.py`
 - **_class_title()** (2 connections) — `scrapers/utils/oeb_tariff.py`
 - **_condition()** (2 connections) — `scrapers/utils/oeb_tariff.py`
@@ -25,18 +23,18 @@
 
 ## Relationships
 
+- [Classification](Classification.md) (15 shared connections)
 - [build_demand_records](build_demand_records.md) (14 shared connections)
-- [Classification](Classification.md) (10 shared connections)
-- [TariffCharge](TariffCharge.md) (8 shared connections)
 - [TariffSheet](TariffSheet.md) (7 shared connections)
-- [parse_tariff_pages](parse_tariff_pages.md) (7 shared connections)
-- [BaseScraper](BaseScraper.md) (6 shared connections)
-- [RateComponent](RateComponent.md) (2 shared connections)
+- [parse_tariff_pages](parse_tariff_pages.md) (5 shared connections)
+- [BaseScraper](BaseScraper.md) (5 shared connections)
+- [close_class](close_class.md) (5 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
 - [DocumentPage](DocumentPage.md) (2 shared connections)
-- [io](io.md) (2 shared connections)
 - [class_loss_factors](class_loss_factors.md) (2 shared connections)
 - [_dedupe_classifications](_dedupe_classifications.md) (2 shared connections)
-- [._energy_entries](_energy_entries.md) (1 shared connections)
+- [OntarioLDCScraper](OntarioLDCScraper.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
 
 ## Source Files
 
@@ -44,7 +42,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 96 (99%)
+- EXTRACTED: 86 (99%)
 - INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 

@@ -2,7 +2,7 @@
 
 > God node · 100 connections · `scrapers/utils/parsing.py`
 
-**Community:** [parse_html](parse_html.md)
+**Community:** [BaseScraper](BaseScraper.md)
 
 ## Connections by Relation
 
@@ -30,7 +30,7 @@
 - *…and 40 more `calls` connection(s) not listed (lowest-degree first to go)*
 
 ### contains
-- [parsing.py](parsing.py.md) `EXTRACTED`
+- parsing.py `EXTRACTED`
 
 ### imports
 - base.py `EXTRACTED`

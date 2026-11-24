@@ -1,6 +1,6 @@
 # enmax_power.py
 
-> 49 nodes
+> 42 nodes
 
 ## Key Concepts
 
@@ -14,7 +14,6 @@
 - **parse_schedule_pages()** (12 connections) — `scrapers/utilities/enmax_power.py`
 - **_date()** (11 connections) — `scrapers/utilities/enmax_power.py`
 - **_rider_page()** (9 connections) — `scrapers/utilities/enmax_power.py`
-- **extract_schedule_pages()** (8 connections) — `scrapers/utilities/enmax_power.py`
 - **_parse_riders()** (8 connections) — `scrapers/utilities/enmax_power.py`
 - **_class_pages()** (7 connections) — `scrapers/utilities/enmax_power.py`
 - **_class_values()** (7 connections) — `scrapers/utilities/enmax_power.py`
@@ -29,22 +28,22 @@
 - **_split_footer()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_Riders** (4 connections) — `scrapers/utilities/enmax_power.py`
 - **_component()** (4 connections) — `scrapers/utilities/enmax_power.py`
-- *... and 24 more nodes in this community*
+- **_require()** (4 connections) — `scrapers/utilities/enmax_power.py`
+- *... and 17 more nodes in this community*
 
 ## Relationships
 
 - [re](re.md) (17 shared connections)
-- [DocumentPage](DocumentPage.md) (15 shared connections)
-- [BaseScraper](BaseScraper.md) (7 shared connections)
-- [RateComponent](RateComponent.md) (3 shared connections)
+- [DocumentPage](DocumentPage.md) (14 shared connections)
+- [BaseScraper](BaseScraper.md) (8 shared connections)
+- [extract_schedule_pages](extract_schedule_pages.md) (4 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
 - [TariffRecord](TariffRecord.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
-- [io](io.md) (2 shared connections)
-- [parse_html](parse_html.md) (2 shared connections)
-- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
-- [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
-- [parsing.py](parsing.py.md) (1 shared connections)
-- [ENMAXPowerScraper](ENMAXPowerScraper.md) (1 shared connections)
+- [ENMAXPowerScraper](ENMAXPowerScraper.md) (2 shared connections)
+- [io](io.md) (1 shared connections)
+- [run_scrape.py](run_scrape.py.md) (1 shared connections)
+- [os](os.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -52,8 +51,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 163 (92%)
-- INFERRED: 15 (8%)
+- EXTRACTED: 153 (91%)
+- INFERRED: 15 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,10 +1,9 @@
 # check_db_history.py
 
-> 28 nodes
+> 27 nodes
 
 ## Key Concepts
 
-- **json** (60 connections)
 - **check_db_history.py** (27 connections) — `scripts/check_db_history.py`
 - **read_stats()** (11 connections) — `scripts/check_db_history.py`
 - **main()** (10 connections) — `scripts/check_db_history.py`
@@ -29,22 +28,14 @@
 - **Check that the SQLite history database only grows before CI uploads it. The…** (1 connections) — `scripts/check_db_history.py`
 - **Current statistics (digest over the earlier id range) and the list of failed…** (1 connections) — `scripts/check_db_history.py`
 - **One line: counts with their growth, the file size and SHA-256.** (1 connections) — `scripts/check_db_history.py`
-- *... and 3 more nodes in this community*
+- **The database, or the statistics recorded before the run, fail a check.** (1 connections) — `scripts/check_db_history.py`
+- *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [run_scrape.py](run_scrape.py.md) (13 shared connections)
-- [main](main.md) (11 shared connections)
-- [graphify_hook.py](graphify_hook.py.md) (8 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (4 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (2 shared connections)
-- [build_models](build_models.md) (2 shared connections)
-- [registry.py](registry.py.md) (2 shared connections)
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (2 shared connections)
-- [parse_schedule](parse_schedule.md) (2 shared connections)
-- [market_pricing.py](market_pricing.py.md) (2 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (2 shared connections)
+- [run_scrape.py](run_scrape.py.md) (11 shared connections)
+- [os](os.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -52,8 +43,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 128 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 72 (97%)
+- INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

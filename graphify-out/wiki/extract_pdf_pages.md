@@ -30,7 +30,7 @@
 - *…and 16 more `calls` connection(s) not listed (lowest-degree first to go)*
 
 ### contains
-- [parsing.py](parsing.py.md) `EXTRACTED`
+- parsing.py `EXTRACTED`
 
 ### imports
 - base.py `EXTRACTED`
@@ -51,7 +51,7 @@
 - hydro_quebec.py `EXTRACTED`
 - saint_john_energy.py `EXTRACTED`
 - [red_deer.py](red_deer.py.md) `EXTRACTED`
-- [new_westminster.py](new_westminster.py.md) `EXTRACTED`
+- new_westminster.py `EXTRACTED`
 - summerland.py `EXTRACTED`
 - *…and 10 more `imports` connection(s) not listed (lowest-degree first to go)*
 

@@ -12,7 +12,7 @@
 ## Relationships
 
 - [representative_models.py](representative_models.py.md) (2 shared connections)
-- [_build_model](_build_model.md) (1 shared connections)
+- [_prepare](_prepare.md) (1 shared connections)
 
 ## Source Files
 

@@ -1,6 +1,6 @@
 # parse_schedule
 
-> 24 nodes
+> 25 nodes
 
 ## Key Concepts
 
@@ -18,6 +18,7 @@
 - **Pattern** (4 connections)
 - **.scrape()** (3 connections) — `scrapers/utilities/grand_forks.py`
 - **_iso()** (3 connections) — `scrapers/utilities/grand_forks.py`
+- **comp()** (2 connections) — `scrapers/utilities/grand_forks.py`
 - **.__init__()** (2 connections) — `scrapers/utilities/grand_forks.py`
 - **date** (1 connections)
 - **grand_forks.py — Scraper for the City of Grand Forks electrical utility…** (1 connections) — `scrapers/utilities/grand_forks.py`
@@ -31,16 +32,16 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (8 shared connections)
-- [re](re.md) (7 shared connections)
+- [BaseScraper](BaseScraper.md) (11 shared connections)
+- [re](re.md) (6 shared connections)
 - [TariffRecord](TariffRecord.md) (5 shared connections)
 - [DocumentPage](DocumentPage.md) (4 shared connections)
-- [.fetch_page](fetch_page.md) (4 shared connections)
-- [RateComponent](RateComponent.md) (3 shared connections)
-- [parse_html](parse_html.md) (2 shared connections)
-- [check_db_history.py](check_db_history.py.md) (2 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [parsing.py](parsing.py.md) (1 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [run_scrape.py](run_scrape.py.md) (2 shared connections)
+- [ntpc.py](ntpc.py.md) (1 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
+- [maritime_electric.py](maritime_electric.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +49,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 71 (95%)
+- EXTRACTED: 72 (95%)
 - INFERRED: 4 (5%)
 - AMBIGUOUS: 0 (0%)
 

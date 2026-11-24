@@ -33,15 +33,14 @@
 
 ## Relationships
 
+- [BaseScraper](BaseScraper.md) (13 shared connections)
 - [re](re.md) (9 shared connections)
-- [BaseScraper](BaseScraper.md) (8 shared connections)
 - [DocumentPage](DocumentPage.md) (7 shared connections)
 - [TariffRecord](TariffRecord.md) (5 shared connections)
-- [RateComponent](RateComponent.md) (4 shared connections)
-- [parse_html](parse_html.md) (4 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [parsing.py](parsing.py.md) (1 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
+- [ntpc.py](ntpc.py.md) (1 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
 
 ## Source Files
 

@@ -1,43 +1,47 @@
 # Any
 
-> 23 nodes
+> 29 nodes
 
 ## Key Concepts
 
-- **Any** (26 connections)
+- **Any** (37 connections)
 - **block_periods_config()** (7 connections) — `pipeline/representative_models.py`
+- **percentage_riders_config()** (7 connections) — `pipeline/representative_models.py`
+- **subsidies_config()** (7 connections) — `pipeline/representative_models.py`
+- **_regex_ok()** (6 connections) — `pipeline/representative_models.py`
+- **subsidy_policy()** (6 connections) — `pipeline/representative_models.py`
+- **subsidy_programs()** (6 connections) — `pipeline/representative_models.py`
 - **_annual_band_groups()** (5 connections) — `pipeline/representative_models.py`
-- **apply_usage_bounds()** (5 connections) — `pipeline/representative_models.py`
-- **bands_for_demand()** (5 connections) — `pipeline/representative_models.py`
-- **_kw()** (5 connections) — `pipeline/representative_models.py`
-- **load_market_document()** (5 connections) — `pipeline/representative_models.py`
-- **record_covers_level()** (5 connections) — `pipeline/representative_models.py`
-- **resolve_size_band()** (5 connections) — `pipeline/representative_models.py`
-- **_market_context()** (4 connections) — `pipeline/representative_models.py`
+- **months_from_text()** (5 connections) — `pipeline/representative_models.py`
+- **_note_sentences()** (5 connections) — `pipeline/representative_models.py`
+- **_program_problem()** (5 connections) — `pipeline/representative_models.py`
 - **peak_month_factor()** (4 connections) — `pipeline/representative_models.py`
+- **_percentage_entry_problem()** (4 connections) — `pipeline/representative_models.py`
 - **reference_customer_entries()** (4 connections) — `pipeline/representative_models.py`
+- **_sector_group()** (4 connections) — `pipeline/representative_models.py`
+- **_selector_ok()** (4 connections) — `pipeline/representative_models.py`
 - **_block_period_problem()** (3 connections) — `pipeline/representative_models.py`
 - **annual()** (1 connections) — `pipeline/representative_models.py`
+- **Usable programs and the jurisdiction policy of a subsidies document (or of an…** (1 connections) — `pipeline/representative_models.py`
+- **{'after_subsidy': bool, 'reason': text or None} for a territorial electricity…** (1 connections) — `pipeline/representative_models.py`
+- **The configuration's usable programs for a province, sector group and (when…** (1 connections) — `pipeline/representative_models.py`
 - **Fixed charges published as bands of annual volume (tier numbers with a per-year…** (1 connections) — `pipeline/representative_models.py`
-- **Bands whose reference kW the [min, max) demand range covers; else bands…** (1 connections) — `pipeline/representative_models.py`
-- **Normalise a rule size_band (None, id, list or '@demand_bounds') to a list of…** (1 connections) — `pipeline/representative_models.py`
-- **True when the record's published demand ([min, max) kW, or the inclusivity of a…** (1 connections) — `pipeline/representative_models.py`
-- **The observed Ontario market history (default…** (1 connections) — `pipeline/representative_models.py`
-- **Copy of a record with reviewed eligibility bounds from crosswalk usage_bounds;…** (1 connections) — `pipeline/representative_models.py`
+- **The sentences of a record's notes that mention a subsidy keyword (why no price…** (1 connections) — `pipeline/representative_models.py`
 - **usage_levels 'reference_customer' entries for a province, fuel (missing = any…** (1 connections) — `pipeline/representative_models.py`
 - **The usage_levels 'peak_month_factors' entry (ratio of the peak month to the…** (1 connections) — `pipeline/representative_models.py`
-- **Usable entries of a block_periods document ({'entries': [...]}) or entry list;…** (1 connections) — `pipeline/representative_models.py`
+- *... and 4 more nodes in this community*
 
 ## Relationships
 
-- [representative_models.py](representative_models.py.md) (13 shared connections)
-- [_build_model](_build_model.md) (10 shared connections)
-- [build_models](build_models.md) (6 shared connections)
-- [_select_variants](_select_variants.md) (5 shared connections)
-- [_prepare](_prepare.md) (4 shared connections)
-- [main](main.md) (3 shared connections)
-- [market_pricing.py](market_pricing.py.md) (1 shared connections)
-- [re](re.md) (1 shared connections)
+- [representative_models.py](representative_models.py.md) (19 shared connections)
+- [_prepare](_prepare.md) (15 shared connections)
+- [build_models](build_models.md) (5 shared connections)
+- [main](main.md) (5 shared connections)
+- [_fullmatch](_fullmatch.md) (4 shared connections)
+- [_select_variants](_select_variants.md) (4 shared connections)
+- [apply_usage_bounds](apply_usage_bounds.md) (3 shared connections)
+- [re](re.md) (2 shared connections)
+- [_energy_tier_scale](_energy_tier_scale.md) (2 shared connections)
 
 ## Source Files
 
@@ -45,7 +49,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 68 (100%)
+- EXTRACTED: 95 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

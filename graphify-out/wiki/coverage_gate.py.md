@@ -1,12 +1,13 @@
 # coverage_gate.py
 
-> 43 nodes
+> 44 nodes
 
 ## Key Concepts
 
 - **coverage_gate.py** (30 connections) — `scripts/coverage_gate.py`
 - **evaluate()** (14 connections) — `scripts/coverage_gate.py`
 - **date** (10 connections)
+- **collections** (9 connections)
 - **main()** (8 connections) — `scripts/coverage_gate.py`
 - **manual_update_review_by()** (8 connections) — `scripts/coverage_gate.py`
 - **stale_documents()** (8 connections) — `scripts/coverage_gate.py`
@@ -28,17 +29,22 @@
 - **resolve_entry()** (3 connections) — `scripts/coverage_gate.py`
 - **active_utilities()** (2 connections) — `scripts/coverage_gate.py`
 - **_escape()** (2 connections) — `scripts/coverage_gate.py`
-- **add()** (1 connections) — `scripts/coverage_gate.py`
-- *... and 18 more nodes in this community*
+- *... and 19 more nodes in this community*
 
 ## Relationships
 
-- [model_monitoring.py](model_monitoring.py.md) (4 shared connections)
-- [run_scrape.py](run_scrape.py.md) (4 shared connections)
-- [check_db_history.py](check_db_history.py.md) (3 shared connections)
+- [run_scrape.py](run_scrape.py.md) (7 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (3 shared connections)
+- [os](os.md) (2 shared connections)
 - [main](main.md) (1 shared connections)
-- [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
+- [representative_models.py](representative_models.py.md) (1 shared connections)
+- [enmax_power.py](enmax_power.py.md) (1 shared connections)
+- [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -46,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 95 (100%)
+- EXTRACTED: 103 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

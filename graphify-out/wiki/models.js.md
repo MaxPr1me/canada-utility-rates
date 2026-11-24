@@ -1,35 +1,35 @@
 # models.js
 
-> 67 nodes
+> 69 nodes
 
 ## Key Concepts
 
-- **models.js** (66 connections) — `site/js/models.js`
-- **isNum()** (23 connections) — `site/js/models.js`
-- **el()** (20 connections) — `site/js/models.js`
-- **renderNotes()** (13 connections) — `site/js/models.js`
+- **models.js** (68 connections) — `site/js/models.js`
+- **isNum()** (25 connections) — `site/js/models.js`
+- **el()** (22 connections) — `site/js/models.js`
+- **renderNotes()** (14 connections) — `site/js/models.js`
+- **subsidyBlock()** (14 connections) — `site/js/models.js`
+- **money()** (12 connections) — `site/js/models.js`
 - **renderHistory()** (12 connections) — `site/js/models.js`
 - **byId()** (11 connections) — `site/js/models.js`
 - **levelRow()** (11 connections) — `site/js/models.js`
-- **money()** (11 connections) — `site/js/models.js`
 - **benchmarkBlock()** (10 connections) — `site/js/models.js`
 - **contributorsDetails()** (10 connections) — `site/js/models.js`
+- **humanize()** (10 connections) — `site/js/models.js`
 - **illustrativeLevel()** (10 connections) — `site/js/models.js`
+- **usageText()** (10 connections) — `site/js/models.js`
 - **load()** (9 connections) — `site/js/models.js`
 - **renderModel()** (9 connections) — `site/js/models.js`
-- **usageText()** (9 connections) — `site/js/models.js`
+- **renderTable()** (9 connections) — `site/js/models.js`
 - **factsGrid()** (8 connections) — `site/js/models.js`
-- **humanize()** (8 connections) — `site/js/models.js`
-- **renderTable()** (8 connections) — `site/js/models.js`
-- **nounOf()** (7 connections) — `site/js/models.js`
+- **nounOf()** (8 connections) — `site/js/models.js`
+- **cell()** (7 connections) — `site/js/models.js`
+- **sentenceCase()** (7 connections) — `site/js/models.js`
+- **sourceLink()** (7 connections) — `site/js/models.js`
 - **statsText()** (7 connections) — `site/js/models.js`
 - **taxBlock()** (7 connections) — `site/js/models.js`
-- **cell()** (6 connections) — `site/js/models.js`
-- **outliersCell()** (6 connections) — `site/js/models.js`
-- **sentenceCase()** (6 connections) — `site/js/models.js`
-- **stateText()** (6 connections) — `site/js/models.js`
-- **classSelectionNote()** (5 connections) — `site/js/models.js`
-- *... and 42 more nodes in this community*
+- **territorialNotes()** (7 connections) — `site/js/models.js`
+- *... and 44 more nodes in this community*
 
 ## Relationships
 
@@ -41,8 +41,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 221 (96%)
-- INFERRED: 9 (4%)
+- EXTRACTED: 242 (96%)
+- INFERRED: 10 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

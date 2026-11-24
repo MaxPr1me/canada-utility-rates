@@ -1,9 +1,10 @@
 # .mark_live_parsed
 
-> 55 nodes
+> 57 nodes
 
 ## Key Concepts
 
+- **.mark_live_parsed()** (49 connections) — `scrapers/base.py`
 - **nl_hydro.py** (39 connections) — `scrapers/utilities/nl_hydro.py`
 - **NLHydroScraper** (22 connections) — `scrapers/utilities/nl_hydro.py`
 - **_Reject** (21 connections) — `scrapers/utilities/nl_hydro.py`
@@ -28,28 +29,31 @@
 - **_billing_conditions()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **._audit_island_industrial_other()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_option_components()** (7 connections) — `scrapers/utilities/nl_hydro.py`
-- **_verify_nonfirm_formula()** (7 connections) — `scrapers/utilities/nl_hydro.py`
-- *... and 30 more nodes in this community*
+- *... and 32 more nodes in this community*
 
 ## Relationships
 
-- [RateComponent](RateComponent.md) (16 shared connections)
-- [TariffRecord](TariffRecord.md) (15 shared connections)
-- [re](re.md) (15 shared connections)
-- [DocumentPage](DocumentPage.md) (13 shared connections)
-- [BaseScraper](BaseScraper.md) (12 shared connections)
+- [TariffRecord](TariffRecord.md) (18 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (16 shared connections)
+- [re](re.md) (16 shared connections)
+- [BaseScraper](BaseScraper.md) (15 shared connections)
+- [DocumentPage](DocumentPage.md) (15 shared connections)
 - [.fetch_page](fetch_page.md) (6 shared connections)
-- [parse_html](parse_html.md) (2 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [parsing.py](parsing.py.md) (1 shared connections)
+- [ntpc.py](ntpc.py.md) (4 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (2 shared connections)
+- [maritime_electric.py](maritime_electric.py.md) (2 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (2 shared connections)
+- [aeso.py](aeso.py.md) (1 shared connections)
 
 ## Source Files
 
+- `scrapers/base.py`
 - `scrapers/utilities/nl_hydro.py`
 
 ## Audit Trail
 
-- EXTRACTED: 225 (99%)
+- EXTRACTED: 271 (99%)
 - INFERRED: 3 (1%)
 - AMBIGUOUS: 0 (0%)
 

@@ -7,13 +7,13 @@
 - **MarketDataError** (27 connections) — `scripts/generate_market_pricing.py`
 - **parse_hoep_csv()** (9 connections) — `scripts/generate_market_pricing.py`
 - **parse_hoep_averages()** (8 connections) — `scripts/generate_market_pricing.py`
-- **_cell_number()** (7 connections) — `scripts/generate_market_pricing.py`
 - **_number()** (7 connections) — `scripts/generate_market_pricing.py`
 - **parse_hoep_page()** (7 connections) — `scripts/generate_market_pricing.py`
 - **date** (6 connections)
 - **_parse_xml()** (5 connections) — `scripts/generate_market_pricing.py`
 - **_parse_date()** (4 connections) — `scripts/generate_market_pricing.py`
-- **xml_etree_elementtree** (4 connections)
+- **_text()** (4 connections) — `scripts/generate_market_pricing.py`
+- **validate_document()** (4 connections) — `scripts/generate_market_pricing.py`
 - **_find_text()** (3 connections) — `scripts/generate_market_pricing.py`
 - **Element** (2 connections)
 - **Exception** (1 connections)
@@ -25,13 +25,12 @@
 ## Relationships
 
 - [generate_market_pricing.py](generate_market_pricing.py.md) (25 shared connections)
-- [_actual_rates](_actual_rates.md) (9 shared connections)
-- [_yearly_files](_yearly_files.md) (5 shared connections)
+- [_actual_rates](_actual_rates.md) (8 shared connections)
+- [_yearly_files](_yearly_files.md) (6 shared connections)
 - [market_pricing.py](market_pricing.py.md) (2 shared connections)
 - [io](io.md) (2 shared connections)
-- [re](re.md) (1 shared connections)
 - [ontario_ldc.py](ontario_ldc.py.md) (1 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [re](re.md) (1 shared connections)
 
 ## Source Files
 
@@ -39,7 +38,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 70 (100%)
+- EXTRACTED: 68 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

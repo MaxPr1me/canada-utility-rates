@@ -1,50 +1,50 @@
 # representative_models.py
 
-> 33 nodes
+> 50 nodes
 
 ## Key Concepts
 
-- **representative_models.py** (119 connections) — `pipeline/representative_models.py`
+- **representative_models.py** (145 connections) — `pipeline/representative_models.py`
+- **_build_model()** (39 connections) — `pipeline/representative_models.py`
 - **_market_energy_level()** (10 connections) — `pipeline/representative_models.py`
+- **summary_stats()** (9 connections) — `pipeline/representative_models.py`
 - **_energy_block()** (8 connections) — `pipeline/representative_models.py`
-- **summary_stats()** (8 connections) — `pipeline/representative_models.py`
+- **_after_subsidy_level()** (7 connections) — `pipeline/representative_models.py`
 - **_illustrative()** (7 connections) — `pipeline/representative_models.py`
 - **statistics** (6 connections)
 - **_clean()** (5 connections) — `pipeline/representative_models.py`
+- **_benchmark()** (5 connections) — `pipeline/representative_models.py`
 - **_bucket_stats()** (5 connections) — `pipeline/representative_models.py`
+- **closest_to_median()** (5 connections) — `pipeline/representative_models.py`
 - **find_outliers()** (5 connections) — `pipeline/representative_models.py`
+- **gas_volume_unit()** (5 connections) — `pipeline/representative_models.py`
+- **_method_text()** (5 connections) — `pipeline/representative_models.py`
 - **apply_tax_lines()** (4 connections) — `pipeline/representative_models.py`
-- **closest_to_median()** (4 connections) — `pipeline/representative_models.py`
-- **format_models()** (4 connections) — `pipeline/representative_models.py`
+- **_money()** (4 connections) — `pipeline/representative_models.py`
 - **_record_buckets()** (4 connections) — `pipeline/representative_models.py`
-- **format_coverage()** (3 connections) — `pipeline/representative_models.py`
+- **_territorial_method_parts()** (4 connections) — `pipeline/representative_models.py`
+- **cheapest_elective_rows()** (3 connections) — `pipeline/representative_models.py`
+- **crosswalk_rule_levels()** (3 connections) — `pipeline/representative_models.py`
+- **elective_class_groups()** (3 connections) — `pipeline/representative_models.py`
 - **_illustrative_level()** (3 connections) — `pipeline/representative_models.py`
 - **_illustrative_method()** (3 connections) — `pipeline/representative_models.py`
-- **_money()** (3 connections) — `pipeline/representative_models.py`
 - **_period_label()** (3 connections) — `pipeline/representative_models.py`
-- **_rate()** (3 connections) — `pipeline/representative_models.py`
-- **_fmt_money()** (2 connections) — `pipeline/representative_models.py`
-- **_hours_text()** (2 connections) — `pipeline/representative_models.py`
-- **Representative models: crosswalk/coverage (Phase 7A), the modeled-cost engine…** (1 connections) — `pipeline/representative_models.py`
-- **Cost with tax and each line's amount: rate x base, never compounding; rebates…** (1 connections) — `pipeline/representative_models.py`
-- **median, n, min, p25, p75, max (statistics.quantiles 'inclusive'); None values…** (1 connections) — `pipeline/representative_models.py`
-- **Utilities > 30% from the median or outside 1.5 x IQR, with signed deviation %…** (1 connections) — `pipeline/representative_models.py`
-- *... and 8 more nodes in this community*
+- *... and 25 more nodes in this community*
 
 ## Relationships
 
-- [_build_model](_build_model.md) (34 shared connections)
-- [build_models](build_models.md) (15 shared connections)
-- [Any](Any.md) (13 shared connections)
-- [_prepare](_prepare.md) (12 shared connections)
-- [main](main.md) (11 shared connections)
-- [_select_variants](_select_variants.md) (8 shared connections)
-- [market_pricing.py](market_pricing.py.md) (6 shared connections)
-- [_price](_price.md) (5 shared connections)
-- [run_scrape.py](run_scrape.py.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
-- [_fixed_variant_groups](_fixed_variant_groups.md) (2 shared connections)
-- [re](re.md) (1 shared connections)
+- [_prepare](_prepare.md) (24 shared connections)
+- [build_models](build_models.md) (23 shared connections)
+- [Any](Any.md) (19 shared connections)
+- [main](main.md) (15 shared connections)
+- [_energy_tier_scale](_energy_tier_scale.md) (9 shared connections)
+- [_fullmatch](_fullmatch.md) (8 shared connections)
+- [market_pricing.py](market_pricing.py.md) (7 shared connections)
+- [_price](_price.md) (7 shared connections)
+- [_select_variants](_select_variants.md) (7 shared connections)
+- [run_scrape.py](run_scrape.py.md) (7 shared connections)
+- [apply_usage_bounds](apply_usage_bounds.md) (6 shared connections)
+- [re](re.md) (4 shared connections)
 
 ## Source Files
 
@@ -52,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 169 (100%)
+- EXTRACTED: 238 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

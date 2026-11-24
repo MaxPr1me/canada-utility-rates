@@ -1,10 +1,9 @@
 # preserve_ieso_reports.py
 
-> 31 nodes
+> 27 nodes
 
 ## Key Concepts
 
-- **preserve_ieso_reports.py** (22 connections) — `scripts/preserve_ieso_reports.py`
 - **RawStore** (11 connections) — `scripts/preserve_ieso_reports.py`
 - **preserve()** (8 connections) — `scripts/preserve_ieso_reports.py`
 - **.capture()** (7 connections) — `scripts/preserve_ieso_reports.py`
@@ -26,21 +25,17 @@
 - **.get()** (2 connections) — `scripts/preserve_ieso_reports.py`
 - **date** (2 connections)
 - **gzip** (2 connections)
-- **_load_archive()** (1 connections) — `scripts/preserve_ieso_reports.py`
 - **Pattern** (1 connections)
-- **Preserve unverified IESO DA-OZP/LFDA bytes independently of monthly price…** (1 connections) — `scripts/preserve_ieso_reports.py`
-- *... and 6 more nodes in this community*
+- **Persist bytes before parsing, including malformed responses. Return whether new.** (1 connections) — `scripts/preserve_ieso_reports.py`
+- **Choose a parseable capture, but reject two differing valid immutable reports.** (1 connections) — `scripts/preserve_ieso_reports.py`
+- **Read-only DA replay; LFDA, listings and monthly tables are always fetched live.** (1 connections) — `scripts/preserve_ieso_reports.py`
+- *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [run_scrape.py](run_scrape.py.md) (4 shared connections)
-- [graphify_hook.py](graphify_hook.py.md) (3 shared connections)
-- [main](main.md) (2 shared connections)
+- [os](os.md) (11 shared connections)
+- [run_scrape.py](run_scrape.py.md) (1 shared connections)
 - [_yearly_files](_yearly_files.md) (1 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
-- [check_db_history.py](check_db_history.py.md) (1 shared connections)
-- [re](re.md) (1 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,8 +43,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 66 (93%)
-- INFERRED: 5 (7%)
+- EXTRACTED: 53 (91%)
+- INFERRED: 5 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

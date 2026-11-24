@@ -1,41 +1,48 @@
 # _prepare
 
-> 22 nodes
+> 28 nodes
 
 ## Key Concepts
 
-- **_fullmatch()** (8 connections) — `pipeline/representative_models.py`
-- **_energy_tier_scale()** (6 connections) — `pipeline/representative_models.py`
-- **_period_and_tier_checks()** (6 connections) — `pipeline/representative_models.py`
-- **_tier_windows()** (6 connections) — `pipeline/representative_models.py`
-- **_block_windows()** (5 connections) — `pipeline/representative_models.py`
-- **_demand_tier_factor()** (5 connections) — `pipeline/representative_models.py`
-- **_demand_windows()** (5 connections) — `pipeline/representative_models.py`
-- **reference_customer_match()** (5 connections) — `pipeline/representative_models.py`
-- **rule_matches()** (5 connections) — `pipeline/representative_models.py`
-- **_compiled()** (4 connections) — `pipeline/representative_models.py`
-- **block_period_entry()** (4 connections) — `pipeline/representative_models.py`
-- **_note_body()** (4 connections) — `pipeline/representative_models.py`
-- **Pattern** (1 connections)
-- **Id of the first entry whose notes_regex/name_regex all fully match the…** (1 connections) — `pipeline/representative_models.py`
-- **True when every criterion of ``rule`` holds for ``record`` (regexes use…** (1 connections) — `pipeline/representative_models.py`
-- **First block_periods entry for the record: same utility, every match criterion…** (1 connections) — `pipeline/representative_models.py`
-- **(scale 'month'|'kw'|'kva', factor to the scale, conversions, problem,…** (1 connections) — `pipeline/representative_models.py`
-- **kW per threshold unit for demand blocks (kVA bounds at the power factor); None…** (1 connections) — `pipeline/representative_models.py`
-- **Windows per tier number: two-block schedules share one boundary (an item may…** (1 connections) — `pipeline/representative_models.py`
-- **Set tier_lower/tier_upper (kWh/month, or kWh per kW/kVA) on one season's energy…** (1 connections) — `pipeline/representative_models.py`
-- **Set demand_lower/demand_upper (kW) on one season's demand block items.** (1 connections) — `pipeline/representative_models.py`
-- **Attach TOU shares, block windows and demand thresholds to priced items;…** (1 connections) — `pipeline/representative_models.py`
+- **_prepare()** (20 connections) — `pipeline/representative_models.py`
+- **_after_subsidy_record()** (18 connections) — `pipeline/representative_models.py`
+- **record_monthly_cost()** (16 connections) — `pipeline/representative_models.py`
+- **date** (12 connections)
+- **_as_of()** (10 connections) — `pipeline/representative_models.py`
+- **_context()** (10 connections) — `pipeline/representative_models.py`
+- **_as_date()** (8 connections) — `pipeline/representative_models.py`
+- **component_exclusion()** (8 connections) — `pipeline/representative_models.py`
+- **tax_lines()** (8 connections) — `pipeline/representative_models.py`
+- **find_tou_shares()** (7 connections) — `pipeline/representative_models.py`
+- **season_months()** (6 connections) — `pipeline/representative_models.py`
+- **_tou_share_in_force()** (5 connections) — `pipeline/representative_models.py`
+- **_is_percentage()** (4 connections) — `pipeline/representative_models.py`
+- **_dates_text()** (2 connections) — `pipeline/representative_models.py`
+- **_stem()** (2 connections) — `pipeline/representative_models.py`
+- **_threshold_problem()** (2 connections) — `pipeline/representative_models.py`
+- **failed()** (1 connections) — `pipeline/representative_models.py`
+- **skip()** (1 connections) — `pipeline/representative_models.py`
+- **True for a component priced as a percentage or fraction (price_basis 'percent').** (1 connections) — `pipeline/representative_models.py`
+- **Classify a record's components once (level-independent): items, priced items,…** (1 connections) — `pipeline/representative_models.py`
+- **Modeled monthly cost of one record at (kWh/month, kW) with an itemized…** (1 connections) — `pipeline/representative_models.py`
+- **One zone record's cost after the reviewed automatic subsidies at one usage…** (1 connections) — `pipeline/representative_models.py`
+- **(applied, not_applied) tax/rebate lines for a level: sector, dates and…** (1 connections) — `pipeline/representative_models.py`
+- **Reason a component is left out of a modeled cost (see EXCLUSION_TEXT), or None…** (1 connections) — `pipeline/representative_models.py`
+- **Months a seasonal component applies in (None = all year) and a problem text…** (1 connections) — `pipeline/representative_models.py`
+- *... and 3 more nodes in this community*
 
 ## Relationships
 
-- [representative_models.py](representative_models.py.md) (12 shared connections)
-- [_build_model](_build_model.md) (4 shared connections)
-- [Any](Any.md) (4 shared connections)
-- [re](re.md) (3 shared connections)
+- [representative_models.py](representative_models.py.md) (24 shared connections)
+- [Any](Any.md) (15 shared connections)
+- [_select_variants](_select_variants.md) (5 shared connections)
+- [_fullmatch](_fullmatch.md) (4 shared connections)
+- [_energy_tier_scale](_energy_tier_scale.md) (4 shared connections)
+- [re](re.md) (2 shared connections)
+- [_price](_price.md) (2 shared connections)
 - [build_models](build_models.md) (2 shared connections)
-- [_select_variants](_select_variants.md) (1 shared connections)
-- [check_db_history.py](check_db_history.py.md) (1 shared connections)
+- [market_pricing.py](market_pricing.py.md) (1 shared connections)
+- [_fixed_variant_groups](_fixed_variant_groups.md) (1 shared connections)
 
 ## Source Files
 
@@ -43,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 50 (100%)
+- EXTRACTED: 105 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -35,16 +35,14 @@
 
 - [aeso.py](aeso.py.md) (13 shared connections)
 - [io](io.md) (6 shared connections)
-- [run_scrape.py](run_scrape.py.md) (4 shared connections)
-- [graphify_hook.py](graphify_hook.py.md) (4 shared connections)
+- [run_scrape.py](run_scrape.py.md) (6 shared connections)
+- [os](os.md) (6 shared connections)
 - [market_pricing.py](market_pricing.py.md) (3 shared connections)
 - [re](re.md) (3 shared connections)
-- [check_db_history.py](check_db_history.py.md) (2 shared connections)
-- [main](main.md) (2 shared connections)
 - [BaseScraper](BaseScraper.md) (2 shared connections)
 - [parse_html](parse_html.md) (1 shared connections)
-- [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
-- [parsing.py](parsing.py.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
+- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (1 shared connections)
 
 ## Source Files
 

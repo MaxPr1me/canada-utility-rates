@@ -1,6 +1,6 @@
 # epcor_energy_alberta.py
 
-> 78 nodes
+> 87 nodes
 
 ## Key Concepts
 
@@ -17,9 +17,11 @@
 - **normalize_text()** (13 connections) — `scrapers/utils/alberta_rolr.py`
 - **parse_date()** (13 connections) — `scrapers/utils/alberta_rolr.py`
 - **ENMAXEnergyScraper** (12 connections) — `scrapers/utilities/enmax_energy.py`
+- **EPCOREnergyAlbertaScraper** (12 connections) — `scrapers/utilities/epcor_energy_alberta.py`
 - **parse_cents()** (12 connections) — `scrapers/utils/alberta_rolr.py`
 - **parse_sources()** (12 connections) — `scrapers/utilities/direct_energy_regulated.py`
 - **parse_enmax_page()** (12 connections) — `scrapers/utilities/enmax_energy.py`
+- **._try_live_scrape()** (12 connections) — `scrapers/utilities/epcor_energy_alberta.py`
 - **rolr_record()** (11 connections) — `scrapers/utils/alberta_rolr.py`
 - **._try_live_scrape()** (11 connections) — `scrapers/utilities/enmax_energy.py`
 - **html_text()** (11 connections) — `scrapers/utils/alberta_rolr.py`
@@ -27,24 +29,22 @@
 - **parse_price_schedule()** (10 connections) — `scrapers/utilities/epcor_energy_alberta.py`
 - **uca_detail()** (10 connections) — `scrapers/utils/alberta_rolr.py`
 - **RolrPeriod** (9 connections) — `scrapers/utils/alberta_rolr.py`
-- **_parse_uca_grid()** (8 connections) — `scrapers/utils/alberta_rolr.py`
-- **parse_ders_page()** (7 connections) — `scrapers/utilities/direct_energy_regulated.py`
-- *... and 53 more nodes in this community*
+- *... and 62 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (24 shared connections)
+- [BaseScraper](BaseScraper.md) (33 shared connections)
+- [TariffRecord](TariffRecord.md) (16 shared connections)
 - [re](re.md) (15 shared connections)
-- [TariffRecord](TariffRecord.md) (12 shared connections)
-- [RateComponent](RateComponent.md) (11 shared connections)
-- [parse_html](parse_html.md) (7 shared connections)
-- [DocumentPage](DocumentPage.md) (6 shared connections)
-- [.__init__](__init__.md) (6 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (12 shared connections)
+- [DocumentPage](DocumentPage.md) (8 shared connections)
+- [run_scrape.py](run_scrape.py.md) (5 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
 - [DirectEnergyRegulatedScraper](DirectEnergyRegulatedScraper.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
 - [aeso.py](aeso.py.md) (3 shared connections)
-- [parsing.py](parsing.py.md) (3 shared connections)
-- [check_db_history.py](check_db_history.py.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (2 shared connections)
+- [ntpc.py](ntpc.py.md) (2 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (2 shared connections)
 
 ## Source Files
 
@@ -55,8 +55,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 300 (96%)
-- INFERRED: 14 (4%)
+- EXTRACTED: 324 (95%)
+- INFERRED: 17 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

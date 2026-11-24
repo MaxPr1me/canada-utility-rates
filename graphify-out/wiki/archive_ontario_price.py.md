@@ -1,6 +1,6 @@
 # archive_ontario_price.py
 
-> 70 nodes
+> 71 nodes
 
 ## Key Concepts
 
@@ -13,6 +13,7 @@
 - **site_api_candidates()** (11 connections) — `scripts/archive_ontario_price.py`
 - **Archive** (11 connections)
 - **month_status()** (10 connections) — `scripts/archive_ontario_price.py`
+- **parse_lfda_csv()** (10 connections) — `scripts/archive_ontario_price.py`
 - **fetch_site_api()** (9 connections) — `scripts/archive_ontario_price.py`
 - **main()** (9 connections) — `scripts/archive_ontario_price.py`
 - **download_reports()** (8 connections) — `scripts/archive_ontario_price.py`
@@ -28,23 +29,19 @@
 - **_check_days()** (5 connections) — `scripts/archive_ontario_price.py`
 - **_hour()** (5 connections) — `scripts/archive_ontario_price.py`
 - **load_lfda()** (5 connections) — `scripts/archive_ontario_price.py`
-- **_month()** (5 connections) — `scripts/archive_ontario_price.py`
-- *... and 45 more nodes in this community*
+- *... and 46 more nodes in this community*
 
 ## Relationships
 
-- [io](io.md) (14 shared connections)
+- [io](io.md) (8 shared connections)
 - [_yearly_files](_yearly_files.md) (7 shared connections)
+- [run_scrape.py](run_scrape.py.md) (6 shared connections)
+- [os](os.md) (5 shared connections)
 - [re](re.md) (4 shared connections)
-- [run_scrape.py](run_scrape.py.md) (4 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
 - [generate_market_pricing.py](generate_market_pricing.py.md) (2 shared connections)
-- [graphify_hook.py](graphify_hook.py.md) (2 shared connections)
-- [check_db_history.py](check_db_history.py.md) (2 shared connections)
-- [main](main.md) (2 shared connections)
-- [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
-- [parsing.py](parsing.py.md) (1 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
+- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (1 shared connections)
 
 ## Source Files
 

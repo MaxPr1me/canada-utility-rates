@@ -25,10 +25,9 @@
 
 - [generate_market_pricing.py](generate_market_pricing.py.md) (13 shared connections)
 - [archive_ontario_price.py](archive_ontario_price.py.md) (7 shared connections)
-- [MarketDataError](MarketDataError.md) (5 shared connections)
+- [MarketDataError](MarketDataError.md) (6 shared connections)
 - [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
 - [re](re.md) (1 shared connections)
-- [main](main.md) (1 shared connections)
 
 ## Source Files
 

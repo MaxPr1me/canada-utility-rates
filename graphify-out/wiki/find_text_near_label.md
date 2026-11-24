@@ -18,13 +18,10 @@
 
 ## Relationships
 
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (6 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
 - [re](re.md) (2 shared connections)
-- [parsing.py](parsing.py.md) (2 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
 - [TariffRecord](TariffRecord.md) (1 shared connections)
-- [parse_html](parse_html.md) (1 shared connections)
 
 ## Source Files
 

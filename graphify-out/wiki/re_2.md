@@ -1,65 +1,65 @@
 # re
 
-> 53 nodes
+> 51 nodes
 
 ## Key Concepts
 
-- **re** (273 connections)
-- **maritime_electric.py** (25 connections) — `scrapers/utilities/maritime_electric.py`
-- **saint_john_energy.py** (23 connections) — `scrapers/utilities/saint_john_energy.py`
+- **re** (277 connections)
+- **new_westminster.py** (20 connections) — `scrapers/utilities/new_westminster.py`
 - **parse_manual()** (15 connections) — `scrapers/utilities/saint_john_energy.py`
-- **parse_bylaw()** (9 connections) — `scrapers/utilities/summerland.py`
+- **parse_schedule()** (14 connections) — `scrapers/utilities/new_westminster.py`
+- **parse_rates()** (12 connections) — `scrapers/utilities/nelson_hydro.py`
+- **parse_appendix()** (10 connections) — `scrapers/utilities/penticton.py`
 - **manual_revision()** (6 connections) — `scrapers/utilities/saint_john_energy.py`
-- **normalize_document_text()** (6 connections) — `scrapers/utils/parsing.py`
-- **_schedule_date()** (5 connections) — `scrapers/utilities/maritime_electric.py`
-- **_schedule_sections()** (5 connections) — `scrapers/utilities/maritime_electric.py`
-- **_split_criteria()** (5 connections) — `scrapers/utilities/ontario_ldc.py`
+- **current_tariff_link()** (5 connections) — `scrapers/utilities/enmax_power.py`
+- **_schedule_years()** (5 connections) — `scrapers/utilities/nelson_hydro.py`
+- **find_bylaw_url()** (5 connections) — `scrapers/utilities/new_westminster.py`
 - **_class_blocks()** (5 connections) — `scrapers/utilities/saint_john_energy.py`
 - **_energy_rows()** (5 connections) — `scrapers/utilities/saint_john_energy.py`
-- **schedule_a_effective()** (5 connections) — `scrapers/utilities/summerland.py`
 - **parse_joint_schedules()** (5 connections) — `scrapers/utilities/yukon_energy.py`
 - **rider_a_terms()** (5 connections) — `scrapers/utilities/yukon_energy.py`
-- **_amounts()** (4 connections) — `scrapers/utilities/maritime_electric.py`
-- **_parse_date()** (4 connections) — `scrapers/utilities/maritime_electric.py`
-- **_tier_from_label()** (4 connections) — `scrapers/utilities/maritime_electric.py`
-- **_criteria_text()** (4 connections) — `scrapers/utilities/ontario_ldc.py`
-- **_kwh_threshold()** (4 connections) — `scrapers/utilities/ontario_ldc.py`
+- **_schedule()** (4 connections) — `scrapers/utilities/nelson_hydro.py`
+- **_one()** (4 connections) — `scrapers/utilities/new_westminster.py`
 - **_iso()** (4 connections) — `scrapers/utilities/saint_john_energy.py`
-- **find_pdf_section()** (4 connections) — `scrapers/utils/parsing.py`
-- **_cents_triplet()** (3 connections) — `scrapers/utilities/nb_power.py`
+- **comp()** (3 connections) — `scrapers/utilities/new_westminster.py`
+- **_body()** (3 connections) — `scrapers/utilities/new_westminster.py`
+- **rider_components()** (3 connections) — `scrapers/utilities/new_westminster.py`
+- **_riders()** (3 connections) — `scrapers/utilities/new_westminster.py`
+- **_pair()** (3 connections) — `scrapers/utilities/penticton.py`
 - **_applicability()** (3 connections) — `scrapers/utilities/saint_john_energy.py`
 - **clean_number()** (3 connections) — `scrapers/utils/parsing.py`
-- *... and 28 more nodes in this community*
+- **normalize_charge_unit()** (3 connections) — `scrapers/utils/parsing.py`
+- *... and 26 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (40 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (17 shared connections)
+- [BaseScraper](BaseScraper.md) (57 shared connections)
 - [enmax_power.py](enmax_power.py.md) (17 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (16 shared connections)
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (15 shared connections)
 - [.mark_live_parsed](mark_live_parsed.md) (15 shared connections)
-- [parsing.py](parsing.py.md) (14 shared connections)
+- [DocumentPage](DocumentPage.md) (13 shared connections)
+- [ntpc.py](ntpc.py.md) (13 shared connections)
 - [epcor_distribution.py](epcor_distribution.py.md) (12 shared connections)
-- [ntpc.py](ntpc.py.md) (12 shared connections)
-- [parse_html](parse_html.md) (10 shared connections)
-- [DocumentPage](DocumentPage.md) (9 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (10 shared connections)
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (9 shared connections)
 - [naka_power.py](naka_power.py.md) (9 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (8 shared connections)
 
 ## Source Files
 
-- `scrapers/utilities/maritime_electric.py`
-- `scrapers/utilities/nb_power.py`
-- `scrapers/utilities/ontario_ldc.py`
+- `scrapers/utilities/enmax_power.py`
+- `scrapers/utilities/nelson_hydro.py`
+- `scrapers/utilities/new_westminster.py`
+- `scrapers/utilities/penticton.py`
 - `scrapers/utilities/saint_john_energy.py`
-- `scrapers/utilities/summerland.py`
 - `scrapers/utilities/yukon_energy.py`
 - `scrapers/utils/parsing.py`
 
 ## Audit Trail
 
-- EXTRACTED: 388 (98%)
-- INFERRED: 6 (2%)
+- EXTRACTED: 379 (97%)
+- INFERRED: 10 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---
