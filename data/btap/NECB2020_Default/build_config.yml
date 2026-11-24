@@ -1,0 +1,71 @@
+
+# This is the name of the build environment. This will prefix all images, s3 folders, and resources created on aws. Please ensure that it is 24 characters long or less, only uses numbers and lowercase letters, and includes no spaces or special characters aside from underscore. Use the underscore character instead of spaces.
+build_env_name: bhobson
+
+# Compute Environment used to build and run analyses. Options are
+#  local: Will run everything on your own computer. Recommended for running small analysis and testing ahead of using aws.
+#  aws: Run everything on Amazon infrastructure. You can turn off your computer after the analyses are all sent to Amazon. Recommended for large analyses.
+#  local_managed_aws_workers: Analysis is managed on your local computer but simulations are done on Amazon.. Used by the aws process above.
+compute_environment: local
+
+# Branch of btap_batch to be used in aws compute_environment runs on AWS.
+btap_batch_branch: main
+
+# Branch of openstudio-standards used in environment
+os_standards_branch: nrcan
+
+# OpenStudio version used by analyses and built into the container environment. The E+ version used for simulations is determined by the OpenStudio version.
+openstudio_version: 3.11.0
+
+# Location of weather files to download. 
+# If true, downloads from btap_weather. Else, downloads from Climate.OneBuilding.Org. 
+# The other locations that you can use can be found in their respective locations here: 
+# btap_weather:
+#   https://github.com/canmet-energy/btap_weather/raw/main/historic/
+#   https://github.com/canmet-energy/btap_weather/raw/main/future/
+# Climate.OneBuilding.Org:
+#   https://climate.onebuilding.org/WMO_Region_4_North_and_Central_America/CAN_Canada/
+#   https://climate.onebuilding.org/WMO_Region_4_North_and_Central_America/CAN_Canada_Future/
+btap_weather: True 
+
+# List of Weather files to build included in the build environment. 
+# Only .epw files , and <100 files. Other weather locations are available. 
+# However, you have to define the ones you want to use when creating your environment.  
+weather_list:
+  - CAN_QC_Montreal.Intl.AP.716270_CWEC2020.epw
+  - CAN_NS_Halifax.Dockyard.713280_CWEC2020.epw
+  - CAN_AB_Edmonton.Intl.AP.711230_CWEC2020.epw
+  - CAN_BC_Vancouver.Intl.AP.718920_CWEC2020.epw
+  - CAN_AB_Calgary.Intl.AP.718770_CWEC2020.epw
+  - CAN_ON_Toronto.Intl.AP.716240_CWEC2020.epw
+  - CAN_NT_Yellowknife.AP.719360_CWEC2020.epw
+  - CAN_AB_Fort.Mcmurray.AP.716890_CWEC2020.epw
+
+# Path to the local costs.csv costing file.  The default is 'resources\costing\costs.csv'. If you are using a custom costing file, you can set the path here.
+# All relative paths are relative to the root of the btap_batch repository you are using. Ignore this if you are not using costing or are content with the default costs.csv costing file."
+local_costing_path: resources\costing\costs.csv
+
+# Path to the local costs_local_factors.csv costing localization factors file.  The default is 'resources\costing\costs_local_factors.csv'. If you are using a custom costing localization factors file, you can set the path here.
+# All relative paths are relative to the root of the btap_batch repository you are using. Ignore this if you are not using local costing localization factors or content with the default costs_local_factors.csv costing localization factors file."
+local_factors_path: resources\costing\costs_local_factors.csv
+
+# Paths to the local embodied carbon database files. 
+local_carbon_opaque_path: resources\carbon\carbon_opaque.csv
+local_carbon_glazing_path: resources\carbon\carbon_glazing.csv
+local_carbon_frame_path: resources\carbon\carbon_frame.csv
+
+# Rebuild btap_cli image
+build_btap_cli: True
+
+# Rebuild btap_batch image
+build_btap_batch: True
+
+# Set this to True if you intend to build your environment locally on a computer connected to the NRCan network.
+# Otherwise leave it as False.
+local_nrcan: False
+
+# Decryption key for proprietary RSMeans and carbon files fetched from AWS CodeCommit.
+# Only used with the --use_proprietary_data build flag.
+btap_decryption_key: ''
+
+git_api_token: ''
