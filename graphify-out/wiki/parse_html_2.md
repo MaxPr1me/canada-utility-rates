@@ -38,7 +38,7 @@
 - [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
 - [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- epcor_gas_ontario.py `EXTRACTED`
+- [epcor_gas_ontario.py](epcor_gas_ontario.py.md) `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
@@ -48,7 +48,7 @@
 - alberta_rolr.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
 - [naka_power.py](naka_power.py.md) `EXTRACTED`
-- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
+- maritime_electric.py `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - grand_forks.py `EXTRACTED`
 - [lethbridge.py](lethbridge.py.md) `EXTRACTED`

@@ -1,6 +1,6 @@
 # fortisalberta.py
 
-> 51 nodes
+> 44 nodes
 
 ## Key Concepts
 
@@ -9,7 +9,6 @@
 - **_date()** (17 connections) — `scrapers/utilities/fortisalberta.py`
 - **_Section** (12 connections) — `scrapers/utilities/fortisalberta.py`
 - **_Document** (11 connections) — `scrapers/utilities/fortisalberta.py`
-- **FortisAlbertaScraper** (11 connections) — `scrapers/utilities/fortisalberta.py`
 - **_charge()** (11 connections) — `scrapers/utilities/fortisalberta.py`
 - **_balancing_pool_rider()** (11 connections) — `scrapers/utilities/fortisalberta.py`
 - **_base_rider()** (11 connections) — `scrapers/utilities/fortisalberta.py`
@@ -19,7 +18,6 @@
 - **_option_i()** (10 connections) — `scrapers/utilities/fortisalberta.py`
 - **_quarterly_rider()** (10 connections) — `scrapers/utilities/fortisalberta.py`
 - **_ClassSpec** (9 connections) — `scrapers/utilities/fortisalberta.py`
-- **.scrape()** (9 connections) — `scrapers/utilities/fortisalberta.py`
 - **parse_schedule_pages()** (9 connections) — `scrapers/utilities/fortisalberta.py`
 - **_kw_kva_pair()** (8 connections) — `scrapers/utilities/fortisalberta.py`
 - **_rider_row()** (8 connections) — `scrapers/utilities/fortisalberta.py`
@@ -29,21 +27,19 @@
 - **document_edition_date()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **_document()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **Match** (6 connections)
-- *... and 26 more nodes in this community*
+- **.one()** (5 connections) — `scrapers/utilities/fortisalberta.py`
+- **_demand_rules()** (4 connections) — `scrapers/utilities/fortisalberta.py`
+- *... and 19 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (12 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (11 shared connections)
-- [DocumentPage](DocumentPage.md) (7 shared connections)
+- [BaseScraper](BaseScraper.md) (11 shared connections)
+- [RateComponent](RateComponent.md) (9 shared connections)
 - [re](re.md) (7 shared connections)
-- [TariffRecord](TariffRecord.md) (6 shared connections)
+- [FortisAlbertaScraper](FortisAlbertaScraper.md) (6 shared connections)
+- [DocumentPage](DocumentPage.md) (5 shared connections)
+- [TariffRecord](TariffRecord.md) (3 shared connections)
 - [.fetch_page](fetch_page.md) (2 shared connections)
-- [ENMAXPowerScraper](ENMAXPowerScraper.md) (1 shared connections)
-- [ntpc.py](ntpc.py.md) (1 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
-- [run_scrape.py](run_scrape.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -51,8 +47,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 176 (92%)
-- INFERRED: 16 (8%)
+- EXTRACTED: 159 (92%)
+- INFERRED: 13 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

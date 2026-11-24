@@ -9,7 +9,7 @@
 ### calls
 - [re](re.md) `EXTRACTED`
 - [DocumentPage](DocumentPage.md) `EXTRACTED`
-- [io](io.md) `EXTRACTED`
+- io `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
@@ -49,9 +49,9 @@
 - grand_forks.py `EXTRACTED`
 - [lethbridge.py](lethbridge.py.md) `EXTRACTED`
 - hydro_quebec.py `EXTRACTED`
-- saint_john_energy.py `EXTRACTED`
-- [red_deer.py](red_deer.py.md) `EXTRACTED`
-- new_westminster.py `EXTRACTED`
+- [saint_john_energy.py](saint_john_energy.py.md) `EXTRACTED`
+- red_deer.py `EXTRACTED`
+- [new_westminster.py](new_westminster.py.md) `EXTRACTED`
 - summerland.py `EXTRACTED`
 - *…and 10 more `imports` connection(s) not listed (lowest-degree first to go)*
 

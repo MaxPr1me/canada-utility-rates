@@ -1,54 +1,53 @@
 # DocumentPage
 
-> 19 nodes
+> 29 nodes
 
 ## Key Concepts
 
-- **DocumentPage** (241 connections) — `scrapers/utils/parsing.py`
-- **FortisBCElectricScraper** (10 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **.scrape()** (8 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **._seed_data()** (7 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **extract_schedule_pages()** (6 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **manual_effective()** (6 connections) — `scrapers/utilities/summerside_electric.py`
-- **._fetch_schedule_pages()** (5 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **.parse_schedule_pages()** (5 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **find_pdf_section()** (4 connections) — `scrapers/utils/parsing.py`
-- **_iso()** (2 connections) — `scrapers/utilities/summerside_electric.py`
-- **.source_detail()** (1 connections) — `scrapers/utils/parsing.py`
-- **Extract only the supported schedule sheets from the full Electric Tariff PDF.…** (1 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **Scrape FortisBC Electric building rate schedules from the official Electric…** (1 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **Parse each schedule independently; label seed fallbacks for failed seeded…** (1 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **Return the schedules that parse completely; a failing schedule is skipped and…** (1 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **Fallback copies of the published RS 1 and RS 20 values; never presented as live.** (1 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **Most recent date of the page-2 revision table (rate adjustments only).** (1 connections) — `scrapers/utilities/summerside_electric.py`
-- **Return pages belonging to a labelled tariff section. Merely finding a number is…** (1 connections) — `scrapers/utils/parsing.py`
-- **Text extracted from one source page, retaining its human page number.** (1 connections) — `scrapers/utils/parsing.py`
+- **NewfoundlandPowerScraper** (24 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._try_live_scrape()** (14 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._parse_pages()** (11 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._find_page()** (9 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._page_date()** (9 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._net_metering_domestic()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._primary_voltage_discount()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._prompt_payment()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._seasonal_domestic()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._annotate_base()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._curtailable()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._parse_ratebook()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._service_fees()** (6 connections) — `scrapers/utilities/newfoundland_power.py`
+- **.scrape()** (6 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._parse_components()** (5 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._seed_data()** (5 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._rate_section()** (3 connections) — `scrapers/utilities/newfoundland_power.py`
+- **add()** (3 connections) — `scrapers/utilities/newfoundland_power.py`
+- **._slice()** (3 connections) — `scrapers/utilities/newfoundland_power.py`
+- **Attach page-level provenance to the already parsed core components.** (1 connections) — `scrapers/utilities/newfoundland_power.py`
+- **Parse optional/seasonal, discount and fee records; each fails independently.** (1 connections) — `scrapers/utilities/newfoundland_power.py`
+- **Build a TariffRecord for each core rate class found in the RateBook text.** (1 connections) — `scrapers/utilities/newfoundland_power.py`
+- **Return the charge-bearing detail section for a rate code, bounded to the next…** (1 connections) — `scrapers/utilities/newfoundland_power.py`
+- **Return the text between *start_label* and the earliest of *end_labels*.** (1 connections) — `scrapers/utilities/newfoundland_power.py`
+- **Extract fixed, demand and energy components from one rate-detail section.** (1 connections) — `scrapers/utilities/newfoundland_power.py`
+- *... and 4 more nodes in this community*
 
 ## Relationships
 
-- [fortisbc_electric.py](fortisbc_electric.py.md) (25 shared connections)
-- [BaseScraper](BaseScraper.md) (20 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (20 shared connections)
-- [re](re.md) (18 shared connections)
-- [TariffRecord](TariffRecord.md) (16 shared connections)
-- [epcor_distribution.py](epcor_distribution.py.md) (15 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (14 shared connections)
-- [enmax_power.py](enmax_power.py.md) (14 shared connections)
+- [TariffRecord](TariffRecord.md) (14 shared connections)
 - [DocumentPage](DocumentPage.md) (11 shared connections)
-- [EnbridgeGasScraper](EnbridgeGasScraper.md) (10 shared connections)
 - [RateComponent](RateComponent.md) (9 shared connections)
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (8 shared connections)
+- [BaseScraper](BaseScraper.md) (7 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
 
-- `scrapers/utilities/fortisbc_electric.py`
-- `scrapers/utilities/summerside_electric.py`
-- `scrapers/utils/parsing.py`
+- `scrapers/utilities/newfoundland_power.py`
 
 ## Audit Trail
 
-- EXTRACTED: 169 (61%)
-- INFERRED: 110 (39%)
+- EXTRACTED: 98 (97%)
+- INFERRED: 3 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

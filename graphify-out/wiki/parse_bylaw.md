@@ -15,7 +15,7 @@
 
 - [BaseScraper](BaseScraper.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (1 shared connections)
 - [TariffRecord](TariffRecord.md) (1 shared connections)
 - [.fetch_page](fetch_page.md) (1 shared connections)
 - [DocumentPage](DocumentPage.md) (1 shared connections)

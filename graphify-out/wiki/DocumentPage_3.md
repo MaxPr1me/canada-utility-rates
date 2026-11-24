@@ -25,7 +25,7 @@
 - [fortisbc_electric.py](fortisbc_electric.py.md) `EXTRACTED`
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- epcor_gas_ontario.py `EXTRACTED`
+- [epcor_gas_ontario.py](epcor_gas_ontario.py.md) `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
@@ -34,7 +34,7 @@
 - enmax_energy.py `EXTRACTED`
 - manitoba_hydro.py `EXTRACTED`
 - [naka_power.py](naka_power.py.md) `EXTRACTED`
-- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
+- maritime_electric.py `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - grand_forks.py `EXTRACTED`
 - [lethbridge.py](lethbridge.py.md) `EXTRACTED`
@@ -88,7 +88,7 @@
 - _schedule_page() `INFERRED`
 - SaskPowerScraper `INFERRED`
 - parse_manual() `INFERRED`
-- ManitobaHydroScraper `INFERRED`
+- [ManitobaHydroScraper](ManitobaHydroScraper.md) `INFERRED`
 - parse_tariff_pages() `INFERRED`
 - _parse_commercial() `INFERRED`
 - *…and 89 more `uses` connection(s) not listed (lowest-degree first to go)*

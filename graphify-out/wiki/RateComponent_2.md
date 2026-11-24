@@ -2,7 +2,7 @@
 
 > God node · 287 connections · `scrapers/base.py`
 
-**Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
+**Community:** [RateComponent](RateComponent.md)
 
 ## Connections by Relation
 
@@ -40,7 +40,7 @@
 - [ntpc.py](ntpc.py.md) `EXTRACTED`
 - [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
 - [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- epcor_gas_ontario.py `EXTRACTED`
+- [epcor_gas_ontario.py](epcor_gas_ontario.py.md) `EXTRACTED`
 - nl_hydro.py `EXTRACTED`
 - atco_electric.py `EXTRACTED`
 - enbridge_gas.py `EXTRACTED`
@@ -51,7 +51,7 @@
 - manitoba_hydro.py `EXTRACTED`
 - [naka_power.py](naka_power.py.md) `EXTRACTED`
 - nb_power.py `EXTRACTED`
-- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
+- maritime_electric.py `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
 - *…and 28 more `imports` connection(s) not listed (lowest-degree first to go)*
 

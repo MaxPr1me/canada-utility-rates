@@ -1,9 +1,10 @@
 # ATCOGasScraper
 
-> 52 nodes
+> 51 nodes
 
 ## Key Concepts
 
+- **atco_gas.py** (34 connections) — `scrapers/utilities/atco_gas.py`
 - **ATCOGasScraper** (23 connections) — `scrapers/utilities/atco_gas.py`
 - **_date()** (15 connections) — `scrapers/utilities/atco_gas.py`
 - **._build()** (13 connections) — `scrapers/utilities/atco_gas.py`
@@ -21,27 +22,25 @@
 - **._rider_e()** (5 connections) — `scrapers/utilities/atco_gas.py`
 - **_amount()** (5 connections) — `scrapers/utilities/atco_gas.py`
 - **._pdf_pages()** (5 connections) — `scrapers/utilities/atco_gas.py`
-- **.scrape()** (5 connections) — `scrapers/utilities/atco_gas.py`
 - **_Page** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **RiderTable** (4 connections) — `scrapers/utilities/atco_gas.py`
-- **._seed_data()** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **._today()** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **_soup_text()** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **ClassSpec** (3 connections) — `scrapers/utilities/atco_gas.py`
 - **Commodity** (3 connections) — `scrapers/utilities/atco_gas.py`
-- *... and 27 more nodes in this community*
+- **DeemedValue** (3 connections) — `scrapers/utilities/atco_gas.py`
+- *... and 26 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (24 shared connections)
-- [TariffRecord](TariffRecord.md) (6 shared connections)
-- [DocumentPage](DocumentPage.md) (4 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
-- [ntpc.py](ntpc.py.md) (1 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
-- [re](re.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (14 shared connections)
+- [TariffRecord](TariffRecord.md) (8 shared connections)
+- [DocumentPage](DocumentPage.md) (5 shared connections)
+- [RateComponent](RateComponent.md) (4 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [re](re.md) (2 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
+- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,7 +48,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 141 (98%)
+- EXTRACTED: 150 (98%)
 - INFERRED: 3 (2%)
 - AMBIGUOUS: 0 (0%)
 

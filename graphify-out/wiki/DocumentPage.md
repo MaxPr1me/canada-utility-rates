@@ -1,56 +1,62 @@
 # DocumentPage
 
-> 29 nodes
+> 45 nodes
 
 ## Key Concepts
 
-- **NewfoundlandPowerScraper** (24 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._try_live_scrape()** (14 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._parse_pages()** (11 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._find_page()** (9 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._page_date()** (9 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._net_metering_domestic()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._primary_voltage_discount()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._prompt_payment()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._seasonal_domestic()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._annotate_base()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._curtailable()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._parse_ratebook()** (7 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._service_fees()** (6 connections) — `scrapers/utilities/newfoundland_power.py`
-- **.scrape()** (6 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._parse_components()** (5 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._seed_data()** (5 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._rate_section()** (3 connections) — `scrapers/utilities/newfoundland_power.py`
-- **add()** (3 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._slice()** (3 connections) — `scrapers/utilities/newfoundland_power.py`
-- **Attach page-level provenance to the already parsed core components.** (1 connections) — `scrapers/utilities/newfoundland_power.py`
-- **Parse optional/seasonal, discount and fee records; each fails independently.** (1 connections) — `scrapers/utilities/newfoundland_power.py`
-- **Build a TariffRecord for each core rate class found in the RateBook text.** (1 connections) — `scrapers/utilities/newfoundland_power.py`
-- **Return the charge-bearing detail section for a rate code, bounded to the next…** (1 connections) — `scrapers/utilities/newfoundland_power.py`
-- **Return the text between *start_label* and the earliest of *end_labels*.** (1 connections) — `scrapers/utilities/newfoundland_power.py`
-- **Extract fixed, demand and energy components from one rate-detail section.** (1 connections) — `scrapers/utilities/newfoundland_power.py`
-- *... and 4 more nodes in this community*
+- **DocumentPage** (241 connections) — `scrapers/utils/parsing.py`
+- **NLHydroScraper** (22 connections) — `scrapers/utilities/nl_hydro.py`
+- **YukonEnergyScraper** (20 connections) — `scrapers/utilities/yukon_energy.py`
+- **._parse_residential_pdfs()** (15 connections) — `scrapers/utilities/yukon_energy.py`
+- **._parse_labrador_nonfirm()** (12 connections) — `scrapers/utilities/nl_hydro.py`
+- **_flat()** (12 connections) — `scrapers/utilities/nl_hydro.py`
+- **.parse_schedule_pages()** (11 connections) — `scrapers/utilities/nl_hydro.py`
+- **._published_sections()** (11 connections) — `scrapers/utilities/nl_hydro.py`
+- **._try_live_scrape()** (11 connections) — `scrapers/utilities/nl_hydro.py`
+- **._parse_island_industrial()** (10 connections) — `scrapers/utilities/nl_hydro.py`
+- **._parse_island_nonfirm()** (10 connections) — `scrapers/utilities/nl_hydro.py`
+- **date** (10 connections)
+- **._parse_labrador_industrial()** (9 connections) — `scrapers/utilities/nl_hydro.py`
+- **._parse_net_metering()** (9 connections) — `scrapers/utilities/nl_hydro.py`
+- **._joint_schedule()** (9 connections) — `scrapers/utilities/yukon_energy.py`
+- **._new_record()** (8 connections) — `scrapers/utilities/nl_hydro.py`
+- **._nonfirm_record()** (7 connections) — `scrapers/utilities/nl_hydro.py`
+- **._audit_island_industrial_other()** (7 connections) — `scrapers/utilities/nl_hydro.py`
+- **._general_service_records()** (7 connections) — `scrapers/utilities/yukon_energy.py`
+- **._try_last_known_schedule()** (6 connections) — `scrapers/utilities/nl_hydro.py`
+- **manual_effective()** (6 connections) — `scrapers/utilities/summerside_electric.py`
+- **_landing_rates()** (5 connections) — `scrapers/utilities/nl_hydro.py`
+- **parse_joint_schedules()** (5 connections) — `scrapers/utilities/yukon_energy.py`
+- **rider_a_terms()** (5 connections) — `scrapers/utilities/yukon_energy.py`
+- **_nonfirm_components()** (4 connections) — `scrapers/utilities/nl_hydro.py`
+- *... and 20 more nodes in this community*
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (13 shared connections)
+- [re](re.md) (40 shared connections)
+- [BaseScraper](BaseScraper.md) (33 shared connections)
+- [TariffRecord](TariffRecord.md) (32 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (22 shared connections)
+- [RateComponent](RateComponent.md) (20 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (20 shared connections)
+- [enmax_power.py](enmax_power.py.md) (15 shared connections)
+- [epcor_distribution.py](epcor_distribution.py.md) (15 shared connections)
+- [.fetch_page](fetch_page.md) (13 shared connections)
 - [DocumentPage](DocumentPage.md) (11 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (9 shared connections)
-- [BaseScraper](BaseScraper.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
-- [.now_iso](now_iso.md) (1 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
-- [ntpc.py](ntpc.py.md) (1 shared connections)
-- [.mark_live_parsed](mark_live_parsed.md) (1 shared connections)
+- [naka_power.py](naka_power.py.md) (7 shared connections)
+- [EnbridgeGasScraper](EnbridgeGasScraper.md) (6 shared connections)
 
 ## Source Files
 
-- `scrapers/utilities/newfoundland_power.py`
+- `scrapers/utilities/nl_hydro.py`
+- `scrapers/utilities/summerside_electric.py`
+- `scrapers/utilities/yukon_energy.py`
+- `scrapers/utils/parsing.py`
 
 ## Audit Trail
 
-- EXTRACTED: 98 (97%)
-- INFERRED: 3 (3%)
+- EXTRACTED: 293 (72%)
+- INFERRED: 114 (28%)
 - AMBIGUOUS: 0 (0%)
 
 ---
