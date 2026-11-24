@@ -459,7 +459,7 @@ def input_checks(root: Path, now: datetime) -> list[dict]:
         problems.extend(f"{finding['code']}: {finding['message']}" for finding in coverage["global"]
                         if finding["level"] == "error")
         checks.append({"id": "coverage", "ok": coverage["passed"], "details": problems,
-                       "warnings": coverage["warnings"]})
+                       "warnings": coverage["warnings"], "freshness": coverage["freshness"]})
     except (OSError, ValueError, KeyError, TypeError) as exc:
         checks.append({"id": "coverage", "ok": False, "details": [f"Coverage inputs cannot be checked: {exc}"]})
     try:
@@ -750,6 +750,54 @@ def workflow_checks(context: dict, now: datetime, manual_updates: dict[str, date
     return checks + sources
 
 
+# Owner decisions 2026-11-23: the "Rates not updated in a year" issue is reported once a quarter, after the first
+# successful full Monthly Scrape of January, April, July and October.
+FRESHNESS_REPORT_MONTHS = (1, 4, 7, 10)
+
+
+def _report_run(context: dict | None, now: datetime, run_id: str | None) -> tuple[bool, str]:
+    """Whether this monitoring job belongs to a successful full Monthly Scrape in a quarter's first month.
+
+    Proven by the calling run's own receipts (run and attempt bound): the full source scope, a completed source-check
+    step, a successful model generation and a successful data publication. The monthly-price run on the 4th, targeted
+    runs, Source Health and the other workflows never qualify; neither does a run whose receipts are not visible.
+    """
+    if now.month not in FRESHNESS_REPORT_MONTHS:
+        return False, "not the first month of a quarter"
+    if not run_id or context is None:
+        return False, "no GitHub Actions run context"
+    runs = context.get("workflows", {}).get("scrape.yml", {}).get("runs", [])
+    run = next((item for item in runs if str(item.get("id")) == str(run_id)), None)
+    if run is None:
+        return False, "this run is not a Monthly Scrape, or its receipts were not visible"
+    try:
+        outcome = _evidence(run, "monitor-status.json")
+        sources = _evidence(run, "source-summary.json")
+        _successful_generation(_evidence(run, "model-generation.json"))
+        if sources["scope"]["full"] is not True:
+            return False, "a targeted or monthly-price Monthly Scrape, not a full one"
+        if outcome["sources"] != "success" or outcome["publication"] != "success":
+            return False, "the Monthly Scrape did not complete its scrape and publication"
+    except (ValueError, KeyError, TypeError) as exc:
+        return False, f"the run's receipts could not be verified: {exc}"
+    return True, "a successful full Monthly Scrape in the first month of the quarter"
+
+
+def freshness_report(utilities: dict | None, context: dict | None, now: datetime, run_id: str | None) -> dict | None:
+    """The data for the quarterly "Rates not updated in a year" issue (owner decisions 2026-11-23 and 2026-11-24).
+
+    ``utilities`` is the coverage gate's ``freshness`` result: the utilities with a document whose prices have not
+    changed for more than a year, after the ledger's exemptions and review notes. None when the gate inputs could
+    not be read: nothing is then reported, so the issue is neither created nor closed on missing data. Only a report
+    run creates a quarter's issue; every other run only refreshes an open one (scripts/model_monitoring_issue.js).
+    """
+    if not isinstance(utilities, dict):
+        return None
+    report_run, reason = _report_run(context, now, run_id)
+    return {"version": 1, "checked_at": now.isoformat(), "quarter": f"{now.year}-Q{(now.month - 1) // 3 + 1}",
+            "report_run": report_run, "reason": reason, "utilities": utilities}
+
+
 def read_evidence_archive(path: Path) -> dict:
     """Read only named JSON receipts from a small Actions artifact; never extract paths from a ZIP."""
     names = {"model-generation.json", "source-summary.json", "monitor-status.json"}
@@ -783,7 +831,11 @@ def main(argv: list[str] | None = None) -> int:
     now = datetime.now(timezone.utc)
     report = {"version": SCHEMA_VERSION, "checked_at": now.isoformat(), "run": run_identity(),
               "checks": input_checks(ROOT, now)}
+    coverage = next((check for check in report["checks"] if check["id"] == "coverage"), {})
+    freshness = coverage.pop("freshness", None)
+    context = None
     if args.github_context:
+        context = read_json(args.github_context)
         try:
             manual_updates = manual_update_reviews(read_json(ROOT / "data" / "sources" / "coverage_ledger.json"))
         except (OSError, ValueError):
@@ -795,10 +847,10 @@ def main(argv: list[str] | None = None) -> int:
                                monthly_price_utilities(load_registry(ROOT / "data" / "sources" / "registry.json"))}
         except (OSError, ValueError, KeyError, TypeError):
             price_utilities = set()  # no hold: their failures are reported as soon as they are seen
-        report["checks"].extend(workflow_checks(read_json(args.github_context), now, manual_updates,
-                                                price_utilities))
+        report["checks"].extend(workflow_checks(context, now, manual_updates, price_utilities))
     else:
         report["scope_note"] = "Local file checks only; GitHub workflow cadence was not checked."
+    report["freshness"] = freshness_report(freshness, context, now, report["run"]["id"])
     try:
         document = read_json(args.models)
         semantic_models(document)
@@ -834,6 +886,12 @@ def main(argv: list[str] | None = None) -> int:
           f"{'history write requested' if args.record else 'read-only check'}.")
     for check in failed:
         print(f"{check['id']}: " + "; ".join(check["details"]))
+    if report["freshness"] is not None:
+        flagged = report["freshness"]["utilities"]
+        print(f"Rates not updated in a year: {len(flagged)} utilities"
+              + (f" ({', '.join(flagged)})" if flagged else "")
+              + f"; quarterly report run: {'yes' if report['freshness']['report_run'] else 'no'}"
+              f" ({report['freshness']['reason']}).")
     if report.get("scope_note"):
         print(report["scope_note"])
     return 1 if failed else 0

@@ -410,6 +410,10 @@ and the [Territories section](../.github/instructions/regional-utilities.instruc
   (Centra's `SCHEDULE_EDITIONS`), so that a new year or edition needs no code change or only one new
   entry. Failure messages name what changed. See the
   [scraper rules](../.github/instructions/scrapers.instructions.md#freshness-and-maintenance).
+- **Name each value's own document.** Set a component's `source_url` to the official document its
+  value was read from (a rider page, a supply-price page, the tariff sheet), not only the tariff's main
+  page: the coverage gate's one-year check dates each document separately and flags one whose prices
+  have not changed for more than a year (owner decisions 2026-11-23 and 2026-11-24).
 - **A monthly price posted after the 1st joins the monthly-price run.** If the price changes every
   month and the new month is often posted after the 1st, add `"monthly_price_refresh": true` to the
   utility's registry entry: the Monthly Scrape then runs it again on the 4th, and model monitoring

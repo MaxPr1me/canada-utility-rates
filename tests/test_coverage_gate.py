@@ -156,6 +156,109 @@ def test_summary_names_utilities_without_live_output_and_counts_codes():
     assert "no_live_output 1 (A)" in summary and "no_audit 1" in summary and "deferred_open 1" in summary
 
 
+SOURCE = "https://example.test/schedule"
+OTHER = "https://example.test/other"
+
+
+def _version(name, effective, *lines, tariff="T", end=None, source=SOURCE):
+    """A live tariff version; each line is (component_type, charge_value[, extra component fields])."""
+    components = [{"component_type": ctype, "component_name": f"{ctype} charge", "charge_value": value,
+                   "charge_unit": "$/kWh", **(extra[0] if extra else {})} for ctype, value, *extra in lines]
+    return {"utility_name": name, "name": tariff, "provenance": "live", "effective_date": effective,
+            "end_date": end, "source_url": source, "components": components}
+
+
+def test_redated_or_renamed_identical_values_are_not_a_price_change():
+    # Owner decisions 2026-11-23 (re-dated identical values do not count) and 2026-11-24 (renames do not count).
+    v1 = _version("A", "2025-01-01", ("energy", 0.1), ("fixed", 10.0))
+    v2 = _version("A", "2026-01-01", ("energy", 0.1, {"component_name": "Energy (renamed)"}), ("fixed", 10))
+    assert gate.document_update_dates([v2, v1], AS_OF) == {SOURCE: date(2025, 1, 1)}
+    v3 = _version("A", "2026-07-01", ("energy", 0.11), ("fixed", 10.0))
+    assert gate.document_update_dates([v1, v2, v3], AS_OF) == {SOURCE: date(2026, 7, 1)}
+
+
+def test_threshold_changes_added_and_removed_lines_are_price_changes():
+    tier = {"tier_number": 1, "tier_threshold": 1000}
+    base = _version("A", "2025-01-01", ("energy", 0.1, tier), ("fixed", 10.0))
+
+    def changed(*lines, effective="2026-03-01"):
+        return gate.document_update_dates([base, _version("A", effective, *lines)], AS_OF)[SOURCE]
+
+    assert changed(("energy", 0.1, {**tier, "tier_threshold": 1200}), ("fixed", 10.0)) == date(2026, 3, 1)
+    assert changed(("energy", 0.1, tier)) == date(2026, 3, 1)
+    assert changed(("energy", 0.1, tier), ("fixed", 10.0), ("rider", 0.002)) == date(2026, 3, 1)
+    # A replaced value is dated by its replacement, not by the later version that first stored it.
+    assert changed(("energy", 0.12, {**tier, "effective_date": "2026-01-01"}), ("fixed", 10.0)) == date(2026, 1, 1)
+
+
+def test_zero_valueless_and_ended_prices_are_ignored():
+    records = [
+        _version("A", "2026-06-01", ("energy", 0.1), ("carbon", 0.0, {"source_url": OTHER}),
+                 ("market", None, {"source_url": OTHER}),
+                 ("rider", 0.01, {"source_url": OTHER, "effective_date": "2024-01-01", "end_date": "2026-09-30"})),
+        _version("A", "2024-01-01", ("fixed", 5.0), tariff="Ended", end="2026-06-30", source=OTHER),
+    ]
+    assert gate.document_update_dates(records, AS_OF) == {SOURCE: date(2026, 6, 1)}
+    assert gate.document_update_dates(records, date(2026, 9, 1))[OTHER] == date(2024, 1, 1)
+
+
+def test_a_stale_document_behind_a_fresh_one_is_flagged_after_its_anniversary():
+    # Owner decision 2026-11-24: each document is checked on its own, so a fresh monthly price cannot hide a
+    # delivery schedule that has not changed for a year.
+    records = [_version("A", "2026-10-01", ("commodity", 5.0),
+                        ("fixed", 22.5, {"source_url": OTHER, "effective_date": "2025-10-30"}))]
+
+    def result_on(as_of):
+        return gate.evaluate(_registry(("A", "active")), records, _ledger(A={"audit": AUDIT}), as_of)
+
+    on_due_date = result_on(date(2026, 10, 30))
+    assert on_due_date["passed"] and not on_due_date["warnings"] and on_due_date["freshness"] == {}
+    after = result_on(date(2026, 10, 31))
+    assert after["passed"] and after["warnings"] == {"not_updated_in_a_year": 1}
+    assert after["freshness"] == {"A": [{"document": OTHER, "last_change": "2025-10-30", "due": "2026-10-30"}]}
+    assert "not_updated_in_a_year 1 (A)" in gate.format_summary(after)
+    assert gate.one_year_after(date(2024, 2, 29)) == date(2025, 2, 28)
+
+
+def test_review_note_clears_only_existing_flags_until_it_expires():
+    records = [_version("A", "2025-01-01", ("fixed", 10.0)),
+               _version("A", "2025-12-01", ("energy", 0.1), tariff="U", source=OTHER)]
+    review = {"reviewed": "2026-06-01", "finding": "legitimate", "basis": "prices fixed by order"}
+
+    def stale(as_of, **change):
+        return [item["document"] for item in
+                gate.stale_documents(records, {"freshness_review": {**review, **change}}, as_of)]
+
+    assert stale(date(2026, 5, 31)) == [SOURCE]
+    assert stale(date(2026, 6, 1)) == []
+    assert stale(date(2026, 12, 2)) == [OTHER]  # turned a year old after the review
+    assert stale(date(2027, 6, 1)) == [OTHER]
+    assert stale(date(2027, 6, 2)) == [OTHER, SOURCE]  # the note lasts one year
+    assert stale(date(2026, 9, 2), review_by="2026-09-01") == [SOURCE]  # or until an earlier date it names
+
+
+def test_freshness_exemption_and_review_note_are_validated():
+    exempt = {"reason": "publishes no price", "decided": "2026-11-23"}
+    records = [_version("A", "2020-01-01", ("fixed", 10.0))]
+    assert gate.stale_documents(records, {"freshness_exempt": exempt}, AS_OF) == []
+    assert gate.stale_documents(records, {"freshness_exempt": {**exempt, "reason": " "}}, AS_OF)  # grants nothing
+
+    def problems(**entry):
+        return gate.validate_ledger(_ledger(A={"audit": AUDIT, **entry}))
+
+    review = {"reviewed": "2026-11-24", "finding": "legitimate", "basis": "rates fixed until 2027"}
+    assert problems(freshness_exempt=exempt) == problems(freshness_review=review) == []
+    assert problems(freshness_review={**review, "review_by": "2027-06-30"}) == []
+    assert problems(freshness_exempt={**exempt, "until": "2027-01-01"})  # no end date (owner decision 2026-11-24)
+    for bad in ({**review, "review_by": "2027-11-25"}, {**review, "review_by": "2026-11-24"},
+                {**review, "finding": "fine"}, {"reviewed": "2026-11-24", "finding": "legitimate"}):
+        assert problems(freshness_review=bad), bad
+    assert problems(freshness_exempt=exempt, freshness_review=review)
+    result = gate.evaluate(_registry(("A", "active")), records,
+                           _ledger(A={"audit": AUDIT, "freshness_review": {**review, "finding": "fine"}}), AS_OF)
+    assert result["errors"] == {"ledger_invalid": 1} and result["warnings"] == {"not_updated_in_a_year": 1}
+
+
 def _write(tmp_path, registry, rates, ledger):
     paths = {}
     for key, value in (("registry", registry), ("rates", rates), ("ledger", ledger)):

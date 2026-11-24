@@ -643,3 +643,95 @@ const report = checks => ({version: 1, checked_at: '2026-11-17T12:00:00Z', check
 """
     result = subprocess.run(["node", "-e", script, str(helper)], capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_only_a_full_successful_monthly_scrape_in_a_quarters_first_month_is_the_freshness_report_run(document):
+    # Owner decisions 2026-11-23: the quarterly report follows the first successful full Monthly Scrape of January,
+    # April, July and October; the monthly-price run, targeted runs and other workflows only refresh an open issue.
+    flagged = {"A": [{"document": "https://example.test/a", "last_change": "2025-01-01", "due": "2026-01-01"}]}
+
+    def report(context, now="2027-01-01T12:00:00Z", run_id="1"):
+        return monitoring.freshness_report(flagged, context, monitoring.timestamp(now), run_id)
+
+    first = report(workflow_context(document))
+    assert first["report_run"] is True and first["quarter"] == "2027-Q1" and first["utilities"] == flagged
+    assert report(workflow_context(document), now="2027-02-01T12:00:00Z")["report_run"] is False
+    assert report(workflow_context(document, full=False))["report_run"] is False
+    assert report(workflow_context(document, publication="failure"))["report_run"] is False
+    assert report(workflow_context(document), run_id="2")["report_run"] is False  # another workflow's monitor job
+    assert report(None, run_id=None)["report_run"] is False
+    broken = workflow_context(document)
+    del broken["workflows"]["scrape.yml"]["runs"][0]["evidence"]["model-generation.json"]
+    assert report(broken)["report_run"] is False
+    assert monitoring.freshness_report(None, workflow_context(document), monitoring.timestamp(
+        "2027-01-01T12:00:00Z"), "1") is None  # unreadable gate inputs: nothing to report or close
+
+
+def test_freshness_issue_is_quarterly_refreshed_superseded_and_never_reopened():
+    helper = Path(__file__).resolve().parents[1] / "scripts" / "model_monitoring_issue.js"
+    script = r"""
+const assert = require('node:assert/strict');
+const {syncFreshnessIssue} = require(process.argv[1]);
+const monitoringBody = '<!-- model-monitoring:v1 -->\nstate\n<!-- /model-monitoring -->';
+const issues = [{number: 1, body: 'Unrelated failure', user: {login: 'github-actions[bot]'}, state: 'open'},
+                {number: 2, body: monitoringBody, user: {login: 'github-actions[bot]'}, state: 'open'}];
+const comments = [];
+let next = 10;
+const github = {
+  paginate: async (method, params) => issues.filter(i => params.state === 'all' || i.state === params.state),
+  rest: {issues: {
+    listForRepo() {},
+    create: async fields => {
+      const issue = {...fields, number: next++, user: {login: 'github-actions[bot]'}, state: 'open'};
+      issues.push(issue);
+      return {data: issue};
+    },
+    update: async fields => Object.assign(issues.find(i => i.number === fields.issue_number), fields),
+    createComment: async fields => comments.push(fields),
+  }}
+};
+const context = {repo: {owner: 'test', repo: 'example'}, serverUrl: 'https://github.com', runId: 7};
+const doc = name => ({document: `https://example.test/${name}`, last_change: '2025-01-01', due: '2026-01-01'});
+const report = (quarter, report_run, utilities) => ({freshness: {version: 1, quarter, report_run, reason: 'test', utilities}});
+const owned = () => issues.filter(i => (i.body || '').includes('<!-- rates-not-updated:v1 -->'));
+const sync = (...args) => syncFreshnessIssue({github, context, report: report(...args)});
+(async () => {
+  await sync('2027-Q1', false, {A: [doc('a')]});
+  await syncFreshnessIssue({github, context, report: {freshness: null}});
+  assert.equal(owned().length, 0, 'only the report run creates an issue');
+  await sync('2027-Q1', true, {A: [doc('a')], B: [doc('b')]});
+  await sync('2027-Q1', true, {A: [doc('a')], B: [doc('b')]});
+  assert.equal(owned().length, 1, 'one issue per quarter');
+  const q1 = owned()[0];
+  assert.equal(q1.title, 'Rates not updated in a year: 2027 Q1');
+  assert.match(q1.body, /### A\n- https:\/\/example\.test\/a: last price change 2025-01-01/);
+  q1.body += '\nMaintainer note: keep.';
+  await sync('2027-Q1', false, {A: [doc('a')], C: [doc('c')]});
+  assert.doesNotMatch(q1.body, /### B/);
+  assert.match(q1.body, /### C/);
+  assert.match(q1.body, /Maintainer note: keep\./);
+  await sync('2027-Q1', false, {});
+  assert.equal(q1.state, 'closed', 'closes when the list is empty');
+  await sync('2027-Q1', true, {D: [doc('d')]});
+  assert.equal(owned().length, 1, 'a closed report is neither reopened nor recreated in its quarter');
+  assert.equal(q1.state, 'closed');
+  await sync('2027-Q2', true, {D: [doc('d')]});
+  const q2 = owned().find(i => i.title.endsWith('2027 Q2'));
+  await sync('2027-Q3', true, {D: [doc('d')]});
+  const q3 = owned().find(i => i.title.endsWith('2027 Q3'));
+  assert.equal(q2.state, 'closed');
+  assert.equal(q3.state, 'open');
+  assert.ok(comments.some(c => c.issue_number === q2.number && c.body.includes(`#${q3.number}`)), 'superseded');
+  await sync('2027-Q4', true, {});
+  assert.equal(q3.state, 'closed', 'a report with nothing flagged closes the open earlier report');
+  assert.equal(owned().length, 3);
+  assert.deepEqual(issues.slice(0, 2).map(i => [i.body, i.state]),
+                   [['Unrelated failure', 'open'], [monitoringBody, 'open']]);
+  await assert.rejects(sync('2027-Q4', true, {E: [{document: 1}]}), /Invalid freshness entry/);
+  q2.state = 'open';
+  q3.state = 'open';
+  await assert.rejects(sync('2027-Q4', false, {}), /Multiple open/);
+})().catch(error => { console.error(error); process.exitCode = 1; });
+"""
+    result = subprocess.run(["node", "-e", script, str(helper)], capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr

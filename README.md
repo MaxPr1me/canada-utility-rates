@@ -132,6 +132,14 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   yet, so it is expected to return estimates (and the Nova Scotia models to be left out) until NS
   Power posts a complete 2027 book; the owner then starts its run (see AGENTS.md, "How the Monthly
   Updates Work").
+- **One-year check (November 24, owner decisions November 23 and 24):** the coverage gate now warns,
+  without failing, when an official document behind a utility's live prices has not changed for more
+  than a year, and the first successful full Monthly Scrape of each quarter opens a "Rates not
+  updated in a year" issue (first report January 2027). On November 24 it flags 8 utilities: the
+  three Alberta Rate of Last Resort providers (fixed 2025-2026 term), SaskEnergy, Qulliq, Liberty NB
+  (distribution charges) and the two Yukon utilities (base rates adjusted through riders); their
+  first review is due before January. AESO and Maritime Electric are exempt (see AGENTS.md, "Rates
+  not updated in a year").
 - **Latest export (November 20, scrape run 46, the owner's full run):** 987 latest live tariffs and
   484 retained estimates; 1,414 stored live versions and 7,670 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
@@ -170,7 +178,7 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   are now modelled too. Small businesses are modelled at 2,000 kWh with 14 kW and 10,000 kWh with
   40 kW, and every usage level records its decision, what it represents and its sources. The Rate
   Browser shows a dated price's period and tags it "Ended" once that date has passed.
-- **Validation:** all 2,543 tests passed on Python 3.11 using `pytest tests`.
+- **Validation:** all 2,551 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.
@@ -720,6 +728,9 @@ substitute for current approved tariff documents.
 ### Market Benchmarks opened an issue
 → A step of the run failed (its tests, the Alberta market history build or the model refresh), so nothing new was published and the site keeps its previous data. A missing hour, a changed source format, a disagreement with AESO's official monthly price or a changed already-archived price stops publication on purpose. Run `python scripts/build_alberta_market.py --dry-run` to see the reason. Do not overwrite archived evidence or guess a correction.
 
+### An issue says "Rates not updated in a year"
+→ Not an error: the quarterly report lists official documents whose prices have not changed for more than a year. Check each one, then record a dated `freshness_review` finding (`legitimate`, `parser_fixed` or `moved_on`) in `data/sources/coverage_ledger.json`, or fix the scraper; the issue closes itself once every listed utility is updated or reviewed. Step-by-step: [AGENTS.md](AGENTS.md), "Rates not updated in a year".
+
 ### A workflow log warns that `git` exited with code 128
 → Harmless: it comes from the checkout clean-up, because two committed `.claude/worktrees` links have no `.gitmodules` entry.
 
@@ -787,7 +798,7 @@ One line per phase; sub-phase detail and the work queue are in the
 - **Earlier phases (foundations)** — done: scraper framework, granular schema, registry, validation, history snapshots, JSON export and the website.
 - **Phase 5: Live Parser Completion** — in progress: the Batch 18 additions are published (municipal utilities in NB, BC and PE on November 18; Naka Power and the Alberta cities on November 19) and issue #6 is closed; the scoped coverage-complete claim will be drafted for owner approval after the January renewals, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas supply-price freshness: Énergir's monthly prices and period end dates for the other gas utilities done November 20, and the monthly-price run on the 4th added November 23 (first run December 4)).
-- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D gas done in each utility's native m³ or GJ: homes as method 7D-1 and commercial general service for small and mid-size buildings as method 7D-2, November 23; contract, interruptible and seasonal gas classes come later with their own decision). Next (owner decisions, November 20 and 23): a check for rates not updated in a year, then models for the territories.
+- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D gas done in each utility's native m³ or GJ: homes as method 7D-1 and commercial general service for small and mid-size buildings as method 7D-2, November 23; contract, interruptible and seasonal gas classes come later with their own decision). Next (owner decisions, November 20 and 23): models for the territories (the check for rates not updated in a year was added November 24).
 - **Phase 8: Representative Model Refresh Automation** — done and verified in CI and on the deployed site. Public change history and problem-only monitoring follow the [approved policy](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
 - **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done). Planned: a Rate History tab of historical charts (designed November 23, built after the territorial models; collected data since September 29, 2026 plus the stored market history), then AI-ready exports, a bill calculator or API and commercial/gas comparisons.
 

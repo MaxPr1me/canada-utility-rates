@@ -164,6 +164,96 @@ async function syncIssue({ github, context, report }) {
         ...(!remaining ? { state: "closed", state_reason: "completed" } : {}) });
 }
 
+/* The quarterly "Rates not updated in a year" issue (owner decisions 2026-11-23 and 2026-11-24). Separate from the
+   monitoring issue: only the report run (the first successful full Monthly Scrape of January, April, July or October,
+   decided by pipeline/model_monitoring.py) creates a quarter's issue, and only when something is flagged. Every run
+   refreshes the open issue's list and closes it when the list is empty; a closed issue is never reopened, so new
+   flags then wait for the next quarter. The next quarter's issue supersedes an open earlier one. */
+const FRESH_START = "<!-- rates-not-updated:v1 -->";
+const FRESH_END = "<!-- /rates-not-updated -->";
+const FRESH_QUARTER = /<!-- rates-not-updated-quarter:(\d{4}-Q[1-4]) -->/;
+const FRESH_LIST_LIMIT = 50000;
+
+function validFreshness(freshness) {
+    if (!freshness || freshness.version !== 1 || typeof freshness.quarter !== "string"
+        || !/^\d{4}-Q[1-4]$/.test(freshness.quarter) || typeof freshness.report_run !== "boolean"
+        || !freshness.utilities || typeof freshness.utilities !== "object" || Array.isArray(freshness.utilities)) {
+        return null;
+    }
+    for (const [name, documents] of Object.entries(freshness.utilities)) {
+        if (!Array.isArray(documents) || !documents.length || !documents.every(item => item
+            && ["document", "last_change", "due"].every(key => typeof item[key] === "string"))) {
+            throw new Error(`Invalid freshness entry for ${name}`);
+        }
+    }
+    return freshness;
+}
+
+function freshnessRegion(freshness, quarter, runUrl) {
+    const names = Object.keys(freshness.utilities).sort();
+    let list = names.flatMap(name => [`### ${name}`, ...freshness.utilities[name].map(item =>
+        `- ${item.document}: last price change ${item.last_change}, more than a year old since ${item.due}`)]).join("\n");
+    if (list.length > FRESH_LIST_LIMIT) list = list.slice(0, FRESH_LIST_LIMIT) + "\n\n[truncated; see the coverage gate in the run log]";
+    return `${FRESH_START}\n<!-- rates-not-updated-quarter:${quarter} -->\n`
+        + `Report ${quarter.replace("-", " ")}: these utilities have an official document whose prices have not changed `
+        + "for more than a year (the coverage gate's `not_updated_in_a_year` warning). Being a few months behind is "
+        + "acceptable; a year is the alarm.\n\n"
+        + (names.length ? list : "Every flagged utility has been updated or reviewed.")
+        + "\n\n**What to do:** check each document at its official source, then record one finding in "
+        + "`data/sources/coverage_ledger.json` as `\"freshness_review\": {\"reviewed\": \"YYYY-MM-DD\", \"finding\": \"...\", "
+        + "\"basis\": \"...\"}`:\n"
+        + "- `legitimate`: the prices really have not changed (for example a fixed multi-year term, or base rates "
+        + "adjusted only through riders);\n"
+        + "- `parser_fixed`: the scraper missed a change and has been fixed;\n"
+        + "- `moved_on`: the utility publishes its prices in a new document or at a new address, and the scraper and "
+        + "registry have been updated.\n\n"
+        + "A note clears the flags that exist on its date, for one year or until an earlier `review_by`; a real price "
+        + "change clears a utility by itself. Every monitoring run refreshes this list; the issue closes itself when the "
+        + "list is empty, and the next quarter's report supersedes it. Details: AGENTS.md, \"Rates not updated in a year\"."
+        + `\n\nLast refreshed: ${runUrl}\n${FRESH_END}`;
+}
+
+async function syncFreshnessIssue({ github, context, report }) {
+    const freshness = validFreshness(report.freshness);
+    if (!freshness) return;  // the gate inputs could not be read: never create or close on missing data
+    const issues = await github.paginate(github.rest.issues.listForRepo,
+        { ...context.repo, state: "all", labels: "automated", per_page: 100 });
+    const owned = issues.filter(issue => !issue.pull_request && issue.user.login === "github-actions[bot]"
+        && (issue.body || "").includes(FRESH_START));
+    const quarterOf = issue => (FRESH_QUARTER.exec(issue.body) || [])[1];
+    const open = owned.filter(issue => issue.state === "open");
+    if (open.length > 1) throw new Error("Multiple open 'Rates not updated in a year' issues require review; none was changed");
+    const current = open[0];
+    const label = freshness.quarter.replace("-", " ");
+    const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+    const flagged = Object.keys(freshness.utilities).length;
+    const close = async (issue, comment) => {
+        await github.rest.issues.createComment({ ...context.repo, issue_number: issue.number, body: comment });
+        await github.rest.issues.update({ ...context.repo, issue_number: issue.number, state: "closed",
+            state_reason: "completed" });
+    };
+    if (freshness.report_run && !owned.some(issue => quarterOf(issue) === freshness.quarter)) {
+        if (flagged) {
+            const created = await github.rest.issues.create({ ...context.repo,
+                title: `Rates not updated in a year: ${label}`, body: freshnessRegion(freshness, freshness.quarter, runUrl),
+                labels: ["scrape-issue", "automated"] });
+            if (current) await close(current, `Superseded by the ${label} report, #${created.data.number}.`);
+        } else if (current) {
+            await close(current, `The ${label} report (${runUrl}) found no utility whose prices are more than a year old; closing.`);
+        }
+        return;
+    }
+    if (!current) return;
+    const start = current.body.indexOf(FRESH_START);
+    const end = current.body.indexOf(FRESH_END, start);
+    const quarter = quarterOf(current);
+    if (end < 0 || !quarter) throw new Error("The 'Rates not updated in a year' issue lost its managed region; refusing to change it");
+    const body = current.body.slice(0, start) + freshnessRegion(freshness, quarter, runUrl)
+        + current.body.slice(end + FRESH_END.length);
+    await github.rest.issues.update({ ...context.repo, issue_number: current.number, body });
+    if (!flagged) await close(current, `Every flagged utility has been updated or reviewed (${runUrl}); closing this report.`);
+}
+
 async function reportWorkflow({ github, context, core }) {
     const collected = await collectContext({ github, context, core });
     const contextPath = path.join(process.env.RUNNER_TEMP, "model-monitor-context.json");
@@ -175,11 +265,17 @@ async function reportWorkflow({ github, context, core }) {
     const failed = report.checks.filter(check => check.ok === false);
     const unknown = report.checks.filter(check => check.ok === null);
     if (failed.length || unknown.length) core.warning(`Model monitoring: ${failed.length} problem checks; ${unknown.length} awaiting evidence.`);
+    const stale = report.freshness ? Object.keys(report.freshness.utilities) : [];
     await core.summary.addHeading("Model monitoring")
         .addRaw(`${failed.length} problem checks; ${unknown.length} awaiting evidence. No database was written.\n\n`)
         .addRaw([...failed, ...unknown].flatMap(check => check.details.map(detail => `- ${detail}`)).join("\n"))
+        .addRaw(report.freshness ? `\n\n**Rates not updated in a year:** ${stale.length ? stale.join(", ") : "none"}`
+            + ` (quarterly report run: ${report.freshness.report_run ? "yes" : "no"}, ${report.freshness.reason}).\n`
+            : "\n\nRates not updated in a year: not checked (the coverage inputs could not be read).\n")
         .write();
     await syncIssue({ github, context, report });
+    // After the monitoring issue, so a problem here never holds back the input and refresh problems.
+    await syncFreshnessIssue({ github, context, report });
 }
 
-module.exports = { writeOutcome, collectContext, syncIssue, reportWorkflow };
+module.exports = { writeOutcome, collectContext, syncIssue, syncFreshnessIssue, reportWorkflow };

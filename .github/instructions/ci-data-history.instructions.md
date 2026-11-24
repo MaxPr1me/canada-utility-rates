@@ -157,6 +157,18 @@ The following workflow decisions were approved on 2026-11-17.
   changes. Preserve unchecked problems and maintainer text, reject older recovery evidence and
   avoid duplicating a failure already reported by its workflow. Only monitoring-owned issues are
   auto-closed, with recovery evidence; publication problems require verified publication.
+- **Quarterly "Rates not updated in a year" issue (owner decisions 2026-11-23 and 2026-11-24):** a
+  separate bot-owned issue per quarter (marker `rates-not-updated:v1`, title "Rates not updated in a
+  year: 2027 Q1"), never part of the monitoring issue's checks. The report's `freshness` section
+  carries the gate's flagged documents (none when the gate inputs could not be read: then nothing is
+  created or closed). Only the report run creates a quarter's issue, and only when something is
+  flagged: the monitoring job of a successful full Monthly Scrape in January, April, July or October,
+  proven by that same run's receipts (full source scope, completed sources, successful generation and
+  publication). Every monitoring run refreshes the open issue's list (maintainer text outside the
+  marked region is kept) and closes it when the list is empty; a closed issue is never reopened or
+  recreated in its quarter, so new flags wait for the next report, which closes an open earlier issue
+  as superseded. Two open marked issues are refused. It runs after the monitoring issue and stays
+  non-blocking like the rest of the job.
 - Recording, evidence upload and the reusable reporting job are non-blocking. Failures stay
   visible in Actions logs/annotations and diagnostic artifacts; missing receipts stay unverified.
   These failures must not bypass database safety gates or turn a valid publication into a failed
@@ -173,12 +185,31 @@ The following workflow decisions were approved on 2026-11-17.
   `site/data/rates.json` and `data/sources/coverage_ledger.json`.
 - Errors: `no_live_output` (no live record whose effective date has been reached and whose end date
   has not passed), `no_audit`, `stale_audit`, `deferred_open`, `monitor_overdue`, `ledger_orphan`,
-  `ledger_invalid`. Warnings: `monitor_due_soon`, `live_expiring`.
+  `ledger_invalid`. Warnings: `monitor_due_soon`, `live_expiring`, `not_updated_in_a_year`.
+- **`not_updated_in_a_year` (owner decisions 2026-11-23 and 2026-11-24):** a lag of a few months is
+  acceptable, a year is the alarm. Each official document behind a utility's current live prices
+  (a component's `source_url`, else its tariff's) is checked on its own, so a stale tariff sheet
+  cannot hide behind a fresh monthly or RPP price. Its date is its last real price change, read from
+  every stored live version in `rates.json`: a value, a tier or demand threshold, or a priced line
+  that appears or disappears; re-dated identical values and renamed lines with the same value are
+  not changes. A line first takes its own effective date (else its tariff's); a replaced value is
+  dated by its replacement. $0 and value-less ("Variable") lines and ended prices are ignored (an
+  ended price is a `live_expiring`/`no_live_output` question). A document is flagged strictly after
+  the anniversary of that date (29 February falls due on 28 February). The result's `freshness`
+  field lists the flagged documents, and the summary names the utilities. It is never an error.
 - Ledger schema 1: per registry name an `audit` {date, basis, source}, the string lists `excluded`,
   `source_blocked` and `deferred`, a `monitor` {item, review_by}, an optional `stored_name` and an
   optional entry-only `manual_update` {reason, decided, review_by} (exactly these keys; review_by on
   or after decided) for a source refreshed by hand. Its review date counts like a monitor item
   (`monitor_due_soon`, then `monitor_overdue`); it never stands in for live output.
+  Two more entry-only keys serve the one-year check: `freshness_exempt` {reason, decided} (exactly
+  these keys, no end date; AESO, which publishes no price, and Maritime Electric, whose yearly manual
+  update already covers it) and `freshness_review` {reviewed, finding, basis, optional review_by}
+  with `finding` one of `legitimate`, `parser_fixed`, `moved_on` and review_by after reviewed and at
+  most one year later (the default). A review clears only the documents already flagged on its date,
+  until review_by; a document that turns a year old later is flagged again, and a real change clears
+  it by itself. One note per utility (Git keeps earlier ones); an exempt utility needs none.
+  Malformed entries grant nothing and are `ledger_invalid`.
   `groups` let entries inherit an audit and standard exclusions (`"group": "ontario_electricity"`); an
   entry's own audit wins and the lists are concatenated. The ledger records decisions and never
   changes a rate. Undecided items go under `deferred`, which keeps the gate failing until resolved.

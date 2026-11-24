@@ -215,7 +215,7 @@ The comparison policy is in the
 | `.github/workflows/model-monitoring.yml`, `scripts/model_monitoring_issue.js` | A shared follow-up check called by the existing data workflows and Source Health. It reports input/refresh problems and manages its own issue; it has no daily schedule and does not block valid publication. |
 | `.github/workflows/deploy.yml` | **Deploy Site**: publishes the website on push, by hand, and by itself after each successful Monthly Scrape, Ontario Price Archive or Market Benchmarks run. |
 | `scripts/check_db_history.py` | The Monthly Scrape's safety check: the database is not damaged, and nothing old was lost or changed. |
-| `scripts/coverage_gate.py`, `data/sources/coverage_ledger.json` | The coverage gate (see the glossary) and the audit ledger it reads: audit dates, exclusions, deferred and monitored items, and manual-update decisions for each utility. The ledger records decisions; it never changes a rate. |
+| `scripts/coverage_gate.py`, `data/sources/coverage_ledger.json` | The coverage gate (see the glossary) and the audit ledger it reads: audit dates, exclusions, deferred and monitored items, manual-update decisions, and the "not updated in a year" exemptions and review notes for each utility. The ledger records decisions; it never changes a rate. |
 | `scripts/pull_history_db.py` | Downloads the newest database to your computer, checks it, and keeps your old copy. It never uploads anything. |
 | `scripts/build_ontario_market.py`, `archive_ontario_price.py`, `preserve_ieso_reports.py`, `export_ontario_totals.py` | Build the Ontario market history, extend the hourly Ontario Price archive, save the original IESO reports, and create the combined energy-plus-GA files. |
 | `scripts/build_alberta_market.py` | Builds the Alberta market history, checked against every official AESO monthly summary. |
@@ -543,6 +543,39 @@ There is no daily checker: missed refreshes are noticed at the next existing or 
 Timing and recovery details are in the
 [CI monitoring rules](.github/instructions/ci-data-history.instructions.md#model-monitoring).
 
+### Rates not updated in a year
+
+**What happened:** an issue titled "Rates not updated in a year: 2027 Q1" (or a later quarter) lists
+utilities with an official document (a tariff sheet, a rate page, a supply-price page) whose prices
+have not changed for more than a year. Each line gives the document, its last price change and the
+date it became a year old. The issue is created only after the first successful full Monthly Scrape
+of January, April, July or October; between those reports the same list appears in the coverage
+gate note on Monthly Scrape run pages and in the monitoring summary of each run. This is a prompt to
+check, not an error: the gate still passes. A price whose term has ended is a different problem (the
+gate reports it as `live_expiring` or `no_live_output`).
+
+**What to do:**
+1. For each utility, open the listed document and the utility's official rate page, and run a dry run
+   (`python -m pipeline.run_scrape --utility "Name" --dry-run`).
+2. Decide which of three findings applies:
+   - **legitimate:** the prices really have not changed (for example a fixed multi-year term, or base
+     rates that change only through riders printed in other documents);
+   - **parser fixed:** the utility published new prices but the scraper missed them; fix the scraper
+     (the next Monthly Scrape stores the new prices, which clears the flag by itself);
+   - **moved on:** the utility now publishes its prices in a new document or at a new address; update
+     the scraper and `data/sources/registry.json`.
+3. Record the finding in the utility's entry in `data/sources/coverage_ledger.json`, for example
+   `"freshness_review": {"reviewed": "2027-01-05", "finding": "legitimate", "basis": "Fixed term
+   January 1, 2025 to December 31, 2026, checked on the official page"}`. `finding` is `legitimate`,
+   `parser_fixed` or `moved_on`. The note clears the flags that exist on its date for one year, or
+   until an earlier `"review_by"` date you add; a price that turns a year old later is flagged again.
+   Only one note per utility: a new review replaces the old one, and Git keeps the history.
+4. Push the change. Every monitoring run refreshes the issue's list, and the issue closes itself once
+   the list is empty. A closed issue is never reopened: new flags wait for the next quarter's report,
+   which also replaces an issue still open.
+
+Details: the [CI rules](.github/instructions/ci-data-history.instructions.md#coverage-gate-scriptscoverage_gatepy-owner-decisions-2026-10-30).
+
 ### The Ontario Price Archive opened an issue
 
 **What happened:** a month in the archive did not match the IESO's own monthly Ontario Price
@@ -758,6 +791,11 @@ apply to all of them:
   Scrapers should find new documents, editions and years by themselves, and a flagged error should
   name what changed so it is quick to fix. Details: the
   [scraper rules](.github/instructions/scrapers.instructions.md#freshness-and-maintenance).
+  The coverage gate checks this for every official document a utility's prices come from, and a
+  quarterly issue lists what is a year old (see "Rates not updated in a year" under "What to Do When
+  Something Breaks"). AESO (it
+  publishes no price) and Maritime Electric (its yearly manual update already checks it) are exempt,
+  as their ledger entries say (owner decisions, November 23 and 24, 2026).
 - **"Complete" means checked.** Completing a utility means auditing its building-related standard
   published classes, not just replacing old estimates. Some products are left out on purpose;
   exclusions and remaining gaps are listed in the [parser gap report](docs/live_parser_gap_report.md)
@@ -805,7 +843,7 @@ The detailed rules are in the area files: [all scrapers](.github/instructions/sc
 | **Illustrative estimate** | A number shown only to give a rough idea, not to be relied on: for Ontario's two larger business sizes, their delivery charges plus market energy priced with the synthetic load profile. It stays hidden until you tick "Show illustrative all-in estimate (synthetic load profile)", carries a warning and a SYNTHETIC badge, and is never used in medians, comparisons or change checks. It is not a forecast, a quote or a bill, and it needs further analysis. |
 | **Historical market benchmark** | A comparison using the average of 60 complete monthly energy prices plus today's modeled delivery charges. Ontario includes actual Class B GA; Alberta uses pool energy alone. It is not a forecast, retail quote or customer-profile-weighted bill, and does not replace the base model. |
 | **Rolling window** | A period that moves forward as time passes. The Market Pricing page always shows the latest 60 complete months; when a new month is complete, the oldest one leaves the page (it stays in the monthly history file). |
-| **Coverage gate** | `scripts/coverage_gate.py`: the check that must pass before anyone may say nationwide live-rate coverage is complete. It fails while any active utility has no live record, no recent audit, an open deferred item or an overdue review. |
+| **Coverage gate** | `scripts/coverage_gate.py`: the check that must pass before anyone may say nationwide live-rate coverage is complete. It fails while any active utility has no live record, no recent audit, an open deferred item or an overdue review. It also warns, without failing, about documents whose prices have not changed for more than a year. |
 | **LDC** | Local Distribution Company — the utility that delivers electricity to your home (common in Ontario). |
 | **OEB** | Ontario Energy Board — the regulator that sets many Ontario utility rates. |
 | **QRAM** | Quarterly Rate Adjustment Mechanism — the Ontario Energy Board process that resets Ontario natural gas supply prices every three months. |

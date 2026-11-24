@@ -18,8 +18,17 @@ A ``manual_update`` entry {reason, decided, review_by} records a utility whose o
 GitHub, so its labelled estimates are refreshed by hand (Maritime Electric, owner decision 2026-11-19). It never
 counts as live output; pipeline/model_monitoring.py accepts that utility's estimates until review_by.
 
-Warnings (never fail the gate): ``monitor_due_soon`` and ``live_expiring`` (every live record ends within
---warn-days). ``ledger_orphan`` (a ledger entry for a utility that is not active) and ``ledger_invalid`` are errors.
+Warnings (never fail the gate): ``monitor_due_soon``, ``live_expiring`` (every live record ends within
+--warn-days) and ``not_updated_in_a_year``. ``ledger_orphan`` (a ledger entry for a utility that is not active) and
+``ledger_invalid`` are errors.
+
+``not_updated_in_a_year`` (owner decisions 2026-11-23 and 2026-11-24): data not updated in a year is the key
+freshness concern, while a lag of a few months is acceptable. Each official document behind a utility's current live
+prices is dated by its last real price change (see ``document_update_dates``) and flagged once the as-of date is
+past that date's anniversary, so a stale tariff sheet cannot hide behind a fresh monthly price. A ledger
+``freshness_exempt`` {reason, decided} exempts a utility (AESO, Maritime Electric); a dated ``freshness_review``
+{reviewed, finding, basis[, review_by]} clears the flags that already existed on its date, for one year or until
+review_by.
 
 The gate exits 1 when there are errors, unless --report-only is given. On GitHub Actions the result is one public
 ``::notice`` annotation. Standard library only; nothing is written except the optional --json file.
@@ -45,7 +54,10 @@ SCHEMA_VERSION = 1
 DEFAULT_MAX_AGE_DAYS = 120
 DEFAULT_WARN_DAYS = 30
 LIST_KEYS = ("excluded", "source_blocked", "deferred")
-ENTRY_KEYS = {"audit", "monitor", "manual_update", "notes", "stored_name", "group", *LIST_KEYS}
+ENTRY_KEYS = {"audit", "monitor", "manual_update", "freshness_exempt", "freshness_review", "notes", "stored_name",
+              "group", *LIST_KEYS}
+FRESHNESS_CODE = "not_updated_in_a_year"
+FRESHNESS_FINDINGS = ("legitimate", "parser_fixed", "moved_on")
 GROUP_KEYS = {"audit", "monitor", "notes", *LIST_KEYS}
 ERROR_ORDER = ("no_live_output", "no_audit", "stale_audit", "deferred_open", "monitor_overdue",
                "ledger_orphan", "ledger_invalid")
@@ -84,6 +96,156 @@ def manual_update_review_by(value) -> date:
     if review_by < decided:
         raise ValueError("manual_update.review_by is before its decision date")
     return review_by
+
+
+def one_year_after(day: date) -> date:
+    """The same calendar day a year later; a change on 29 February falls due on 28 February (decision 2026-11-24)."""
+    try:
+        return day.replace(year=day.year + 1)
+    except ValueError:
+        return day.replace(year=day.year + 1, day=28)
+
+
+def freshness_exemption(value) -> date:
+    """The decision date of a ledger ``freshness_exempt``; ValueError when it is malformed (no exemption then)."""
+    if not isinstance(value, dict) or set(value) != {"reason", "decided"}:
+        raise ValueError("'freshness_exempt' needs exactly reason and decided")
+    if not isinstance(value["reason"], str) or not value["reason"].strip():
+        raise ValueError("freshness_exempt.reason must be a non-empty string")
+    return _parse_date(value["decided"], "freshness_exempt.decided")
+
+
+def freshness_review_window(value) -> tuple[date, date]:
+    """(reviewed, review_by) of a ledger ``freshness_review``; ValueError when it is malformed (it clears nothing then).
+
+    review_by is optional: the note lasts one year, or until an earlier date it names (owner decision 2026-11-23).
+    """
+    if not isinstance(value, dict) or not {"reviewed", "finding", "basis"} <= set(value) <= {
+            "reviewed", "finding", "basis", "review_by"}:
+        raise ValueError("'freshness_review' needs reviewed, finding and basis, and optionally review_by")
+    if value["finding"] not in FRESHNESS_FINDINGS:
+        raise ValueError(f"freshness_review.finding must be one of {', '.join(FRESHNESS_FINDINGS)}")
+    if not isinstance(value["basis"], str) or not value["basis"].strip():
+        raise ValueError("freshness_review.basis must be a non-empty string")
+    reviewed = _parse_date(value["reviewed"], "freshness_review.reviewed")
+    longest = one_year_after(reviewed)
+    review_by = _parse_date(value["review_by"], "freshness_review.review_by") if "review_by" in value else longest
+    if not reviewed < review_by <= longest:
+        raise ValueError("freshness_review.review_by must fall after reviewed and at most one year later")
+    return reviewed, review_by
+
+
+def _day(value) -> date | None:
+    try:
+        return date.fromisoformat(str(value)[:10]) if value else None
+    except ValueError:
+        return None
+
+
+def _priced(component: dict) -> bool:
+    """A line with a non-zero price: value-less market references ("Variable") and $0 lines cannot go stale."""
+    value = component.get("charge_value")
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and value != 0
+
+
+def _line_key(component: dict) -> tuple:
+    """A priced line without its name, so a line renamed with the same value is not a change (decision 2026-11-24)."""
+    return (component.get("component_type"), component.get("charge_unit"), component.get("tier_number"),
+            component.get("tou_period"), component.get("season"), component.get("sub_component"),
+            float(component["charge_value"]), component.get("tier_threshold"), component.get("demand_threshold_kw"))
+
+
+def document_update_dates(versions: list[dict], as_of: date) -> dict[str, date]:
+    """When each official document behind a utility's current live prices last changed (decisions 2026-11-23/24).
+
+    ``versions`` are one utility's live tariff versions, every stored effective date. Each tariff's versions are
+    walked in effective-date order. A line identical to an unmatched line of the previous version (same type, unit,
+    tier, TOU period, season, sub-component, value and thresholds; the name is ignored) keeps that line's date, so a
+    version that only re-dates identical values changes nothing. Any other line took effect on its own effective date,
+    else its version's. A line of the previous version left unmatched while its document gained no new line (a line
+    removed outright) is a change of that document on the new version's effective date; a replaced value is dated by
+    its replacement instead.
+
+    The current lines are those of each tariff's newest version, including a future-dated one (a newer price is
+    already stored). A tariff or line whose end date has passed is skipped: an ended price with nothing newer is a
+    coverage question (``live_expiring``, ``no_live_output``), not stale data. A line's document is its own source URL,
+    else its tariff's, and a document's date is the newest among its current lines and removals.
+    """
+    by_tariff: dict[object, list[dict]] = {}
+    for record in versions:
+        if _day(record.get("effective_date")) is not None:
+            by_tariff.setdefault(record.get("name"), []).append(record)
+    current: dict[str, date] = {}
+    removed: dict[str, date] = {}
+    for records in by_tariff.values():
+        records.sort(key=lambda r: _day(r["effective_date"]))
+        pool: dict[tuple, list[tuple[date, str]]] = {}
+        changes: dict[str, date] = {}
+        lines: list[tuple[dict, date, str]] = []
+        for record in records:
+            effective = _day(record["effective_date"])
+            lines, fresh = [], set()
+            for component in record.get("components") or []:
+                if not _priced(component):
+                    continue
+                key = _line_key(component)
+                document = component.get("source_url") or record.get("source_url") or "(no source URL)"
+                matched = pool.get(key)
+                if matched:
+                    changed = matched.pop(0)[0]
+                else:
+                    changed = _day(component.get("effective_date")) or effective
+                    fresh.add(document)
+                lines.append((component, changed, document))
+            for leftovers in pool.values():
+                for _, document in leftovers:
+                    if document not in fresh:
+                        changes[document] = max(changes.get(document, effective), effective)
+            pool = {}
+            for component, changed, document in lines:
+                pool.setdefault(_line_key(component), []).append((changed, document))
+        newest_end = _day(records[-1].get("end_date"))
+        if newest_end is not None and newest_end < as_of:
+            continue
+        for component, changed, document in lines:
+            end = _day(component.get("end_date"))
+            if end is None or end >= as_of:
+                current[document] = max(current.get(document, changed), changed)
+        for document, changed in changes.items():
+            removed[document] = max(removed.get(document, changed), changed)
+    return {document: max(changed, removed.get(document, changed)) for document, changed in current.items()}
+
+
+def stale_documents(versions: list[dict], entry, as_of: date) -> list[dict]:
+    """The documents past their one-year due date, after the ledger's exemption or review note.
+
+    A well-formed ``freshness_exempt`` exempts the utility. A well-formed ``freshness_review`` that has not expired
+    clears the documents whose flag already existed on its date (owner decision 2026-11-24); a document that turns a
+    year old later is still flagged, and a real price change clears its flag by itself. Malformed entries grant
+    nothing (they are reported once as ``ledger_invalid``).
+    """
+    entry = entry if isinstance(entry, dict) else {}
+    if "freshness_exempt" in entry:
+        try:
+            freshness_exemption(entry["freshness_exempt"])
+            return []
+        except ValueError:
+            pass
+    window = None
+    if "freshness_review" in entry:
+        try:
+            window = freshness_review_window(entry["freshness_review"])
+        except ValueError:
+            window = None
+    stale = []
+    for document, changed in sorted(document_update_dates(versions, as_of).items()):
+        due = one_year_after(changed)
+        if as_of <= due:
+            continue
+        if window is not None and window[0] <= as_of <= window[1] and due < window[0]:
+            continue
+        stale.append({"document": document, "last_change": changed.isoformat(), "due": due.isoformat()})
+    return stale
 
 
 def is_live_on(record: dict, as_of: date) -> bool:
@@ -157,6 +319,18 @@ def _validate_block(problems: list[str], where: str, block, allowed: set, requir
             manual_update_review_by(block["manual_update"])
         except ValueError as exc:
             problems.append(f"{where} {exc}")
+    if "freshness_exempt" in block:
+        try:
+            freshness_exemption(block["freshness_exempt"])
+        except ValueError as exc:
+            problems.append(f"{where} {exc}")
+    if "freshness_review" in block:
+        try:
+            freshness_review_window(block["freshness_review"])
+        except ValueError as exc:
+            problems.append(f"{where} {exc}")
+        if "freshness_exempt" in block:
+            problems.append(f"{where} an exempt utility needs no freshness_review")
     monitor = block.get("monitor", [])
     if not isinstance(monitor, list):
         problems.append(f"{where} 'monitor' must be a list")
@@ -217,10 +391,14 @@ def evaluate(registry: dict, rates: list[dict], ledger: dict, as_of: date,
                                 "message": f"{name}: ledger entry for a utility that is not an active registry entry"})
 
     live_by_utility: dict[str, list[dict]] = {}
+    versions_by_utility: dict[str, list[dict]] = {}
     for record in rates:
+        if record.get("provenance") == "live":
+            versions_by_utility.setdefault(record.get("utility_name"), []).append(record)
         if is_live_on(record, as_of):
             live_by_utility.setdefault(record.get("utility_name"), []).append(record)
 
+    freshness: dict[str, list[dict]] = {}
     warn_cutoff = as_of + timedelta(days=warn_days)
     for utility in active:
         name = utility["name"]
@@ -235,6 +413,12 @@ def evaluate(registry: dict, rates: list[dict], ledger: dict, as_of: date,
             if last_end <= warn_cutoff:
                 add(name, "warning", "live_expiring",
                     f"every live record ends by {last_end.isoformat()}; the next term or edition must be stored")
+        stale = stale_documents(versions_by_utility.get(stored_name, []), entry, as_of)
+        if stale:
+            freshness[name] = stale
+            add(name, "warning", FRESHNESS_CODE, "no price change stored for more than a year in "
+                + "; ".join(f"{item['document']} (last change {item['last_change']}, due {item['due']})"
+                            for item in stale))
         entry = entries.get(name)
         if not isinstance(entry, dict) or not isinstance(entry.get("audit"), dict):
             add(name, "error", "no_audit", "no ledger audit entry")
@@ -292,6 +476,7 @@ def evaluate(registry: dict, rates: list[dict], ledger: dict, as_of: date,
         "passed": not errors,
         "global": global_findings,
         "utilities": {n: findings[n] for n in sorted(findings)},
+        "freshness": {n: freshness[n] for n in sorted(freshness)},
     }
 
 
@@ -311,7 +496,10 @@ def format_summary(result: dict) -> str:
             detail = f" ({', '.join(names)})" if code == "no_live_output" and names else ""
             parts.append(f"{code} {result['errors'][code]}{detail}")
     if result["warnings"]:
-        parts.append("warnings: " + ", ".join(f"{c} {n}" for c, n in sorted(result["warnings"].items())))
+        # The run-page notice names the utilities not updated in a year (owner decision 2026-11-23).
+        parts.append("warnings: " + ", ".join(
+            f"{c} {n}" + (f" ({', '.join(result.get('freshness', {}))})" if c == FRESHNESS_CODE else "")
+            for c, n in sorted(result["warnings"].items())))
     return head + ("; " + "; ".join(parts) if parts else "")
 
 

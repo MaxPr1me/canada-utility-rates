@@ -30,20 +30,29 @@ Standing guidance (owner, November 23): keep the rates up to date, but a lag of 
 acceptable; data not updated in a year is the key concern; scrapers should find new editions by
 themselves and a flagged error should be quick to fix.
 
-The one-year check (next; design approved November 23, not built yet):
-- a utility's update date is the newest effective date at which any of its live prices actually
-  changed value (a version that only re-dates the same values does not count); once that date's
-  anniversary passes without a newer change, the coverage gate warns (never fails);
-- exempt: the Alberta Electric System Operator (a value-less market reference with no price to
-  change) and Maritime Electric (estimates refreshed by hand under their own yearly review); the
-  build records both exemptions, with reason and date, in the coverage ledger, the CI rules and
-  AGENTS.md;
+The one-year check (built November 24; design approved November 23, build details November 24):
+- each official document behind a utility's current live prices (a tariff sheet, a rate page, a
+  supply-price page) is dated by its last real price change: a new value, a changed tier or demand
+  threshold, or a price line added or removed; a version that only re-dates the same values, or a
+  line renamed with the same value, does not count; $0 lines, value-less "Variable" lines and ended
+  prices are ignored. Once that date's anniversary passes, the coverage gate warns (never fails).
+  Checking each document separately (owner decision November 24) means a stale tariff sheet cannot
+  hide behind Ontario's regulated prices or a monthly gas supply price;
+- exempt, with no end date: the Alberta Electric System Operator (a value-less market reference with
+  no price to change) and Maritime Electric (estimates refreshed by hand under their own yearly
+  review); both exemptions are recorded, with reason and date, in the coverage ledger, the CI rules
+  and AGENTS.md;
 - a dated ledger review note (the finding: legitimate, parser fixed, or the utility moved on) clears
-  the warning for a year, and a real price change clears it automatically;
+  the flags that exist on its date for a year (or until an earlier date it names), and a real price
+  change clears a flag by itself;
 - reporting: one separate GitHub issue per quarter, "Rates not updated in a year", opened after the
-  first successful full Monthly Scrape of January, April, July and October. The first report is in
-  January 2027, after a first review round of the utilities flagged on November 23 (Direct Energy
-  Regulated Services, ENMAX Energy, Qulliq and SaskEnergy).
+  first successful full Monthly Scrape of January, April, July and October when something is
+  flagged; every monitoring run refreshes its list and it closes itself when the list is empty. The
+  first report is in January 2027. On November 24 eight utilities are flagged: Direct Energy
+  Regulated Services, ENMAX Energy and EPCOR Energy (fixed Rate of Last Resort term), SaskEnergy,
+  Qulliq (interim rates since April 2025), Liberty NB (distribution charges from January 2025) and
+  Yukon Energy and ATCO Electric Yukon (base rates dated 2011, adjusted through riders). Next: the
+  first review round of these eight, before January 1.
 
 The Rate History tab (planned; owner decisions November 23, built after the one-year check and the
 territorial models): a sixth view with four sub-tabs (tariff prices, regulated and default prices,
@@ -127,8 +136,8 @@ are priced, so Québec and New Brunswick homes are modelled too; the small-busin
 moved to 14 and 40 kW (BC Hydro is priced on Rate 1500 at 40 kW; FortisBC Electric Rate 20 is "not
 more than 40 kW"). Owner decision November 23: the Rate Browser shows a dated price's period and an
 "Ended" tag once it has passed. The model preview against the published models showed only these
-intended changes. Next: the one-year check (above), models for the territories, then the Rate
-History tab.
+intended changes. Next: the one-year check's first review round (above), models for the
+territories, then the Rate History tab.
 
 Dated checks (owner decisions, November 19) take priority when they fall due. Batch 18 continued
 was published on November 19 (see [Registered municipal additions](#registered-municipal-additions)),
@@ -564,7 +573,7 @@ building coverage; counts include optional adjustments and reference records.
 | Done (October 30, batch 16; pushed October 30) | W1 Yukon book discovery through the page model JSON; W2 Centra schedule edition by rates date and the v1126 text Appendix A (high confidence); W3 dead seed citations kept with notes (`KEPT_DEAD`), inventory and AESO pool-price links fixed, guard scans reference data; W4 local check kit (`logs/_b16_kit_*`, untracked); W5 model decisions (method 7C-3) | 2,090 tests across 27 modules. Dry runs: Yukon 20 and 20, Centra 13, Alberta 2/4/5/2 live. Gate 77 of 78 on the committed export (AESO, stored by the next Monthly Scrape) |
 | Done (October 15-16) | Lane B (7F site view, October 15); Lane F (EPCOR Energy Alberta's moved pages), CI as the only database writer (first stored run: Monthly Scrape #11, scrape run 29), the Ontario market continuation (rolling 60-month history), Lane A (7C, all ten provinces) and the 7E illustrative sidecar (all October 16) | See Next Batches item 0 |
 | Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones; the 7E synthetic profile (Monday-Friday hours beginning 7-18 EST). | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
-| Planned (order decided November 20, updated November 23) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); January 1 readiness (published November 23); the one-year check; then territorial models; then the Rate History tab (moved ahead of the coverage claim, November 23); then the rest of the Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses illustrative values) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
+| Planned (order decided November 20, updated November 23) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); January 1 readiness (published November 23); the one-year check (built November 24; its first review round before January 1); then territorial models; then the Rate History tab (moved ahead of the coverage claim, November 23); then the rest of the Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses illustrative values) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11) while the rate pages show August 1, 2026 rates; from the November 1, 2026 rates the v1126 text Appendix A is parsed at high confidence (batch 16, row 1b) |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Checked October 30 (ledger notes): Qulliq, NTPC Snare, EPCOR Distribution (2026 tariffs still interim) and the next Rate of Last Resort term (the UCA table shows only the 2025-2026 term) unchanged, next review December 15; Centra and Yukon changed (row 1b); the Centra monitor was closed November 18 (owner decision) and Yukon's review is December 15. Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |
@@ -1092,7 +1101,7 @@ live records also need crosswalk rules: after export,
     and [workflow rules](../.github/instructions/ci-data-history.instructions.md#model-monitoring).
 10. **Phase 9: Product Follow-up** ([README](../README.md#roadmap)):
     historical charts (planned as the Rate History tab, owner decisions November 23: built after
-    the one-year check and the territorial models, ahead of the coverage claim) and AI exports,
+    the one-year check (built November 24) and the territorial models, ahead of the coverage claim) and AI exports,
     calculator/API scoping, and the Across-Canada comparison view built on the Phase 7 models (done
     for residential electricity; it never uses illustrative values). Roadmap items, not implemented
     features.

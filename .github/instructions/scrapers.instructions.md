@@ -104,6 +104,12 @@ Owner decisions 2026-11-23:
 - A failure message names what changed (the document, year, edition, class or value), so a flagged
   error is quick to fix. A missing new year or edition still fails closed; an old price is never
   extended.
+- The one-year alarm is checked for every utility: the coverage gate's `not_updated_in_a_year`
+  warning flags each official document whose prices have not changed for more than a year, and a
+  quarterly GitHub issue lists them (owner decisions 2026-11-23 and 2026-11-24; rules in the
+  [CI rules](ci-data-history.instructions.md#coverage-gate-scriptscoverage_gatepy-owner-decisions-2026-10-30)).
+  A scraper's `source_url` on each component is what names the document, so keep it the official
+  document the value was read from.
 
 ## Completeness
 
