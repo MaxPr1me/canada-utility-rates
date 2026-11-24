@@ -1,0 +1,642 @@
+{
+  "version": 1,
+  "kind": "market_quarterly",
+  "province": "ON",
+  "derivation_method": "observed_quarterly_time_weighted",
+  "unit": "$/kWh",
+  "measures": [
+    "energy",
+    "ga_class_b",
+    "total"
+  ],
+  "source": "data/market/ontario_market_monthly.csv",
+  "weighting": "Each month is weighted by its calendar hours in Eastern Standard Time (days x 24), the IESO's hour-ending convention with no daylight-saving shift, not by its observed hours (months taken from the IESO monthly tables have none).",
+  "rule": "A quarter is published only when all three of its calendar months are complete in the permanent monthly history, and each value is the hour-weighted mean of its three monthly values, sum(value x hours) / sum(hours) (owner decision 50, 2026-11-23).",
+  "first_quarter": "2020Q1",
+  "last_quarter": "2026Q3",
+  "quarters": [
+    {
+      "quarter": "2020Q1",
+      "start": "2020-01-01",
+      "end": "2020-03-31",
+      "months": [
+        "2020-01",
+        "2020-02",
+        "2020-03"
+      ],
+      "hours": 2184,
+      "energy": 0.013782,
+      "ga_class_b": 0.111648,
+      "total": 0.12543,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2020Q2",
+      "start": "2020-04-01",
+      "end": "2020-06-30",
+      "months": [
+        "2020-04",
+        "2020-05",
+        "2020-06"
+      ],
+      "hours": 2184,
+      "energy": 0.008095,
+      "ga_class_b": 0.115,
+      "total": 0.123095,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2020Q3",
+      "start": "2020-07-01",
+      "end": "2020-09-30",
+      "months": [
+        "2020-07",
+        "2020-08",
+        "2020-09"
+      ],
+      "hours": 2208,
+      "energy": 0.016883,
+      "ga_class_b": 0.107938,
+      "total": 0.124821,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2020Q4",
+      "start": "2020-10-01",
+      "end": "2020-12-31",
+      "months": [
+        "2020-10",
+        "2020-11",
+        "2020-12"
+      ],
+      "hours": 2208,
+      "energy": 0.011808,
+      "ga_class_b": 0.116895,
+      "total": 0.128703,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2021Q1",
+      "start": "2021-01-01",
+      "end": "2021-03-31",
+      "months": [
+        "2021-01",
+        "2021-02",
+        "2021-03"
+      ],
+      "hours": 2160,
+      "energy": 0.021804,
+      "ga_class_b": 0.07554,
+      "total": 0.097345,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2021Q2",
+      "start": "2021-04-01",
+      "end": "2021-06-30",
+      "months": [
+        "2021-04",
+        "2021-05",
+        "2021-06"
+      ],
+      "hours": 2184,
+      "energy": 0.015482,
+      "ga_class_b": 0.098753,
+      "total": 0.114235,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2021Q3",
+      "start": "2021-07-01",
+      "end": "2021-09-30",
+      "months": [
+        "2021-07",
+        "2021-08",
+        "2021-09"
+      ],
+      "hours": 2208,
+      "energy": 0.031963,
+      "ga_class_b": 0.064965,
+      "total": 0.096928,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2021Q4",
+      "start": "2021-10-01",
+      "end": "2021-12-31",
+      "months": [
+        "2021-10",
+        "2021-11",
+        "2021-12"
+      ],
+      "hours": 2208,
+      "energy": 0.03751,
+      "ga_class_b": 0.055444,
+      "total": 0.092954,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2022Q1",
+      "start": "2022-01-01",
+      "end": "2022-03-31",
+      "months": [
+        "2022-01",
+        "2022-02",
+        "2022-03"
+      ],
+      "hours": 2160,
+      "energy": 0.039809,
+      "ga_class_b": 0.051778,
+      "total": 0.091587,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2022Q2",
+      "start": "2022-04-01",
+      "end": "2022-06-30",
+      "months": [
+        "2022-04",
+        "2022-05",
+        "2022-06"
+      ],
+      "hours": 2184,
+      "energy": 0.031062,
+      "ga_class_b": 0.082149,
+      "total": 0.113211,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2022Q3",
+      "start": "2022-07-01",
+      "end": "2022-09-30",
+      "months": [
+        "2022-07",
+        "2022-08",
+        "2022-09"
+      ],
+      "hours": 2208,
+      "energy": 0.06579,
+      "ga_class_b": 0.025755,
+      "total": 0.091545,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2022Q4",
+      "start": "2022-10-01",
+      "end": "2022-12-31",
+      "months": [
+        "2022-10",
+        "2022-11",
+        "2022-12"
+      ],
+      "hours": 2208,
+      "energy": 0.042902,
+      "ga_class_b": 0.053783,
+      "total": 0.096686,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2023Q1",
+      "start": "2023-01-01",
+      "end": "2023-03-31",
+      "months": [
+        "2023-01",
+        "2023-02",
+        "2023-03"
+      ],
+      "hours": 2160,
+      "energy": 0.027048,
+      "ga_class_b": 0.071847,
+      "total": 0.098895,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2023Q2",
+      "start": "2023-04-01",
+      "end": "2023-06-30",
+      "months": [
+        "2023-04",
+        "2023-05",
+        "2023-06"
+      ],
+      "hours": 2184,
+      "energy": 0.02199,
+      "ga_class_b": 0.093758,
+      "total": 0.115748,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2023Q3",
+      "start": "2023-07-01",
+      "end": "2023-09-30",
+      "months": [
+        "2023-07",
+        "2023-08",
+        "2023-09"
+      ],
+      "hours": 2208,
+      "energy": 0.035033,
+      "ga_class_b": 0.058913,
+      "total": 0.093946,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2023Q4",
+      "start": "2023-10-01",
+      "end": "2023-12-31",
+      "months": [
+        "2023-10",
+        "2023-11",
+        "2023-12"
+      ],
+      "hours": 2208,
+      "energy": 0.030102,
+      "ga_class_b": 0.074067,
+      "total": 0.10417,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2024Q1",
+      "start": "2024-01-01",
+      "end": "2024-03-31",
+      "months": [
+        "2024-01",
+        "2024-02",
+        "2024-03"
+      ],
+      "hours": 2184,
+      "energy": 0.032968,
+      "ga_class_b": 0.0646,
+      "total": 0.097568,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2024Q2",
+      "start": "2024-04-01",
+      "end": "2024-06-30",
+      "months": [
+        "2024-04",
+        "2024-05",
+        "2024-06"
+      ],
+      "hours": 2184,
+      "energy": 0.028118,
+      "ga_class_b": 0.076776,
+      "total": 0.104894,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2024Q3",
+      "start": "2024-07-01",
+      "end": "2024-09-30",
+      "months": [
+        "2024-07",
+        "2024-08",
+        "2024-09"
+      ],
+      "hours": 2208,
+      "energy": 0.034046,
+      "ga_class_b": 0.068625,
+      "total": 0.102671,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2024Q4",
+      "start": "2024-10-01",
+      "end": "2024-12-31",
+      "months": [
+        "2024-10",
+        "2024-11",
+        "2024-12"
+      ],
+      "hours": 2208,
+      "energy": 0.033583,
+      "ga_class_b": 0.075066,
+      "total": 0.108649,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2025Q1",
+      "start": "2025-01-01",
+      "end": "2025-03-31",
+      "months": [
+        "2025-01",
+        "2025-02",
+        "2025-03"
+      ],
+      "hours": 2160,
+      "energy": 0.062923,
+      "ga_class_b": 0.039019,
+      "total": 0.101941,
+      "eras": [
+        "hoep"
+      ],
+      "energy_sources": [
+        "hoep_hourly"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2025Q2",
+      "start": "2025-04-01",
+      "end": "2025-06-30",
+      "months": [
+        "2025-04",
+        "2025-05",
+        "2025-06"
+      ],
+      "hours": 2184,
+      "energy": 0.037087,
+      "ga_class_b": 0.08845,
+      "total": 0.125537,
+      "eras": [
+        "hoep",
+        "oemp"
+      ],
+      "energy_sources": [
+        "hoep_monthly_report",
+        "oemp_monthly_table"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2025Q3",
+      "start": "2025-07-01",
+      "end": "2025-09-30",
+      "months": [
+        "2025-07",
+        "2025-08",
+        "2025-09"
+      ],
+      "hours": 2208,
+      "energy": 0.064578,
+      "ga_class_b": 0.035156,
+      "total": 0.099735,
+      "eras": [
+        "oemp"
+      ],
+      "energy_sources": [
+        "oemp_monthly_table"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2025Q4",
+      "start": "2025-10-01",
+      "end": "2025-12-31",
+      "months": [
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "hours": 2208,
+      "energy": 0.078723,
+      "ga_class_b": 0.021398,
+      "total": 0.100121,
+      "eras": [
+        "oemp"
+      ],
+      "energy_sources": [
+        "oemp_monthly_table"
+      ],
+      "ga_sources": [
+        "ga_workbook"
+      ]
+    },
+    {
+      "quarter": "2026Q1",
+      "start": "2026-01-01",
+      "end": "2026-03-31",
+      "months": [
+        "2026-01",
+        "2026-02",
+        "2026-03"
+      ],
+      "hours": 2160,
+      "energy": 0.09856,
+      "ga_class_b": 0.000842,
+      "total": 0.099403,
+      "eras": [
+        "oemp"
+      ],
+      "energy_sources": [
+        "oemp_monthly_table"
+      ],
+      "ga_sources": [
+        "ga_monthly_report"
+      ]
+    },
+    {
+      "quarter": "2026Q2",
+      "start": "2026-04-01",
+      "end": "2026-06-30",
+      "months": [
+        "2026-04",
+        "2026-05",
+        "2026-06"
+      ],
+      "hours": 2184,
+      "energy": 0.039159,
+      "ga_class_b": 0.094305,
+      "total": 0.133463,
+      "eras": [
+        "oemp"
+      ],
+      "energy_sources": [
+        "oemp_monthly_table"
+      ],
+      "ga_sources": [
+        "ga_monthly_report"
+      ]
+    },
+    {
+      "quarter": "2026Q3",
+      "start": "2026-07-01",
+      "end": "2026-09-30",
+      "months": [
+        "2026-07",
+        "2026-08",
+        "2026-09"
+      ],
+      "hours": 2208,
+      "energy": 0.062891,
+      "ga_class_b": 0.049486,
+      "total": 0.112377,
+      "eras": [
+        "oemp"
+      ],
+      "energy_sources": [
+        "oemp_monthly_table"
+      ],
+      "ga_sources": [
+        "ga_monthly_report"
+      ]
+    }
+  ]
+}

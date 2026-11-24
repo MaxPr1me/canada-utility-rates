@@ -8,11 +8,11 @@
     "price_basis": "Energy is the legacy Hourly Ontario Energy Price (HOEP) until it retired on April 30, 2025, and the Ontario Electricity Market Price (OEMP, the Ontario Price = Day-Ahead Ontario Zonal Price + Load Forecast Deviation Adjustment) from May 1, 2025, published by the IESO in $/MWh and shown here in $/kWh. Monthly values: legacy HOEP months use the arithmetic mean of every hourly HOEP value (checked against the IESO HOEP Monthly Averages report) and that report's demand-weighted average; Ontario Price months use the IESO monthly Ontario Price table (arithmetic and weighted averages), checked against the project's hourly archive when the archive covers the whole month.",
     "ga_basis": "Global Adjustment Class B actual monthly rate: \"Actual Rate ($/MWh)\" in the IESO Data Directory Global Adjustment workbook (cross-checked against the IESO cents-per-kWh workbook) or, for months the workbook does not list yet, ActualRate in the IESO Global Adjustment monthly report; where both list a month they must agree within 0.005 $/MWh. The rate applies to every hour of its month, so energy + GA is what a market-billed Class B customer paid per kWh for energy. Class A customers pay Global Adjustment by their peak demand factor instead.",
     "derivation_method": "observed_rolling_60m_hoep_oemp_ga",
-    "window_start": "2021-10-01",
-    "window_end": "2026-09-30",
+    "window_start": "2021-11-01",
+    "window_end": "2026-10-31",
     "window": {
-      "start_month": "2021-10",
-      "end_month": "2026-09",
+      "start_month": "2021-11",
+      "end_month": "2026-10",
       "months": 60,
       "complete_rule": "A month is complete when it has ended, its energy value is validated (legacy HOEP months: the hourly mean matches the IESO HOEP Monthly Averages report within 0.01 $/MWh; Ontario Price months: listed in the IESO monthly table, and within 0.01 $/MWh of the hourly archive when the archive covers the whole month) and its Class B Global Adjustment actual rate is published. The window is the latest 60 consecutive complete months."
     },
@@ -24,21 +24,21 @@
       2025,
       2026
     ],
-    "generated_at": "2026-11-17T20:35:58Z",
-    "as_of": "2026-11-17",
+    "generated_at": "2026-11-24T18:54:45Z",
+    "as_of": "2026-11-24",
     "change_date": "2025-05-01",
     "eras": [
       {
         "id": "hoep",
         "name": "Hourly Ontario Energy Price (HOEP, legacy)",
-        "from": "2021-10",
+        "from": "2021-11",
         "to": "2025-04"
       },
       {
         "id": "oemp",
         "name": "Ontario Electricity Market Price (Ontario Price, OEMP)",
         "from": "2025-05",
-        "to": "2026-09"
+        "to": "2026-10"
       }
     ],
     "gap": {
@@ -56,11 +56,11 @@
       "days": 1826,
       "hours": 32640,
       "months": 60,
-      "weekday_days": 1304,
-      "weekend_days": 522,
+      "weekday_days": 1305,
+      "weekend_days": 521,
       "calendar_hours": 43824,
-      "hours_hoep": 30672,
-      "hours_oemp": 1968,
+      "hours_hoep": 29928,
+      "hours_oemp": 2712,
       "unobserved_hours": 11184,
       "hours_per_bin": {
         "weekday": {
@@ -69,7 +69,7 @@
         },
         "weekend": {
           "min": 25,
-          "max": 37
+          "max": 36
         }
       },
       "hours_hoep_per_bin": {
@@ -82,14 +82,6 @@
       }
     },
     "months": [
-      {
-        "month": "2021-10",
-        "days": 31,
-        "weekday_days": 21,
-        "weekend_days": 10,
-        "hours": 744,
-        "observed_hours": 744
-      },
       {
         "month": "2021-11",
         "days": 30,
@@ -561,6 +553,14 @@
         "weekend_days": 8,
         "hours": 720,
         "observed_hours": 720
+      },
+      {
+        "month": "2026-10",
+        "days": 31,
+        "weekday_days": 22,
+        "weekend_days": 9,
+        "hours": 744,
+        "observed_hours": 744
       }
     ],
     "unobserved_hoep_months": [
@@ -569,18 +569,12 @@
         "reason": "No validated hourly legacy HOEP values: the IESO yearly hourly HOEP report for the final, partial year does not reproduce the HOEP Monthly Averages report for this month (or no hourly report exists), so the month's hours are left out of the heatmap and its monthly values come from the HOEP Monthly Averages report."
       }
     ],
-    "incomplete_months": [
-      {
-        "month": "2026-10",
-        "reason": "energy not validated (not in the IESO monthly table)"
-      }
-    ],
+    "incomplete_months": [],
     "revisions": [],
     "ga_adjustments": [
       {
         "type": "deferral_recovery_not_included",
         "months": [
-          "2021-10",
           "2021-11",
           "2021-12"
         ],
@@ -1110,7 +1104,7 @@
         "basis": "arithmetic mean of the archived hourly Ontario Price vs the IESO monthly table (tab AA), for months whose every hour has a published Ontario Price in the archive",
         "unit": "$/MWh",
         "tolerance": 0.01,
-        "months_checked": 2,
+        "months_checked": 3,
         "max_abs_difference": 0.008,
         "months": [
           {
@@ -1130,6 +1124,15 @@
             "difference": 0.0019,
             "da_ozp": "pass",
             "lfda": "pass"
+          },
+          {
+            "month": "2026-10",
+            "hours": 744,
+            "computed": 54.7378,
+            "published": 54.73,
+            "difference": 0.0078,
+            "da_ozp": "pass",
+            "lfda": "pass"
           }
         ]
       },
@@ -1138,7 +1141,7 @@
         "basis": "DA-OZP + LFDA vs the Ontario Price (OEMP) in every row of both IESO monthly tables",
         "unit": "$/MWh",
         "tolerance": 0.01,
-        "months_checked": 34,
+        "months_checked": 36,
         "max_abs_difference": 0.0
       },
       "ga_class_b_units": {
@@ -1154,16 +1157,9 @@
         "basis": "Class B actual rate in the IESO Data Directory workbook vs ActualRate in the IESO Global Adjustment monthly report, for months listed in both",
         "unit": "$/MWh",
         "tolerance": 0.005,
-        "months_checked": 3,
+        "months_checked": 2,
         "max_abs_difference": 0.0,
         "months": [
-          {
-            "month": "2025-10",
-            "workbook": 48.85,
-            "monthly_report": 48.85,
-            "difference": 0.0,
-            "file": "PUB_GlobalAdjustment_202510_v3.xml"
-          },
           {
             "month": "2025-11",
             "workbook": 18.16,
@@ -1180,7 +1176,6 @@
           }
         ],
         "reports": {
-          "2025-10": "PUB_GlobalAdjustment_202510_v3.xml",
           "2025-11": "PUB_GlobalAdjustment_202511_v3.xml",
           "2025-12": "PUB_GlobalAdjustment_202512_v3.xml",
           "2026-01": "PUB_GlobalAdjustment_202601_v3.xml",
@@ -1200,17 +1195,6 @@
     "notes": "Observed market history for comparison only: not a tariff, a bill or a forecast. The Hourly Ontario Energy Price (HOEP) retired on April 30, 2025, and was replaced with the Ontario Price. Energy is the legacy HOEP to April 2025 and the Ontario Price (OEMP = DA-OZP + LFDA) from May 2025; Global Adjustment is the Class B actual monthly rate, so energy + GA is what a market-billed Class B customer paid per kWh for energy. Class A customers pay Global Adjustment by their peak demand factor, not the Class B rate shown here. Delivery, regulatory, loss and retail contract charges are not included. The hourly Ontario Price from 2025-05-01 to 2026-07-10 is not available (the IESO keeps its daily reports for about 90 days and the project's archive starts after that period), so those hours are left out of the heatmap and never modelled; monthly values for those months come from the IESO monthly table."
   },
   "monthly": [
-    {
-      "month": "2021-10",
-      "era": "hoep",
-      "energy_arithmetic": 0.03861,
-      "energy_weighted": 0.03995,
-      "ga_class_b": 0.05244,
-      "total_arithmetic": 0.09105,
-      "energy_source": "hoep_hourly",
-      "ga_source": "ga_workbook",
-      "observed_hours": 744
-    },
     {
       "month": "2021-11",
       "era": "hoep",
@@ -1859,6 +1843,17 @@
       "energy_source": "oemp_monthly_table",
       "ga_source": "ga_monthly_report",
       "observed_hours": 720
+    },
+    {
+      "month": "2026-10",
+      "era": "oemp",
+      "energy_arithmetic": 0.05473,
+      "energy_weighted": 0.05605,
+      "ga_class_b": 0.06455,
+      "total_arithmetic": 0.11928,
+      "energy_source": "oemp_monthly_table",
+      "ga_source": "ga_monthly_report",
+      "observed_hours": 744
     }
   ],
   "hourly_surface": [
@@ -6618,529 +6613,529 @@
       "month": 10,
       "day_type": "weekday",
       "hour": 0,
-      "hours_count": 87,
-      "avg_energy_price": 0.026656,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.094519,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.029017,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.099732,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 1,
-      "hours_count": 87,
-      "avg_energy_price": 0.023927,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.09179,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.027374,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.098088,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 2,
-      "hours_count": 87,
-      "avg_energy_price": 0.02355,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.091412,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.027807,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.098521,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 3,
-      "hours_count": 87,
-      "avg_energy_price": 0.023746,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.091609,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.027907,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.098621,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 4,
-      "hours_count": 87,
-      "avg_energy_price": 0.022358,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.09022,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.029009,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.099723,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 5,
-      "hours_count": 87,
-      "avg_energy_price": 0.034949,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.102811,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.041128,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.111843,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 6,
-      "hours_count": 87,
-      "avg_energy_price": 0.061274,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.129137,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.068557,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.139272,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 7,
-      "hours_count": 87,
-      "avg_energy_price": 0.047975,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.115837,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.053946,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.124661,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 8,
-      "hours_count": 87,
-      "avg_energy_price": 0.0462,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.114062,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.048949,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.119664,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 9,
-      "hours_count": 87,
-      "avg_energy_price": 0.044521,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.112383,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.046968,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.117682,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 10,
-      "hours_count": 87,
-      "avg_energy_price": 0.041435,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.109297,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.044725,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.11544,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 11,
-      "hours_count": 87,
-      "avg_energy_price": 0.041748,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.10961,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.044398,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.115113,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 12,
-      "hours_count": 87,
-      "avg_energy_price": 0.041759,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.109622,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.044464,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.115179,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 13,
-      "hours_count": 87,
-      "avg_energy_price": 0.039177,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.107039,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.043541,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.114255,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 14,
-      "hours_count": 87,
-      "avg_energy_price": 0.037934,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.105797,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.040945,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.111659,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 15,
-      "hours_count": 87,
-      "avg_energy_price": 0.039626,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.107488,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.043186,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.113901,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 16,
-      "hours_count": 87,
-      "avg_energy_price": 0.044538,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.1124,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.051856,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.122571,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 17,
-      "hours_count": 87,
-      "avg_energy_price": 0.0449,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.112762,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.055196,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.12591,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 18,
-      "hours_count": 87,
-      "avg_energy_price": 0.043449,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.111312,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.05466,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.125375,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 19,
-      "hours_count": 87,
-      "avg_energy_price": 0.038908,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.10677,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.047288,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.118002,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 20,
-      "hours_count": 87,
-      "avg_energy_price": 0.037287,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.10515,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.043022,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.113737,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 21,
-      "hours_count": 87,
-      "avg_energy_price": 0.033235,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.101097,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.038068,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.108782,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 22,
-      "hours_count": 87,
-      "avg_energy_price": 0.029166,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.097028,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.033017,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.103732,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekday",
       "hour": 23,
-      "hours_count": 87,
-      "avg_energy_price": 0.027131,
-      "avg_ga_class_b": 0.067862,
-      "combined": 0.094993,
-      "hours_hoep": 87,
-      "hours_oemp": 0
+      "hours_count": 88,
+      "avg_energy_price": 0.031327,
+      "avg_ga_class_b": 0.070715,
+      "combined": 0.102041,
+      "hours_hoep": 66,
+      "hours_oemp": 22
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 0,
-      "hours_count": 37,
-      "avg_energy_price": 0.028489,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.095112,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.027931,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.097976,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 1,
-      "hours_count": 37,
-      "avg_energy_price": 0.026746,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.093369,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.027189,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.097233,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 2,
-      "hours_count": 37,
-      "avg_energy_price": 0.025726,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.092349,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.025465,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.095509,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 3,
-      "hours_count": 37,
-      "avg_energy_price": 0.023921,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.090544,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.02624,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.096284,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 4,
-      "hours_count": 37,
-      "avg_energy_price": 0.025191,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.091813,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.028463,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.098507,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 5,
-      "hours_count": 37,
-      "avg_energy_price": 0.028354,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.094977,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.031105,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.101149,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 6,
-      "hours_count": 37,
-      "avg_energy_price": 0.029697,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.096319,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.034983,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.105027,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 7,
-      "hours_count": 37,
-      "avg_energy_price": 0.029959,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.096582,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.033916,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.10396,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 8,
-      "hours_count": 37,
-      "avg_energy_price": 0.041259,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.107882,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.042474,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.112518,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 9,
-      "hours_count": 37,
-      "avg_energy_price": 0.042837,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.10946,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.042194,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.112239,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 10,
-      "hours_count": 37,
-      "avg_energy_price": 0.039512,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.106134,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.03637,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.106414,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 11,
-      "hours_count": 37,
-      "avg_energy_price": 0.062177,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.128799,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.032485,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.102529,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 12,
-      "hours_count": 37,
-      "avg_energy_price": 0.035377,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.102,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.031581,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.101625,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 13,
-      "hours_count": 37,
-      "avg_energy_price": 0.028852,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.095475,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.03064,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.100684,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 14,
-      "hours_count": 37,
-      "avg_energy_price": 0.029481,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.096103,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.032276,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.10232,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 15,
-      "hours_count": 37,
-      "avg_energy_price": 0.034587,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.101209,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.036883,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.106927,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 16,
-      "hours_count": 37,
-      "avg_energy_price": 0.04362,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.110243,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.044636,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.11468,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 17,
-      "hours_count": 37,
-      "avg_energy_price": 0.064928,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.13155,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.074801,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.144846,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 18,
-      "hours_count": 37,
-      "avg_energy_price": 0.04394,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.110563,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.052089,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.122133,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 19,
-      "hours_count": 37,
-      "avg_energy_price": 0.034241,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.100864,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.040221,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.110265,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 20,
-      "hours_count": 37,
-      "avg_energy_price": 0.030655,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.097277,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.035669,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.105713,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 21,
-      "hours_count": 37,
-      "avg_energy_price": 0.030437,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.097059,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.035705,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.105749,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 22,
-      "hours_count": 37,
-      "avg_energy_price": 0.023056,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.089679,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.029876,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.09992,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 10,
       "day_type": "weekend",
       "hour": 23,
-      "hours_count": 37,
-      "avg_energy_price": 0.024051,
-      "avg_ga_class_b": 0.066623,
-      "combined": 0.090673,
-      "hours_hoep": 37,
-      "hours_oemp": 0
+      "hours_count": 36,
+      "avg_energy_price": 0.029714,
+      "avg_ga_class_b": 0.070044,
+      "combined": 0.099758,
+      "hours_hoep": 27,
+      "hours_oemp": 9
     },
     {
       "month": 11,
