@@ -407,3 +407,43 @@ def test_mobile_all_views_preserve_existing_tariff_comparison(open_site, payload
     expect(page.locator(".across-table")).to_be_visible()
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
     assert not errors
+
+
+@pytest.mark.parametrize("width", [1280, 390])
+def test_territorial_models_show_costs_before_and_after_subsidies(open_site, payload, width):
+    # Method 7T-1 (owner decisions 67, 69, 72 and 74, 2026-11-24): territorial totals are before subsidies, the
+    # after-subsidy median is published before tax only, interim rates are labelled and Nunavut says why it has
+    # no after-subsidy cost. Every amount comes from the engine's own territorial build, never from the browser.
+    territorial = copy.deepcopy(_builds()["territorial"]["models"])
+    payload["models"] += territorial
+    nt = next(m for m in territorial if m["key"]["province"] == "NT" and m["key"]["sector"] == "residential")
+    level = next(item for item in nt["levels"] if item["kwh"] == 1000)
+    page, _, errors = open_site(payload, width=width)
+
+    def money(value):
+        return page.evaluate("value => CanadaUtilityModels.money(value)", value)
+
+    after = level["after_subsidy"]["without_tax"]["median"]
+    page.locator('[data-view="models"]').click()
+    page.locator("#models-province").select_option("NT")
+    expect(page.locator("#models-interim")).to_contain_text("Interim rates: Naka Power Utilities (NWT)")
+    expect(page.locator("#models-table-wrap > table")).to_contain_text(money(level["without_tax"]["median"]))
+    expect(page.locator(".rm-subsidies table")).to_contain_text(money(after))
+    expect(page.locator(".rm-subsidies")).to_contain_text("before tax only")
+    page.locator("#models-province").select_option("NU")
+    expect(page.locator(".rm-subsidies")).to_contain_text("No cost after subsidies is shown")
+    expect(page.locator(".rm-subsidies table")).to_have_count(0)
+    page.locator("#models-province").select_option("ON")
+    expect(page.locator(".rm-subsidies")).to_have_count(0)
+    expect(page.locator("#models-interim")).to_be_hidden()
+    page.locator('[data-view="across-canada"]').click()
+    row = page.locator('tr[data-province="NT"]')
+    expect(row).to_contain_text("before subsidies")
+    expect(row).to_contain_text(f"After automatic subsidies: {money(after)} before tax")
+    expect(page.locator('tr[data-province="NU"]')).to_contain_text("Before subsidies only")
+    expect(page.locator('tr[data-province="YT"]')).not_to_contain_text("Not modelled yet")
+    expect(page.locator("#across-chart")).to_contain_text("(before subsidies)")
+    expect(page.locator(".across-subsidy-note")).to_be_visible()
+    if width == 390:
+        assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+    assert not errors

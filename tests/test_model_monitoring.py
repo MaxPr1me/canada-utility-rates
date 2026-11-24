@@ -486,20 +486,20 @@ def test_read_only_check_requires_the_exact_recorded_generation(document, tmp_pa
     assert paths["history"].read_bytes() == before
 
 
-@pytest.mark.parametrize("fault", [None, "taxes", "unmapped", "block_periods"])
+@pytest.mark.parametrize("fault", [None, "taxes", "unmapped", "block_periods", "percentage_riders", "subsidies"])
 def test_configuration_health_catches_missing_and_soft_failed_inputs(tmp_path, fault):
     from pipeline.representative_models import load_rates
 
     root = Path(__file__).resolve().parents[1]
     configs = tmp_path / "data" / "models"
     configs.mkdir(parents=True)
-    for name in ("crosswalk", "usage_levels", "taxes", "block_periods"):
-        if fault == "taxes" and name == "taxes":
+    for name in ("crosswalk", "usage_levels", "taxes", "block_periods", "percentage_riders", "subsidies"):
+        if fault in ("taxes", "subsidies") and name == fault:
             continue
         config = monitoring.read_json(root / "data" / "models" / f"{name}.json")
         if fault == "unmapped" and name == "crosswalk":
             config["rules"] = [{"id": "no-match", "utility": "No Matching Utility", "exclude": "test"}]
-        elif fault == "block_periods" and name == "block_periods":
+        elif fault in ("block_periods", "percentage_riders") and name == fault:
             config["entries"].append({"id": "incomplete"})
         (configs / f"{name}.json").write_text(json.dumps(config), encoding="utf-8")
     rates = load_rates(root / "tests" / "fixtures" / "rm_records_sample.json")

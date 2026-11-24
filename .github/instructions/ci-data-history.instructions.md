@@ -150,8 +150,9 @@ The following workflow decisions were approved on 2026-11-17.
 - A run stopped by its input check (outcome receipt `inputs: "failure"`; owner decision 2026-11-23)
   is neither a failure nor a refresh: it scraped and saved nothing, and its own error says what to
   type. Older receipts without the field are read as before.
-- Reuse the coverage gate, crosswalk coverage, reviewed block-period checks and observed-market
-  reader. Missing/invalid configuration and unmapped live tariffs remain problems; a documented
+- Reuse the coverage gate, crosswalk coverage, reviewed block-period, percentage-rider and subsidy
+  checks (the last two since method 7T-1, 2026-11-24) and the observed-market reader. Missing/invalid
+  configuration and unmapped live tariffs remain problems; a documented
   `not_computable` model is not inherently corrupt. Do not hide known coverage gaps.
 - Keep one bot-owned, marked monitoring issue for input/refresh problems, never ordinary price
   changes. Preserve unchecked problems and maintainer text, reject older recovery evidence and

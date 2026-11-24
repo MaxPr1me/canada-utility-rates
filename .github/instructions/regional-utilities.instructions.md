@@ -176,6 +176,13 @@ known copies, decided 2026-11-18, have a note but no review date.)
 - The joint book gets a new address every month. Find it through ATCO's
   `understanding-rates.model.json` (the newest `yecl-yec-rate-schedules-MM-YYYY.pdf` on the AEY asset
   path not later than the current UTC month), then the static page link, then the last known link.
+- **Territorial models (method 7T-1, owner decisions 2026-11-24)** read these records through reviewed
+  lists that match component names and notes: `data/models/percentage_riders.json` (Yukon Riders R, J,
+  J1 and the relief; Naka Riders R, E, H and the franchise tax) and `data/models/subsidies.json` (the
+  TPSP first-block prices, NTPC's Cost of Living Subsidy, Naka's GREP and Qulliq's NESP). A scraper
+  change that renames a component or adds a percentage rider must update those lists in the same
+  change: an unreviewed percentage rider makes the record not computable in the models. Rules:
+  [representative-models.instructions.md](representative-models.instructions.md#territorial-models-method-7t-1-owner-decisions-64-79-2026-11-24).
 
 ## Municipal utilities (batch 18)
 

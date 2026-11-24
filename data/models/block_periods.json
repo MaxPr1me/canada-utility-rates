@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-11-04",
+  "updated": "2026-11-24",
   "status": "Reviewed per-tariff billing periods for energy block thresholds published as plain kWh (user decision 2026-10-16). Each entry quotes the official text; entries without a stated period have threshold_period null and stay not computable. User decision 2026-10-30: a block printed 'per Billing Period' counts as per month only where the utility's official billing terms confirm monthly billing (NB Power and Maritime Electric confirmed 2026-10-30; their seasonal options stay null).",
   "entries": [
     {
@@ -272,6 +272,28 @@
       "location": "Electric Rates, Schedule & Policy Manual (rates effective August 1, 2026, v2), Section N Residential Seasonal Option and General Service I - Seasonal (PDF pages 38-39)",
       "reviewed": "2026-11-04",
       "note": "Seasonal billing periods are not confirmed as monthly (as for Maritime Electric's seasonal options); these schedules are excluded from the models (seasonal_property)."
+    },
+    {
+      "id": "yt-yukon-energy-residential",
+      "utility": "Yukon Energy",
+      "match": {"tariff_code_regex": "^1[1-4][68]0$"},
+      "threshold_period": "month",
+      "quote": "RATE: Charges for service in any one billing month shall be the sum of the following: (a) Customer Charge $14.65 (b) Energy Charge For the first 1,000 kW.h 12.14¢/kW.h Between 1,001 - 2,500 kW.h 12.82¢/kW.h For energy in excess 2,500 kW.h 13.99¢/kW.h",
+      "source_url": "https://www.atcoelectricyukon.com/content/dam/aey-website/en-ca/assets/services-rates/yecl-yec-rate-schedules-10-2026.pdf",
+      "location": "Joint YECL/YEC rate schedules (October 2026 book), Rate Schedule 1160 Residential Service Hydro, Non-Government (PDF page 5); 1260, 1360 and 1460 (PDF pages 6-8) and the government rates 1180-1480 (PDF pages 9-12) print the same billing-month wording",
+      "reviewed": "2026-11-24",
+      "note": "Territorial models (method 7T-1, owner decisions 2026-11-24). Quote checked against the October 2026 book read 2026-11-24."
+    },
+    {
+      "id": "yt-yukon-energy-general-service",
+      "utility": "Yukon Energy",
+      "match": {"tariff_code_regex": "^2[1-4][678]0$"},
+      "threshold_period": "month",
+      "quote": "RATE: Charges for service in any one billing month shall be the sum of the following: (a) Demand Charge All kW of billing demand $7.39 / kW (b) Energy charge For the first 2,000 kW.h 10.00 ¢/kW.h Between 2,001 - 15,000 kW.h 12.88 ¢/kW.h Between 15,001 - 20,000 kW.h 15.68 ¢/kW.h For energy in excess of 20,000 kW.h 12.86 ¢/kW.h",
+      "source_url": "https://www.atcoelectricyukon.com/content/dam/aey-website/en-ca/assets/services-rates/yecl-yec-rate-schedules-10-2026.pdf",
+      "location": "Joint YECL/YEC rate schedules (October 2026 book), Rate Schedule 2160 General Service Hydro, Non-Government (PDF page 13); the other general service schedules 2170-2480 print the same billing-month wording",
+      "reviewed": "2026-11-24",
+      "note": "Territorial models (method 7T-1, owner decisions 2026-11-24). Quote checked against the October 2026 book read 2026-11-24."
     }
   ]
 }

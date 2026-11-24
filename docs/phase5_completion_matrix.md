@@ -56,18 +56,23 @@ The one-year check (built November 24; design approved November 23, build detail
   source and dry run; the dated ledger notes clear them for a year (the three Rate of Last Resort
   providers until December 31, the end of their term).
 
-Territorial models (decided November 24, being built): Yukon (the joint rate book of Yukon Energy and
-ATCO Electric Yukon, counted once), the Northwest Territories (NTPC and Naka Power, each the median of
-its zones) and Nunavut (Qulliq, interim rates labelled), for homes and small businesses. Percentage
-riders of the base charges (Yukon's Riders R, J and J1; Naka's Riders R, E and H) will be applied
-through a reviewed list, never guessed; government rates stay out of the medians. Each territory
-shows its cost before and after automatic subsidies (the NWT power support program's Yellowknife-rate
-first block, month-weighted by season; Yukon's dated affordability relief); Nunavut is shown before
-subsidy only, because the subsidised price is not published. GST is added to before-subsidy figures;
-after-subsidy figures stay before tax until the tax base on subsidised bills is confirmed.
+Territorial models (built November 24 as method 7T-1, owner decisions 64-79; published by the push):
+Yukon (the joint rate book of Yukon Energy and ATCO Electric Yukon, counted once), the Northwest
+Territories (NTPC and Naka Power, each the median of its zones) and Nunavut (Qulliq, interim rates
+labelled), for homes and small businesses. Percentage riders of the base charges (Yukon's Riders R, J
+and J1; Naka's Riders R, E and H, whose base includes the fuel charge) are applied through a reviewed
+list, never guessed; government rates stay out of the medians. Each territory shows its cost before
+subsidies (with GST) and, for homes, after the automatic subsidies, before tax: the NWT power support
+program's first block at 36.50 cents/kWh all-in (NTPC's riders and Cost of Living Subsidy apply above
+it), month-weighted by season; Naka's rate equalization for Thermal-zone homes; Yukon's dated
+affordability relief. NTPC's Snare-zone first block is not applied (its stated saving does not
+reconcile), and Nunavut is shown before subsidy only, because the subsidised price is not published.
+After-subsidy figures stay before tax until the tax base on subsidised bills is confirmed. At 1,000
+kWh, before tax: Yukon $323.62 before and $253.66 after subsidy; Northwest Territories $542.73 and
+$429.16; Nunavut $785.40 (before subsidy only). All 85 provincial models are unchanged.
 
-The Rate History tab (planned; owner decisions November 23, built after the one-year check and the
-territorial models): a sixth view with four sub-tabs (tariff prices, regulated and default prices,
+The Rate History tab (planned; owner decisions November 23; next, now that the one-year check and the
+territorial models are built): a sixth view with four sub-tabs (tariff prices, regulated and default prices,
 market prices, model costs). It shows only data the project has collected since September 29, 2026,
 plus the full stored market history; it never charts estimates, never extends an ended price and
 never adds charges together. Stored history is still short: by November 20 the only real price
@@ -148,8 +153,8 @@ are priced, so Québec and New Brunswick homes are modelled too; the small-busin
 moved to 14 and 40 kW (BC Hydro is priced on Rate 1500 at 40 kW; FortisBC Electric Rate 20 is "not
 more than 40 kW"). Owner decision November 23: the Rate Browser shows a dated price's period and an
 "Ended" tag once it has passed. The model preview against the published models showed only these
-intended changes. Next: models for the territories, then the Rate History tab (the one-year check
-and its first review round were done November 24).
+intended changes. Next: the Rate History tab (the one-year check, its first review round and the
+territorial models were done November 24).
 
 Dated checks (owner decisions, November 19) take priority when they fall due. Batch 18 continued
 was published on November 19 (see [Registered municipal additions](#registered-municipal-additions)),
@@ -585,7 +590,7 @@ building coverage; counts include optional adjustments and reference records.
 | Done (October 30, batch 16; pushed October 30) | W1 Yukon book discovery through the page model JSON; W2 Centra schedule edition by rates date and the v1126 text Appendix A (high confidence); W3 dead seed citations kept with notes (`KEPT_DEAD`), inventory and AESO pool-price links fixed, guard scans reference data; W4 local check kit (`logs/_b16_kit_*`, untracked); W5 model decisions (method 7C-3) | 2,090 tests across 27 modules. Dry runs: Yukon 20 and 20, Centra 13, Alberta 2/4/5/2 live. Gate 77 of 78 on the committed export (AESO, stored by the next Monthly Scrape) |
 | Done (October 15-16) | Lane B (7F site view, October 15); Lane F (EPCOR Energy Alberta's moved pages), CI as the only database writer (first stored run: Monthly Scrape #11, scrape run 29), the Ontario market continuation (rolling 60-month history), Lane A (7C, all ten provinces) and the 7E illustrative sidecar (all October 16) | See Next Batches item 0 |
 | Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones; the 7E synthetic profile (Monday-Friday hours beginning 7-18 EST). | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
-| Planned (order decided November 20, updated November 23) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); January 1 readiness (published November 23); the one-year check (built November 24, first review round done the same day); then territorial models; then the Rate History tab (moved ahead of the coverage claim, November 23); then the rest of the Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses illustrative values) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
+| Planned (order decided November 20, updated November 23) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); January 1 readiness (published November 23); the one-year check (built November 24, first review round done the same day); then territorial models (built November 24, method 7T-1); then the Rate History tab (moved ahead of the coverage claim, November 23); then the rest of the Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses illustrative values) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11) while the rate pages show August 1, 2026 rates; from the November 1, 2026 rates the v1126 text Appendix A is parsed at high confidence (batch 16, row 1b) |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Checked October 30 (ledger notes): Qulliq, NTPC Snare, EPCOR Distribution (2026 tariffs still interim) and the next Rate of Last Resort term (the UCA table shows only the 2025-2026 term) unchanged, next review December 15; Centra and Yukon changed (row 1b); the Centra monitor was closed November 18 (owner decision) and Yukon's review is December 15. Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |
@@ -1089,14 +1094,15 @@ live records also need crosswalk rules: after export,
     across utilities, single-source where only one utility exists, all-in energy from Phase 6, its
     own site view and generated method statements. Decided: prices without and with tax; a model per
     common usage level; major outliers named with their deviation, no "excluding" variants;
-    provinces only, territories planned later; each utility counts once as the median of its
-    standard zones. **7A and 7B were done for Ontario on October 9 and 7C on October 16:**
+    provinces first, then the territories (method 7T-1, November 24, 2026); each utility counts
+    once as the median of its standard zones. **7A and 7B were done for Ontario on October 9 and 7C on October 16:**
     `data/models/crosswalk.json` (240 ordered rules with Alberta `pairs` and
     `required_contributors`; 557 of 910 latest live records mapped, 353 excluded with reasons, 0
     unmapped), `usage_levels.json` (user-approved levels, a reviewed reference-customer list and the
     7E synthetic profile), `block_periods.json` (21 reviewed entries), `taxes.json` and the engine
     `pipeline/representative_models.py` (method 7C-2; 7C-3 since October 30), which every export runs to write
-    `site/data/representative_models.json` for the ten provinces (labelled modeled, never live
+    `site/data/representative_models.json` for the ten provinces (and the three territories since
+    November 24; labelled modeled, never live
     coverage; shown on the Representative Models tab, 7F). 55 models: 16 modeled, 20 single-source,
     6 *market energy pending* (Ontario and Alberta demand classes), 13 not computable (Manitoba
     commercial, NB Power GS1, Maritime Electric, Newfoundland and Labrador residential and small
@@ -1112,8 +1118,8 @@ live records also need crosswalk rules: after export,
     [model policy](../.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17)
     and [workflow rules](../.github/instructions/ci-data-history.instructions.md#model-monitoring).
 10. **Phase 9: Product Follow-up** ([README](../README.md#roadmap)):
-    historical charts (planned as the Rate History tab, owner decisions November 23: built after
-    the one-year check (built November 24) and the territorial models, ahead of the coverage claim) and AI exports,
+    historical charts (planned as the Rate History tab, owner decisions November 23: next, now
+    that the one-year check and the territorial models are built (November 24), ahead of the coverage claim) and AI exports,
     calculator/API scoping, and the Across-Canada comparison view built on the Phase 7 models (done
     for residential electricity; it never uses illustrative values). Roadmap items, not implemented
     features.

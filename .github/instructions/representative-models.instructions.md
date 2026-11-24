@@ -13,9 +13,11 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 - Every export carries `method_version` from `METHOD_VERSION`. Each owner-approved method change has
   received a new version (7C-3: decisions of 2026-10-30; 7C-4: market benchmark sidecars,
   2026-11-02; 7D-1: residential gas models, 2026-11-04; 7D-2: commercial gas, reviewed class bounds
-  and the s1/s2 levels, decisions of 2026-11-20); update the tests that assert it.
+  and the s1/s2 levels, decisions of 2026-11-20; 7T-1: territorial models, decisions 64-79 of
+  2026-11-24); update the tests that assert it.
 - `export_json.export_all()` calls `export_representative_models()` after the other exports
-  (`MODEL_PROVINCES` = ON, AB, BC, MB, NB, NL, NS, PE, QC, SK; `zone_policy="median_of_zones"`). The
+  (`MODEL_PROVINCES` = all 13 jurisdictions: ON, AB, BC, MB, NB, NL, NS, PE, QC, SK, YT, NT, NU;
+  `zone_policy="median_of_zones"`). The
   hook imports lazily and writes `site/data/representative_models.json` through a temporary file and
   `os.replace`; any failure is logged, keeps the previous file and never fails the export.
 - CLI: `python -m pipeline.representative_models --coverage` and/or `--build [--output PATH]
@@ -24,8 +26,8 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   from 3.11 and once moved a median by a cent.
 - Tests use frozen record fixtures (`tests/fixtures/rm_records_sample.json`, `rm_engine_sample.json`,
   `rm_records_b12.json`, `rm_records_b14.json`, `rm_records_ws_6d.json`, `rm_records_7d_gas.json`,
-  `rm_records_7d2_gas.json`, `rm_records_b18.json`, `rm_records_b18_ab.json`), so the pre-scrape CI
-  tests never depend on the live export.
+  `rm_records_7d2_gas.json`, `rm_records_b18.json`, `rm_records_b18_ab.json`, `rm_records_t.json`), so the
+  pre-scrape CI tests never depend on the live export.
 - The export and model CLI accept `--generation-receipt PATH`. This optional record distinguishes
   successful unchanged generation from failure retaining an old file; monitoring defects cannot
   break the primary export. The CLI requires `--build --output` when requesting a receipt.
@@ -43,8 +45,8 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   or create price-change issues.
 - Semantic fingerprints omit routine timestamps, machine paths, illustrative sidecars and
   synthetic-only inputs. Preserve first-match rule order. Fingerprint allowlisted input fields,
-  not whole mixed-purpose files; use the actual loaded configuration and reviewed block-period
-  inputs from that build. Monitoring alone does not change `METHOD_VERSION`.
+  not whole mixed-purpose files; use the actual loaded configuration and reviewed block-period,
+  percentage-rider and subsidy inputs from that build. Monitoring alone does not change `METHOD_VERSION`.
 - `site/data/model_change_history.json` keeps the last recorded semantic baseline, append-only
   hash-linked events, per-model last-change dates and the exact successful generation receipt.
   Initialization is labelled as a baseline, not a historical price change. Unchanged rebuilds
@@ -107,7 +109,9 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   the intentional rule overrides.
 - Exclusion reasons include `gas_models_phase_7d` (gas classes outside the Phase 7D models:
   contract-demand, interruptible, seasonal, peaking and load-factor services in every province),
-  `territory_planned_later`,
+  `government_rate` (territorial government account classes, including Qulliq's municipal tax-based
+  commercial class; decision 71), `territory_planned_later` (a territorial class outside the first
+  release: Naka's Taltson Large General Service),
   `paired_retail_component` (Alberta RoLR records), `no_reference_level` (a class whose printed
   eligibility fits no usage level: Lethbridge 992 and 995), `eligibility_unpublished` (class size
   limits not published: Medicine Hat 3.1 and 3.3, owner decision 2026-11-19) and, for AESO and the
@@ -206,7 +210,8 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   because both utilities' billing pages confirm monthly billing (owner decision 2026-10-30). Summerside
   Electric's residential and General Service I blocks follow the same rule (batch 18, its manual's
   billing period is about one month); its seasonal schedules stay `null`. Grand Forks' commercial block
-  is per two-month billing period (`two_months`, like BC Hydro 1101).
+  is per two-month billing period (`two_months`, like BC Hydro 1101). Yukon's joint rate book prints
+  "Charges for service in any one billing month", so its blocks count per month (7T-1).
 - Only these conversions are allowed: $/day x 30.4375; $/30 days x 30.4375/30; "$/two months" / 2 for
   charges printed per two-month billing period (FortisBC; batch 18: Nelson Hydro and New Westminster
   bi-monthly basic charges); per-day energy blocks x 30.4375 (Hydro-Quebec Rate D 40 kWh/day; Energir
@@ -216,8 +221,8 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   all year, block 2 Sep-Apr and May-Aug); its bounds must agree across seasons.
 - Municipal utilities registered in batch 18 join their province's medians like any registered utility
   (owner decision 2026-11-04); their percentage riders of the billed amount (New Westminster) are
-  disclosed but not applied, like every percentage adjustment (retained for this milestone by the
-  owner on 2026-11-17).
+  disclosed but not applied, like every percentage adjustment outside the territories' reviewed list
+  (retained for this milestone by the owner on 2026-11-17; see Territorial models).
 
 ## Costing rules
 
@@ -269,6 +274,54 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   (`NOT_APPLIED`), with no line while the price is below its $6.50/GJ trigger; claim-based rebates
   are left out; BC PST and ICE stay separate lines.
 
+## Territorial models (method 7T-1, owner decisions 64-79, 2026-11-24)
+
+- Scope: Yukon, the Northwest Territories and Nunavut, residential and small commercial (s1, s2)
+  non-government classes (decision 75). Government classes are `government_rate` (decision 71), Naka's
+  Taltson Large General Service is `territory_planned_later` and NTPC's interruptible heating is
+  excluded. Levels are the provincial ones, with documented northern reference points (decision 73).
+- Contributors: Yukon's joint YUB rate book counts once, as Yukon Energy (crosswalk
+  `shared_rate_books`; Yukon Electrical Company is a `duplicate_variant`; decision 66). The NWT models
+  are NTPC and Naka Power, each the median of its zones (decision 65). Interim rates (Qulliq since
+  April 1, 2025; Naka's July 1, 2026 riders) are included and labelled (crosswalk `interim_rates`,
+  `model.interim` and a warning; decision 72).
+- Percentage riders (`data/models/percentage_riders.json`, decision 64): each reviewed entry quotes what
+  its percentage applies to. `apply` prices it as that percentage of the named base charges, never of
+  other riders: Yukon Riders R, J and J1, and Naka Riders R, E and H, whose base includes the fuel charge
+  (decision 79; Naka's July 2026 notice reconciles only that way). `exclude` keeps a percentage of the
+  whole bill disclosed (Naka's franchise tax). `subsidy` is left out of the cost before subsidies and
+  applied only after them (the Yukon Affordability Rate Relief, while its component dates include the
+  as-of date; decision 70). A percentage component of a territorial record without an entry makes the
+  record not computable. Provincial percentage adjustments are unchanged (disclosed, not applied).
+- Subsidies (`data/models/subsidies.json`): every level shows its cost before subsidies (the tariff,
+  with GST like the provinces) and, where the jurisdiction allows it, the median after the automatic
+  subsidies (`level.after_subsidy`, utility rows `cost_after_subsidy`) before tax only: no with-tax
+  after-subsidy figure until bills or official text confirm the GST base (decisions 67 and 74). A
+  subsidy counts as automatic only where an official source says so.
+  - Applied: the NWT TPSP first block at 36.50 cents/kWh all-in (it replaces the whole per-kWh price of
+    the first-block kWh; NTPC's riders and its Cost of Living Subsidy apply above it; decision 76),
+    month-weighted like the Ontario RPP tiers: 7/12 at 1,000 kWh and 5/12 at 600 kWh
+    (`usage_levels.seasons.NT_TPSP`, decision 68); NTPC's Cost of Living Subsidy on every kWh where
+    no first block applies; Naka's GREP for non-government Thermal homes, whose all-in reference
+    prices replace Naka's own Thermal price and riders (decision 78); the Yukon relief (decision 70).
+  - Not applied, named: NTPC's Snare zone first block (no stored price: its stated saving does not
+    reconcile; decision 77) and Nunavut's NESP (no published price: Nunavut is before subsidy only;
+    decision 69). Commercial models have no after-subsidy figure: no automatic subsidy with a
+    published general-service amount applies (NTPC's credit also covers commercial customers but has
+    no published general-service value). Naka's 30-day pro-rating of the TPSP block is not modelled.
+- The territorial models depend on stored component names and notes that these lists match (for
+  example "GNWT TPSP First-Block Energy Price (...)", "Rider J - Base Rate Adjustment"); a scraper
+  change that renames them must update the lists, or the record fails closed.
+- Both lists fail closed and never fail a build. A missing or unreadable file states its problem: with
+  no percentage riders, territorial percentage components are not computable; with no subsidies, no
+  after-subsidy figure is published. An unreviewed or malformed entry is skipped with its reason and never
+  applied: a skipped rider leaves its record not computable, and a skipped program publishes no
+  after-subsidy cost for its territory and sector. An applied program (`treatment` `reference_rates`,
+  `first_block_price` or `per_kwh_credit`) needs `automatic` (the official text and its URL); a first
+  block states `replaces.all_energy` and its `seasons`; reference rates state `replaces.all_charges` and
+  their `required_components`, and apply only to the zone records `applies_to` selects; `absent` names
+  the zone records without a stored price, with the reviewed reason; `disclose` programs are only named.
+
 ## 7E illustrative sidecar (synthetic load profile)
 
 - Only for the Ontario `market_energy_pending` m1/l1 levels: `illustrative_all_in` with
@@ -305,6 +358,7 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 - Read the model file through the shared loader in `models.js`. Never recalculate bills, never use
   synthetic or benchmark values (neither sidecar enters Across-Canada) and never show a computed bill
   breakdown.
-- Chart and table share one eligibility rule. Show missing, territorial, pending and withheld states
-  explicitly, keep missing territorial models separate from live tariff coverage, and never turn a
-  missing model into a zero bar.
+- Chart and table share one eligibility rule. Show missing, pending and withheld states explicitly,
+  and never turn a missing model into a zero bar. Territorial totals are before subsidies (decision
+  74): their rows and bars say "before subsidies", and each row states the published cost after
+  automatic subsidies, before tax, or why there is none (Nunavut).

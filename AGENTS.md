@@ -165,17 +165,30 @@ records does not prove that every building class is covered. Current figures are
 
 ### Where the representative models live
 
-A *representative model* is a "typical" monthly cost for a province, worked out from the middle
-value (the median) of its utilities' live rates. Electricity models exist for the ten provinces.
-Natural gas models exist for homes and for small and mid-size commercial buildings, in the unit each
-utility bills (cubic metres or gigajoules, never converted); contract, interruptible and seasonal gas
-services and the territories come later.
+A *representative model* is a "typical" monthly cost for a province or territory, worked out from the
+middle value (the median) of its utilities' live rates. Electricity models exist for the ten provinces
+and, since November 24, 2026, for the three territories (homes and small businesses; see "Territorial
+models" below). Natural gas models exist for homes and for small and mid-size commercial buildings, in
+the unit each utility bills (cubic metres or gigajoules, never converted); contract, interruptible and
+seasonal gas services come later.
+
+**Territorial models (owner decisions, November 24, 2026).** Yukon's two utilities share one rate book,
+so it counts once; the Northwest Territories model combines NTPC and Naka Power; Nunavut is Qulliq.
+Their prices add percentage riders to old base charges (Yukon's Rider J alone adds 100.23%), so a
+reviewed list says what each percentage applies to; an unknown one stops that tariff from being
+priced. Each territorial model shows the cost before subsidies (the published tariff, with GST like
+the provinces) and, below it, the cost after the automatic territorial subsidies, before tax (the tax
+on subsidised bills is not confirmed yet). Nunavut is shown before subsidy only, because Qulliq does
+not publish the subsidised price. Government accounts are left out, and interim rates (Qulliq, Naka
+Power) are labelled.
 
 | File | What it does |
 |---|---|
 | `data/models/crosswalk.json` | The sorting list. Its rules are read from top to bottom; the first rule that fits puts each live tariff into a model group (province, fuel, customer type, rate structure and size) or leaves it out with a written reason. No live tariff may be left unsorted. It also holds the reviewed class limits that decide which tariff serves each example customer, each quoting the tariff's own words (for example whether "1,200 GJ per year or less" includes 1,200 GJ). |
 | `data/models/usage_levels.json` | The example customers, approved by the project owner: homes using 500, 1,000 or 2,000 kWh a month (1,000 kWh is the reference level); small businesses (under 50 kW) using 2,000 kWh at 14 kW or 10,000 kWh at 40 kW; medium businesses (50-499 kW) using 40,000 kWh at 100 kW; large businesses (500-4,999 kW) using 500,000 kWh at 1,000 kW. For gas, homes using 100, 200 or 400 cubic metres a month, or 4, 8 or 16 GJ where gas is billed in GJ; small commercial buildings using 500, 1,000 or 2,000 m³ (15, 30 or 60 GJ); mid-size buildings using 2,500, 5,000 or 10,000 m³ (100, 200 or 400 GJ). In each gas set the middle value is the reference level and the others show the range. Every level records who decided it, what it represents, why, and its official sources. Also the average month (30.4375 days, for turning daily charges into monthly ones), Ontario's dated time-of-use split, the synthetic business load profile, and the few reviewed rules for charges that depend on the customer (for example which of Liberty Gas NB's customer charges applies). |
 | `data/models/block_periods.json` | Reviewed notes saying whether an energy block such as "first 5,000 kWh" is per month or per two months, quoting the source. When nothing says, the tariff is left out of the model instead of guessed. |
+| `data/models/percentage_riders.json` | The reviewed list of percentage riders the territorial models apply (Yukon's Riders R, J and J1; Naka Power's Riders R, E and H), each quoting what its percentage applies to, plus the ones left out (a percentage of the whole bill) and the Yukon relief applied only after subsidies. |
+| `data/models/subsidies.json` | The reviewed territorial subsidies: which territories show a cost after automatic subsidies, which programs are applied (NWT power support first block, NTPC's Cost of Living Subsidy, Naka's rate equalization, the Yukon relief) or only named (Nunavut's subsidy, whose price is unpublished), each with its official source. |
 | `data/models/taxes.json` | Sales taxes and automatic bill rebates for every province and territory, as dated lines: for example the Ontario Electricity Rebate is 23.5% until October 31, 2026 and 15.7% from November 1, 2026 (O. Reg. 328/26). Municipal taxes and income-tested programs are left out. |
 | `pipeline/representative_models.py` | The calculator: each utility's monthly cost at each level, then the median, the spread, the utility closest to the median and any far from it (outliers), without and with tax, with a written explanation of how each number was made. |
 | `site/data/representative_models.json` | The results, rewritten by every export (if the calculation fails, the previous file is kept). These are comparison aids, never rates anyone is billed. |
@@ -188,8 +201,8 @@ services and the territories come later.
 |---|---|
 | `site/index.html` | The page and its views: **Rate Browser**, **Market Pricing**, **Representative Models**, **Across-Canada** and **Compare** (two tariffs side by side, never a bill total). |
 | `site/js/app.js` | The main logic: loads the data, shows the newest version of each tariff, and runs the filters, rate cards, detail windows and the Market Pricing page (Ontario or Alberta). A price with an end date shows its period, and an "Ended" tag once that date has passed. |
-| `site/js/models.js` | The Representative Models page: typical monthly costs without and with tax, the method, the contributing utilities and the example customer's assumptions; a separate historical market benchmark for larger Ontario and Alberta businesses; and, only behind a checkbox, the illustrative estimate with a warning and a SYNTHETIC badge. |
-| `site/js/across-canada.js` | Residential electricity across Canada at 500, 1,000 or 2,000 kWh (default 1,000), with tax by default. It reuses the model file, never recalculates bills or uses synthetic estimates, and never turns a missing model into a zero bar. |
+| `site/js/models.js` | The Representative Models page: typical monthly costs without and with tax, the method, the contributing utilities and the example customer's assumptions; for the territories, the cost after automatic subsidies (before tax) and an "Interim rates" label; a separate historical market benchmark for larger Ontario and Alberta businesses; and, only behind a checkbox, the illustrative estimate with a warning and a SYNTHETIC badge. |
+| `site/js/across-canada.js` | Residential electricity across Canada at 500, 1,000 or 2,000 kWh (default 1,000), with tax by default. It reuses the model file, never recalculates bills or uses synthetic estimates, and never turns a missing model into a zero bar. Territorial bars are labelled "before subsidies"; each territory's row gives its cost after automatic subsidies, before tax. |
 | `site/css/` | How the pages look (`style.css`, `models.css`, `across-canada.css`). |
 
 The model views label totals **"Before tax and rebates"** and **"With tax and rebates"**.
@@ -835,7 +848,7 @@ The detailed rules are in the area files: [all scrapers](.github/instructions/sc
 | **Demand charge** | A charge based on the peak power (kW) a customer draws, common for commercial and industrial accounts. |
 | **Rider** | A temporary adjustment to rates — can be a surcharge or a credit. |
 | **Variable (market) charge** | A charge that follows a market price that changes over time (for example the Ontario Price). It is stored with a link to the market but no number, and the website shows "Variable". |
-| **Representative model** | A "typical" monthly cost for a province, built from the median of its utilities' live tariffs at set example usage levels, shown without and with tax, with a note explaining how it was made. In Alberta, one "utility" in a model is a service area: a wires company plus the Rate of Last Resort provider for its area, or one city utility (Lethbridge, Red Deer or Medicine Hat). It is a comparison aid, never a rate anyone is billed, and it never counts as live coverage. |
+| **Representative model** | A "typical" monthly cost for a province or territory, built from the median of its utilities' live tariffs at set example usage levels, shown without and with tax, with a note explaining how it was made. In Alberta, one "utility" in a model is a service area: a wires company plus the Rate of Last Resort provider for its area, or one city utility (Lethbridge, Red Deer or Medicine Hat). Territorial models also show the cost after automatic subsidies, before tax. It is a comparison aid, never a rate anyone is billed, and it never counts as live coverage. |
 | **Median** | The middle value when numbers are sorted from lowest to highest. Unlike an average, one unusually high or low utility barely moves it. |
 | **Reference level / sensitivity level** | In a representative model, the reference level is the example customer the model is built around (for example a home using 1,000 kWh a month, or a small commercial building using 1,000 m³ of gas); sensitivity levels (often half and double) show how the cost changes with use. Sensitivity levels are not "typical" customers. |
 | **Outlier** | In a representative model, a utility whose cost is far from the median (more than 30% away, or well outside the range of the middle half of the utilities). It is named with how far away it is; it is not left out. |

@@ -37,10 +37,12 @@ MODEL_FIELDS = (
     "id", "key", "label", "state", "provenance", "cost_basis", "energy", "coverage", "buckets",
     "tou", "tiers", "utilities", "reference_customer", "exclusions", "warnings", "block_periods",
     "fixed_charge_variants", "required_contributors",
+    # Method 7T-1 territorial fields (owner decisions 2026-11-24).
+    "subsidies", "interim", "percentage_riders", "shared_rate_books",
 )
 USAGE_FIELDS = ("id", "kwh", "kw", "quantity", "unit", "role")
 LEVEL_FIELDS = USAGE_FIELDS + (
-    "without_tax", "with_tax", "closest_utility", "outliers", "utilities", "withheld", "reason",
+    "without_tax", "with_tax", "closest_utility", "outliers", "utilities", "withheld", "reason", "after_subsidy",
 )
 ASSUMPTION_FIELDS = (
     "usage_levels", "days_per_month", "power_factor_for_kva", "tou_shares", "seasons", "zone_policy",
@@ -49,17 +51,25 @@ ASSUMPTION_FIELDS = (
     "usage_bounds", "taxes",
     # Method 7D-2 selection inputs (owner decisions 2026-11-20).
     "peak_month_factors", "elective_classes", "demand_bounds",
+    # Method 7T-1 inputs (owner decisions 2026-11-24).
+    "percentage_riders", "subsidies", "interim_rates", "shared_rate_books",
 )
 INPUT_FIELDS = {
     "crosswalk": ("vocabulary", "pairs", "required_contributors", "usage_bounds", "rules", "elective_classes",
-                  "demand_bounds"),
+                  "demand_bounds", "interim_rates", "shared_rate_books"),
     "usage_levels": (
         "days_per_month", "power_factor_for_kva", "market_benchmarks", "electricity", "gas",
         "tou_shares", "seasons", "reference_customer", "fixed_charge_variants", "peak_month_factors",
     ),
     "taxes": ("sectors", "jurisdictions"),
     "block_periods": ("entries",),
+    # Reviewed percentage riders and territorial subsidies (method 7T-1): taken, like block_periods, from the loaded
+    # configuration recorded in the build's assumptions, so an edit to a reviewed list is an input change.
+    "percentage_riders": ("entries",),
+    "subsidies": ("jurisdictions", "programs"),
 }
+# Inputs read from the build's assumptions (the configuration actually loaded) rather than passed by the caller.
+RESULT_INPUTS = ("block_periods", "percentage_riders", "subsidies")
 VOLATILE_FIELDS = {
     "generated_at", "created_at", "updated", "as_of", "generated_from", "rates_generated_at",
     "latest_record_created_at", "file", "input",
@@ -260,7 +270,8 @@ def save_generation_receipt(path: Path | None, result: dict | None, *, previous:
         return
     try:
         if result is not None and inputs is not None:
-            inputs = {**inputs, "block_periods": result["assumptions"]["block_periods"]}
+            assumptions = result["assumptions"]
+            inputs = {**inputs, **{name: assumptions[name] for name in RESULT_INPUTS if name in assumptions}}
         write_json(path, generation_receipt(result, previous=previous, inputs=inputs, error=error))
     except Exception:
         logger.exception("Model generation receipt failed; monitoring cannot verify this refresh")
@@ -446,7 +457,8 @@ def input_checks(root: Path, now: datetime) -> list[dict]:
     """Reuse coverage and observed-market validity rules; a documented missing model is not corrupt data."""
     from scripts.coverage_gate import evaluate
     from scrapers.utils.market_pricing import historical_market_price
-    from pipeline.representative_models import coverage_report, load_block_periods
+    from pipeline.representative_models import (coverage_report, load_block_periods, load_percentage_riders,
+                                                 load_subsidies)
 
     checks = []
     try:
@@ -481,6 +493,12 @@ def input_checks(root: Path, now: datetime) -> list[dict]:
         problems = [f"{unmapped} live tariffs are unmapped."] if unmapped else []
         if periods.get("problem") or periods.get("skipped"):
             problems.append(f"Reviewed block periods are invalid: {periods.get('problem') or periods['skipped']}")
+        # Method 7T-1 reviewed lists: a missing or invalid list leaves territorial costs not computable.
+        for name, loaded in (("percentage riders", load_percentage_riders(root / "data" / "models" /
+                                                                          "percentage_riders.json")),
+                             ("subsidies", load_subsidies(root / "data" / "models" / "subsidies.json"))):
+            if loaded.get("problem") or loaded.get("skipped"):
+                problems.append(f"Reviewed {name} are invalid: {loaded.get('problem') or loaded['skipped']}")
         checks.append({"id": "model_configuration", "ok": not problems, "details": problems})
     except (OSError, ValueError, KeyError, TypeError) as exc:
         checks.append({"id": "model_configuration", "ok": False,
@@ -860,6 +878,10 @@ def main(argv: list[str] | None = None) -> int:
             problems = ([f"{unmapped} live tariffs are unmapped."] if unmapped else [])
             if block_periods.get("problem") or block_periods.get("skipped"):
                 problems.append("Reviewed block-period inputs are missing or invalid.")
+            for name in ("percentage_riders", "subsidies"):
+                reviewed = document.get("assumptions", {}).get(name) or {}
+                if reviewed.get("problem") or reviewed.get("skipped"):
+                    problems.append(f"Reviewed {name.replace('_', ' ')} inputs are missing or invalid.")
             report["checks"].append({"id": "model_inputs", "ok": not problems, "details": problems})
         history = read_json(args.history) if args.history.exists() else None
         if args.receipt:

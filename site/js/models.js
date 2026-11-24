@@ -506,6 +506,13 @@
         const badge = byId("models-badge");
         badge.className = STATE_BADGE_CLASS[model.state] || "rm-badge rm-badge-alert";
         badge.textContent = stateText(model, levels);
+        // Owner decision 72 (2026-11-24): interim rates are included and labelled.
+        const interim = byId("models-interim");
+        if (interim) {
+            const utilities = [...new Set(list(model.interim).map(row => row.utility).filter(Boolean))];
+            interim.textContent = utilities.length ? `Interim rates: ${joinNames(utilities)}` : "";
+            interim.classList.toggle("hidden", utilities.length === 0);
+        }
         const reasons = model.state === "not_computable" ? notComputableReasons(model) : [];
         const target = byId("models-reasons");
         target.textContent = reasons.length ? `Reasons: ${reasons.join("; ")}` : "";
@@ -572,6 +579,8 @@
         levels.forEach((level, index) => tbody.append(levelRow(level, index === highlight)));
         table.append(thead, tbody);
         wrap.append(table);
+        const subsidies = subsidyBlock(model, levels, highlight);
+        if (subsidies) wrap.append(subsidies);
     }
 
     function cell(text, className, column) {
@@ -651,6 +660,7 @@
         const classes = classSelectionNote(model);
         if (classes) box.append(classes);
         if (level) box.append(...taxBlock(level));
+        box.append(...territorialNotes(model));
         box.append(el("h3", null, "Method"),
             el("p", "methodology-summary rm-text", model.method || "No method text was published for this model."));
         const warnings = list(model.warnings).filter(item => typeof item === "string" && item);
@@ -865,7 +875,10 @@
         const headRow = el("tr");
         const hasVariants = [...rows.values()].some(row => list(row.fixed_charge_variants).length);
         const showClass = isCommercialGas(model);
+        // Method 7T-1 (owner decision 67, 2026-11-24): each contributor's cost after automatic subsidies, before tax.
+        const showAfter = (model.subsidies || {}).after_subsidy === true;
         const headings = [sentenceCase(noun.singular), "Before tax and rebates", "With tax and rebates"];
+        if (showAfter) headings.push("After automatic subsidies (before tax)");
         if (showClass) headings.push("Class used");
         if (hasVariants) headings.push("Selected fixed charge (model assumption)");
         headings.forEach(text => {
@@ -882,6 +895,7 @@
             const th = el("th", null, name);
             th.scope = "row";
             tr.append(th, cell(money(row.cost_without_tax), "rm-num"), cell(money(row.cost_with_tax), "rm-num"));
+            if (showAfter) tr.append(cell(money(row.cost_after_subsidy), "rm-num"));
             if (showClass) tr.append(cell(row.records ? classUsedText(model, row) : DASH));
             if (hasVariants) {
                 const chosen = list(row.fixed_charge_variants).map(item => item.component).filter(Boolean);
@@ -942,6 +956,130 @@
         const items = [...owners].map(([name, who]) => (who.length ? `${name} for ${joinNames(who)}` : name));
         return el("p", "rm-note rm-text", `Market-indexed ${items.length === 1 ? "charge" : "charges"} not included `
             + `(no stored value; the market price is not modeled yet): ${items.join("; ")}.`);
+    }
+
+    // ── Method 7T-1 territorial fields (owner decisions 64-79, 2026-11-24) ──
+
+    const SUBSIDY_STATUS_TEXT = { applied: "applied", not_applied: "not applied", disclosed: "named only, not applied" };
+    const RIDER_TREATMENT_TEXT = {
+        apply: "applied to",
+        subsidy: "a subsidy, applied only in the after-subsidy cost, to",
+        exclude: "not applied (a percentage of the whole bill or of revenues)",
+    };
+
+    // The cost after automatic subsidies is published before tax only (decision 74); it never replaces the table above.
+    function subsidyBlock(model, levels, highlight) {
+        const info = model.subsidies;
+        if (!info || typeof info !== "object") return null;
+        const section = el("section", "rm-subsidies");
+        section.append(el("h4", null, "After automatic subsidies (before tax)"));
+        if (info.after_subsidy !== true) {
+            section.append(el("p", "rm-note rm-text", "No cost after subsidies is shown. "
+                + (info.reason || "No automatic subsidy with a published price applies.")));
+        } else {
+            const noun = nounOf(model);
+            const table = el("table", "rm-table rm-table-compact");
+            table.append(el("caption", null, "Median monthly cost after the automatic subsidies listed below, before "
+                + "tax. The table above is the cost before subsidies."));
+            const headRow = el("tr");
+            ["Monthly usage", "Median after automatic subsidies (before tax)", `${sentenceCase(noun.plural)} (n)`,
+                "Range (min\u2013max)", "Closest to median"].forEach(text => {
+                const th = el("th", null, text);
+                th.scope = "col";
+                headRow.append(th);
+            });
+            const thead = el("thead");
+            thead.append(headRow);
+            const tbody = el("tbody");
+            const reasons = [];
+            levels.forEach((level, index) => {
+                const after = level.after_subsidy || {};
+                const stats = after.without_tax || {};
+                const available = after.available === true && isNum(stats.median);
+                const row = el("tr", index === highlight ? "rm-row-highlight" : null);
+                const usage = el("th", null, usageText(level));
+                usage.scope = "row";
+                row.append(usage,
+                    cell(available ? money(stats.median) : DASH, "rm-num", "after"),
+                    cell(available && isNum(stats.n) ? String(stats.n) : DASH, "rm-num"),
+                    cell(available ? moneyRange(stats.min, stats.max) : DASH, "rm-num"),
+                    available ? closestCell(after.closest_utility) : cell(DASH));
+                tbody.append(row);
+                if (!available && after.reason) reasons.push(`${usageText(level)}: ${after.reason}`);
+            });
+            table.append(thead, tbody);
+            section.append(table);
+            reasons.forEach(text => section.append(el("p", "rm-note rm-text", `Not available at ${text}`)));
+        }
+        if (info.tax_note) section.append(el("p", "rm-note rm-text", info.tax_note));
+        const lines = el("ul", "rm-lines rm-text");
+        list(info.programs).forEach(program => {
+            const where = list(program.applied_at).map(id => {
+                const level = levels.find(item => String(item.id) === String(id));
+                return level ? usageText(level) : String(id);
+            });
+            const text = [`${program.name || "Subsidy"}${program.utility ? ` (${program.utility})` : ""}: `
+                + `${SUBSIDY_STATUS_TEXT[program.status] || humanize(program.status)}`
+                + (where.length ? ` at ${where.join("; ")}` : ""),
+            program.replaces ? `It replaces ${program.replaces}` : "",
+            program.reason || program.note || ""].filter(Boolean).join(". ");
+            const li = el("li", null, text.endsWith(".") ? text : `${text}.`);
+            const link = sourceLink(program.source_url);
+            if (link) li.append(" ", link);
+            lines.append(li);
+        });
+        list(info.percentage_subsidies).forEach(entry => {
+            const span = [entry.effective_date, entry.end_date].every(value => typeof value === "string")
+                ? ` from ${formatDate(entry.effective_date)} to ${formatDate(entry.end_date)}` : "";
+            const li = el("li", null, `${entry.name || entry.component || "Percentage subsidy"}`
+                + `${entry.utility ? ` (${entry.utility})` : ""}: ${list(entry.rates_percent).join(", ")}%${span}; `
+                + `${entry.in_force ? "in force on the model date" : "not in force on the model date"}.`);
+            const link = sourceLink(entry.source_url);
+            if (link) li.append(" ", link);
+            lines.append(li);
+        });
+        list(info.not_applied).forEach(row => lines.append(el("li", null,
+            `Not applied: ${row.name || "subsidy"}${row.utility ? ` (${row.utility})` : ""}`
+            + `${row.reason ? ` - ${row.reason}` : ""}.`)));
+        if (lines.childElementCount) {
+            const details = el("details", "rm-details");
+            details.append(el("summary", null, `Subsidies applied and not applied (${lines.childElementCount})`), lines);
+            section.append(details);
+        }
+        return section;
+    }
+
+    // The joint rate book counted once (decision 66) and the reviewed percentage riders (decisions 64 and 79).
+    function territorialNotes(model) {
+        const nodes = [];
+        list(model.shared_rate_books).forEach(book => {
+            const names = list(book.utilities).filter(name => typeof name === "string");
+            const text = `${names.length ? joinNames(names) : "These utilities"} publish one joint rate book, counted `
+                + `once${book.counted_as ? ` (as ${book.counted_as})` : ""}${book.note ? `. ${book.note}` : ""}.`;
+            const note = el("p", "rm-note rm-text", text.replace(/\.\.$/, "."));
+            const link = sourceLink(book.source);
+            if (link) note.append(" ", link);
+            nodes.push(note);
+        });
+        const riders = list(model.percentage_riders).filter(entry => entry && entry.component);
+        if (riders.length) {
+            const lines = el("ul", "rm-lines rm-text");
+            riders.forEach(entry => {
+                const rates = list(entry.rates_percent).filter(isNum).map(value => `${numberFormat.format(value)}%`);
+                const treatment = RIDER_TREATMENT_TEXT[entry.treatment] || humanize(entry.treatment);
+                const text = `${entry.utility ? `${entry.utility}: ` : ""}${entry.component}`
+                    + `${rates.length ? ` (${rates.join(", ")})` : ""} - ${treatment}`
+                    + `${entry.treatment !== "exclude" && entry.base ? ` ${entry.base}` : ""}.`;
+                const li = el("li", null, text);
+                const link = sourceLink(entry.source_url);
+                if (link) li.append(" ", link);
+                lines.append(li);
+            });
+            const details = el("details", "rm-details");
+            details.append(el("summary", null, `Percentage riders (${riders.length})`), lines);
+            nodes.push(details);
+        }
+        return nodes;
     }
 
     // ── Phase 7E illustrative sidecar (synthetic load profile) ──

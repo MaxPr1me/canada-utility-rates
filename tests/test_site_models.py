@@ -92,6 +92,10 @@ def _builds():
         "single_source": _synthetic([_record(_tou() + [_component("fixed", 30.0, "$/month", "Service Charge")])]),
         "not_computable": _synthetic([_record(_tou()[:2])]),
         "market_pending": _synthetic([_demand("A Hydro", 1, 100.0), _demand("B Hydro", 2, 300.0)]),
+        # Method 7T-1 (owner decisions 2026-11-24): the territorial models with their after-subsidy fields.
+        "territorial": build_models(load_rates(FIXTURES / "rm_records_t.json"), load_crosswalk(), load_usage_levels(),
+                                    load_taxes(), provinces=("YT", "NT", "NU"), as_of="2026-11-24",
+                                    market_documents={"ON": None, "AB": None}),
     }
 
 
@@ -380,3 +384,83 @@ def test_rm7e_index_html_links_models_css_after_style_css():
     sheets = [attrs.get("href") for tag, attrs in tags if tag == "link" and attrs.get("rel") == "stylesheet"]
     assert "css/models.css" in sheets, "index.html must link css/models.css after css/style.css"
     assert sheets.index("css/models.css") > sheets.index("css/style.css")
+
+
+# Method 7T-1 optional territorial fields (owner decisions 64-79, 2026-11-24). They are new and optional: provincial
+# models never carry them; site/js/models.js and site/js/across-canada.js read them.
+SUBSIDY_FIELDS = {"after_subsidy": bool, "tax_basis": str, "tax_note": str, "programs": list,
+                  "percentage_subsidies": list, "not_applied": list}
+PROGRAM_FIELDS = ("id", "name", "utility", "treatment", "status", "applied_at", "automatic", "quote", "source_url",
+                  "decided")
+AFTER_SUBSIDY_FIELDS = ("available", "reason", "tax_basis", "without_tax", "closest_utility", "not_computable",
+                        "applied", "not_applied")
+AFTER_RECORD_FIELDS = ("record_id", "zone", "cost_after_subsidy", "seasons", "applied", "not_applied", "reasons")
+NOT_APPLIED_ROW_FIELDS = ("id", "name", "utility", "reason")
+TERRITORIAL_MODEL_FIELDS = ("subsidies", "interim", "percentage_riders", "shared_rate_books")
+
+
+@pytest.mark.parametrize("name", sorted(set(BUILDS) - {"territorial"}))
+def test_rm7t_provincial_models_carry_no_territorial_fields(name):
+    for model in BUILDS[name]["models"]:
+        assert not set(TERRITORIAL_MODEL_FIELDS) & set(model), model["id"]
+        for level in model["levels"]:
+            assert "after_subsidy" not in level
+            assert all("cost_after_subsidy" not in row and "interim" not in row for row in level["utilities"])
+
+
+def test_rm7t_territorial_fields_have_the_shape_the_website_reads_next():
+    models = BUILDS["territorial"]["models"]
+    assert {m["key"]["province"] for m in models} == {"YT", "NT", "NU"}
+    for model in models:
+        where = model["id"]
+        subsidies = model["subsidies"]
+        for field, kind in SUBSIDY_FIELDS.items():
+            assert isinstance(subsidies.get(field), kind), f"{where}: subsidies.{field}"
+        assert subsidies["tax_basis"] == "before_tax_only"
+        assert subsidies["after_subsidy"] or isinstance(subsidies.get("reason"), str), where
+        for program in subsidies["programs"]:
+            _assert_fields(program, PROGRAM_FIELDS, f"{where} program")
+            assert program["status"] in ("applied", "not_applied", "disclosed"), where
+        for row in subsidies["not_applied"]:
+            _assert_fields(row, NOT_APPLIED_ROW_FIELDS + ("levels",), f"{where} not_applied")
+        for entry in model.get("percentage_riders") or []:
+            _assert_fields(entry, ("id", "utility", "component", "treatment", "rates_percent", "quote", "source_url"),
+                           f"{where} percentage_riders")
+            assert entry["treatment"] in ("apply", "exclude", "subsidy"), where
+        for entry in model.get("interim") or []:
+            _assert_fields(entry, ("utility", "entry", "records", "quote", "source", "decided"), f"{where} interim")
+        for level in model["levels"]:
+            after = level["after_subsidy"]
+            _assert_fields(after, AFTER_SUBSIDY_FIELDS, f"{where} {level['id']} after_subsidy")
+            _assert_fields(after["without_tax"], STAT_FIELDS, f"{where} {level['id']} after_subsidy.without_tax")
+            assert "with_tax" not in after and after["tax_basis"] == "before_tax_only"
+            assert (after["without_tax"]["median"] is not None) is after["available"], where
+            for row in after["not_applied"]:
+                _assert_fields(row, NOT_APPLIED_ROW_FIELDS + ("records",), f"{where} {level['id']} not_applied")
+            for row in level["utilities"]:
+                if not subsidies["after_subsidy"]:
+                    assert "cost_after_subsidy" not in row, where
+                    continue
+                assert row["cost_after_subsidy"] is None or isinstance(row["cost_after_subsidy"], float), where
+                for record in row["after_subsidy_records"]:
+                    _assert_fields(record, AFTER_RECORD_FIELDS, f"{where} {level['id']} after_subsidy_records")
+                    for season in record["seasons"] or []:
+                        _assert_fields(season, ("season", "months", "cost_after_subsidy"), f"{where} season")
+    nt = next(m for m in models if m["id"] == "NT|electricity|residential|flat|-")
+    assert nt["levels"][1]["after_subsidy"]["available"] is True and nt["interim"]
+    yt = next(m for m in models if m["id"] == "YT|electricity|residential|tiered|-")
+    assert [book["counted_as"] for book in yt["shared_rate_books"]] == ["Yukon Energy"]
+
+
+def test_rm7t_website_reads_the_territorial_fields_and_never_taxes_the_after_subsidy_cost():
+    models_js = MODELS_JS.read_text(encoding="utf-8")
+    across_js = (SITE / "js" / "across-canada.js").read_text(encoding="utf-8")
+    read_by_models = (set(TERRITORIAL_MODEL_FIELDS) | {"after_subsidy", "cost_after_subsidy", "reason", "tax_note",
+                                                       "programs", "percentage_subsidies", "not_applied", "applied_at",
+                                                       "status", "rates_percent", "treatment", "counted_as"})
+    unread = sorted(f for f in read_by_models if not re.search(rf"\b{re.escape(f)}\b", models_js))
+    assert not unread, f"territorial fields not read by models.js: {unread}"
+    assert all(re.search(rf"\b{field}\b", across_js) for field in ("subsidies", "after_subsidy", "reason"))
+    # Decision 74: the after-subsidy cost is published before tax only; the browser never derives a taxed figure.
+    for source in (models_js, across_js):
+        assert not re.search(r"after_subsidy[^;\n]*with_tax", source)

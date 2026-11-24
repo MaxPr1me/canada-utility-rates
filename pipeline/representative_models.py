@@ -1,5 +1,6 @@
 """Representative models: crosswalk/coverage (Phase 7A), the modeled-cost engine (Phase 7B), all provinces with
-Alberta wires + Rate of Last Resort pairs (Phase 7C) and the Phase 7E illustrative sidecar (synthetic load profile)."""
+Alberta wires + Rate of Last Resort pairs (Phase 7C), the Phase 7E illustrative sidecar (synthetic load profile) and the
+territories with reviewed percentage riders and before/after-subsidy costs (method 7T-1, owner decisions 2026-11-24)."""
 from __future__ import annotations
 
 import argparse
@@ -22,6 +23,8 @@ USAGE_LEVELS_PATH = ROOT / "data" / "models" / "usage_levels.json"
 TAXES_PATH = ROOT / "data" / "models" / "taxes.json"
 RATES_PATH = ROOT / "site" / "data" / "rates.json"
 BLOCK_PERIODS_PATH = ROOT / "data" / "models" / "block_periods.json"
+PERCENTAGE_RIDERS_PATH = ROOT / "data" / "models" / "percentage_riders.json"
+SUBSIDIES_PATH = ROOT / "data" / "models" / "subsidies.json"
 MARKET_PATH = ROOT / "site" / "data" / "market_pricing_ontario.json"
 DEMAND_BOUNDS = "@demand_bounds"
 MATCH_FIELDS = ("tariff_code", "tariff_code_regex", "name_regex", "customer_class", "rate_structure")
@@ -320,7 +323,17 @@ def format_coverage(report: dict, limit: int = 25) -> str:
 # 7D-2 (owner decisions 2026-11-20): commercial general-service gas for small and mid-size buildings (class chosen by
 # reviewed volume bounds), Energir Rate D1, Liberty Utility Gas as New Brunswick's reference supply, and the small
 # business electricity levels s1 = 2,000 kWh at 14 kW and s2 = 10,000 kWh at 40 kW.
-METHOD_VERSION = "7D-2"
+# 7T-1 (owner decisions 64-75, 2026-11-24): territorial residential and small-commercial models, reviewed percentage
+# riders (data/models/percentage_riders.json), costs before and after automatic subsidies (data/models/subsidies.json,
+# before tax only), government classes out of the medians and interim rates labelled.
+METHOD_VERSION = "7T-1"
+# Every percentage component of a record in these jurisdictions needs a reviewed percentage_riders.json entry; one without
+# makes the record not computable. Provinces keep disclosing percentage adjustments unapplied (owner decision 64).
+TERRITORIES = ("YT", "NT", "NU")
+PERCENT_TREATMENTS = ("apply", "exclude", "subsidy")
+PERCENT_PREFIX = "percentage_rider:"
+SUBSIDY_TREATMENTS = ("reference_rates", "first_block_price", "per_kwh_credit", "disclose")
+BEFORE_TAX_ONLY = "before_tax_only"
 MODEL_FUELS = ("electricity", "gas")
 # Gas is priced in its native billing unit and never converted between m3 and GJ (owner decision 2026-11-04;
 # a future cross-unit comparison converts toward m3, with its heating-value source chosen then).
@@ -360,7 +373,7 @@ BUCKET_TEXT = {
     "carbon": "carbon charges",
     "other": "other mandatory charges",
 }
-BASIS_UNITS = {"month": "$/month", "kwh": "$/kWh", "kw": "$/kW-month"}
+BASIS_UNITS = {"month": "$/month", "kwh": "$/kWh", "kw": "$/kW-month", "percent": "% of base charges"}
 TAX_BASES = ("pre_tax_subtotal", "pre_rebate_subtotal", "energy_charge_subtotal")
 TAX_KINDS = ("sales_tax", "rebate")
 PROVINCE_NAMES = {"AB": "Alberta", "BC": "British Columbia", "MB": "Manitoba", "NB": "New Brunswick",
@@ -398,6 +411,9 @@ EXCLUSION_TEXT = {
                                  "are modelled)",
     "no_value": "no published value",
     "percentage_base_not_computable": "percentage adjustment whose base is not computable",
+    "percentage_excluded": "percentage of the whole bill or of revenues billed (reviewed: disclosed, not applied)",
+    "percentage_unreviewed": "percentage rider without a reviewed data/models/percentage_riders.json entry",
+    "subsidy": "automatic subsidy: left out of the cost before subsidies, applied only in the after-subsidy cost",
     "unsupported_unit": "unit not supported by the engine",
     "variant_not_selected": "fixed-charge variant for another reference customer",
 }
@@ -423,7 +439,17 @@ COMPONENT_RULES = (
     "notes starting 'Conditional'), alternatives, optional components, components expired (end_date before the "
     "as-of date) or not yet effective, value-less market energy (model state market_energy_pending), value-less "
     "market-indexed non-energy charges (named in the method; the state does not change) and percentage "
-    "adjustments (no computable base).",
+    "adjustments (no computable base) other than the reviewed ones below.",
+    "Percentage riders (owner decision 64, 2026-11-24): a percentage component with a reviewed "
+    "data/models/percentage_riders.json entry is priced as its percentage of the base charges the entry names (never "
+    "of other riders), itemized with reason 'percentage_rider:<id>'; reviewed percentages of the whole bill or of "
+    "revenues billed are disclosed, not applied; reviewed percentage subsidies apply only in the after-subsidy cost. "
+    "In the territories a percentage component without a reviewed entry makes its record not computable.",
+    "Territorial subsidies (owner decisions 67-70, 74 and 76-78, 2026-11-24): the cost before subsidies leaves subsidy "
+    "prices and credits out; the after-subsidy cost (before tax only) applies only the automatic subsidies of "
+    "data/models/subsidies.json and the reviewed percentage subsidies in force at the as-of date. Reference rates "
+    "(GREP) and first-block prices (TPSP) are all-in: they replace the zone's whole tariff, or the whole per-kWh price "
+    "of the first-block kWh; seasonal first blocks are priced per season and month-weighted.",
     "Thresholds as published: demand charges with a demand threshold bill only the kW above it; demand and energy "
     "blocks use their published bounds (kVA bounds at the power factor; per-kW and per-kVA energy blocks scale "
     "with the level's demand; per-day blocks x days per month; a block published in bare 'kWh' only with the "
@@ -744,14 +770,17 @@ def gas_volume_unit(records: Iterable[dict]) -> Optional[str]:
 
 
 def _context(province: Any, fuel: Any, structure: Any, sector: Any, usage_levels: Optional[dict],
-             as_of: date, block_periods: Optional[list] = None, volume_unit: str = "kwh") -> dict:
+             as_of: date, block_periods: Optional[list] = None, volume_unit: str = "kwh",
+             percentage_riders: Optional[list] = None, subsidies: Optional[dict] = None) -> dict:
     """Pricing inputs shared by every record of one model key at the as-of date.
 
     Inputs: the model's province, fuel, rate structure and sector (residential or a commercial size band), the
-    usage_levels document, the as-of date and the usable block_periods entries. Returns days per month and the kVA
-    power factor (module defaults when the document has none), the TOU share set in force on the as-of date
-    (find_tou_shares; shares_id None unless exactly one validly dated set is in force, so TOU energy is then not
-    computable), the reference-customer entries, the fixed-charge variant rules and the block periods.
+    usage_levels document, the as-of date, the usable block_periods entries, the usable percentage_riders entries and the
+    subsidies configuration (subsidies_config). Returns days per month and the kVA power factor (module defaults when
+    the document has none), the TOU share set in force on the as-of date (find_tou_shares; shares_id None unless
+    exactly one validly dated set is in force, so TOU energy is then not computable), the reference-customer entries,
+    the fixed-charge variant rules, the block periods, the percentage-rider entries (with 'percent_review' true in the
+    territories, where an unreviewed percentage component is not computable) and the subsidies configuration.
     """
     usage_levels = usage_levels or {}
     shares_id, entry = find_tou_shares(usage_levels, province, fuel, structure, sector, as_of)
@@ -762,7 +791,9 @@ def _context(province: Any, fuel: Any, structure: Any, sector: Any, usage_levels
             "reference": reference_customer_entries(usage_levels, province, fuel, sector),
             "variant_rules": fixed_charge_variant_rules(usage_levels, fuel, sector, province),
             "peak_factor": peak_month_factor(usage_levels, province, fuel, sector),
-            "block_periods": [e for e in block_periods or [] if isinstance(e, dict)], "volume_unit": volume_unit}
+            "block_periods": [e for e in block_periods or [] if isinstance(e, dict)], "volume_unit": volume_unit,
+            "percent_entries": [e for e in percentage_riders or [] if isinstance(e, dict)],
+            "percent_review": province in TERRITORIES, "subsidies": subsidies}
 
 
 def _block_period_problem(entry: Any) -> Optional[str]:
@@ -828,6 +859,248 @@ def block_period_entry(record: dict, components: Iterable[dict], entries: Iterab
             continue
         return entry
     return None
+
+
+def _regex_ok(value: Any) -> bool:
+    return isinstance(value, str) and bool(value) and _compiled(value) is not None
+
+
+def _read_config(path: PathLike, default: Path) -> tuple[Optional[dict], Optional[str]]:
+    """(document, problem) of a reviewed JSON configuration; a missing, unreadable or non-object file gives a problem,
+    never an exception, so the build continues with the affected figures not computable."""
+    target = Path(path or default)
+    try:
+        data = json.loads(target.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None, f"{target.name} not found"
+    except (OSError, ValueError) as exc:
+        return None, f"{target.name} unreadable ({exc})"
+    if not isinstance(data, dict):
+        return None, f"{target.name} is not a JSON object"
+    return data, None
+
+
+def _percentage_entry_problem(entry: Any) -> Optional[str]:
+    if not isinstance(entry, dict) or not entry.get("id") or not entry.get("utility"):
+        return "id and utility are required"
+    match = entry.get("match")
+    if (not isinstance(match, dict) or not _regex_ok(match.get("component_name_regex"))
+            or not set(match) <= {"component_name_regex", "tariff_code_regex"}
+            or not all(_regex_ok(value) for value in match.values())):
+        return "match needs a valid component_name_regex (and optionally tariff_code_regex)"
+    treatment = entry.get("treatment")
+    if treatment not in PERCENT_TREATMENTS:
+        return f"treatment must be one of {', '.join(PERCENT_TREATMENTS)}"
+    if treatment != "exclude" and not _regex_ok((entry.get("base") or {}).get("component_name_regex")):
+        return "base.component_name_regex is required"
+    if treatment == "subsidy":
+        limit = entry.get("limit")
+        if limit is not None and (not isinstance(limit, dict) or limit.get("period") != "month"
+                                  or isinstance(limit.get("kwh"), bool) or not isinstance(limit.get("kwh"), (int, float))
+                                  or limit["kwh"] <= 0):
+            return "limit needs kwh above 0 and period 'month'"
+        if not isinstance(entry.get("with_riders", []), list):
+            return "with_riders must be a list of entry ids"
+    if not (entry.get("quote") and entry.get("source_url") and entry.get("decided")):
+        return "quote, source_url and decided are required"
+    if not entry.get("reviewed"):
+        return "not reviewed"
+    return None
+
+
+def percentage_riders_config(data: Any) -> dict:
+    """Usable entries of a percentage_riders document ({'entries': [...]}) or entry list; unreviewed or malformed
+    entries are skipped with a reason, so they never apply (a territorial component they would match stays
+    unreviewed and its record not computable)."""
+    doc = data if isinstance(data, dict) else {"entries": data if isinstance(data, list) else []}
+    entries, skipped = [], []
+    for entry in doc.get("entries") or []:
+        problem = _percentage_entry_problem(entry)
+        if problem:
+            skipped.append({"id": entry.get("id") if isinstance(entry, dict) else None, "reason": problem})
+        else:
+            entries.append(entry)
+    return {"version": doc.get("version"), "status": doc.get("status"), "rule": doc.get("rule"),
+            "problem": doc.get("problem"), "entries": entries, "skipped": skipped}
+
+
+def load_percentage_riders(path: PathLike = None) -> dict:
+    """Reviewed percentage riders (default data/models/percentage_riders.json, owner decision 64). A missing or
+    unreadable file gives no entries (territorial percentage components are then not computable) and states the
+    problem; it never fails a build."""
+    data, problem = _read_config(path, PERCENTAGE_RIDERS_PATH)
+    return percentage_riders_config(data) if problem is None else {**percentage_riders_config(None), "problem": problem}
+
+
+def percentage_entries_for(record: dict, component: dict, entries: Iterable[dict]) -> list[dict]:
+    """Reviewed percentage_riders entries of the record's utility whose match criteria fully match the component."""
+    found = []
+    for entry in entries:
+        match = entry.get("match") or {}
+        if (entry.get("utility") == record.get("utility_name")
+                and _fullmatch(match.get("component_name_regex"), component.get("component_name"))
+                and ("tariff_code_regex" not in match or _fullmatch(match["tariff_code_regex"], record.get("tariff_code")))):
+            found.append(entry)
+    return found
+
+
+def _program_problem(program: Any) -> Optional[str]:
+    if not isinstance(program, dict) or not program.get("id") or not program.get("province") or not program.get("name"):
+        return "id, province and name are required"
+    treatment = program.get("treatment")
+    if treatment not in SUBSIDY_TREATMENTS:
+        return f"treatment must be one of {', '.join(SUBSIDY_TREATMENTS)}"
+    if not _regex_ok(program.get("component_name_regex")):
+        return "component_name_regex is required"
+    if not isinstance(program.get("sectors"), list) or not program["sectors"]:
+        return "sectors are required"
+    if treatment == "disclose":
+        if not program.get("reason"):
+            return "a disclosed program needs a reason"
+    else:
+        automatic = program.get("automatic")
+        if not program.get("utility"):
+            return "utility is required"
+        if not isinstance(automatic, dict) or not automatic.get("quote") or not automatic.get("source_url"):
+            # Owner decision 67 (2026-11-24): a subsidy counts as automatic only where an official source says so.
+            return "an applied subsidy needs the official text saying it is automatic (automatic.quote and source_url)"
+    if treatment == "first_block_price":
+        # Owner decisions 76 and 78 (2026-11-24): the first-block price is all-in for the first-block kWh.
+        if not isinstance(program.get("replaces"), dict) or program["replaces"].get("all_energy") is not True:
+            return "replaces must state all_energy true (the first-block price replaces the whole per-kWh price)"
+        if not isinstance(program.get("seasons"), str) or not program["seasons"]:
+            return "seasons (a usage_levels.json seasons entry) is required"
+    if treatment == "reference_rates":
+        # Owner decision 78: reference rates replace the zone's whole tariff, charges and riders.
+        if not isinstance(program.get("replaces"), dict) or program["replaces"].get("all_charges") is not True:
+            return "replaces must state all_charges true (reference rates replace the whole tariff)"
+        required = program.get("required_components")
+        if not isinstance(required, list) or not required or not all(_regex_ok(regex) for regex in required):
+            return "required_components (component-name regexes) are required"
+    if treatment == "per_kwh_credit" and not isinstance(program.get("within_first_block"), bool):
+        return "within_first_block (true or false) is required"
+    absent = program.get("absent", [])
+    if not isinstance(absent, list) or not all(isinstance(row, dict) and row.get("reason") and _selector_ok(row, "reason")
+                                               for row in absent):
+        return "absent entries need a tariff_code_regex or name_regex and a reason"
+    if "applies_to" in program and not (isinstance(program["applies_to"], dict)
+                                        and _selector_ok(program["applies_to"], "text")):
+        return "applies_to needs a tariff_code_regex or name_regex"
+    if not (program.get("quote") and program.get("source_url") and program.get("decided")):
+        return "quote, source_url and decided are required"
+    if not program.get("reviewed"):
+        return "not reviewed"
+    return None
+
+
+def _selector_ok(selector: dict, *extra: str) -> bool:
+    """A record selector names tariff_code_regex and/or name_regex (valid regexes) and nothing else but ``extra``."""
+    keys = set(selector) - set(extra)
+    return bool(keys) and keys <= {"tariff_code_regex", "name_regex"} and all(_regex_ok(selector[k]) for k in keys)
+
+
+def _record_selected(record: dict, selector: Any) -> bool:
+    """True when every regex of a record selector ({tariff_code_regex, name_regex}) fully matches the record."""
+    if not isinstance(selector, dict) or not ({"tariff_code_regex", "name_regex"} & set(selector)):
+        return False
+    return (("tariff_code_regex" not in selector or _fullmatch(selector["tariff_code_regex"], record.get("tariff_code")))
+            and ("name_regex" not in selector or _fullmatch(selector["name_regex"], record.get("name"))))
+
+
+def subsidies_config(data: Any) -> dict:
+    """Usable programs and the jurisdiction policy of a subsidies document (or of an already loaded configuration,
+    whose skipped programs are kept); unreviewed or malformed programs are skipped with a reason, so they are never
+    applied, and subsidy_policy then publishes no after-subsidy cost for their territory and sector."""
+    doc = data if isinstance(data, dict) else {}
+    programs = []
+    skipped = [row for row in doc.get("skipped") or [] if isinstance(row, dict)]
+    for program in doc.get("programs") or []:
+        problem = _program_problem(program)
+        if problem:
+            row = program if isinstance(program, dict) else {}
+            skipped.append({"id": row.get("id"), "province": row.get("province"), "sectors": row.get("sectors"),
+                            "reason": problem})
+        else:
+            programs.append(program)
+    jurisdictions = doc.get("jurisdictions") if isinstance(doc.get("jurisdictions"), dict) else {}
+    return {"version": doc.get("version"), "status": doc.get("status"), "rule": doc.get("rule"),
+            "tax_note": doc.get("tax_note"), "problem": doc.get("problem"), "jurisdictions": jurisdictions,
+            "programs": programs, "skipped": skipped}
+
+
+def load_subsidies(path: PathLike = None) -> dict:
+    """Reviewed territorial subsidies (default data/models/subsidies.json, owner decisions 67-70, 74 and 76-78). A
+    missing or unreadable file publishes no after-subsidy figure and states the problem; it never fails a build."""
+    data, problem = _read_config(path, SUBSIDIES_PATH)
+    return subsidies_config(data) if problem is None else {**subsidies_config(None), "problem": problem}
+
+
+def _sector_group(sector: Any) -> str:
+    return "residential" if sector == "residential" else "commercial"
+
+
+def subsidy_policy(config: Optional[dict], province: Any, fuel: Any, sector: Any) -> Optional[dict]:
+    """{'after_subsidy': bool, 'reason': text or None} for a territorial electricity model, else None (provinces carry
+    no subsidy figures). Without a usable configuration or jurisdiction entry, or while a program that could apply to
+    the territory and sector is not usable (skipped), no after-subsidy cost is published."""
+    if province not in TERRITORIES or fuel != "electricity":
+        return None
+    if config is None:
+        return {"after_subsidy": False, "reason": "no subsidies configuration was supplied"}
+    if config.get("problem"):
+        return {"after_subsidy": False, "reason": f"data/models/subsidies.json: {config['problem']}"}
+    entry = ((config.get("jurisdictions") or {}).get(province) or {}).get(_sector_group(sector))
+    if not isinstance(entry, dict) or not isinstance(entry.get("after_subsidy"), bool):
+        return {"after_subsidy": False,
+                "reason": f"no reviewed subsidies.json entry for {province} {_sector_group(sector)} models"}
+    if not entry["after_subsidy"]:
+        return {"after_subsidy": False, "reason": entry.get("reason") or "no after-subsidy cost is published",
+                "decided": entry.get("decided")}
+    group = _sector_group(sector)
+    # Fail closed: a program that could apply here but is not usable would otherwise silently drop out of the figure.
+    broken = [row for row in config.get("skipped") or [] if row.get("province") in (province, None)
+              and (not isinstance(row.get("sectors"), list) or group in row["sectors"])]
+    if broken:
+        return {"after_subsidy": False, "decided": entry.get("decided"),
+                "reason": "data/models/subsidies.json: " + "; ".join(
+                    f"program {row.get('id')} is not usable ({row.get('reason')})" for row in broken)
+                          + "; no after-subsidy cost is published until it is reviewed"}
+    return {"after_subsidy": True, "reason": None, "decided": entry.get("decided")}
+
+
+def subsidy_programs(config: Optional[dict], province: Any, sector: Any,
+                     utilities: Optional[Iterable[str]] = None) -> list[dict]:
+    """The configuration's usable programs for a province, sector group and (when given) set of utilities."""
+    names = None if utilities is None else set(utilities)
+    return [program for program in (config or {}).get("programs") or []
+            if program.get("province") == province and _sector_group(sector) in (program.get("sectors") or [])
+            and (names is None or program.get("utility") is None or program["utility"] in names)]
+
+
+def interim_entry(record: dict, entries: Iterable[dict]) -> Optional[dict]:
+    """The crosswalk interim_rates entry that labels a record interim (owner decision 72, 2026-11-24): same utility and
+    the record's own notes still say so (notes_search, case-insensitive), so final rates drop the label."""
+    for entry in entries:
+        pattern = entry.get("notes_search") if isinstance(entry, dict) else None
+        if not isinstance(pattern, str) or entry.get("utility") != record.get("utility_name"):
+            continue
+        try:
+            if re.search(pattern, record.get("notes") or "", re.IGNORECASE):
+                return entry
+        except re.error:
+            continue
+    return None
+
+
+def shared_rate_book_units(crosswalk: Optional[dict]) -> dict[str, str]:
+    """Utility name -> the utility a crosswalk shared_rate_books entry counts it as (owner decision 66: the joint Yukon
+    rate book is one contributor)."""
+    units = {}
+    for book in (crosswalk or {}).get("shared_rate_books") or []:
+        if isinstance(book, dict) and book.get("counted_as") and isinstance(book.get("utilities"), list):
+            for name in book["utilities"]:
+                units[name] = book["counted_as"]
+    return units
 
 
 def _energy_tier_scale(unit: Any, record: dict, ctx: dict, components: list[dict]
@@ -1078,6 +1351,12 @@ def _annual_band_groups(priced: list[tuple[dict, dict]], ctx: dict) -> dict[Any,
             and all(annual(comp) or comp.get("tier_threshold") is None for _, comp in rows)}
 
 
+def _is_percentage(component: dict) -> bool:
+    """True for a component priced as a percentage or fraction (price_basis 'percent')."""
+    unit = re.sub(r"\s+", " ", (component.get("charge_unit") or "").strip().lower())
+    return unit.startswith("%") or unit.startswith("fraction")
+
+
 def _prepare(record: dict, ctx: dict) -> dict:
     """Classify a record's components once (level-independent): items, priced items, blockers, energy status."""
     items: list[dict] = []
@@ -1101,6 +1380,15 @@ def _prepare(record: dict, ctx: dict) -> dict:
                 item[field] = comp.get(field)
         if comp.get("pair_part"):
             item["pair_part"] = comp["pair_part"]
+        # Percentage components: the reviewed entry (owner decision 64, 2026-11-24) is looked up whatever the dates, so an
+        # expired or future percentage subsidy is still named in the after-subsidy disclosure.
+        pct_entries = percentage_entries_for(record, comp, ctx.get("percent_entries") or []) \
+            if _is_percentage(comp) else []
+        pct_entry = pct_entries[0] if len(pct_entries) == 1 else None
+        if pct_entry is not None:
+            item["percentage_entry"] = pct_entry["id"]
+            if pct_entry.get("treatment") == "subsidy":
+                item["limit_kwh"], item["limit_unit"] = comp.get("tier_threshold"), comp.get("tier_unit")
         reason = component_exclusion(comp, ctx["as_of"])
         reference = reference_customer_match(comp, ctx["reference"], reason) \
             if reason in ("conditional", "optional") else None
@@ -1109,7 +1397,17 @@ def _prepare(record: dict, ctx: dict) -> dict:
         basis = None
         if reason is None:
             basis = price_basis(comp, ctx["days_per_month"], ctx["power_factor"], ctx.get("volume_unit", "kwh"))
-            reason = "unsupported_unit" if basis is None else "percentage_base_not_computable" if basis[0] == "percent" else None
+            if basis is None:
+                reason = "unsupported_unit"
+            elif basis[0] == "percent":
+                if pct_entry is not None:
+                    reason = {"apply": None, "exclude": "percentage_excluded", "subsidy": "subsidy"}[pct_entry["treatment"]]
+                elif len(pct_entries) > 1 or ctx.get("percent_review"):
+                    reason = "percentage_unreviewed"
+                    blockers.append(f"{EXCLUSION_TEXT[reason]} (owner decision 64): {name} ({item['value']} "
+                                    f"{item['unit']})" + (" matches more than one entry" if pct_entries else ""))
+                else:
+                    reason = "percentage_base_not_computable"
         if reason in ("unsupported_unit", "no_value"):
             blockers.append(f"{EXCLUSION_TEXT[reason]}: {name} ({item['unit']})")
         elif reason == "market_pending":
@@ -1133,6 +1431,9 @@ def _prepare(record: dict, ctx: dict) -> dict:
         kind, factor, conversions = basis
         item.update(status="included", basis=kind, factor=factor, bucket=bucket_of(ctype, kind), months=months,
                     conversions=conversions)
+        if kind == "percent" and pct_entry is not None:
+            item["reason"] = PERCENT_PREFIX + pct_entry["id"]
+            item["percent_base"] = pct_entry["base"]["component_name_regex"]
         if reference:
             item["reason"] = REFERENCE_PREFIX + reference
             entry = next((e for e in ctx["reference"] if e.get("id") == reference), {})
@@ -1142,6 +1443,12 @@ def _prepare(record: dict, ctx: dict) -> dict:
         priced.append((item, comp))
         priced_slots.add((ctype, comp.get("sub_component")))
         covered_stems.add((ctype, _stem(name)))
+    for item, _ in priced:
+        # A reviewed rider whose base names no priced charge would be priced at zero: fail closed instead.
+        if item["basis"] == "percent" and not any(
+                other["basis"] != "percent" and _fullmatch(item["percent_base"], other["component"]) for other, _ in priced):
+            blockers.append(f"percentage rider {item['component']}: its reviewed base "
+                            f"({item['reason'][len(PERCENT_PREFIX):]}) names no priced charge")
     variant_slots: dict[str, list[tuple[int, list[tuple[dict, dict]]]]] = defaultdict(list)
     for slot, names in sorted(alternatives.items(), key=str):
         if slot not in priced_slots and not all(
@@ -1276,6 +1583,9 @@ def _price(prep: dict, kwh: float, kw: Optional[float],
                 "amounts": [], "variants": []}
     amounts: list[float] = []
     for item, _ in prep["priced"]:
+        if item["basis"] == "percent":
+            amounts.append(0.0)  # priced below, from the charges of its base at this level
+            continue
         if item["basis"] == "month":
             quantity = 1.0
         elif item["basis"] == "kw":
@@ -1297,6 +1607,14 @@ def _price(prep: dict, kwh: float, kw: Optional[float],
         item = choice["item"]
         weight = len(item["months"]) / 12 if item.get("months") else 1.0
         variants.append({**choice, "amount": float(item["value"]) * item["factor"] * weight})
+    # Reviewed percentage riders (owner decision 64, 2026-11-24): the percentage of the base charges their entry names,
+    # priced at this level; riders never apply to each other.
+    for index, (item, _) in enumerate(prep["priced"]):
+        if item["basis"] == "percent":
+            base = math.fsum([amount for (other, _), amount in zip(prep["priced"], amounts)
+                              if other["basis"] != "percent" and _fullmatch(item["percent_base"], other["component"])]
+                             + [v["amount"] for v in variants if _fullmatch(item["percent_base"], v["item"]["component"])])
+            amounts[index] = float(item["value"]) / 100 * base
     # math.fsum: built-in sum() of floats differs between Python 3.11 and 3.12, flipping cents
     per_kwh = math.fsum(a for (item, _), a in zip(prep["priced"], amounts) if item["basis"] == "kwh")
     return {"status": "ok", "cost": math.fsum(amounts + [v["amount"] for v in variants]),
@@ -1312,20 +1630,26 @@ def _clean(value: Any) -> Any:
 def record_monthly_cost(record: dict, kwh: float, kw: Optional[float] = None, *, sector: Optional[str] = None,
                         structure: Optional[str] = None, usage_levels: Optional[dict] = None,
                         as_of: Union[date, str, None] = None, block_periods: Any = None,
-                        level: Optional[str] = None) -> dict:
+                        level: Optional[str] = None, percentage_riders: Any = None, subsidies: Any = None) -> dict:
     """Modeled monthly cost of one record at (kWh/month, kW) with an itemized included/excluded component list.
 
     ``sector`` (residential or a commercial size band) also selects the usage_levels reference-customer entries;
     ``block_periods`` is a block_periods document or entry list (default: none); ``level`` (a usage level id such as
     's1') applies that level's fixed_charge_variants rules (default: none, so fixed-charge variants stay not
-    computable)."""
+    computable); ``percentage_riders`` is a percentage_riders document or entry list (default: none, so a territorial
+    percentage component is not computable); ``subsidies`` is a subsidies document: when its policy covers the
+    record's territory and sector, the result carries 'after_subsidy' (the cost after automatic subsidies, before
+    tax)."""
     if sector is None:
         sector = "residential" if record.get("customer_class") == "residential" else None
     volume = (gas_volume_unit([record]) or "none") if record.get("utility_type") == "gas" else "kwh"
+    subsidy_cfg = None if subsidies is None else subsidies_config(subsidies)
     ctx = _context(record.get("province"), record.get("utility_type"), structure or record.get("rate_structure"),
-                   sector, usage_levels, _as_of(as_of), block_periods_config(block_periods)["entries"], volume)
+                   sector, usage_levels, _as_of(as_of), block_periods_config(block_periods)["entries"], volume,
+                   percentage_riders_config(percentage_riders)["entries"], subsidy_cfg)
     prep = _prepare(record, ctx)
-    priced = _price(prep, kwh, kw, None if level is None else _select_variants(prep, ctx, level, kwh))
+    selection = None if level is None else _select_variants(prep, ctx, level, kwh)
+    priced = _price(prep, kwh, kw, selection)
     amounts = {id(item): amount for (item, _), amount in zip(prep["priced"], priced["amounts"])}
     chosen = {id(choice["source"]): choice for choice in priced["variants"]}
     others = {member for choice in priced["variants"] for member in choice["members"]} - set(chosen)
@@ -1340,11 +1664,249 @@ def record_monthly_cost(record: dict, kwh: float, kw: Optional[float] = None, *,
         elif id(item) in others and row.get("status") == "included":
             row.update(status="excluded", reason="variant_not_selected")
         items.append(row)
-    return {"record_id": record.get("id"), "utility": record.get("utility_name"), "tariff_code": record.get("tariff_code"),
-            "kwh": kwh, "kw": kw, "status": priced["status"], "cost": priced["cost"],
-            "energy_charge_subtotal": priced["energy_charge_subtotal"], "energy_status": prep["energy_status"],
-            "market_pending": prep["market_pending"], "reasons": priced["reasons"], "shares_id": ctx["shares_id"],
-            "items": items}
+    result = {"record_id": record.get("id"), "utility": record.get("utility_name"),
+              "tariff_code": record.get("tariff_code"), "kwh": kwh, "kw": kw, "status": priced["status"],
+              "cost": priced["cost"], "energy_charge_subtotal": priced["energy_charge_subtotal"],
+              "energy_status": prep["energy_status"], "market_pending": prep["market_pending"],
+              "reasons": priced["reasons"], "shares_id": ctx["shares_id"], "items": items}
+    policy = None if subsidy_cfg is None else subsidy_policy(subsidy_cfg, record.get("province"),
+                                                              record.get("utility_type"), sector)
+    if policy is not None:
+        if not policy["after_subsidy"]:
+            result["after_subsidy"] = {"status": "not_published", "reason": policy["reason"]}
+        elif priced["status"] != "ok":
+            result["after_subsidy"] = {"status": "not_computable", "reasons": priced["reasons"]}
+        else:
+            result["after_subsidy"] = _after_subsidy_record(prep, record, ctx, kwh, kw, selection, priced["cost"])
+    return result
+
+
+def _note_sentences(record: dict, keyword: Any) -> Optional[str]:
+    """The sentences of a record's notes that mention a subsidy keyword (why no price is stored for it)."""
+    if not isinstance(keyword, str) or not keyword:
+        return None
+    text = _PROVENANCE_PREFIX.sub("", record.get("notes") or "", count=1)
+    hits = [sentence.strip() for sentence in re.split(r"(?<=[.!?])\s+", text) if keyword in sentence]
+    return " ".join(hits) or None
+
+
+def _dates_text(component: dict) -> str:
+    return f"{component.get('effective_date') or 'open'} to {component.get('end_date') or 'open'}"
+
+
+def _after_subsidy_record(prep: dict, record: dict, ctx: dict, kwh: float, kw: Optional[float],
+                          selection: Optional[tuple], before: float) -> dict:
+    """One zone record's cost after the reviewed automatic subsidies at one usage level, before tax (owner decisions
+    67-70, 74 and 76-78, 2026-11-24).
+
+    Starts from the record's cost before subsidies at the level (``before``) or, where a reference-rate program applies
+    to the zone record (GREP, decision 78), from its cost at the reference rates, which replace the zone's whole tariff
+    (every charge and rider: the reference is all-in). A first-block price (TPSP) is all-in too (decisions 76 and 78):
+    for each season's first-block kWh it replaces the whole per-kWh price of the tariff in force (the cost at the
+    block's kWh less the cost at zero kWh, so the per-kWh and percentage riders' shares of energy go with it); the
+    seasons and blocks come from the reviewed usage_levels.json seasons entry and are month-weighted. A per-kWh credit
+    applies to every kWh or, when its program says it is not billed within a first block (within_first_block false),
+    only to the kWh above it. A percentage subsidy in force at the as-of date applies to its base charges of the first
+    limit kWh, plus the named riders' share. A subsidy that the sources do not establish (no stored price, a disclosed
+    program, out of its dates) is not applied and is listed in 'not_applied'; a stored value that differs from its
+    reviewed convention, a missing reference rate or a combination of subsidies that no review covers makes the record
+    not computable. Returns {'status', 'cost', 'seasons', 'applied', 'not_applied', 'reasons'}."""
+    as_of = _as_of(ctx["as_of"])
+    applied: list[str] = []
+    not_applied: list[dict] = []
+    reasons: list[str] = []
+    first_blocks: list[tuple[dict, list[dict]]] = []
+    references: list[tuple[dict, list[dict]]] = []
+    credits: list[tuple[dict, dict]] = []
+
+    def skip(subsidy_id: str, name: str, reason: str) -> None:
+        row = {"id": subsidy_id, "name": name, "reason": reason}
+        if row not in not_applied:
+            not_applied.append(row)
+
+    def failed() -> dict:
+        return {"status": "not_computable", "cost": None, "seasons": None, "applied": [], "not_applied": not_applied,
+                "reasons": reasons}
+
+    for program in subsidy_programs(ctx.get("subsidies"), ctx["province"], ctx["sector"], [record.get("utility_name")]):
+        if "applies_to" in program and not _record_selected(record, program["applies_to"]):
+            continue
+        comps = [comp for comp in record.get("components") or []
+                 if _fullmatch(program["component_name_regex"], comp.get("component_name"))]
+        if program["treatment"] == "disclose":
+            if comps:
+                skip(program["id"], program["name"], program["reason"])
+            continue
+        live = []
+        for comp in comps:
+            state = component_exclusion(comp, as_of)
+            if state in ("expired", "not_yet_effective"):
+                skip(program["id"], program["name"],
+                     f"{comp.get('component_name')}: {EXCLUSION_TEXT[state]} ({_dates_text(comp)})")
+            elif state is None:
+                reasons.append(f"{program['name']}: {comp.get('component_name')} is already priced in the cost before "
+                               "subsidies")
+            else:
+                live.append(comp)
+        if program["treatment"] == "reference_rates":
+            # Decision 78: the program applies to this zone record (applies_to), so without its reference rates in
+            # force the cost after subsidies is not computable rather than priced without it.
+            if not live:
+                reasons.append(f"{program['name']}: no reference rate in force is stored for this zone record")
+                continue
+            for regex in program["required_components"]:
+                hits = [comp for comp in live if _fullmatch(regex, comp.get("component_name"))]
+                if len(hits) != 1 or hits[0].get("charge_value") is None:
+                    reasons.append(f"{program['name']}: expected one reference rate in force with a value matching "
+                                   f"{regex}; found {len(hits)}")
+            unknown = [comp.get("component_name") for comp in live
+                       if not any(_fullmatch(regex, comp.get("component_name")) for regex in program["required_components"])]
+            if unknown:
+                reasons.append(f"{program['name']}: reference rate(s) not covered by its review: {', '.join(unknown)}")
+            references.append((program, live))
+            continue
+        if not live:
+            if not comps:
+                # A reviewed reason (owner decision 77 for NTPC's Snare zone) comes before the record's own notes.
+                note = next((row["reason"] for row in program.get("absent") or [] if _record_selected(record, row)),
+                            None) or _note_sentences(record, program.get("keyword"))
+                skip(program["id"], program["name"],
+                     "no price is stored for this zone record" + (f" ({note.rstrip('.')})" if note else ""))
+            continue
+        if program["treatment"] == "first_block_price":
+            first_blocks.append((program, live))
+        elif (len(live) != 1 or live[0].get("charge_value") is None
+              or re.sub(r"\s+", "", (live[0].get("charge_unit") or "").lower()) != "$/kwh"):
+            reasons.append(f"{program['name']}: expected one per-kWh credit with a value")
+        else:
+            credits.append((program, live[0]))
+    entries = {entry["id"]: entry for entry in ctx.get("percent_entries") or []}
+    percentage_subsidies = []
+    for item in prep["items"]:
+        entry = entries.get(item.get("percentage_entry"))
+        if entry is None or entry.get("treatment") != "subsidy":
+            continue
+        name = entry.get("name") or item["component"]
+        if item.get("reason") == "subsidy":
+            percentage_subsidies.append((item, entry))
+        elif item.get("reason") in ("expired", "not_yet_effective"):
+            # Owner decision 70: a dated subsidy applies only while its stored dates include the as-of date.
+            skip(entry["id"], name, f"{EXCLUSION_TEXT[item['reason']]} ({_dates_text(item)})")
+        else:
+            skip(entry["id"], name, EXCLUSION_TEXT.get(item.get("reason"), str(item.get("reason"))))
+    if len(first_blocks) > 1:
+        reasons.append("more than one first-block subsidy applies: " + ", ".join(p["id"] for p, _ in first_blocks))
+    if len(references) > 1:
+        reasons.append("more than one reference-rate subsidy applies: " + ", ".join(p["id"] for p, _ in references))
+    if references and (credits or percentage_subsidies):
+        # Reference rates replace every charge and rider; no review says how another credit combines with them.
+        reasons.append(f"{references[0][0]['name']}: combining its reference rates with "
+                       + ", ".join([p["id"] for p, _ in credits] + [e["id"] for _, e in percentage_subsidies])
+                       + " is not reviewed")
+    program = first_blocks[0][0] if len(first_blocks) == 1 else None
+    seasons: list[dict] = []
+    if program is not None:
+        convention = (ctx["usage_levels"].get("seasons") or {}).get(program["seasons"]) or {}
+        for comp in first_blocks[0][1]:
+            label = comp.get("season")
+            months, problem = season_months(comp, ctx["province"], ctx["usage_levels"])
+            reviewed = convention.get(label) if isinstance(convention.get(label), dict) else {}
+            limit = reviewed.get("first_block_kwh_per_month")
+            threshold = comp.get("tier_threshold")
+            where = f"{program['name']} ({comp.get('component_name')})"
+            if problem or not months:
+                reasons.append(f"{where}: {problem or 'no season months'}")
+            elif isinstance(limit, bool) or not isinstance(limit, (int, float)):
+                reasons.append(f"{where}: season {label!r} has no reviewed first block in usage_levels.json seasons "
+                               f"{program['seasons']}")
+            elif threshold is None or float(threshold) != float(limit):
+                reasons.append(f"{where}: the stored first block ({threshold} kWh) differs from the reviewed {limit:g} "
+                               f"kWh a month (usage_levels.json seasons {program['seasons']}); it needs a new review")
+            elif comp.get("charge_value") is None:
+                reasons.append(f"{where}: no first-block price is stored")
+            else:
+                seasons.append({"season": label, "months": months, "block": float(limit),
+                                "price": float(comp["charge_value"])})
+        if seasons and sorted(m for season in seasons for m in season["months"]) != list(range(1, 13)):
+            reasons.append(f"{program['name']}: its seasons do not cover each month exactly once")
+    if reasons:
+        return failed()
+    base_prep, base_selection, start = prep, selection, float(before)
+    if references:
+        reference_program, reference_comps = references[0]
+        # The reference rates priced as a tariff of their own (they are stored as conditional alternatives of the zone
+        # record): only these components, unconditional, with their stored values, units and dates.
+        reference = {**record, "components": [{**comp, "sub_component": None, "notes": "Provenance: live_parsed."}
+                                              for comp in reference_comps]}
+        base_prep, base_selection = _prepare(reference, ctx), None
+        at = _price(base_prep, kwh, kw, None)
+        if at["status"] != "ok":
+            reasons.extend(f"{reference_program['name']}: {reason}" for reason in at["reasons"])
+            return failed()
+        if at["cost"] > float(before):
+            reasons.append(f"{reference_program['name']}: its reference rates cost more than the zone's own tariff at "
+                           "this level; no review covers that")
+            return failed()
+        start = at["cost"]
+        applied.append(reference_program["id"])
+    rows, zero = [], None
+    for season in seasons or [{"season": None, "months": None, "block": None, "price": None}]:
+        cost, block = start, 0.0
+        if season["block"] is not None:
+            block = min(float(kwh), season["block"])
+            # Decisions 76 and 78: the first-block price is all-in, so it replaces the whole per-kWh price of the
+            # tariff in force (the reference rates where they apply) on the first-block kWh.
+            at_block = _price(base_prep, block, kw, base_selection)
+            zero = zero or _price(base_prep, 0.0, kw, base_selection)
+            if at_block["status"] != "ok" or zero["status"] != "ok":
+                reasons.extend(at_block["reasons"] + zero["reasons"])
+                return failed()
+            saving = at_block["cost"] - zero["cost"] - block * season["price"]
+            if saving < 0:
+                reasons.append(f"{program['name']}: the first-block price exceeds the per-kWh price it replaces")
+                return failed()
+            cost -= saving
+            if block > 0:
+                applied.append(program["id"])
+        for credit, comp in credits:
+            # A credit not billed within the first block (its price is all-in, decision 76) applies above it.
+            eligible = float(kwh) - (block if not credit["within_first_block"] else 0.0)
+            if eligible > 0:
+                cost += float(comp["charge_value"]) * eligible
+                applied.append(credit["id"])
+        for item, entry in percentage_subsidies:
+            limit, stored = entry.get("limit"), item.get("limit_kwh")
+            unit = re.sub(r"\s+", " ", (item.get("limit_unit") or "").strip().lower())
+            if limit is not None and (stored is None or float(stored) != float(limit["kwh"])
+                                      or unit not in ("kwh", "kwh/month", "kwh per month")):
+                reasons.append(f"{entry['id']}: the stored limit ({stored} {item.get('limit_unit')}) differs from the "
+                               f"reviewed {float(limit['kwh']):g} kWh a month; the entry needs a new review")
+                return failed()
+            if limit is None and stored is not None:
+                reasons.append(f"{entry['id']}: the record limits it to {stored} kWh but the entry states no reviewed "
+                               "limit")
+                return failed()
+            at = _price(prep, min(float(kwh), float(limit["kwh"])) if limit else float(kwh), kw, selection)
+            if at["status"] != "ok":
+                reasons.extend(at["reasons"])
+                return failed()
+            base = math.fsum(amount for (other, _), amount in zip(prep["priced"], at["amounts"])
+                             if other["basis"] != "percent"
+                             and _fullmatch(entry["base"]["component_name_regex"], other["component"]))
+            riders = {PERCENT_PREFIX + rider for rider in entry.get("with_riders") or []}
+            share = math.fsum(float(other["value"]) for other, _ in prep["priced"]
+                              if other["basis"] == "percent" and other.get("reason") in riders)
+            amount = float(item["value"]) / 100 * base * (1 + share / 100)
+            cost += amount
+            if amount:
+                applied.append(entry["id"])
+        rows.append({"season": season["season"], "months": season["months"], "cost": cost})
+    seasonal = rows[0]["season"] is not None
+    total = math.fsum(row["cost"] * len(row["months"]) / 12 for row in rows) if seasonal else rows[0]["cost"]
+    return {"status": "ok", "cost": total,
+            "seasons": [{"season": row["season"], "months": row["months"], "cost_after_subsidy": round(row["cost"], 2)}
+                        for row in rows] if seasonal else None,
+            "applied": sorted(set(applied)), "not_applied": not_applied, "reasons": []}
 
 
 def record_covers_level(record: dict, kwh: Optional[float], kw: Optional[float]) -> bool:
@@ -1496,6 +2058,8 @@ def _record_brief(record: dict, zone: str, rule_id: Optional[str]) -> dict:
     if record.get("pair"):
         brief["pair"] = {k: record["pair"].get(k) for k in ("unit", "variant", "wires_record_id", "retail_record_id")}
         brief["retail_source_url"] = record.get("retail_source_url")
+    if record.get("interim"):
+        brief["interim"] = True  # owner decision 72 (2026-11-24): interim rates are included and labelled
     return brief
 
 
@@ -1584,6 +2148,60 @@ def _model_label(key: tuple, crosswalk: dict) -> str:
 
 def _fmt_money(value: Optional[float]) -> str:
     return "n/a" if value is None else f"${value:,.2f}"
+
+
+def _rates_text(values: Iterable[Any]) -> str:
+    return "/".join(f"{float(value):g}%" for value in values)
+
+
+def _territorial_method_parts(model: dict) -> list[str]:
+    """Method sentences for the joint rate book, reviewed percentage riders, subsidies and interim rates (method 7T-1,
+    owner decisions 2026-11-24). Provincial models carry none of these fields, so their text is unchanged."""
+    parts = []
+    for book in model.get("shared_rate_books") or []:
+        parts.append(f"{' and '.join(book['utilities'])} bill the same rate schedules; they count once, as "
+                     f"{book['counted_as']} ({book['id']}, decided {book.get('decided')}).")
+    riders = model.get("percentage_riders") or []
+    applied = [rider for rider in riders if rider["treatment"] == "apply"]
+    if applied:
+        parts.append("Percentage riders applied to the base charges named by their reviewed entry "
+                     "(data/models/percentage_riders.json; never to other riders): " + "; ".join(
+                         f"{rider['component']} {_rates_text(rider['rates_percent'])} of {rider['base']} ({rider['id']})"
+                         for rider in applied) + ".")
+    excluded = [rider for rider in riders if rider["treatment"] == "exclude"]
+    if excluded:
+        parts.append("Disclosed, not applied (a percentage of the whole bill): " + "; ".join(
+            f"{rider['component']} {_rates_text(rider['rates_percent'])} ({rider['id']})" for rider in excluded) + ".")
+    subsidies = model.get("subsidies")
+    if subsidies:
+        if subsidies["after_subsidy"]:
+            used = [f"{entry['name']} ({entry['utility']}) at {', '.join(entry['applied_at'])}"
+                    for entry in subsidies["programs"] + subsidies["percentage_subsidies"] if entry.get("applied_at")]
+            text = ("Costs are before subsidies: subsidy prices and credits stay out of them. The cost after automatic "
+                    "subsidies applies " + ("; ".join(used) if used else "no subsidy at any level") + ".")
+            treatments = {entry["treatment"] for entry in subsidies["programs"] if entry.get("applied_at")}
+            if "reference_rates" in treatments:
+                text += (" Reference rates are all-in: where they apply they replace the zone's whole tariff, every "
+                         "charge and rider (owner decision 78).")
+            if "first_block_price" in treatments:
+                text += (" First-block prices are all-in: they replace the whole per-kWh price of the first-block kWh, "
+                         "riders and credits included (owner decisions 76 and 78); credits not billed within the block "
+                         "apply to the kWh above it.")
+            if any(entry.get("seasons") for entry in subsidies["programs"] if entry.get("applied_at")):
+                text += (" Seasonal first blocks are priced once per season and month-weighted by the season's months "
+                         "(usage_levels.json seasons).")
+            text += " " + (subsidies.get("tax_note") or "After-subsidy costs are shown before tax only.")
+        else:
+            text = f"Costs are before subsidies; no after-subsidy cost is shown: {subsidies.get('reason')}"
+        skipped = sorted({f"{row['name']} ({row['utility']}): {row['reason'].rstrip('.')}"
+                          for row in subsidies["not_applied"]})
+        if skipped:
+            text += " Not applied: " + "; ".join(skipped) + "."
+        parts.append(text)
+    for entry in model.get("interim") or []:
+        parts.append(f"Interim rates, included and labelled: {entry['utility']} ({len(entry['records'])} record(s); "
+                     f"{entry['entry']}, decided {entry.get('decided')}).")
+    return parts
 
 
 def _method_text(model: dict, key: tuple, levels: list[dict], component_counts: Counter,
@@ -1701,6 +2319,7 @@ def _method_text(model: dict, key: tuple, levels: list[dict], component_counts: 
         parts.append(f"{entry['utility']} customers may elect {' or '.join(entry['tariff_codes'])}; the cheaper is "
                      f"priced at each level ({entry['id']}, decided {entry.get('decided')}): "
                      + "; ".join(f"{code} at {', '.join(ids)}" for code, ids in sorted(used.items())) + ".")
+    parts.extend(_territorial_method_parts(model))
     if component_counts:
         parts.append("Excluded components: " + "; ".join(
             f"{reason.replace('_', ' ')} {count} (e.g. {', '.join(component_examples[reason])})"
@@ -1927,11 +2546,158 @@ def _illustrative(model: dict, profile_id: Optional[str], profile: dict, market:
     return info
 
 
+def _group_skips(skips: Iterable[dict], scope: str = "records") -> list[dict]:
+    """Not-applied subsidies grouped by subsidy, utility and reason, listing the records (or levels) concerned."""
+    grouped: dict[tuple, dict] = {}
+    for skip in skips:
+        key = (skip["id"], skip.get("utility") or "", skip["reason"])
+        row = grouped.setdefault(key, {"id": skip["id"], "name": skip.get("name"), "utility": skip.get("utility"),
+                                       "reason": skip["reason"], scope: []})
+        for value in (skip.get("records") or [skip.get("record_id")]) if scope == "records" else [skip.get("level")]:
+            if value is not None and value not in row[scope]:
+                row[scope].append(value)
+    return [grouped[key] for key in sorted(grouped, key=str)]
+
+
+def _after_subsidy_level(policy: dict, costs: dict, after_costs: dict, problems: dict, withheld: Optional[dict],
+                         applied: set, skipped: list) -> dict:
+    """A level's cost after automatic subsidies, before tax only (owner decision 74, 2026-11-24): statistics over the
+    same utilities as the cost before subsidies, so the two compare, and unavailable when any of them is not computable
+    after subsidies (reason listed)."""
+    block = {"available": False, "reason": None, "tax_basis": BEFORE_TAX_ONLY,
+             "without_tax": _money(summary_stats([])), "closest_utility": None,
+             "not_computable": [{"utility": utility, "reason": reason} for utility, reason in sorted(problems.items())],
+             "applied": sorted(applied), "not_applied": _group_skips(skipped)}
+    if not policy["after_subsidy"]:
+        block["reason"] = policy["reason"]
+    elif withheld:
+        block["reason"] = "the level is withheld (see withheld)"
+    elif not costs:
+        block["reason"] = "no utility is computable at this level"
+    elif problems or set(after_costs) != set(costs):
+        block["reason"] = ("the cost after subsidies is not computable for "
+                           + ", ".join(sorted(set(problems) | (set(costs) - set(after_costs)))))
+    else:
+        stats = summary_stats(after_costs.values())
+        closest = closest_to_median(after_costs, stats["median"])
+        block.update(available=True, without_tax=_money(stats), closest_utility={
+            "utility": closest, "cost_without_tax": round(after_costs[closest], 2),
+            "deviation_pct": round((after_costs[closest] - stats["median"]) / stats["median"] * 100, 2)
+            if stats["median"] else None})
+    return block
+
+
+def _territorial_fields(model: dict, chosen: dict, preps: dict, crosswalk: dict, ctx: dict, policy: Optional[dict],
+                        level_out: list[dict]) -> None:
+    """Add the method 7T-1 fields (owner decisions 64-75, 2026-11-24) that apply to a model: the joint rate book, the
+    reviewed percentage riders its records carry, interim labels (and warnings) and, for a territory, the subsidies
+    block. Each field is added only when it applies, so provincial models stay unchanged."""
+    records = [(utility, record) for utility, rows in chosen.items() for record, _, _ in rows]
+    books = [book for book in (crosswalk or {}).get("shared_rate_books") or []
+             if isinstance(book, dict) and book.get("counted_as") in chosen]
+    if books:
+        model["shared_rate_books"] = [{k: book.get(k) for k in ("id", "utilities", "counted_as", "quote", "source",
+                                                                 "decided", "note")} for book in books]
+    entries = {entry["id"]: entry for entry in ctx.get("percent_entries") or []}
+    used: dict[str, dict] = {}
+    for utility, record in records:
+        for item in preps[id(record)]["items"]:
+            entry = entries.get(item.get("percentage_entry"))
+            if entry is None:
+                continue
+            row = used.setdefault(entry["id"], {"id": entry["id"], "utility": utility, "component": item["component"],
+                                                "treatment": entry["treatment"], "rates_percent": [], "items": []})
+            row["items"].append(item)
+            if item.get("value") is not None and float(item["value"]) not in row["rates_percent"]:
+                row["rates_percent"].append(float(item["value"]))
+    if used:
+        model["percentage_riders"] = [
+            {**{k: row[k] for k in ("id", "utility", "component", "treatment")},
+             "rates_percent": sorted(row["rates_percent"]), "base": (entries[eid].get("base") or {}).get("text"),
+             **{k: entries[eid].get(k) for k in ("quote", "source_url", "location", "decided")}}
+            for eid, row in sorted(used.items())]
+    labels = {entry.get("id"): entry for entry in (crosswalk or {}).get("interim_rates") or [] if isinstance(entry, dict)}
+    interim: dict[tuple, list] = defaultdict(list)
+    for utility, record in records:
+        if record.get("interim"):
+            interim[(utility, record["interim"])].append(record.get("id"))
+    if interim:
+        model["interim"] = [{"utility": utility, "entry": entry_id, "records": ids,
+                             **{k: (labels.get(entry_id) or {}).get(k) for k in ("quote", "source", "decided")}}
+                            for (utility, entry_id), ids in sorted(interim.items())]
+        for row in model["interim"]:
+            model["warnings"].append(f"Interim rates included: {row['utility']} ({len(row['records'])} record(s); "
+                                     f"{row['entry']}, owner decision 72): \"{row['quote']}\"")
+    if policy is None:
+        return
+    config = ctx.get("subsidies") or {}
+    applied_at: dict[str, list[str]] = defaultdict(list)
+    skipped = []
+    for level in level_out:
+        block = level.get("after_subsidy") or {}
+        for subsidy_id in block.get("applied") or []:
+            applied_at[subsidy_id].append(str(level["id"]))
+        skipped.extend({**row, "level": str(level["id"])} for row in block.get("not_applied") or [])
+    programs = []
+    for program in subsidy_programs(config, model["key"]["province"], ctx["sector"], chosen):
+        present = [record for _, record in records if any(
+            _fullmatch(program["component_name_regex"], comp.get("component_name"))
+            for comp in record.get("components") or [])]
+        if program["treatment"] == "disclose" and not present:
+            continue
+        seasons = None
+        if program["treatment"] == "first_block_price":
+            convention = (ctx["usage_levels"].get("seasons") or {}).get(program["seasons"]) or {}
+            seasons = {"id": program["seasons"], "decided": convention.get("decided"),
+                       "method": convention.get("method"),
+                       "seasons": [{"label": label, "months": value.get("months"),
+                                    "first_block_kwh_per_month": value.get("first_block_kwh_per_month")}
+                                   for label, value in convention.items() if isinstance(value, dict) and "months" in value]}
+        programs.append({"id": program["id"], "name": program["name"], "utility": program.get("utility"),
+                         "treatment": program["treatment"],
+                         "status": ("applied" if applied_at.get(program["id"]) else
+                                    "disclosed" if program["treatment"] == "disclose" else "not_applied"),
+                         "applied_at": applied_at.get(program["id"], []),
+                         "replaces": (program.get("replaces") or {}).get("text"),
+                         "applies_to": (program.get("applies_to") or {}).get("text"),
+                         "within_first_block": program.get("within_first_block"), "seasons": seasons,
+                         "automatic": program.get("automatic"),
+                         **{k: program.get(k) for k in ("quote", "source_url", "location", "evidence", "note", "reason",
+                                                        "decided")}})
+        if program["treatment"] == "disclose" and not policy["after_subsidy"]:
+            skipped.extend({"id": program["id"], "name": program["name"], "utility": program.get("utility"),
+                            "reason": program["reason"], "level": None} for _ in present[:1])
+    percentage = []
+    for entry_id, row in sorted(used.items()):
+        entry = entries[entry_id]
+        if entry["treatment"] != "subsidy":
+            continue
+        starts = sorted({item.get("effective_date") for item in row["items"] if item.get("effective_date")})
+        ends = sorted({item.get("end_date") for item in row["items"] if item.get("end_date")})
+        percentage.append({"id": entry_id, "name": entry.get("name") or row["component"], "utility": row["utility"],
+                           "component": row["component"], "rates_percent": sorted(row["rates_percent"]),
+                           "effective_date": starts[0] if len(starts) == 1 else starts or None,
+                           "end_date": ends[0] if len(ends) == 1 else ends or None,
+                           "in_force": any(item.get("reason") == "subsidy" for item in row["items"]),
+                           "applied_at": applied_at.get(entry_id, []), "base": (entry.get("base") or {}).get("text"),
+                           "limit": entry.get("limit"),
+                           **{k: entry.get(k) for k in ("quote", "applicable", "source_url", "location", "note",
+                                                        "decided")}})
+    model["subsidies"] = {"after_subsidy": policy["after_subsidy"], "reason": policy["reason"],
+                          "decided": policy.get("decided"), "tax_basis": BEFORE_TAX_ONLY,
+                          "tax_note": config.get("tax_note"), "rule": config.get("rule"),
+                          "programs": programs, "percentage_subsidies": percentage,
+                          "not_applied": _group_skips(skipped, scope="levels"),
+                          "problem": config.get("problem"), "skipped": config.get("skipped") or []}
+
+
 def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, crosswalk: dict, usage_levels: dict,
                  taxes: dict, as_of: date, zone_policy: str, province_utilities: set[str], input_label: str,
                  block_periods: Optional[list] = None, market: Optional[dict] = None,
-                 benchmark_market: Optional[dict] = None) -> dict:
-    """One model: per-utility costs at each usage level, statistics, buckets, energy blocks and method text."""
+                 benchmark_market: Optional[dict] = None, percentage_riders: Optional[list] = None,
+                 subsidies: Optional[dict] = None) -> dict:
+    """One model: per-utility costs at each usage level, statistics, buckets, energy blocks and method text; for a
+    territory also the cost after automatic subsidies (subsidy_policy) and the reviewed percentage riders it applies."""
     province, fuel, sector, structure, band = key
     level_sector = band if sector == "commercial" and band else sector
     raw_levels = (usage_levels.get(fuel) or {}).get(level_sector) if isinstance(usage_levels.get(fuel), dict) else None
@@ -1941,7 +2707,9 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
         # Each gas model is evaluated only at the levels of its records' native volume unit (m3 or GJ).
         volume = gas_volume_unit(record for record, _, _ in entries) or "none"
         levels = [lv for lv in levels if lv.get("unit") == volume]
-    ctx = _context(province, fuel, structure, level_sector, usage_levels, as_of, block_periods, volume)
+    ctx = _context(province, fuel, structure, level_sector, usage_levels, as_of, block_periods, volume,
+                   percentage_riders, subsidies)
+    policy = subsidy_policy(subsidies, province, fuel, level_sector)
     required = required_contributors(crosswalk, key)
     required_names = sorted({name for entry in required for name in entry.get("utilities") or []})
     by_utility: dict[str, list[tuple[dict, str, Optional[str]]]] = defaultdict(list)
@@ -1986,6 +2754,7 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
         applied, not_applied = tax_lines(taxes, province, fuel, level_sector, None if fuel == "gas" else kwh, kw, as_of)
         costs, taxed, line_amounts, rows_out = {}, {}, defaultdict(list), []
         level_used, level_fallbacks, zone_inputs, level_variants, level_electives = [], [], {}, [], []
+        after_costs, after_problems, after_applied, after_skipped = {}, {}, set(), []
         for utility, rows in chosen.items():
             zone_rows, reasons = [], []
             for record, zone, rule_id in rows:
@@ -2004,13 +2773,17 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
                                    f"{record.get('demand_bounds_problem') or 'eligibility does not cover the level'}")
                     continue
                 prep = preps[id(record)]
-                priced = _price(prep, kwh, kw, _select_variants(prep, ctx, level.get("id"), kwh))
+                selection = _select_variants(prep, ctx, level.get("id"), kwh)
+                priced = _price(prep, kwh, kw, selection)
                 if priced["status"] != "ok":
                     reasons.append(f"{record.get('tariff_code')}: " + "; ".join(priced["reasons"]))
                     continue
                 with_tax, amounts = apply_tax_lines(priced["cost"], priced["energy_charge_subtotal"], applied)
+                # The after-subsidy cost uses the same record and level as the cost before subsidies (decision 67).
+                after = (_after_subsidy_record(prep, record, ctx, kwh, kw, selection, priced["cost"])
+                         if policy and policy["after_subsidy"] else None)
                 zone_rows.append((record, zone, priced["cost"], with_tax, amounts, priced["energy_charge_subtotal"],
-                                  priced["variants"]))
+                                  priced["variants"], after))
             zone_rows, elective_notes = cheapest_elective_rows(zone_rows, electives.get(utility) or [])
             if not zone_rows:
                 exclusions.append({"scope": "utility", "utility": utility, "level": level.get("id"),
@@ -2039,6 +2812,27 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
             if elective_notes:
                 row_out["elective_classes"] = elective_notes
                 level_electives.extend((level.get("id"), utility, note) for note in elective_notes)
+            if any(row[0].get("interim") for row in zone_rows):
+                row_out["interim"] = True  # owner decision 72 (2026-11-24)
+            if policy is not None and policy["after_subsidy"]:
+                afters = [row[7] for row in zone_rows]
+                if all(after["status"] == "ok" for after in afters):
+                    after_costs[utility] = statistics.median([after["cost"] for after in afters])
+                else:
+                    after_problems[utility] = " | ".join(
+                        f"{row[0].get('tariff_code') or row[0].get('name')}: " + "; ".join(row[7]["reasons"])
+                        for row in zone_rows if row[7]["status"] != "ok")
+                row_out["cost_after_subsidy"] = round(after_costs[utility], 2) if utility in after_costs else None
+                row_out["after_subsidy_records"] = [
+                    {"record_id": row[0].get("id"), "tariff_code": row[0].get("tariff_code"), "zone": row[1],
+                     "cost_after_subsidy": None if row[7]["cost"] is None else round(row[7]["cost"], 2),
+                     "seasons": row[7]["seasons"], "applied": row[7]["applied"],
+                     "not_applied": sorted({skip["id"] for skip in row[7]["not_applied"]}),
+                     "reasons": row[7]["reasons"]} for row in zone_rows]
+                for row in zone_rows:
+                    after_applied.update(row[7]["applied"])
+                    after_skipped.extend({**skip, "utility": utility, "record_id": row[0].get("id")}
+                                         for skip in row[7]["not_applied"])
             rows_out.append(row_out)
         missing = [name for name in required_names if name not in costs]
         withheld = None
@@ -2052,6 +2846,7 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
                                "reason": f"required contributor not computable: {', '.join(missing)}; computed "
                                          f"{', '.join(sorted(costs))} withheld ({withheld['reason']})"})
             costs, taxed, line_amounts, rows_out, zone_inputs = {}, {}, defaultdict(list), [], {}
+            after_costs, after_problems = {}, {}
         else:
             for utility in level_fallbacks:
                 zone_fallbacks[utility].append(level.get("id"))
@@ -2087,6 +2882,9 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
         })
         if withheld:
             level_out[-1]["withheld"] = withheld
+        if policy is not None:
+            level_out[-1]["after_subsidy"] = _after_subsidy_level(policy, costs, after_costs, after_problems,
+                                                                  withheld, after_applied, after_skipped)
     if not levels:
         for utility, rows in chosen.items():
             for record, _, _ in rows:
@@ -2276,6 +3074,7 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
              "decided": e.get("decided"),
              "withheld_at": [str(level_id) for level_id, names in withheld_missing.items()
                              if set(names) & set(e.get("utilities") or [])]} for e in required]
+    _territorial_fields(model, chosen, preps, crosswalk, ctx, policy, level_out)
     has_pairs = any(record.get("pair") for rows in chosen.values() for record, _, _ in rows)
     model["method"] = _method_text(model, key, levels, component_counts, component_examples, conversions, zone_policy,
                                    pair_config(crosswalk).get("method_note") if has_pairs else None)
@@ -2478,30 +3277,44 @@ def volume_bound_problem(record: dict, quantity: float, unit: str,
     return None
 
 
+def label_interim(record: dict, crosswalk: dict) -> dict:
+    """Copy of a record labelled with the id of the crosswalk interim_rates entry that applies to it (owner decision 72,
+    2026-11-24); the record itself when none does."""
+    entry = interim_entry(record, [e for e in (crosswalk or {}).get("interim_rates") or [] if isinstance(e, dict)])
+    return {**record, "interim": entry["id"]} if entry is not None and entry.get("id") else record
+
+
 def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: dict, taxes: dict,
                  provinces: Optional[Iterable[str]] = ("ON",), as_of: Union[date, str, None] = None,
                  zone_policy: str = "median_of_zones", input_label: str = "site/data/rates.json",
                  fuels: Optional[Iterable[str]] = MODEL_FUELS, block_periods: Any = _DEFAULT,
-                 market_document: Any = _DEFAULT, market_documents: Any = _DEFAULT) -> dict:
-    """Representative models for every crosswalk model key of the given provinces and fuels (Phases 7B/7C).
+                 market_document: Any = _DEFAULT, market_documents: Any = _DEFAULT,
+                 percentage_riders: Any = _DEFAULT, subsidies: Any = _DEFAULT) -> dict:
+    """Representative models for every crosswalk model key of the given provinces and fuels (Phases 7B/7C, 7T).
 
     ``block_periods``: a block_periods document or entry list (default data/models/block_periods.json; a missing file
     means no entries). ``market_document``: observed Ontario market history for the Phase 7E illustrative sidecar
     (default site/data/market_pricing_ontario.json, read only when a model matches a synthetic profile; None or an
     unusable document makes the sidecar unavailable, never the build). ``market_documents`` optionally
     supplies province-keyed observed histories for benchmarks (and Ontario's synthetic sidecar).
-    Explicit None values disable that province's history without reading a live file."""
+    Explicit None values disable that province's history without reading a live file. ``percentage_riders`` and
+    ``subsidies``: the reviewed percentage_riders and subsidies documents (defaults data/models/percentage_riders.json
+    and data/models/subsidies.json; a missing file leaves territorial percentage riders not computable and publishes
+    no after-subsidy cost)."""
     if zone_policy not in ZONE_POLICIES:
         raise ValueError(f"zone_policy must be one of {ZONE_POLICIES}")
     as_of_date = _as_of(as_of)
     periods = load_block_periods() if block_periods is _DEFAULT else block_periods_config(block_periods)
+    riders = load_percentage_riders() if percentage_riders is _DEFAULT else percentage_riders_config(percentage_riders)
+    subsidy_cfg = load_subsidies() if subsidies is _DEFAULT else subsidies_config(subsidies)
     rows = rates.get("records", []) if isinstance(rates, dict) else list(rates)
     wanted = None if provinces is None else {str(p).upper() for p in provinces}
     wanted_fuels = None if fuels is None else {str(f) for f in fuels}
-    live = [apply_usage_bounds(r, crosswalk) for r in latest_live_records(rows)
+    live = [label_interim(apply_usage_bounds(r, crosswalk), crosswalk) for r in latest_live_records(rows)
             if (wanted is None or r.get("province") in wanted)
             and (wanted_fuels is None or r.get("utility_type") in wanted_fuels)]
     variants, wires_units, retail_utilities = compose_pairs(live, crosswalk)
+    shared = shared_rate_book_units(crosswalk)
     groups: dict[tuple, list] = defaultdict(list)
     withheld_gas: set[tuple] = set()
     province_utilities: dict[tuple, set[str]] = defaultdict(set)
@@ -2512,9 +3325,11 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
         outcome = match_record(record, crosswalk)
         market_reference_only[name] = (market_reference_only.get(name, True)
                                        and outcome.get("exclude") == "market_reference_only")
-        # A city that publishes both its wires tariff and its Rate of Last Resort is one unit, not a retail part.
+        # A city that publishes both its wires tariff and its Rate of Last Resort is one unit, not a retail part; the
+        # utilities of a shared rate book count once (owner decision 66: the joint Yukon rate book).
         if name not in retail_utilities or name in wires_units:
-            counted.append(((record.get("province"), record.get("utility_type")), name, wires_units.get(name, name)))
+            counted.append(((record.get("province"), record.get("utility_type")), name,
+                            wires_units.get(name) or shared.get(name, name)))
         for key in model_keys(outcome):
             if key[1] == "gas" and key[2] not in GAS_MODEL_SECTORS:
                 withheld_gas.add(key)
@@ -2555,7 +3370,8 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
     models = [_build_model(key, groups[key], crosswalk=crosswalk, usage_levels=usage_levels, taxes=taxes,
                            as_of=as_of_date, zone_policy=zone_policy,
                            province_utilities=province_utilities[(key[0], key[1])], input_label=input_label,
-                           block_periods=periods["entries"], market=market, benchmark_market=benchmarks.get(key[0]))
+                           block_periods=periods["entries"], market=market, benchmark_market=benchmarks.get(key[0]),
+                           percentage_riders=riders["entries"], subsidies=subsidy_cfg)
               for key in sorted(groups, key=lambda k: _model_order(k, crosswalk))]
     created = [str(r["created_at"]) for r in live if r.get("created_at")]
     shares = {k: {"applies_to": v.get("applies_to"), "shares": v.get("shares"), "period": v.get("period"),
@@ -2638,7 +3454,22 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
             "demand_bounds": [e for e in crosswalk.get("demand_bounds") or [] if isinstance(e, dict)],
             "taxes": {"as_of": taxes.get("as_of"), "rule": "Lines from data/models/taxes.json for province, fuel and "
                       "sector, in effect at the as-of date; eligibility thresholds use the level's kW and kWh x 12 "
-                      "(either test when both are set); amount = rate x base; never compounded; rebates subtracted."},
+                      "(either test when both are set); amount = rate x base; never compounded; rebates subtracted. "
+                      "Territorial costs after subsidies are before tax only (owner decision 74, 2026-11-24)."},
+            # Method 7T-1 inputs (owner decisions 64-75, 2026-11-24).
+            "percentage_riders": {
+                "source": "data/models/percentage_riders.json" if percentage_riders is _DEFAULT else "argument",
+                "version": riders.get("version"), "status": riders.get("status"), "problem": riders.get("problem"),
+                "rule": riders.get("rule"), "review_scope": list(TERRITORIES),
+                "entries": riders["entries"], "skipped": riders.get("skipped")},
+            "subsidies": {
+                "source": "data/models/subsidies.json" if subsidies is _DEFAULT else "argument",
+                "version": subsidy_cfg.get("version"), "status": subsidy_cfg.get("status"),
+                "problem": subsidy_cfg.get("problem"), "rule": subsidy_cfg.get("rule"),
+                "tax_note": subsidy_cfg.get("tax_note"), "jurisdictions": subsidy_cfg.get("jurisdictions"),
+                "programs": subsidy_cfg.get("programs"), "skipped": subsidy_cfg.get("skipped")},
+            "interim_rates": [e for e in crosswalk.get("interim_rates") or [] if isinstance(e, dict)],
+            "shared_rate_books": [e for e in crosswalk.get("shared_rate_books") or [] if isinstance(e, dict)],
         },
         "models": models,
         "coverage_report": coverage_report(rows, crosswalk),
@@ -2682,6 +3513,13 @@ def format_models(result: dict) -> str:
                              f"/kWh (${illustrative['market_energy_cost']:,.2f}/month); median "
                              f"{_fmt_money(illustrative['without_tax']['median'])} / with tax "
                              f"{_fmt_money(illustrative['with_tax']['median'])}")
+            after = level.get("after_subsidy")
+            if after and after.get("available"):
+                lines.append(f"           after automatic subsidies (before tax only): median "
+                             f"{_fmt_money(after['without_tax']['median'])} (n={after['without_tax']['n']}); "
+                             f"applied {', '.join(after['applied']) or 'none'}")
+            elif after:
+                lines.append(f"           after subsidies: not shown ({after.get('reason')})")
         info = model.get("illustrative")
         if info and not info["available"]:
             lines.append(f"  illustrative estimate unavailable: {info['reason']}")

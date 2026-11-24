@@ -14622,13 +14622,36 @@ def test_rm7a_all_46_ontario_default_rpp_records_map_to_residential_structures()
             assert outcome["zone"] == "default"
 
 
-def test_rm7a_territorial_records_are_excluded_for_later_models():
+def test_rm7a_territorial_records_follow_the_owner_decisions_of_2026_11_24():
     crosswalk = RM7A_load_crosswalk(RM7A_CROSSWALK)
     territorial = [r for r in RM7A__records() if r["province"] in ("YT", "NT", "NU")]
     assert len(territorial) == 109
-    for record in territorial:
-        outcome = RM7A_match_record(record, crosswalk)
-        assert outcome["model"] is None and outcome["exclude"] == "territory_planned_later"
+    outcomes = [(r, RM7A_match_record(r, crosswalk)) for r in territorial]
+    mapped = {(r["utility_name"], r["tariff_code"] or r["name"]): o["model"]["sector"] for r, o in outcomes if o["model"]}
+    excluded = {(r["utility_name"], r["tariff_code"] or r["name"]): o["exclude"] for r, o in outcomes if o["exclude"]}
+    assert len(mapped) == 20 and len(mapped) + len(excluded) == 109
+    # Decision 66: the joint Yukon rate book counts once, through Yukon Energy.
+    yec = [v for (utility, _), v in excluded.items() if utility == "Yukon Electrical Company"]
+    assert yec == ["duplicate_variant"] * 20 and not any(u == "Yukon Electrical Company" for u, _ in mapped)
+    assert {code for (utility, code) in mapped if utility == "Yukon Energy"} == {
+        "1160", "1260", "1360", "1460", "2160", "2260", "2360", "2460"}
+    # Decision 71: government classes stay out of the medians; Qulliq's municipal tax-based residential is a duplicate.
+    government = {k for k, v in excluded.items() if v == "government_rate"}
+    assert {code for utility, code in government if utility == "Yukon Energy"} == {
+        "1180", "1280", "1380", "1480", "2170", "2180", "2270", "2280", "2370", "2380", "2470", "2480"}
+    assert {code for utility, code in government if utility == "Qulliq Energy Corporation"} == {"G-RES", "G-COM", "MT-COM"}
+    assert excluded[("Qulliq Energy Corporation", "MT-RES")] == "duplicate_variant"
+    ntpc = [k for k in government if k[0] == "Northwest Territories Power Corporation"]
+    assert ntpc and all(" Government — " in name for _, name in ntpc)
+    # Decision 75: non-government residential and general service by zone; interruptible heating stays out.
+    assert sorted(name for utility, name in mapped if utility == "Northwest Territories Power Corporation") == sorted(
+        [f"Residential Service — {zone}" for zone in ("Diesel Zone", "Snare Zone", "Norman Wells Zone",
+                                                      "Taltson Zone (Hay River)", "Taltson Zone (Fort Smith/Fort Resolution)")]
+        + [f"General Service — {zone}" for zone in ("Thermal Zone", "Snare Zone", "Norman Wells Zone",
+                                                    "Taltson Zone (Hay River)", "Taltson Zone (Fort Smith/Fort Resolution)")])
+    assert [v for (u, name), v in excluded.items() if name.startswith("Interruptible")] == ["conditional_only"]
+    assert {code for (utility, code), sector in mapped.items() if utility == "Qulliq Energy Corporation"} == {
+        "NG-RES", "NG-COM"}
 
 
 def test_rm7a_first_matching_rule_wins():
@@ -14830,7 +14853,7 @@ def test_rm7a_new_utilities_are_unmapped_until_a_rule_is_appended():
     assert RM7A_coverage_report([record], crosswalk)["unmapped"] == [
         {"utility_name": "Apex Utilities", "province": "AB", "tariff_code": "1", "name": "Rate 1",
          "customer_class": "residential"}]
-    first_territory = next(i for i, r in enumerate(crosswalk["rules"]) if r["id"].startswith("territory-"))
+    first_territory = next(i for i, r in enumerate(crosswalk["rules"]) if r["province"] in ("YT", "NT", "NU"))
     crosswalk["rules"].insert(first_territory, {
         "id": "ab-apex-utilities", "utility": "Apex Utilities", "province": "AB", "fuel": "gas", "match": {},
         "zone": None, "model": None, "exclude": "gas_models_phase_7d", "note": ""})

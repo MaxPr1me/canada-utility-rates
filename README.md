@@ -141,6 +141,13 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   reviewed all eight the same day (all legitimate; dated notes in the coverage ledger), so none is
   flagged now. AESO and Maritime Electric are exempt (see AGENTS.md, "Rates not updated in a
   year").
+- **Territorial models (method 7T-1, November 24, owner decisions 64-79):** Yukon, the Northwest
+  Territories (NTPC and Naka Power) and Nunavut now have electricity models for homes and small
+  businesses. Their percentage riders are applied from a reviewed list, government rates are left
+  out and interim rates are labelled. Homes also show the cost after automatic subsidies, before tax
+  (1,000 kWh: Yukon $323.62 before and $253.66 after; Northwest Territories $542.73 and $429.16);
+  Nunavut is shown before subsidy only, because its subsidised price is not published. The ten
+  provinces' 85 models are unchanged.
 - **Latest export (November 20, scrape run 46, the owner's full run):** 987 latest live tariffs and
   484 retained estimates; 1,414 stored live versions and 7,670 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
@@ -179,7 +186,7 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   are now modelled too. Small businesses are modelled at 2,000 kWh with 14 kW and 10,000 kWh with
   40 kW, and every usage level records its decision, what it represents and its sources. The Rate
   Browser shows a dated price's period and tags it "Ended" once that date has passed.
-- **Validation:** all 2,551 tests passed on Python 3.11 using `pytest tests`.
+- **Validation:** all 2,583 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.
@@ -192,7 +199,7 @@ The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; th
 2. **Stores** everything in a normalized SQLite database that preserves every rate detail — not just a single "cost per kWh" number.
 3. **Tracks history** — each stored scrape appends snapshots. Only the Monthly Scrape workflow stores scrapes: it keeps `data/db/rates.db` in the `data-history` GitHub release with dated backups and checks that history only grows; local copies are read-only mirrors (`python scripts/pull_history_db.py`).
 4. **Exports** the data as JSON for the GitHub Pages static site.
-5. **Serves** a browsable web interface with five views: **Rate Browser** (multi-select filters, confidence indicators and source attribution), **Market Pricing** (observed Ontario and Alberta market history with a monthly chart, table and heatmap), **Representative Models** (typical monthly electricity costs for the ten provinces, and natural gas costs for homes and small and mid-size commercial buildings in each utility's m³ or GJ, without and with tax), **Across-Canada** (residential electricity compared by province) and **Compare** (two tariffs side by side, never a bill total).
+5. **Serves** a browsable web interface with five views: **Rate Browser** (multi-select filters, confidence indicators and source attribution), **Market Pricing** (observed Ontario and Alberta market history with a monthly chart, table and heatmap), **Representative Models** (typical monthly electricity costs for the ten provinces and the three territories, the territories also after automatic subsidies, and natural gas costs for homes and small and mid-size commercial buildings in each utility's m³ or GJ, without and with tax), **Across-Canada** (residential electricity compared by province and territory) and **Compare** (two tariffs side by side, never a bill total).
 6. **Provides automation** through monthly scraping, separate Pages deployment, non-blocking source-health runs, a twice-monthly Ontario Price archive and market history update, and Alberta market history and model refreshes.
 
 **Scope: building energy costs.** The work supports building energy-cost analysis, including
@@ -292,6 +299,8 @@ canada-utility-costs/
 │   │   ├── crosswalk.json    ← Ordered rules: live record → model key or exclusion reason; Alberta pairs
 │   │   ├── usage_levels.json ← Usage levels, TOU/ULO shares, reference-customer charges, 7E synthetic profile
 │   │   ├── block_periods.json ← Reviewed periods for block thresholds printed without one
+│   │   ├── percentage_riders.json ← Reviewed territorial percentage riders (what each applies to)
+│   │   ├── subsidies.json    ← Reviewed territorial subsidies (applied or only named)
 │   │   └── taxes.json        ← Sales taxes and automatic point-of-sale rebates
 │   ├── sources/registry.json ← Master list of where to find rate data
 │   ├── sources/coverage_ledger.json ← Coverage audit ledger read by the coverage gate
@@ -311,7 +320,7 @@ canada-utility-costs/
 │       ├── summary.json      ← Provincial summaries
 │       ├── missing.json      ← Known data gaps
 │       ├── missing_classes_report.json  ← Customer class coverage audit
-│       ├── representative_models.json   ← Phase 7 models (ten provinces; Representative Models tab)
+│       ├── representative_models.json   ← Phase 7 models (provinces and territories; Representative Models tab)
 │       ├── market_pricing_ontario.json  ← Rolling 60-month market history + observed-hours bins (scripts/build_ontario_market.py)
 │       ├── market_pricing_alberta.json  ← Alberta market history + observed-hours bins (scripts/build_alberta_market.py)
 │       ├── market_structure_notes.json  ← All-province market research
@@ -405,9 +414,10 @@ Each charge has its own row with:
 
 **Representative models are derived, never stored as rates.** Every export runs
 `pipeline/representative_models.py`, which uses the reviewed inputs in `data/models/`
-(crosswalk, usage levels, block periods and taxes) to work out, for each of the ten provinces,
-the median monthly electricity cost of its utilities' live tariffs at set example usage levels,
-before and after sales taxes and automatic rebates, and writes `site/data/representative_models.json`. Models are labelled
+(crosswalk, usage levels, block periods, taxes, and the territories' percentage riders and subsidies)
+to work out, for each province and territory, the median monthly electricity cost of its utilities'
+live tariffs at set example usage levels, before and after sales taxes and automatic rebates (and, for
+the territories, after automatic subsidies, before tax), and writes `site/data/representative_models.json`. Models are labelled
 modeled, are never a bill and never count as live coverage. [AGENTS.md](AGENTS.md) describes
 their inputs and rules.
 
@@ -799,9 +809,9 @@ One line per phase; sub-phase detail and the work queue are in the
 - **Earlier phases (foundations)** — done: scraper framework, granular schema, registry, validation, history snapshots, JSON export and the website.
 - **Phase 5: Live Parser Completion** — in progress: the Batch 18 additions are published (municipal utilities in NB, BC and PE on November 18; Naka Power and the Alberta cities on November 19) and issue #6 is closed; the scoped coverage-complete claim will be drafted for owner approval after the January renewals, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas supply-price freshness: Énergir's monthly prices and period end dates for the other gas utilities done November 20, and the monthly-price run on the 4th added November 23 (first run December 4)).
-- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D gas done in each utility's native m³ or GJ: homes as method 7D-1 and commercial general service for small and mid-size buildings as method 7D-2, November 23; contract, interruptible and seasonal gas classes come later with their own decision). Next (owner decisions, November 20, 23 and 24): models for the territories, homes and small businesses, before and after automatic subsidies (decided November 24, being built; the check for rates not updated in a year was added November 24).
+- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; 7E is only an opt-in illustrative estimate, not a true all-in bill; 7D gas done in each utility's native m³ or GJ: homes as method 7D-1 and commercial general service for small and mid-size buildings as method 7D-2, November 23; contract, interruptible and seasonal gas classes come later with their own decision; the territories were added November 24 as method 7T-1, homes and small businesses, before and after automatic subsidies). The check for rates not updated in a year was added November 24.
 - **Phase 8: Representative Model Refresh Automation** — done and verified in CI and on the deployed site. Public change history and problem-only monitoring follow the [approved policy](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
-- **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done). Planned: a Rate History tab of historical charts (designed November 23, built after the territorial models; collected data since September 29, 2026 plus the stored market history), then AI-ready exports, a bill calculator or API and commercial/gas comparisons.
+- **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done). Planned: a Rate History tab of historical charts (designed November 23; next, now that the territorial models are built; collected data since September 29, 2026 plus the stored market history), then AI-ready exports, a bill calculator or API and commercial/gas comparisons.
 
 ---
 

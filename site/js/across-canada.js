@@ -61,14 +61,37 @@
             && model.cost_basis === "delivery_and_energy" && !list((model.energy || {}).market_pending).length
             && level && !level.withheld && finite((before || {}).median) && finite((after || {}).median)
             && finite(before.n) && before.n > 0;
+        // Method 7T-1 (owner decisions 67 and 74, 2026-11-24): a territorial model's totals are before subsidies.
+        const subsidies = model && model.subsidies && typeof model.subsidies === "object" ? model.subsidies : null;
         let state = ["YT", "NT", "NU"].includes(province)
             ? "Not modelled yet (live tariffs are separate)" : "No representative model";
         if (model) {
             state = complete ? (model.state === "single_source" ? "Single source" : "Modeled")
                 : model.state === "market_energy_pending" ? "Market energy pending - not a full cost"
                     : "Not computable at this usage - not a full cost";
+            if (complete && subsidies) state += " - before subsidies";
         }
-        return { province, model, structure, label, complete: Boolean(complete), state, before, after, level };
+        return { province, model, structure, label, complete: Boolean(complete), state, before, after, level, subsidies };
+    }
+
+    // The published cost after automatic subsidies (before tax only), or why there is none; never recalculated here.
+    function subsidyNote(item) {
+        const { subsidies, level, complete } = item;
+        if (!subsidies || !complete) return null;
+        const afterSubsidy = (level && level.after_subsidy) || {};
+        const stats = afterSubsidy.without_tax || {};
+        let text;
+        if (subsidies.after_subsidy !== true) {
+            text = `Before subsidies only: ${subsidies.reason || "no automatic subsidy with a published price applies."}`;
+        } else if (afterSubsidy.available === true && finite(stats.median)) {
+            text = `After automatic subsidies: ${shared.money(stats.median)} before tax`
+                + (finite(stats.n) ? ` (median of ${stats.n})` : "") + ". Tax on subsidised bills is not shown yet.";
+        } else {
+            text = `After automatic subsidies: not available at this usage${afterSubsidy.reason ? ` (${afterSubsidy.reason})` : ""}.`;
+        }
+        const note = el("p", text);
+        note.className = "across-subsidy";
+        return note;
     }
 
     function row(item) {
@@ -85,6 +108,8 @@
         if (!complete) status.className = "across-incomplete";
         tr.append(status);
         const notes = el("td");
+        const subsidy = subsidyNote(item);
+        if (subsidy) notes.append(subsidy);
         if (model) notes.append(context(model));
         tr.append(notes);
         return tr;
@@ -108,6 +133,12 @@
             note.className = "rm-note rm-rebate-note";
             return note;
         });
+        if (rows.some(item => item.complete && item.subsidies)) {
+            const note = el("p", "Territorial bars show the published tariff cost before territorial subsidies "
+                + "(with tax where selected). The cost after automatic subsidies, before tax, is in the table below.");
+            note.className = "rm-note across-subsidy-note";
+            rebateNotes.push(note);
+        }
         const axis = el("div");
         axis.className = "across-axis";
         axis.append(el("span", shared.money(lower)), el("span", shared.money(upper)));
@@ -122,7 +153,7 @@
                 const line = el("div");
                 line.className = "across-chart-row";
                 line.dataset.structure = item.structure;
-                line.append(el("span", item.label));
+                line.append(el("span", item.complete && item.subsidies ? `${item.label} (before subsidies)` : item.label));
                 if (!item.complete) {
                     const unavailable = el("span", item.state);
                     unavailable.className = "across-chart-unavailable";

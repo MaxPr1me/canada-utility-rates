@@ -1,8 +1,8 @@
 {
   "version": 1,
   "phase": "7A",
-  "updated": "2026-11-23",
-  "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list. A SYNTHETIC business-hours load profile ('synthetic_profiles') was added October 16, 2026 (user-approved) for the Phase 7E illustrative estimate only; it never changes a model's own numbers.   Reference-customer rules for fixed charges published as phase or amperage variants ('fixed_charge_variants') added October 30, 2026 (user decision). Historical market benchmarks ('market_benchmarks') approved November 2, 2026: 60 equal-weight monthly arithmetic prices, Ontario with Class B GA and Alberta pool energy only, maximum window lag four months. These are separate from base medians and synthetic estimates, not customer-weighted bills. Method 7D-2 (owner decisions November 20, 2026): commercial gas levels for small and mid-size buildings, the s1/s2 small-business levels at 14 and 40 kW, documented backing for every level, Liberty Gas NB's peak-month factor and customer-charge rules, Energir's basic-fee band rule, and reference-customer entries for Energir's load balancing and renewable-gas socialization charges and Liberty Utility Gas.",
+  "updated": "2026-11-24",
+  "status": "Usage levels approved by the user (October 9, 2026). Time-of-use shares and seasons copied from official OEB sources; null where no official share is published. Reference-customer conditions (conditional charges the typical customer of a sector pays) added October 9, 2026 per the user's decision to include a reviewed list. A SYNTHETIC business-hours load profile ('synthetic_profiles') was added October 16, 2026 (user-approved) for the Phase 7E illustrative estimate only; it never changes a model's own numbers.   Reference-customer rules for fixed charges published as phase or amperage variants ('fixed_charge_variants') added October 30, 2026 (user decision). Historical market benchmarks ('market_benchmarks') approved November 2, 2026: 60 equal-weight monthly arithmetic prices, Ontario with Class B GA and Alberta pool energy only, maximum window lag four months. These are separate from base medians and synthetic estimates, not customer-weighted bills. Method 7D-2 (owner decisions November 20, 2026): commercial gas levels for small and mid-size buildings, the s1/s2 small-business levels at 14 and 40 kW, documented backing for every level, Liberty Gas NB's peak-month factor and customer-charge rules, Energir's basic-fee band rule, and reference-customer entries for Energir's load balancing and renewable-gas socialization charges and Liberty Utility Gas. Method 7T-1 (owner decisions November 24, 2026): the territorial models reuse the residential and s1/s2 levels unchanged; each of those levels carries its northern reference points ('north', decision 73), and the NWT TPSP seasonal first block is month-weighted (seasons NT_TPSP, decision 68).",
   "days_per_month": 30.4375,
   "hours_per_month": 730.5,
   "power_factor_for_kva": 0.9,
@@ -44,7 +44,26 @@
             "date": "read 2026-11-20",
             "figure": "\"The average home in Alberta uses around 600 kilowatt hours every month.\""
           }
-        ]
+        ],
+        "north": {
+          "decided": "owner 2026-11-24 (decision 73): the territorial models reuse this level unchanged",
+          "represents": "In the territories, a household of the size used in the utilities' own bill examples (Qulliq Energy 500 kWh, Naka Power 600 kWh a month), below the NWT and Nunavut summer subsidised blocks (TPSP 600 kWh, NESP 700 kWh).",
+          "why": "Northern utilities illustrate residential bills at 500-600 kWh a month. No official average northern household consumption figure was found: the northern figures cited for the residential levels are bill examples and subsidy limits, not averages.",
+          "sources": [
+            {
+              "title": "Qulliq Energy Corporation, Interim Electricity Rates effective April 1, 2025 - General Rate Application",
+              "url": "https://www.qec.nu.ca/interim-electricity-rates-effective-april-1-2025-general-rate-application",
+              "date": "2025-04-11; read 2026-11-24",
+              "figure": "\"A residential customer using 500 kWh monthly will see an increase of approximately $14 per month.\""
+            },
+            {
+              "title": "Naka Power, Electricity Rate Updates - Effective July 1, 2026",
+              "url": "https://www.nakapower.com/en-ca/customer-billing-rates/rates-regulations/rate-updates-july-2026.html",
+              "date": "read 2026-11-24",
+              "figure": "rate impact table note: \"Residential customer using 600kWh per month\""
+            }
+          ]
+        }
       },
       {
         "id": "typical",
@@ -78,7 +97,26 @@
             "date": "2024-03-19",
             "figure": "Canada electricity 39.1 GJ per household a year (905 kWh a month, computed)"
           }
-        ]
+        ],
+        "north": {
+          "decided": "owner 2026-11-24 (decision 73): the territorial models reuse this level unchanged",
+          "represents": "In the territories, the winter subsidised block: NWT households pay the Yellowknife rate on their first 1,000 kWh a month from September to March (TPSP), and Nunavut's NESP subsidises 1,000 kWh per 30-day period from October to March.",
+          "why": "The reference level equals the territories' winter subsidy limits, so a TPSP household's winter use at this level is all in the first block. No official average northern household consumption figure was found.",
+          "sources": [
+            {
+              "title": "Northwest Territories Power Corporation, Territorial Power Support Program (TPSP)",
+              "url": "https://www.ntpc.com/customer-service/territorial-power-support-program-tpsp",
+              "date": "read 2026-11-24",
+              "figure": "\"From September 1 to March 31 each year, residential customers only pay the Yellowknife rate on the first 1,000 kilowatt hours (kWh) of power that they consume.\" ... \"From April 1 to August 31 ... on the first 600 kilowatt hours\""
+            },
+            {
+              "title": "Qulliq Energy Corporation, Customer Rates (Nunavut Electricity Subsidy Program)",
+              "url": "https://www.qec.nu.ca/customer-care/accounts-and-billing/customer-rates",
+              "date": "read 2026-11-24",
+              "figure": "\"a subsidy of 700 kWh for each 30-day period from April 1 to September 30 and 1000 kWh for each 30-day period from October 1 to March 31\""
+            }
+          ]
+        }
       },
       {
         "id": "high",
@@ -106,7 +144,20 @@
             "date": "2019 survey",
             "figure": "Quebec single detached house 81.6 GJ a year (1,889 kWh a month, computed)"
           }
-        ]
+        ],
+        "north": {
+          "decided": "owner 2026-11-24 (decision 73): the territorial models reuse this level unchanged",
+          "represents": "In the territories, a high-use household above every subsidy limit: the NWT TPSP block (1,000 kWh September-March, 600 April-August), Nunavut's NESP allowance (1,000 / 700 kWh) and the Yukon Affordability Rate Relief (the first 1,500 kWh a month), so part of its use is billed at the full rate.",
+          "why": "A sensitivity level, as elsewhere: it shows the cost beyond the subsidised blocks. No official average northern household consumption figure was found.",
+          "sources": [
+            {
+              "title": "Yukon Energy, Affordability Rate Relief Rebate (effective 2026-10-01)",
+              "url": "https://yukonenergy.ca/media/site_documents/2026-10-01_Affordability_Rate_Relief.pdf",
+              "date": "2026-10-01; read 2026-11-24",
+              "figure": "\"The rebate is -25% off energy charges (includes base rates and Rider J, J1, R and R1 only) for the first 1,500 kWh of electricity usage.\""
+            }
+          ]
+        }
       }
     ],
     "commercial_small": [
@@ -136,7 +187,20 @@
             "date": "2022-11-25",
             "figure": "General Service < 50 kW: 463,628 customers, 2,313 kWh per customer-month (computed from the published totals)"
           }
-        ]
+        ],
+        "north": {
+          "decided": "owner 2026-11-24 (decision 73): the territorial models reuse this level unchanged",
+          "represents": "In the territories, a small non-government general-service customer (shop or office) on its zone's general service class; no territorial general-service class prints a kW limit, so this level is served.",
+          "why": "No official northern commercial reference level or average was found; Naka Power's July 2026 bill example is a smaller general-service customer (1,000 kWh at 5 kW).",
+          "sources": [
+            {
+              "title": "Naka Power, Electricity Rate Updates - Effective July 1, 2026",
+              "url": "https://www.nakapower.com/en-ca/customer-billing-rates/rates-regulations/rate-updates-july-2026.html",
+              "date": "read 2026-11-24",
+              "figure": "rate impact table note: \"General Service customer using 1000kWh & 5kW per month\""
+            }
+          ]
+        }
       },
       {
         "id": "s2",
@@ -164,7 +228,20 @@
             "date": "2025-03-28",
             "figure": "General Service Small Demand: 150,560 kWh per customer-year (12,547 kWh a month, computed)"
           }
-        ]
+        ],
+        "north": {
+          "decided": "owner 2026-11-24 (decision 73): the territorial models reuse this level unchanged",
+          "represents": "In the territories, the upper end of small non-government general service (three-phase, 40 kW) on its zone's general service class, which prints no kW limit.",
+          "why": "No official northern commercial reference level or average was found; the level is reused so that territorial and provincial small-business costs compare at the same use. Naka Power's July 2026 bill example is a much smaller general-service customer.",
+          "sources": [
+            {
+              "title": "Naka Power, Electricity Rate Updates - Effective July 1, 2026",
+              "url": "https://www.nakapower.com/en-ca/customer-billing-rates/rates-regulations/rate-updates-july-2026.html",
+              "date": "read 2026-11-24",
+              "figure": "rate impact table note: \"General Service customer using 1000kWh & 5kW per month\""
+            }
+          ]
+        }
       }
     ],
     "commercial_medium": [
@@ -708,6 +785,28 @@
         "retrieved": "2026-10-30",
         "cross_check": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates (current prices table for November 1, 2026, read 2026-10-30: residential first 1,000 kWh/month winter, first 600 kWh/month summer; non-residential first 750 kWh/month; TOU and ULO hours as in the report)",
         "note": "Seasons, tier thresholds and TOU/ULO hours are unchanged from the previous report, which this entry cited until 2026-10-30: Ontario Energy Board, Regulated Price Plan Price Report, November 1, 2025 to October 31, 2026, https://www.oeb.ca/sites/default/files/rpp-price-report-20251017.pdf (executive summary 'Regulated Price Plan - Tiered Pricing', printed page 4, PDF page 5; TOU periods printed pages 3-4 and 23)."
+      }
+    },
+    "NT_TPSP": {
+      "September 1 to March 31": {
+        "label": "September 1 to March 31",
+        "months": [9, 10, 11, 12, 1, 2, 3],
+        "first_block_kwh_per_month": 1000
+      },
+      "April 1 to August 31": {
+        "label": "April 1 to August 31",
+        "months": [4, 5, 6, 7, 8],
+        "first_block_kwh_per_month": 600
+      },
+      "method": "GNWT Territorial Power Support Program (TPSP) first block in the after-subsidy cost: compute each usage level's cost once per season with that season's first block at the stored Yellowknife-rate price, which is all-in (it replaces the whole per-kWh price of the first-block kWh, riders and credits included: owner decisions 76 and 78), then month-weight: cost = (7 x September-March + 5 x April-August) / 12, as for Ontario's RPP tiers (ON_RPP). The engine checks every stored first-block threshold against first_block_kwh_per_month; a different threshold or months that do not cover the year once make the after-subsidy cost not computable.",
+      "decided": "owner 2026-11-24 (decisions 68 and 76)",
+      "source": {
+        "title": "Northwest Territories Power Corporation, Territorial Power Support Program (TPSP)",
+        "url": "https://www.ntpc.com/customer-service/territorial-power-support-program-tpsp",
+        "quote": "From September 1 to March 31 each year, residential customers only pay the Yellowknife rate on the first 1,000 kilowatt hours (kWh) of power that they consume. After 1,000 kWh, each additional kilowatt hour is charged at the Zone Rate. From April 1 to August 31 – when there are more hours of daylight – residential customers pay the Yellowknife rate (where costs are lower) on the first 600 kilowatt hours -- after that, each additional kilowatt hour, is charged at the Zone Rate.",
+        "retrieved": "2026-11-24",
+        "cross_check": "Naka Power Utilities (NWT) Rate Schedule effective July 1, 2026, Territorial Power Subsidy Program (TPSP), PDF page 32 (https://www.nakapower.com/content/dam/web/nakapower/2026-07-01-NPUNWT-rate-schedule.pdf): 'The Territorial Support is limited to 1000 kW.h per month during September to March and 600 kW.h per month during April to August, pro-rated on a 30 day charge period basis.'",
+        "note": "The block is applied per average month (1,000 or 600 kWh), as decided; Naka's pro-rating on a 30-day charge period is not modelled."
       }
     }
   },

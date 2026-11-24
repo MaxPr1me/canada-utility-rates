@@ -2,7 +2,9 @@
 
 Owner decisions 2026-11-04 and 2026-11-19: Lethbridge and Red Deer publish their wires tariff and their area's Rate of
 Last Resort, so each city is one pairs unit; Medicine Hat's bundled residential rate joins the Alberta residential
-median as flat; its business classes stay out; Lethbridge is not computable at s1; Naka Power is territorial.
+median as flat; its business classes stay out; Lethbridge is not computable at s1. Naka Power is territorial: since the
+owner decisions of 2026-11-24 its residential and general service classes join the Northwest Territories models and its
+Taltson Large General Service is left for a later territorial release.
 """
 from pathlib import Path
 
@@ -38,7 +40,9 @@ def test_every_record_is_mapped_or_excluded_with_the_owner_decisions():
     outcomes = {(r["utility_name"], r["tariff_code"]): match_record(r, load_crosswalk()) for r in CITIES}
     excluded = {key: o["exclude"] for key, o in outcomes.items() if o["exclude"]}
     assert {key for key, reason in excluded.items() if reason == "territory_planned_later"} == {
-        (u, c) for u, c in outcomes if u == "Naka Power Utilities (NWT)"}
+        ("Naka Power Utilities (NWT)", "TALTSON-LGS")}
+    assert {code for (utility, code), o in outcomes.items() if utility == "Naka Power Utilities (NWT)" and o["model"]} \
+        == {"SNARE-RES", "TALTSON-RES", "THERMAL-RES", "SNARE-GS", "TALTSON-GS"}
     assert excluded[(MEDICINE_HAT, "3.1")] == excluded[(MEDICINE_HAT, "3.3")] == "eligibility_unpublished"
     assert excluded[(LETHBRIDGE, "992")] == excluded[(LETHBRIDGE, "995")] == "no_reference_level"
     assert {key for key, reason in excluded.items() if reason == "paired_retail_component"} == {

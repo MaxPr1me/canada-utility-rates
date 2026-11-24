@@ -83,6 +83,13 @@ reading `site/data/`. Model data rules, including Across-Canada's:
   plus each contributor's chosen component. They describe the example customer, not the visitor's
   actual service or eligibility. Older exports may omit these fields.
 - Show the historical market benchmarks apart from the delivery-only table, never in place of it.
+- Territorial models (method 7T-1, owner decisions 2026-11-24): an "Interim rates: ..." badge
+  (`#models-interim`) beside the state badge when `model.interim` lists utilities; under the main
+  table, an "After automatic subsidies (before tax)" table read from `level.after_subsidy` (or the
+  model's reason when `subsidies.after_subsidy` is false, as for Nunavut), the tax note and the
+  applied and not-applied subsidies; an after-subsidy column in the contributors table; the joint
+  rate book and the reviewed percentage riders in the notes. The after-subsidy figure never replaces
+  the before-subsidy table and is never taxed or recalculated in the browser.
 - Load `model_change_history.json` independently of the shared model-data promise. Its generation,
   as-of, method, model/level identities, usage, costs and recorded last-change dates must match;
   missing or invalid history gets a retryable notice without hiding prices or breaking Across-Canada.
@@ -98,6 +105,9 @@ reading `site/data/`. Model data rules, including Across-Canada's:
 
 - A scrollable national table and grouped horizontal CSS bars by province, with a stable province hue
   and related shades per rate structure, for desktop and phone screens.
+- Territories with a model show their before-subsidy totals labelled "before subsidies" (status and
+  chart label, plus a note under the chart) and, in the row, the published after-subsidy median before
+  tax or the reason none is shown; a territory without a model keeps "Not modelled yet".
 
 ## Tests
 

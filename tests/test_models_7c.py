@@ -24,7 +24,7 @@ ON_FIXTURE = FIXTURES / "rm_engine_sample.json"
 AS_OF = "2026-10-16"
 ON_AS_OF = "2026-10-09"
 DPM = 365.25 / 12
-PROVINCES = ("ON", "AB", "BC", "MB", "NB", "NL", "NS", "PE", "QC", "SK")
+PROVINCES = ("ON", "AB", "BC", "MB", "NB", "NL", "NS", "PE", "QC", "SK", "YT", "NT", "NU")
 AB_RES = "AB|electricity|residential|flat|-"
 AB_SMALL = "AB|electricity|commercial|demand|commercial_small"
 AB_MEDIUM = "AB|electricity|commercial|demand|commercial_medium"
@@ -241,7 +241,7 @@ def test_optional_time_of_use_and_peak_event_products_stay_out_of_the_medians():
 
 def test_province_labels_method_texts_and_states_are_generic():
     result = _build()
-    assert result["method_version"] == rm.METHOD_VERSION == "7D-2"
+    assert result["method_version"] == rm.METHOD_VERSION == "7T-1"
     assert result["input"]["fuels"] == ["electricity", "gas"] and result["input"]["provinces"] == sorted(PROVINCES)
     for model in result["models"]:
         province = model["key"]["province"]
@@ -319,21 +319,25 @@ def test_market_indexed_and_aeso_records_are_excluded_by_their_own_rules():
         assert any(c["charge_value"] is None and c["market_reference"] for c in record["components"]), record["name"]
 
 
-def test_gas_models_are_residential_or_commercial_building_bands_and_territories_are_not_modelled():
+def test_gas_models_are_residential_or_commercial_building_bands_and_territories_are_electricity_only():
     records = load_rates(FIXTURES / "rm_records_sample.json") + load_rates(FIXTURES / "rm_records_b12.json")
     result = build_models(records, load_crosswalk(), load_usage_levels(), load_taxes(), provinces=None, as_of=AS_OF,
                           block_periods=None, market_document=None)
     assert {m["key"]["fuel"] for m in result["models"]} <= {"electricity", "gas"}
     gas = [m["key"] for m in result["models"] if m["key"]["fuel"] == "gas"]
     assert all(k["sector"] == "residential" or k["size_band"] in ("commercial_small", "commercial_medium") for k in gas)
-    assert not {m["key"]["province"] for m in result["models"]} & {"YT", "NT", "NU"}
+    # Territorial first release (owner decision 75, 2026-11-24): residential and small commercial electricity only.
+    territorial = {(m["key"]["province"], m["key"]["fuel"], m["key"]["sector"], m["key"]["size_band"])
+                   for m in result["models"] if m["key"]["province"] in ("YT", "NT", "NU")}
+    assert territorial == {(p, "electricity", sector, band) for p in ("YT", "NT", "NU")
+                           for sector, band in (("residential", None), ("commercial", "commercial_small"))}
     assert "Phase 7D" in result["assumptions"]["fuels"] and "left out" in result["assumptions"]["fuels"]
 
 
 def test_ontario_engine_fixture_keeps_its_7b_numbers():
     fx = json.loads((FIXTURES / "rm_engine_sample.json").read_text(encoding="utf-8"))
     result = build_models(fx, fx["crosswalk"], fx["usage_levels"], fx["taxes"], as_of="2026-10-09")
-    assert result["version"] == 1 and result["method_version"] == "7D-2" and result["as_of"] == "2026-10-09"
+    assert result["version"] == 1 and result["method_version"] == "7T-1" and result["as_of"] == "2026-10-09"
     assert result["input"]["records_considered"] == 36 and result["input"]["rates_generated_at"] == "2026-10-08T15:23:54Z"
     assert all(m["state"] in STATES and m["provenance"] == "modeled" for m in result["models"])
     typical = _level(_model(result, "ON|electricity|residential|tou|-"), "typical")
@@ -348,8 +352,9 @@ def test_ontario_engine_fixture_keeps_its_7b_numbers():
     assert xlarge["state"] == "single_source" and xlarge["levels"] == []
 
 
-def test_export_model_provinces_cover_the_ten_provinces_in_a_stable_order():
-    assert export_json.MODEL_PROVINCES == PROVINCES and len(set(PROVINCES)) == 10
+def test_export_model_provinces_cover_the_provinces_and_territories_in_a_stable_order():
+    # The territories joined on 2026-11-24 (method 7T-1, owner decisions 64-75).
+    assert export_json.MODEL_PROVINCES == PROVINCES and len(set(PROVINCES)) == 13
 
 
 def test_export_hook_writes_compact_all_province_models_and_keeps_the_previous_file(tmp_path, monkeypatch, caplog):
@@ -359,7 +364,7 @@ def test_export_hook_writes_compact_all_province_models_and_keeps_the_previous_f
     written = json.loads(text)
     assert text == json.dumps(written, separators=(",", ":"), ensure_ascii=False) + "\n"
     assert written["input"]["provinces"] == sorted(PROVINCES) and written["input"]["fuels"] == ["electricity", "gas"]
-    assert written["method_version"] == "7D-2" and AB_RES in {m["id"] for m in result["models"]}
+    assert written["method_version"] == "7T-1" and AB_RES in {m["id"] for m in result["models"]}
     previous = out.read_bytes()
 
     def broken(*args, **kwargs):

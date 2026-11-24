@@ -230,13 +230,18 @@ not modelled:
 - A rule in `data/models/crosswalk.json` must map it to a model key (province, fuel, sector,
   structure and, where relevant, size band) or exclude it with a reason from the file's exclusion
   vocabulary; add a rule when no existing rule fits. Rules are read in order and the first match
-  wins, so put a utility-specific rule before its province's generic (`*`) rules and before the
-  territory rules.
+  wins, so put a utility-specific rule before its province's generic (`*`) rules.
 - After exporting, run `python -m pipeline.representative_models --coverage` (it reads
   `site/data/rates.json`); it must report 0 unmapped. Since October 16 (Phase 7C; method 7C-3 since October 30) the
-  models cover all ten provinces, so a new record in a modelled province can change a median:
+  models cover all ten provinces, and since November 24 (method 7T-1) the three territories, so a new
+  record in a modelled province or territory can change a median:
   check `python -m pipeline.representative_models --build` (a summary; add `--output PATH` to
   write the JSON elsewhere) for the affected province.
+- **Territorial percentage riders and subsidies:** a new territorial record whose percentage rider
+  (`%` component) has no reviewed entry in `data/models/percentage_riders.json` is not computable in
+  the models; add an entry that quotes what the percentage applies to. Subsidy prices are read through
+  `data/models/subsidies.json`, which matches component names, so keep those names stable or update
+  the list in the same change.
 - **Block periods:** an energy block threshold printed in kWh without a period ("first 5,000 kWh")
   needs a reviewed entry in `data/models/block_periods.json` that quotes the tariff and records
   its `threshold_period` (for example `month` or `two_months`). When neither the tariff nor the

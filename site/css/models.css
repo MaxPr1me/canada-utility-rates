@@ -52,3 +52,8 @@
 .rm-history-event ul { padding-left: 1.25rem; }
 .rm-history-event li { margin: 0.5rem 0; }
 .rm-history-warning, .rm-history-material { color: #78350f; }
+
+/* Method 7T-1 territorial models: the cost after automatic subsidies (before tax), under the main table. */
+.rm-subsidies { margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid #cbd5e1; overflow-wrap: anywhere; }
+.rm-subsidies h4 { margin: 0.25rem 0 0.5rem; }
+.rm-subsidies details { margin-top: 0.5rem; }

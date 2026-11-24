@@ -37,3 +37,6 @@
     .across-chart-row { grid-template-columns: 7rem minmax(0, 1fr) 6rem; gap: 0.4rem; font-size: 0.85rem; }
     .across-axis { margin-left: calc(7.4rem + 17px); margin-right: 6.4rem; }
 }
+
+/* Method 7T-1: territorial totals are before subsidies; the after-subsidy cost is stated beside them. */
+.across-table .across-subsidy { margin: 0 0 0.4rem; max-width: 32rem; white-space: normal; font-weight: 600; }
