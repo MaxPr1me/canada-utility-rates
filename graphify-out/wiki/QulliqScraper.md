@@ -22,7 +22,7 @@
 
 ## Relationships
 
-- [BCHydroScraper](BCHydroScraper.md) (6 shared connections)
+- [TariffRecord](TariffRecord.md) (6 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
 - [.fetch_page](fetch_page.md) (2 shared connections)

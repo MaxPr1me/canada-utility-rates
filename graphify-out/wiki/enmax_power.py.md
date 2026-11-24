@@ -1,6 +1,6 @@
 # enmax_power.py
 
-> 51 nodes
+> 49 nodes
 
 ## Key Concepts
 
@@ -24,26 +24,27 @@
 - **_money()** (6 connections) — `scrapers/utilities/enmax_power.py`
 - **_table_rows()** (6 connections) — `scrapers/utilities/enmax_power.py`
 - **_Rider** (5 connections) — `scrapers/utilities/enmax_power.py`
-- **current_tariff_link()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_log_exclusions()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_page_with()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_split_footer()** (5 connections) — `scrapers/utilities/enmax_power.py`
 - **_Riders** (4 connections) — `scrapers/utilities/enmax_power.py`
-- *... and 26 more nodes in this community*
+- **_component()** (4 connections) — `scrapers/utilities/enmax_power.py`
+- *... and 24 more nodes in this community*
 
 ## Relationships
 
-- [re](re.md) (18 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (15 shared connections)
+- [re](re.md) (17 shared connections)
+- [DocumentPage](DocumentPage.md) (15 shared connections)
 - [BaseScraper](BaseScraper.md) (7 shared connections)
-- [ENMAXPowerScraper](ENMAXPowerScraper.md) (4 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (3 shared connections)
+- [TariffRecord](TariffRecord.md) (3 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
+- [io](io.md) (2 shared connections)
 - [parse_html](parse_html.md) (2 shared connections)
-- [aeso.py](aeso.py.md) (2 shared connections)
-- [os](os.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
-- [new_westminster.py](new_westminster.py.md) (1 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
+- [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
+- [parsing.py](parsing.py.md) (1 shared connections)
+- [ENMAXPowerScraper](ENMAXPowerScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -51,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 167 (92%)
+- EXTRACTED: 163 (92%)
 - INFERRED: 15 (8%)
 - AMBIGUOUS: 0 (0%)
 

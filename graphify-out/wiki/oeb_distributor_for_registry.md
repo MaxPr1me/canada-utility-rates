@@ -10,7 +10,7 @@
 
 ## Relationships
 
-- [ontario_ldc.py](ontario_ldc.py.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 - [OntarioLDCScraper](OntarioLDCScraper.md) (1 shared connections)
 

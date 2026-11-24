@@ -39,7 +39,7 @@
 - [OntarioLDCScraper](OntarioLDCScraper.md) `EXTRACTED`
 - [FortisBCEnergyScraper](FortisBCEnergyScraper.md) `EXTRACTED`
 - [EnergirScraper](EnergirScraper.md) `EXTRACTED`
-- [BCHydroScraper](BCHydroScraper.md) `EXTRACTED`
+- BCHydroScraper `EXTRACTED`
 - [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `EXTRACTED`
 - [NBPowerScraper](NBPowerScraper.md) `EXTRACTED`
 - NewfoundlandPowerScraper `EXTRACTED`
@@ -52,7 +52,7 @@
 - [HeritageGasScraper](HeritageGasScraper.md) `EXTRACTED`
 - LibertyGasNBScraper `EXTRACTED`
 - SaskPowerScraper `EXTRACTED`
-- [ManitobaHydroScraper](ManitobaHydroScraper.md) `EXTRACTED`
+- ManitobaHydroScraper `EXTRACTED`
 - *…and 26 more `inherits` connection(s) not listed (lowest-degree first to go)*
 
 ### method

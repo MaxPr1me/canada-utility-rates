@@ -30,7 +30,7 @@
 - *…and 40 more `calls` connection(s) not listed (lowest-degree first to go)*
 
 ### contains
-- parsing.py `EXTRACTED`
+- [parsing.py](parsing.py.md) `EXTRACTED`
 
 ### imports
 - base.py `EXTRACTED`

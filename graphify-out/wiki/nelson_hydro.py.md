@@ -1,6 +1,6 @@
 # nelson_hydro.py
 
-> 12 nodes
+> 11 nodes
 
 ## Key Concepts
 
@@ -9,7 +9,6 @@
 - **parse_rates_page()** (7 connections) — `scrapers/utilities/nelson_hydro.py`
 - **_schedule_years()** (5 connections) — `scrapers/utilities/nelson_hydro.py`
 - **_schedule()** (4 connections) — `scrapers/utilities/nelson_hydro.py`
-- **comp()** (2 connections) — `scrapers/utilities/nelson_hydro.py`
 - **_iso()** (2 connections) — `scrapers/utilities/nelson_hydro.py`
 - **date** (1 connections)
 - **nelson_hydro.py — Scraper for Nelson Hydro, the City of Nelson's electric…** (1 connections) — `scrapers/utilities/nelson_hydro.py`
@@ -19,13 +18,14 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (6 shared connections)
 - [re](re.md) (5 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
-- [RateComponent](RateComponent.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (5 shared connections)
+- [DocumentPage](DocumentPage.md) (4 shared connections)
 - [.fetch_page](fetch_page.md) (3 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
+- [TariffRecord](TariffRecord.md) (2 shared connections)
 - [parse_html](parse_html.md) (2 shared connections)
+- [parsing.py](parsing.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -33,7 +33,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 37 (92%)
+- EXTRACTED: 36 (92%)
 - INFERRED: 3 (8%)
 - AMBIGUOUS: 0 (0%)
 

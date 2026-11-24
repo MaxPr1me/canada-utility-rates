@@ -33,11 +33,12 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (18 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (18 shared connections)
+- [TariffRecord](TariffRecord.md) (18 shared connections)
+- [parsing.py](parsing.py.md) (17 shared connections)
 - [RateComponent](RateComponent.md) (10 shared connections)
 - [re](re.md) (7 shared connections)
 - [.fetch_page](fetch_page.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files

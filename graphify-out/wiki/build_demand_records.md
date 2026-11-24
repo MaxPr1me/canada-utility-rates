@@ -1,6 +1,6 @@
 # build_demand_records
 
-> 18 nodes
+> 16 nodes
 
 ## Key Concepts
 
@@ -8,14 +8,12 @@
 - **_norm_name()** (12 connections) — `scrapers/utils/oeb_tariff.py`
 - **classify_classification()** (11 connections) — `scrapers/utils/oeb_tariff.py`
 - **residential_demand_floor()** (7 connections) — `scrapers/utils/oeb_tariff.py`
+- **_allowance_applies()** (5 connections) — `scrapers/utils/oeb_tariff.py`
 - **_demand_bounds()** (5 connections) — `scrapers/utils/oeb_tariff.py`
 - **exclusion_reason()** (5 connections) — `scrapers/utils/oeb_tariff.py`
 - **_name_bounds()** (5 connections) — `scrapers/utils/oeb_tariff.py`
 - **_num()** (5 connections) — `scrapers/utils/oeb_tariff.py`
 - **_selected()** (5 connections) — `scrapers/utils/oeb_tariff.py`
-- **_today_iso()** (4 connections) — `scrapers/utils/oeb_tariff.py`
-- **date** (4 connections)
-- **connection_not_printed_note()** (3 connections) — `scrapers/utils/oeb_tariff.py`
 - **_tariff_code()** (3 connections) — `scrapers/utils/oeb_tariff.py`
 - **kW floor of a residential class billed on a demand basis; ``None`` unless every…** (1 connections) — `scrapers/utils/oeb_tariff.py`
 - **Categorise a classification for record builders; one of ``CLASS_CATEGORIES``.…** (1 connections) — `scrapers/utils/oeb_tariff.py`
@@ -26,15 +24,14 @@
 ## Relationships
 
 - [oeb_tariff.py](oeb_tariff.py.md) (14 shared connections)
-- [Classification](Classification.md) (9 shared connections)
-- [TariffSheet](TariffSheet.md) (3 shared connections)
-- [parse_tariff_pages](parse_tariff_pages.md) (3 shared connections)
-- [._tariff_demand_records](_tariff_demand_records.md) (2 shared connections)
-- [close_class](close_class.md) (2 shared connections)
+- [Classification](Classification.md) (8 shared connections)
+- [parse_tariff_pages](parse_tariff_pages.md) (4 shared connections)
+- [TariffCharge](TariffCharge.md) (2 shared connections)
+- [._energy_entries](_energy_entries.md) (2 shared connections)
 - [class_loss_factors](class_loss_factors.md) (2 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (1 shared connections)
+- [TariffSheet](TariffSheet.md) (2 shared connections)
+- [TariffRecord](TariffRecord.md) (1 shared connections)
 - [OntarioLDCScraper](OntarioLDCScraper.md) (1 shared connections)
-- [ontario_ldc.py](ontario_ldc.py.md) (1 shared connections)
 - [_dedupe_classifications](_dedupe_classifications.md) (1 shared connections)
 
 ## Source Files
@@ -43,8 +40,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 67 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 63 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

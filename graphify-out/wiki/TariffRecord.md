@@ -1,108 +1,62 @@
 # TariffRecord
 
-> God node · 423 connections · `scrapers/base.py`
+> 42 nodes
 
-**Community:** [BCHydroScraper](BCHydroScraper.md)
+## Key Concepts
 
-## Connections by Relation
+- **TariffRecord** (423 connections) — `scrapers/base.py`
+- **BCHydroScraper** (25 connections) — `scrapers/utilities/bc_hydro.py`
+- **._try_live_scrape()** (19 connections) — `scrapers/utilities/bc_hydro.py`
+- **._parse_business_tariff()** (10 connections) — `scrapers/utilities/bc_hydro.py`
+- **TorontoHydroScraper** (9 connections) — `scrapers/utilities/toronto_hydro.py`
+- **._numbered_section()** (9 connections) — `scrapers/utilities/bc_hydro.py`
+- **._parse_freshet_energy()** (7 connections) — `scrapers/utilities/bc_hydro.py`
+- **._parse_net_metering_tariff()** (7 connections) — `scrapers/utilities/bc_hydro.py`
+- **._parse_residential_options()** (7 connections) — `scrapers/utilities/bc_hydro.py`
+- **._parse_residential_tariff()** (7 connections) — `scrapers/utilities/bc_hydro.py`
+- **._parse_transmission_pilots()** (7 connections) — `scrapers/utilities/bc_hydro.py`
+- **._tariff_document()** (7 connections) — `scrapers/utilities/bc_hydro.py`
+- **._parse_standard_charges()** (6 connections) — `scrapers/utilities/bc_hydro.py`
+- **._parse_business()** (6 connections) — `scrapers/utilities/bc_hydro.py`
+- **._parse_community_generation_tariff()** (6 connections) — `scrapers/utilities/bc_hydro.py`
+- **._parse_self_generation_tariff()** (6 connections) — `scrapers/utilities/bc_hydro.py`
+- **._parse_transmission_tariff()** (6 connections) — `scrapers/utilities/bc_hydro.py`
+- **.scrape()** (6 connections) — `scrapers/utilities/bc_hydro.py`
+- **._seed_data()** (6 connections) — `scrapers/utilities/bc_hydro.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/toronto_hydro.py`
+- **._parse_residential()** (4 connections) — `scrapers/utilities/bc_hydro.py`
+- **._seed_data()** (4 connections) — `scrapers/utilities/toronto_hydro.py`
+- **._try_live_scrape()** (4 connections) — `scrapers/utilities/toronto_hydro.py`
+- **value()** (3 connections) — `scrapers/utilities/bc_hydro.py`
+- **._extract_step_rate()** (2 connections) — `scrapers/utilities/bc_hydro.py`
+- *... and 17 more nodes in this community*
 
-### calls
-- build_demand_records() `EXTRACTED`
-- _parse_class() `EXTRACTED`
-- _build_record() `EXTRACTED`
-- _build_record() `EXTRACTED`
-- _tariff() `EXTRACTED`
-- parse_manual() `EXTRACTED`
-- parse_schedule() `EXTRACTED`
-- parse_schedule() `EXTRACTED`
-- parse_schedule() `EXTRACTED`
-- parse_rates() `EXTRACTED`
-- parse_manual() `EXTRACTED`
-- rolr_record() `EXTRACTED`
-- parse_rates() `EXTRACTED`
-- parse_appendix() `EXTRACTED`
-- parse_bylaw() `EXTRACTED`
-- parse_tariff() `EXTRACTED`
-- build_interruptible_record() `EXTRACTED`
-- _record() `EXTRACTED`
-- build_records() `EXTRACTED`
-- finish() `EXTRACTED`
-- *…and 5 more `calls` connection(s) not listed (lowest-degree first to go)*
+## Relationships
 
-### contains
-- base.py `EXTRACTED`
+- [RateComponent](RateComponent.md) (39 shared connections)
+- [.fetch_page](fetch_page.md) (28 shared connections)
+- [BaseScraper](BaseScraper.md) (27 shared connections)
+- [parsing.py](parsing.py.md) (22 shared connections)
+- [DocumentPage](DocumentPage.md) (21 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (18 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (17 shared connections)
+- [.mark_live_parsed](mark_live_parsed.md) (15 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (13 shared connections)
+- [.now_iso](now_iso.md) (13 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (12 shared connections)
+- [maritime_electric.py](maritime_electric.py.md) (11 shared connections)
 
-### imports
-- [oeb_tariff.py](oeb_tariff.py.md) `EXTRACTED`
-- [enmax_power.py](enmax_power.py.md) `EXTRACTED`
-- [epcor_distribution.py](epcor_distribution.py.md) `EXTRACTED`
-- [fortisbc_electric.py](fortisbc_electric.py.md) `EXTRACTED`
-- [ntpc.py](ntpc.py.md) `EXTRACTED`
-- [ontario_ldc.py](ontario_ldc.py.md) `EXTRACTED`
-- [run_scrape.py](run_scrape.py.md) `EXTRACTED`
-- [fortisalberta.py](fortisalberta.py.md) `EXTRACTED`
-- epcor_gas_ontario.py `EXTRACTED`
-- nl_hydro.py `EXTRACTED`
-- atco_electric.py `EXTRACTED`
-- enbridge_gas.py `EXTRACTED`
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) `EXTRACTED`
-- atco_gas.py `EXTRACTED`
-- enmax_energy.py `EXTRACTED`
-- alberta_rolr.py `EXTRACTED`
-- manitoba_hydro.py `EXTRACTED`
-- [naka_power.py](naka_power.py.md) `EXTRACTED`
-- nb_power.py `EXTRACTED`
-- [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
-- *…and 30 more `imports` connection(s) not listed (lowest-degree first to go)*
+## Source Files
 
-### rationale_for
-- A complete tariff / rate plan scraped from a utility. Contains one or more… `EXTRACTED`
+- `scrapers/base.py`
+- `scrapers/utilities/bc_hydro.py`
+- `scrapers/utilities/toronto_hydro.py`
 
-### references
-- .mark_live_parsed() `EXTRACTED`
-- .mark_fallback() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._build() `EXTRACTED`
-- .parse_pages() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._pdf_records() `EXTRACTED`
-- ._parse_building_extras() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._schedule_record() `EXTRACTED`
-- ._build_egd_contract() `EXTRACTED`
-- ._build_m4() `EXTRACTED`
-- ._build_un_contract() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._parse_spec() `EXTRACTED`
-- ._build_general() `EXTRACTED`
-- ._build_m5() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- ._try_live_scrape() `EXTRACTED`
-- .parse_documents() `EXTRACTED`
-- *…and 249 more `references` connection(s) not listed (lowest-degree first to go)*
+## Audit Trail
 
-### uses
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) `INFERRED`
-- [EnbridgeGasScraper](EnbridgeGasScraper.md) `INFERRED`
-- [CentraGasScraper](CentraGasScraper.md) `INFERRED`
-- [OntarioLDCScraper](OntarioLDCScraper.md) `INFERRED`
-- [FortisBCEnergyScraper](FortisBCEnergyScraper.md) `INFERRED`
-- [EnergirScraper](EnergirScraper.md) `INFERRED`
-- [BCHydroScraper](BCHydroScraper.md) `INFERRED`
-- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) `INFERRED`
-- [NBPowerScraper](NBPowerScraper.md) `INFERRED`
-- NewfoundlandPowerScraper `INFERRED`
-- main() `INFERRED`
-- [ATCOGasScraper](ATCOGasScraper.md) `INFERRED`
-- HydroQuebecScraper `INFERRED`
-- NLHydroScraper `INFERRED`
-- MaritimeElectricScraper `INFERRED`
-- [SaskEnergyScraper](SaskEnergyScraper.md) `INFERRED`
-- YukonEnergyScraper `INFERRED`
-- [HeritageGasScraper](HeritageGasScraper.md) `INFERRED`
-- LibertyGasNBScraper `INFERRED`
-- parse_sources() `INFERRED`
-- *…and 57 more `uses` connection(s) not listed (lowest-degree first to go)*
+- EXTRACTED: 457 (85%)
+- INFERRED: 82 (15%)
+- AMBIGUOUS: 0 (0%)
 
 ---
 

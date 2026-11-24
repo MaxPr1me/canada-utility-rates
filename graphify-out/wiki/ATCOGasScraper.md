@@ -1,6 +1,6 @@
 # ATCOGasScraper
 
-> 51 nodes
+> 53 nodes
 
 ## Key Concepts
 
@@ -22,26 +22,27 @@
 - **._rider_e()** (5 connections) — `scrapers/utilities/atco_gas.py`
 - **_amount()** (5 connections) — `scrapers/utilities/atco_gas.py`
 - **._pdf_pages()** (5 connections) — `scrapers/utilities/atco_gas.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/atco_gas.py`
 - **_Page** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **RiderTable** (4 connections) — `scrapers/utilities/atco_gas.py`
+- **._seed_data()** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **._today()** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **_soup_text()** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **ClassSpec** (3 connections) — `scrapers/utilities/atco_gas.py`
-- **Commodity** (3 connections) — `scrapers/utilities/atco_gas.py`
-- **DeemedValue** (3 connections) — `scrapers/utilities/atco_gas.py`
-- *... and 26 more nodes in this community*
+- *... and 28 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (10 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (8 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
-- [RateComponent](RateComponent.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (9 shared connections)
+- [TariffRecord](TariffRecord.md) (7 shared connections)
+- [RateComponent](RateComponent.md) (6 shared connections)
+- [DocumentPage](DocumentPage.md) (5 shared connections)
 - [parse_html](parse_html.md) (4 shared connections)
 - [.fetch_page](fetch_page.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [main](main.md) (1 shared connections)
+- [check_db_history.py](check_db_history.py.md) (1 shared connections)
+- [parsing.py](parsing.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 150 (98%)
+- EXTRACTED: 155 (98%)
 - INFERRED: 3 (2%)
 - AMBIGUOUS: 0 (0%)
 

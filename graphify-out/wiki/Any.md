@@ -1,47 +1,43 @@
 # Any
 
-> 29 nodes
+> 23 nodes
 
 ## Key Concepts
 
 - **Any** (26 connections)
-- **record_monthly_cost()** (12 connections) — `pipeline/representative_models.py`
-- **_select_variants()** (11 connections) — `pipeline/representative_models.py`
-- **_context()** (10 connections) — `pipeline/representative_models.py`
 - **block_periods_config()** (7 connections) — `pipeline/representative_models.py`
-- **_variant_rule_applies()** (6 connections) — `pipeline/representative_models.py`
-- **_clean()** (5 connections) — `pipeline/representative_models.py`
-- **bucket_of()** (5 connections) — `pipeline/representative_models.py`
-- **fixed_charge_variant_rules()** (5 connections) — `pipeline/representative_models.py`
-- **gas_volume_unit()** (5 connections) — `pipeline/representative_models.py`
-- **months_from_text()** (5 connections) — `pipeline/representative_models.py`
-- **season_months()** (5 connections) — `pipeline/representative_models.py`
-- **_variant_rule_kind()** (5 connections) — `pipeline/representative_models.py`
+- **_annual_band_groups()** (5 connections) — `pipeline/representative_models.py`
+- **apply_usage_bounds()** (5 connections) — `pipeline/representative_models.py`
+- **bands_for_demand()** (5 connections) — `pipeline/representative_models.py`
+- **_kw()** (5 connections) — `pipeline/representative_models.py`
+- **load_market_document()** (5 connections) — `pipeline/representative_models.py`
+- **record_covers_level()** (5 connections) — `pipeline/representative_models.py`
+- **resolve_size_band()** (5 connections) — `pipeline/representative_models.py`
+- **_market_context()** (4 connections) — `pipeline/representative_models.py`
 - **peak_month_factor()** (4 connections) — `pipeline/representative_models.py`
 - **reference_customer_entries()** (4 connections) — `pipeline/representative_models.py`
 - **_block_period_problem()** (3 connections) — `pipeline/representative_models.py`
-- **Whether a fixed_charge_variants rule applies to a prepared record at one level:…** (1 connections) — `pipeline/representative_models.py`
-- **(chosen variants, indexes of the blockers they resolve) at one usage level. A…** (1 connections) — `pipeline/representative_models.py`
-- **Modeled monthly cost of one record at (kWh/month, kW) with an itemized…** (1 connections) — `pipeline/representative_models.py`
+- **annual()** (1 connections) — `pipeline/representative_models.py`
+- **Fixed charges published as bands of annual volume (tier numbers with a per-year…** (1 connections) — `pipeline/representative_models.py`
+- **Bands whose reference kW the [min, max) demand range covers; else bands…** (1 connections) — `pipeline/representative_models.py`
+- **Normalise a rule size_band (None, id, list or '@demand_bounds') to a list of…** (1 connections) — `pipeline/representative_models.py`
+- **True when the record's published demand ([min, max) kW, or the inclusivity of a…** (1 connections) — `pipeline/representative_models.py`
+- **The observed Ontario market history (default…** (1 connections) — `pipeline/representative_models.py`
+- **Copy of a record with reviewed eligibility bounds from crosswalk usage_bounds;…** (1 connections) — `pipeline/representative_models.py`
 - **usage_levels 'reference_customer' entries for a province, fuel (missing = any…** (1 connections) — `pipeline/representative_models.py`
-- **levels' (selected by usage-level id), 'peak_month' (by the level's monthly…** (1 connections) — `pipeline/representative_models.py`
-- **usage_levels 'fixed_charge_variants' rules for a fuel (missing = any fuel),…** (1 connections) — `pipeline/representative_models.py`
 - **The usage_levels 'peak_month_factors' entry (ratio of the peak month to the…** (1 connections) — `pipeline/representative_models.py`
-- **Months named by a season text ('12,1,2', 'Sep-Apr', 'November 1 - April 30');…** (1 connections) — `pipeline/representative_models.py`
-- **Months a seasonal component applies in (None = all year) and a problem text…** (1 connections) — `pipeline/representative_models.py`
-- *... and 4 more nodes in this community*
+- **Usable entries of a block_periods document ({'entries': [...]}) or entry list;…** (1 connections) — `pipeline/representative_models.py`
 
 ## Relationships
 
-- [representative_models.py](representative_models.py.md) (20 shared connections)
-- [date](date.md) (12 shared connections)
-- [build_models](build_models.md) (4 shared connections)
+- [representative_models.py](representative_models.py.md) (13 shared connections)
+- [_build_model](_build_model.md) (10 shared connections)
+- [build_models](build_models.md) (6 shared connections)
+- [_select_variants](_select_variants.md) (5 shared connections)
 - [_prepare](_prepare.md) (4 shared connections)
-- [apply_usage_bounds](apply_usage_bounds.md) (3 shared connections)
-- [re](re.md) (2 shared connections)
-- [_price](_price.md) (2 shared connections)
+- [main](main.md) (3 shared connections)
 - [market_pricing.py](market_pricing.py.md) (1 shared connections)
-- [main](main.md) (1 shared connections)
+- [re](re.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,7 +45,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 90 (100%)
+- EXTRACTED: 68 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

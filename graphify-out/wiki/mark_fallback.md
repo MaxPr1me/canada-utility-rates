@@ -33,16 +33,17 @@
 
 ## Relationships
 
-- [BCHydroScraper](BCHydroScraper.md) (14 shared connections)
+- [TariffRecord](TariffRecord.md) (11 shared connections)
 - [RateComponent](RateComponent.md) (10 shared connections)
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [.fetch_page](fetch_page.md) (6 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (8 shared connections)
+- [.fetch_page](fetch_page.md) (7 shared connections)
+- [DocumentPage](DocumentPage.md) (4 shared connections)
 - [.__init__](__init__.md) (2 shared connections)
+- [.now_iso](now_iso.md) (2 shared connections)
 - [parse_html](parse_html.md) (2 shared connections)
+- [parsing.py](parsing.py.md) (2 shared connections)
 - [re](re.md) (2 shared connections)
 - [_strings](_strings.md) (1 shared connections)
-- [ENMAXPowerScraper](ENMAXPowerScraper.md) (1 shared connections)
 
 ## Source Files
 

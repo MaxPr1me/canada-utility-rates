@@ -1,6 +1,6 @@
 # .mark_live_parsed
 
-> 50 nodes
+> 55 nodes
 
 ## Key Concepts
 
@@ -10,7 +10,9 @@
 - **._parse_spec()** (17 connections) — `scrapers/utilities/nl_hydro.py`
 - **._parse_labrador_nonfirm()** (12 connections) — `scrapers/utilities/nl_hydro.py`
 - **_flat()** (12 connections) — `scrapers/utilities/nl_hydro.py`
+- **.parse_schedule_pages()** (11 connections) — `scrapers/utilities/nl_hydro.py`
 - **._published_sections()** (11 connections) — `scrapers/utilities/nl_hydro.py`
+- **._try_live_scrape()** (11 connections) — `scrapers/utilities/nl_hydro.py`
 - **._parse_island_industrial()** (10 connections) — `scrapers/utilities/nl_hydro.py`
 - **._parse_island_nonfirm()** (10 connections) — `scrapers/utilities/nl_hydro.py`
 - **_energy_components()** (10 connections) — `scrapers/utilities/nl_hydro.py`
@@ -27,20 +29,19 @@
 - **._audit_island_industrial_other()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_option_components()** (7 connections) — `scrapers/utilities/nl_hydro.py`
 - **_verify_nonfirm_formula()** (7 connections) — `scrapers/utilities/nl_hydro.py`
-- **_energy_rows()** (6 connections) — `scrapers/utilities/nl_hydro.py`
-- **_money_rows()** (6 connections) — `scrapers/utilities/nl_hydro.py`
-- *... and 25 more nodes in this community*
+- *... and 30 more nodes in this community*
 
 ## Relationships
 
 - [RateComponent](RateComponent.md) (16 shared connections)
+- [TariffRecord](TariffRecord.md) (15 shared connections)
 - [re](re.md) (15 shared connections)
-- [.fetch_page](fetch_page.md) (12 shared connections)
-- [BCHydroScraper](BCHydroScraper.md) (12 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (12 shared connections)
-- [BaseScraper](BaseScraper.md) (10 shared connections)
+- [DocumentPage](DocumentPage.md) (13 shared connections)
+- [BaseScraper](BaseScraper.md) (12 shared connections)
+- [.fetch_page](fetch_page.md) (6 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [parse_html](parse_html.md) (1 shared connections)
+- [parsing.py](parsing.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +49,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 209 (99%)
+- EXTRACTED: 225 (99%)
 - INFERRED: 3 (1%)
 - AMBIGUOUS: 0 (0%)
 

@@ -20,14 +20,14 @@
 ## Relationships
 
 - [oeb_tariff.py](oeb_tariff.py.md) (7 shared connections)
-- [parse_tariff_pages](parse_tariff_pages.md) (5 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
-- [build_demand_records](build_demand_records.md) (3 shared connections)
+- [parse_tariff_pages](parse_tariff_pages.md) (6 shared connections)
+- [DocumentPage](DocumentPage.md) (4 shared connections)
+- [build_demand_records](build_demand_records.md) (2 shared connections)
 - [class_loss_factors](class_loss_factors.md) (1 shared connections)
-- [close_class](close_class.md) (1 shared connections)
+- [TariffCharge](TariffCharge.md) (1 shared connections)
 - [_dedupe_classifications](_dedupe_classifications.md) (1 shared connections)
 - [Classification](Classification.md) (1 shared connections)
-- [parse_bill_data](parse_bill_data.md) (1 shared connections)
+- [._load_sheets](_load_sheets.md) (1 shared connections)
 
 ## Source Files
 

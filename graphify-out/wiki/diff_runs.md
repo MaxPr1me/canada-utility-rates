@@ -13,7 +13,7 @@
 ## Relationships
 
 - [run_scrape.py](run_scrape.py.md) (3 shared connections)
-- [main](main.md) (1 shared connections)
+- [check_db_history.py](check_db_history.py.md) (1 shared connections)
 
 ## Source Files
 
