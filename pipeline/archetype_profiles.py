@@ -15,6 +15,9 @@ bins follow each market's own clock (market-data rules): the IESO heatmap is in 
 are not shifted; the AESO heatmap is in Alberta's prevailing local time, so Calgary steps inside daylight saving move one
 hour later (today's rule on the 2006 calendar: from the second Sunday of March at 02:00 standard time to the first Sunday
 of November at 01:00 standard time). Both heatmaps count holidays as the weekday they fall on, and so do the bins here.
+One known difference, one hour a year: AESO labels the hour before the spring change (01:00-02:00 standard time) HE03
+and its heatmap files it in hour 2 (HE-1), while decision 94 leaves that hour unshifted in hour 1 here. The autumn
+repeated hour (HE02 and HE02*) matches. The difference is open with the owner, not corrected silently.
 
 Failure behaviour: a missing or unreadable results workbook, or one without the expected columns, raises
 ``ArchetypeDataError``; a run that fails any check is left out with its reason in ``ArchetypeSet.problems``.

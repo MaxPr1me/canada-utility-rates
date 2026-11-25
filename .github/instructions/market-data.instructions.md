@@ -190,7 +190,8 @@ them: [website.instructions.md](website.instructions.md).
 - **Market Benchmarks** (`market-benchmarks.yml`): runs after each successful Monthly Scrape, after
   every Ontario Price Archive run (also a failed one, to isolate Alberta), after relevant code and
   model-input pushes (including `data/btap/**` and `pipeline/archetype_profiles.py`, which the
-  simulated-shape sidecar reads; reading the 68 runs takes about half a minute) and on dispatch. It
+  simulated-shape sidecar reads; GitHub's runners read the 68 runs in seconds, the owner's Windows
+  computer in about half a minute) and on dispatch. It
   tests, builds the Alberta history and refreshes the models
   without writing the database, committing the Alberta quarterly file and the model quarterly file
   with them; a failure opens an issue and the site keeps its published files.
