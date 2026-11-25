@@ -6,12 +6,14 @@ on:
     paths:
       - "scripts/build_alberta_market.py"
       - "pipeline/representative_models.py"
+      - "pipeline/archetype_profiles.py"
       - "pipeline/model_monitoring.py"
       - "scripts/model_monitoring_issue.js"
       - ".github/workflows/model-monitoring.yml"
       - "scrapers/utils/market_pricing.py"
       - "scrapers/utilities/aeso.py"
       - "data/models/**"
+      - "data/btap/**"
       - ".github/workflows/market-benchmarks.yml"
   workflow_dispatch:
   workflow_run:
@@ -59,7 +61,7 @@ jobs:
           pip install -e .
 
       - name: Test market ingestion and benchmarks
-        run: python -m pytest -q tests/test_alberta_market.py tests/test_ws4_aeso.py tests/test_market_benchmarks.py tests/test_models_7c.py tests/test_model_monitoring.py
+        run: python -m pytest -q tests/test_alberta_market.py tests/test_ws4_aeso.py tests/test_market_benchmarks.py tests/test_models_7c.py tests/test_model_monitoring.py tests/test_archetype_profiles.py
 
       - name: Synchronize inputs before calculating
         run: git pull --ff-only origin main

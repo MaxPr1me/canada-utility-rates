@@ -1630,7 +1630,7 @@
             explain: "A quarter shows the published model cost in effect at its end (its last recorded refresh); the current "
                 + "quarter shows the latest recorded value, labelled \u201cquarter in progress\u201d (decision 50). Representative "
                 + "models are comparison aids, not bills: the median monthly cost across utilities at this example usage, "
-                + "never recalculated here. The synthetic illustrative estimate is never charted.",
+                + "never recalculated here. The opt-in simulated market energy estimate is never charted.",
             caption: `Monthly cost in CAD, ${state.model.tax === "before" ? "before tax and rebates" : "with tax and rebates"}`,
             extraNotes: [], quarters: known.length ? quarterRange(known[0], known[known.length - 1]) : [], breaks,
             missing: new Set(), missingReason: "", lines,

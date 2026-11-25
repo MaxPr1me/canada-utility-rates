@@ -104,7 +104,7 @@ def build(documents):
     return rm.build_models(_records() + _on_fixture()["records"],
                            rm.load_crosswalk(), rm.load_usage_levels(), rm.load_taxes(),
                            provinces=("ON", "AB"), as_of=AS_OF, market_document=None,
-                           market_documents=documents)
+                           market_documents=documents, archetypes=None)
 
 
 def test_market_benchmarks_do_not_change_base_models_or_rolr():

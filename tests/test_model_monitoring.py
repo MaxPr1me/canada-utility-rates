@@ -18,7 +18,7 @@ def document():
     return {
         "version": 1, "method_version": "test-method",
         "generated_at": "2026-11-01T08:15:00+00:00", "as_of": "2026-11-01",
-        "assumptions": {"days_per_month": 30.4375, "synthetic_profiles": {"test": {"hours": 12}}},
+        "assumptions": {"days_per_month": 30.4375, "simulated_profiles": {"test": {"hours": 12}}},
         "input": {"latest_record_created_at": "2026-11-01"},
         "models": [{
             "id": "example", "key": {"province": "ON", "fuel": "electricity"},
@@ -112,16 +112,16 @@ def test_timestamps_order_and_synthetic_changes_do_not_change_semantics(document
     after["models"][0]["coverage"]["contributing_utilities"].reverse()
     after["models"][0]["illustrative"] = {"available": False}
     after["models"][0]["levels"][0]["illustrative_all_in"]["with_tax"]["median"] = 5000
-    after["assumptions"]["synthetic_profiles"]["test"]["hours"] = 18
+    after["assumptions"]["simulated_profiles"]["test"]["hours"] = 18
     assert monitoring.semantic_models(document) == monitoring.semantic_models(after)
 
 
 def test_input_hashes_exclude_synthetic_edits_but_preserve_first_match_order():
     inputs = {"crosswalk": {"rules": [{"id": "first"}, {"id": "second"}]},
-              "usage_levels": {"electricity": {"levels": [1000]}, "synthetic_profiles": {"hours": 12},
+              "usage_levels": {"electricity": {"levels": [1000]}, "simulated_profiles": {"hours": 12},
                                "updated": "before"}}
     hashes = monitoring.input_fingerprints(inputs)
-    inputs["usage_levels"].update(synthetic_profiles={"hours": 20}, updated="after")
+    inputs["usage_levels"].update(simulated_profiles={"hours": 20}, updated="after")
     assert monitoring.input_fingerprints(inputs) == hashes
     inputs["crosswalk"]["rules"].reverse()
     assert monitoring.input_fingerprints(inputs)["crosswalk"] != hashes["crosswalk"]
@@ -511,12 +511,13 @@ def test_configuration_health_catches_missing_and_soft_failed_inputs(tmp_path, f
         assert "unmapped" in " ".join(check["details"])
 
 
+@pytest.mark.parametrize("flag", ["synthetic_profile", "simulated_profile"])
 @pytest.mark.parametrize("where", ["model", "level"])
-def test_synthetic_benchmark_flags_are_rejected_at_both_scopes(document, where):
+def test_synthetic_benchmark_flags_are_rejected_at_both_scopes(document, where, flag):
     target = document["models"][0]
     if where == "level":
         target = target["levels"][0]
-    target["market_benchmark"] = {"available": False, "synthetic_profile": True}
+    target["market_benchmark"] = {"available": False, flag: True}
     with pytest.raises(ValueError, match="observed benchmark"):
         monitoring.semantic_models(document)
 

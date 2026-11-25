@@ -635,10 +635,10 @@ def test_market_pricing_rejects_other_methods(tmp_path, method):
         market_pricing.load_ontario_market_pricing(path)
 
 
-# -- synthetic load profile (Phase 7E, illustrative) -------------------------------------------------
+# -- market energy of a load shape (owner decisions 11 and 12; method 7S-1) -------------------------
 
-BUSINESS = 12 * 365.25 * 5 / 7 / 12
-OTHER = 730.5 - BUSINESS
+SHAPE_KEYS = [(month, kind, hour) for month in range(1, 13) for kind in ("weekday", "weekend") for hour in range(24)]
+EQUAL_MONTHS = {month: 1000.0 for month in range(1, 13)}
 
 
 def _month_keys(end, count=60):
@@ -646,91 +646,112 @@ def _month_keys(end, count=60):
     return [f"{i // 12:04d}-{i % 12 + 1:02d}" for i in range(index - count + 1, index + 1)]
 
 
-def _synthetic_document(end="2026-08"):
-    """Hand-computable: weekday hours 7-18 at 0.10 $/kWh (July 0.20), other hours 0.05; 10 or 4 hours per bin."""
+def _shape_document(end="2026-08", province="ON"):
+    """Hand-computable: weekday hours 7-18 at 0.10 $/kWh (July 0.20), other hours 0.05; 10 or 4 hours per bin.
+
+    Window months 2021-09..2026-08 have energy 0.050 + 0.001 x their position (0..59) and, in Ontario, Class B GA 0.04.
+    """
     surface = []
     for month in range(1, 13):
         for kind in ("weekday", "weekend"):
             for hour in range(24):
                 business = kind == "weekday" and 7 <= hour <= 18
                 price = (0.20 if month == 7 else 0.10) if business else 0.05
-                surface.append({"month": month, "day_type": kind, "hour": hour, "hours_count": 10 if kind == "weekday"
-                                else 4, "avg_energy_price": price, "avg_ga_class_b": 0.04, "combined": price + 0.04,
-                                "hours_hoep": 0, "hours_oemp": 10 if kind == "weekday" else 4})
+                surface.append({"month": month, "day_type": kind, "hour": hour,
+                                "hours_count": 10 if kind == "weekday" else 4, "avg_energy_price": price})
     keys = _month_keys(end)
-    monthly = [{"month": key, "era": "oemp", "energy_arithmetic": round(0.05 + 0.001 * index, 6),
-                "energy_weighted": 0.06, "ga_class_b": 0.04, "total_arithmetic": round(0.09 + 0.001 * index, 6),
-                "energy_source": "oemp_monthly_table", "ga_source": "ga_workbook", "observed_hours": 0}
-               for index, key in enumerate(keys)]
-    metadata = {"derivation_method": market_pricing.ROLLING_METHOD,
-                "window": {"start_month": keys[0], "end_month": keys[-1], "months": 60}}
+    monthly = []
+    for index, key in enumerate(keys):
+        entry = {"month": key, "energy_arithmetic": round(0.05 + 0.001 * index, 6)}
+        if province == "ON":
+            entry.update(era="oemp", ga_class_b=0.04, total_arithmetic=round(0.09 + 0.001 * index, 6))
+        monthly.append(entry)
+    method = market_pricing.ROLLING_METHOD if province == "ON" else market_pricing.ALBERTA_METHOD
+    metadata = {"derivation_method": method, "window": {"start_month": keys[0], "end_month": keys[-1], "months": 60}}
     return {"metadata": metadata, "monthly": monthly, "hourly_surface": surface}
 
 
-def _expected_price(document, kwh, kw):
-    base = (kwh - kw * BUSINESS) / OTHER
-    factors = {}
-    for month in range(1, 13):
-        high = 0.20 if month == 7 else 0.10
-        time_weighted = (120 * high + 120 * 0.05 + 96 * 0.05) / 336
-        profile = (kw * 120 * high + base * 120 * 0.05 + base * 96 * 0.05) / (kw * 120 + base * 120 + base * 96)
-        factors[month] = profile / time_weighted
-    totals = [entry["energy_arithmetic"] * factors[int(entry["month"][5:])] + entry["ga_class_b"]
-              for entry in document["monthly"]]
-    return base, factors, sum(totals) / len(totals)
+def _flat(kw=50.0):
+    return {key: kw for key in SHAPE_KEYS}
 
 
-@pytest.mark.parametrize("kwh,kw", [(40000, 100), (500000, 1000)])
-def test_synthetic_profile_price_on_a_hand_computable_surface(kwh, kw):
-    document = _synthetic_document()
-    result = market_pricing.synthetic_profile_price(document, kwh=kwh, kw=kw, as_of=date(2026, 10, 16))
-    base, factors, price = _expected_price(document, kwh, kw)
-    assert result["ok"] is True and result["reason"] is None
-    assert result["price_per_kwh"] == pytest.approx(price, abs=1e-6)
-    assert result["label"] == "SYNTHETIC LOAD PROFILE - ILLUSTRATIVE ONLY"
-    profile = result["profile"]
-    assert profile["base_kw"] == pytest.approx(base, abs=1e-6) and profile["peak_kw"] == kw
-    assert profile["business_hours_beginning"] == list(range(7, 19)) and profile["days"] == "Monday-Friday"
-    assert profile["business_hours_per_month"] == pytest.approx(260.892857, abs=1e-6)
-    assert profile["other_hours_per_month"] == pytest.approx(469.607143, abs=1e-6)
+def _business_only(kw=100.0):
+    return {key: kw if key[1] == "weekday" and 7 <= key[2] <= 18 else 0.0 for key in SHAPE_KEYS}
+
+
+def _shape_price(document, bins, months=EQUAL_MONTHS, province="ON", **options):
+    options.setdefault("as_of", date(2026, 10, 16))
+    return market_pricing.load_shape_price(document, province=province, bin_kw=bins, month_kwh=months, **options)
+
+
+def test_a_flat_load_prices_at_the_kwh_weighted_mean_of_the_monthly_totals():
+    result = _shape_price(_shape_document(), _flat())
+    assert result["ok"] is True and result["reason"] is None and result["province"] == "ON"
+    assert result["shape_factors"] == {str(month): 1.0 for month in range(1, 13)}
+    # Mean energy of the 60 months 0.050 + 0.001 x 29.5 = 0.0795, plus Class B GA 0.04.
+    assert result["price_per_kwh"] == pytest.approx(0.1195, abs=1e-6)
     assert result["window"] == {"start_month": "2021-09", "end_month": "2026-08", "months": 60}
-    assert result["shape_factors"] == {str(m): pytest.approx(factors[m], abs=1e-6) for m in range(1, 13)}
-    assert len(result["months"]) == 60 and result["months"][0]["month"] == "2021-09"
-    july = next(entry for entry in result["months"] if entry["month"] == "2026-07")
-    assert july["shaped_energy"] == pytest.approx(july["energy_level"] * factors[7], abs=1e-6)
-    assert july["total"] == pytest.approx(july["shaped_energy"] + 0.04, abs=1e-6)
-    assert result["profile"]["base_kw"] == pytest.approx(29.622024 if kw == 100 else 509.164195, abs=1e-6)
+    # Only July's kWh: the five Julys of the window (positions 10, 22, 34, 46, 58) average 0.084, plus GA.
+    july = _shape_price(_shape_document(), _flat(), {month: 500.0 if month == 7 else 0.0 for month in range(1, 13)})
+    assert july["price_per_kwh"] == pytest.approx(0.124, abs=1e-6) and july["month_prices"]["7"] == 0.124
 
 
-def _not_ok(document, reason, **options):
-    arguments = {"kwh": 40000, "kw": 100, "as_of": date(2026, 10, 16), **options}
-    result = market_pricing.synthetic_profile_price(document, **arguments)
+def test_a_business_hours_load_pays_its_hours_price_shape_and_its_own_month_weights():
+    january = {month: 1000.0 if month == 1 else 0.0 for month in range(1, 13)}
+    result = _shape_price(_shape_document(), _business_only(), january)
+    # Factor = load-weighted 0.10 / time-weighted (120 x 0.10 + 216 x 0.05) / 336; July uses 0.20.
+    assert result["shape_factors"]["1"] == pytest.approx(0.10 / (22.8 / 336), abs=1e-6)
+    assert result["shape_factors"]["7"] == pytest.approx(0.20 / (34.8 / 336), abs=1e-6)
+    # The five Januarys (positions 4, 16, 28, 40, 52) average 0.078 energy.
+    assert result["price_per_kwh"] == pytest.approx(0.078 * 0.10 / (22.8 / 336) + 0.04, abs=1e-6)
+
+
+def test_alberta_shapes_price_pool_energy_only():
+    document = _shape_document(province="AB")
+    result = _shape_price(document, _flat(), province="AB")
+    assert result["ok"] is True and result["price_per_kwh"] == pytest.approx(0.0795, abs=1e-6)
+    with_ga = copy.deepcopy(document)
+    with_ga["monthly"][3]["ga_class_b"] = 0.04
+    refused = _shape_price(with_ga, _flat(), province="AB")
+    assert refused["ok"] is False and "no Ontario Global Adjustment" in refused["reason"]
+    assert "not the AB rolling observed history" in _shape_price(_shape_document(), _flat(), province="AB")["reason"]
+
+
+def _refused(reason, document=None, bins=None, months=EQUAL_MONTHS, **options):
+    result = _shape_price(_shape_document() if document is None else document, _flat() if bins is None else bins,
+                          months, **options)
     assert result["ok"] is False and result["price_per_kwh"] is None, result
     assert reason in result["reason"], result["reason"]
-    assert result["label"] == "SYNTHETIC LOAD PROFILE - ILLUSTRATIVE ONLY"
 
 
-def test_synthetic_profile_price_refuses_doubtful_inputs():
-    document = _synthetic_document()
+def test_load_shape_price_refuses_doubtful_inputs():
+    document = _shape_document()
     legacy = copy.deepcopy(document)
     legacy["metadata"]["derivation_method"] = "observed_legacy_hoep_2020_2024_average"
-    _not_ok(legacy, "not the rolling observed history")
-    _not_ok(document, "stale market history", as_of=date(2027, 1, 1))
-    assert market_pricing.synthetic_profile_price(document, kwh=40000, kw=100, as_of=date(2026, 12, 31))["ok"]
-    _not_ok(document, "base load would be negative", kwh=1000)
-    _not_ok(document, "would exceed the business-hours load", kwh=100000, kw=10)
-    _not_ok(document, "kwh and kw must be positive", kwh=0)
+    _refused("not the ON rolling observed history", legacy)
+    _refused("no observed market history for province 'BC'", province="BC")
+    _refused("stale market history: the window ends 2026-08, 5 months before 2027-01-01", as_of=date(2027, 1, 1))
+    assert _shape_price(document, _flat(), as_of=date(2026, 12, 31))["ok"]
+    _refused("not complete on 2026-08-20", as_of=date(2026, 8, 20))
+    partial = _flat()
+    partial.pop((3, "weekend", 4))
+    _refused("non-negative kW for each of the 576", bins=partial)
+    _refused("non-negative kW for each of the 576", bins={**_flat(), (1, "weekday", 0): -1.0})
+    _refused("non-negative kWh for each calendar month", months={month: 1.0 for month in range(1, 12)})
+    _refused("with a positive total", months={month: 0.0 for month in range(1, 13)})
+    _refused("calendar month 2: the load shape uses no energy", bins={
+        key: 0.0 if key[0] == 2 else 1.0 for key in SHAPE_KEYS})
     cheap = copy.deepcopy(document)
     for entry in cheap["hourly_surface"]:
         if entry["month"] == 3:
             entry["avg_energy_price"] = 0.0005
-    _not_ok(cheap, "calendar month 3: time-weighted mean energy")
+    _refused("calendar month 3: time-weighted mean energy", cheap)
     missing_bin = copy.deepcopy(document)
     missing_bin["hourly_surface"].pop(100)
-    _not_ok(missing_bin, "bins or monthly records missing/invalid")
+    _refused("bins or monthly records missing/invalid", missing_bin)
     missing_month = copy.deepcopy(document)
     missing_month["monthly"].pop(10)
-    _not_ok(missing_month, "bins or monthly records missing/invalid")
-    bad_value = copy.deepcopy(document)
-    bad_value["monthly"][5]["ga_class_b"] = None
-    _not_ok(bad_value, "bins or monthly records missing/invalid")
+    _refused("bins or monthly records missing/invalid", missing_month)
+    no_ga = copy.deepcopy(document)
+    no_ga["monthly"][5]["ga_class_b"] = None
+    _refused("bins or monthly records missing/invalid", no_ga)

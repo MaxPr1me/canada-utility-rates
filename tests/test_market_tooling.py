@@ -130,6 +130,8 @@ def test_market_workflow_rebuilds_after_sources_and_model_input_changes():
     triggers = workflow.get("on", workflow.get(True))
     assert triggers["workflow_run"]["workflows"] == ["Monthly Scrape", "Ontario Price Archive"]
     assert "data/models/**" in triggers["push"]["paths"]
+    # Method 7S-1: the simulated-shape sidecar reads the BTAP runs, so changing them or their reader rebuilds too.
+    assert {"data/btap/**", "pipeline/archetype_profiles.py"} <= set(triggers["push"]["paths"])
     assert triggers["push"]["branches"] == ["main"]
     assert "workflow_dispatch" in triggers
     condition = workflow["jobs"]["market"]["if"]

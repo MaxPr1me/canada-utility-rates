@@ -76,7 +76,9 @@ VOLATILE_FIELDS = {
     "latest_record_created_at", "file", "input",
 }
 ORDERED_FIELDS = {"rules", "entries", "reference_customer", "fixed_charge_variants"}
-SYNTHETIC_FIELDS = {"illustrative", "illustrative_all_in", "synthetic_profiles"}
+# Opt-in estimates and their inputs never enter fingerprints or the change history (safeguard 8): the Phase 7E synthetic
+# fields stay listed so that histories recorded before method 7S-1 still compare.
+SYNTHETIC_FIELDS = {"illustrative", "illustrative_all_in", "synthetic_profiles", "simulated_profiles"}
 
 
 def timestamp(value: str) -> datetime:
@@ -166,7 +168,8 @@ def _median(summary: Any) -> float | int | None:
 
 def _check_benchmark(value: Any) -> None:
     if value is not None and (not isinstance(value, dict) or type(value.get("available")) is not bool
-                              or value.get("synthetic_profile") or value.get("illustrative_only")):
+                              or value.get("synthetic_profile") or value.get("simulated_profile")
+                              or value.get("illustrative_only")):
         raise ValueError("invalid observed benchmark")
 
 

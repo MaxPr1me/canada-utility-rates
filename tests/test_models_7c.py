@@ -1,9 +1,9 @@
 """Phase 7C representative models: every province with live data, Alberta wires + Rate of Last Resort pairs, plus the
-7C-2 additions (two-month charges, reviewed block periods, required contributors, contributor nouns) and the Phase 7E
-illustrative sidecar (synthetic load profile).
+7C-2 additions (two-month charges, reviewed block periods, required contributors, contributor nouns) and method 7S-1
+(the opt-in simulated-shape sidecar and the province-specific 50-499 kW and 500-4,999 kW example customers).
 
-Frozen fixtures and inline market documents only (tests/fixtures/rm_records_b14.json plus the 7A/7B samples), so the
-tests never depend on the live export or the live market file.
+Frozen fixtures, inline market documents and in-memory simulated runs only (tests/fixtures/rm_records_b14.json plus
+the 7A/7B samples), so the tests never depend on the live export, the live market file or the BTAP folder.
 """
 import copy
 import json
@@ -16,7 +16,9 @@ from pipeline import export_json, representative_models as rm
 from pipeline.representative_models import (build_models, compose_pairs, coverage_report, latest_live_records,
                                             load_crosswalk, load_rates, load_taxes, load_usage_levels, match_record,
                                             record_covers_level, record_monthly_cost)
-from scrapers.utils.market_pricing import ROLLING_METHOD, synthetic_profile_price
+from pipeline import archetype_profiles
+from pipeline.archetype_profiles import ArchetypeDataError, ArchetypeRun, ArchetypeSet
+from scrapers.utils.market_pricing import ALBERTA_METHOD, ROLLING_METHOD, load_shape_price
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 FIXTURE = FIXTURES / "rm_records_b14.json"
@@ -37,7 +39,8 @@ ON_LARGE = "ON|electricity|commercial|demand|commercial_large"
 ENMAX, ATCO = "ENMAX Power + ENMAX Energy Corporation", "ATCO Electric + Direct Energy Regulated Services"
 EPCOR, FORTIS = "EPCOR Distribution + EPCOR Energy Alberta", "FortisAlberta + EPCOR Energy Alberta"
 STATES = {"modeled", "single_source", "market_energy_pending", "not_computable"}
-SYNTHETIC = "SYNTHETIC LOAD PROFILE - ILLUSTRATIVE ONLY"
+SIMULATED = "SIMULATED LOAD SHAPES - MARKET ENERGY ESTIMATE, NOT A BILL"
+PROFILE = "BTAP_NECB2020_BAND_ARCHETYPES"
 BCH_1101 = {"id": "test-bc-hydro-1101", "utility": "BC Hydro", "match": {"tariff_code": "1101"},
             "threshold_period": "two_months", "quote": "Bi-monthly threshold shown; monthly threshold is 675 kWh.",
             "source_url": "https://example.org/bchydro-electric-tariff.pdf", "location": "Rate Schedule 1101",
@@ -55,7 +58,7 @@ def _by_id(record_id):
 def _build(records=None, provinces=PROVINCES, crosswalk=None, block_periods=None, market_document=None):
     return build_models(_records() if records is None else records, crosswalk or load_crosswalk(), load_usage_levels(),
                         load_taxes(), provinces=provinces, as_of=AS_OF, block_periods=block_periods,
-                        market_document=market_document)
+                        market_document=market_document, archetypes=None)
 
 
 def _model(result, model_id):
@@ -268,7 +271,7 @@ def test_optional_time_of_use_and_peak_event_products_stay_out_of_the_medians():
 
 def test_province_labels_method_texts_and_states_are_generic():
     result = _build()
-    assert result["method_version"] == rm.METHOD_VERSION == "7T-1"
+    assert result["method_version"] == rm.METHOD_VERSION == "7S-1"
     assert result["input"]["fuels"] == ["electricity", "gas"] and result["input"]["provinces"] == sorted(PROVINCES)
     for model in result["models"]:
         province = model["key"]["province"]
@@ -364,7 +367,7 @@ def test_gas_models_are_residential_or_commercial_building_bands_and_territories
 def test_ontario_engine_fixture_keeps_its_7b_numbers():
     fx = json.loads((FIXTURES / "rm_engine_sample.json").read_text(encoding="utf-8"))
     result = build_models(fx, fx["crosswalk"], fx["usage_levels"], fx["taxes"], as_of="2026-10-09")
-    assert result["version"] == 1 and result["method_version"] == "7T-1" and result["as_of"] == "2026-10-09"
+    assert result["version"] == 1 and result["method_version"] == "7S-1" and result["as_of"] == "2026-10-09"
     assert result["input"]["records_considered"] == 36 and result["input"]["rates_generated_at"] == "2026-10-08T15:23:54Z"
     assert all(m["state"] in STATES and m["provenance"] == "modeled" for m in result["models"])
     typical = _level(_model(result, "ON|electricity|residential|tou|-"), "typical")
@@ -391,7 +394,7 @@ def test_export_hook_writes_compact_all_province_models_and_keeps_the_previous_f
     written = json.loads(text)
     assert text == json.dumps(written, separators=(",", ":"), ensure_ascii=False) + "\n"
     assert written["input"]["provinces"] == sorted(PROVINCES) and written["input"]["fuels"] == ["electricity", "gas"]
-    assert written["method_version"] == "7T-1" and AB_RES in {m["id"] for m in result["models"]}
+    assert written["method_version"] == "7S-1" and AB_RES in {m["id"] for m in result["models"]}
     previous = out.read_bytes()
 
     def broken(*args, **kwargs):
@@ -613,13 +616,14 @@ def _on_fixture(inject=True, profiles=True):
                 record["components"].append(_c("energy", None, "$/kWh", "Market Energy (OEMP + Class B GA)",
                                                market_reference="IESO OEMP + GA (Class B)"))
     if profiles:
-        fx["usage_levels"]["synthetic_profiles"] = load_usage_levels()["synthetic_profiles"]
+        fx["usage_levels"]["simulated_profiles"] = load_usage_levels()["simulated_profiles"]
     return fx
 
 
 def _on_build(fx, **kwargs):
     kwargs.setdefault("block_periods", None)
     kwargs.setdefault("market_document", None)
+    kwargs.setdefault("archetypes", None)
     return build_models(fx, fx["crosswalk"], fx["usage_levels"], fx["taxes"], as_of=ON_AS_OF, **kwargs)
 
 
@@ -632,6 +636,8 @@ def _market_doc(end="2026-08", energy=0.05, ga=0.06, method=ROLLING_METHOD, busi
     months = [_month_key(i) for i in range(last - 59, last + 1)]
     monthly = [{"month": m, "era": "hoep" if m < "2025-05" else "oemp", "energy_arithmetic": energy,
                 "ga_class_b": ga, "total_arithmetic": round(energy + ga, 6)} for m in months]
+    if method == ALBERTA_METHOD:
+        monthly = [{"month": m, "energy_arithmetic": energy, "total_arithmetic": energy} for m in months]
     surface = [{"month": month, "day_type": kind, "hour": hour, "hours_count": 20 if kind == "weekday" else 8,
                 "avg_energy_price": business if business and kind == "weekday" and 7 <= hour <= 18 else energy}
                for month in range(1, 13) for kind in ("weekday", "weekend") for hour in range(24)]
@@ -649,6 +655,34 @@ def _without_sidecar(models):
     return out
 
 
+SHAPE_KEYS = [(month, kind, hour) for month in range(1, 13) for kind in ("weekday", "weekend") for hour in range(24)]
+
+
+def _run(datapoint, peak_kw, province="ON", business=1.0, building="MediumOffice"):
+    """A simulated run with an average monthly peak of peak_kw: weekday hours 7-18 at business x peak, else 0.3 x."""
+    bins = {key: peak_kw * (business if key[1] == "weekday" and 7 <= key[2] <= 18 else 0.3) for key in SHAPE_KEYS}
+    return ArchetypeRun(datapoint_id=datapoint, building_type=building, heating_fuel="Electricity", province=province,
+                        city="Toronto" if province == "ON" else "Calgary", weather_file=f"CAN_{province}_Test.epw",
+                        climate_zone="6", floor_area_m2=30.0 * peak_kw, unmet_heating_occupied=0.0,
+                        unmet_cooling_occupied=400.0 if datapoint.endswith("-b") else 0.0,
+                        monthly_kwh=(250.0 * peak_kw,) * 12, monthly_peak_kw=(float(peak_kw),) * 12,
+                        monthly_gas_gj=(0.0,) * 12, market_bin_kw=bins,
+                        market_month_kwh={month: 250.0 * peak_kw for month in range(1, 13)})
+
+
+RUNS = {run.datapoint_id: run for run in (
+    _run("on-a", 100), _run("on-b", 200, business=0.3, building="Warehouse"), _run("on-c", 400),
+    _run("on-big", 1500, building="Hospital"), _run("on-small", 30), _run("ab-a", 100, "AB"),
+    _run("ab-big", 1200, "AB", building="LargeOffice"))}
+ARCHETYPES = ArchetypeSet(root=str(FIXTURES), runs=tuple(RUNS.values()), problems=(), workbook_rows=len(RUNS))
+
+
+def _shape_price(document, datapoint, province="ON", as_of=ON_AS_OF):
+    run = RUNS[datapoint]
+    return load_shape_price(document, province=province, bin_kw=run.market_bin_kw, month_kwh=run.market_month_kwh,
+                            as_of=as_of)["price_per_kwh"]
+
+
 def test_contributor_nouns_name_what_each_model_counts_once():
     result = _build()
     assert _model(result, AB_RES)["coverage"]["contributor_noun"] == {
@@ -659,104 +693,151 @@ def test_contributor_nouns_name_what_each_model_counts_once():
                            for m in ontario)
 
 
-def test_usage_levels_hold_the_user_approved_synthetic_profile():
-    profile = load_usage_levels()["synthetic_profiles"]["ON_SYNTHETIC_BUSINESS_HOURS"]
-    assert profile["applies_to"] == {"province": "ON", "fuel": "electricity",
+def test_usage_levels_document_the_simulated_profile_and_the_province_example_customers():
+    usage = load_usage_levels()
+    profile = usage["simulated_profiles"][PROFILE]
+    assert "synthetic_profiles" not in usage
+    assert profile["applies_to"] == {"provinces": ["ON", "AB"], "fuel": "electricity",
                                      "sectors": ["commercial_medium", "commercial_large"]}
-    assert profile["status"].startswith("SYNTHETIC: user-approved 2026-10-16") and profile["label"] == SYNTHETIC
-    assert profile["business_hours_beginning"] == list(range(7, 19)) and profile["max_window_lag_months"] == 4
-    assert (profile["days"], profile["time_basis"]) == ("Monday-Friday", "EST (IESO market time)")
-    assert profile["holidays"] == "counted as the weekday they fall on" and "base_load" in profile
-    assert "not a forecast, a quote or a bill" in profile["caveat"] and profile["caveat"].endswith(
-        "Needs further analysis.")
+    assert profile["label"] == SIMULATED and profile["badge"] == "SIMULATED" and profile["max_window_lag_months"] == 4
+    assert profile["status"].startswith("SIMULATED: requested by the owner 2026-11-25")
+    assert profile["decided"] and profile["represents"] and profile["why"] and profile["sources"]
+    assert "not metered customers" in profile["caveat"]
+    # Method 7S-1: Ontario and Alberta keep their bill-impact customers; the other provinces use the archetype size.
+    for sector, ours, theirs in (("commercial_medium", (40000, 100), (25000, 100)),
+                                 ("commercial_large", (500000, 1000), (250000, 1000))):
+        for province in ("ON", "AB", "BC", "SK", "MB", "QC", "NB", "NS", "PE", "NL"):
+            applicable = [lv for lv in usage["electricity"][sector] if rm.level_applies(lv, province)]
+            assert [(lv["kwh"], lv["kw"]) for lv in applicable] == [ours if province in ("ON", "AB") else theirs]
+        assert not any(rm.level_applies(lv, "YT") for lv in usage["electricity"][sector])
+    with pytest.raises(ValueError, match="'provinces' must be a list of province codes"):
+        rm.level_applies({"id": "x", "provinces": "ON"}, "ON")
 
 
-def test_illustrative_sidecar_adds_synthetic_market_energy_and_never_changes_the_model():
-    fx = _on_fixture()
-    result = _on_build(fx, market_document=_market_doc())
-    baseline = _on_build(_on_fixture(profiles=False), market_document=_market_doc())
+def test_each_model_prices_the_example_customer_of_its_own_province():
+    result = _build(provinces=("AB", "NS"))
+    for model_id, level_id, usage in ((AB_MEDIUM, "m1", (40000, 100)), (AB_LARGE, "l1", (500000, 1000)),
+                                      ("NS|electricity|commercial|demand|commercial_medium", "m1", (25000, 100)),
+                                      ("NS|electricity|commercial|demand|commercial_large", "l1", (250000, 1000))):
+        assert [(lv["id"], lv["kwh"], lv["kw"]) for lv in _model(result, model_id)["levels"]] == [(level_id, *usage)]
+    doubled = load_usage_levels()
+    doubled["electricity"]["commercial_medium"].append(dict(doubled["electricity"]["commercial_medium"][1]))
+    with pytest.raises(ValueError, match=r"more than one entry \['m1'\] applies to NS"):
+        build_models(_records(), load_crosswalk(), doubled, load_taxes(), provinces=("NS",), as_of=AS_OF,
+                     block_periods=None, market_document=None, archetypes=None)
+
+
+def test_simulated_sidecar_prices_market_energy_with_the_band_archetypes_and_never_changes_the_model():
+    document = _market_doc(business=0.08)
+    result = _on_build(_on_fixture(), market_document=document, archetypes=ARCHETYPES)
+    baseline = _on_build(_on_fixture(profiles=False), market_document=document, archetypes=ARCHETYPES)
     assert _without_sidecar(result["models"]) == baseline["models"]
     assert _level(_model(result, ON_MEDIUM), "m1")["without_tax"]["median"] == 1908.08
-    for model_id in (ON_MEDIUM, ON_LARGE):
+    shaped, flat = _shape_price(document, "on-a"), _shape_price(document, "on-b")
+    assert flat == 0.11 and shaped > flat and _shape_price(document, "on-c") == shaped
+    for model_id, buildings, price in ((ON_MEDIUM, ["on-b", "on-a", "on-c"], shaped),
+                                       (ON_LARGE, ["on-big"], _shape_price(document, "on-big"))):
         model = _model(result, model_id)
         assert model["state"] == "market_energy_pending"
         assert model["cost_basis"] == "delivery_only_market_energy_pending"
         info = model["illustrative"]
-        assert info["available"] is True and info["reason"] is None and info["profile_id"] == "ON_SYNTHETIC_BUSINESS_HOURS"
-        assert info["label"] == SYNTHETIC and info["caveat"].endswith("Needs further analysis.")
+        assert info["available"] is True and info["reason"] is None and info["profile_id"] == PROFILE
+        assert info["simulated"] is True and info["label"] == SIMULATED and info["badge"] == "SIMULATED"
+        assert [b["datapoint_id"] for b in info["buildings"]] == buildings and info["price_per_kwh"] == price
         assert info["window"] == {"start_month": "2021-09", "end_month": "2026-08", "months": 60}
         assert info["market_file"] == {"derivation_method": ROLLING_METHOD, "generated_at": "2026-10-16T00:00:00Z"}
-        assert info["method"].startswith(SYNTHETIC + ":")
+        assert info["method"].startswith(SIMULATED + ":")
         for text in ("2021-09 to 2026-08", "44 legacy HOEP months, 16 Ontario Price months", "shape factor",
-                     "Class B Global Adjustment only", "loss factors not modelled", "needs further analysis",
-                     "not a forecast, a quote or a bill", "hours beginning 7-18 EST (IESO market time)",
-                     "mean of the 60 monthly totals", "state stays market_energy_pending"):
+                     "Class B Global Adjustment only", "loss factors", "not a forecast, a quote or a bill",
+                     "Eastern Standard Time all year", "median building price", "not metered customers",
+                     "state stays market_energy_pending", f"the {len(buildings)} archetype runs simulated in Toronto"):
             assert text in info["method"], text
         level = model["levels"][0]
         sidecar = level["illustrative_all_in"]
-        assert sidecar["synthetic_profile"] is True and sidecar["illustrative_only"] is True
-        assert sidecar["label"] == SYNTHETIC and sidecar["market_energy_per_kwh"] == pytest.approx(0.11)
-        assert sidecar["market_energy_cost"] == pytest.approx(0.11 * level["kwh"])
-        assert sidecar["profile"]["peak_kw"] == level["kw"] and sidecar["profile"]["business_hours_beginning"] == list(
-            range(7, 19))
+        assert sidecar["simulated_profile"] is True and sidecar["illustrative_only"] is True
+        assert sidecar["label"] == SIMULATED and sidecar["profile_id"] == PROFILE
+        assert sidecar["market_energy_per_kwh"] == price
+        assert sidecar["market_energy_cost"] == round(price * level["kwh"], 2)
+        low = min(b["price_per_kwh"] for b in info["buildings"])
+        assert sidecar["market_energy_range"] == {"min_per_kwh": low, "max_per_kwh": price, "buildings": len(buildings),
+                                                  "min_cost": round(low * level["kwh"], 2),
+                                                  "max_cost": round(price * level["kwh"], 2)}
         assert set(sidecar["without_tax"]) == set(level["without_tax"])
         assert set(sidecar["with_tax"]) == set(level["with_tax"])
         assert sidecar["without_tax"]["n"] == level["without_tax"]["n"]
         for stat in ("median", "min", "max"):
-            assert sidecar["without_tax"][stat] == pytest.approx(level["without_tax"][stat] + 0.11 * level["kwh"],
+            assert sidecar["without_tax"][stat] == pytest.approx(level["without_tax"][stat] + price * level["kwh"],
                                                                  abs=0.011)
         rate = sum(line["rate"] for line in level["with_tax"]["lines"] if line["kind"] == "sales_tax")
         assert rate > 0 and sidecar["with_tax"]["median"] == pytest.approx(
             sidecar["without_tax"]["median"] * (1 + rate), abs=0.02)
-        assert [line["name"] for line in sidecar["with_tax"]["lines"]] == [line["name"] for line in
-                                                                          level["with_tax"]["lines"]]
         assert sidecar["with_tax"]["not_applied"] == level["with_tax"]["not_applied"]
+    assert _model(result, ON_MEDIUM)["illustrative"]["buildings"][0] == {
+        "datapoint_id": "on-b", "building_type": "Warehouse", "heating_fuel": "Electricity", "city": "Toronto",
+        "floor_area_m2": 6000.0, "average_monthly_kwh": 50000, "average_monthly_peak_kw": 200.0, "kwh_per_kw": 250.0,
+        "quality_flag": True, "price_per_kwh": 0.11}
+    simulated = result["assumptions"]["simulated_profiles"]
+    assert list(simulated["profiles"]) == [PROFILE] and simulated["market_files"]["ON"] == info["market_file"]
+    assert simulated["archetypes"]["runs"] == len(RUNS) and simulated["archetypes"]["cities"] == {
+        "AB": ["Calgary"], "ON": ["Toronto"]}
 
 
-def test_illustrative_price_is_the_market_helpers_synthetic_profile_price():
-    document = _market_doc(business=0.08)
-    level = _level(_model(_on_build(_on_fixture(), market_document=document), ON_MEDIUM), "m1")
-    expected = synthetic_profile_price(document, kwh=40000.0, kw=100.0, business_hours=list(range(7, 19)),
-                                       as_of=ON_AS_OF, max_lag_months=4)
-    assert expected["ok"] and expected["price_per_kwh"] > 0.11
-    sidecar = level["illustrative_all_in"]
-    assert sidecar["market_energy_per_kwh"] == expected["price_per_kwh"]
-    assert sidecar["months"] == expected["months"] and sidecar["shape_factors"] == expected["shape_factors"]
-    assert sidecar["market_energy_cost"] == round(expected["price_per_kwh"] * 40000, 2)
-
-
-def test_illustrative_sidecar_is_unavailable_when_the_market_file_is_missing_wrong_or_stale(tmp_path, monkeypatch):
+def test_simulated_sidecar_is_unavailable_when_an_input_is_missing_wrong_or_stale(tmp_path, monkeypatch):
     fx = _on_fixture()
     monkeypatch.setattr(rm, "MARKET_PATH", tmp_path / "missing.json")
-    bad = tmp_path / "bad.json"
-    bad.write_text("{", encoding="utf-8")
-    cases = [("market history file missing.json not found", _on_build(fx, market_document=rm._DEFAULT)),
-             ("no market history document was supplied", _on_build(fx)),
-             ("not the rolling observed history",
-              _on_build(fx, market_document=_market_doc(method="observed_legacy_hoep_2020_2024_average"))),
+    alberta_only = ArchetypeSet(root=str(tmp_path), runs=(RUNS["ab-a"],), problems=(), workbook_rows=1)
+    cases = [("market history file missing.json not found",
+              _on_build(fx, market_document=rm._DEFAULT, archetypes=ARCHETYPES)),
+             ("no market history document was supplied", _on_build(fx, archetypes=ARCHETYPES)),
+             ("not the ON rolling observed history",
+              _on_build(fx, market_document=_market_doc(method="observed_legacy_hoep_2020_2024_average"),
+                        archetypes=ARCHETYPES)),
              ("stale market history: the window ends 2026-05, 5 months before 2026-10-09",
-              _on_build(fx, market_document=_market_doc(end="2026-05")))]
-    monkeypatch.setattr(rm, "MARKET_PATH", bad)
-    cases.append(("market history file bad.json not usable", _on_build(fx, market_document=rm._DEFAULT)))
+              _on_build(fx, market_document=_market_doc(end="2026-05"), archetypes=ARCHETYPES)),
+             ("no simulated archetypes were supplied", _on_build(fx, market_document=_market_doc())),
+             ("no simulated archetype in ON has an average monthly peak in this size band",
+              _on_build(fx, market_document=_market_doc(), archetypes=alberta_only))]
+
+    def broken(root=None):
+        raise ArchetypeDataError("BTAP results workbook missing")
+
+    monkeypatch.setattr(archetype_profiles, "load_archetypes", broken)
+    cases.append(("simulated archetypes unavailable (ArchetypeDataError: BTAP results workbook missing)",
+                  _on_build(fx, market_document=_market_doc(), archetypes=rm._DEFAULT)))
     for text, result in cases:
         for model_id in (ON_MEDIUM, ON_LARGE):
             model = _model(result, model_id)
             info = model["illustrative"]
             assert info["available"] is False and text in info["reason"], (text, info["reason"])
-            assert model["state"] == "market_energy_pending" and info["method"] is None
+            assert model["state"] == "market_energy_pending" and info["method"] is None and info["buildings"] == []
             assert not any("illustrative_all_in" in level for level in model["levels"])
     stale = _model(cases[3][1], ON_MEDIUM)["illustrative"]
     assert stale["window"] == {"start_month": "2021-06", "end_month": "2026-05", "months": 60}
+    assert cases[-1][1]["assumptions"]["simulated_profiles"]["archetypes"] == {
+        "available": False, "problem": "simulated archetypes unavailable (ArchetypeDataError: BTAP results workbook "
+                                       "missing)"}
 
 
-def test_illustrative_sidecar_only_for_market_pending_models_in_the_profile_scope():
-    result = _on_build(_on_fixture(), market_document=_market_doc())
-    assert {m["id"] for m in result["models"] if "illustrative" in m} == {ON_MEDIUM, ON_LARGE}
-    delivery = _model(_on_build(_on_fixture(inject=False), market_document=_market_doc()), ON_MEDIUM)
+def test_simulated_sidecar_covers_market_pending_ontario_and_alberta_models_only():
+    delivery = _model(_on_build(_on_fixture(inject=False), market_document=_market_doc(), archetypes=ARCHETYPES),
+                      ON_MEDIUM)
     assert delivery["state"] != "market_energy_pending"
     assert delivery["illustrative"]["available"] is False
     assert delivery["illustrative"]["reason"].startswith(f"model state is {delivery['state']}")
-    alberta = _build(market_document=_market_doc())
-    assert _model(alberta, AB_MEDIUM)["state"] == "market_energy_pending"
-    assert not any("illustrative" in m for m in alberta["models"])
-    assert alberta["assumptions"]["market_file"] is None
+    pool = _market_doc(method=ALBERTA_METHOD, business=0.08)
+    result = build_models(_records(), load_crosswalk(), load_usage_levels(), load_taxes(), provinces=PROVINCES,
+                          as_of=AS_OF, block_periods=None, market_documents={"ON": None, "AB": pool},
+                          archetypes=ARCHETYPES)
+    assert all(m["key"]["province"] in ("ON", "AB") for m in result["models"] if "illustrative" in m)
+    for model_id, buildings in ((AB_MEDIUM, ["ab-a"]), (AB_LARGE, ["ab-big"])):
+        model = _model(result, model_id)
+        info = model["illustrative"]
+        assert model["state"] == "market_energy_pending" and info["available"] is True, info["reason"]
+        assert [b["datapoint_id"] for b in info["buildings"]] == buildings
+        assert info["price_per_kwh"] == _shape_price(pool, buildings[0], "AB", AS_OF) and info["price_per_kwh"] < 0.08
+        for text in ("Pool energy only", "Alberta prevailing local time", "simulated in Calgary"):
+            assert text in info["method"], text
+        assert "Global Adjustment" not in info["method"]
+    assert result["assumptions"]["simulated_profiles"]["market_files"]["ON"] is None
+    assert build_models(_records(), load_crosswalk(), load_usage_levels(), load_taxes(), provinces=("BC",),
+                        as_of=AS_OF, block_periods=None, archetypes=None)["assumptions"]["simulated_profiles"] is None

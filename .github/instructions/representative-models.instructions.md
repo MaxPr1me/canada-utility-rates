@@ -1,6 +1,6 @@
 ---
-description: "Use when changing representative models, model change monitoring, their inputs or the views that read them. Covers crosswalk rules, required contributors, usage, taxes, block periods, model states, separate synthetic/observed sidecars, semantic change history, the quarter-end model costs for Rate History, METHOD_VERSION and Across-Canada constraints."
-applyTo: "pipeline/representative_models.py, pipeline/model_monitoring.py, tests/test_model_monitoring.py, tests/test_model_cost_quarterly.py, data/models/**, site/js/models.js, site/js/across-canada.js, site/css/models.css, site/css/across-canada.css, site/data/representative_models.json, site/data/model_change_history.json, site/data/model_cost_quarterly.json"
+description: "Use when changing representative models, model change monitoring, their inputs or the views that read them. Covers crosswalk rules, required contributors, usage levels (including province-specific ones), taxes, block periods, model states, separate simulated/observed sidecars, semantic change history, the quarter-end model costs for Rate History, METHOD_VERSION and Across-Canada constraints."
+applyTo: "pipeline/representative_models.py, pipeline/archetype_profiles.py, pipeline/model_monitoring.py, tests/test_model_monitoring.py, tests/test_model_cost_quarterly.py, tests/test_archetype_profiles.py, data/models/**, site/js/models.js, site/js/across-canada.js, site/css/models.css, site/css/across-canada.css, site/data/representative_models.json, site/data/model_change_history.json, site/data/model_cost_quarterly.json"
 ---
 # Representative models
 
@@ -14,7 +14,8 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   received a new version (7C-3: decisions of 2026-10-30; 7C-4: market benchmark sidecars,
   2026-11-02; 7D-1: residential gas models, 2026-11-04; 7D-2: commercial gas, reviewed class bounds
   and the s1/s2 levels, decisions of 2026-11-20; 7T-1: territorial models, decisions 64-79 of
-  2026-11-24); update the tests that assert it.
+  2026-11-24; 7S-1: the simulated-shape sidecar and the province-specific m1/l1 levels, requested by
+  the owner 2026-11-25 with choices still to confirm); update the tests that assert it.
 - `export_json.export_all()` calls `export_representative_models()` after the other exports
   (`MODEL_PROVINCES` = all 13 jurisdictions: ON, AB, BC, MB, NB, NL, NS, PE, QC, SK, YT, NT, NU;
   `zone_policy="median_of_zones"`). The
@@ -185,6 +186,14 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   10,000 kWh at 40 kW (s2, three phase; decisions 27-28 of 2026-11-20 replaced 10 kW and 8,000 kWh
   at 25 kW); 50-499 kW 40,000 kWh at 100 kW (m1); 500-4,999 kW 500,000 kWh at 1,000 kW (l1). There
   is no 5,000 kW+ level (those models report buckets only). Gas levels: see Gas models.
+- Province-specific levels (method 7S-1, owner request 2026-11-25; values provisional until the
+  owner confirms them): m1 and l1 above apply to Ontario and Alberta only (their bill-impact
+  customers). The other eight provinces use 25,000 kWh at 100 kW (m1) and 250,000 kWh at 1,000 kW
+  (l1): the simulated archetypes in each size band use a median 260 and 256 kWh per kW of average
+  monthly peak, and Hydro-Quebec's price comparison prints 100 kW at 25,000 kWh. A level's optional
+  `provinces` list says where it applies (none: everywhere); exactly one entry per level id may apply
+  to a province (a second one fails the build). The territories have no m1/l1 models (decision 73).
+  `tests/test_archetype_profiles.py` re-derives the band figures quoted in the level sources.
 - A month is 30.4375 days everywhere (owner decision 2026-10-30), although Hydro-Quebec and Manitoba
   Hydro define a month as 30 days. kVA uses power factor 0.9.
 - TOU/ULO shares are dated sets (`effective_date`/`end_date`), one per OEB RPP price period.
@@ -336,23 +345,36 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   their `required_components`, and apply only to the zone records `applies_to` selects; `absent` names
   the zone records without a stored price, with the reviewed reason; `disclose` programs are only named.
 
-## 7E illustrative sidecar (synthetic load profile)
+## Simulated-shape sidecar (method 7S-1; replaced the Phase 7E synthetic profile)
 
-- Only for the Ontario `market_energy_pending` m1/l1 levels: `illustrative_all_in` with
-  `synthetic_profile: true`, `illustrative_only: true` and the label "SYNTHETIC LOAD PROFILE -
-  ILLUSTRATIVE ONLY". It must stay very obviously synthetic: representative only, not to be taken
-  seriously, needing further analysis (owner decision 2026-10-16).
-- Profile `usage_levels.synthetic_profiles.ON_SYNTHETIC_BUSINESS_HOURS` (an open default): the level's
-  kW Monday-Friday in hours beginning 7-18 EST and a constant base load sized to the level's kWh at
-  all other hours; holidays count as weekdays. The price comes from
-  `market_pricing.synthetic_profile_price()` (algorithm and availability checks in
-  [market-data.instructions.md](market-data.instructions.md)).
-- Never use it in medians, outliers, closest utility, Phase 8 change detection or Phase 9 comparisons;
-  the level's state stays `market_energy_pending`.
+- Owner decisions 11 and 12 (2026-11-20) planned it and the owner asked for it on 2026-11-25; the
+  selection, statistic and month weighting below were chosen while the owner was unavailable and
+  await confirmation. It replaced the 7E made-up business-hours profile (`synthetic_profiles`,
+  2026-10-16), which no longer exists.
+- Only for the Ontario and Alberta `market_energy_pending` m1/l1 levels (eligible like the benchmark:
+  not withheld, computable, market-priced energy): `level.illustrative_all_in` with
+  `simulated_profile: true`, `illustrative_only: true`, the label "SIMULATED LOAD SHAPES - MARKET
+  ENERGY ESTIMATE, NOT A BILL" and `market_energy_range`; `model.illustrative` (`simulated: true`,
+  badge SIMULATED) lists every building used, its price and quality flag, the median and range.
+- Profile `usage_levels.simulated_profiles.BTAP_NECB2020_BAND_ARCHETYPES`: every validated archetype
+  run of the province (Toronto, Calgary) whose average monthly peak (mean of the 12 monthly highest
+  15-minute demands) is in the model's crosswalk size band, both heating fuels. Each run is priced by
+  `market_pricing.load_shape_price()` on its market clock (checks in
+  [market-data.instructions.md](market-data.instructions.md)); the estimate uses the median building
+  price x the level's kWh. Runs come from `pipeline/archetype_profiles.py` (reads and checks
+  `data/btap/`: totals against `output.xlsx`, 15-minute steps, IESO bins in EST, AESO bins in
+  prevailing time; a failing run is left out with its reason, an unreadable workbook disables the
+  sidecar).
+- Fail closed: a flat-load probe checks the market file before any run is read; any doubtful input
+  (state, file, window, archetypes, no run in the band, a run that cannot be priced) makes the whole
+  sidecar unavailable with its reason, never the build.
+- Never use it in medians, outliers, closest utility, Phase 8 change detection, Across-Canada, Compare,
+  Rate History or Phase 9 comparisons (safeguard 8, decision 104); the level's state stays
+  `market_energy_pending`. Its inputs sit under `assumptions.simulated_profiles` (profiles, an
+  archetype summary without machine paths, the market files) and stay out of fingerprints.
 - No real commercial load profile is qualified: Toronto Hydro's EB-2023-0195 Exhibit 7 example is
   illustrative (its full-year attachment and rights are unverified), and FortisAlberta's assigned
-  settlement shapes are not observed commercial class loads. Geographic proxies are a separate future
-  proposal.
+  settlement shapes are not observed commercial class loads.
 
 ## Market benchmark sidecars (method 7C-4)
 
@@ -363,14 +385,14 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   before the per-zone taxes and statistics.
 - A benchmark is the 60-complete-month historical energy average plus today's modeled delivery: not a
   forecast, a retail quote or a customer-profile-weighted bill, and it never replaces the
-  delivery-only base table. Base medians, RPP/RoLR results and synthetic output stay separate.
+  delivery-only base table. Base medians, RPP/RoLR results and simulated output stay separate.
 
 ## Across-Canada (`site/js/across-canada.js`)
 
 - Residential electricity only, at 500, 1,000 or 2,000 kWh (default 1,000), with tax by default and a
   before-tax option; all 13 jurisdictions; rate structures stay separate.
 - Read the model file through the shared loader in `models.js`. Never recalculate bills, never use
-  synthetic or benchmark values (neither sidecar enters Across-Canada) and never show a computed bill
+  simulated or benchmark values (neither sidecar enters Across-Canada) and never show a computed bill
   breakdown.
 - Chart and table share one eligibility rule. Show missing, pending and withheld states explicitly,
   and never turn a missing model into a zero bar. Territorial totals are before subsidies (decision

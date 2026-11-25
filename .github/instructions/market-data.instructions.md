@@ -127,10 +127,15 @@ them: [website.instructions.md](website.instructions.md).
 - `historical_market_price()` (market benchmarks) validates the province, the exact method and unit,
   60 consecutive complete months, finite arithmetic, citations and a window lag of at most four months
   (`max_window_lag_months` in `usage_levels.market_benchmarks`).
-- `synthetic_profile_price()` (7E illustrative estimate): for each window month, that month's
-  published energy price x that calendar month's profile-weighted shape factor from the heatmap bins,
-  plus that month's Class B GA, averaged over the 60 months. It is unavailable when the window ends
-  more than `max_window_lag_months` (4) before the as-of date or the file is not the rolling method.
+- `load_shape_price()` (method 7S-1's simulated-shape estimate; owner decisions 11 and 12): a load
+  shape's average kW in each of the 576 heatmap bins (on the market's own clock: IESO EST, AESO
+  prevailing time) gives each calendar month a shape factor (load-weighted / time-weighted mean bin
+  energy price, 1 for a flat load); each window month's published energy x its calendar month's
+  factor, plus Ontario's Class B GA (Alberta: pool energy only, a GA field is refused), averaged per
+  calendar month and weighted by the shape's own monthly kWh. It returns a reason instead of a price
+  when the method is not the province's rolling one, a bin, month or GA value is missing, the window
+  is incomplete or ends more than `max_window_lag_months` (4) before the as-of date, or a calendar
+  month's mean energy is too small for a meaningful factor.
 
 ## Alberta AESO history (`scripts/build_alberta_market.py`)
 
@@ -184,7 +189,9 @@ them: [website.instructions.md](website.instructions.md).
   opens an issue titled by the failing part.
 - **Market Benchmarks** (`market-benchmarks.yml`): runs after each successful Monthly Scrape, after
   every Ontario Price Archive run (also a failed one, to isolate Alberta), after relevant code and
-  model-input pushes and on dispatch. It tests, builds the Alberta history and refreshes the models
+  model-input pushes (including `data/btap/**` and `pipeline/archetype_profiles.py`, which the
+  simulated-shape sidecar reads; reading the 68 runs takes about half a minute) and on dispatch. It
+  tests, builds the Alberta history and refreshes the models
   without writing the database, committing the Alberta quarterly file and the model quarterly file
   with them; a failure opens an issue and the site keeps its published files.
 - The three data writers (Monthly Scrape, Ontario Price Archive, Market Benchmarks) take turns through
@@ -194,6 +201,6 @@ them: [website.instructions.md](website.instructions.md).
   [ci-data-history.instructions.md](ci-data-history.instructions.md), which also describes
   deployment chaining).
 - Both market workflows record model change history around their existing build and publication.
-  Observed benchmarks remain separate from base models and synthetic estimates. Reporting failures
+  Observed benchmarks remain separate from base models and simulated estimates. Reporting failures
   cannot block valid publication; evidence, cadence and issue recovery are governed by the
   [monitoring rules](ci-data-history.instructions.md#model-monitoring).

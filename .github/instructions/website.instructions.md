@@ -1,5 +1,5 @@
 ---
-description: "Use when changing the static website under site/: index.html, css/, js/app.js (Rate Browser, Market Pricing, Compare), js/models.js (Representative Models), js/across-canada.js, js/rate-history.js (Rate History) and the site/data/ JSON it reads. Covers the six views, hiding seed (estimated) rates by default, filterState Sets, the province-to-utility cascade, dedupe by effective date, formatCharge, Compare never totalling, the Ontario/Alberta market dashboard, the window.CanadaUtilityModels API and shared lazy load, the Rate History periods, reviewed series and event lists and hand-built SVG charts, safe DOM building, failure notices, the opt-in synthetic block and offline browser tests."
+description: "Use when changing the static website under site/: index.html, css/, js/app.js (Rate Browser, Market Pricing, Compare), js/models.js (Representative Models), js/across-canada.js, js/rate-history.js (Rate History) and the site/data/ JSON it reads. Covers the six views, hiding seed (estimated) rates by default, filterState Sets, the province-to-utility cascade, dedupe by effective date, formatCharge, Compare never totalling, the Ontario/Alberta market dashboard, the window.CanadaUtilityModels API and shared lazy load, the Rate History periods, reviewed series and event lists and hand-built SVG charts, safe DOM building, failure notices, the opt-in simulated block and offline browser tests."
 applyTo: "site/**"
 ---
 # Static website
@@ -78,8 +78,12 @@ file rules: [market-data.instructions.md](market-data.instructions.md).
   used" column to the contributors table (the tariff codes of the records used at the selected level,
   and the elective choice with both costs) and a "Class used at each level" note with the peak-month
   factor and elective classes. Across-Canada keeps filtering to residential electricity.
-- The synthetic 7E block is opt-in ("Show illustrative all-in estimate (synthetic load profile)"): off
-  by default and reset when the model changes, with its warning, SYNTHETIC badge and fixed caveat.
+- The simulated-shape block (method 7S-1, Ontario and Alberta 50-499 kW and 500-4,999 kW models) is
+  opt-in ("Show market energy estimate (simulated building load shapes)"): off by default, built only
+  while ticked and reset when the model changes, with its warning, SIMULATED badge, fixed label and
+  caveat, a collapsed list of the simulated buildings used (BTAP type names rendered as text only)
+  and the method. It is shown only when the model says `simulated` and each level is flagged
+  `simulated_profile` and `illustrative_only`.
 - Render `fixed_charge_variants` as always-visible reference assumptions for every supplied level,
   plus each contributor's chosen component. They describe the example customer, not the visitor's
   actual service or eligibility. Older exports may omit these fields.
@@ -170,7 +174,7 @@ Owner decisions 44-57 (2026-11-23) and 80-84 (2026-11-24).
     quarter is labelled "quarter in progress".
   - `break_before` draws a "method changed" gap with its reasons, and the % change restarts after it.
   - Recording gaps are noted, and market benchmarks are their own line.
-  - The synthetic estimate is never charted.
+  - The simulated estimate is never charted.
 - Event markers come only from `rate_history_events.json` (regulator or government decisions, each with
   its official source and checked quote), shown on charts whose family, province and fuel match.
   `site/data/rate_history_series.json` selects records and price lines by stored component names with

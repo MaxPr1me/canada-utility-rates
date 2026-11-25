@@ -13,6 +13,9 @@ site/data/market_pricing_ontario.json holds observed IESO history in $/kWh, neve
   built from observed hours only;
 * the earlier legacy surface (scripts/generate_market_pricing.py, "observed_legacy_hoep_YYYY_YYYY_average"): 576
   bins of legacy HOEP and Class B Global Adjustment over full calendar years.
+
+``historical_market_price`` (the flat 60-month benchmark) and ``load_shape_price`` (a load shape priced with the
+heatmap) also read the Alberta pool history, site/data/market_pricing_alberta.json ("observed_rolling_60m_aeso_pool").
 """
 from __future__ import annotations
 
@@ -34,10 +37,7 @@ OBSERVED_METHOD_RE = re.compile(r"^(?:observed_legacy_hoep_\d{4}_\d{4}_average|o
 PRICE_FIELDS = ("avg_energy_price", "avg_ga_class_b", "combined")
 DAY_TYPES = ("weekday", "weekend")
 WINDOW_MONTHS = 60
-HOURS_PER_MONTH = 730.5
-WEEKDAYS_PER_MONTH = 365.25 * 5 / 7 / 12
 MIN_TIME_WEIGHTED_ENERGY = 0.001
-SYNTHETIC_LABEL = "SYNTHETIC LOAD PROFILE - ILLUSTRATIVE ONLY"
 
 
 def load_ontario_market_pricing(path: Path = MARKET_DATA_PATH) -> dict:
@@ -171,7 +171,7 @@ def historical_market_price(document: dict, *, province: str, as_of=None, max_la
                       + " Current delivery charges plus historical energy are a benchmark, not a forecast or bill."}
 
 
-# -- Phase 7E illustrative estimate (synthetic load profile) -----------------------------------------
+# -- Market energy of a load shape (owner decisions 11 and 12, 2026-11-20) -----------------------------
 
 def _number(value) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
@@ -195,58 +195,46 @@ def _as_date(value) -> date:
     return date.fromisoformat(str(value))
 
 
-def synthetic_profile_price(document: dict, *, kwh: float, kw: float, business_hours=range(7, 19), as_of=None,
-                            max_lag_months: int = 4) -> dict:
-    """Illustrative all-in market energy price ($/kWh) of a SYNTHETIC load profile; never a tariff or a bill.
+def load_shape_price(document: dict, *, province: str, bin_kw: dict, month_kwh: dict, as_of=None,
+                     max_lag_months: int = 4) -> dict:
+    """Market energy price ($/kWh) of a load shape over the observed 60-month history; never a tariff or a bill.
 
-    Profile: `kw` during Monday-Friday hours beginning in `business_hours` (EST, IESO market time; holidays count as
-    the weekday they fall on) and a constant base load at all other hours, sized so the month's energy is `kwh`.
-    For each window month, the published monthly energy level is scaled by its calendar month's shape factor
-    (profile-weighted / time-weighted mean energy of the month's 48 heatmap bins), then that month's Class B Global
-    Adjustment is added; the price is the mean of the window months' totals.
+    Owner decision 12 (2026-11-20): in Ontario and Alberta a load profile's energy is priced with the month x
+    weekday/weekend x hour average prices of the observed-hour heatmap. ``bin_kw`` gives the shape's average kW in
+    each of the 576 bins (calendar month, "weekday"/"weekend", hour beginning 0-23) on the market's own clock (IESO:
+    EST; AESO: Alberta prevailing local time; holidays count as their weekday, as in both heatmaps). Each calendar
+    month's shape factor is the load-weighted mean bin energy price (weights: kW x observed hours) over the
+    time-weighted mean (weights: observed hours), so a flat load has factor 1. Each of the 60 window months' published
+    energy level is multiplied by its calendar month's factor, plus that month's actual Class B Global Adjustment in
+    Ontario (Alberta: pool energy only, never Ontario's Global Adjustment). A calendar month's price is the mean of its
+    window months, and the result weights the calendar months by ``month_kwh`` (the shape's own energy in each month),
+    so it is the shape's annual market energy cost divided by its annual kWh.
+
+    Replaces the Phase 7E made-up business-hours profile (owner decision 11, 2026-11-20). Returns
+    ``{"ok": False, "reason": ...}`` instead of raising when an input is doubtful (fail closed).
     """
-    hours = sorted(set(business_hours))
-    business = len(hours) * WEEKDAYS_PER_MONTH
-    other = HOURS_PER_MONTH - business
-    result = {
-        "ok": False,
-        "reason": None,
-        "price_per_kwh": None,
-        "profile": {
-            "peak_kw": kw,
-            "base_kw": None,
-            "business_hours_beginning": hours,
-            "days": "Monday-Friday",
-            "time_basis": "EST (IESO market time)",
-            "holidays": "counted as the weekday they fall on",
-            "business_hours_per_month": round(business, 6),
-            "other_hours_per_month": round(other, 6),
-        },
-        "window": None,
-        "shape_factors": {},
-        "months": [],
-        "label": SYNTHETIC_LABEL,
-    }
+    methods = {"ON": ROLLING_METHOD, "AB": ALBERTA_METHOD}
+    result = {"ok": False, "reason": None, "province": province, "price_per_kwh": None, "window": None,
+              "shape_factors": {}, "month_prices": {}}
 
     def fail(reason: str) -> dict:
         result["reason"] = reason
         return result
 
-    if not (_number(kwh) and _number(kw) and kwh > 0 and kw > 0):
-        return fail("kwh and kw must be positive numbers")
-    if not hours or any(not isinstance(hour, int) or not 0 <= hour <= 23 for hour in hours) or other <= 0:
-        return fail("business_hours must be hours beginning 0-23 that leave other hours in the week")
-    base_kw = (kwh - kw * business) / other
-    result["profile"]["base_kw"] = round(base_kw, 6)
-    if base_kw < 0:
-        return fail(f"base load would be negative ({base_kw:.3f} kW): {kwh} kWh is less than {kw} kW for "
-                    f"{business:.3f} business hours")
-    if base_kw > kw:
-        return fail(f"base load {base_kw:.3f} kW would exceed the business-hours load {kw} kW")
+    if province not in methods:
+        return fail(f"no observed market history for province {province!r}")
+    keys = [(month, kind, hour) for month in range(1, 13) for kind in DAY_TYPES for hour in range(24)]
+    if not isinstance(bin_kw, dict) or set(bin_kw) != set(keys) or not all(
+            _number(bin_kw[key]) and bin_kw[key] >= 0 for key in keys):
+        return fail("the load shape must give a non-negative kW for each of the 576 month x day type x hour bins")
+    if (not isinstance(month_kwh, dict) or set(month_kwh) != set(range(1, 13))
+            or not all(_number(value) and value >= 0 for value in month_kwh.values())
+            or not math.fsum(month_kwh.values()) > 0):
+        return fail("the load shape must give a non-negative kWh for each calendar month, with a positive total")
     metadata = document.get("metadata") if isinstance(document, dict) else None
     method = (metadata or {}).get("derivation_method")
-    if method != ROLLING_METHOD:
-        return fail(f"the market file is not the rolling observed history (derivation_method={method!r})")
+    if method != methods[province]:
+        return fail(f"the market file is not the {province} rolling observed history (derivation_method={method!r})")
     window = metadata.get("window") or {}
     monthly = document.get("monthly")
     surface = document.get("hourly_surface")
@@ -261,16 +249,21 @@ def synthetic_profile_price(document: dict, *, kwh: float, kw: float, business_h
     except ValueError:
         return fail(f"invalid as_of {as_of!r}")
     lag = today.year * 12 + today.month - 1 - end
+    if lag < 1:
+        return fail(f"the market window ends {window['end_month']}, which is not complete on {today.isoformat()}")
     if lag > max_lag_months:
         return fail(f"stale market history: the window ends {window['end_month']}, {lag} months before "
                     f"{today.isoformat()} (limit {max_lag_months})")
+    ga = province == "ON"
     expected = [_month_key(index) for index in range(start, end + 1)]
     if (len(expected) != WINDOW_MONTHS or window.get("months") != WINDOW_MONTHS or not isinstance(monthly, list)
             or [entry.get("month") if isinstance(entry, dict) else None for entry in monthly] != expected
-            or not all(_number(entry.get("energy_arithmetic")) and _number(entry.get("ga_class_b"))
+            or not all(_number(entry.get("energy_arithmetic"))
+                       and (_number(entry.get("ga_class_b")) if ga else "ga_class_b" not in entry)
                        for entry in monthly)):
         return fail(f"bins or monthly records missing/invalid: expected {WINDOW_MONTHS} monthly records "
-                    f"{window['start_month']}..{window['end_month']} with numeric energy and GA")
+                    f"{window['start_month']}..{window['end_month']} with numeric energy"
+                    + (" and Class B Global Adjustment" if ga else " and no Ontario Global Adjustment"))
     bins: dict[tuple, dict] = {}
     for entry in surface if isinstance(surface, list) else []:
         if not isinstance(entry, dict):
@@ -280,36 +273,30 @@ def synthetic_profile_price(document: dict, *, kwh: float, kw: float, business_h
         if key in bins or not (isinstance(count, int) and count > 0 and _number(energy)):
             return fail(f"bins or monthly records missing/invalid: bin {key!r}")
         bins[key] = entry
-    wanted = {(month, kind, hour) for month in range(1, 13) for kind in DAY_TYPES for hour in range(24)}
-    if set(bins) != wanted:
-        return fail(f"bins or monthly records missing/invalid: {len(bins)} valid bins, expected {len(wanted)}")
+    if set(bins) != set(keys):
+        return fail(f"bins or monthly records missing/invalid: {len(bins)} valid bins, expected {len(keys)}")
     factors = {}
     for month in range(1, 13):
-        time_sum = time_hours = profile_sum = profile_weight = 0.0
-        for kind in DAY_TYPES:
-            for hour in range(24):
-                entry = bins[(month, kind, hour)]
-                load = kw if kind == "weekday" and hour in hours else base_kw
-                count, energy = entry["hours_count"], entry["avg_energy_price"]
-                time_sum += count * energy
-                time_hours += count
-                profile_sum += load * count * energy
-                profile_weight += load * count
-        time_weighted = time_sum / time_hours
+        month_keys = [key for key in keys if key[0] == month]
+        hours = math.fsum(bins[key]["hours_count"] for key in month_keys)
+        time_weighted = math.fsum(bins[key]["hours_count"] * bins[key]["avg_energy_price"] for key in month_keys) / hours
         if time_weighted < MIN_TIME_WEIGHTED_ENERGY:
             return fail(f"calendar month {month}: time-weighted mean energy {time_weighted:.6f} $/kWh is below "
                         f"{MIN_TIME_WEIGHTED_ENERGY} $/kWh, so its shape factor is not meaningful")
-        factors[month] = (profile_sum / profile_weight) / time_weighted
-    totals = []
+        weight = math.fsum(bin_kw[key] * bins[key]["hours_count"] for key in month_keys)
+        if not weight > 0:
+            return fail(f"calendar month {month}: the load shape uses no energy")
+        load_weighted = math.fsum(bin_kw[key] * bins[key]["hours_count"] * bins[key]["avg_energy_price"]
+                                  for key in month_keys) / weight
+        factors[month] = load_weighted / time_weighted
+    totals: dict[int, list[float]] = {month: [] for month in range(1, 13)}
     for entry in monthly:
-        factor = factors[int(entry["month"][5:7])]
-        shaped = entry["energy_arithmetic"] * factor
-        total = shaped + entry["ga_class_b"]
-        totals.append(total)
-        result["months"].append({"month": entry["month"], "energy_level": entry["energy_arithmetic"],
-                                 "shape_factor": round(factor, 6), "shaped_energy": round(shaped, 6),
-                                 "ga_class_b": entry["ga_class_b"], "total": round(total, 6)})
+        month = int(entry["month"][5:7])
+        totals[month].append(entry["energy_arithmetic"] * factors[month] + (entry["ga_class_b"] if ga else 0.0))
+    prices = {month: math.fsum(values) / len(values) for month, values in totals.items()}
     result["shape_factors"] = {str(month): round(factor, 6) for month, factor in factors.items()}
-    result["price_per_kwh"] = round(math.fsum(totals) / len(totals), 6)
+    result["month_prices"] = {str(month): round(price, 6) for month, price in prices.items()}
+    result["price_per_kwh"] = round(math.fsum(month_kwh[month] * prices[month] for month in range(1, 13))
+                                    / math.fsum(month_kwh.values()), 6)
     result["ok"] = True
     return result

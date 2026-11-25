@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from pipeline.representative_models import build_models, load_crosswalk, load_rates, load_taxes, load_usage_levels
+from tests.test_models_7c import ARCHETYPES, _market_doc
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests" / "fixtures"
@@ -92,6 +93,11 @@ def _builds():
         "single_source": _synthetic([_record(_tou() + [_component("fixed", 30.0, "$/month", "Service Charge")])]),
         "not_computable": _synthetic([_record(_tou()[:2])]),
         "market_pending": _synthetic([_demand("A Hydro", 1, 100.0), _demand("B Hydro", 2, 300.0)]),
+        # Method 7S-1: an available simulated-shape sidecar (in-memory simulated runs and market history).
+        "simulated": build_models([_demand("A Hydro", 1, 100.0), _demand("B Hydro", 2, 300.0)], fx["crosswalk"],
+                                   {**fx["usage_levels"], "simulated_profiles": load_usage_levels()["simulated_profiles"]},
+                                   fx["taxes"], as_of=AS_OF, market_document=_market_doc(business=0.08),
+                                   archetypes=ARCHETYPES),
         # Method 7T-1 (owner decisions 2026-11-24): the territorial models with their after-subsidy fields.
         "territorial": build_models(load_rates(FIXTURES / "rm_records_t.json"), load_crosswalk(), load_usage_levels(),
                                     load_taxes(), provinces=("YT", "NT", "NU"), as_of="2026-11-24",
@@ -241,20 +247,21 @@ def test_rm7f_css_block_is_appended_once():
     assert "#view-models .hidden" in block
 
 
-# Phase 7C contributor nouns and the Phase 7E illustrative sidecar (synthetic load profile).
+# Phase 7C contributor nouns and the method 7S-1 simulated-shape sidecar (it replaced the Phase 7E synthetic profile).
 MODELS_JS = SITE / "js" / "models.js"
 MODELS_CSS = SITE / "css" / "models.css"
-ILLUSTRATIVE_TOGGLE = "Show illustrative all-in estimate (synthetic load profile)"
-ILLUSTRATIVE_LABEL = "SYNTHETIC LOAD PROFILE - ILLUSTRATIVE ONLY"
+ILLUSTRATIVE_TOGGLE = "Show market energy estimate (simulated building load shapes)"
+ILLUSTRATIVE_LABEL = "SIMULATED LOAD SHAPES - MARKET ENERGY ESTIMATE, NOT A BILL"
 ILLUSTRATIVE_WARNING = ("Representative only: not a forecast, a quote or a bill. "
-                        "Do not use it for decisions; it needs further analysis.")
+                        "The buildings are simulated, not metered customers; do not use it for decisions.")
 NOUN_FIELDS = ("contributor_noun", "singular", "plural", "market_indexed_excluded", "components")
-ILLUSTRATIVE_FIELDS = ("available", "reason", "caveat", "method", "window")
+ILLUSTRATIVE_FIELDS = ("available", "reason", "caveat", "method", "window", "simulated", "buildings")
 WINDOW_FIELDS = ("start_month", "end_month", "months")
-ILLUSTRATIVE_LEVEL_FIELDS = ("synthetic_profile", "illustrative_only", "market_energy_per_kwh", "market_energy_cost",
-                             "profile", "without_tax", "with_tax")
-PROFILE_FIELDS = ("peak_kw", "base_kw", "business_hours_beginning", "days", "time_basis", "holidays",
-                  "business_hours_per_month", "other_hours_per_month")
+ILLUSTRATIVE_LEVEL_FIELDS = ("simulated_profile", "illustrative_only", "market_energy_per_kwh", "market_energy_cost",
+                             "market_energy_range", "without_tax", "with_tax")
+RANGE_FIELDS = ("min_per_kwh", "max_per_kwh", "min_cost", "max_cost", "buildings")
+BUILDING_FIELDS = ("building_type", "heating_fuel", "city", "average_monthly_peak_kw", "kwh_per_kw", "quality_flag",
+                   "price_per_kwh")
 ILLUSTRATIVE_BANDS = {"commercial_medium", "commercial_large"}
 
 
@@ -278,7 +285,7 @@ def test_rm7e_models_js_fixes_the_toggle_label_warning_and_badge_texts():
     assert _js_string(source, "ILLUSTRATIVE_WARNING") == ILLUSTRATIVE_WARNING
     block = _js_functions(source)["illustrativeBlock"]
     assert 'warning.setAttribute("role", "note")' in block
-    assert '"SYNTHETIC"' in block and "ILLUSTRATIVE_LABEL" in block and "ILLUSTRATIVE_WARNING" in block
+    assert '"SIMULATED"' in block and "ILLUSTRATIVE_LABEL" in block and "ILLUSTRATIVE_WARNING" in block
     # The warning comes first in the block, before any number.
     assert block.index("section.append(warning)") < block.index("illustrativeLevel(")
 
@@ -293,9 +300,10 @@ def test_rm7e_toggle_is_a_labelled_unticked_checkbox_and_builds_the_block_only_w
                      r"\[illustrativeBlock\(", controls)
     callers = sorted(name for name, body in functions.items() if "illustrativeBlock(" in body)
     assert callers == ["illustrativeBlock", "illustrativeControls"]
-    # Fail closed: the model must say available and every level must be flagged synthetic and illustrative.
+    # Fail closed: the model must say available and simulated, and every level flagged simulated and illustrative.
     gate = functions["illustrativeLevels"]
-    for needle in ("info.available !== true", "all.synthetic_profile === true", "all.illustrative_only === true"):
+    for needle in ("info.available !== true", "info.simulated !== true", "all.simulated_profile === true",
+                   "all.illustrative_only === true"):
         assert needle in gate, needle
     # Rebuilt (unticked) on every model render, so switching models resets the toggle.
     assert "illustrativeControls(model)" in functions["renderNotes"]
@@ -329,7 +337,8 @@ def test_rm7c_models_js_uses_the_contributor_noun_with_a_utility_fallback():
 def test_rm7c_7e_models_js_reads_the_new_contract_fields():
     source = MODELS_JS.read_text(encoding="utf-8")
     fields = (set(NOUN_FIELDS) | {"illustrative", "illustrative_all_in"} | set(ILLUSTRATIVE_FIELDS)
-              | set(WINDOW_FIELDS) | set(ILLUSTRATIVE_LEVEL_FIELDS) | set(PROFILE_FIELDS) | set(STAT_FIELDS))
+              | set(WINDOW_FIELDS) | set(ILLUSTRATIVE_LEVEL_FIELDS) | set(RANGE_FIELDS) | set(BUILDING_FIELDS)
+              | set(STAT_FIELDS))
     unread = sorted(f for f in fields if not re.search(rf"\b{re.escape(f)}\b", source))
     assert not unread, f"listed in the contract but not read by models.js: {unread}"
 
@@ -354,15 +363,18 @@ def test_rm7c_7e_optional_engine_fields_have_the_shape_models_js_reads(name):
             assert not levels, f"{where}: illustrative_all_in on an unavailable model"
             continue
         _assert_fields(info, ILLUSTRATIVE_FIELDS, f"{where} illustrative")
-        assert model["key"]["province"] == "ON" and model["key"]["size_band"] in ILLUSTRATIVE_BANDS, where
+        assert model["key"]["province"] in ("ON", "AB") and model["key"]["size_band"] in ILLUSTRATIVE_BANDS, where
+        assert info["simulated"] is True and info["buildings"], where
+        for building in info["buildings"]:
+            _assert_fields(building, BUILDING_FIELDS, f"{where} illustrative building")
         assert model["state"] == "market_energy_pending", f"{where}: the state must stay market_energy_pending"
         _assert_fields(info["window"], WINDOW_FIELDS, f"{where} illustrative.window")
         assert levels, where
         for level in levels:
             all_in = level["illustrative_all_in"]
             _assert_fields(all_in, ILLUSTRATIVE_LEVEL_FIELDS, f"{where} {level['id']} illustrative_all_in")
-            assert all_in["synthetic_profile"] is True and all_in["illustrative_only"] is True, where
-            _assert_fields(all_in["profile"], PROFILE_FIELDS, f"{where} {level['id']} profile")
+            assert all_in["simulated_profile"] is True and all_in["illustrative_only"] is True, where
+            _assert_fields(all_in["market_energy_range"], RANGE_FIELDS, f"{where} {level['id']} market_energy_range")
             for side in ("without_tax", "with_tax"):
                 _assert_fields(all_in[side], STAT_FIELDS, f"{where} {level['id']} illustrative {side}")
 

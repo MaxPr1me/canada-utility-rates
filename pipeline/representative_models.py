@@ -1,6 +1,8 @@
 """Representative models: crosswalk/coverage (Phase 7A), the modeled-cost engine (Phase 7B), all provinces with
-Alberta wires + Rate of Last Resort pairs (Phase 7C), the Phase 7E illustrative sidecar (synthetic load profile) and the
-territories with reviewed percentage riders and before/after-subsidy costs (method 7T-1, owner decisions 2026-11-24)."""
+Alberta wires + Rate of Last Resort pairs (Phase 7C), the territories with reviewed percentage riders and before/after-
+subsidy costs (method 7T-1, owner decisions 2026-11-24), and method 7S-1: the opt-in simulated-shape sidecar (Ontario
+and Alberta market energy priced with simulated BTAP archetype load shapes, replacing Phase 7E's made-up profile) and
+province-specific 50-499 kW and 500-4,999 kW example customers."""
 from __future__ import annotations
 
 import argparse
@@ -326,7 +328,11 @@ def format_coverage(report: dict, limit: int = 25) -> str:
 # 7T-1 (owner decisions 64-75, 2026-11-24): territorial residential and small-commercial models, reviewed percentage
 # riders (data/models/percentage_riders.json), costs before and after automatic subsidies (data/models/subsidies.json,
 # before tax only), government classes out of the medians and interim rates labelled.
-METHOD_VERSION = "7T-1"
+# 7S-1 (requested 2026-11-25; choices provisional until the owner confirms them): the opt-in Ontario and Alberta
+# sidecar prices market energy with the simulated BTAP archetypes' load shapes (usage_levels simulated_profiles,
+# replacing the Phase 7E made-up profile), and the 50-499 kW and 500-4,999 kW example customers differ by province
+# (a level's optional "provinces" list).
+METHOD_VERSION = "7S-1"
 # Every percentage component of a record in these jurisdictions needs a reviewed percentage_riders.json entry; one without
 # makes the record not computable. Provinces keep disclosing percentage adjustments unapplied (owner decision 64).
 TERRITORIES = ("YT", "NT", "NU")
@@ -484,7 +490,7 @@ VARIANT_PREFIX = "fixed_charge_variant:"
 BLOCK_PERIOD_MATCH_FIELDS = ("tariff_code", "tariff_code_regex", "name_regex")
 BLOCK_PERIOD_WORDS = {"month": "per month", "two_months": "per two months, halved",
                       "day": "per day, x days per month"}
-SYNTHETIC_LABEL = "SYNTHETIC LOAD PROFILE - ILLUSTRATIVE ONLY"
+SIMULATED_LABEL = "SIMULATED LOAD SHAPES - MARKET ENERGY ESTIMATE, NOT A BILL"
 _DEFAULT: Any = object()
 
 
@@ -2348,18 +2354,29 @@ def required_contributors(crosswalk: dict, key: tuple) -> list[dict]:
             and entry.get("structure", structure) == structure and entry.get("size_band", band) == band]
 
 
-def find_synthetic_profile(usage_levels: Optional[dict], province: Any, fuel: Any, sector: Any,
+def find_simulated_profile(usage_levels: Optional[dict], province: Any, fuel: Any, sector: Any,
                            level_sector: Any) -> tuple[Optional[str], Optional[dict]]:
-    """(id, entry) of the usage_levels synthetic_profiles entry whose applies_to matches a model; (None, None) else."""
-    for key, entry in ((usage_levels or {}).get("synthetic_profiles") or {}).items():
+    """(id, entry) of the usage_levels simulated_profiles entry whose applies_to matches a model; (None, None) else."""
+    for key, entry in ((usage_levels or {}).get("simulated_profiles") or {}).items():
         applies = entry.get("applies_to") if isinstance(entry, dict) else None
         if not isinstance(applies, dict):
             continue
         sectors = applies.get("sectors") or []
-        if (applies.get("province") == province and applies.get("fuel", fuel) == fuel
+        if (province in (applies.get("provinces") or []) and applies.get("fuel", fuel) == fuel
                 and (level_sector in sectors or sector in sectors)):
             return key, entry
     return None, None
+
+
+def level_applies(level: dict, province: Any) -> bool:
+    """True when a usage level applies to a province: levels without a 'provinces' list apply everywhere (method
+    7S-1: the 50-499 kW and 500-4,999 kW example customers differ between Ontario/Alberta and the other provinces)."""
+    provinces = level.get("provinces")
+    if provinces is None:
+        return True
+    if not isinstance(provinces, list) or not all(isinstance(code, str) for code in provinces):
+        raise ValueError(f"usage level {level.get('id')!r}: 'provinces' must be a list of province codes")
+    return province in provinces
 
 
 def load_market_document(path: PathLike = None) -> tuple[Optional[dict], Optional[str]]:
@@ -2389,12 +2406,6 @@ def _market_context(document: Any) -> dict:
     return {"document": document, "problem": problem, "file": info}
 
 
-def _hours_text(hours: list[int]) -> str:
-    if hours and hours == list(range(hours[0], hours[-1] + 1)):
-        return f"{hours[0]}-{hours[-1]}"
-    return ", ".join(map(str, hours))
-
-
 def _market_energy_level(level: dict, price: float, inputs: dict) -> dict:
     """Add market energy before taxes and zone/utility aggregation, never to a rounded median."""
     energy_cost = price * level["kwh"]
@@ -2419,13 +2430,16 @@ def _market_energy_level(level: dict, price: float, inputs: dict) -> dict:
                          "not_applied": inputs["not_applied"]}}
 
 
-def _illustrative_level(level: dict, priced: dict, inputs: dict, profile_id: Optional[str], label: str) -> dict:
-    result = _market_energy_level(level, float(priced["price_per_kwh"]), inputs)
+def _simulated_level(level: dict, price: float, prices: list[float], inputs: dict, profile_id: str,
+                     label: str) -> dict:
+    """A level's all-in estimate at the median simulated-building market price, without the per-utility rows."""
+    result = _market_energy_level(level, price, inputs)
     for key in ("utilities", "closest_utility", "outliers"):
         result.pop(key)
-    return {**result, "synthetic_profile": True, "illustrative_only": True, "label": label,
-            "profile_id": profile_id, "profile": priced["profile"],
-            "shape_factors": priced["shape_factors"], "months": priced["months"]}
+    low, high = min(prices), max(prices)
+    return {**result, "simulated_profile": True, "illustrative_only": True, "label": label, "profile_id": profile_id,
+            "market_energy_range": {"min_per_kwh": low, "max_per_kwh": high, "min_cost": round(low * level["kwh"], 2),
+                                    "max_cost": round(high * level["kwh"], 2), "buildings": len(prices)}}
 
 
 def _benchmark(model: dict, market: dict, level_inputs: dict, config: dict, as_of: date) -> dict:
@@ -2466,83 +2480,176 @@ def _benchmark(model: dict, market: dict, level_inputs: dict, config: dict, as_o
                                          "Level withheld, not computable, or already includes priced energy."}
     return info
 
-def _illustrative_method(profile_id: Optional[str], profile: dict, done: list[tuple[dict, dict]], document: dict,
-                         market_file: Optional[dict], noun: str) -> str:
-    window = done[0][1].get("window") or {}
-    months = window.get("months")
+_MARKET_CLOCK_TEXT = {
+    "ON": "Eastern Standard Time all year (IESO market time), so the simulated steps are not shifted",
+    "AB": "Alberta prevailing local time (AESO market time), so steps inside daylight saving move one hour later",
+}
+_SIMULATED_EXCLUSIONS = {
+    "ON": "Class B Global Adjustment only (Class A customers pay it by peak demand factor; not modelled); distribution "
+          "loss factors and retailer charges not modelled.",
+    "AB": "Pool energy only: retailer energy charges and margins and distribution loss factors are not modelled (a "
+          "site using 250,000 kWh a year or more cannot take the Rate of Last Resort).",
+}
+
+
+def _archetype_context(value: Any) -> dict:
+    """Simulated archetypes for the sidecar: _DEFAULT loads the repository's BTAP runs on first use, None disables."""
+    return {"set": None if value is _DEFAULT else value, "pending": value is _DEFAULT,
+            "problem": "no simulated archetypes were supplied" if value is None else None}
+
+
+def _archetype_set(context: dict) -> Any:
+    if context.get("pending"):
+        context["pending"] = False
+        try:
+            from pipeline.archetype_profiles import load_archetypes
+
+            context["set"] = load_archetypes()
+        except Exception as exc:  # unreadable BTAP data only makes the simulated sidecar unavailable
+            context["problem"] = f"simulated archetypes unavailable ({type(exc).__name__}: {exc})"
+            logger.warning("Simulated archetypes unavailable: %s", exc)
+    return context.get("set")
+
+
+def _archetype_summary(context: dict) -> Optional[dict]:
+    """What the build read from the archetypes (counts only: run problems can name machine paths)."""
+    data = context.get("set")
+    if data is None:
+        return {"available": False, "problem": context.get("problem")} if not context.get("pending") else None
+    root = Path(data.root)
+    try:
+        root = root.resolve().relative_to(ROOT)
+    except ValueError:
+        pass
+    return {"available": True, "source": root.as_posix() if not root.is_absolute() else root.name,
+            "workbook_rows": data.workbook_rows, "runs": len(data.runs), "runs_left_out": len(data.problems),
+            "cities": {province: sorted({run.city for run in data.runs if run.province == province})
+                       for province in sorted({run.province for run in data.runs})}}
+
+
+def _band_limits(crosswalk: dict, band: Any) -> Optional[tuple[float, Optional[float]]]:
+    def number(value: Any) -> bool:
+        return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+    entry = ((crosswalk.get("vocabulary") or {}).get("size_bands") or {}).get(band)
+    low = entry.get("min_kw") if isinstance(entry, dict) else None
+    high = entry.get("max_kw") if isinstance(entry, dict) else None
+    if not number(low) or (high is not None and not number(high)):
+        return None
+    return float(low), None if high is None else float(high)
+
+
+def _simulated_method(model: dict, profile_id: str, buildings: list[dict], price: float, window: dict,
+                      document: dict, market_file: Optional[dict], noun: str, label: str) -> str:
+    province = model["key"]["province"]
     eras = Counter(entry.get("era") for entry in document.get("monthly") or [] if isinstance(entry, dict))
     era_text = f" ({eras['hoep']} legacy HOEP months, {eras['oemp']} Ontario Price months)" \
-        if eras.get("hoep") or eras.get("oemp") else ""
-    loads = "; ".join(f"{lv['id']}: {lv['kw']:,.0f} kW in business hours, base load {pr['profile']['base_kw']:,.1f} kW"
-                      for lv, pr in done)
-    prices = "; ".join(f"{lv['id']} ${pr['price_per_kwh']:.6f}/kWh" for lv, pr in done)
+        if province == "ON" and (eras.get("hoep") or eras.get("oemp")) else ""
+    cities = ", ".join(sorted({b["city"] for b in buildings}))
+    flagged = sum(1 for b in buildings if b["quality_flag"])
+    band = model["key"].get("size_band")
+    band_label = {"commercial_medium": "50 to 499 kW", "commercial_large": "500 to 4,999 kW"}.get(band, str(band))
+    prices = [b["price_per_kwh"] for b in buildings]
     file_text = "" if not market_file else (
-        f" Market file: site/data/market_pricing_ontario.json ({market_file.get('derivation_method')}, generated "
-        f"{market_file.get('generated_at')}).")
-    return (f"{SYNTHETIC_LABEL}: an all-in estimate that adds market energy, priced with a made-up business-hours load "
-            "profile, to the delivery-only costs of this model. Representative only: not a forecast, a quote or a "
-            "bill, and not a basis for decisions; it needs further analysis. "
-            f"Profile {profile_id}: the level's kW during {profile.get('days') or 'Monday-Friday'} hours beginning "
-            f"{_hours_text(sorted(profile.get('business_hours_beginning') or []))} "
-            f"{profile.get('time_basis') or 'EST (IESO market time)'} (holidays "
-            f"{profile.get('holidays') or 'counted as the weekday they fall on'}) and a constant base load at all other "
-            f"hours, sized so the month's kWh equals the usage level ({loads}). Market energy: for each of the {months} "
-            f"months {window.get('start_month')} to {window.get('end_month')}{era_text}, the month's published energy "
-            "price level x that calendar month's shape factor (profile-weighted / time-weighted mean energy price of "
-            "the month's observed weekday and weekend hourly heatmap bins), plus that month's actual Class B Global "
-            f"Adjustment; the price is the mean of the {months} monthly totals ({prices}). Class B Global Adjustment "
-            "only (Class A customers pay it by peak demand factor; not modelled); distribution loss factors not "
-            "modelled. Taxes: the model's tax lines applied to the delivery + market energy subtotal of each "
-            f"{noun}. The model state stays market_energy_pending; its delivery-only medians, outliers and closest "
-            f"{noun} are unchanged." + file_text)
+        f" Market file: site/data/market_pricing_{'ontario' if province == 'ON' else 'alberta'}.json "
+        f"({market_file.get('derivation_method')}, generated {market_file.get('generated_at')}).")
+    return (f"{label}: an all-in estimate that adds market energy, priced with the 15-minute load shapes of simulated "
+            "buildings, to the delivery-only costs of this model. Representative only: not a forecast, a quote or a "
+            "bill; the buildings are simulated NECB 2020 archetypes (NRCan BTAP), not metered customers. "
+            f"Buildings ({profile_id}): the {len(buildings)} archetype runs simulated in {cities} whose average "
+            f"monthly peak (the mean of the 12 monthly highest 15-minute demands) is {band_label}, with electric or "
+            f"gas space heating; {flagged} of them exceed 300 occupied unmet hours (a simulation quality flag). "
+            "Market energy: each building's whole-building electricity is averaged into the heatmap's 576 bins "
+            f"(calendar month x weekday/weekend x hour, on {_MARKET_CLOCK_TEXT[province]}; holidays count as the "
+            f"weekday they fall on). For each of the {window.get('months')} months {window.get('start_month')} to "
+            f"{window.get('end_month')}{era_text}, the month's published energy price level x that calendar month's "
+            "shape factor (the building's load-weighted mean bin energy price / the time-weighted mean of the month's "
+            "observed bins)" + (", plus that month's actual Class B Global Adjustment" if province == "ON" else "")
+            + "; a calendar month's price is the mean of its window months, and the building's price weights the "
+            f"calendar months by its own kWh. The estimate uses the median building price, ${price:.6f}/kWh "
+            f"(buildings ${min(prices):.6f} to ${max(prices):.6f}/kWh), x the usage level's kWh; the level's own kWh "
+            f"and kW are unchanged. {_SIMULATED_EXCLUSIONS[province]} Taxes: the model's tax lines applied to the "
+            f"delivery + market energy subtotal of each {noun}. The model state stays market_energy_pending; its "
+            f"delivery-only medians, outliers and closest {noun} are unchanged." + file_text)
 
 
-def _illustrative(model: dict, profile_id: Optional[str], profile: dict, market: dict, level_inputs: dict,
-                  as_of: date) -> dict:
-    """Phase 7E sidecar: each level's delivery cost plus market energy priced with a SYNTHETIC load profile, with the
-    same tax lines and statistics. Never changes the model's own numbers, state, outliers or closest utility."""
-    info = {"available": False, "reason": None, "profile_id": profile_id,
-            "label": profile.get("label") or SYNTHETIC_LABEL, "caveat": profile.get("caveat"),
-            "status": profile.get("status"), "method": None, "window": None, "market_file": market.get("file")}
-    hours, lag = profile.get("business_hours_beginning"), profile.get("max_window_lag_months")
+def _simulated(model: dict, profile_id: str, profile: dict, market: dict, level_inputs: dict, as_of: date,
+               archetypes: dict, limits: Optional[tuple[float, Optional[float]]]) -> dict:
+    """Simulated-shape sidecar (owner decisions 11 and 12, 2026-11-20; requested 2026-11-25): each market-pending
+    level's delivery cost plus market energy priced with the load shapes of the province's simulated archetypes in the
+    model's size band and the observed market heatmap. Never changes the model's own numbers, state, outliers or
+    closest utility (safeguard 8); any doubtful input leaves the whole sidecar unavailable (fail closed)."""
+    province = model["key"]["province"]
+    info = {"available": False, "reason": None, "profile_id": profile_id, "simulated": True,
+            "label": profile.get("label") or SIMULATED_LABEL, "badge": profile.get("badge") or "SIMULATED",
+            "caveat": profile.get("caveat"), "status": profile.get("status"), "method": None, "window": None,
+            "market_file": market.get("file"), "price_per_kwh": None, "buildings": []}
+
+    def unavailable(reason: str) -> dict:
+        info["reason"] = reason
+        return info
+
+    lag = profile.get("max_window_lag_months")
     if model["state"] != "market_energy_pending":
-        info["reason"] = (f"model state is {model['state']}; the illustrative estimate is made only when the energy is "
-                          "market-priced and pending")
-        return info
-    if not isinstance(hours, list) or not hours or not isinstance(lag, int):
-        info["reason"] = f"synthetic profile {profile_id} lacks business_hours_beginning or max_window_lag_months"
-        return info
+        return unavailable(f"model state is {model['state']}; the simulated estimate is made only when the energy is "
+                           "market-priced and pending")
+    if not isinstance(lag, int) or isinstance(lag, bool) or lag < 1:
+        return unavailable(f"simulated profile {profile_id} lacks a positive max_window_lag_months")
+    if limits is None:
+        return unavailable(f"size band {model['key'].get('size_band')} has no kW limits in the crosswalk")
+    levels = [level for level in model["levels"] if not level.get("withheld")
+              and (level_inputs.get(level["id"]) or {}).get("zone_rows")
+              and (level_inputs.get(level["id"]) or {}).get("market_eligible")]
+    if not levels:
+        return unavailable("No eligible market-only usage level with complete required delivery contributors.")
     document = market.get("document")
     if document is None:
-        info["reason"] = market.get("problem") or "no market history document"
-        return info
-    from scrapers.utils.market_pricing import synthetic_profile_price
+        return unavailable(market.get("problem") or "no market history document")
+    from pipeline.archetype_profiles import DAY_TYPES, runs_in_band
+    from scrapers.utils.market_pricing import load_shape_price
 
-    reasons, done = {}, []
-    for level in model["levels"]:
-        inputs = level_inputs.get(level["id"]) or {}
-        if not inputs.get("zone_rows"):
-            reasons[str(level["id"])] = "no utility is computable at this level"
-            continue
+    # A flat load checks the market history first, so a stale or wrong file never costs reading the simulated runs.
+    probe = load_shape_price(document, province=province, as_of=as_of, max_lag_months=lag,
+                             bin_kw={(month, kind, hour): 1.0 for month in range(1, 13) for kind in DAY_TYPES
+                                     for hour in range(24)}, month_kwh={month: 1.0 for month in range(1, 13)})
+    info["window"] = probe.get("window")
+    if not probe.get("ok"):
+        return unavailable(probe.get("reason") or "the market history is not usable")
+    data = _archetype_set(archetypes)
+    if data is None:
+        return unavailable(archetypes.get("problem") or "no simulated archetypes")
+
+    runs = sorted(runs_in_band(data, province, *limits), key=lambda run: run.datapoint_id)
+    if not runs:
+        return unavailable(f"no simulated archetype in {province} has an average monthly peak in this size band")
+    buildings = []
+    for run in runs:
         try:
-            priced = synthetic_profile_price(document, kwh=level["kwh"], kw=level["kw"], business_hours=hours,
-                                             as_of=as_of, max_lag_months=lag)
+            priced = load_shape_price(document, province=province, bin_kw=run.market_bin_kw,
+                                      month_kwh=run.market_month_kwh, as_of=as_of, max_lag_months=lag)
         except Exception as exc:  # fail closed: only the sidecar becomes unavailable
             priced = {"ok": False, "reason": f"market price calculation failed ({exc})"}
         info["window"] = info["window"] or priced.get("window")
         if not priced.get("ok"):
-            reasons[str(level["id"])] = priced.get("reason") or "not computable"
-            continue
-        level["illustrative_all_in"] = _illustrative_level(level, priced, inputs, profile_id, info["label"])
-        done.append((level, priced))
-    if not done:
-        info["reason"] = "; ".join(dict.fromkeys(reasons.values())) or "no usage level"
-        return info
-    info["available"] = True
-    if reasons:
-        info["level_reasons"] = reasons
-    info["method"] = _illustrative_method(profile_id, profile, done, document, market.get("file"),
-                                          model["coverage"]["contributor_noun"]["singular"])
+            return unavailable(f"{run.building_type} ({run.datapoint_id}): {priced.get('reason') or 'not computable'}")
+        buildings.append({"datapoint_id": run.datapoint_id, "building_type": run.building_type,
+                          "heating_fuel": run.heating_fuel, "city": run.city,
+                          "floor_area_m2": round(run.floor_area_m2, 1),
+                          "average_monthly_kwh": round(run.average_monthly_kwh),
+                          "average_monthly_peak_kw": round(run.average_monthly_peak_kw, 1),
+                          "kwh_per_kw": round(run.kwh_per_kw, 1), "quality_flag": run.quality_flag,
+                          "price_per_kwh": priced["price_per_kwh"]})
+    buildings.sort(key=lambda b: (b["price_per_kwh"], b["building_type"], b["heating_fuel"]))
+    prices = [b["price_per_kwh"] for b in buildings]
+    price = round(statistics.median(prices), 6)
+    for level in levels:
+        level["illustrative_all_in"] = _simulated_level(level, price, prices, level_inputs[level["id"]], profile_id,
+                                                        info["label"])
+    info.update(available=True, price_per_kwh=price, buildings=buildings,
+                price_range={"min": min(prices), "max": max(prices)},
+                method=_simulated_method(model, profile_id, buildings, price, info["window"] or {}, document,
+                                         market.get("file"), model["coverage"]["contributor_noun"]["singular"],
+                                         info["label"]))
     return info
 
 
@@ -2693,7 +2800,7 @@ def _territorial_fields(model: dict, chosen: dict, preps: dict, crosswalk: dict,
 
 def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, crosswalk: dict, usage_levels: dict,
                  taxes: dict, as_of: date, zone_policy: str, province_utilities: set[str], input_label: str,
-                 block_periods: Optional[list] = None, market: Optional[dict] = None,
+                 block_periods: Optional[list] = None, archetypes: Optional[dict] = None,
                  benchmark_market: Optional[dict] = None, percentage_riders: Optional[list] = None,
                  subsidies: Optional[dict] = None) -> dict:
     """One model: per-utility costs at each usage level, statistics, buckets, energy blocks and method text; for a
@@ -2701,7 +2808,11 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
     province, fuel, sector, structure, band = key
     level_sector = band if sector == "commercial" and band else sector
     raw_levels = (usage_levels.get(fuel) or {}).get(level_sector) if isinstance(usage_levels.get(fuel), dict) else None
-    levels = [lv for lv in raw_levels if isinstance(lv, dict)] if isinstance(raw_levels, list) else []
+    levels = [lv for lv in raw_levels if isinstance(lv, dict) and level_applies(lv, province)] \
+        if isinstance(raw_levels, list) else []
+    repeated = sorted({str(lv.get("id")) for lv in levels if sum(other.get("id") == lv.get("id") for other in levels) > 1})
+    if repeated:
+        raise ValueError(f"usage levels {fuel}/{level_sector}: more than one entry {repeated} applies to {province}")
     volume = "kwh"
     if fuel == "gas":
         # Each gas model is evaluated only at the levels of its records' native volume unit (m3 or GJ).
@@ -3078,9 +3189,11 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
     has_pairs = any(record.get("pair") for rows in chosen.values() for record, _, _ in rows)
     model["method"] = _method_text(model, key, levels, component_counts, component_examples, conversions, zone_policy,
                                    pair_config(crosswalk).get("method_note") if has_pairs else None)
-    profile_id, profile = find_synthetic_profile(usage_levels, province, fuel, sector, level_sector)
+    profile_id, profile = find_simulated_profile(usage_levels, province, fuel, sector, level_sector)
     if profile is not None:
-        model["illustrative"] = _illustrative(model, profile_id, profile, market or {}, level_inputs, as_of)
+        model["illustrative"] = _simulated(model, profile_id, profile, benchmark_market or {}, level_inputs, as_of,
+                                           archetypes if archetypes is not None else _archetype_context(None),
+                                           _band_limits(crosswalk, band))
     configs = usage_levels.get("market_benchmarks") or {}
     if (province in ("ON", "AB") and fuel == "electricity" and sector == "commercial"
             and model["state"] == "market_energy_pending" and province in configs):
@@ -3289,18 +3402,19 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
                  zone_policy: str = "median_of_zones", input_label: str = "site/data/rates.json",
                  fuels: Optional[Iterable[str]] = MODEL_FUELS, block_periods: Any = _DEFAULT,
                  market_document: Any = _DEFAULT, market_documents: Any = _DEFAULT,
-                 percentage_riders: Any = _DEFAULT, subsidies: Any = _DEFAULT) -> dict:
+                 percentage_riders: Any = _DEFAULT, subsidies: Any = _DEFAULT, archetypes: Any = _DEFAULT) -> dict:
     """Representative models for every crosswalk model key of the given provinces and fuels (Phases 7B/7C, 7T).
 
     ``block_periods``: a block_periods document or entry list (default data/models/block_periods.json; a missing file
-    means no entries). ``market_document``: observed Ontario market history for the Phase 7E illustrative sidecar
-    (default site/data/market_pricing_ontario.json, read only when a model matches a synthetic profile; None or an
-    unusable document makes the sidecar unavailable, never the build). ``market_documents`` optionally
-    supplies province-keyed observed histories for benchmarks (and Ontario's synthetic sidecar).
-    Explicit None values disable that province's history without reading a live file. ``percentage_riders`` and
-    ``subsidies``: the reviewed percentage_riders and subsidies documents (defaults data/models/percentage_riders.json
-    and data/models/subsidies.json; a missing file leaves territorial percentage riders not computable and publishes
-    no after-subsidy cost)."""
+    means no entries). ``market_document``: observed Ontario market history for the Ontario benchmark and simulated
+    sidecar (default site/data/market_pricing_ontario.json; None or an unusable document makes them unavailable, never
+    the build). ``market_documents`` optionally supplies province-keyed observed histories (ON, AB) instead; with only
+    ``market_document`` given, Alberta has none. Explicit None values disable that province's history without reading
+    a live file. ``archetypes``: the simulated BTAP runs for the simulated-shape sidecar (pipeline.archetype_profiles;
+    default the repository's runs, read only when a market-pending model needs them; None disables the sidecar).
+    ``percentage_riders`` and ``subsidies``: the reviewed percentage_riders and subsidies documents (defaults
+    data/models/percentage_riders.json and data/models/subsidies.json; a missing file leaves territorial percentage
+    riders not computable and publishes no after-subsidy cost)."""
     if zone_policy not in ZONE_POLICIES:
         raise ValueError(f"zone_policy must be one of {ZONE_POLICIES}")
     as_of_date = _as_of(as_of)
@@ -3341,12 +3455,9 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
     for province_fuel, name, unit in counted:
         if not market_reference_only.get(name):
             province_utilities[province_fuel].add(unit)
-    profiled = [key for key in groups if find_synthetic_profile(
-        usage_levels, key[0], key[1], key[2], key[4] if key[2] == "commercial" and key[4] else key[2])[1] is not None]
     if market_documents is not _DEFAULT and not isinstance(market_documents, dict):
         raise ValueError("market_documents must map province codes to market documents or None")
-    ontario = market_document if market_documents is _DEFAULT else market_documents.get("ON")
-    market = _market_context(ontario) if profiled else None
+    archetype_ctx = _archetype_context(archetypes)
     benchmarks = {}
     for province in ("ON", "AB"):
         if wanted is not None and province not in wanted:
@@ -3354,7 +3465,7 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
         if market_documents is not _DEFAULT:
             benchmarks[province] = _market_context(market_documents.get(province))
         elif province == "ON":
-            benchmarks[province] = market or _market_context(market_document)
+            benchmarks[province] = _market_context(market_document)
         elif market_document is not _DEFAULT:
             benchmarks[province] = _market_context(None)
         else:
@@ -3370,9 +3481,13 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
     models = [_build_model(key, groups[key], crosswalk=crosswalk, usage_levels=usage_levels, taxes=taxes,
                            as_of=as_of_date, zone_policy=zone_policy,
                            province_utilities=province_utilities[(key[0], key[1])], input_label=input_label,
-                           block_periods=periods["entries"], market=market, benchmark_market=benchmarks.get(key[0]),
+                           block_periods=periods["entries"], archetypes=archetype_ctx,
+                           benchmark_market=benchmarks.get(key[0]),
                            percentage_riders=riders["entries"], subsidies=subsidy_cfg)
               for key in sorted(groups, key=lambda k: _model_order(k, crosswalk))]
+    profiles_used = {k: v for k, v in (usage_levels.get("simulated_profiles") or {}).items()
+                     if isinstance(v, dict) and (wanted is None or wanted & set(
+                         (v.get("applies_to") or {}).get("provinces") or []))}
     created = [str(r["created_at"]) for r in live if r.get("created_at")]
     shares = {k: {"applies_to": v.get("applies_to"), "shares": v.get("shares"), "period": v.get("period"),
                   "source_url": (v.get("source") or {}).get("url")}
@@ -3446,10 +3561,12 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
                 "skipped": periods.get("skipped")},
             "required_contributors": [e for e in crosswalk.get("required_contributors") or [] if isinstance(e, dict)
                                       and (wanted is None or e.get("province") in wanted)],
-            "synthetic_profiles": {k: v for k, v in (usage_levels.get("synthetic_profiles") or {}).items()
-                                   if isinstance(v, dict) and (wanted is None or (v.get("applies_to") or {}).get(
-                                       "province") in wanted)} or None,
-            "market_file": (market or {}).get("file"),
+            # Simulated-shape sidecar inputs (owner decisions 11 and 12): left out of model monitoring's fingerprints.
+            "simulated_profiles": {
+                "profiles": profiles_used,
+                "archetypes": _archetype_summary(archetype_ctx),
+                "market_files": {province: context.get("file") for province, context in sorted(benchmarks.items())}}
+            if profiles_used else None,
             "usage_bounds": [e for e in crosswalk.get("usage_bounds") or [] if isinstance(e, dict)],
             "demand_bounds": [e for e in crosswalk.get("demand_bounds") or [] if isinstance(e, dict)],
             "taxes": {"as_of": taxes.get("as_of"), "rule": "Lines from data/models/taxes.json for province, fuel and "
@@ -3509,9 +3626,11 @@ def format_models(result: dict) -> str:
                          f"closest {closest.get('utility')}" + (f"  outliers: {outliers}" if outliers else ""))
             illustrative = level.get("illustrative_all_in")
             if illustrative:
-                lines.append(f"           {SYNTHETIC_LABEL}: market energy ${illustrative['market_energy_per_kwh']:.6f}"
-                             f"/kWh (${illustrative['market_energy_cost']:,.2f}/month); median "
-                             f"{_fmt_money(illustrative['without_tax']['median'])} / with tax "
+                low = (illustrative.get("market_energy_range") or {}).get("min_per_kwh")
+                high = (illustrative.get("market_energy_range") or {}).get("max_per_kwh")
+                lines.append(f"           {SIMULATED_LABEL}: market energy ${illustrative['market_energy_per_kwh']:.6f}"
+                             f"/kWh (buildings ${low:.6f}-${high:.6f}; ${illustrative['market_energy_cost']:,.2f}/month);"
+                             f" median {_fmt_money(illustrative['without_tax']['median'])} / with tax "
                              f"{_fmt_money(illustrative['with_tax']['median'])}")
             after = level.get("after_subsidy")
             if after and after.get("available"):
@@ -3522,7 +3641,7 @@ def format_models(result: dict) -> str:
                 lines.append(f"           after subsidies: not shown ({after.get('reason')})")
         info = model.get("illustrative")
         if info and not info["available"]:
-            lines.append(f"  illustrative estimate unavailable: {info['reason']}")
+            lines.append(f"  simulated estimate unavailable: {info['reason']}")
     return "\n".join(lines)
 
 

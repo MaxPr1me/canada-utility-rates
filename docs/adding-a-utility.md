@@ -278,7 +278,7 @@ not modelled:
   which class serves each level; when the tariff's wording makes a limit itself included or
   excluded differently from the default, add a reviewed crosswalk `usage_bounds` (gas) or
   `demand_bounds` (kW) entry quoting it. A market-priced energy charge makes the model *market
-  energy pending*; the 7E illustrative (synthetic-profile) estimate is never an input to medians,
+  energy pending*; the opt-in simulated-shape estimate (method 7S-1) is never an input to medians,
   change detection or comparisons.
 - The model tests use frozen fixtures (`tests/fixtures/rm_*.json`, including `rm_records_b14.json`
   for the other provinces and Alberta), so live data never breaks the tests that run before the

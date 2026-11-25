@@ -1,5 +1,6 @@
-/* Representative models: Phase 7E illustrative all-in estimate (synthetic load profile).
-   Loaded after style.css; the amber, dashed block must never look like the source-backed table. */
+/* Representative models: the opt-in market energy estimate priced with simulated building load shapes (method 7S-1,
+   which replaced the Phase 7E synthetic profile). Loaded after style.css; the amber, dashed block must never look like
+   the source-backed table. */
 
 .rm-illus-wrap { max-width: 900px; margin: 0.25rem 0 1rem; }
 .rm-illus-switch { display: inline-flex; align-items: flex-start; gap: 0.5rem; max-width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #f0c36d; border-radius: var(--radius); background: #fffbeb; color: #78350f; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
@@ -18,6 +19,9 @@
 .rm-illus-grid { max-width: none; }
 .rm-illus-grid .meta-label { color: #78350f; }
 .rm-illus-method { margin-top: 0.25rem; padding: 0.75rem; border-radius: var(--radius); background: rgba(255, 255, 255, 0.7); font-size: 0.85rem; line-height: 1.5; }
+.rm-illus-buildings { margin-top: 1rem; }
+.rm-illus-buildings summary { font-weight: 600; cursor: pointer; }
+.rm-illus-buildings .rm-table { background: rgba(255, 255, 255, 0.85); }
 
 @media (max-width: 640px) {
   .rm-illus { padding: 0.75rem; }
