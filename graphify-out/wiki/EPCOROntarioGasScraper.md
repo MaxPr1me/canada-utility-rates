@@ -1,10 +1,9 @@
 # EPCOROntarioGasScraper
 
-> 60 nodes
+> 45 nodes
 
 ## Key Concepts
 
-- **epcor_gas_ontario.py** (39 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **EPCOROntarioGasScraper** (25 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._build()** (22 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._zone_context()** (13 connections) — `scrapers/utilities/epcor_gas_ontario.py`
@@ -21,26 +20,25 @@
 - **._carbon()** (6 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._columns()** (6 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **.scrape()** (6 connections) — `scrapers/utilities/epcor_gas_ontario.py`
-- **find_rate_order_url()** (6 connections) — `scrapers/utilities/epcor_gas_ontario.py`
-- **_page_classes()** (6 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **_cell_values()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **_display()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
+- **._fetch_pdf_pages()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._fetch_text()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._require_effective()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
-- **._seasons()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **notice_case()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
-- *... and 35 more nodes in this community*
+- **notice_url()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
+- **_Line** (4 connections) — `scrapers/utilities/epcor_gas_ontario.py`
+- **Zone** (4 connections) — `scrapers/utilities/epcor_gas_ontario.py`
+- *... and 20 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (13 shared connections)
-- [re](re.md) (9 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (5 shared connections)
-- [RateComponent](RateComponent.md) (5 shared connections)
-- [DocumentPage](DocumentPage.md) (4 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (26 shared connections)
+- [re](re.md) (12 shared connections)
+- [TariffRecord](TariffRecord.md) (4 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,8 +46,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 181 (98%)
-- INFERRED: 4 (2%)
+- EXTRACTED: 145 (97%)
+- INFERRED: 4 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **math** (32 connections)
+- **math** (33 connections)
 - **market_pricing.py** (18 connections) — `scrapers/utils/market_pricing.py`
 - **historical_market_price()** (12 connections) — `scrapers/utils/market_pricing.py`
 - **load_shape_price()** (10 connections) — `scrapers/utils/market_pricing.py`
@@ -31,18 +31,18 @@
 
 ## Relationships
 
-- [representative_models.py](representative_models.py.md) (7 shared connections)
 - [json](json.md) (6 shared connections)
+- [representative_models.py](representative_models.py.md) (5 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (5 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (4 shared connections)
 - [archetype_profiles.py](archetype_profiles.py.md) (4 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (4 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
+- [_energy_estimate](_energy_estimate.md) (2 shared connections)
 - [aeso.py](aeso.py.md) (2 shared connections)
-- [MarketDataError](MarketDataError.md) (2 shared connections)
 - [main](main.md) (1 shared connections)
-- [build_models](build_models.md) (1 shared connections)
+- [_build_model](_build_model.md) (1 shared connections)
 
 ## Source Files
 
@@ -50,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 83 (100%)
+- EXTRACTED: 84 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,6 +1,6 @@
 # workflow_checks
 
-> 23 nodes
+> 24 nodes
 
 ## Key Concepts
 
@@ -14,6 +14,7 @@
 - **freshness_report()** (5 connections) — `pipeline/model_monitoring.py`
 - **next_scheduled()** (5 connections) — `pipeline/model_monitoring.py`
 - **scheduled_due()** (5 connections) — `pipeline/model_monitoring.py`
+- **date** (5 connections)
 - **_monthly_price_check()** (4 connections) — `pipeline/model_monitoring.py`
 - **source_checks()** (4 connections) — `pipeline/model_monitoring.py`
 - **_evidence()** (3 connections) — `pipeline/model_monitoring.py`
@@ -24,18 +25,16 @@
 - **The first occurrence strictly after ``after`` of a fixed UTC day-of-month…** (1 connections) — `pipeline/model_monitoring.py`
 - **The monthly-price schedule's own cadence: met by a successful full or monthly-…** (1 connections) — `pipeline/model_monitoring.py`
 - **Hold a monthly-price utility's failure seen between the full run and the next…** (1 connections) — `pipeline/model_monitoring.py`
-- **Reject ambiguous clocks instead of treating a local time as UTC.** (1 connections) — `pipeline/model_monitoring.py`
 - **Use completed-step evidence, including source provenance; a green badge alone…** (1 connections) — `pipeline/model_monitoring.py`
+- **Reject ambiguous clocks instead of treating a local time as UTC.** (1 connections) — `pipeline/model_monitoring.py`
 - **Whether this monitoring job belongs to a successful full Monthly Scrape in a…** (1 connections) — `pipeline/model_monitoring.py`
 
 ## Relationships
 
-- [model_monitoring.py](model_monitoring.py.md) (16 shared connections)
-- [main](main.md) (3 shared connections)
-- [record_refresh](record_refresh.md) (3 shared connections)
-- [parse_html](parse_html.md) (1 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (17 shared connections)
+- [main](main.md) (4 shared connections)
+- [semantic_models](semantic_models.md) (4 shared connections)
 - [re](re.md) (1 shared connections)
-- [semantic_models](semantic_models.md) (1 shared connections)
 
 ## Source Files
 
@@ -43,7 +42,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 60 (100%)
+- EXTRACTED: 63 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,6 +1,6 @@
 # run_scrape.py
 
-> 58 nodes
+> 62 nodes
 
 ## Key Concepts
 
@@ -8,12 +8,13 @@
 - **main()** (23 connections) — `pipeline/run_scrape.py`
 - **registry.py** (20 connections) — `scrapers/registry.py`
 - **load_registry()** (13 connections) — `scrapers/registry.py`
+- **validation.py** (11 connections) — `scrapers/utils/validation.py`
 - **find_utility()** (8 connections) — `scrapers/registry.py`
 - **monthly_price_utilities()** (8 connections) — `scrapers/registry.py`
 - **get_active_utilities()** (7 connections) — `scrapers/registry.py`
 - **suggest_names()** (7 connections) — `scrapers/registry.py`
-- **canonical_snapshot()** (6 connections) — `pipeline/run_scrape.py`
-- **store_results()** (6 connections) — `pipeline/run_scrape.py`
+- **validate_tariff()** (6 connections) — `scrapers/utils/validation.py`
+- **derive_provenance()** (6 connections) — `pipeline/export_json.py`
 - **tally_provenance()** (6 connections) — `pipeline/run_scrape.py`
 - **validate_batch()** (6 connections) — `scrapers/utils/validation.py`
 - **load_scraper()** (5 connections) — `pipeline/run_scrape.py`
@@ -27,25 +28,24 @@
 - **summarize_run()** (4 connections) — `pipeline/run_scrape.py`
 - **is_excluded_class_estimate()** (4 connections) — `scrapers/base.py`
 - **get_utility()** (4 connections) — `scrapers/registry.py`
-- **unicodedata** (4 connections)
-- **append_step_summary()** (3 connections) — `pipeline/run_scrape.py`
-- *... and 33 more nodes in this community*
+- **_validate_charge_value()** (4 connections) — `scrapers/utils/validation.py`
+- *... and 37 more nodes in this community*
 
 ## Relationships
 
 - [json](json.md) (22 shared connections)
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (6 shared connections)
+- [BaseScraper](BaseScraper.md) (14 shared connections)
+- [TariffRecord](TariffRecord.md) (6 shared connections)
+- [os](os.md) (5 shared connections)
 - [main](main.md) (4 shared connections)
 - [semantic_models](semantic_models.md) (4 shared connections)
-- [os](os.md) (3 shared connections)
-- [validate_tariff](validate_tariff.md) (3 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
-- [re](re.md) (2 shared connections)
 - [ntpc.py](ntpc.py.md) (2 shared connections)
+- [re](re.md) (2 shared connections)
 
 ## Source Files
 
+- `pipeline/export_json.py`
 - `pipeline/run_scrape.py`
 - `scrapers/base.py`
 - `scrapers/registry.py`
@@ -53,7 +53,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 144 (96%)
+- EXTRACTED: 154 (96%)
 - INFERRED: 6 (4%)
 - AMBIGUOUS: 0 (0%)
 

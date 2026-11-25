@@ -1,6 +1,6 @@
 # parse_rolr_page
 
-> 23 nodes
+> 25 nodes
 
 ## Key Concepts
 
@@ -14,6 +14,7 @@
 - **_sections()** (7 connections) — `scrapers/utilities/red_deer.py`
 - **_flat()** (6 connections) — `scrapers/utilities/red_deer.py`
 - **parse_delivery_page()** (6 connections) — `scrapers/utilities/red_deer.py`
+- **._html()** (5 connections) — `scrapers/utilities/red_deer.py`
 - **_iso()** (4 connections) — `scrapers/utilities/red_deer.py`
 - **_quarter()** (3 connections) — `scrapers/utilities/red_deer.py`
 - **.scrape()** (3 connections) — `scrapers/utilities/red_deer.py`
@@ -25,17 +26,18 @@
 - **The current term's Rate of Last Resort energy price and the page's…** (1 connections) — `scrapers/utilities/red_deer.py`
 - **Wires and Rate of Last Resort records; (records, {code: rejection reason}).** (1 connections) — `scrapers/utilities/red_deer.py`
 - **Parse the City of Red Deer's distribution tariff and Regulated Rate Tariff.** (1 connections) — `scrapers/utilities/red_deer.py`
+- **The page over plain HTTP, or rendered by headless Chromium when the expected…** (1 connections) — `scrapers/utilities/red_deer.py`
 - **{rate class: {page, text}} for pages whose heading matches ``heading`` (one…** (1 connections) — `scrapers/utilities/red_deer.py`
 - **Effective date and, per class, the System/Distribution Access charges,…** (1 connections) — `scrapers/utilities/red_deer.py`
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (6 shared connections)
+- [BaseScraper](BaseScraper.md) (13 shared connections)
 - [re](re.md) (6 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (5 shared connections)
-- [DocumentPage](DocumentPage.md) (4 shared connections)
-- [RateComponent](RateComponent.md) (2 shared connections)
+- [TariffRecord](TariffRecord.md) (5 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [FortisBCEnergyScraper](FortisBCEnergyScraper.md) (1 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
@@ -44,7 +46,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 70 (95%)
+- EXTRACTED: 73 (95%)
 - INFERRED: 4 (5%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,6 +1,6 @@
 # RateComponent
 
-> 52 nodes
+> 48 nodes
 
 ## Key Concepts
 
@@ -14,13 +14,11 @@
 - **._run_section()** (7 connections) — `scrapers/utilities/hydro_quebec.py`
 - **._parse_domestic_rates()** (6 connections) — `scrapers/utilities/hydro_quebec.py`
 - **._parse_dr_leeway()** (6 connections) — `scrapers/utilities/hydro_quebec.py`
-- **.scrape()** (6 connections) — `scrapers/utilities/nl_hydro.py`
 - **._parse_rate_d()** (5 connections) — `scrapers/utilities/hydro_quebec.py`
 - **._parse_rate_g()** (5 connections) — `scrapers/utilities/hydro_quebec.py`
 - **._parse_rate_m()** (5 connections) — `scrapers/utilities/hydro_quebec.py`
 - **.scrape()** (5 connections) — `scrapers/utilities/hydro_quebec.py`
 - **._seed_data()** (5 connections) — `scrapers/utilities/hydro_quebec.py`
-- **._seed_data()** (5 connections) — `scrapers/utilities/nl_hydro.py`
 - **g9_common()** (4 connections) — `scrapers/utilities/hydro_quebec.py`
 - **._option_section()** (3 connections) — `scrapers/utilities/hydro_quebec.py`
 - **voltage_credits()** (3 connections) — `scrapers/utilities/hydro_quebec.py`
@@ -29,32 +27,33 @@
 - **finish()** (2 connections) — `scrapers/utilities/hydro_quebec.py`
 - **build()** (2 connections) — `scrapers/utilities/hydro_quebec.py`
 - **finish()** (2 connections) — `scrapers/utilities/hydro_quebec.py`
-- *... and 27 more nodes in this community*
+- **.__init__()** (2 connections) — `scrapers/utilities/hydro_quebec.py`
+- **flex_components()** (2 connections) — `scrapers/utilities/hydro_quebec.py`
+- *... and 23 more nodes in this community*
 
 ## Relationships
 
-- [NBPowerScraper](NBPowerScraper.md) (33 shared connections)
-- [RateComponent](RateComponent.md) (25 shared connections)
-- [DocumentPage](DocumentPage.md) (11 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (8 shared connections)
-- [BaseScraper](BaseScraper.md) (7 shared connections)
+- [BaseScraper](BaseScraper.md) (26 shared connections)
+- [TariffRecord](TariffRecord.md) (24 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (11 shared connections)
+- [extract_effective_date](extract_effective_date.md) (6 shared connections)
 - [YukonEnergyScraper](YukonEnergyScraper.md) (4 shared connections)
-- [.__init__](__init__.md) (3 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
-- [nl_hydro.py](nl_hydro.py.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
+- [.__init__](__init__.md) (2 shared connections)
+- [FortisBCEnergyScraper](FortisBCEnergyScraper.md) (2 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (2 shared connections)
+- [aeso.py](aeso.py.md) (1 shared connections)
 - [ATCOElectricScraper](ATCOElectricScraper.md) (1 shared connections)
-- [DirectEnergyRegulatedScraper](DirectEnergyRegulatedScraper.md) (1 shared connections)
-- [ENMAXEnergyScraper](ENMAXEnergyScraper.md) (1 shared connections)
+- [ATCOGasScraper](ATCOGasScraper.md) (1 shared connections)
 
 ## Source Files
 
 - `scrapers/base.py`
 - `scrapers/utilities/hydro_quebec.py`
-- `scrapers/utilities/nl_hydro.py`
 
 ## Audit Trail
 
-- EXTRACTED: 172 (98%)
+- EXTRACTED: 163 (98%)
 - INFERRED: 3 (2%)
 - AMBIGUOUS: 0 (0%)
 

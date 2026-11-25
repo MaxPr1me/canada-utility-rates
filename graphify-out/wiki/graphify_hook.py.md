@@ -35,7 +35,8 @@
 
 - [json](json.md) (9 shared connections)
 - [os](os.md) (8 shared connections)
-- [re](re.md) (4 shared connections)
+- [re](re.md) (3 shared connections)
+- [TariffRecord](TariffRecord.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files

@@ -1,6 +1,6 @@
 # epcor_distribution.py
 
-> 55 nodes
+> 59 nodes
 
 ## Key Concepts
 
@@ -28,18 +28,18 @@
 - **Edition** (6 connections) — `scrapers/utilities/epcor_distribution.py`
 - **_Tariff** (6 connections) — `scrapers/utilities/epcor_distribution.py`
 - **._fetch_pdf_pages()** (6 connections) — `scrapers/utilities/epcor_distribution.py`
-- **_parse_date()** (6 connections) — `scrapers/utilities/epcor_distribution.py`
-- *... and 30 more nodes in this community*
+- **.scrape()** (6 connections) — `scrapers/utilities/epcor_distribution.py`
+- *... and 34 more nodes in this community*
 
 ## Relationships
 
-- [DocumentPage](DocumentPage.md) (15 shared connections)
+- [BaseScraper](BaseScraper.md) (18 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (15 shared connections)
 - [re](re.md) (12 shared connections)
-- [BaseScraper](BaseScraper.md) (11 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (8 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (5 shared connections)
-- [RateComponent](RateComponent.md) (4 shared connections)
+- [TariffRecord](TariffRecord.md) (7 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (1 shared connections)
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (1 shared connections)
 
 ## Source Files
@@ -48,7 +48,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 185 (93%)
+- EXTRACTED: 192 (93%)
 - INFERRED: 14 (7%)
 - AMBIGUOUS: 0 (0%)
 

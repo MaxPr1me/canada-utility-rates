@@ -33,12 +33,11 @@
 
 ## Relationships
 
-- [NBPowerScraper](NBPowerScraper.md) (12 shared connections)
-- [BaseScraper](BaseScraper.md) (10 shared connections)
-- [DocumentPage](DocumentPage.md) (10 shared connections)
-- [RateComponent](RateComponent.md) (6 shared connections)
+- [BaseScraper](BaseScraper.md) (17 shared connections)
+- [TariffRecord](TariffRecord.md) (12 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (10 shared connections)
 - [re](re.md) (6 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (5 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
 - [io](io.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 

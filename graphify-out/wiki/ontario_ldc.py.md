@@ -28,10 +28,11 @@
 ## Relationships
 
 - [ontario_ldc.py](ontario_ldc.py.md) (11 shared connections)
-- [OntarioLDCScraper](OntarioLDCScraper.md) (9 shared connections)
+- [OntarioLDCScraper](OntarioLDCScraper.md) (7 shared connections)
+- [._energy_entries](_energy_entries.md) (2 shared connections)
 - [re](re.md) (1 shared connections)
-- [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
-- [parse_hoep_averages](parse_hoep_averages.md) (1 shared connections)
+- [parse_tariff_pages](parse_tariff_pages.md) (1 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files

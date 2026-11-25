@@ -1,6 +1,6 @@
 # ontario_ldc.py
 
-> 18 nodes
+> 19 nodes
 
 ## Key Concepts
 
@@ -8,6 +8,7 @@
 - **clean_zone()** (7 connections) — `scrapers/utilities/ontario_ldc.py`
 - **validate_energy_charges()** (6 connections) — `scrapers/utilities/ontario_ldc.py`
 - **_split_criteria()** (5 connections) — `scrapers/utilities/ontario_ldc.py`
+- **._tariff_component()** (4 connections) — `scrapers/utilities/ontario_ldc.py`
 - **_criteria_text()** (4 connections) — `scrapers/utilities/ontario_ldc.py`
 - **_slug()** (4 connections) — `scrapers/utilities/ontario_ldc.py`
 - **split_oeb_distributor()** (4 connections) — `scrapers/utilities/ontario_ldc.py`
@@ -25,17 +26,14 @@
 
 ## Relationships
 
-- [OntarioLDCScraper](OntarioLDCScraper.md) (12 shared connections)
+- [._energy_entries](_energy_entries.md) (12 shared connections)
+- [BaseScraper](BaseScraper.md) (11 shared connections)
 - [ontario_ldc.py](ontario_ldc.py.md) (11 shared connections)
-- [BaseScraper](BaseScraper.md) (8 shared connections)
 - [re](re.md) (6 shared connections)
-- [select_energy_classification](select_energy_classification.md) (2 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (1 shared connections)
-- [parse_hoep_averages](parse_hoep_averages.md) (1 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
+- [OntarioLDCScraper](OntarioLDCScraper.md) (4 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (1 shared connections)
+- [TariffRecord](TariffRecord.md) (1 shared connections)
 - [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)
-- [class_loss_factors](class_loss_factors.md) (1 shared connections)
 
 ## Source Files
 
@@ -44,7 +42,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 66 (100%)
+- EXTRACTED: 69 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

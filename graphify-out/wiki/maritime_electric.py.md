@@ -1,10 +1,9 @@
 # maritime_electric.py
 
-> 33 nodes
+> 19 nodes
 
 ## Key Concepts
 
-- **maritime_electric.py** (25 connections) — `scrapers/utilities/maritime_electric.py`
 - **MaritimeElectricScraper** (21 connections) — `scrapers/utilities/maritime_electric.py`
 - **._apply_large_industrial()** (8 connections) — `scrapers/utilities/maritime_electric.py`
 - **._apply_small_industrial()** (7 connections) — `scrapers/utilities/maritime_electric.py`
@@ -13,35 +12,27 @@
 - **._pdf_parts()** (6 connections) — `scrapers/utilities/maritime_electric.py`
 - **.scrape()** (6 connections) — `scrapers/utilities/maritime_electric.py`
 - **._seed_data()** (6 connections) — `scrapers/utilities/maritime_electric.py`
-- **._parse_component_line()** (5 connections) — `scrapers/utilities/maritime_electric.py`
 - **_expect_amounts()** (5 connections) — `scrapers/utilities/maritime_electric.py`
 - **._cross_checked()** (5 connections) — `scrapers/utilities/maritime_electric.py`
-- **_schedule_date()** (5 connections) — `scrapers/utilities/maritime_electric.py`
-- **_schedule_sections()** (5 connections) — `scrapers/utilities/maritime_electric.py`
 - **._page_component()** (4 connections) — `scrapers/utilities/maritime_electric.py`
-- **_amounts()** (4 connections) — `scrapers/utilities/maritime_electric.py`
-- **_parse_date()** (4 connections) — `scrapers/utilities/maritime_electric.py`
 - **_require()** (4 connections) — `scrapers/utilities/maritime_electric.py`
 - **_section()** (4 connections) — `scrapers/utilities/maritime_electric.py`
-- **_tier_from_label()** (4 connections) — `scrapers/utilities/maritime_electric.py`
 - **component()** (2 connections) — `scrapers/utilities/maritime_electric.py`
 - **record()** (2 connections) — `scrapers/utilities/maritime_electric.py`
-- **requests_exceptions** (2 connections)
-- **maritime_electric.py — Scraper for Maritime Electric electricity rates (Prince…** (1 connections) — `scrapers/utilities/maritime_electric.py`
-- **Rate-column header date; must agree with the date in the document URL when…** (1 connections) — `scrapers/utilities/maritime_electric.py`
-- *... and 8 more nodes in this community*
+- **Scrape Maritime Electric electricity rates.** (1 connections) — `scrapers/utilities/maritime_electric.py`
+- **Attempt to scrape live Maritime Electric rates. Falls back to seed data if the…** (1 connections) — `scrapers/utilities/maritime_electric.py`
+- **Build one record; None unless the class has exactly its expected components.** (1 connections) — `scrapers/utilities/maritime_electric.py`
+- **Estimates mirroring the N-28 Rate 110 and Rate 232 components (see SEED_NOTE).…** (1 connections) — `scrapers/utilities/maritime_electric.py`
 
 ## Relationships
 
-- [NBPowerScraper](NBPowerScraper.md) (12 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (10 shared connections)
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [RateComponent](RateComponent.md) (8 shared connections)
-- [re](re.md) (5 shared connections)
-- [DocumentPage](DocumentPage.md) (2 shared connections)
+- [TariffRecord](TariffRecord.md) (11 shared connections)
+- [re](re.md) (7 shared connections)
+- [BaseScraper](BaseScraper.md) (6 shared connections)
+- [.fetch_page](fetch_page.md) (6 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
-- [parse_schedule](parse_schedule.md) (1 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,8 +40,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 100 (97%)
-- INFERRED: 3 (3%)
+- EXTRACTED: 62 (95%)
+- INFERRED: 3 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

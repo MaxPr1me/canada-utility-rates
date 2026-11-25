@@ -1,39 +1,44 @@
 # aeso.py
 
-> 19 nodes
+> 23 nodes
 
 ## Key Concepts
 
 - **aeso.py** (24 connections) — `scrapers/utilities/aeso.py`
 - **._try_live_scrape()** (12 connections) — `scrapers/utilities/aeso.py`
 - **parse_pool_price_csv()** (12 connections) — `scrapers/utilities/aeso.py`
+- **AESOScraper** (10 connections) — `scrapers/utilities/aeso.py`
 - **AESOVerificationError** (8 connections) — `scrapers/utilities/aeso.py`
-- **parse_metadata()** (7 connections) — `scrapers/utilities/aeso.py`
 - **report_csv_url()** (7 connections) — `scrapers/utilities/aeso.py`
 - **metadata_document()** (6 connections) — `scrapers/utilities/aeso.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/aeso.py`
 - **verify_recent_prices()** (5 connections) — `scrapers/utilities/aeso.py`
+- **._market_reference()** (4 connections) — `scrapers/utilities/aeso.py`
+- **._seed_data()** (4 connections) — `scrapers/utilities/aeso.py`
 - **get_hours()** (4 connections) — `scripts/build_alberta_market.py`
 - **date** (4 connections)
 - **_today()** (3 connections) — `scrapers/utilities/aeso.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/aeso.py`
 - **ValueError** (1 connections)
 - **aeso.py -- Scraper for Alberta Electric System Operator (AESO) pool price. AESO…** (1 connections) — `scrapers/utilities/aeso.py`
 - **Require enough recent posted hours; returns the latest posted date.** (1 connections) — `scrapers/utilities/aeso.py`
-- **Check the metadata text still defines the pool price and return the document…** (1 connections) — `scrapers/utilities/aeso.py`
 - **(text, PDF modification date such as "D:20250528113723-06'00'").** (1 connections) — `scrapers/utilities/aeso.py`
+- **AESO pool price market reference for Alberta (value-less; no customer tariff…** (1 connections) — `scrapers/utilities/aeso.py`
 - **An official AESO source is missing, changed shape or is out of date.** (1 connections) — `scrapers/utilities/aeso.py`
 - **ETS report URL; the end date is exclusive.** (1 connections) — `scrapers/utilities/aeso.py`
 - **Posted hourly prices as (date, hour-ending label, $/MWh). Hours not yet posted…** (1 connections) — `scrapers/utilities/aeso.py`
 
 ## Relationships
 
-- [build_alberta_market.py](build_alberta_market.py.md) (13 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (6 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (14 shared connections)
+- [BaseScraper](BaseScraper.md) (10 shared connections)
+- [TariffRecord](TariffRecord.md) (6 shared connections)
 - [io](io.md) (5 shared connections)
-- [BaseScraper](BaseScraper.md) (5 shared connections)
-- [re](re.md) (3 shared connections)
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (3 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (2 shared connections)
 - [market_pricing.py](market_pricing.py.md) (2 shared connections)
+- [re](re.md) (2 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
 - [RateComponent](RateComponent.md) (1 shared connections)
 
 ## Source Files
@@ -43,8 +48,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 68 (97%)
-- INFERRED: 2 (3%)
+- EXTRACTED: 78 (95%)
+- INFERRED: 4 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,11 +1,12 @@
 # YukonEnergyScraper
 
-> 28 nodes
+> 30 nodes
 
 ## Key Concepts
 
 - **YukonEnergyScraper** (20 connections) — `scrapers/utilities/yukon_energy.py`
 - **._parse_residential_pdfs()** (15 connections) — `scrapers/utilities/yukon_energy.py`
+- **.live_records()** (12 connections) — `scrapers/utilities/yukon_energy.py`
 - **YukonElectricalScraper** (10 connections) — `scrapers/utilities/yukon_electrical.py`
 - **._joint_schedule()** (9 connections) — `scrapers/utilities/yukon_energy.py`
 - **._try_live_scrape()** (8 connections) — `scrapers/utilities/yukon_electrical.py`
@@ -26,21 +27,22 @@
 - **Scrape Yukon Energy Corporation electricity rates.** (1 connections) — `scrapers/utilities/yukon_energy.py`
 - **Attempt to scrape live Yukon Energy rates. Falls back to seed data if the live…** (1 connections) — `scrapers/utilities/yukon_energy.py`
 - **Parse live residential/general-service schedules; unparsed seed classes stay…** (1 connections) — `scrapers/utilities/yukon_energy.py`
+- **Return only live-parsed records (no seeds), or None when 1160 cannot be proven.** (1 connections) — `scrapers/utilities/yukon_energy.py`
 - **Return the newest model-JSON book link not later than the current UTC month;…** (1 connections) — `scrapers/utilities/yukon_energy.py`
-- **Fetch the joint YECL/YEC rate-schedule book; None if unavailable or not the…** (1 connections) — `scrapers/utilities/yukon_energy.py`
-- **Return residential schedules only when 1160, percentage riders, fuel and relief…** (1 connections) — `scrapers/utilities/yukon_energy.py`
-- *... and 3 more nodes in this community*
+- *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [RateComponent](RateComponent.md) (13 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (10 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (10 shared connections)
-- [BaseScraper](BaseScraper.md) (6 shared connections)
-- [DocumentPage](DocumentPage.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (17 shared connections)
+- [TariffRecord](TariffRecord.md) (11 shared connections)
+- [.fetch_page](fetch_page.md) (6 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [RateComponent](RateComponent.md) (4 shared connections)
+- [extract_effective_date](extract_effective_date.md) (3 shared connections)
 - [.__init__](__init__.md) (2 shared connections)
 - [re](re.md) (2 shared connections)
 - [_strings](_strings.md) (1 shared connections)
+- [FortisBCEnergyScraper](FortisBCEnergyScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,8 +51,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 81 (92%)
-- INFERRED: 7 (8%)
+- EXTRACTED: 89 (93%)
+- INFERRED: 7 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

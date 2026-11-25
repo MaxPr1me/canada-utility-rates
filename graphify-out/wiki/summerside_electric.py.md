@@ -18,12 +18,11 @@
 
 ## Relationships
 
-- [NBPowerScraper](NBPowerScraper.md) (5 shared connections)
-- [BaseScraper](BaseScraper.md) (4 shared connections)
-- [extract_pdf_pages](extract_pdf_pages.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (6 shared connections)
+- [TariffRecord](TariffRecord.md) (5 shared connections)
+- [.fetch_page](fetch_page.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
-- [DocumentPage](DocumentPage.md) (1 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (1 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
