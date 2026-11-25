@@ -166,6 +166,10 @@ The following workflow decisions were approved on 2026-11-17.
   current live tariff matches, or a line that no tariff's newest live version carries (usually a
   renamed or dropped component), is a problem until the reviewed list is updated. An unreadable list
   is a problem too.
+- `market_energy_estimate` (method 7S-2, owner decision 119, 2026-11-25) reads the published models: a
+  model whose estimated market energy failed on an input (`energy_estimate.available` false with
+  `input_problem` true; for example a stale market history or unreadable simulated buildings) shows
+  delivery charges only and is a problem until a refresh makes the estimate again.
 - Keep one bot-owned, marked monitoring issue for input/refresh problems, never ordinary price
   changes. Preserve unchecked problems and maintainer text, reject older recovery evidence and
   avoid duplicating a failure already reported by its workflow. Only monitoring-owned issues are

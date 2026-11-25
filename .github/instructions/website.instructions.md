@@ -1,5 +1,5 @@
 ---
-description: "Use when changing the static website under site/: index.html, css/, js/app.js (Rate Browser, Market Pricing, Compare), js/models.js (Representative Models), js/across-canada.js, js/rate-history.js (Rate History) and the site/data/ JSON it reads. Covers the six views, hiding seed (estimated) rates by default, filterState Sets, the province-to-utility cascade, dedupe by effective date, formatCharge, Compare never totalling, the Ontario/Alberta market dashboard, the window.CanadaUtilityModels API and shared lazy load, the Rate History periods, reviewed series and event lists and hand-built SVG charts, safe DOM building, failure notices, the opt-in simulated block and offline browser tests."
+description: "Use when changing the static website under site/: index.html, css/, js/app.js (Rate Browser, Market Pricing, Compare), js/models.js (Representative Models), js/across-canada.js, js/rate-history.js (Rate History) and the site/data/ JSON it reads. Covers the six views, hiding seed (estimated) rates by default, filterState Sets, the province-to-utility cascade, dedupe by effective date, formatCharge, Compare never totalling, the Ontario/Alberta market dashboard, the window.CanadaUtilityModels API and shared lazy load, the Rate History periods, reviewed series and event lists and hand-built SVG charts, safe DOM building, failure notices, the estimated market energy note and offline browser tests."
 applyTo: "site/**"
 ---
 # Static website
@@ -78,16 +78,22 @@ file rules: [market-data.instructions.md](market-data.instructions.md).
   used" column to the contributors table (the tariff codes of the records used at the selected level,
   and the elective choice with both costs) and a "Class used at each level" note with the peak-month
   factor and elective classes. Across-Canada keeps filtering to residential electricity.
-- The simulated-shape block (method 7S-1, Ontario and Alberta 50-499 kW and 500-4,999 kW models) is
-  opt-in ("Show market energy estimate (simulated building load shapes)"): off by default, built only
-  while ticked and reset when the model changes, with its warning, SIMULATED badge, fixed label and
-  caveat, a collapsed list of the simulated buildings used (BTAP type names rendered as text only)
-  and the method. It is shown only when the model says `simulated` and each level is flagged
-  `simulated_profile` and `illustrative_only`.
+- Estimated market energy (method 7S-2, owner decisions 119-123 of 2026-11-25): the Ontario and Alberta
+  50-499 kW and 500-4,999 kW models include it in the table. The badge says "with estimated market
+  energy", the caption says it is not live, and each estimated level gets an "Estimated energy" tag.
+  One always-visible note under the table, "Market energy in this model" (decision 123, replacing the
+  opt-in simulated block and the separate benchmark block), shows the price used, the level's energy
+  amount, the same-use-every-hour benchmark (price and medians, a comparison only), the simulated
+  buildings' price range, the assumptions, a collapsed list of the buildings (BTAP type names as text
+  only) and the sources. It describes the estimate only when the model is `market_energy_estimated`
+  with that cost basis, `energy_estimate.available` and the level's `market_energy_estimate` amount
+  (fail closed); a pending model shows why (the estimate's reason when an input failed) and only a
+  usable benchmark; an estimated model whose details fail the checks shows no number.
 - Render `fixed_charge_variants` as always-visible reference assumptions for every supplied level,
   plus each contributor's chosen component. They describe the example customer, not the visitor's
   actual service or eligibility. Older exports may omit these fields.
-- Show the historical market benchmarks apart from the delivery-only table, never in place of it.
+- Show the historical market benchmark only as the same-use-every-hour comparison in the energy note,
+  never in place of the table's numbers.
 - Territorial models (method 7T-1, owner decisions 2026-11-24): an "Interim rates: ..." badge
   (`#models-interim`) beside the state badge when `model.interim` lists utilities; under the main
   table, an "After automatic subsidies (before tax)" table read from `level.after_subsidy` (or the
@@ -174,7 +180,9 @@ Owner decisions 44-57 (2026-11-23) and 80-84 (2026-11-24).
     quarter is labelled "quarter in progress".
   - `break_before` draws a "method changed" gap with its reasons, and the % change restarts after it.
   - Recording gaps are noted, and market benchmarks are their own line.
-  - The simulated estimate is never charted.
+  - Since method 7S-2 (2026-11-25) the Ontario and Alberta 50-499 kW and 500-4,999 kW model costs
+    include estimated market energy (the cost basis change breaks their series); the explanation says
+    so, and the benchmark line prices the same use in every hour.
 - Event markers come only from `rate_history_events.json` (regulator or government decisions, each with
   its official source and checked quote), shown on charts whose family, province and fuel match.
   `site/data/rate_history_series.json` selects records and price lines by stored component names with

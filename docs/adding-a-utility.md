@@ -277,9 +277,10 @@ not modelled:
   listed. A class limit stored as `usage_min`/`usage_max` or `demand_min_kw`/`demand_max_kw` decides
   which class serves each level; when the tariff's wording makes a limit itself included or
   excluded differently from the default, add a reviewed crosswalk `usage_bounds` (gas) or
-  `demand_bounds` (kW) entry quoting it. A market-priced energy charge makes the model *market
-  energy pending*; the opt-in simulated-shape estimate (method 7S-1) is never an input to medians,
-  change detection or comparisons.
+  `demand_bounds` (kW) entry quoting it. A market-priced energy charge has no stored value: the Ontario and
+  Alberta 50-499 kW and 500-4,999 kW models add estimated market energy to it (method 7S-2, labelled
+  estimated), and any other model with one is *market energy pending*. Keep such a charge value-less
+  with its `market_reference`; never store an average in the tariff.
 - The model tests use frozen fixtures (`tests/fixtures/rm_*.json`, including `rm_records_b14.json`
   for the other provinces and Alberta), so live data never breaks the tests that run before the
   monthly scrape. Those tests do not see a new utility's records; the coverage command is the

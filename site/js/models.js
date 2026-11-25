@@ -4,7 +4,8 @@
  * Loads data/representative_models.json the first time the tab is opened and shows one model at a time:
  * cascading selectors, a state badge, a usage-level table with range bars, tax lines, method and coverage.
  * Models are comparison indicators (medians across utilities), never a rate anyone is billed.
- * Method 7S-1: an opt-in market energy estimate (simulated building load shapes) has its own block, never the table.
+ * Method 7S-2: the Ontario and Alberta 50-499 kW and 500-4,999 kW models include estimated market energy in the table,
+ * labelled estimated, with an always-visible note on its price and assumptions (owner decisions 119-123, 2026-11-25).
  * The DOM is built with createElement/textContent only, so no JSON string is ever parsed as HTML.
  */
 
@@ -46,10 +47,12 @@
         modeled: "rm-badge",
         single_source: "rm-badge rm-badge-caution",
         market_energy_pending: "rm-badge rm-badge-caution",
+        market_energy_estimated: "rm-badge rm-badge-caution",
     };
     const COST_BASIS_TEXT = {
         delivery_and_energy: "Delivery and energy charges",
         delivery_only_market_energy_pending: "Delivery charges only; market-priced energy is pending",
+        delivery_and_estimated_market_energy: "Delivery charges plus estimated market energy (not live)",
         delivery_only_no_energy_component: "Delivery charges only; the tariffs publish no energy charge",
     };
     const TAX_BASE_TEXT = {
@@ -58,12 +61,7 @@
         energy_charge_subtotal: "energy charge subtotal",
     };
     const DEFAULT_NOUN = { singular: "utility", plural: "utilities" };
-    const ILLUSTRATIVE_TOGGLE_TEXT = "Show market energy estimate (simulated building load shapes)";
-    const ILLUSTRATIVE_LABEL = "SIMULATED LOAD SHAPES - MARKET ENERGY ESTIMATE, NOT A BILL";
-    const ILLUSTRATIVE_WARNING = "Representative only: not a forecast, a quote or a bill. "
-        + "The buildings are simulated, not metered customers; do not use it for decisions.";
-    const ILLUSTRATIVE_TOGGLE_ID = "models-illustrative-toggle";
-    const ILLUSTRATIVE_SLOT_ID = "models-illustrative";
+    const HEATING_TEXT = { Electricity: "Electric", NaturalGas: "Natural gas" };
     const MONTHS = [
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December",
@@ -532,6 +530,13 @@
                 return "Single source";
             case "market_energy_pending":
                 return "Delivery charges only: market energy pending";
+            case "market_energy_estimated": {
+                const contributing = (model.coverage || {}).utilities_contributing;
+                const noun = nounOf(model);
+                return isNum(contributing) && contributing
+                    ? `Median of ${contributing} ${nounFor(contributing, noun)}, with estimated market energy`
+                    : "Includes estimated market energy";
+            }
             case "not_computable":
                 return "Not computable";
             default:
@@ -562,8 +567,11 @@
         [...new Set(levels.map(rebateExplanation).filter(Boolean))].forEach(text =>
             wrap.append(el("p", "rm-note rm-rebate-note", text)));
         const table = el("table", "rm-table");
+        // Decision 119: estimated market energy is part of these numbers, so the caption says so.
+        const estimated = model.state === "market_energy_estimated"
+            ? " Includes estimated market energy, not live: see \u201cMarket energy in this model\u201d below." : "";
         table.append(el("caption", null, "Modeled monthly cost in Canadian dollars at each usage level. "
-            + `Spread, closest ${noun.singular} and outliers are based on costs before tax and rebates.`));
+            + `Spread, closest ${noun.singular} and outliers are based on costs before tax and rebates.${estimated}`));
         const headRow = el("tr");
         [
             "Monthly usage", "Median before tax and rebates", "Median with tax and rebates", `${sentenceCase(noun.plural)} (n)`,
@@ -599,6 +607,10 @@
         if (level.role === "reference") usage.append(" ", el("span", "rm-tag", "Reference"));
         else if (level.role === "sensitivity") usage.append(" ", el("span", "rm-tag", "Sensitivity"));
         else if (level.id === DEFAULT_LEVEL_ID) usage.append(" ", el("span", "rm-tag", "Typical"));
+        const estimate = level.market_energy_estimate;
+        if (estimate && typeof estimate === "object" && isNum(estimate.cost)) {
+            usage.append(" ", el("span", "rm-tag rm-tag-estimated", "Estimated energy"));
+        }
         const range = cell(moneyRange(without.min, without.max), "rm-num");
         const bar = rangeBar(without);
         if (bar) range.append(bar);
@@ -653,8 +665,7 @@
 
     function renderNotes(model, level) {
         const box = byId("models-notes");
-        box.replaceChildren(...[marketIndexedNote(model), benchmarkBlock(model, level),
-            illustrativeControls(model)].filter(Boolean));
+        box.replaceChildren(...[marketIndexedNote(model), energyNote(model, level)].filter(Boolean));
         const assumptions = fixedChargeAssumptions(model);
         if (assumptions) box.append(assumptions);
         const classes = classSelectionNote(model);
@@ -734,62 +745,124 @@
         return [codes.join(", "), ...notes].filter(Boolean).join("; ") || DASH;
     }
 
-    function benchmarkBlock(model, level) {
+    // ── Market energy note (method 7S-2, owner decisions 119-123, 2026-11-25) ──
+    // One always-visible note (decision 123) replaces the opt-in simulated block and the separate benchmark block.
+
+    // Fail closed: the estimate is described only when the model says it was applied and the level carries its amount.
+    function estimateUsable(model, level) {
+        const info = model.energy_estimate;
+        const costs = level && level.market_energy_estimate;
+        return model.state === "market_energy_estimated" && model.cost_basis === "delivery_and_estimated_market_energy"
+            && !!info && typeof info === "object" && info.available === true && isNum(info.price_per_kwh)
+            && !!costs && typeof costs === "object" && isNum(costs.price_per_kwh) && isNum(costs.cost);
+    }
+
+    function benchmarkUsable(model, level) {
         const info = model.market_benchmark;
-        if (!info || typeof info !== "object") return null;
-        const section = el("section", "rm-benchmark");
-        section.append(el("h3", null, "Historical market benchmark - not a bill"));
-        section.append(el("p", "rm-text", "The main table remains delivery-only. This separate scenario combines "
-            + "current modeled delivery with historical market energy. It is not a forecast or customer quote."));
         const costs = level && level.market_benchmark;
-        const usable = info.available === true && costs && costs.available === true
-            && model.state === "market_energy_pending"
-            && model.cost_basis === "delivery_only_market_energy_pending"
-            && info.province === model.key.province
-            && [costs.market_energy_per_kwh, costs.market_energy_cost,
-                (costs.without_tax || {}).median, (costs.with_tax || {}).median].every(isNum)
-            && (costs.without_tax || {}).n > 0;
-        if (usable) {
-            const noun = info.province === "AB"
-                ? { singular: "wires utility", plural: "wires utilities" } : nounOf(model);
-            section.append(el("h4", null, usageText(level)));
-            const grid = el("div", "methodology-grid rm-text");
-            [
-                ["Historical energy", marketPriceText(costs, info.window)],
-                ["Energy amount", money(costs.market_energy_cost) + " a month"],
-                ["Benchmark before tax and rebates", statsText(costs.without_tax, noun)],
-                ["Benchmark with tax and rebates", statsText(costs.with_tax, noun)],
-            ].forEach(([name, text]) => grid.append(el("span", "meta-label", name), el("span", null, text)));
-            section.append(grid);
-            if (typeof info.method === "string") section.append(el("p", "rm-text", info.method));
-            const sources = el("ul", "rm-lines rm-text");
-            list(info.sources).forEach(source => {
-                const link = sourceLink(source.url);
-                if (!link) return;
-                link.textContent = source.name || "Official source";
-                const item = el("li");
-                item.append(link);
-                sources.append(item);
-            });
-            if (sources.childElementCount) {
-                const details = el("details", "rm-details");
-                details.append(el("summary", null, `Sources (${sources.childElementCount})`), sources);
-                section.append(details);
-            }
+        return !!info && typeof info === "object" && info.available === true && info.province === model.key.province
+            && !!costs && typeof costs === "object" && costs.available === true
+            && [costs.market_energy_per_kwh, costs.market_energy_cost, (costs.without_tax || {}).median,
+                (costs.with_tax || {}).median].every(isNum);
+    }
+
+    function cents(value) {
+        return `${centsFormat.format(value * 100)} cents/kWh`;
+    }
+
+    function windowText(span) {
+        const win = span && typeof span === "object" ? span : {};
+        if (![win.start_month, win.end_month].every(m => typeof m === "string" && m)) return "";
+        return `the ${isNum(win.months) ? `${win.months} ` : ""}months ${formatMonth(win.start_month)} to `
+            + `${formatMonth(win.end_month)}`;
+    }
+
+    function energyNote(model, level) {
+        const info = model.energy_estimate && typeof model.energy_estimate === "object" ? model.energy_estimate : {};
+        const estimated = estimateUsable(model, level);
+        const pending = model.state === "market_energy_pending";
+        const failed = pending && info.input_problem === true;
+        const bench = (pending || estimated) && benchmarkUsable(model, level);
+        if (!estimated && !failed && !bench && model.state !== "market_energy_estimated") return null;
+        const section = el("section", "rm-energy");
+        section.setAttribute("aria-labelledby", "models-energy-title");
+        const title = el("h3");
+        title.id = "models-energy-title";
+        if (estimated) title.append(el("span", "rm-energy-badge", "Estimated"), " ");
+        title.append("Market energy in this model");
+        section.append(title);
+        const noun = nounOf(model);
+        const grid = el("div", "methodology-grid rm-text");
+        const add = (label, value) => {
+            if (value) grid.append(el("span", "meta-label", label), el("span", null, value));
+        };
+        if (estimated) {
+            section.append(el("p", "rm-text", "These customers buy their energy at market prices, which have no "
+                + "published tariff price. The table above includes an estimate: the market price of the general load "
+                + "shape of simulated buildings of this size. It is not live and not a bill."));
+            const shape = info.shape && typeof info.shape === "object" ? info.shape : {};
+            const span = windowText(info.window);
+            const costs = level.market_energy_estimate;
+            add("Estimated energy price", `${cents(info.price_per_kwh)}: the general load shape of `
+                + `${isNum(shape.buildings) ? `${shape.buildings} ` : ""}simulated buildings${span ? `, priced over ${span}` : ""}`);
+            add("Estimated energy amount", `${money(costs.cost)} a month (${usageText(level)} at that price), included `
+                + "in the table");
+        } else if (pending) {
+            const reason = failed && typeof info.reason === "string" && info.reason ? info.reason.replace(/\.?$/, ".") : "";
+            section.append(el("p", "rm-text", (failed
+                ? `Estimated market energy unavailable${reason ? `: ${reason}` : "."} `
+                : "These customers buy their energy at market prices, which have no published tariff price. ")
+                + "The table shows delivery charges only (market energy pending), never a guessed energy price."));
         } else {
-            const reason = (costs && costs.reason) || info.reason || "No valid benchmark for this usage level.";
-            section.append(el("p", "rm-text", `Historical market benchmark unavailable: ${reason}`));
+            // The export says the energy is estimated, but its details fail the checks: no number is shown.
+            section.append(el("p", "rm-text", "The details of this model's estimated market energy are not available."));
         }
-        const exclusions = list(info.exclusions);
-        if (exclusions.length) {
-            const listNode = el("ul", "rm-lines rm-text");
-            exclusions.forEach(text => listNode.append(el("li", null, String(text))));
-            section.append(el("h4", null, "Not priced in this benchmark"), listNode);
+        if (bench) {
+            const costs = level.market_benchmark;
+            add("Same use every hour", `${cents(costs.market_energy_per_kwh)}, ${money(costs.market_energy_cost)} a `
+                + `month: median ${money(costs.without_tax.median)} before tax and rebates, `
+                + `${money(costs.with_tax.median)} with tax and rebates (historical market benchmark across `
+                + `${isNum(costs.without_tax.n) ? `${costs.without_tax.n} ` : ""}${noun.plural}; a comparison, not in the table)`);
         }
-        const profile = info.profile_backed || {};
-        section.append(el("p", "rm-text", "Real customer-profile cost unavailable: "
-            + (profile.reason || "No qualified observed profile has been supplied.")));
+        const range = info.price_range && typeof info.price_range === "object" ? info.price_range : {};
+        if (estimated && isNum(range.min) && isNum(range.max)) {
+            add("Simulated buildings' own prices", `${centsFormat.format(range.min * 100)} to ${cents(range.max)}`);
+        }
+        if (grid.childElementCount) {
+            section.append(el("h4", null, `${usageText(level)}${levelSuffix(level)}`), grid);
+        }
+        const assumptions = list(info.assumptions).filter(text => typeof text === "string" && text);
+        if (estimated && assumptions.length) {
+            const ul = el("ul", "rm-lines rm-text");
+            assumptions.forEach(text => ul.append(el("li", null, text)));
+            section.append(el("h4", null, "Assumptions"), ul);
+        }
+        if (estimated) section.append(...buildingsDetails(info));
+        const shapes = ((data.assumptions || {}).market_energy_shapes || {}).profiles || {};
+        const profile = estimated && typeof info.profile_id === "string" ? shapes[info.profile_id] : null;
+        const sources = [...list((profile || {}).sources), ...(bench ? list(model.market_benchmark.sources) : [])];
+        const details = sourcesDetails(sources);
+        if (details) section.append(details);
         return section;
+    }
+
+    function sourcesDetails(sources) {
+        const ul = el("ul", "rm-lines rm-text");
+        const seen = new Set();
+        sources.forEach(source => {
+            if (!source || typeof source !== "object" || seen.has(source.url)) return;
+            const link = sourceLink(source.url);
+            if (!link) return;
+            seen.add(source.url);
+            link.textContent = source.title || source.name || "Official source";
+            const item = el("li");
+            item.append(link);
+            ul.append(item);
+        });
+        if (!ul.childElementCount) return null;
+        const details = el("details", "rm-details");
+        details.append(el("summary", null, `Sources (${ul.childElementCount})`), ul);
+        return details;
     }
 
     function taxBlock(level) {
@@ -1082,99 +1155,7 @@
         return nodes;
     }
 
-    // ── Simulated-shape sidecar (method 7S-1; replaced the Phase 7E synthetic profile) ──
-
-    // Fail closed: only a model that says available and simulated, and only levels flagged simulated and illustrative.
-    function illustrativeLevels(model) {
-        const info = model.illustrative;
-        if (!info || typeof info !== "object" || info.available !== true || info.simulated !== true) return [];
-        return list(model.levels).filter(level => {
-            const all = level.illustrative_all_in;
-            return all && typeof all === "object" && all.simulated_profile === true && all.illustrative_only === true
-                && isNum((all.without_tax || {}).median);
-        });
-    }
-
-    function illustrativeControls(model) {
-        const info = model.illustrative;
-        const levels = illustrativeLevels(model);
-        if (levels.length === 0) {
-            if (model.state !== "market_energy_pending" || !info || typeof info !== "object"
-                || typeof info.reason !== "string" || !info.reason) {
-                return null;
-            }
-            return el("p", "rm-note rm-text", "Market energy estimate (simulated building load shapes) not available: "
-                + info.reason.replace(/\.?$/, "."));
-        }
-        const input = el("input");
-        input.type = "checkbox";
-        input.id = ILLUSTRATIVE_TOGGLE_ID;
-        input.checked = false;
-        input.setAttribute("aria-controls", ILLUSTRATIVE_SLOT_ID);
-        const label = el("label", "rm-illus-switch");
-        label.htmlFor = ILLUSTRATIVE_TOGGLE_ID;
-        label.append(input, el("span", null, ILLUSTRATIVE_TOGGLE_TEXT));
-        const slot = el("div");
-        slot.id = ILLUSTRATIVE_SLOT_ID;
-        // Built only while ticked, so nothing simulated is in the page by default or after unticking.
-        input.addEventListener("change", () => {
-            slot.replaceChildren(...(input.checked ? [illustrativeBlock(model, info, levels)] : []));
-        });
-        const wrap = el("div", "rm-illus-wrap");
-        wrap.append(label, el("p", "rm-illus-hint", "The table above does not change. Ticking shows a separate "
-            + "estimate that adds market energy priced with the hourly load shapes of simulated buildings."), slot);
-        return wrap;
-    }
-
-    function illustrativeBlock(model, info, levels) {
-        const section = el("section", "rm-illus");
-        section.setAttribute("aria-labelledby", "models-illustrative-label");
-        const warning = el("div", "rm-illus-warning");
-        warning.setAttribute("role", "note");
-        const title = el("p", "rm-illus-title");
-        const label = el("strong", "rm-illus-label", ILLUSTRATIVE_LABEL);
-        label.id = "models-illustrative-label";
-        title.append(el("span", "rm-illus-badge", "SIMULATED"), " ", label);
-        warning.append(title);
-        if (typeof info.caveat === "string" && info.caveat) warning.append(el("p", "rm-text", info.caveat));
-        warning.append(el("p", "rm-illus-fixed", ILLUSTRATIVE_WARNING));
-        section.append(warning);
-        const noun = nounOf(model);
-        levels.forEach(level => section.append(...illustrativeLevel(level, info, noun)));
-        section.append(...buildingsDetails(info),
-            el("h4", null, "How this estimate was made"),
-            el("p", "rm-illus-method rm-text", typeof info.method === "string" && info.method
-                ? info.method : "No method text was published for this estimate."));
-        return section;
-    }
-
-    function illustrativeLevel(level, info, noun) {
-        const all = level.illustrative_all_in;
-        const grid = el("div", "methodology-grid rm-illus-grid rm-text");
-        const add = (label, value) => {
-            if (value) grid.append(el("span", "meta-label", label), el("span", null, value));
-        };
-        const price = isNum(all.market_energy_per_kwh) ? centsFormat.format(all.market_energy_per_kwh * 100) : "";
-        const win = info.window && typeof info.window === "object" ? info.window : {};
-        const months = [win.start_month, win.end_month].every(m => typeof m === "string" && m)
-            ? `, each priced over the ${isNum(win.months) ? `${win.months} ` : ""}months `
-                + `${formatMonth(win.start_month)} to ${formatMonth(win.end_month)}` : "";
-        add("Market energy price used", price ? `${price} cents/kWh: the median of the simulated buildings${months}` : "");
-        add("Simulated buildings' prices", shapeRangeText(all.market_energy_range));
-        add("Market energy cost", isNum(all.market_energy_cost) ? `${money(all.market_energy_cost)} a month` : "");
-        add("Estimated median before tax and rebates", statsText(all.without_tax, noun));
-        add("Estimated median with tax and rebates", statsText(all.with_tax, noun));
-        return [el("h4", null, `${usageText(level)}${levelSuffix(level)}`), grid];
-    }
-
-    function shapeRangeText(range) {
-        const r = range && typeof range === "object" ? range : {};
-        if (!isNum(r.min_per_kwh) || !isNum(r.max_per_kwh)) return "";
-        const count = isNum(r.buildings) ? `${r.buildings} building${r.buildings === 1 ? "" : "s"}, ` : "";
-        const costs = isNum(r.min_cost) && isNum(r.max_cost) ? ` (${moneyRange(r.min_cost, r.max_cost)} a month)` : "";
-        return `${count}${centsFormat.format(r.min_per_kwh * 100)} to `
-            + `${centsFormat.format(r.max_per_kwh * 100)} cents/kWh${costs}`;
-    }
+    // ── Simulated buildings behind an estimate (method 7S-2) ──
 
     // "MediumOffice" -> "Medium office": BTAP building type names, read as text only.
     function buildingName(type) {
@@ -1187,7 +1168,7 @@
             && typeof b.building_type === "string" && b.building_type && isNum(b.price_per_kwh));
         if (!rows.length) return [];
         const cities = [...new Set(rows.map(b => b.city).filter(c => typeof c === "string" && c))];
-        const details = el("details", "rm-illus-buildings");
+        const details = el("details", "rm-energy-buildings");
         details.append(el("summary", null, `Simulated buildings used (${rows.length}`
             + `${cities.length ? `, ${cities.join(", ")}` : ""})`));
         const table = el("table", "rm-table rm-table-compact");
@@ -1202,7 +1183,7 @@
         const tbody = el("tbody");
         rows.forEach(b => {
             const tr = el("tr");
-            const heating = { Electricity: "Electric", NaturalGas: "Natural gas" }[b.heating_fuel] || "Not stated";
+            const heating = HEATING_TEXT[b.heating_fuel] || "Not stated";
             tr.append(el("td", null, buildingName(b.building_type) + (b.quality_flag === true ? " *" : "")),
                 el("td", null, heating),
                 el("td", null, isNum(b.average_monthly_peak_kw)
@@ -1220,26 +1201,6 @@
                 + "in the simulation (a quality flag)."));
         }
         return [details];
-    }
-
-    function marketPriceText(all, span) {
-        if (!isNum(all.market_energy_per_kwh)) return "";
-        const win = span && typeof span === "object" ? span : {};
-        const months = [win.start_month, win.end_month].every(m => typeof m === "string" && m)
-            ? `${formatMonth(win.start_month)} to ${formatMonth(win.end_month)}` : "";
-        const mean = isNum(win.months) ? `mean of ${win.months} months` : "";
-        const when = [mean, months].filter(Boolean).join(", ");
-        return `${centsFormat.format(all.market_energy_per_kwh * 100)} cents/kWh${when ? ` (${when})` : ""}`;
-    }
-
-    function statsText(stats, noun) {
-        const s = stats && typeof stats === "object" ? stats : {};
-        if (!isNum(s.median)) return "";
-        const extra = [
-            isNum(s.n) ? `${s.n} ${nounFor(s.n, noun)}` : "",
-            isNum(s.min) && isNum(s.max) ? `range ${moneyRange(s.min, s.max)}` : "",
-        ].filter(Boolean).join("; ");
-        return `${money(s.median)} a month${extra ? ` (${extra})` : ""}`;
     }
 
     // ── Event listeners ───────────────────────────────────────

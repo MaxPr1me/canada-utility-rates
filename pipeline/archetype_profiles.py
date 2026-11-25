@@ -7,7 +7,7 @@ gas space heating, 68 runs (owner decisions 86, 87 and 93 of 2026-11-24 brought 
 file, heating fuel, floor area, energy use intensities, peak demand, unmet hours and the run's ``:datapoint_id``) and
 ``parametric/runs/<datapoint_id>/timestep.csv`` (whole-building Electricity:Facility, then NaturalGas:Facility for
 gas-heated runs, in joules per 15-minute step). These are simulated buildings, never metered customers: anything priced
-from them is a comparison aid labelled simulated (AGENTS.md safeguard 8).
+from them is labelled simulated or estimated and never counts as live coverage (AGENTS.md safeguard 8).
 
 Time convention (owner decision 94): each Timestep label is the start of a 15-minute interval in local standard time on
 the 2006 calendar (January 1 is a Sunday). The simulated schedules observe neither holidays nor daylight saving. Market
@@ -25,6 +25,8 @@ Failure behaviour: a missing or unreadable results workbook, or one without the 
 from __future__ import annotations
 
 import csv
+import hashlib
+import json
 import math
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -356,3 +358,23 @@ def runs_in_band(archetypes: ArchetypeSet, province: str, min_kw: float, max_kw:
     """Runs simulated in ``province`` whose average monthly peak is in [min_kw, max_kw) (no upper limit when None)."""
     return [run for run in archetypes.runs if run.province == province and run.average_monthly_peak_kw >= min_kw
             and (max_kw is None or run.average_monthly_peak_kw < max_kw)]
+
+
+def archetype_fingerprint(archetypes: ArchetypeSet) -> str:
+    """SHA-256 of every value the models read from the validated runs (identity, size, monthly use and peaks, market
+    bins), so model monitoring sees a changed simulation as a changed input (method 7S-2). Values are rounded to six
+    decimals and the runs sorted by datapoint id: the same data gives the same fingerprint on any machine."""
+    def number(value: float) -> float:
+        return round(float(value), 6)
+
+    rows = [{"datapoint_id": run.datapoint_id, "building_type": run.building_type, "heating_fuel": run.heating_fuel,
+             "province": run.province, "city": run.city, "floor_area_m2": number(run.floor_area_m2),
+             "unmet_occupied_hours": number(run.unmet_occupied_hours),
+             "monthly_kwh": [number(value) for value in run.monthly_kwh],
+             "monthly_peak_kw": [number(value) for value in run.monthly_peak_kw],
+             "market_bin_kw": [[month, kind, hour, number(kw)]
+                               for (month, kind, hour), kw in sorted(run.market_bin_kw.items())],
+             "market_month_kwh": [[month, number(kwh)] for month, kwh in sorted(run.market_month_kwh.items())]}
+            for run in sorted(archetypes.runs, key=lambda run: run.datapoint_id)]
+    text = json.dumps({"runs": rows, "left_out": len(archetypes.problems)}, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()

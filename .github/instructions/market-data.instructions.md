@@ -127,7 +127,9 @@ them: [website.instructions.md](website.instructions.md).
 - `historical_market_price()` (market benchmarks) validates the province, the exact method and unit,
   60 consecutive complete months, finite arithmetic, citations and a window lag of at most four months
   (`max_window_lag_months` in `usage_levels.market_benchmarks`).
-- `load_shape_price()` (method 7S-1's simulated-shape estimate; owner decisions 11 and 12): a load
+- `load_shape_price()` (the estimated market energy of the Ontario and Alberta 50-499 kW and 500-4,999 kW
+  models, method 7S-2, which prices the simulated buildings' general load shape with it; owner decisions
+  11, 12 and 119-123): a load
   shape's average kW in each of the 576 heatmap bins (on the market's own clock: IESO EST, AESO
   prevailing time) gives each calendar month a shape factor (load-weighted / time-weighted mean bin
   energy price, 1 for a flat load); each window month's published energy x its calendar month's
@@ -190,7 +192,7 @@ them: [website.instructions.md](website.instructions.md).
 - **Market Benchmarks** (`market-benchmarks.yml`): runs after each successful Monthly Scrape, after
   every Ontario Price Archive run (also a failed one, to isolate Alberta), after relevant code and
   model-input pushes (including `data/btap/**` and `pipeline/archetype_profiles.py`, which the
-  simulated-shape sidecar reads; GitHub's runners read the 68 runs in seconds, the owner's Windows
+  estimated market energy reads; GitHub's runners read the 68 runs in seconds, the owner's Windows
   computer in about half a minute) and on dispatch. It
   tests, builds the Alberta history and refreshes the models
   without writing the database, committing the Alberta quarterly file and the model quarterly file
@@ -202,6 +204,6 @@ them: [website.instructions.md](website.instructions.md).
   [ci-data-history.instructions.md](ci-data-history.instructions.md), which also describes
   deployment chaining).
 - Both market workflows record model change history around their existing build and publication.
-  Observed benchmarks remain separate from base models and simulated estimates. Reporting failures
+  Observed benchmarks remain separate from base models, including their estimated market energy. Reporting failures
   cannot block valid publication; evidence, cadence and issue recovery are governed by the
   [monitoring rules](ci-data-history.instructions.md#model-monitoring).

@@ -14751,16 +14751,13 @@ def test_rm7a_usage_levels_hold_the_approved_values():
     assert levels["power_factor_for_kva"] == 0.9
     values = {sector: [{k: lv[k] for k in ("id", "kwh", "kw", "provinces") if k in lv} for lv in rows]
               for sector, rows in levels["electricity"].items()}
-    others = ["BC", "SK", "MB", "QC", "NB", "NS", "PE", "NL"]
     assert values == {
         "residential": [{"id": "low", "kwh": 500}, {"id": "typical", "kwh": 1000}, {"id": "high", "kwh": 2000}],
         # Owner decisions 27 and 28 (2026-11-20): s1 at 14 kW, s2 10,000 kWh at 40 kW (were 10 kW and 8,000 kWh at 25 kW).
         "commercial_small": [{"id": "s1", "kwh": 2000, "kw": 14}, {"id": "s2", "kwh": 10000, "kw": 40}],
-        # Method 7S-1 (requested 2026-11-25, provisional): outside Ontario and Alberta, sized from the archetypes.
-        "commercial_medium": [{"id": "m1", "kwh": 40000, "kw": 100, "provinces": ["ON", "AB"]},
-                              {"id": "m1", "kwh": 25000, "kw": 100, "provinces": others}],
-        "commercial_large": [{"id": "l1", "kwh": 500000, "kw": 1000, "provinces": ["ON", "AB"]},
-                             {"id": "l1", "kwh": 250000, "kw": 1000, "provinces": others}],
+        # Owner decision 120 (2026-11-25, method 7S-2): every province, sized from the simulated archetypes.
+        "commercial_medium": [{"id": "m1", "kwh": 25000, "kw": 100}],
+        "commercial_large": [{"id": "l1", "kwh": 250000, "kw": 1000}],
         "commercial_xlarge": [],
     }
     # Decision 29 roles and the documented backing of every level (owner rule 2026-11-20).
@@ -14792,7 +14789,7 @@ def test_rm7a_size_band_reference_loads_match_usage_levels():
     electricity = RM7A_load_usage_levels(RM7A_USAGE_LEVELS)["electricity"]
     assert list(bands) == [SMALL, MEDIUM, LARGE, XLARGE]
     for band in (SMALL, MEDIUM, LARGE):
-        # Province-specific entries of one level share its kW (method 7S-1), so the band lists each kW once.
+        # The band lists each level's kW once (method 7S-1 split a level into province entries; 7S-2 merged them).
         assert sorted(bands[band]["reference_kw"]) == sorted({level["kw"] for level in electricity[band]})
         assert all(bands[band]["min_kw"] <= kw < bands[band]["max_kw"] for kw in bands[band]["reference_kw"])
     assert electricity[XLARGE] == [] and bands[XLARGE]["max_kw"] is None

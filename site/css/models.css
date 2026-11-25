@@ -1,34 +1,26 @@
-/* Representative models: the opt-in market energy estimate priced with simulated building load shapes (method 7S-1,
-   which replaced the Phase 7E synthetic profile). Loaded after style.css; the amber, dashed block must never look like
-   the source-backed table. */
+/* Representative models. Method 7S-2 (owner decisions 119-123, 2026-11-25): the always-visible note on the estimated
+   market energy of the Ontario and Alberta 50-499 kW and 500-4,999 kW models (it replaced method 7S-1's opt-in block
+   and the separate benchmark block). Amber marks the estimate, which is part of the table's numbers but never live.
+   Loaded after style.css. */
 
-.rm-illus-wrap { max-width: 900px; margin: 0.25rem 0 1rem; }
-.rm-illus-switch { display: inline-flex; align-items: flex-start; gap: 0.5rem; max-width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #f0c36d; border-radius: var(--radius); background: #fffbeb; color: #78350f; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
-.rm-illus-switch input { flex: none; width: 1.05rem; height: 1.05rem; margin-top: 0.1rem; accent-color: #b45309; cursor: pointer; }
-.rm-illus-switch:has(input:focus-visible) { outline: 2px solid #b45309; outline-offset: 2px; }
-.rm-illus-hint { margin-top: 0.35rem; font-size: 0.8rem; color: var(--color-text-secondary); }
-
-.rm-illus { margin-top: 0.75rem; padding: 1rem; border: 3px dashed #b45309; border-radius: var(--radius); background: repeating-linear-gradient(135deg, #fffbeb 0 14px, #fef6dc 14px 28px); color: #422006; overflow-wrap: anywhere; }
-.rm-illus-warning { padding: 0.75rem 1rem; border-left: 6px solid #b45309; border-radius: 4px; background: #fef3c7; color: #78350f; font-size: 0.9rem; }
-.rm-illus-warning p + p { margin-top: 0.4rem; }
-.rm-illus-title { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; }
-.rm-illus-badge { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 4px; background: #b45309; color: #fff; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; }
-.rm-illus-label { font-size: 1rem; font-weight: 800; letter-spacing: 0.04em; }
-.rm-illus-fixed { font-weight: 700; }
-#models-notes .rm-illus h4 { margin: 1rem 0 0.25rem; font-size: 0.95rem; }
-.rm-illus-grid { max-width: none; }
-.rm-illus-grid .meta-label { color: #78350f; }
-.rm-illus-method { margin-top: 0.25rem; padding: 0.75rem; border-radius: var(--radius); background: rgba(255, 255, 255, 0.7); font-size: 0.85rem; line-height: 1.5; }
-.rm-illus-buildings { margin-top: 1rem; }
-.rm-illus-buildings summary { font-weight: 600; cursor: pointer; }
+.rm-energy { margin: 1rem 0; padding: 1rem; border: 1px solid #f0c36d; border-left: 6px solid #b45309; border-radius: var(--radius); background: #fffbeb; color: #422006; overflow-wrap: anywhere; }
+#models-notes .rm-energy h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; margin-top: 0; }
+#models-notes .rm-energy h4 { margin: 1rem 0 0.25rem; font-size: 0.95rem; }
+.rm-energy p { margin: 0.5rem 0; }
+.rm-energy-badge { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 4px; background: #b45309; color: #fff; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.rm-energy .methodology-grid { max-width: none; margin: 0.75rem 0; }
+.rm-energy .meta-label { color: #78350f; }
+.rm-energy-buildings { margin-top: 1rem; }
+.rm-energy-buildings summary { font-weight: 600; cursor: pointer; }
 /* Wide enough to read on phones: the table scrolls sideways in .rm-table-wrap instead of splitting words. */
-.rm-illus-buildings .rm-table { min-width: 36rem; background: rgba(255, 255, 255, 0.85); }
-.rm-illus-buildings .rm-table th, .rm-illus-buildings .rm-table td { overflow-wrap: normal; }
+.rm-energy-buildings .rm-table { min-width: 36rem; background: rgba(255, 255, 255, 0.85); }
+.rm-energy-buildings .rm-table th, .rm-energy-buildings .rm-table td { overflow-wrap: normal; }
+.rm-tag-estimated { background: #b45309; }
 
 @media (max-width: 640px) {
-  .rm-illus { padding: 0.75rem; }
-  .rm-illus-grid { grid-template-columns: minmax(0, 1fr); gap: 0 0; }
-  .rm-illus-grid .meta-label { margin-top: 0.5rem; }
+  .rm-energy { padding: 0.75rem; }
+  .rm-energy .methodology-grid { grid-template-columns: minmax(0, 1fr); gap: 0 0; }
+  .rm-energy .methodology-grid .meta-label { margin-top: 0.5rem; }
 }
 .rm-fixed-assumptions,
 .rm-class-selection {
@@ -37,19 +29,6 @@
     margin: 1rem 0;
     overflow-wrap: anywhere;
 }
-.rm-benchmark {
-    margin: 1rem 0;
-    padding: 1rem;
-    border: 2px solid #335c81;
-    border-radius: var(--radius);
-    background: #f0f7fc;
-    color: #18354f;
-    overflow-wrap: anywhere;
-}
-.rm-benchmark h4 { margin-top: 0.75rem; }
-.rm-benchmark p { margin: 0.5rem 0; }
-.rm-benchmark .methodology-grid { margin: 0.75rem 0; }
-
 .rm-history { overflow-wrap: anywhere; }
 .rm-history summary { cursor: pointer; font-weight: 600; }
 .rm-history p, .rm-history select, .rm-history button { margin: 0.5rem 0; }

@@ -36,17 +36,19 @@ plan, built next:
   SIMULATED and rebuilt by every export. Simulated costs never enter the models' medians,
   Across-Canada, Compare, Rate History or change checks (safeguard 8 is amended with the build);
 - afterwards, replace the made-up profile of the illustrative estimate with archetype shapes, after
-  its own decision round. **Done first instead, at the owner's request (November 25, method 7S-1):**
-  the opt-in estimate of the Ontario and Alberta 50-499 kW and 500-4,999 kW models now prices market
-  energy with the load shapes of every simulated building of that size in Toronto or Calgary (the
-  median building price, with the list and range shown). From the same day's request, the other
-  eight provinces' 50-499 kW and 500-4,999 kW example customers use 25,000 kWh at 100 kW and 250,000
-  kWh at 1,000 kW (the simulated buildings' size; Ontario and Alberta keep 40,000 and 500,000). The
-  owner was unavailable, so the choice of buildings, the median and both values await confirmation.
+  its own decision round. **Done first instead, at the owner's request (November 25):** method 7S-1
+  first made it an opt-in estimate; method 7S-2 (owner decisions 119-123, the same day) moved it into
+  the main table. The Ontario and Alberta 50-499 kW and 500-4,999 kW models now add market energy
+  priced with the general load shape of every simulated building of that size in Toronto or Calgary
+  (each scaled to the same yearly use, averaged hour by hour), labelled estimated with its
+  assumptions, never live coverage, and falling back to *market energy pending* when an input fails.
+  Every province's 50-499 kW and 500-4,999 kW example customers use 25,000 kWh at 100 kW and 250,000
+  kWh at 1,000 kW (the simulated buildings' size; decision 120). Decisions 119-123 settled the
+  provisional choices of method 7S-1.
 
 Open: whether an official Enbridge source puts apartment buildings of more than six units on Rate 6
-(until one is found, those three runs show gas as not computable); confirmation of the November 25
-provisional choices. The dated December and January checks keep priority when they fall due.
+(until one is found, those three runs show gas as not computable). The dated December and January
+checks keep priority when they fall due.
 
 ## Previous milestone - the one-year check, territorial models and the Rate History tab (done November 24)
 
@@ -179,7 +181,8 @@ Second decision round (November 20), from the commercial gas research:
   gas models are published), later for a Phase 9 archetype comparison. Simulated values stay out of
   the base models. Update November 24: the data has arrived and the order is reversed: the archetype
   cost comparison comes first, ahead of the coverage claim, and the illustrative estimate's profile
-  is replaced afterwards (see the current milestone above).
+  is replaced afterwards (see the current milestone above). Update November 25: the replacement was
+  done first, at the owner's request, and became the estimated market energy of method 7S-2.
 
 Progress (November 23): the small fixes are published. Énergir's monthly supply price was stored by
 scrape run 45, and the other supply-price period ends by the owner's full run on November 20 (scrape
@@ -629,15 +632,15 @@ building coverage; counts include optional adjustments and reference records.
 | 1b. Centra and Yukon follow-ups (batch 15 monitor checks) | Centra: the v1126 schedule (PUB Order 150/26, effective November 1, 2026) prints Appendix A as text, not scans; the rate pages still showed August 1 rates on October 30. Yukon: the joint rate book is found only through its hard-coded October address; replaced books are deleted (08- and 09-2026 return 404) | **Done October 30 (batch 16, pushed):** Centra picks the schedule edition from the commercial "Rates effective" date and parses the v1126 text Appendix A at high confidence (user decision); Yukon finds the book through `understanding-rates.model.json`, with the page link and the October address as fallbacks. After the switch: confirm the Centra text path and decide how to read High Volume Firm's negative transport rider (-$0.0018, rejected today); confirm a stored Yukon run uses a newer edition |
 | 2. Manitoba Hydro block parser fix (7C blocker) | **Done October 30.** Blocks numbered 1..n with cumulative kWh bounds; phase variants stored as alternatives; "First 50 kVA no charge" a $0 tier (GS Medium had been overcharged $619.50 once tiers were fixed) | GS Medium is computable (single source; 30.4375-day months kept, decided October 30); GS Small (Non-Demand) becomes computable with the reference customer (decided October 30); GS Small (Demand) is in the 50-499 kW band, which has no variant rule. The next Monthly Scrape stores new versions of the two demand classes |
 | 3. Decisions (user; decided October 30) | (a) NB Power GS1 and Maritime Electric block thresholds are per "Billing Period", whose length is not stated (`block_periods.json` period `null`); (b) a reference customer for amperage/phase fixed-charge alternatives (Newfoundland Power 1.1, NL Hydro, Manitoba Hydro basic charges); (c) 30-day versus 30.4375-day months (Hydro-Quebec and Manitoba Hydro define a month as 30 days); (d) replacements for dead seed citations (ENMAX Energy and EPCOR Energy Alberta seed `SOURCE_URL` 404, EPCOR Distribution's 301 to a 404, DERS's 301; batch 15 left them unchanged) | **Decided October 30 (batch 16):** (a) per month, because both utilities' billing pages confirm monthly billing (Maritime Electric's seasonal 133/233 stay null); (b) homes single-phase 200 A, under 50 kW single phase at 10 kW and three phase at 25 kW (`usage_levels.json` `fixed_charge_variants`); (c) 30.4375 kept; (d) kept with a "page removed" note in `KEPT_DEAD` (no archived copy shows the values). Method 7C-3 at the October 16 data: NB 0/4/0/0, NL 4/1/0/1, PE 0/1/0/3; still not computable: Manitoba commercial (3), NL commercial <50 kW flat-rate, PE business (3; Maritime Electric 232 prints no demand block thresholds) |
-| 4. Simulated-shape estimate (method 7S-1, done November 25) | The opt-in market energy estimate of the Ontario and Alberta 50-499 kW and 500-4,999 kW models, priced with the simulated buildings' load shapes (it replaced the 7E made-up profile) | Owner confirmation of the provisional choices; compare with real commercial load profiles if one qualifies; use an Ontario Price-era hourly shape once 12 archived months exist (August 2027 at the earliest); consider Class A and loss factors. It stays hidden by default, labelled SIMULATED and out of medians and comparisons |
+| 4. Estimated market energy (methods 7S-1 and 7S-2, done November 25) | The Ontario and Alberta 50-499 kW and 500-4,999 kW models price their market energy in the main table from the simulated buildings' general load shape, labelled estimated (owner decisions 119-123; it replaced 7S-1's opt-in estimate and the 7E made-up profile) | Compare with real commercial load profiles if one qualifies; use an Ontario Price-era hourly shape once 12 archived months exist (August 2027 at the earliest); Class A is not modelled and Ontario loss factors are stated, not applied; the AESO spring-forward hour question is open. It never counts as live coverage and falls back to *market energy pending* when an input fails |
 | Lane C: Phase 6D market-indexed products | **Done October 30** (stored by the next Monthly Scrape): BC Hydro RS1892 (`1892`); FortisBC Electric RS38 (`38`, pilot to 2028-07-31, medium confidence); NSPower One-Part Real Time Pricing (`RTP-T`, `RTP-D`; adders from scanned pages, user-approved); NL Hydro 5.1L and IND-NONFIRM | Each market energy line is a value-less "Variable" component; six crosswalk rules exclude them from the models (`tests/fixtures/rm_records_ws_6d.json`). NL Hydro's Island thermal non-firm stays source-blocked |
 | Lane E: optional items | **Decided October 30 (user):** excluded: DERS RoLR admin charge, ENMAX D700, EPCOR Edmonton local access fee (stays a note), Enbridge Rate 135, ATCO Gas ATA commodity and DERS gas admin charge; kept live: EPCOR Aylmer Rates 2/4/5; Oakville GS<50 stays rejected (source-blocked); Apex Utilities is outside the chosen scope | Recorded as dated exclusions in `data/sources/coverage_ledger.json`. FortisAlberta Rate 65 and ATCO T31 stay live partial records (decided October 9) |
-| Lane D: Phase 6C | **Market reference done October 30:** AESO is a live value-less "Variable" pool price record verified against the ETS report and its metadata (the old aeso.ca page 404s) | The Alberta Market Pricing view waits for AESO's written permission (terms: non-commercial, unmodified use). The Alberta 50-499 kW and larger models stay *market energy pending* |
+| Lane D: Phase 6C | **Market reference done October 30:** AESO is a live value-less "Variable" pool price record verified against the ETS report and its metadata (the old aeso.ca page 404s) | The Alberta Market Pricing view waits for AESO's written permission (terms: non-commercial, unmodified use). The Alberta 50-499 kW and 500-4,999 kW models estimate their pool energy since November 25 (method 7S-2); the 5,000 kW and over model stays *market energy pending* |
 | Done (October 30, batch 15; pushed with batch 16) | Dated model inputs (`tou_shares` effective/end dates; ULO 41/20/26/13 and Ontario Electricity Rebate 15.7% from November 1, 2026); Manitoba Hydro pages moved to `/account/rates/...`; Alberta Rate of Last Resort seed citations now cite the ETS pool price report; `tests/test_source_urls.py` dead-address guard; legacy market generator default `logs/market_pricing_legacy_2020_2024.json`; Deploy Site after successful Ontario Price Archive runs; monitor checks recorded in the coverage ledger | 2,032 tests across 24 modules. Models rebuilt for the committed as-of date are unchanged |
 | Done (October 30, batch 16; pushed October 30) | W1 Yukon book discovery through the page model JSON; W2 Centra schedule edition by rates date and the v1126 text Appendix A (high confidence); W3 dead seed citations kept with notes (`KEPT_DEAD`), inventory and AESO pool-price links fixed, guard scans reference data; W4 local check kit (`logs/_b16_kit_*`, untracked); W5 model decisions (method 7C-3) | 2,090 tests across 27 modules. Dry runs: Yukon 20 and 20, Centra 13, Alberta 2/4/5/2 live. Gate 77 of 78 on the committed export (AESO, stored by the next Monthly Scrape) |
 | Done (October 15-16) | Lane B (7F site view, October 15); Lane F (EPCOR Energy Alberta's moved pages), CI as the only database writer (first stored run: Monthly Scrape #11, scrape run 29), the Ontario market continuation (rolling 60-month history), Lane A (7C, all ten provinces) and the 7E illustrative sidecar (all October 16) | See Next Batches item 0 |
-| Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones; the simulated-shape estimate (method 7S-1, November 25: every simulated building of the size band, both heating fuels, median building price, months weighted by each building's own use) and the other provinces' 50-499 kW and 500-4,999 kW example customers (25,000 kWh at 100 kW and 250,000 kWh at 1,000 kW), chosen while the owner was unavailable. | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
-| Planned (order decided November 20, updated November 23 and 24) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); January 1 readiness (published November 23); the one-year check (built November 24, first review round done the same day); then territorial models (built November 24, method 7T-1); then the Rate History tab (moved ahead of the coverage claim, November 23; built November 24); then the building archetype costs (planned November 24, ahead of the coverage claim; the archetype replacement of the illustrative estimate's profile was done first, November 25, at the owner's request); then the rest of the Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses illustrative values; a spark gap comparison of heating fuels by region was added November 25, order not decided) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
+| Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones. | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
+| Planned (order decided November 20, updated November 23 and 24) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); January 1 readiness (published November 23); the one-year check (built November 24, first review round done the same day); then territorial models (built November 24, method 7T-1); then the Rate History tab (moved ahead of the coverage claim, November 23; built November 24); then the building archetype costs (planned November 24, ahead of the coverage claim; the archetype replacement of the illustrative estimate's profile was done first, November 25, at the owner's request, and became the models' estimated market energy the same day, method 7S-2); then the rest of the Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses estimated or illustrative values; a spark gap comparison of heating fuels by region was added November 25, order not decided) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11) while the rate pages show August 1, 2026 rates; from the November 1, 2026 rates the v1126 text Appendix A is parsed at high confidence (batch 16, row 1b) |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Checked October 30 (ledger notes): Qulliq, NTPC Snare, EPCOR Distribution (2026 tariffs still interim) and the next Rate of Last Resort term (the UCA table shows only the 2025-2026 term) unchanged, next review December 15; Centra and Yukon changed (row 1b); the Centra monitor was closed November 18 (owner decision) and Yukon's review is December 15. Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |
@@ -907,9 +910,9 @@ remain RPP-eligible).
 **Remaining Ontario:** no active distributor is unconfigured. The Market Pricing view shows
 observed market history only (Phase 6A on October 9; since October 16 the rolling 60 months of
 legacy HOEP, then the Ontario Price, plus Class B GA); tariff market energy stays value-less. The
-hourly Ontario Price has been archived since October 15. The Ontario demand-class models stay
-*market energy pending*; beside them, only an opt-in simulated-shape estimate (method 7S-1, which
-replaced the 7E synthetic profile on November 25).
+hourly Ontario Price has been archived since October 15. The Ontario 50-499 kW and 500-4,999 kW
+models include estimated market energy since November 25 (method 7S-2: the simulated buildings'
+general load shape, labelled estimated); the 5,000 kW and over model stays *market energy pending*.
 
 Original registry distributors: Alectra Utilities, Algoma Power Inc., Atikokan Hydro Inc., Bluewater
 Power Distribution, Brantford Power Inc., Burlington Hydro Inc., Canadian Niagara
@@ -1099,10 +1102,12 @@ order.
 3. **Decisions (user; decided October 30, batch 16, see queue row 3).** The length of NB Power GS1's and Maritime Electric's "Billing Period"; a
    reference customer for amperage/phase fixed-charge alternatives; 30-day versus 30.4375-day
    months (Hydro-Quebec and Manitoba Hydro define a month as 30 days).
-4. **Simulated-shape estimate (method 7S-1, November 25; replaced the 7E profile).** Owner
-   confirmation of the provisional choices; real commercial load profiles if one qualifies, an
-   Ontario Price-era hourly shape once 12 archived months exist, Class A and loss factors. The
-   estimate stays out of medians, outliers, closest utility, Phase 8 and Phase 9.
+4. **Estimated market energy (method 7S-2, owner decisions 119-123 of November 25; replaced 7S-1's
+   opt-in estimate and the 7E profile).** Real commercial load profiles if one qualifies, an Ontario
+   Price-era hourly shape once 12 archived months exist, Class A, and the open AESO spring-forward
+   hour question. The estimate is part of the Ontario and Alberta 50-499 kW and 500-4,999 kW models'
+   medians, change history and Rate History, labelled estimated; it never counts as live coverage and
+   stays out of Across-Canada.
 5. **Remaining lanes.** **C (Phase 6D):** BC Hydro RS1892 (freshet energy, Mid-C index), FortisBC
    Electric RS38 (Mid-C index), NSPower one-part real-time pricing and NL Hydro monthly non-firm
    prices (5.1L, Island non-thermal) become value-less "Variable" components with a market reference
@@ -1157,10 +1162,11 @@ live records also need crosswalk rules: after export,
     commercial, NB Power GS1, Maritime Electric, Newfoundland and Labrador residential and small
     commercial). With the October 30 decisions (7C-3): 18, 24, 6 and 7 (not computable: Manitoba
     commercial, Maritime Electric business, Newfoundland and Labrador flat-rate small business).
-    7E was an illustrative synthetic-profile sidecar on the two Ontario demand models; since
-    November 25 (method 7S-1) that opt-in estimate covers the Ontario and Alberta demand models and
-    prices market energy with simulated building load shapes (hidden by default; never in medians
-    or comparisons). A metered-profile estimate still needs a qualified source.
+    7E was an illustrative synthetic-profile sidecar on the two Ontario demand models; method 7S-1
+    (November 25) priced it with simulated building load shapes, and method 7S-2 (owner decisions
+    119-123, the same day) moved that energy into the Ontario and Alberta 50-499 kW and 500-4,999 kW
+    models as estimated market energy, labelled and never live coverage. A metered-profile estimate
+    still needs a qualified source.
 9. **Phase 8: Representative Model Refresh Automation** ([README](../README.md#roadmap)):
     Implemented and verified locally, in CI and on the deployed site. The existing builds produce
     explicit receipts and a public change history; a reusable non-blocking job checks inputs,
@@ -1170,7 +1176,7 @@ live records also need crosswalk rules: after export,
 10. **Phase 9: Product Follow-up** ([README](../README.md#roadmap)):
     historical charts (the Rate History tab, owner decisions of November 23 and 24, built November 24
     ahead of the coverage claim) and the Across-Canada comparison view built on the Phase 7 models
-    (done for residential electricity; it never uses illustrative values) are done. A cost comparison
+    (done for residential electricity; it never uses estimated or illustrative values) are done. A cost comparison
     of simulated building archetypes (owner decisions of November 24) is planned next, ahead of the
     coverage claim. AI exports and calculator/API scoping remain roadmap items, not implemented
     features.

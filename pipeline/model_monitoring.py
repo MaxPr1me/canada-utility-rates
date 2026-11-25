@@ -44,6 +44,8 @@ MODEL_FIELDS = (
 USAGE_FIELDS = ("id", "kwh", "kw", "quantity", "unit", "role")
 LEVEL_FIELDS = USAGE_FIELDS + (
     "without_tax", "with_tax", "closest_utility", "outliers", "utilities", "withheld", "reason", "after_subsidy",
+    # Method 7S-2 (owner decisions 119-123, 2026-11-25): the estimated market energy included in the level's costs.
+    "market_energy_estimate",
 )
 ASSUMPTION_FIELDS = (
     "usage_levels", "days_per_month", "power_factor_for_kva", "tou_shares", "seasons", "zone_policy",
@@ -54,6 +56,8 @@ ASSUMPTION_FIELDS = (
     "peak_month_factors", "elective_classes", "demand_bounds",
     # Method 7T-1 inputs (owner decisions 2026-11-24).
     "percentage_riders", "subsidies", "interim_rates", "shared_rate_books",
+    # Method 7S-2 inputs (owner decisions 119-123, 2026-11-25).
+    "market_energy_shapes",
 )
 INPUT_FIELDS = {
     "crosswalk": ("vocabulary", "pairs", "required_contributors", "usage_bounds", "rules", "elective_classes",
@@ -61,6 +65,7 @@ INPUT_FIELDS = {
     "usage_levels": (
         "days_per_month", "power_factor_for_kva", "market_benchmarks", "electricity", "gas",
         "tou_shares", "seasons", "reference_customer", "fixed_charge_variants", "peak_month_factors",
+        "market_energy_shapes",
     ),
     "taxes": ("sectors", "jurisdictions"),
     "block_periods": ("entries",),
@@ -68,17 +73,22 @@ INPUT_FIELDS = {
     # configuration recorded in the build's assumptions, so an edit to a reviewed list is an input change.
     "percentage_riders": ("entries",),
     "subsidies": ("jurisdictions", "programs"),
+    # Method 7S-2: the shape settings used and what was read from the simulated buildings (counts and a fingerprint of
+    # their values), so a changed simulation is an input change.
+    "market_energy_shapes": ("profiles", "archetypes"),
 }
 # Inputs read from the build's assumptions (the configuration actually loaded) rather than passed by the caller.
-RESULT_INPUTS = ("block_periods", "percentage_riders", "subsidies")
+RESULT_INPUTS = ("block_periods", "percentage_riders", "subsidies", "market_energy_shapes")
 VOLATILE_FIELDS = {
     "generated_at", "created_at", "updated", "as_of", "generated_from", "rates_generated_at",
     "latest_record_created_at", "file", "input",
 }
 ORDERED_FIELDS = {"rules", "entries", "reference_customer", "fixed_charge_variants"}
-# Opt-in estimates and their inputs never enter fingerprints or the change history (safeguard 8): the Phase 7E synthetic
-# fields stay listed so that histories recorded before method 7S-1 still compare.
+# Opt-in estimates and their inputs never enter fingerprints or the change history (safeguard 8). Method 7S-2 moved the
+# estimated market energy into the models themselves; these legacy names stay listed so that histories recorded before
+# it (Phase 7E and method 7S-1) still compare.
 SYNTHETIC_FIELDS = {"illustrative", "illustrative_all_in", "synthetic_profiles", "simulated_profiles"}
+MODEL_STATES = ("modeled", "single_source", "market_energy_pending", "market_energy_estimated", "not_computable")
 
 
 def timestamp(value: str) -> datetime:
@@ -174,7 +184,7 @@ def _check_benchmark(value: Any) -> None:
 
 
 def semantic_models(document: dict) -> dict:
-    """Project the supported export, not its timestamps, machine paths or illustrative estimates."""
+    """Project the supported export, not its timestamps, machine paths or opt-in synthetic estimates."""
     if (not isinstance(document, dict) or document.get("version") != 1
             or not isinstance(document.get("method_version"), str) or not document["method_version"]
             or not isinstance(document.get("models"), list) or not document["models"]):
@@ -188,7 +198,7 @@ def semantic_models(document: dict) -> dict:
         model_id = model.get("id")
         if (not isinstance(model_id, str) or not model_id or model_id in models
                 or model.get("provenance") != "modeled"
-                or model.get("state") not in ("modeled", "single_source", "market_energy_pending", "not_computable")
+                or model.get("state") not in MODEL_STATES
                 or not isinstance(model.get("levels"), list)):
             raise ValueError("invalid or duplicate representative model")
         base = _pick(model, MODEL_FIELDS)
@@ -279,7 +289,8 @@ def save_generation_receipt(path: Path | None, result: dict | None, *, previous:
     try:
         if result is not None and inputs is not None:
             assumptions = result["assumptions"]
-            inputs = {**inputs, **{name: assumptions[name] for name in RESULT_INPUTS if name in assumptions}}
+            inputs = {**inputs, **{name: assumptions[name] for name in RESULT_INPUTS
+                                   if isinstance(assumptions.get(name), dict)}}
         write_json(path, generation_receipt(result, previous=previous, inputs=inputs, error=error))
     except Exception:
         logger.exception("Model generation receipt failed; monitoring cannot verify this refresh")
@@ -1090,6 +1101,14 @@ def main(argv: list[str] | None = None) -> int:
                 if reviewed.get("problem") or reviewed.get("skipped"):
                     problems.append(f"Reviewed {name.replace('_', ' ')} inputs are missing or invalid.")
             report["checks"].append({"id": "model_inputs", "ok": not problems, "details": problems})
+        # Method 7S-2 (owner decision 119): a model whose estimated market energy failed on an input fell back to
+        # delivery charges only; reported until a refresh makes the estimate again.
+        estimates = [f"{model['id']}: estimated market energy unavailable, so the model shows delivery charges only "
+                     f"(market energy pending): {model['energy_estimate'].get('reason')}"
+                     for model in document["models"] if isinstance(model.get("energy_estimate"), dict)
+                     and model["energy_estimate"].get("available") is False
+                     and model["energy_estimate"].get("input_problem") is True]
+        report["checks"].append({"id": "market_energy_estimate", "ok": not estimates, "details": estimates})
         history = read_json(args.history) if args.history.exists() else None
         if args.receipt:
             history = record_refresh(history, document, read_json(args.receipt))

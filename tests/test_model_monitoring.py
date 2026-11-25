@@ -127,6 +127,60 @@ def test_input_hashes_exclude_synthetic_edits_but_preserve_first_match_order():
     assert monitoring.input_fingerprints(inputs)["crosswalk"] != hashes["crosswalk"]
 
 
+def test_estimated_market_energy_and_its_inputs_are_tracked_like_any_cost(document, tmp_path):
+    # Method 7S-2 (owner decision 119): the estimate is part of the model's costs, not an opt-in synthetic sidecar.
+    after = copy.deepcopy(document)
+    model, level = after["models"][0], after["models"][0]["levels"][0]
+    model.update(state="market_energy_estimated", cost_basis="delivery_and_estimated_market_energy")
+    level["market_energy_estimate"] = {"price_per_kwh": 0.105, "cost": 105.5}
+    after["assumptions"]["market_energy_shapes"] = {"profiles": {"shape": {"scaling": "yearly"}},
+                                                    "archetypes": {"runs": 68, "fingerprint": "a" * 64}}
+    snapshot = monitoring.semantic_models(after)
+    assert snapshot["models"]["example"]["base"]["levels"]["typical"]["market_energy_estimate"] == {
+        "price_per_kwh": 0.105, "cost": 105.5}
+    assert snapshot["assumptions"]["market_energy_shapes"]["archetypes"]["fingerprint"] == "a" * 64
+    changes = monitoring.compare_models(monitoring.semantic_models(document), snapshot)
+    structure = next(change for change in changes if change["category"] == "structure")
+    assert structure["after"]["cost_basis"] == "delivery_and_estimated_market_energy"
+    assert "market_energy_estimate" in next(change for change in changes if change["category"] == "level")["fields"]
+    usage = {"usage_levels": {"market_energy_shapes": {"shape": {"scaling": "yearly"}}}}
+    hashes = monitoring.input_fingerprints(usage)
+    usage["usage_levels"]["market_energy_shapes"]["shape"]["scaling"] = "monthly"
+    assert monitoring.input_fingerprints(usage) != hashes
+    path = tmp_path / "generation.json"
+    monitoring.save_generation_receipt(path, after, previous={"status": "absent"}, inputs={})
+    recorded = monitoring.read_json(path)["input_fingerprints"]
+    assert set(recorded) == {"market_energy_shapes"}
+    after["assumptions"]["market_energy_shapes"]["archetypes"]["fingerprint"] = "b" * 64
+    monitoring.save_generation_receipt(path, after, previous={"status": "absent"}, inputs={})
+    assert monitoring.read_json(path)["input_fingerprints"]["market_energy_shapes"] != recorded["market_energy_shapes"]
+
+
+def test_a_failed_estimate_is_reported_while_the_model_shows_delivery_charges_only(document, tmp_path, monkeypatch):
+    document["models"][0].update(state="market_energy_pending", cost_basis="delivery_only_market_energy_pending",
+                                 energy_estimate={"available": False, "input_problem": True,
+                                                  "reason": "stale market history"})
+    history = monitoring.record_refresh(None, document, receipt(document))
+    paths = {name: tmp_path / f"{name}.json" for name in ("models", "history", "report")}
+    monitoring.write_json(paths["history"], history)
+    monitoring.write_json(paths["models"], document)
+    monkeypatch.setattr(monitoring, "input_checks", lambda *args: [])
+    assert monitoring.main(["--models", str(paths["models"]), "--history", str(paths["history"]),
+                            "--report", str(paths["report"]), "--dry-run"]) == 1
+    check = next(check for check in monitoring.read_json(paths["report"])["checks"]
+                 if check["id"] == "market_energy_estimate")
+    assert check["ok"] is False and check["details"] == [
+        "example: estimated market energy unavailable, so the model shows delivery charges only (market energy "
+        "pending): stale market history"]
+    document["models"][0]["energy_estimate"]["input_problem"] = False
+    monitoring.write_json(paths["models"], document)
+    monitoring.main(["--models", str(paths["models"]), "--history", str(paths["history"]),
+                     "--report", str(paths["report"]), "--dry-run"])
+    check = next(check for check in monitoring.read_json(paths["report"])["checks"]
+                 if check["id"] == "market_energy_estimate")
+    assert check["ok"] is True and check["details"] == []
+
+
 def test_observed_benchmarks_are_compared_separately(document):
     level = document["models"][0]["levels"][0]
     level["market_benchmark"] = {"available": True, "without_tax": {"median": 200},

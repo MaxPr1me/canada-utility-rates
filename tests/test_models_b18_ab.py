@@ -118,5 +118,6 @@ def test_city_rate_of_last_resort_applies_only_below_250000_kwh():
                                                                                          + 0.0024 + 0.1206), abs=0.01)
     assert medium["state"] == "market_energy_pending"
     kva_days = 100 / 0.9 * DPM
-    assert _costs(medium, "m1")[RED_DEER] == pytest.approx(kva_days * (0.2533 + 0.1847) + 40000 * (
+    # m1 is 25,000 kWh at 100 kW (owner decision 120): 300,000 kWh a year, still above the Rate of Last Resort limit.
+    assert _costs(medium, "m1")[RED_DEER] == pytest.approx(kva_days * (0.2533 + 0.1847) + 25000 * (
         0.0143 + 0.0143 + 0.00131 + 0.0024), abs=0.01)

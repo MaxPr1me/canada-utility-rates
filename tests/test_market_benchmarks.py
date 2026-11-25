@@ -110,7 +110,8 @@ def build(documents):
 def test_market_benchmarks_do_not_change_base_models_or_rolr():
     base = build({"ON": None, "AB": None})
     result = build({p: market_document(p) for p in ("ON", "AB")})
-    for model_id, amount in ((ON_MEDIUM, 4000), (AB_MEDIUM, 1600)):
+    # m1 is 25,000 kWh at 100 kW (owner decision 120): 0.10 $/kWh in Ontario, 0.04 in Alberta.
+    for model_id, amount in ((ON_MEDIUM, 2500), (AB_MEDIUM, 1000)):
         model = _model(result, model_id)
         assert model["market_benchmark"]["available"]
         assert not model["market_benchmark"]["profile_backed"]["available"]

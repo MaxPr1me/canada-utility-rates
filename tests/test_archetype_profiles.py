@@ -1,9 +1,11 @@
 """pipeline/archetype_profiles.py: reading and checking the simulated BTAP runs (owner decisions 86-94, 2026-11-24).
 
 Small BTAP folders are generated in tmp_path; the last test reads the repository's own runs once, because the
-documented usage levels (data/models/usage_levels.json, method 7S-1) quote their size-band figures.
+documented usage levels (data/models/usage_levels.json, methods 7S-1 and 7S-2) quote their size-band figures.
 """
 import csv
+import dataclasses
+import re
 import statistics
 from datetime import datetime, timedelta
 
@@ -155,6 +157,21 @@ def test_size_bands_use_the_average_monthly_peak_with_the_lower_limit_included(t
     assert [run.datapoint_id for run in ap.runs_in_band(data, "ON", 1.0, 2.0)] == ["one-kw"]
     assert ap.runs_in_band(data, "ON", 0.0, 1.0) == [] and ap.runs_in_band(data, "AB", 0.0, None) == []
     assert ap.runs_in_band(data, "ON", 0.5, None)
+
+
+def test_the_fingerprint_follows_the_values_used_and_not_the_run_order(tmp_path):
+    electricity = _steady()
+    for name in ("a-run", "b-run"):
+        _write_run(tmp_path, name, electricity)
+    _write_workbook(tmp_path, [_row("a-run", electricity), _row("b-run", electricity)])
+    data = ap.load_archetypes(tmp_path)
+    fingerprint = ap.archetype_fingerprint(data)
+    assert re.fullmatch(r"[0-9a-f]{64}", fingerprint)
+    assert ap.archetype_fingerprint(dataclasses.replace(data, runs=tuple(reversed(data.runs)))) == fingerprint
+    bins = dict(data.runs[0].market_bin_kw)
+    bins[(1, "weekday", 12)] += 0.5
+    changed = dataclasses.replace(data, runs=(dataclasses.replace(data.runs[0], market_bin_kw=bins), data.runs[1]))
+    assert ap.archetype_fingerprint(changed) != fingerprint
 
 
 def test_the_repository_runs_all_validate_and_match_the_documented_size_band_figures():

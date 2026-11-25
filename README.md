@@ -156,12 +156,15 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   price changes (November 1 so far). Estimates are never charted, ended prices are never extended,
   charges are never added together, and regulator decisions are marked with their official sources.
   Its quarterly market and model files and its correction notes appear after the next data runs.
-- **Simulated buildings in the models (method 7S-1, November 25, at the owner's request):** the opt-in
-  market energy estimate of the Ontario and Alberta 50-499 kW and 500-4,999 kW models now uses the
-  load shapes of the owner's simulated buildings instead of a made-up profile, and the other eight
-  provinces' 50-499 kW and 500-4,999 kW models use 25,000 kWh at 100 kW and 250,000 kWh at 1,000 kW
-  (were 40,000 and 500,000; Quebec 50-499 kW is $3,397.20 a month before tax, was $4,341.00). Both
-  choices are provisional until the owner confirms them; the next model refresh publishes them.
+- **Estimated market energy in the larger business models (method 7S-2, November 25, owner
+  decisions 119-123):** the Ontario and Alberta 50-499 kW and 500-4,999 kW models now include their
+  market energy, which has no published price: an estimate from the general load shape of the owner's
+  simulated buildings of that size and the observed market history, labelled estimated with its
+  assumptions listed (Ontario 50-499 kW: 10.93 cents/kWh, $4,455.56 a month before tax; Alberta: 10.68
+  cents/kWh, $4,859.00). If an input fails, they fall back to delivery charges only. Every province now
+  uses 25,000 kWh at 100 kW and 250,000 kWh at 1,000 kW for these sizes (Quebec 50-499 kW: $3,397.20 a
+  month before tax, was $4,341.00 at 40,000 kWh). This replaced the opt-in estimate of method 7S-1,
+  built earlier the same day.
 - **Latest export (November 20, scrape run 46, the owner's full run):** 987 latest live tariffs and
   484 retained estimates; 1,414 stored live versions and 7,670 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
@@ -286,7 +289,7 @@ canada-utility-costs/
 ├── pipeline/                 ← Scripts that run the whole process
 │   ├── run_scrape.py         ← Main entry: run scrapers → validate → store
 │   ├── export_json.py        ← Export database → JSON for the website (also runs the model builder)
-│   ├── representative_models.py ← Phase 7 representative models: crosswalk coverage, cost engine, Alberta pairs, opt-in simulated estimate
+│   ├── representative_models.py ← Phase 7 representative models: crosswalk coverage, cost engine, Alberta pairs, estimated market energy
 │   ├── archetype_profiles.py ← Reads and checks the simulated BTAP buildings (monthly use, peaks, market-hour load shapes)
 │   ├── diff_report.py        ← Compare two scrape runs to see changes
 │   └── validate.py           ← Data quality checks
@@ -325,7 +328,7 @@ canada-utility-costs/
 ├── site/                     ← Static website (deployed to GitHub Pages)
 │   ├── index.html            ← Six views, including Rate History, Across-Canada and two-tariff Compare
 │   ├── css/style.css         ← Styles inc. multi-select filters, heatmap, confidence
-│   ├── css/models.css        ← Representative Models styles, incl. the opt-in simulated block
+│   ├── css/models.css        ← Representative Models styles, incl. the estimated market energy note
 │   ├── css/across-canada.css ← Residential national comparison table
 │   ├── css/rate-history.css  ← Rate History charts, tables and phone layout
 │   ├── js/app.js             ← SPA logic: filters, cards, modal, market viz
@@ -696,9 +699,9 @@ independently inspected.
   pool price) is stored with a market reference and no number; the site shows it as
   "Variable". For Ontario demand classes, Class A Global Adjustment (by peak demand factor) is a
   conditional note.
-- **Representative models** show delivery charges with *market energy pending* wherever the
-  energy itself is market-priced (Ontario and Alberta demand classes); they never guess a
-  number. Alberta's Rate of Last Resort (in the provider pairs and the Lethbridge and Red Deer
+- **Representative models** never guess a market price. The Ontario and Alberta 50-499 kW and
+  500-4,999 kW models add an estimate, labelled as such (below); the 5,000 kW and over models, and
+  any model whose estimate input fails, show delivery charges with *market energy pending*. Alberta's Rate of Last Resort (in the provider pairs and the Lethbridge and Red Deer
   city units) applies only below 250,000 kWh a year, the RoLR limit.
 - **Historical market benchmark (method 7C-4):** for Ontario and Alberta medium and large
   commercial demand models, a separate figure adds the average energy price of 60 complete
@@ -707,24 +710,28 @@ independently inspected.
   Losses, retail fees, Class A and unpriced conditional charges are not included, and a
   province's benchmark is unavailable when its history is missing or invalid or its 60-month
   window is more than four months old. It is **not a customer-profile-weighted bill or
-  forecast**, does not replace the base model and is not used in the Across-Canada comparison.
-- **Simulated market energy estimate (method 7S-1, November 25):** for the two larger business
-  sizes in Ontario and Alberta, an opt-in estimate prices market energy with the 15-minute load
-  shapes of the owner's simulated NECB 2020 buildings (`data/btap/`) whose usual monthly peak is
-  in the model's size range (21 in Toronto and 20 in Calgary for 50-499 kW, 5 each for
-  500-4,999 kW), using the market heatmap. It uses the median building price (Ontario 50-499 kW:
-  10.83 cents/kWh, buildings 10.49-11.38; Alberta: 10.67, buildings 9.38-11.96) and lists every
-  building. It replaced the 7E made-up business-hours profile. It is hidden behind a checkbox,
-  carries a warning and a SIMULATED badge, and is never used in medians, outliers, comparisons or
-  change detection. It is not a forecast, a quote or a bill. The choice of buildings and the
-  median are provisional until the owner confirms them.
-- **Example customers outside Ontario and Alberta (method 7S-1, November 25):** the 50-499 kW
-  and 500-4,999 kW models of the other provinces now use 25,000 kWh at 100 kW and 250,000 kWh at
-  1,000 kW, the size of the simulated buildings in those ranges (about 255-260 kWh per kW of peak)
-  and Hydro-Québec's own 100 kW comparison customer. Ontario and Alberta keep 40,000 and 500,000
-  kWh. Provisional until the owner confirms them.
-- Real (metered) commercial load profiles are not qualified yet, so no profile-weighted or all-in
-  bill is claimed.
+  forecast**, does not replace the base model and is not used in the Across-Canada comparison. On
+  the Representative Models page it is the "same use every hour" comparison beside the estimate.
+- **Estimated market energy (method 7S-2, November 25, owner decisions 119-123):** for the two
+  larger business sizes in Ontario and Alberta, the main table adds market energy priced with one
+  general load shape: the owner's simulated NECB 2020 buildings (`data/btap/`) whose usual monthly
+  peak is in the model's size range (21 in Toronto and 20 in Calgary for 50-499 kW, 5 each for
+  500-4,999 kW), both heating fuels, each scaled to the same yearly use and averaged hour by hour, and
+  priced over the 60 observed months of the market heatmap (Ontario with actual Class B GA, Alberta
+  pool energy only). The price times the example customer's kWh is added to every contributor's
+  delivery cost before tax. The page labels it estimated and lists its assumptions, the
+  same-use-every-hour price and every building with its own price. It never counts as live coverage;
+  Ontario's published loss factors are stated, not applied, as in every model. A failed input (a stale
+  or invalid market history, unreadable buildings) leaves *market energy pending*, and model monitoring
+  reports it. It replaced the opt-in estimate of method 7S-1 (which used the median building price)
+  and, before it, the 7E made-up business-hours profile.
+- **Example customers (owner decision 120, November 25):** every province's 50-499 kW and
+  500-4,999 kW models use 25,000 kWh at 100 kW and 250,000 kWh at 1,000 kW, the size of the simulated
+  buildings in those ranges (about 255-260 kWh per kW of peak) and Hydro-Qu?bec's own 100 kW
+  comparison customer. Ontario's bill-impact customers of these classes use more per kW (40,000 and
+  500,000 kWh were used until November 25); the levels document that difference.
+- Real (metered) commercial load profiles are not qualified yet, so the estimate uses simulated
+  buildings and no metered-profile bill is claimed.
 
 ### Other Provinces
 
@@ -844,7 +851,7 @@ One line per phase; sub-phase detail and the work queue are in the
 - **Earlier phases (foundations)** — done: scraper framework, granular schema, registry, validation, history snapshots, JSON export and the website.
 - **Phase 5: Live Parser Completion** — in progress: the Batch 18 additions are published (municipal utilities in NB, BC and PE on November 18; Naka Power and the Alberta cities on November 19) and issue #6 is closed; the scoped coverage-complete claim will be drafted for owner approval after the January renewals, and remaining building-catalogue gaps and additions are tracked in the coverage matrix.
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas supply-price freshness: Énergir's monthly prices and period end dates for the other gas utilities done November 20, and the monthly-price run on the 4th added November 23 (first run December 4)).
-- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; the opt-in estimate (7E, priced with simulated building load shapes since method 7S-1, November 25) is not a true all-in bill; 7D gas done in each utility's native m³ or GJ: homes as method 7D-1 and commercial general service for small and mid-size buildings as method 7D-2, November 23; contract, interruptible and seasonal gas classes come later with their own decision; the territories were added November 24 as method 7T-1, homes and small businesses, before and after automatic subsidies). The check for rates not updated in a year was added November 24.
+- **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; the Ontario and Alberta 50-499 kW and 500-4,999 kW models include market energy estimated from simulated building load shapes since method 7S-2 (November 25), labelled estimated and never a bill; 7D gas done in each utility's native m³ or GJ: homes as method 7D-1 and commercial general service for small and mid-size buildings as method 7D-2, November 23; contract, interruptible and seasonal gas classes come later with their own decision; the territories were added November 24 as method 7T-1, homes and small businesses, before and after automatic subsidies). The check for rates not updated in a year was added November 24.
 - **Phase 8: Representative Model Refresh Automation** — done and verified in CI and on the deployed site. Public change history and problem-only monitoring follow the [approved policy](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
 - **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done; the Rate History tab of historical charts built November 24, using data collected since September 29, 2026 plus the stored market history). Planned next: a Building Archetypes tab pricing 68 simulated NECB 2020 buildings in Toronto and Calgary with the stored tariffs, labelled simulated and kept out of the models (owner decisions November 24). Planned later: a spark gap comparison by region (the cost of a unit of useful heat from electricity versus natural gas, or versus the region's usual heating fuel where gas is not widespread; owner request November 25, details in the coverage matrix), AI-ready exports, a bill calculator or API and commercial/gas comparisons.
 

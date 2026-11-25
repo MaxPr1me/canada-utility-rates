@@ -251,7 +251,8 @@ def test_rebate_explanation_requires_applied_rebate_and_lower_published_total(op
     assert not errors
 
 
-@pytest.mark.parametrize("state", ["market_energy_pending", "not_computable", "withheld", "missing_level", "delivery_only"])
+@pytest.mark.parametrize("state", ["market_energy_pending", "market_energy_estimated", "not_computable", "withheld",
+                                   "missing_level", "delivery_only"])
 def test_incomplete_costs_and_synthetic_values_are_never_compared(open_site, payload, state):
     model = next(m for m in payload["models"] if m["key"]["sector"] == "residential")
     model["key"]["province"] = "NU"

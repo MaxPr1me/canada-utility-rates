@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests" / "fixtures"
 SITE = ROOT / "site"
 AS_OF = "2026-10-09"
-STATES = {"modeled", "single_source", "market_energy_pending", "not_computable"}
+STATES = {"modeled", "single_source", "market_energy_pending", "market_energy_estimated", "not_computable"}
 RES_TOU = "ON|electricity|residential|tou|-"
 MEDIUM = "ON|electricity|commercial|demand|commercial_medium"
 MARKET_NOTE = ("Provenance: live_parsed. The hourly Ontario Electricity Market Price replaced the HOEP on May 1, 2025. "
@@ -84,6 +84,9 @@ def _model(result, model_id):
     return next(m for m in result["models"] if m["id"] == model_id)
 
 
+SHAPES = load_usage_levels()["market_energy_shapes"]
+
+
 def _builds():
     records = load_rates(FIXTURES / "rm_records_sample.json") + load_rates(FIXTURES / "rm_records_b12.json")
     fx = _engine_fixture()
@@ -93,11 +96,14 @@ def _builds():
         "single_source": _synthetic([_record(_tou() + [_component("fixed", 30.0, "$/month", "Service Charge")])]),
         "not_computable": _synthetic([_record(_tou()[:2])]),
         "market_pending": _synthetic([_demand("A Hydro", 1, 100.0), _demand("B Hydro", 2, 300.0)]),
-        # Method 7S-1: an available simulated-shape sidecar (in-memory simulated runs and market history).
-        "simulated": build_models([_demand("A Hydro", 1, 100.0), _demand("B Hydro", 2, 300.0)], fx["crosswalk"],
-                                   {**fx["usage_levels"], "simulated_profiles": load_usage_levels()["simulated_profiles"]},
-                                   fx["taxes"], as_of=AS_OF, market_document=_market_doc(business=0.08),
-                                   archetypes=ARCHETYPES),
+        # Method 7S-2: estimated market energy (in-memory simulated runs and market history), and its fallback.
+        "estimated": build_models([_demand("A Hydro", 1, 100.0), _demand("B Hydro", 2, 300.0)], fx["crosswalk"],
+                                  {**fx["usage_levels"], "market_energy_shapes": SHAPES}, fx["taxes"], as_of=AS_OF,
+                                  market_document=_market_doc(business=0.08), archetypes=ARCHETYPES),
+        "estimate_unavailable": build_models([_demand("A Hydro", 1, 100.0), _demand("B Hydro", 2, 300.0)],
+                                             fx["crosswalk"], {**fx["usage_levels"], "market_energy_shapes": SHAPES},
+                                             fx["taxes"], as_of=AS_OF, market_document=_market_doc(business=0.08),
+                                             archetypes=None),
         # Method 7T-1 (owner decisions 2026-11-24): the territorial models with their after-subsidy fields.
         "territorial": build_models(load_rates(FIXTURES / "rm_records_t.json"), load_crosswalk(), load_usage_levels(),
                                     load_taxes(), provinces=("YT", "NT", "NU"), as_of="2026-11-24",
@@ -247,22 +253,20 @@ def test_rm7f_css_block_is_appended_once():
     assert "#view-models .hidden" in block
 
 
-# Phase 7C contributor nouns and the method 7S-1 simulated-shape sidecar (it replaced the Phase 7E synthetic profile).
+# Phase 7C contributor nouns and the method 7S-2 market energy note (owner decisions 119-123, 2026-11-25; it replaced
+# method 7S-1's opt-in simulated block and the separate benchmark block).
 MODELS_JS = SITE / "js" / "models.js"
 MODELS_CSS = SITE / "css" / "models.css"
-ILLUSTRATIVE_TOGGLE = "Show market energy estimate (simulated building load shapes)"
-ILLUSTRATIVE_LABEL = "SIMULATED LOAD SHAPES - MARKET ENERGY ESTIMATE, NOT A BILL"
-ILLUSTRATIVE_WARNING = ("Representative only: not a forecast, a quote or a bill. "
-                        "The buildings are simulated, not metered customers; do not use it for decisions.")
 NOUN_FIELDS = ("contributor_noun", "singular", "plural", "market_indexed_excluded", "components")
-ILLUSTRATIVE_FIELDS = ("available", "reason", "caveat", "method", "window", "simulated", "buildings")
+ESTIMATE_FIELDS = ("available", "reason", "input_problem", "profile_id", "price_per_kwh", "price_range", "window",
+                   "shape", "buildings", "assumptions")
 WINDOW_FIELDS = ("start_month", "end_month", "months")
-ILLUSTRATIVE_LEVEL_FIELDS = ("simulated_profile", "illustrative_only", "market_energy_per_kwh", "market_energy_cost",
-                             "market_energy_range", "without_tax", "with_tax")
-RANGE_FIELDS = ("min_per_kwh", "max_per_kwh", "min_cost", "max_cost", "buildings")
+ESTIMATE_LEVEL_FIELDS = ("price_per_kwh", "cost")
+RANGE_FIELDS = ("min", "max")
 BUILDING_FIELDS = ("building_type", "heating_fuel", "city", "average_monthly_peak_kw", "kwh_per_kw", "quality_flag",
                    "price_per_kwh")
-ILLUSTRATIVE_BANDS = {"commercial_medium", "commercial_large"}
+BENCHMARK_LEVEL_FIELDS = ("available", "market_energy_per_kwh", "market_energy_cost", "without_tax", "with_tax")
+ESTIMATE_BANDS = {"commercial_medium", "commercial_large"}
 
 
 def _js_functions(source):
@@ -272,50 +276,36 @@ def _js_functions(source):
     return {name: source[start:end] for (name, start), end in zip(starts, ends)}
 
 
-def _js_string(source, name):
-    match = re.search(rf'const {name} = ((?:"[^"]*"\s*\+?\s*)+);', source)
-    assert match, f"models.js has no string constant {name}"
-    return "".join(re.findall(r'"([^"]*)"', match.group(1)))
-
-
-def test_rm7e_models_js_fixes_the_toggle_label_warning_and_badge_texts():
+def test_s2_one_always_visible_note_replaces_the_opt_in_block_and_the_benchmark_block():
     source = MODELS_JS.read_text(encoding="utf-8")
-    assert _js_string(source, "ILLUSTRATIVE_TOGGLE_TEXT") == ILLUSTRATIVE_TOGGLE
-    assert _js_string(source, "ILLUSTRATIVE_LABEL") == ILLUSTRATIVE_LABEL
-    assert _js_string(source, "ILLUSTRATIVE_WARNING") == ILLUSTRATIVE_WARNING
-    block = _js_functions(source)["illustrativeBlock"]
-    assert 'warning.setAttribute("role", "note")' in block
-    assert '"SIMULATED"' in block and "ILLUSTRATIVE_LABEL" in block and "ILLUSTRATIVE_WARNING" in block
-    # The warning comes first in the block, before any number.
-    assert block.index("section.append(warning)") < block.index("illustrativeLevel(")
-
-
-def test_rm7e_toggle_is_a_labelled_unticked_checkbox_and_builds_the_block_only_while_ticked():
-    functions = _js_functions(MODELS_JS.read_text(encoding="utf-8"))
-    controls = functions["illustrativeControls"]
-    for needle in ('input.type = "checkbox"', "input.checked = false", "label.htmlFor = ILLUSTRATIVE_TOGGLE_ID",
-                   "label.append(input, el(\"span\", null, ILLUSTRATIVE_TOGGLE_TEXT))"):
-        assert needle in controls, needle
-    assert re.search(r'addEventListener\("change", \(\) => \{\s*slot\.replaceChildren\(\.\.\.\(input\.checked \? '
-                     r"\[illustrativeBlock\(", controls)
-    callers = sorted(name for name, body in functions.items() if "illustrativeBlock(" in body)
-    assert callers == ["illustrativeBlock", "illustrativeControls"]
-    # Fail closed: the model must say available and simulated, and every level flagged simulated and illustrative.
-    gate = functions["illustrativeLevels"]
-    for needle in ("info.available !== true", "info.simulated !== true", "all.simulated_profile === true",
-                   "all.illustrative_only === true"):
+    functions = _js_functions(source)
+    assert "energyNote(model, level)" in functions["renderNotes"]
+    for gone in ("illustrative", "benchmarkBlock", '"checkbox"', "rm-illus", "rm-benchmark", "SIMULATED"):
+        assert gone not in source, gone
+    # Fail closed: the estimate is described only when the model says it was applied and the level carries it.
+    gate = functions["estimateUsable"]
+    for needle in ('model.state === "market_energy_estimated"',
+                   'model.cost_basis === "delivery_and_estimated_market_energy"', "info.available === true",
+                   "isNum(info.price_per_kwh)", "isNum(costs.cost)"):
         assert needle in gate, needle
-    # Rebuilt (unticked) on every model render, so switching models resets the toggle.
-    assert "illustrativeControls(model)" in functions["renderNotes"]
+    bench = functions["benchmarkUsable"]
+    for needle in ("info.available === true", "info.province === model.key.province", "costs.available === true"):
+        assert needle in bench, needle
+    note = functions["energyNote"]
+    assert "estimateUsable(model, level)" in note and "benchmarkUsable(model, level)" in note
+    assert "never a guessed energy price" in note
 
 
-def test_rm7e_illustrative_numbers_never_reach_the_main_table_badge_or_statistics():
-    functions = _js_functions(MODELS_JS.read_text(encoding="utf-8"))
-    readers = sorted(name for name, body in functions.items() if "illustrative_all_in" in body)
-    assert readers == ["illustrativeLevel", "illustrativeLevels"]
-    for name in ("renderModel", "renderBadge", "stateText", "renderTable", "levelRow", "rangeBar", "closestCell",
-                 "outliersCell", "taxBlock", "factsGrid", "contributorsDetails"):
-        assert "illustrative" not in functions[name].lower(), name
+def test_s2_estimated_energy_is_labelled_in_the_badge_caption_row_and_cost_basis():
+    source = MODELS_JS.read_text(encoding="utf-8")
+    functions = _js_functions(source)
+    assert 'case "market_energy_estimated"' in functions["stateText"]
+    assert "with estimated market energy" in functions["stateText"]
+    assert 'market_energy_estimated: "rm-badge rm-badge-caution"' in source
+    assert 'delivery_and_estimated_market_energy: "Delivery charges plus estimated market energy (not live)"' in source
+    assert "Includes estimated market energy, not live" in functions["renderTable"]
+    row = functions["levelRow"]
+    assert "level.market_energy_estimate" in row and '"Estimated energy"' in row
 
 
 def test_rm7c_models_js_uses_the_contributor_noun_with_a_utility_fallback():
@@ -334,17 +324,17 @@ def test_rm7c_models_js_uses_the_contributor_noun_with_a_utility_fallback():
     assert "market_indexed_excluded" in note and "entry.components" in note and "entry.utility" in note
 
 
-def test_rm7c_7e_models_js_reads_the_new_contract_fields():
+def test_s2_models_js_reads_the_estimate_contract_fields():
     source = MODELS_JS.read_text(encoding="utf-8")
-    fields = (set(NOUN_FIELDS) | {"illustrative", "illustrative_all_in"} | set(ILLUSTRATIVE_FIELDS)
-              | set(WINDOW_FIELDS) | set(ILLUSTRATIVE_LEVEL_FIELDS) | set(RANGE_FIELDS) | set(BUILDING_FIELDS)
-              | set(STAT_FIELDS))
+    fields = (set(NOUN_FIELDS) | {"energy_estimate", "market_energy_estimate", "market_benchmark"}
+              | set(ESTIMATE_FIELDS) | set(WINDOW_FIELDS) | set(ESTIMATE_LEVEL_FIELDS) | set(RANGE_FIELDS)
+              | set(BUILDING_FIELDS) | set(BENCHMARK_LEVEL_FIELDS) | set(STAT_FIELDS))
     unread = sorted(f for f in fields if not re.search(rf"\b{re.escape(f)}\b", source))
     assert not unread, f"listed in the contract but not read by models.js: {unread}"
 
 
 @pytest.mark.parametrize("name", sorted(BUILDS))
-def test_rm7c_7e_optional_engine_fields_have_the_shape_models_js_reads(name):
+def test_s2_optional_engine_fields_have_the_shape_models_js_reads(name):
     for model in BUILDS[name]["models"]:
         where = f"{name} {model['id']}"
         noun = model["coverage"].get("contributor_noun")
@@ -353,42 +343,51 @@ def test_rm7c_7e_optional_engine_fields_have_the_shape_models_js_reads(name):
         for entry in (model.get("energy") or {}).get("market_indexed_excluded") or []:
             assert isinstance(entry.get("utility"), str), where
             assert entry.get("components") and all(isinstance(c, str) and c for c in entry["components"]), where
-        info = model.get("illustrative")
-        levels = [level for level in model["levels"] if level.get("illustrative_all_in") is not None]
-        if info is None:
-            assert not levels, f"{where}: illustrative_all_in without model.illustrative"
+        info = model.get("energy_estimate")
+        levels = [level for level in model["levels"] if "market_energy_estimate" in level]
+        if info is None or info["available"] is not True:
+            assert not levels, f"{where}: market_energy_estimate without an available estimate"
+            assert model["state"] != "market_energy_estimated", where
+            if info is not None:
+                _assert_fields(info, ("available", "reason", "input_problem"), f"{where} energy_estimate")
+                assert isinstance(info["reason"], str) and info["reason"], where
             continue
-        _assert_fields(info, ("available", "reason"), f"{where} illustrative")
-        if info["available"] is not True:
-            assert not levels, f"{where}: illustrative_all_in on an unavailable model"
-            continue
-        _assert_fields(info, ILLUSTRATIVE_FIELDS, f"{where} illustrative")
-        assert model["key"]["province"] in ("ON", "AB") and model["key"]["size_band"] in ILLUSTRATIVE_BANDS, where
-        assert info["simulated"] is True and info["buildings"], where
+        _assert_fields(info, ESTIMATE_FIELDS, f"{where} energy_estimate")
+        assert model["key"]["province"] in ("ON", "AB") and model["key"]["size_band"] in ESTIMATE_BANDS, where
+        assert model["state"] == "market_energy_estimated", where
+        assert model["cost_basis"] == "delivery_and_estimated_market_energy", where
+        assert info["buildings"] and info["assumptions"], where
+        assert all(isinstance(text, str) and text for text in info["assumptions"]), where
         for building in info["buildings"]:
-            _assert_fields(building, BUILDING_FIELDS, f"{where} illustrative building")
-        assert model["state"] == "market_energy_pending", f"{where}: the state must stay market_energy_pending"
-        _assert_fields(info["window"], WINDOW_FIELDS, f"{where} illustrative.window")
+            _assert_fields(building, BUILDING_FIELDS, f"{where} energy_estimate building")
+        _assert_fields(info["window"], WINDOW_FIELDS, f"{where} energy_estimate.window")
+        _assert_fields(info["price_range"], RANGE_FIELDS, f"{where} energy_estimate.price_range")
         assert levels, where
         for level in levels:
-            all_in = level["illustrative_all_in"]
-            _assert_fields(all_in, ILLUSTRATIVE_LEVEL_FIELDS, f"{where} {level['id']} illustrative_all_in")
-            assert all_in["simulated_profile"] is True and all_in["illustrative_only"] is True, where
-            _assert_fields(all_in["market_energy_range"], RANGE_FIELDS, f"{where} {level['id']} market_energy_range")
-            for side in ("without_tax", "with_tax"):
-                _assert_fields(all_in[side], STAT_FIELDS, f"{where} {level['id']} illustrative {side}")
+            estimate = level["market_energy_estimate"]
+            _assert_fields(estimate, ESTIMATE_LEVEL_FIELDS, f"{where} {level['id']} market_energy_estimate")
+            assert estimate["price_per_kwh"] == info["price_per_kwh"], where
+            assert estimate["cost"] == round(info["price_per_kwh"] * level["kwh"], 2), where
+            benchmark = level.get("market_benchmark") or {}
+            if benchmark.get("available"):
+                _assert_fields(benchmark, BENCHMARK_LEVEL_FIELDS, f"{where} {level['id']} market_benchmark")
 
 
-def test_rm7e_models_css_styles_every_sidecar_class_and_marks_the_block_dashed():
+def test_rm7f_fixture_builds_include_a_fallback_and_an_estimate():
+    assert _model(BUILDS["estimated"], MEDIUM)["state"] == "market_energy_estimated"
+    fallback = _model(BUILDS["estimate_unavailable"], MEDIUM)
+    assert fallback["state"] == "market_energy_pending"
+    assert fallback["energy_estimate"]["input_problem"] is True
+
+
+def test_s2_models_css_styles_every_energy_note_class_and_drops_the_old_blocks():
     css = MODELS_CSS.read_text(encoding="utf-8")
     source = MODELS_JS.read_text(encoding="utf-8")
-    used = sorted(set(re.findall(r"\brm-illus[\w-]*", source)))
-    assert "rm-illus" in used and "rm-illus-badge" in used and "rm-illus-warning" in used
+    used = sorted(set(re.findall(r"\brm-(?:energy[\w-]*|tag-estimated)", source)))
+    assert {"rm-energy", "rm-energy-badge", "rm-energy-buildings", "rm-tag-estimated"} <= set(used)
     unstyled = [name for name in used if not re.search(rf"\.{re.escape(name)}(?![\w-])[^{{]*\{{", css)]
     assert not unstyled, f"classes used by models.js without a models.css rule: {unstyled}"
-    block = re.search(r"^\.rm-illus\s*\{([^}]*)\}", css, flags=re.M).group(1)
-    assert re.search(r"border:\s*\d+px\s+dashed", block)
-    assert "!important" not in css
+    assert "rm-illus" not in css and "rm-benchmark" not in css and "!important" not in css
 
 
 def test_rm7e_index_html_links_models_css_after_style_css():
