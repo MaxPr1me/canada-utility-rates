@@ -175,7 +175,7 @@
           "name_regex": "^RoLR Energy Charge$"
         }
       ],
-      "note": "The default electricity price for residential and small business sites in the ENMAX Power area, fixed for the two-year term."
+      "note": "The default electricity price in the ENMAX Power area for residential sites and for commercial sites using under 250 MWh a year (ENMAX Energy's Small, Medium and Large Commercial schedules), fixed for the two-year term."
     },
     {
       "id": "ab-rolr-epcor",

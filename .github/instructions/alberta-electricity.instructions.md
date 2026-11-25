@@ -53,8 +53,12 @@ Decisions marked 2026-10-09 are the owner's.
 - **Direct Energy Regulated Services** (ATCO Electric area): energy price for residential and small
   business. Its daily administration charge is not emitted: the website value is undated and the last
   dated schedule differs.
-- **ENMAX Energy** (Calgary area): D100/D200 energy price plus the daily administration charge from
-  the Interim 2026 schedule, at medium confidence.
+- **ENMAX Energy** (Calgary area): energy price plus the daily administration charge from the Interim
+  2026 schedule, at medium confidence, for D100 (Residential), D200 (Small Commercial) and, since
+  owner decision 102 (2026-11-24), D300 (Medium Commercial) and D310/D410 (Large Commercial). The
+  commercial schedules apply only to sites under their printed annual limit (250 MWh), each must name
+  its distribution rates and its limit, and all are checked against the UCA table's one ENMAX
+  Power-area price, which UCA publishes for residential and small business consumers.
 - **EPCOR Energy Alberta** (EPCOR Distribution and FortisAlberta areas): energy price plus a per-area
   administration charge. Its pages moved on 2026-10-16: the registry, the scraper constants and
   `tests/fixtures/alberta_rolr.json` must stay in sync.

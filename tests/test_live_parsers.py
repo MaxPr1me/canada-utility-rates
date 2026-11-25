@@ -11953,6 +11953,9 @@ ROLR_TERM_START = "2025-01-01"
 ROLR_TERM_END = "2026-12-31"
 ROLR_RES = "Rate of Last Resort - Residential"
 ROLR_SB = "Rate of Last Resort - Small Business"
+ROLR_MC = "Rate of Last Resort - Medium Commercial"
+ROLR_LC = "Rate of Last Resort - Large Commercial"
+ROLR_ENMAX_NAMES = {ROLR_RES, ROLR_SB, ROLR_MC, ROLR_LC}
 ROLR_EDTI_RES = "Rate of Last Resort - Residential (EPCOR Distribution area)"
 ROLR_EDTI_SB = "Rate of Last Resort - Small Business (EPCOR Distribution area)"
 ROLR_FAI_RES = "Rate of Last Resort - Residential (FortisAlberta area)"
@@ -12135,10 +12138,12 @@ def test_rolr_enmax_records():
     records, rejections = ROLR_enmax.parse_sources(ROLR__enmax_inputs(), ROLR_TODAY)
     assert rejections == []
     by_name = ROLR__by_name(records)
-    assert set(by_name) == {ROLR_RES, ROLR_SB}
+    assert set(by_name) == ROLR_ENMAX_NAMES
     schedule_url = ROLR__sources()["enmax_schedule"]["url"]
     expected = {ROLR_RES: ("RoLR-Res", "residential", 0.4134, "D100", None, None),
-                ROLR_SB: ("RoLR-SB", "commercial", 0.3973, "D200", 250.0, "MWh/year")}
+                ROLR_SB: ("RoLR-SB", "commercial", 0.3973, "D200", 250.0, "MWh/year"),
+                ROLR_MC: ("RoLR-MC", "commercial", 0.3973, "D300", 250.0, "MWh/year"),
+                ROLR_LC: ("RoLR-LC", "commercial", 0.3973, "D310 or D410", 250.0, "MWh/year")}
     for name, (code, customer_class, admin_value, rate_code, usage_max, usage_unit) in expected.items():
         record = by_name[name]
         assert (record.tariff_code, record.customer_class, record.rate_structure, record.pricing_method) == (
@@ -12155,7 +12160,10 @@ def test_rolr_enmax_records():
         assert admin.confidence == "medium" and "Decision 29608-D01-2024" in admin.source_detail
         assert energy.source_url == schedule_url == admin.source_url
     assert "less than 250 MWh" in by_name[ROLR_SB].eligibility
-    assert "Medium Commercial (D300)" in by_name[ROLR_SB].notes
+    # The medium and large schedules say why the one UCA price per area is their cross-check (decision 102).
+    assert "Only for D300 sites using under 250 MWh a year" in by_name[ROLR_MC].notes
+    assert "Only for D310 or D410 sites using under 250 MWh a year" in by_name[ROLR_LC].notes
+    assert "Medium Commercial" not in by_name[ROLR_SB].notes
 
 
 def test_rolr_epcor_records():
@@ -12194,7 +12202,7 @@ def test_rolr_epcor_records():
 
 def test_rolr_every_live_component_is_sourced_and_dated():
     records = ROLR__all_live()
-    assert len(records) == 8
+    assert len(records) == 10
     for record in records:
         assert record.province == "AB" and record.utility_type == "electricity"
         assert not any(c.component_type in ("delivery", "transmission", "rider") for c in record.components)
@@ -12239,7 +12247,7 @@ def test_rolr_ders_small_business_unit_term_or_class_drift_rejects_only_that_cla
 def test_rolr_enmax_changed_price_propagates():
     uca = ROLR__replace(ROLR__html("uca"), "<p>12.06</p>", "<p>12.50</p>")
     pages = ROLR__pages("enmax_schedule")
-    for number in (2, 3):
+    for number in (2, 3, 4, 5):
         pages = ROLR__replace_page(pages, number, "Energy Charge $0.1206 per kWh", "Energy Charge $0.1250 per kWh")
     pages = ROLR__replace_page(pages, 3, "Administration Charge $0.3973 per day", "Administration Charge $0.4000 per day")
     records, rejections = ROLR_enmax.parse_sources(ROLR__enmax_inputs(uca=uca, schedule_pages=pages), ROLR_TODAY)
@@ -12247,20 +12255,25 @@ def test_rolr_enmax_changed_price_propagates():
     by_name = ROLR__by_name(records)
     assert {ROLR__comp(r, "energy").charge_value for r in records} == {0.125}
     assert ROLR__comp(by_name[ROLR_SB], "fixed").charge_value == 0.4
+    assert ROLR__comp(by_name[ROLR_MC], "fixed").charge_value == 0.3973
 
 
-@pytest.mark.parametrize(("page", "old", "new"), [
-    (2, "Energy Charge $0.1206 per kWh", "Energy Charge $0.1216 per kWh"),
-    (2, "Energy Charge $0.1206 per kWh", "Energy Charge $0.1206 per kW"),
-    (2, "Administration Charge $0.4134 per day", "Administration Charge $0.4134 per month"),
-    (2, "Rider n/a", "Rider $0.1797 per day"),
-    (2, "D100 service", "D110 service"),
-    (2, "Decision 29608-D01-2024, effective January 1, 2025", "Decision 29608-D01-2024"),
+@pytest.mark.parametrize(("page", "old", "new", "rejected"), [
+    (2, "Energy Charge $0.1206 per kWh", "Energy Charge $0.1216 per kWh", ROLR_RES),
+    (2, "Energy Charge $0.1206 per kWh", "Energy Charge $0.1206 per kW", ROLR_RES),
+    (2, "Administration Charge $0.4134 per day", "Administration Charge $0.4134 per month", ROLR_RES),
+    (2, "Rider n/a", "Rider $0.1797 per day", ROLR_RES),
+    (2, "D100 service", "D110 service", ROLR_RES),
+    (2, "Decision 29608-D01-2024, effective January 1, 2025", "Decision 29608-D01-2024", ROLR_RES),
+    (4, "less than 250 MWh", "less than 250 MW", ROLR_MC),
+    (4, "Energy Charge $0.1206 per kWh", "Energy Charge $0.1306 per kWh", ROLR_MC),
+    (5, "D310 or D410 service", "D310 service", ROLR_LC),
 ])
-def test_rolr_enmax_schedule_drift_rejects_only_that_class(page, old, new):
+def test_rolr_enmax_schedule_drift_rejects_only_that_class(page, old, new, rejected):
     pages = ROLR__replace_page(ROLR__pages("enmax_schedule"), page, old, new)
     records, rejections = ROLR_enmax.parse_sources(ROLR__enmax_inputs(schedule_pages=pages), ROLR_TODAY)
-    assert ROLR__names(records) == {ROLR_SB} and len(rejections) == 1
+    assert ROLR__names(records) == ROLR_ENMAX_NAMES - {rejected} and len(rejections) == 1
+    assert rejections[0].startswith(rejected + ": ")
 
 
 def test_rolr_enmax_uca_mismatch_term_and_cover_reject_all():
@@ -12437,7 +12450,7 @@ def test_rolr_ders_scrape_live_partial_and_failure():
 
 def test_rolr_enmax_scrape_live_and_failure():
     pages, pdfs = ROLR__enmax_urls()
-    ROLR__assert_live(ROLR__run(ROLR_enmax.ENMAXEnergyScraper(), pages, pdfs), {ROLR_RES, ROLR_SB})
+    ROLR__assert_live(ROLR__run(ROLR_enmax.ENMAXEnergyScraper(), pages, pdfs), ROLR_ENMAX_NAMES)
     ROLR__assert_seed(ROLR__run(ROLR_enmax.ENMAXEnergyScraper(), {}, pdfs))
     ROLR__assert_seed(ROLR__run(ROLR_enmax.ENMAXEnergyScraper(), pages, {}))
     ROLR__assert_seed(ROLR__run(ROLR_enmax.ENMAXEnergyScraper(), pages, pdfs, today=ROLR_AFTER_TERM))

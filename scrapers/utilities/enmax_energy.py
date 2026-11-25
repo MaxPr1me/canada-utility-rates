@@ -13,9 +13,14 @@ Official sources:
     "View the rate schedule" link.
   - ENMAX Energy RoLR rate schedule PDF ("Regulated Rate Tariff" pages):
     energy and administration charges, applicability, decision/effective date
-    and interim status for the Residential and Small Commercial schedules.
+    and interim status for the Residential, Small Commercial (D200), Medium
+    Commercial (D300) and Large Commercial (D310/D410) schedules; the three
+    commercial schedules apply only to sites using under the printed annual
+    limit (250 MWh).
   - Utilities Consumer Advocate default-rates table (Government of Alberta):
-    required cross-check for ENMAX / ENMAX Power Corporation.
+    required cross-check for ENMAX / ENMAX Power Corporation. It publishes one
+    price per provider and distributor area for residential and small business
+    consumers, and every schedule must print that price.
 
 A printed rider without dates, a schedule for another year, or any
 provider/UCA disagreement fails closed for the affected class. Delivery
@@ -70,11 +75,20 @@ UCA_RETAILER = "ENMAX"
 UCA_DISTRIBUTOR = "ENMAX Power"
 SERVICE_AREA = "ENMAX Power Corporation service area (City of Calgary)"
 
-# kind: (rate schedule name, tariff_name, tariff_code, customer_class, distribution rate)
+# kind: (rate schedule name, tariff_name, tariff_code, customer_class, ENMAX Power distribution rates the schedule
+# names). Medium and Large Commercial are stored since owner decision 102 (2026-11-24): they print the same energy and
+# administration charges as Small Commercial for sites under the same annual limit, and the representative models'
+# ENMAX pairs (and the planned building archetype costs) need them for ENMAX Power's D300 and D310 sites.
 SCHEDULES = {
-    "residential": ("Residential", "Rate of Last Resort - Residential", "RoLR-Res", "residential", "D100"),
+    "residential": ("Residential", "Rate of Last Resort - Residential", "RoLR-Res", "residential", ("D100",)),
     "small_business": (
-        "Small Commercial", "Rate of Last Resort - Small Business", "RoLR-SB", "commercial", "D200",
+        "Small Commercial", "Rate of Last Resort - Small Business", "RoLR-SB", "commercial", ("D200",),
+    ),
+    "medium_commercial": (
+        "Medium Commercial", "Rate of Last Resort - Medium Commercial", "RoLR-MC", "commercial", ("D300",),
+    ),
+    "large_commercial": (
+        "Large Commercial", "Rate of Last Resort - Large Commercial", "RoLR-LC", "commercial", ("D310", "D410"),
     ),
 }
 
@@ -208,7 +222,8 @@ def parse_sources(sources: dict, today: date) -> tuple[list[TariffRecord], list[
 
     records: list[TariffRecord] = []
     rejections: list[str] = []
-    for kind, (schedule, name, code, customer_class, rate_code) in SCHEDULES.items():
+    for kind, (schedule, name, code, customer_class, rate_codes) in SCHEDULES.items():
+        services = " or ".join(rate_codes)
         try:
             if schedule not in schedules:
                 raise RolrError(f"{schedule} schedule missing from the rate schedule PDF")
@@ -216,11 +231,11 @@ def parse_sources(sources: dict, today: date) -> tuple[list[TariffRecord], list[
             charges = parse_schedule_charges(entry, today)
             if charges["energy"] * 100 != uca_cents:
                 raise RolrError(f"rate schedule {charges['energy_text']} differs from UCA {uca_cents} cents/kWh")
-            if f"{rate_code} service" not in charges["applicability"]:
-                raise RolrError(f"applicability no longer names {rate_code} service")
+            if f"{services} service" not in charges["applicability"]:
+                raise RolrError(f"applicability no longer names {services} service")
             limit = re.search(r"less than (\d[\d,]*) MWh", charges["applicability"])
-            if kind == "small_business" and not limit:
-                raise RolrError("small commercial consumption limit missing")
+            if customer_class == "commercial" and not limit:
+                raise RolrError(f"{schedule} consumption limit missing")
         except RolrError as exc:
             rejections.append(f"{name}: {exc}")
             continue
@@ -253,10 +268,12 @@ def parse_sources(sources: dict, today: date) -> tuple[list[TariffRecord], list[
             ),
         ]
         notes = [f"Rates from ENMAX Energy's {status} (rider: n/a)."]
-        if kind == "small_business" and {"Medium Commercial", "Large Commercial"} & set(schedules):
+        if kind in ("medium_commercial", "large_commercial"):
             notes.append(
-                "The rate schedule also has Medium Commercial (D300) and Large Commercial (D310/D410) "
-                "RoLR schedules for sites under the same consumption limit; they are not modelled separately."
+                f"Only for {services} sites using under {limit.group(1)} MWh a year, the same limit as the Small "
+                "Commercial schedule. The UCA table publishes one price per provider and distributor area for "
+                "residential and small business consumers, so this schedule is checked against the same ENMAX "
+                "Power-area price."
             )
         if municipal:
             notes.append(

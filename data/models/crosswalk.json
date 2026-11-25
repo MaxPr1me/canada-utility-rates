@@ -1,8 +1,8 @@
 {
   "version": 1,
   "phase": "7C",
-  "updated": "2026-11-24",
-  "status": "Mappings accepted by the user (October 9, 2026; notes still say 'REVIEW' where a judgement was made, see logs/_b12_xwalk_review.txt). Phase 7C (October 16, user decisions): Alberta electricity is modelled as wires + Rate of Last Resort pairs (section 'pairs'); optional time-of-use/time-of-day and peak-event products outside Ontario are excluded from the medians; Ontario/Alberta gas stays excluded until Phase 7D; PUC Distribution maps through the generic Ontario rules. October 16 (7C-2): periods of block thresholds published in bare kWh moved to data/models/block_periods.json; 'required_contributors' withholds the Newfoundland and Labrador residential model while Newfoundland Power is not computable (user decision). November 24 (method 7T-1, owner decisions 64-75): the territories are modelled for residential and small commercial non-government classes; government classes are excluded (government_rate), the joint Yukon rate book counts once (shared_rate_books) and interim rates are labelled (interim_rates).",
+  "updated": "2026-11-25",
+  "status": "Mappings accepted by the user (October 9, 2026; notes still say 'REVIEW' where a judgement was made, see logs/_b12_xwalk_review.txt). Phase 7C (October 16, user decisions): Alberta electricity is modelled as wires + Rate of Last Resort pairs (section 'pairs'); optional time-of-use/time-of-day and peak-event products outside Ontario are excluded from the medians; Ontario/Alberta gas stays excluded until Phase 7D; PUC Distribution maps through the generic Ontario rules. October 16 (7C-2): periods of block thresholds published in bare kWh moved to data/models/block_periods.json; 'required_contributors' withholds the Newfoundland and Labrador residential model while Newfoundland Power is not computable (user decision). November 24 (method 7T-1, owner decisions 64-75): the territories are modelled for residential and small commercial non-government classes; government classes are excluded (government_rate), the joint Yukon rate book counts once (shared_rate_books) and interim rates are labelled (interim_rates). November 25 (owner decision 102 of November 24): the ENMAX Energy scraper also reads its Medium Commercial (RoLR-MC) and Large Commercial (RoLR-LC) Rate of Last Resort schedules, which pair with ENMAX Power's D300 and D310 classes; until a Monthly Scrape stores them, those pairs stay not computable at the Rate of Last Resort levels.",
   "scope": "Latest record per (utility_name, name, customer_class) by effective_date, as the site dedupes, with provenance 'live'. Provinces and, since 2026-11-24, the territories (first release: residential and small commercial; territory_planned_later marks territorial classes left for a later release).",
   "matching": {
     "order": "First matching rule wins; utility-specific rules precede generic ones; territories last.",
@@ -134,8 +134,8 @@
        "classes": [
          {"wires_code": "D100", "retail_code": "RoLR-Res"},
          {"wires_code": "D200", "retail_code": "RoLR-SB"},
-         {"wires_code": "D300", "retail_code": null, "retail_missing": "ENMAX Energy's Medium Commercial (D300) Rate of Last Resort schedule is not in the data (the stored small-business record applies to D200 sites)"},
-         {"wires_code": "D310", "retail_code": null, "retail_missing": "ENMAX Energy's Large Commercial (D310/D410) Rate of Last Resort schedule is not in the data"}
+         {"wires_code": "D300", "retail_code": "RoLR-MC"},
+         {"wires_code": "D310", "retail_code": "RoLR-LC"}
        ]},
       {"id": "ab-atco", "label": "ATCO Electric + Direct Energy Regulated Services", "area": "ATCO Electric service area",
        "wires": "ATCO Electric", "retail": "Direct Energy Regulated Services",

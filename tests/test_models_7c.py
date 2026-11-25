@@ -159,11 +159,38 @@ def test_atco_small_business_pair_matches_a_hand_calculation_with_per_kw_energy_
     assert items["RoLR Energy Charge"]["amount"] == pytest.approx(0.1202 * 8000)
 
 
+def _small_reasons(model):
+    return " ".join(e["reason"] for e in model["exclusions"] if e["scope"] in ("record", "utility"))
+
+
 def test_a_wires_class_without_a_retail_record_is_not_computable_at_rate_of_last_resort_levels():
+    # The frozen fixture predates ENMAX Energy's Medium Commercial record (owner decision 102), so the D300 pair fails
+    # closed until a Monthly Scrape stores it.
     small = _model(_build(), AB_SMALL)
-    reasons = " ".join(e["reason"] for e in small["exclusions"] if e["scope"] in ("record", "utility"))
-    assert "no Rate of Last Resort record for D300 sites" in reasons
+    assert "Rate of Last Resort record ENMAX Energy Corporation RoLR-MC is not live" in _small_reasons(small)
     assert ENMAX not in small["coverage"]["contributing_utilities"]
+    crosswalk = load_crosswalk()
+    enmax = next(unit for unit in crosswalk["pairs"]["units"] if unit["id"] == "ab-enmax")
+    d300 = next(cls for cls in enmax["classes"] if cls["wires_code"] == "D300")
+    d300.update(retail_code=None, retail_missing="no schedule for these sites")
+    unpaired = _model(_build(crosswalk=crosswalk), AB_SMALL)
+    assert "no Rate of Last Resort record for D300 sites: no schedule for these sites" in _small_reasons(unpaired)
+    assert ENMAX not in unpaired["coverage"]["contributing_utilities"]
+
+
+def test_enmax_medium_commercial_rate_of_last_resort_prices_d300_sites_at_s2():
+    # Owner decision 102 (2026-11-24): ENMAX Energy's Medium Commercial schedule (same prices as Small Commercial, sites
+    # under 250 MWh a year) pairs with ENMAX Power D300, so Calgary prices the 10,000 kWh, 40 kW small business.
+    medium = copy.deepcopy(_by_id(3037))
+    medium.update(id=3099, tariff_code="RoLR-MC", name="Rate of Last Resort - Medium Commercial")
+    small = _model(_build(_records() + [medium]), AB_SMALL)
+    row = _row(_level(small, "s2"), ENMAX)
+    assert row["records"] == ["3016+3099"]
+    kva = 40 / 0.9
+    expected = ((0.065473 + 0.063108 + 0.271085) * kva * DPM + 9.644493 * DPM
+                + (0.00129 + 0.00063 + 0.001355 + 0.009237 + 0.1206) * 10000 + 0.3973 * DPM)
+    assert row["cost_without_tax"] == round(expected, 2)
+    assert ENMAX in small["coverage"]["contributing_utilities"]
 
 
 def test_only_market_priced_energy_makes_a_model_pending():
