@@ -15,9 +15,8 @@
 
 - [generate_market_pricing.py](generate_market_pricing.py.md) (5 shared connections)
 - [MarketDataError](MarketDataError.md) (3 shared connections)
+- [ontario_ldc.py](ontario_ldc.py.md) (2 shared connections)
 - [_yearly_files](_yearly_files.md) (1 shared connections)
-- [ontario_ldc.py](ontario_ldc.py.md) (1 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
 

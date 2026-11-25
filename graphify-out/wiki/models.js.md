@@ -1,12 +1,12 @@
 # models.js
 
-> 69 nodes
+> 70 nodes
 
 ## Key Concepts
 
-- **models.js** (68 connections) — `site/js/models.js`
-- **isNum()** (25 connections) — `site/js/models.js`
-- **el()** (22 connections) — `site/js/models.js`
+- **models.js** (69 connections) — `site/js/models.js`
+- **isNum()** (26 connections) — `site/js/models.js`
+- **el()** (23 connections) — `site/js/models.js`
 - **renderNotes()** (14 connections) — `site/js/models.js`
 - **subsidyBlock()** (14 connections) — `site/js/models.js`
 - **money()** (12 connections) — `site/js/models.js`
@@ -24,12 +24,12 @@
 - **factsGrid()** (8 connections) — `site/js/models.js`
 - **nounOf()** (8 connections) — `site/js/models.js`
 - **cell()** (7 connections) — `site/js/models.js`
+- **moneyRange()** (7 connections) — `site/js/models.js`
 - **sentenceCase()** (7 connections) — `site/js/models.js`
 - **sourceLink()** (7 connections) — `site/js/models.js`
 - **statsText()** (7 connections) — `site/js/models.js`
 - **taxBlock()** (7 connections) — `site/js/models.js`
-- **territorialNotes()** (7 connections) — `site/js/models.js`
-- *... and 44 more nodes in this community*
+- *... and 45 more nodes in this community*
 
 ## Relationships
 
@@ -41,7 +41,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 242 (96%)
+- EXTRACTED: 247 (96%)
 - INFERRED: 10 (4%)
 - AMBIGUOUS: 0 (0%)
 

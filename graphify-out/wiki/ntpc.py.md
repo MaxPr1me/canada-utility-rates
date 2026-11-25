@@ -1,18 +1,14 @@
 # ntpc.py
 
-> 54 nodes
+> 44 nodes
 
 ## Key Concepts
 
 - **ntpc.py** (48 connections) — `scrapers/utilities/ntpc.py`
-- **._try_live_scrape()** (16 connections) — `scrapers/utilities/ntpc.py`
-- **NTPCScraper** (12 connections) — `scrapers/utilities/ntpc.py`
 - **_Reject** (12 connections) — `scrapers/utilities/ntpc.py`
-- **._interruptible()** (11 connections) — `scrapers/utilities/ntpc.py`
 - **_page_subsidies()** (10 connections) — `scrapers/utilities/ntpc.py`
 - **parse_residential_page()** (10 connections) — `scrapers/utilities/ntpc.py`
 - **parse_schedule()** (9 connections) — `scrapers/utilities/ntpc.py`
-- **build_interruptible_record()** (8 connections) — `scrapers/utilities/ntpc.py`
 - **_record()** (8 connections) — `scrapers/utilities/ntpc.py`
 - **_base_components()** (8 connections) — `scrapers/utilities/ntpc.py`
 - **_parse_group()** (8 connections) — `scrapers/utilities/ntpc.py`
@@ -29,19 +25,22 @@
 - **_ResidentialPage** (5 connections) — `scrapers/utilities/ntpc.py`
 - **_schedule_component()** (5 connections) — `scrapers/utilities/ntpc.py`
 - **_norm()** (5 connections) — `scrapers/utilities/ntpc.py`
-- *... and 29 more nodes in this community*
+- **parse_rider_page()** (5 connections) — `scrapers/utilities/ntpc.py`
+- **_dollars_per_kwh()** (4 connections) — `scrapers/utilities/ntpc.py`
+- **_Interruptible** (3 connections) — `scrapers/utilities/ntpc.py`
+- **_ScheduleD** (3 connections) — `scrapers/utilities/ntpc.py`
+- *... and 19 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (13 shared connections)
+- [._try_live_scrape](_try_live_scrape.md) (14 shared connections)
 - [re](re.md) (12 shared connections)
-- [TariffRecord](TariffRecord.md) (10 shared connections)
-- [DocumentPage](DocumentPage.md) (6 shared connections)
-- [RateComponent](RateComponent.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [registry.py](registry.py.md) (2 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
-- [.now_iso](now_iso.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (9 shared connections)
+- [RateComponent](RateComponent.md) (4 shared connections)
+- [DocumentPage](DocumentPage.md) (4 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (3 shared connections)
+- [run_scrape.py](run_scrape.py.md) (2 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,8 +48,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 168 (95%)
-- INFERRED: 8 (5%)
+- EXTRACTED: 141 (97%)
+- INFERRED: 5 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

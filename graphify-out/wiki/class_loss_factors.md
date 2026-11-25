@@ -12,11 +12,11 @@
 
 ## Relationships
 
+- [oeb_tariff.py](oeb_tariff.py.md) (3 shared connections)
 - [build_demand_records](build_demand_records.md) (3 shared connections)
-- [oeb_tariff.py](oeb_tariff.py.md) (2 shared connections)
-- [parse_tariff_pages](parse_tariff_pages.md) (2 shared connections)
-- [._energy_entries](_energy_entries.md) (1 shared connections)
-- [BaseScraper](BaseScraper.md) (1 shared connections)
+- [OntarioLDCScraper](OntarioLDCScraper.md) (1 shared connections)
+- [ontario_ldc.py](ontario_ldc.py.md) (1 shared connections)
+- [parse_tariff_pages](parse_tariff_pages.md) (1 shared connections)
 
 ## Source Files
 

@@ -1,10 +1,11 @@
 # parse_html
 
-> 14 nodes
+> 15 nodes
 
 ## Key Concepts
 
 - **medicine_hat.py** (24 connections) — `scrapers/utilities/medicine_hat.py`
+- **calendar** (12 connections)
 - **parse_energy_page()** (10 connections) — `scrapers/utilities/medicine_hat.py`
 - **parse_rates()** (10 connections) — `scrapers/utilities/medicine_hat.py`
 - **_blocks()** (5 connections) — `scrapers/utilities/medicine_hat.py`
@@ -21,14 +22,18 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (10 shared connections)
-- [.fetch_page](fetch_page.md) (4 shared connections)
-- [DocumentPage](DocumentPage.md) (3 shared connections)
-- [re](re.md) (3 shared connections)
-- [calendar](calendar.md) (2 shared connections)
+- [BaseScraper](BaseScraper.md) (11 shared connections)
+- [re](re.md) (5 shared connections)
+- [DocumentPage](DocumentPage.md) (4 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (3 shared connections)
 - [RateComponent](RateComponent.md) (2 shared connections)
-- [TariffRecord](TariffRecord.md) (2 shared connections)
-- [lethbridge.py](lethbridge.py.md) (2 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (2 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
+- [io](io.md) (1 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
+- [workflow_checks](workflow_checks.md) (1 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -36,8 +41,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 48 (96%)
-- INFERRED: 2 (4%)
+- EXTRACTED: 58 (97%)
+- INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

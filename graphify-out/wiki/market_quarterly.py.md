@@ -30,10 +30,10 @@
 
 ## Relationships
 
-- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
+- [json](json.md) (2 shared connections)
 - [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
 - [re](re.md) (1 shared connections)
-- [calendar](calendar.md) (1 shared connections)
+- [parse_html](parse_html.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 - [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
 

@@ -33,10 +33,10 @@
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (8 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (8 shared connections)
 - [BaseScraper](BaseScraper.md) (7 shared connections)
 - [RateComponent](RateComponent.md) (5 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files

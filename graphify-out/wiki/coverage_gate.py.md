@@ -1,10 +1,9 @@
 # coverage_gate.py
 
-> 44 nodes
+> 43 nodes
 
 ## Key Concepts
 
-- **json** (66 connections)
 - **coverage_gate.py** (30 connections) — `scripts/coverage_gate.py`
 - **evaluate()** (14 connections) — `scripts/coverage_gate.py`
 - **date** (10 connections)
@@ -29,22 +28,17 @@
 - **resolve_entry()** (3 connections) — `scripts/coverage_gate.py`
 - **active_utilities()** (2 connections) — `scripts/coverage_gate.py`
 - **_escape()** (2 connections) — `scripts/coverage_gate.py`
-- *... and 19 more nodes in this community*
+- **add()** (1 connections) — `scripts/coverage_gate.py`
+- *... and 18 more nodes in this community*
 
 ## Relationships
 
-- [run_scrape.py](run_scrape.py.md) (12 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (10 shared connections)
-- [main](main.md) (7 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (6 shared connections)
-- [check_db_history.py](check_db_history.py.md) (4 shared connections)
-- [Path](Path.md) (4 shared connections)
-- [BaseScraper](BaseScraper.md) (2 shared connections)
-- [build_revisions](build_revisions.md) (2 shared connections)
-- [representative_models.py](representative_models.py.md) (2 shared connections)
-- [build_models](build_models.md) (2 shared connections)
-- [registry.py](registry.py.md) (2 shared connections)
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (2 shared connections)
+- [json](json.md) (7 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (3 shared connections)
+- [main](main.md) (1 shared connections)
+- [os](os.md) (1 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -52,7 +46,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 158 (100%)
+- EXTRACTED: 95 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

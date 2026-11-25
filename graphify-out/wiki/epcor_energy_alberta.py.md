@@ -1,6 +1,6 @@
 # epcor_energy_alberta.py
 
-> 68 nodes
+> 70 nodes
 
 ## Key Concepts
 
@@ -29,22 +29,22 @@
 - **parse_ders_page()** (7 connections) — `scrapers/utilities/direct_energy_regulated.py`
 - **parse_schedule_charges()** (7 connections) — `scrapers/utilities/enmax_energy.py`
 - **parse_business_page()** (7 connections) — `scrapers/utilities/epcor_energy_alberta.py`
-- *... and 43 more nodes in this community*
+- *... and 45 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (31 shared connections)
-- [re](re.md) (16 shared connections)
+- [BaseScraper](BaseScraper.md) (30 shared connections)
+- [re](re.md) (15 shared connections)
 - [RateComponent](RateComponent.md) (8 shared connections)
-- [TariffRecord](TariffRecord.md) (8 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (8 shared connections)
+- [EPCOREnergyAlbertaScraper](EPCOREnergyAlbertaScraper.md) (5 shared connections)
 - [ENMAXEnergyScraper](ENMAXEnergyScraper.md) (4 shared connections)
 - [DocumentPage](DocumentPage.md) (4 shared connections)
-- [EPCOREnergyAlbertaScraper](EPCOREnergyAlbertaScraper.md) (4 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (4 shared connections)
 - [DirectEnergyRegulatedScraper](DirectEnergyRegulatedScraper.md) (3 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
+- [aeso.py](aeso.py.md) (3 shared connections)
+- [json](json.md) (2 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (2 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
-- [epcor_distribution.py](epcor_distribution.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -55,7 +55,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 274 (96%)
+- EXTRACTED: 278 (96%)
 - INFERRED: 11 (4%)
 - AMBIGUOUS: 0 (0%)
 

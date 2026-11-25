@@ -33,16 +33,16 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (11 shared connections)
+- [BaseScraper](BaseScraper.md) (10 shared connections)
 - [re](re.md) (7 shared connections)
 - [DocumentPage](DocumentPage.md) (5 shared connections)
-- [TariffRecord](TariffRecord.md) (4 shared connections)
-- [RateComponent](RateComponent.md) (3 shared connections)
+- [RateComponent](RateComponent.md) (4 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (3 shared connections)
 - [ATCOElectricScraper](ATCOElectricScraper.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
-- [calendar](calendar.md) (2 shared connections)
-- [Path](Path.md) (1 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (1 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (3 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
+- [json](json.md) (1 shared connections)
 
 ## Source Files
 

@@ -1,28 +1,42 @@
 # parse_rolr_page
 
-> 12 nodes
+> 23 nodes
 
 ## Key Concepts
 
+- **red_deer.py** (22 connections) — `scrapers/utilities/red_deer.py`
+- **._try_live_scrape()** (12 connections) — `scrapers/utilities/red_deer.py`
+- **RedDeerScraper** (8 connections) — `scrapers/utilities/red_deer.py`
 - **parse_rolr_page()** (8 connections) — `scrapers/utilities/red_deer.py`
 - **parse_schedule_a()** (8 connections) — `scrapers/utilities/red_deer.py`
 - **parse_schedule_d()** (8 connections) — `scrapers/utilities/red_deer.py`
+- **build_records()** (7 connections) — `scrapers/utilities/red_deer.py`
 - **_sections()** (7 connections) — `scrapers/utilities/red_deer.py`
 - **_flat()** (6 connections) — `scrapers/utilities/red_deer.py`
 - **parse_delivery_page()** (6 connections) — `scrapers/utilities/red_deer.py`
 - **_iso()** (4 connections) — `scrapers/utilities/red_deer.py`
+- **_quarter()** (3 connections) — `scrapers/utilities/red_deer.py`
+- **.scrape()** (3 connections) — `scrapers/utilities/red_deer.py`
+- **date** (3 connections)
+- **.__init__()** (2 connections) — `scrapers/utilities/red_deer.py`
+- **red_deer.py — Scraper for the City of Red Deer Electric Light & Power…** (1 connections) — `scrapers/utilities/red_deer.py`
 - **Effective date and the Administration Charge and application text per Regulated…** (1 connections) — `scrapers/utilities/red_deer.py`
 - **The delivery page's charges by rate class, Local Access Fee, Balancing Pool and…** (1 connections) — `scrapers/utilities/red_deer.py`
 - **The current term's Rate of Last Resort energy price and the page's…** (1 connections) — `scrapers/utilities/red_deer.py`
+- **Wires and Rate of Last Resort records; (records, {code: rejection reason}).** (1 connections) — `scrapers/utilities/red_deer.py`
+- **Parse the City of Red Deer's distribution tariff and Regulated Rate Tariff.** (1 connections) — `scrapers/utilities/red_deer.py`
 - **{rate class: {page, text}} for pages whose heading matches ``heading`` (one…** (1 connections) — `scrapers/utilities/red_deer.py`
 - **Effective date and, per class, the System/Distribution Access charges,…** (1 connections) — `scrapers/utilities/red_deer.py`
 
 ## Relationships
 
 - [BaseScraper](BaseScraper.md) (9 shared connections)
-- [re](re.md) (5 shared connections)
-- [._try_live_scrape](_try_live_scrape.md) (5 shared connections)
-- [DocumentPage](DocumentPage.md) (3 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (6 shared connections)
+- [re](re.md) (6 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (5 shared connections)
+- [DocumentPage](DocumentPage.md) (4 shared connections)
+- [RateComponent](RateComponent.md) (2 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
 
@@ -30,8 +44,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 34 (92%)
-- INFERRED: 3 (8%)
+- EXTRACTED: 70 (95%)
+- INFERRED: 4 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

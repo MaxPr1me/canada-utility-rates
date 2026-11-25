@@ -1,38 +1,42 @@
 # ._try_live_scrape
 
-> 11 nodes
+> 14 nodes
 
 ## Key Concepts
 
-- **._try_live_scrape()** (12 connections) — `scrapers/utilities/red_deer.py`
-- **RedDeerScraper** (8 connections) — `scrapers/utilities/red_deer.py`
-- **build_records()** (7 connections) — `scrapers/utilities/red_deer.py`
-- **._html()** (5 connections) — `scrapers/utilities/red_deer.py`
-- **_quarter()** (3 connections) — `scrapers/utilities/red_deer.py`
-- **.scrape()** (3 connections) — `scrapers/utilities/red_deer.py`
-- **date** (3 connections)
-- **.__init__()** (2 connections) — `scrapers/utilities/red_deer.py`
-- **Wires and Rate of Last Resort records; (records, {code: rejection reason}).** (1 connections) — `scrapers/utilities/red_deer.py`
-- **Parse the City of Red Deer's distribution tariff and Regulated Rate Tariff.** (1 connections) — `scrapers/utilities/red_deer.py`
-- **The page over plain HTTP, or rendered by headless Chromium when the expected…** (1 connections) — `scrapers/utilities/red_deer.py`
+- **._try_live_scrape()** (16 connections) — `scrapers/utilities/ntpc.py`
+- **NTPCScraper** (12 connections) — `scrapers/utilities/ntpc.py`
+- **._interruptible()** (11 connections) — `scrapers/utilities/ntpc.py`
+- **build_interruptible_record()** (8 connections) — `scrapers/utilities/ntpc.py`
+- **.scrape()** (7 connections) — `scrapers/utilities/ntpc.py`
+- **._seed_data()** (5 connections) — `scrapers/utilities/ntpc.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/ntpc.py`
+- **._optional()** (2 connections) — `scrapers/utilities/ntpc.py`
+- **Build the conditional retail interruptible heating record; riders are not…** (1 connections) — `scrapers/utilities/ntpc.py`
+- **Scrape Northwest Territories Power Corporation electricity rates.** (1 connections) — `scrapers/utilities/ntpc.py`
+- **Parse the current PUB-approved schedule; label any unreplaced seed as an…** (1 connections) — `scrapers/utilities/ntpc.py`
+- **Build records from the schedule PDF; residential-page subsidies are optional,…** (1 connections) — `scrapers/utilities/ntpc.py`
+- **Return the conditional retail interruptible heating record, or None if either…** (1 connections) — `scrapers/utilities/ntpc.py`
+- **Return seed/fallback data based on known published rates.** (1 connections) — `scrapers/utilities/ntpc.py`
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (5 shared connections)
-- [parse_rolr_page](parse_rolr_page.md) (5 shared connections)
-- [TariffRecord](TariffRecord.md) (4 shared connections)
-- [.fetch_page](fetch_page.md) (4 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
+- [ntpc.py](ntpc.py.md) (14 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (6 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (6 shared connections)
+- [RateComponent](RateComponent.md) (5 shared connections)
+- [DocumentPage](DocumentPage.md) (2 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
 
-- `scrapers/utilities/red_deer.py`
+- `scrapers/utilities/ntpc.py`
 
 ## Audit Trail
 
-- EXTRACTED: 32 (97%)
-- INFERRED: 1 (3%)
+- EXTRACTED: 49 (94%)
+- INFERRED: 3 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

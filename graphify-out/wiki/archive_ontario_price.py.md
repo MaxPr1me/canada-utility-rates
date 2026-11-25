@@ -1,60 +1,58 @@
 # archive_ontario_price.py
 
-> 73 nodes
+> 48 nodes
 
 ## Key Concepts
 
 - **archive_ontario_price.py** (62 connections) — `scripts/archive_ontario_price.py`
-- **ReportSource** (19 connections) — `scripts/generate_market_pricing.py`
 - **update_archive()** (16 connections) — `scripts/archive_ontario_price.py`
-- **date** (16 connections)
 - **Decimal** (16 connections)
 - **load_archive()** (13 connections) — `scripts/archive_ontario_price.py`
 - **verify_gap_months()** (12 connections) — `scripts/archive_ontario_price.py`
-- **site_api_candidates()** (11 connections) — `scripts/archive_ontario_price.py`
 - **Archive** (11 connections)
 - **month_status()** (10 connections) — `scripts/archive_ontario_price.py`
 - **parse_lfda_csv()** (10 connections) — `scripts/archive_ontario_price.py`
-- **fetch_site_api()** (9 connections) — `scripts/archive_ontario_price.py`
-- **main()** (9 connections) — `scripts/archive_ontario_price.py`
 - **download_reports()** (8 connections) — `scripts/archive_ontario_price.py`
 - **parse_da_report()** (8 connections) — `scripts/archive_ontario_price.py`
 - **set_day()** (8 connections) — `scripts/archive_ontario_price.py`
 - **_price()** (7 connections) — `scripts/archive_ontario_price.py`
 - **parse_site_api()** (7 connections) — `scripts/archive_ontario_price.py`
 - **month_statuses()** (6 connections) — `scripts/archive_ontario_price.py`
-- **serialize()** (6 connections) — `scripts/archive_ontario_price.py`
 - **MonthStatus** (5 connections) — `scripts/archive_ontario_price.py`
 - **Row** (5 connections) — `scripts/archive_ontario_price.py`
-- **SiteApiSource** (5 connections) — `scripts/archive_ontario_price.py`
-- **_by_month()** (5 connections) — `scripts/archive_ontario_price.py`
 - **_check_days()** (5 connections) — `scripts/archive_ontario_price.py`
-- *... and 48 more nodes in this community*
+- **_hour()** (5 connections) — `scripts/archive_ontario_price.py`
+- **load_lfda()** (5 connections) — `scripts/archive_ontario_price.py`
+- **parse_market_table()** (5 connections) — `scripts/archive_ontario_price.py`
+- **apply_lfda()** (4 connections) — `scripts/archive_ontario_price.py`
+- **_check_hours()** (4 connections) — `scripts/archive_ontario_price.py`
+- **describe_month()** (4 connections) — `scripts/archive_ontario_price.py`
+- **_money()** (4 connections) — `scripts/archive_ontario_price.py`
+- **_month_days()** (4 connections) — `scripts/archive_ontario_price.py`
+- *... and 23 more nodes in this community*
 
 ## Relationships
 
-- [_yearly_files](_yearly_files.md) (6 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (5 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (5 shared connections)
-- [lethbridge.py](lethbridge.py.md) (4 shared connections)
+- [date](date.md) (24 shared connections)
+- [io](io.md) (9 shared connections)
+- [main](main.md) (7 shared connections)
+- [json](json.md) (5 shared connections)
 - [re](re.md) (4 shared connections)
-- [run_scrape.py](run_scrape.py.md) (4 shared connections)
-- [os](os.md) (4 shared connections)
 - [BaseScraper](BaseScraper.md) (4 shared connections)
-- [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (2 shared connections)
-- [coverage_gate.py](coverage_gate.py.md) (2 shared connections)
+- [_yearly_files](_yearly_files.md) (3 shared connections)
+- [requests](requests.md) (3 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (2 shared connections)
 - [market_quarterly.py](market_quarterly.py.md) (1 shared connections)
-- [MarketDataError](MarketDataError.md) (1 shared connections)
+- [os](os.md) (1 shared connections)
 
 ## Source Files
 
 - `scripts/archive_ontario_price.py`
-- `scripts/generate_market_pricing.py`
 
 ## Audit Trail
 
-- EXTRACTED: 225 (100%)
-- INFERRED: 1 (0%)
+- EXTRACTED: 173 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---
