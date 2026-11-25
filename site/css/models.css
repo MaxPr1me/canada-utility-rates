@@ -21,7 +21,9 @@
 .rm-illus-method { margin-top: 0.25rem; padding: 0.75rem; border-radius: var(--radius); background: rgba(255, 255, 255, 0.7); font-size: 0.85rem; line-height: 1.5; }
 .rm-illus-buildings { margin-top: 1rem; }
 .rm-illus-buildings summary { font-weight: 600; cursor: pointer; }
-.rm-illus-buildings .rm-table { background: rgba(255, 255, 255, 0.85); }
+/* Wide enough to read on phones: the table scrolls sideways in .rm-table-wrap instead of splitting words. */
+.rm-illus-buildings .rm-table { min-width: 36rem; background: rgba(255, 255, 255, 0.85); }
+.rm-illus-buildings .rm-table th, .rm-illus-buildings .rm-table td { overflow-wrap: normal; }
 
 @media (max-width: 640px) {
   .rm-illus { padding: 0.75rem; }
