@@ -60,7 +60,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>canada-utility-costs — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 3277 nodes, 9755 edges, 114 communities. Commit: d5bef6c</p>
+<p class="subtitle">Generated from graphify knowledge graph: 3277 nodes, 9755 edges, 114 communities. Commit: e780818</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
@@ -849,6 +849,7 @@ flowchart LR
     %% Section: Pipeline: scrape, validate, export and models (439 nodes, 972 edges)
     subgraph pipeline_pipeline_archetype_profiles_py_f2c06908["pipeline/archetype_profiles.py"]
         pipeline_archetype_profiles_archetyperun_c06ed39e("ArchetypeRun<br/><small>pipeline/archetype_profiles.py</small>")
+        pipeline_archetype_profiles_archetyperun_annual_25b9f63d("annual_gas_gj()<br/><small>pipeline/archetype_profiles.py</small>")
         pipeline_archetype_profiles_archetyperun_average_5bedf811("average_monthly_kwh()<br/><small>pipeline/archetype_profiles.py</small>")
         pipeline_archetype_profiles_archetyperun_average_c59dc4ef("average_monthly_peak_kw()<br/><small>pipeline/archetype_profiles.py</small>")
         pipeline_archetype_profiles_archetyperun_max_pea_005a7115("max_peak_kw()<br/><small>pipeline/archetype_profiles.py</small>")
@@ -856,7 +857,6 @@ flowchart LR
         pipeline_archetype_profiles_archetyperun_unmet_o_6a37cbef("unmet_occupied_hours()<br/><small>pipeline/archetype_profiles.py</small>")
         pipeline_archetype_profiles_archetyperun_quality_21935bf2("quality_flag()<br/><small>pipeline/archetype_profiles.py</small>")
         pipeline_archetype_profiles_archetyperun_annual_245de913("annual_kwh()<br/><small>pipeline/archetype_profiles.py</small>")
-        pipeline_archetype_profiles_archetyperun_annual_25b9f63d("annual_gas_gj()<br/><small>pipeline/archetype_profiles.py</small>")
         pipeline_archetype_profiles_load_archetypes_431ab9ae("load_archetypes()<br/><small>pipeline/archetype_profiles.py</small>")
     end
     subgraph pipeline_pipeline_representative_models_py_a1c18e21["pipeline/representative_models.py"]
@@ -871,6 +871,7 @@ flowchart LR
         pipeline_model_monitoring_read_json_903356b3("read_json()<br/><small>pipeline/model_monitoring.py</small>")
     end
     pipeline_export_json_386f2418("export_json.py")
+    pipeline_archetype_profiles_archetyperun_c06ed39e -->|method| pipeline_archetype_profiles_archetyperun_annual_25b9f63d
     pipeline_archetype_profiles_archetyperun_c06ed39e -->|method| pipeline_archetype_profiles_archetyperun_average_5bedf811
     pipeline_archetype_profiles_archetyperun_c06ed39e -->|method| pipeline_archetype_profiles_archetyperun_average_c59dc4ef
     pipeline_archetype_profiles_archetyperun_c06ed39e -->|method| pipeline_archetype_profiles_archetyperun_max_pea_005a7115
@@ -878,7 +879,6 @@ flowchart LR
     pipeline_archetype_profiles_archetyperun_c06ed39e -->|method| pipeline_archetype_profiles_archetyperun_unmet_o_6a37cbef
     pipeline_archetype_profiles_archetyperun_c06ed39e -->|method| pipeline_archetype_profiles_archetyperun_quality_21935bf2
     pipeline_archetype_profiles_archetyperun_c06ed39e -->|method| pipeline_archetype_profiles_archetyperun_annual_245de913
-    pipeline_archetype_profiles_archetyperun_c06ed39e -->|method| pipeline_archetype_profiles_archetyperun_annual_25b9f63d
     pipeline_representative_models_archetype_set_eedab018 -->|calls| pipeline_archetype_profiles_load_archetypes_431ab9ae
     pipeline_representative_models_build_model_fa9f9c03 -->|calls| pipeline_representative_models_prepare_12850ffc
     pipeline_representative_models_build_models_80982d9d -->|calls| pipeline_representative_models_build_model_fa9f9c03
@@ -886,6 +886,7 @@ flowchart LR
     pipeline_model_monitoring_main_a2682423 -->|calls| pipeline_model_monitoring_read_json_903356b3
     %% Omitted for readability: 421 nodes, 0 edges
     class pipeline_archetype_profiles_archetyperun_c06ed39e entry;
+    class pipeline_archetype_profiles_archetyperun_annual_25b9f63d function;
     class pipeline_archetype_profiles_archetyperun_average_5bedf811 function;
     class pipeline_archetype_profiles_archetyperun_average_c59dc4ef function;
     class pipeline_archetype_profiles_archetyperun_max_pea_005a7115 function;
@@ -893,7 +894,6 @@ flowchart LR
     class pipeline_archetype_profiles_archetyperun_unmet_o_6a37cbef function;
     class pipeline_archetype_profiles_archetyperun_quality_21935bf2 function;
     class pipeline_archetype_profiles_archetyperun_annual_245de913 function;
-    class pipeline_archetype_profiles_archetyperun_annual_25b9f63d function;
     class pipeline_archetype_profiles_load_archetypes_431ab9ae function;
     class pipeline_representative_models_build_model_fa9f9c03 function;
     class pipeline_representative_models_build_models_80982d9d function;
@@ -1993,7 +1993,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>canada-utility-costs — Architecture Documentation</p>
-  <p>Generated: 2026-11-25 15:55 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-11-25 16:03 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->
