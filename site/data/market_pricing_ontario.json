@@ -24,8 +24,8 @@
       2025,
       2026
     ],
-    "generated_at": "2026-11-24T18:54:45Z",
-    "as_of": "2026-11-24",
+    "generated_at": "2026-11-26T16:52:44Z",
+    "as_of": "2026-11-26",
     "change_date": "2025-05-01",
     "eras": [
       {
@@ -1105,7 +1105,7 @@
         "unit": "$/MWh",
         "tolerance": 0.01,
         "months_checked": 3,
-        "max_abs_difference": 0.008,
+        "max_abs_difference": 0.0083,
         "months": [
           {
             "month": "2026-08",
@@ -1128,9 +1128,9 @@
           {
             "month": "2026-10",
             "hours": 744,
-            "computed": 54.7378,
+            "computed": 54.7383,
             "published": 54.73,
-            "difference": 0.0078,
+            "difference": 0.0083,
             "da_ozp": "pass",
             "lfda": "pass"
           }
@@ -6691,7 +6691,7 @@
       "day_type": "weekday",
       "hour": 7,
       "hours_count": 88,
-      "avg_energy_price": 0.053946,
+      "avg_energy_price": 0.053947,
       "avg_ga_class_b": 0.070715,
       "combined": 0.124661,
       "hours_hoep": 66,
@@ -6735,7 +6735,7 @@
       "day_type": "weekday",
       "hour": 11,
       "hours_count": 88,
-      "avg_energy_price": 0.044398,
+      "avg_energy_price": 0.044399,
       "avg_ga_class_b": 0.070715,
       "combined": 0.115113,
       "hours_hoep": 66,
@@ -6759,7 +6759,7 @@
       "hours_count": 88,
       "avg_energy_price": 0.043541,
       "avg_ga_class_b": 0.070715,
-      "combined": 0.114255,
+      "combined": 0.114256,
       "hours_hoep": 66,
       "hours_oemp": 22
     },
@@ -6770,7 +6770,7 @@
       "hours_count": 88,
       "avg_energy_price": 0.040945,
       "avg_ga_class_b": 0.070715,
-      "combined": 0.111659,
+      "combined": 0.11166,
       "hours_hoep": 66,
       "hours_oemp": 22
     },
@@ -6803,7 +6803,7 @@
       "hours_count": 88,
       "avg_energy_price": 0.055196,
       "avg_ga_class_b": 0.070715,
-      "combined": 0.12591,
+      "combined": 0.125911,
       "hours_hoep": 66,
       "hours_oemp": 22
     },
@@ -6812,7 +6812,7 @@
       "day_type": "weekday",
       "hour": 18,
       "hours_count": 88,
-      "avg_energy_price": 0.05466,
+      "avg_energy_price": 0.054661,
       "avg_ga_class_b": 0.070715,
       "combined": 0.125375,
       "hours_hoep": 66,
@@ -6825,7 +6825,7 @@
       "hours_count": 88,
       "avg_energy_price": 0.047288,
       "avg_ga_class_b": 0.070715,
-      "combined": 0.118002,
+      "combined": 0.118003,
       "hours_hoep": 66,
       "hours_oemp": 22
     },
@@ -6856,7 +6856,7 @@
       "day_type": "weekday",
       "hour": 22,
       "hours_count": 88,
-      "avg_energy_price": 0.033017,
+      "avg_energy_price": 0.033018,
       "avg_ga_class_b": 0.070715,
       "combined": 0.103732,
       "hours_hoep": 66,
