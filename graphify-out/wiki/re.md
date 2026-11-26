@@ -36,13 +36,13 @@
 - [BaseScraper](BaseScraper.md) (8 shared connections)
 - [re](re.md) (7 shared connections)
 - [DocumentPage](DocumentPage.md) (5 shared connections)
-- [parse_html](parse_html.md) (5 shared connections)
+- [ATCOElectricScraper](ATCOElectricScraper.md) (5 shared connections)
+- [TariffRecord](TariffRecord.md) (4 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
-- [ATCOElectricScraper](ATCOElectricScraper.md) (3 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
-- [TariffRecord](TariffRecord.md) (1 shared connections)
 - [write_spark_gap](write_spark_gap.md) (1 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (1 shared connections)
 
 ## Source Files
 

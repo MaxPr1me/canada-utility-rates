@@ -1,6 +1,6 @@
 # fortisbc_electric.py
 
-> 50 nodes
+> 46 nodes
 
 ## Key Concepts
 
@@ -29,28 +29,27 @@
 - **_parse_residential()** (9 connections) — `scrapers/utilities/fortisbc_electric.py`
 - **_parse_small_commercial()** (9 connections) — `scrapers/utilities/fortisbc_electric.py`
 - **_small_commercial_record()** (9 connections) — `scrapers/utilities/fortisbc_electric.py`
-- *... and 25 more nodes in this community*
+- *... and 21 more nodes in this community*
 
 ## Relationships
 
-- [DocumentPage](DocumentPage.md) (21 shared connections)
-- [re](re.md) (17 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (17 shared connections)
+- [DocumentPage](DocumentPage.md) (20 shared connections)
+- [TariffRecord](TariffRecord.md) (18 shared connections)
+- [re](re.md) (16 shared connections)
 - [RateComponent](RateComponent.md) (8 shared connections)
-- [BaseScraper](BaseScraper.md) (8 shared connections)
-- [.__init__](__init__.md) (4 shared connections)
-- [io](io.md) (2 shared connections)
-- [parse_html](parse_html.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (7 shared connections)
+- [FortisBCElectricScraper](FortisBCElectricScraper.md) (3 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (1 shared connections)
 
 ## Source Files
 
 - `scrapers/utilities/fortisbc_electric.py`
-- `scrapers/utils/parsing.py`
 
 ## Audit Trail
 
-- EXTRACTED: 208 (81%)
-- INFERRED: 50 (19%)
+- EXTRACTED: 199 (80%)
+- INFERRED: 50 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

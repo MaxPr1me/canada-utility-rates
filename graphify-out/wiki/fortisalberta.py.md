@@ -1,6 +1,6 @@
 # fortisalberta.py
 
-> 44 nodes
+> 51 nodes
 
 ## Key Concepts
 
@@ -9,6 +9,7 @@
 - **_date()** (17 connections) — `scrapers/utilities/fortisalberta.py`
 - **_Section** (12 connections) — `scrapers/utilities/fortisalberta.py`
 - **_Document** (11 connections) — `scrapers/utilities/fortisalberta.py`
+- **FortisAlbertaScraper** (11 connections) — `scrapers/utilities/fortisalberta.py`
 - **_charge()** (11 connections) — `scrapers/utilities/fortisalberta.py`
 - **_balancing_pool_rider()** (11 connections) — `scrapers/utilities/fortisalberta.py`
 - **_base_rider()** (11 connections) — `scrapers/utilities/fortisalberta.py`
@@ -18,6 +19,7 @@
 - **_option_i()** (10 connections) — `scrapers/utilities/fortisalberta.py`
 - **_quarterly_rider()** (10 connections) — `scrapers/utilities/fortisalberta.py`
 - **_ClassSpec** (9 connections) — `scrapers/utilities/fortisalberta.py`
+- **.scrape()** (9 connections) — `scrapers/utilities/fortisalberta.py`
 - **parse_schedule_pages()** (9 connections) — `scrapers/utilities/fortisalberta.py`
 - **_kw_kva_pair()** (8 connections) — `scrapers/utilities/fortisalberta.py`
 - **_rider_row()** (8 connections) — `scrapers/utilities/fortisalberta.py`
@@ -27,19 +29,20 @@
 - **document_edition_date()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **_document()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **Match** (6 connections)
-- **.one()** (5 connections) — `scrapers/utilities/fortisalberta.py`
-- **_demand_rules()** (4 connections) — `scrapers/utilities/fortisalberta.py`
-- *... and 19 more nodes in this community*
+- *... and 26 more nodes in this community*
 
 ## Relationships
 
-- [RateComponent](RateComponent.md) (9 shared connections)
-- [BaseScraper](BaseScraper.md) (8 shared connections)
+- [RateComponent](RateComponent.md) (11 shared connections)
+- [BaseScraper](BaseScraper.md) (9 shared connections)
+- [TariffRecord](TariffRecord.md) (7 shared connections)
+- [DocumentPage](DocumentPage.md) (7 shared connections)
 - [re](re.md) (7 shared connections)
-- [parse_html](parse_html.md) (6 shared connections)
-- [DocumentPage](DocumentPage.md) (5 shared connections)
-- [.__init__](__init__.md) (5 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (4 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
+- [parse_rolr_page](parse_rolr_page.md) (1 shared connections)
+- [ENMAXEnergyScraper](ENMAXEnergyScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -47,8 +50,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 159 (92%)
-- INFERRED: 13 (8%)
+- EXTRACTED: 176 (92%)
+- INFERRED: 16 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

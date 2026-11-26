@@ -10,6 +10,7 @@
 - **._try_live_scrape()** (9 connections) — `scrapers/utilities/saskenergy.py`
 - **._date()** (6 connections) — `scrapers/utilities/saskenergy.py`
 - **date** (6 connections)
+- **._build()** (5 connections) — `scrapers/utilities/saskenergy.py`
 - **._carbon()** (5 connections) — `scrapers/utilities/saskenergy.py`
 - **._industrial_rows()** (5 connections) — `scrapers/utilities/saskenergy.py`
 - **._num()** (5 connections) — `scrapers/utilities/saskenergy.py`
@@ -19,7 +20,6 @@
 - **._norm()** (3 connections) — `scrapers/utilities/saskenergy.py`
 - **._page_text()** (3 connections) — `scrapers/utilities/saskenergy.py`
 - **._service_rows()** (3 connections) — `scrapers/utilities/saskenergy.py`
-- **.__init__()** (2 connections) — `scrapers/utilities/saskenergy.py`
 - **confirmed()** (1 connections) — `scrapers/utilities/saskenergy.py`
 - **Parse the closed Small Industrial full-service row with its monthly delivery…** (1 connections) — `scrapers/utilities/saskenergy.py`
 - **Return (effective date, note) only for an explicit, current, zero published…** (1 connections) — `scrapers/utilities/saskenergy.py`
@@ -30,11 +30,13 @@
 
 ## Relationships
 
-- [RateComponent](RateComponent.md) (7 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (6 shared connections)
-- [parse_html](parse_html.md) (3 shared connections)
+- [TariffRecord](TariffRecord.md) (8 shared connections)
+- [RateComponent](RateComponent.md) (4 shared connections)
 - [BaseScraper](BaseScraper.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [parse_html](parse_html.md) (1 shared connections)
+- [ENMAXEnergyScraper](ENMAXEnergyScraper.md) (1 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (1 shared connections)
 
 ## Source Files
 
@@ -42,7 +44,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 62 (97%)
+- EXTRACTED: 63 (97%)
 - INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 

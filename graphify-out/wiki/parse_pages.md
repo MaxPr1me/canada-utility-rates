@@ -1,12 +1,11 @@
 # .parse_pages
 
-> 23 nodes
+> 21 nodes
 
 ## Key Concepts
 
 - **LibertyGasNBScraper** (19 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **.parse_pages()** (12 connections) — `scrapers/utilities/liberty_gas_nb.py`
-- **._try_live_scrape()** (8 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._build()** (7 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **date** (6 connections)
 - **._carbon()** (5 connections) — `scrapers/utilities/liberty_gas_nb.py`
@@ -26,14 +25,12 @@
 - **Off-Peak summary row, confirmed by its own rate-schedule section (which may be…** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **Build SGS/MGS/LGS/OPS from texts keyed…** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **Scrape Liberty Utilities natural gas rates for New Brunswick.** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
-- **Fetch each official page independently and parse complete building classes.** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
 
 ## Relationships
 
-- [RateComponent](RateComponent.md) (6 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [TariffRecord](TariffRecord.md) (7 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
-- [parse_html](parse_html.md) (3 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
@@ -42,7 +39,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 55 (96%)
+- EXTRACTED: 49 (96%)
 - INFERRED: 2 (4%)
 - AMBIGUOUS: 0 (0%)
 

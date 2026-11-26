@@ -1,6 +1,6 @@
 # DirectEnergyRegulatedScraper
 
-> 9 nodes
+> 8 nodes
 
 ## Key Concepts
 
@@ -10,18 +10,18 @@
 - **._seed_data()** (4 connections) — `scrapers/utilities/direct_energy_regulated.py`
 - **._today()** (3 connections) — `scrapers/utilities/direct_energy_regulated.py`
 - **.__init__()** (2 connections) — `scrapers/utilities/direct_energy_regulated.py`
-- **date** (2 connections)
 - **Scrape Direct Energy Regulated Services RoLR rates for Alberta.** (1 connections) — `scrapers/utilities/direct_energy_regulated.py`
 - **Parse the DERS RoLR pages; the UCA table is a required cross-check.** (1 connections) — `scrapers/utilities/direct_energy_regulated.py`
 
 ## Relationships
 
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [TariffRecord](TariffRecord.md) (5 shared connections)
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (3 shared connections)
-- [RateComponent](RateComponent.md) (3 shared connections)
-- [parse_html](parse_html.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (2 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (1 shared connections)
+- [ENMAXEnergyScraper](ENMAXEnergyScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -29,7 +29,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 23 (92%)
+- EXTRACTED: 22 (92%)
 - INFERRED: 2 (8%)
 - AMBIGUOUS: 0 (0%)
 

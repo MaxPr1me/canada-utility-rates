@@ -1,78 +1,64 @@
 # parse_html
 
-> 119 nodes
+> 33 nodes
 
 ## Key Concepts
 
 - **parse_html()** (100 connections) — `scrapers/utils/parsing.py`
-- **extract_pdf_pages()** (69 connections) — `scrapers/utils/parsing.py`
-- **.fetch_page()** (50 connections) — `scrapers/base.py`
-- **.mark_live_parsed()** (49 connections) — `scrapers/base.py`
-- **.fetch_bytes()** (44 connections) — `scrapers/base.py`
 - **medicine_hat.py** (24 connections) — `scrapers/utilities/medicine_hat.py`
-- **find_pdf_links()** (20 connections) — `scrapers/utils/parsing.py`
-- **._try_live_scrape()** (15 connections) — `scrapers/utilities/manitoba_hydro.py`
-- **._try_live_scrape()** (14 connections) — `scrapers/utilities/newfoundland_power.py`
-- **._try_live_scrape()** (13 connections) — `scrapers/utilities/fortisbc_energy.py`
-- **._try_live_scrape()** (12 connections) — `scrapers/utilities/epcor_energy_alberta.py`
-- **._try_live_scrape()** (12 connections) — `scrapers/utilities/grand_forks.py`
-- **._try_live_scrape()** (11 connections) — `scrapers/utilities/enbridge_gas.py`
-- **._try_live_scrape()** (11 connections) — `scrapers/utilities/energir.py`
-- **._try_live_scrape()** (11 connections) — `scrapers/utilities/nl_hydro.py`
-- **._parse_residential_tariffs()** (11 connections) — `scrapers/utilities/nova_scotia_power.py`
-- **.fetch_rendered_page()** (10 connections) — `scrapers/base.py`
-- **.verify_official_records()** (10 connections) — `scrapers/base.py`
-- **._try_live_scrape()** (10 connections) — `scrapers/utilities/enmax_power.py`
-- **._try_live_scrape()** (10 connections) — `scrapers/utilities/heritage_gas.py`
 - **._try_live_scrape()** (10 connections) — `scrapers/utilities/medicine_hat.py`
 - **parse_energy_page()** (10 connections) — `scrapers/utilities/medicine_hat.py`
 - **parse_rates()** (10 connections) — `scrapers/utilities/medicine_hat.py`
-- **._try_live_scrape()** (10 connections) — `scrapers/utilities/penticton.py`
-- **._try_live_scrape()** (9 connections) — `scrapers/utilities/atco_electric.py`
-- *... and 94 more nodes in this community*
+- **MedicineHatScraper** (7 connections) — `scrapers/utilities/medicine_hat.py`
+- **extract_tables()** (7 connections) — `scrapers/utils/parsing.py`
+- **extract_brochure_columns()** (6 connections) — `scrapers/utilities/medicine_hat.py`
+- **._fetch_text()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
+- **_schedule_sections()** (5 connections) — `scrapers/utilities/maritime_electric.py`
+- **_blocks()** (5 connections) — `scrapers/utilities/medicine_hat.py`
+- **find_bylaw_url()** (5 connections) — `scrapers/utilities/penticton.py`
+- **find_brochure_url()** (4 connections) — `scrapers/utilities/medicine_hat.py`
+- **_flat()** (4 connections) — `scrapers/utilities/medicine_hat.py`
+- **_tables()** (4 connections) — `scrapers/utilities/medicine_hat.py`
+- **find_manual_url()** (4 connections) — `scrapers/utilities/summerside_electric.py`
+- **_iso()** (3 connections) — `scrapers/utilities/medicine_hat.py`
+- **.scrape()** (3 connections) — `scrapers/utilities/medicine_hat.py`
+- **find_table_by_header()** (3 connections) — `scrapers/utils/parsing.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/medicine_hat.py`
+- **_prices()** (2 connections) — `scrapers/utilities/medicine_hat.py`
+- **date** (2 connections)
+- **Rates-page effective date and whitespace-normalized <details> sections by title.** (1 connections) — `scrapers/utilities/maritime_electric.py`
+- **medicine_hat.py — Scraper for the City of Medicine Hat Electric Utility…** (1 connections) — `scrapers/utilities/medicine_hat.py`
+- **Default energy prices and the Going Green surcharge; ValueError (fail closed)…** (1 connections) — `scrapers/utilities/medicine_hat.py`
+- *... and 8 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (73 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (48 shared connections)
-- [re](re.md) (20 shared connections)
-- [.__init__](__init__.md) (19 shared connections)
-- [DocumentPage](DocumentPage.md) (16 shared connections)
-- [RateComponent](RateComponent.md) (14 shared connections)
-- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (12 shared connections)
-- [TariffRecord](TariffRecord.md) (12 shared connections)
-- [YukonEnergyScraper](YukonEnergyScraper.md) (12 shared connections)
-- [maritime_electric.py](maritime_electric.py.md) (11 shared connections)
-- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (10 shared connections)
-- [nl_hydro.py](nl_hydro.py.md) (10 shared connections)
+- [BaseScraper](BaseScraper.md) (32 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (13 shared connections)
+- [re](re.md) (12 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (7 shared connections)
+- [TariffRecord](TariffRecord.md) (6 shared connections)
+- [DocumentPage](DocumentPage.md) (5 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
+- [ATCOGasScraper](ATCOGasScraper.md) (4 shared connections)
+- [parse_rolr_page](parse_rolr_page.md) (4 shared connections)
+- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (4 shared connections)
+- [naka_power.py](naka_power.py.md) (4 shared connections)
+- [lethbridge.py](lethbridge.py.md) (3 shared connections)
 
 ## Source Files
 
-- `scrapers/base.py`
-- `scrapers/utilities/atco_electric.py`
-- `scrapers/utilities/enbridge_gas.py`
-- `scrapers/utilities/energir.py`
-- `scrapers/utilities/enmax_power.py`
-- `scrapers/utilities/epcor_energy_alberta.py`
 - `scrapers/utilities/epcor_gas_ontario.py`
-- `scrapers/utilities/fortisalberta.py`
-- `scrapers/utilities/fortisbc_energy.py`
-- `scrapers/utilities/grand_forks.py`
-- `scrapers/utilities/heritage_gas.py`
-- `scrapers/utilities/manitoba_hydro.py`
+- `scrapers/utilities/maritime_electric.py`
 - `scrapers/utilities/medicine_hat.py`
-- `scrapers/utilities/nelson_hydro.py`
-- `scrapers/utilities/new_westminster.py`
-- `scrapers/utilities/newfoundland_power.py`
-- `scrapers/utilities/nl_hydro.py`
-- `scrapers/utilities/nova_scotia_power.py`
 - `scrapers/utilities/penticton.py`
-- `scrapers/utilities/summerland.py`
+- `scrapers/utilities/summerside_electric.py`
+- `scrapers/utils/parsing.py`
 
 ## Audit Trail
 
-- EXTRACTED: 615 (99%)
-- INFERRED: 8 (1%)
+- EXTRACTED: 184 (98%)
+- INFERRED: 3 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

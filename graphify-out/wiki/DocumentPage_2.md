@@ -7,7 +7,7 @@
 ## Connections by Relation
 
 ### calls
-- [extract_pdf_pages()](extract_pdf_pages.md) `EXTRACTED`
+- [extract_pdf_pages()](extract_pdf_pages_2.md) `EXTRACTED`
 - extract_schedule_pages() `EXTRACTED`
 - extract_handbook_pages() `EXTRACTED`
 - extract_schedule_pages() `EXTRACTED`

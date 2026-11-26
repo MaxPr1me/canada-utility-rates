@@ -1,10 +1,11 @@
 # FortisBCEnergyScraper
 
-> 35 nodes
+> 45 nodes
 
 ## Key Concepts
 
 - **FortisBCEnergyScraper** (29 connections) — `scrapers/utilities/fortisbc_energy.py`
+- **._try_live_scrape()** (13 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **.parse_pages()** (12 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **date** (12 connections)
 - **._transport()** (11 connections) — `scrapers/utilities/fortisbc_energy.py`
@@ -24,20 +25,22 @@
 - **._money()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._rate_section()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **.scrape()** (5 connections) — `scrapers/utilities/fortisbc_energy.py`
+- **._discover_documents()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._document_text()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **._seed_data()** (4 connections) — `scrapers/utilities/fortisbc_energy.py`
 - **AreaClassSpec** (3 connections) — `scrapers/utilities/fortisbc_energy.py`
-- **Match** (2 connections)
-- **extra_detail()** (1 connections) — `scrapers/utilities/fortisbc_energy.py`
-- *... and 10 more nodes in this community*
+- *... and 20 more nodes in this community*
 
 ## Relationships
 
-- [RateComponent](RateComponent.md) (14 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (10 shared connections)
-- [parse_html](parse_html.md) (6 shared connections)
+- [RateComponent](RateComponent.md) (13 shared connections)
+- [TariffRecord](TariffRecord.md) (12 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (3 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [parse_rolr_page](parse_rolr_page.md) (1 shared connections)
+- [ENMAXEnergyScraper](ENMAXEnergyScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -45,8 +48,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 116 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 133 (99%)
+- INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

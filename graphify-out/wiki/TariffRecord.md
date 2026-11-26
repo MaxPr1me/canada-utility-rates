@@ -1,61 +1,68 @@
 # TariffRecord
 
-> 54 nodes
+> 45 nodes
 
 ## Key Concepts
 
-- **extract_effective_date()** (26 connections) — `scrapers/utils/parsing.py`
-- **BCHydroScraper** (25 connections) — `scrapers/utilities/bc_hydro.py`
-- **.now_iso()** (19 connections) — `scrapers/base.py`
-- **._try_live_scrape()** (19 connections) — `scrapers/utilities/bc_hydro.py`
-- **._try_live_scrape()** (17 connections) — `scrapers/utilities/saskpower.py`
-- **SaskPowerScraper** (16 connections) — `scrapers/utilities/saskpower.py`
-- **._parse_business_tariff()** (10 connections) — `scrapers/utilities/bc_hydro.py`
-- **._numbered_section()** (9 connections) — `scrapers/utilities/bc_hydro.py`
-- **._parse_residential_schedules()** (9 connections) — `scrapers/utilities/saskpower.py`
-- **._parse_transformation()** (9 connections) — `scrapers/utilities/saskpower.py`
-- **._parse_residential_pdf()** (8 connections) — `scrapers/utilities/saskpower.py`
-- **._parse_farm_rates()** (8 connections) — `scrapers/utilities/saskpower.py`
-- **._parse_supplied_services()** (8 connections) — `scrapers/utilities/saskpower.py`
-- **._parse_freshet_energy()** (7 connections) — `scrapers/utilities/bc_hydro.py`
-- **._parse_net_metering_tariff()** (7 connections) — `scrapers/utilities/bc_hydro.py`
-- **._parse_residential_options()** (7 connections) — `scrapers/utilities/bc_hydro.py`
-- **._parse_residential_tariff()** (7 connections) — `scrapers/utilities/bc_hydro.py`
-- **._parse_transmission_pilots()** (7 connections) — `scrapers/utilities/bc_hydro.py`
-- **._tariff_document()** (7 connections) — `scrapers/utilities/bc_hydro.py`
-- **._parse_standard_charges()** (6 connections) — `scrapers/utilities/bc_hydro.py`
-- **._parse_business()** (6 connections) — `scrapers/utilities/bc_hydro.py`
-- **._parse_community_generation_tariff()** (6 connections) — `scrapers/utilities/bc_hydro.py`
-- **._parse_self_generation_tariff()** (6 connections) — `scrapers/utilities/bc_hydro.py`
-- **._parse_transmission_tariff()** (6 connections) — `scrapers/utilities/bc_hydro.py`
-- **.scrape()** (6 connections) — `scrapers/utilities/bc_hydro.py`
-- *... and 29 more nodes in this community*
+- **TariffRecord** (423 connections) — `scrapers/base.py`
+- **.mark_fallback()** (44 connections) — `scrapers/base.py`
+- **._try_live_scrape()** (12 connections) — `scrapers/utilities/aeso.py`
+- **AESOScraper** (10 connections) — `scrapers/utilities/aeso.py`
+- **EPCORGasScraper** (9 connections) — `scrapers/utilities/epcor_gas.py`
+- **TorontoHydroScraper** (9 connections) — `scrapers/utilities/toronto_hydro.py`
+- **.scrape()** (8 connections) — `scrapers/utilities/fortisbc_electric.py`
+- **._try_live_scrape()** (8 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **.scrape()** (7 connections) — `scrapers/utilities/ontario_ldc.py`
+- **._try_live_scrape()** (6 connections) — `scrapers/utilities/epcor_gas.py`
+- **.scrape()** (6 connections) — `scrapers/utilities/nl_hydro.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/aeso.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/enbridge_gas.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/epcor_gas.py`
+- **._seed_data()** (5 connections) — `scrapers/utilities/epcor_gas.py`
+- **.parse_schedule_pages()** (5 connections) — `scrapers/utilities/fortisbc_electric.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/heritage_gas.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **._seed_data()** (5 connections) — `scrapers/utilities/nl_hydro.py`
+- **._seed_data()** (5 connections) — `scrapers/utilities/ontario_ldc.py`
+- **.scrape()** (5 connections) — `scrapers/utilities/toronto_hydro.py`
+- **._market_reference()** (4 connections) — `scrapers/utilities/aeso.py`
+- **._seed_data()** (4 connections) — `scrapers/utilities/aeso.py`
+- **._seed_data()** (4 connections) — `scrapers/utilities/enbridge_gas.py`
+- **._seed_data()** (4 connections) — `scrapers/utilities/heritage_gas.py`
+- *... and 20 more nodes in this community*
 
 ## Relationships
 
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (28 shared connections)
-- [RateComponent](RateComponent.md) (26 shared connections)
-- [DocumentPage](DocumentPage.md) (18 shared connections)
-- [BaseScraper](BaseScraper.md) (13 shared connections)
-- [parse_html](parse_html.md) (12 shared connections)
-- [YukonEnergyScraper](YukonEnergyScraper.md) (3 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (3 shared connections)
-- [.__init__](__init__.md) (2 shared connections)
-- [re](re.md) (2 shared connections)
-- [ntpc.py](ntpc.py.md) (1 shared connections)
-- [Path](Path.md) (1 shared connections)
+- [BaseScraper](BaseScraper.md) (36 shared connections)
+- [RateComponent](RateComponent.md) (31 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (24 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (23 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (20 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (18 shared connections)
+- [TariffRecord](TariffRecord.md) (18 shared connections)
+- [maritime_electric.py](maritime_electric.py.md) (15 shared connections)
+- [DocumentPage](DocumentPage.md) (15 shared connections)
+- [YukonEnergyScraper](YukonEnergyScraper.md) (15 shared connections)
+- [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (13 shared connections)
+- [ENMAXEnergyScraper](ENMAXEnergyScraper.md) (13 shared connections)
 
 ## Source Files
 
 - `scrapers/base.py`
-- `scrapers/utilities/bc_hydro.py`
-- `scrapers/utilities/saskpower.py`
-- `scrapers/utils/parsing.py`
+- `scrapers/utilities/aeso.py`
+- `scrapers/utilities/enbridge_gas.py`
+- `scrapers/utilities/epcor_gas.py`
+- `scrapers/utilities/fortisbc_electric.py`
+- `scrapers/utilities/heritage_gas.py`
+- `scrapers/utilities/liberty_gas_nb.py`
+- `scrapers/utilities/nl_hydro.py`
+- `scrapers/utilities/ontario_ldc.py`
+- `scrapers/utilities/toronto_hydro.py`
 
 ## Audit Trail
 
-- EXTRACTED: 207 (96%)
-- INFERRED: 8 (4%)
+- EXTRACTED: 485 (86%)
+- INFERRED: 80 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

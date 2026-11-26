@@ -4,10 +4,10 @@
 
 ## Key Concepts
 
-- **math** (40 connections)
-- **market_pricing.py** (18 connections) — `scrapers/utils/market_pricing.py`
+- **math** (45 connections)
+- **market_pricing.py** (19 connections) — `scrapers/utils/market_pricing.py`
 - **historical_market_price()** (12 connections) — `scrapers/utils/market_pricing.py`
-- **load_shape_price()** (10 connections) — `scrapers/utils/market_pricing.py`
+- **load_shape_price()** (12 connections) — `scrapers/utils/market_pricing.py`
 - **load_ontario_market_pricing()** (9 connections) — `scrapers/utils/market_pricing.py`
 - **get_monthly_average()** (5 connections) — `scrapers/utils/market_pricing.py`
 - **_as_date()** (4 connections) — `scrapers/utils/market_pricing.py`
@@ -31,18 +31,18 @@
 
 ## Relationships
 
-- [representative_models.py](representative_models.py.md) (7 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (6 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (5 shared connections)
-- [run_scrape.py](run_scrape.py.md) (4 shared connections)
-- [archetype_profiles.py](archetype_profiles.py.md) (4 shared connections)
+- [representative_models.py](representative_models.py.md) (5 shared connections)
+- [archetype_costs.py](archetype_costs.py.md) (5 shared connections)
+- [archetype_profiles.py](archetype_profiles.py.md) (5 shared connections)
+- [BaseScraper](BaseScraper.md) (4 shared connections)
 - [spark_gap.py](spark_gap.py.md) (4 shared connections)
-- [write_spark_gap](write_spark_gap.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (4 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (3 shared connections)
 - [json](json.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
-- [_prepare](_prepare.md) (2 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
+- [write_spark_gap](write_spark_gap.md) (2 shared connections)
+- [_energy_estimate](_energy_estimate.md) (2 shared connections)
 
 ## Source Files
 
@@ -50,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 91 (100%)
+- EXTRACTED: 99 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

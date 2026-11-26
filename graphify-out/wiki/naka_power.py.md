@@ -34,12 +34,14 @@
 ## Relationships
 
 - [re](re.md) (9 shared connections)
-- [parse_html](parse_html.md) (9 shared connections)
 - [BaseScraper](BaseScraper.md) (7 shared connections)
 - [DocumentPage](DocumentPage.md) (7 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
+- [TariffRecord](TariffRecord.md) (5 shared connections)
 - [RateComponent](RateComponent.md) (4 shared connections)
+- [parse_html](parse_html.md) (4 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (4 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
+- [ENMAXEnergyScraper](ENMAXEnergyScraper.md) (1 shared connections)
 
 ## Source Files
 

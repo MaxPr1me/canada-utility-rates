@@ -14,11 +14,11 @@
 ## Relationships
 
 - [generate_market_pricing.py](generate_market_pricing.py.md) (6 shared connections)
-- [os](os.md) (2 shared connections)
 - [_yearly_files](_yearly_files.md) (2 shared connections)
+- [write_spark_gap](write_spark_gap.md) (2 shared connections)
 - [run_scrape.py](run_scrape.py.md) (1 shared connections)
 - [json](json.md) (1 shared connections)
-- [write_spark_gap](write_spark_gap.md) (1 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
 
 ## Source Files
 

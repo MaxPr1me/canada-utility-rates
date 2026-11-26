@@ -1,40 +1,50 @@
 # oeb_tariff.py
 
-> 16 nodes
+> 39 nodes
 
 ## Key Concepts
 
 - **oeb_tariff.py** (67 connections) — `scrapers/utils/oeb_tariff.py`
+- **parse_tariff_pages()** (22 connections) — `scrapers/utils/oeb_tariff.py`
+- **TariffSheet** (10 connections) — `scrapers/utils/oeb_tariff.py`
 - **_new_charge()** (10 connections) — `scrapers/utils/oeb_tariff.py`
-- **extract_tariff_pages()** (5 connections) — `scrapers/utils/oeb_tariff.py`
-- **market_energy_component()** (4 connections) — `scrapers/utils/oeb_tariff.py`
+- **parse_tariff_zones()** (8 connections) — `scrapers/utils/oeb_tariff.py`
+- **_split_page()** (8 connections) — `scrapers/utils/oeb_tariff.py`
+- **_approved_copies()** (7 connections) — `scrapers/utils/oeb_tariff.py`
+- **_cover_case_number()** (7 connections) — `scrapers/utils/oeb_tariff.py`
+- **_dedupe_classifications()** (6 connections) — `scrapers/utils/oeb_tariff.py`
+- **add_line()** (5 connections) — `scrapers/utils/oeb_tariff.py`
 - **_cls_title()** (4 connections) — `scrapers/utils/oeb_tariff.py`
-- **normalize_tariff_text()** (3 connections) — `scrapers/utils/oeb_tariff.py`
+- **_iso()** (4 connections) — `scrapers/utils/oeb_tariff.py`
+- **_signature()** (4 connections) — `scrapers/utils/oeb_tariff.py`
+- **_today_iso()** (4 connections) — `scrapers/utils/oeb_tariff.py`
+- **date** (4 connections)
+- **extend_tail()** (3 connections) — `scrapers/utils/oeb_tariff.py`
+- **flush_allowance()** (3 connections) — `scrapers/utils/oeb_tariff.py`
+- **start_class()** (3 connections) — `scrapers/utils/oeb_tariff.py`
+- **_split_footnotes()** (3 connections) — `scrapers/utils/oeb_tariff.py`
+- **_tail_split()** (3 connections) — `scrapers/utils/oeb_tariff.py`
 - **_class_title()** (2 connections) — `scrapers/utils/oeb_tariff.py`
 - **_condition()** (2 connections) — `scrapers/utils/oeb_tariff.py`
 - **_kind()** (2 connections) — `scrapers/utils/oeb_tariff.py`
 - **_parse_value()** (2 connections) — `scrapers/utils/oeb_tariff.py`
 - **_unit()** (2 connections) — `scrapers/utils/oeb_tariff.py`
-- **Match** (1 connections)
-- **oeb_tariff.py — Parser for Ontario distributors' OEB-approved Tariff of Rates…** (1 connections) — `scrapers/utils/oeb_tariff.py`
-- **``normalize_document_text`` without dropping lines that repeat on a page. OEB…** (1 connections) — `scrapers/utils/oeb_tariff.py`
-- **Extract tariff PDF pages like ``extract_pdf_pages`` but keep repeated lines;…** (1 connections) — `scrapers/utils/oeb_tariff.py`
-- **Value-less market energy of a non-RPP demand class; observed averages live only…** (1 connections) — `scrapers/utils/oeb_tariff.py`
+- *... and 14 more nodes in this community*
 
 ## Relationships
 
+- [build_demand_records](build_demand_records.md) (28 shared connections)
 - [Classification](Classification.md) (15 shared connections)
-- [build_demand_records](build_demand_records.md) (14 shared connections)
-- [TariffSheet](TariffSheet.md) (7 shared connections)
+- [DocumentPage](DocumentPage.md) (6 shared connections)
 - [BaseScraper](BaseScraper.md) (6 shared connections)
-- [parse_tariff_pages](parse_tariff_pages.md) (5 shared connections)
-- [close_class](close_class.md) (5 shared connections)
-- [RateComponent](RateComponent.md) (2 shared connections)
-- [DocumentPage](DocumentPage.md) (2 shared connections)
-- [io](io.md) (2 shared connections)
-- [class_loss_factors](class_loss_factors.md) (2 shared connections)
-- [_dedupe_classifications](_dedupe_classifications.md) (2 shared connections)
-- [OntarioLDCScraper](OntarioLDCScraper.md) (1 shared connections)
+- [class_loss_factors](class_loss_factors.md) (4 shared connections)
+- [ontario_ldc.py](ontario_ldc.py.md) (2 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
+- [extract_tariff_pages](extract_tariff_pages.md) (2 shared connections)
+- [re](re.md) (1 shared connections)
+- [RateComponent](RateComponent.md) (1 shared connections)
+- [TariffRecord](TariffRecord.md) (1 shared connections)
+- [._energy_entries](_energy_entries.md) (1 shared connections)
 
 ## Source Files
 
@@ -42,8 +52,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 86 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 134 (96%)
+- INFERRED: 5 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

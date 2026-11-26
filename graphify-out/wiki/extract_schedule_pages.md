@@ -15,8 +15,8 @@
 ## Relationships
 
 - [enmax_power.py](enmax_power.py.md) (4 shared connections)
-- [parse_html](parse_html.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
+- [ENMAXPowerScraper](ENMAXPowerScraper.md) (1 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
 - [re](re.md) (1 shared connections)
 - [DocumentPage](DocumentPage.md) (1 shared connections)
 

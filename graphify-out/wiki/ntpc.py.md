@@ -1,6 +1,6 @@
 # ntpc.py
 
-> 54 nodes
+> 55 nodes
 
 ## Key Concepts
 
@@ -29,20 +29,20 @@
 - **_ResidentialPage** (5 connections) — `scrapers/utilities/ntpc.py`
 - **_schedule_component()** (5 connections) — `scrapers/utilities/ntpc.py`
 - **_norm()** (5 connections) — `scrapers/utilities/ntpc.py`
-- *... and 29 more nodes in this community*
+- *... and 30 more nodes in this community*
 
 ## Relationships
 
 - [re](re.md) (12 shared connections)
-- [BaseScraper](BaseScraper.md) (9 shared connections)
-- [RateComponent](RateComponent.md) (9 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (7 shared connections)
+- [BaseScraper](BaseScraper.md) (10 shared connections)
+- [TariffRecord](TariffRecord.md) (7 shared connections)
 - [DocumentPage](DocumentPage.md) (6 shared connections)
-- [parse_html](parse_html.md) (6 shared connections)
-- [run_scrape.py](run_scrape.py.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (6 shared connections)
+- [extract_pdf_pages](extract_pdf_pages.md) (6 shared connections)
+- [ENMAXEnergyScraper](ENMAXEnergyScraper.md) (3 shared connections)
+- [registry.py](registry.py.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [TariffRecord](TariffRecord.md) (1 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
+- [.now_iso](now_iso.md) (1 shared connections)
 
 ## Source Files
 
@@ -50,8 +50,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 168 (95%)
-- INFERRED: 8 (5%)
+- EXTRACTED: 170 (96%)
+- INFERRED: 8 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

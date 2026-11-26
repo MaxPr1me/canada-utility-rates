@@ -33,16 +33,17 @@
 
 ## Relationships
 
-- [re](re.md) (17 shared connections)
+- [re](re.md) (16 shared connections)
 - [DocumentPage](DocumentPage.md) (14 shared connections)
 - [BaseScraper](BaseScraper.md) (8 shared connections)
 - [extract_schedule_pages](extract_schedule_pages.md) (4 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
-- [parse_html](parse_html.md) (2 shared connections)
-- [io](io.md) (2 shared connections)
-- [os](os.md) (1 shared connections)
-- [ENMAXPowerScraper](ENMAXPowerScraper.md) (1 shared connections)
+- [TariffRecord](TariffRecord.md) (3 shared connections)
+- [ENMAXPowerScraper](ENMAXPowerScraper.md) (2 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
+- [parse_html](parse_html.md) (1 shared connections)
+- [parse_rolr_page](parse_rolr_page.md) (1 shared connections)
 
 ## Source Files
 

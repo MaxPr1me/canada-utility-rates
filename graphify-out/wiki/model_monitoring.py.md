@@ -1,50 +1,50 @@
 # model_monitoring.py
 
-> 84 nodes
+> 30 nodes
 
 ## Key Concepts
 
-- **model_monitoring.py** (74 connections) — `pipeline/model_monitoring.py`
-- **main()** (18 connections) — `pipeline/model_monitoring.py`
+- **model_monitoring.py** (75 connections) — `pipeline/model_monitoring.py`
+- **calendar** (14 connections)
 - **workflow_checks()** (12 connections) — `pipeline/model_monitoring.py`
-- **calendar** (12 connections)
-- **semantic_models()** (11 connections) — `pipeline/model_monitoring.py`
 - **timestamp()** (11 connections) — `pipeline/model_monitoring.py`
 - **datetime** (11 connections)
-- **fingerprint()** (10 connections) — `pipeline/model_monitoring.py`
-- **model_cost_quarterly()** (10 connections) — `pipeline/model_monitoring.py`
-- **record_refresh()** (10 connections) — `pipeline/model_monitoring.py`
-- **write_json()** (10 connections) — `pipeline/model_monitoring.py`
-- **_normalize()** (8 connections) — `pipeline/model_monitoring.py`
-- **read_json()** (8 connections) — `pipeline/model_monitoring.py`
-- **generation_receipt()** (8 connections) — `pipeline/model_monitoring.py`
-- **_json()** (8 connections) — `pipeline/model_monitoring.py`
-- **Path** (8 connections)
-- **input_fingerprints()** (7 connections) — `pipeline/model_monitoring.py`
-- **observe_previous()** (7 connections) — `pipeline/model_monitoring.py`
-- **save_cost_quarterly()** (7 connections) — `pipeline/model_monitoring.py`
 - **_successful_generation()** (7 connections) — `pipeline/model_monitoring.py`
-- **validate_history()** (7 connections) — `pipeline/model_monitoring.py`
-- **Any** (7 connections)
-- **_break_reasons()** (6 connections) — `pipeline/model_monitoring.py`
-- **compare_models()** (6 connections) — `pipeline/model_monitoring.py`
 - **_held_until_monthly_price()** (6 connections) — `pipeline/model_monitoring.py`
-- *... and 59 more nodes in this community*
+- **_monthly_occurrences()** (6 connections) — `pipeline/model_monitoring.py`
+- **_report_run()** (6 connections) — `pipeline/model_monitoring.py`
+- **freshness_report()** (5 connections) — `pipeline/model_monitoring.py`
+- **manual_update_reviews()** (5 connections) — `pipeline/model_monitoring.py`
+- **next_scheduled()** (5 connections) — `pipeline/model_monitoring.py`
+- **scheduled_due()** (5 connections) — `pipeline/model_monitoring.py`
+- **date** (5 connections)
+- **_monthly_price_check()** (4 connections) — `pipeline/model_monitoring.py`
+- **_quarter_end()** (4 connections) — `pipeline/model_monitoring.py`
+- **source_checks()** (4 connections) — `pipeline/model_monitoring.py`
+- **_evidence()** (3 connections) — `pipeline/model_monitoring.py`
+- **Model change history, explicit refresh receipts and read-only health checks.…** (1 connections) — `pipeline/model_monitoring.py`
+- **Whether this monitoring job belongs to a successful full Monthly Scrape in a…** (1 connections) — `pipeline/model_monitoring.py`
+- **The data for the quarterly "Rates not updated in a year" issue (owner decisions…** (1 connections) — `pipeline/model_monitoring.py`
+- **Validate producer evidence before either history recording or freshness can…** (1 connections) — `pipeline/model_monitoring.py`
+- **Occurrences in one month of the repository's fixed UTC day-of-month schedules,…** (1 connections) — `pipeline/model_monitoring.py`
+- **The latest occurrence at or before ``now`` of a fixed UTC day-of-month schedule.** (1 connections) — `pipeline/model_monitoring.py`
+- **The first occurrence strictly after ``after`` of a fixed UTC day-of-month…** (1 connections) — `pipeline/model_monitoring.py`
+- *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [write_spark_gap](write_spark_gap.md) (14 shared connections)
-- [run_scrape.py](run_scrape.py.md) (14 shared connections)
-- [market_pricing.py](market_pricing.py.md) (5 shared connections)
-- [os](os.md) (4 shared connections)
+- [main](main.md) (14 shared connections)
+- [model_cost_quarterly](model_cost_quarterly.md) (11 shared connections)
+- [semantic_models](semantic_models.md) (11 shared connections)
+- [record_refresh](record_refresh.md) (9 shared connections)
 - [re](re.md) (4 shared connections)
+- [representative_models.py](representative_models.py.md) (4 shared connections)
 - [coverage_gate.py](coverage_gate.py.md) (3 shared connections)
 - [BaseScraper](BaseScraper.md) (3 shared connections)
-- [main](main.md) (2 shared connections)
-- [parse_html](parse_html.md) (2 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (2 shared connections)
-- [representative_models.py](representative_models.py.md) (1 shared connections)
-- [rate_history.py](rate_history.py.md) (1 shared connections)
+- [run_scrape.py](run_scrape.py.md) (3 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
+- [registry.py](registry.py.md) (2 shared connections)
+- [write_spark_gap](write_spark_gap.md) (2 shared connections)
 
 ## Source Files
 
@@ -52,8 +52,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 250 (99%)
-- INFERRED: 2 (1%)
+- EXTRACTED: 141 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

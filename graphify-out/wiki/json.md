@@ -26,13 +26,13 @@
 
 ## Relationships
 
+- [write_spark_gap](write_spark_gap.md) (6 shared connections)
 - [BaseScraper](BaseScraper.md) (5 shared connections)
 - [run_scrape.py](run_scrape.py.md) (4 shared connections)
-- [write_spark_gap](write_spark_gap.md) (4 shared connections)
 - [market_pricing.py](market_pricing.py.md) (3 shared connections)
-- [os](os.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
 - [archive_ontario_price.py](archive_ontario_price.py.md) (2 shared connections)
+- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
 - [requests](requests.md) (1 shared connections)
 - [generate_market_pricing.py](generate_market_pricing.py.md) (1 shared connections)
 
