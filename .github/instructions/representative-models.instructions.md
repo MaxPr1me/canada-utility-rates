@@ -1,6 +1,6 @@
 ---
-description: "Use when changing representative models, model change monitoring, their inputs or the views that read them. Covers crosswalk rules, required contributors, usage levels, taxes, block periods, model states, the estimated market energy (method 7S-2) and the observed benchmark, semantic change history, the quarter-end model costs for Rate History, METHOD_VERSION and Across-Canada constraints."
-applyTo: "pipeline/representative_models.py, pipeline/archetype_profiles.py, pipeline/model_monitoring.py, tests/test_model_monitoring.py, tests/test_model_cost_quarterly.py, tests/test_archetype_profiles.py, data/models/**, site/js/models.js, site/js/across-canada.js, site/css/models.css, site/css/across-canada.css, site/data/representative_models.json, site/data/model_change_history.json, site/data/model_cost_quarterly.json"
+description: "Use when changing representative models, model change monitoring, their inputs or the views that read them. Covers crosswalk rules, required contributors, usage levels, taxes, block periods, model states, the estimated market energy (method 7S-2) and the observed benchmark, semantic change history, the quarter-end model costs for Rate History, METHOD_VERSION, Across-Canada constraints and the spark gap comparison (method SG-1: comparison fuels, heating values, heating-oil prices, efficiencies, break-even COP)."
+applyTo: "pipeline/representative_models.py, pipeline/archetype_profiles.py, pipeline/model_monitoring.py, pipeline/spark_gap.py, scripts/fetch_heating_oil.py, tests/test_model_monitoring.py, tests/test_model_cost_quarterly.py, tests/test_archetype_profiles.py, tests/test_spark_gap.py, tests/test_heating_oil_prices.py, data/models/**, data/fuel/**, site/js/models.js, site/js/across-canada.js, site/js/spark-gap.js, site/css/models.css, site/css/across-canada.css, site/css/spark-gap.css, site/data/representative_models.json, site/data/model_change_history.json, site/data/model_cost_quarterly.json, site/data/spark_gap.json"
 ---
 # Representative models
 
@@ -122,7 +122,7 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   thresholds in kWh never apply to gas. Heritage Gas's municipal riders A and B are percentages,
   disclosed but not applied, as for homes.
 - The Representative Models page shows gas levels in m³ or GJ with Reference/Sensitivity tags and
-  the class used at each level; Across-Canada stays residential electricity only.
+  the class used at each level; Across-Canada's residential electricity sub-tab stays residential electricity only.
 
 ## Inputs and crosswalk (`data/models/crosswalk.json`)
 
@@ -309,6 +309,10 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   6%, not modelled); the Alberta Natural Gas Rebate Program is named in the Alberta gas methods
   (`NOT_APPLIED`), with no line while the price is below its $6.50/GJ trigger; claim-based rebates
   are left out; BC PST and ICE stay separate lines.
+- Heating oil (spark gap, decision 151, 2026-11-26): `jurisdictions[province]["heating_oil"]["residential"]`
+  lines (NB HST 15%; NS HST 14% less YERP 9%; PE 5% as IRAC prints it; NL HST 15%; YT and NT GST 5%)
+  only take the tax out of Statistics Canada's as-paid oil prices; the models never read them and model
+  monitoring leaves them out of the input fingerprints.
 
 ## Territorial models (method 7T-1, owner decisions 64-79, 2026-11-24)
 
@@ -415,6 +419,8 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
 
 ## Across-Canada (`site/js/across-canada.js`)
 
+- Two sub-tabs (owner decision 144, 2026-11-26): "Residential electricity" (this section, the default)
+  and "Spark gap" (next section).
 - Residential electricity only, at 500, 1,000 or 2,000 kWh (default 1,000), with tax by default and a
   before-tax option; all 13 jurisdictions; rate structures stay separate.
 - Read the model file through the shared loader in `models.js`. Never recalculate bills, never use
@@ -424,3 +430,62 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   and never turn a missing model into a zero bar. Territorial totals are before subsidies (decision
   74): their rows and bars say "before subsidies", and each row states the published cost after
   automatic subsidies, before tax, or why there is none (Nunavut).
+
+## Spark gap (method SG-1, owner decisions 118 and 124-165, 2026-11-25 and 2026-11-26)
+
+`pipeline/spark_gap.py` writes `site/data/spark_gap.json`; `site/js/spark-gap.js` shows it. Reviewed
+inputs: `data/models/spark_gap.json` (each value with its decision, why, what it represents, its
+official source and the date it was checked). It is a comparison aid of running costs only: never a
+bill, a savings estimate or a forecast, and never in model medians, the change log, Rate History,
+change checks or coverage (decision 143).
+
+- **What it compares:** step 1, the spark gap = the electricity price ÷ the comparison fuel's price per
+  kWh of energy, before efficiency; step 2, the break-even heat pump COP = spark gap × efficiency
+  (decisions 128 and 135). Cents per kWh headline, $/GJ alongside (decision 134); 1 GJ = 277.7778 kWh.
+- **Who:** one row per province and territory for homes; small and mid-size buildings only in the eight
+  gas provinces, paired with electricity s2 and m1 (decisions 125, 126 and 136).
+- **Comparison fuel (decision 146):** each region's most common heating fuel other than electricity
+  among the fuels with an official price: gas in BC, AB, SK, MB, ON and QC; heating oil in NB, NS, PE,
+  NL and the territories; businesses gas only. Wood and propane are left out, their shares named (147).
+- **Prices (decisions 129-131, 137, 139-142):** average = the whole monthly bill, fixed charges included,
+  ÷ its energy, at the same energy for both fuels (homes 2,000 kWh = 7.2 GJ; s2 36 GJ; m1 90 GJ, gas
+  priced in whichever class its own limits select); marginal = the next kWh (businesses at the same
+  load factor: kW grows by kW/kWh) and the next m³ or GJ above 400 m³/16 GJ, 2,000 m³/60 GJ or 5,000
+  m³/200 GJ. Prices come from `build_models(..., exact_costs=True)` (unrounded per-utility and
+  per-record costs; off for the published models) at the spark gap's own levels: electricity keeps the
+  model level ids (reviewed rules tied to them still apply) and fails if the point no longer equals the
+  model level; gas runs once per published heating value. A utility whose next unit changes its records
+  is left out of the marginal median and named.
+- **One price per region (decision 131):** the median across utilities, each counted once. Reviewed
+  choices settle a utility found in several models: Ontario electricity uses the TOU models only;
+  BC Hydro homes use the plan that costs less at the average point (159); EPCOR Ontario gas is the
+  median of its two systems (160). Any other overlap makes the row not available (fail closed). Only
+  models in state modeled, single_source or market_energy_estimated count (the Ontario and Alberta
+  mid-size estimate is labelled, 138); a pending or withheld level makes the row not available.
+- **Gas heating values (153):** a record billed in m³ uses its utility's published value (reviewed
+  entries matched by utility and optional `tariff_code_regex`), else the CER 37.3 MJ/m³, labelled; GJ
+  needs none. The gas models keep their native units: the conversion is for this comparison only.
+- **Heating oil (148-152, 164, 165):** `scripts/fetch_heating_oil.py` reads Statistics Canada Table
+  18-10-0001-01 (household heating fuel, six city vectors) through the Web Data Service into
+  `data/fuel/heating_oil_prices.json`, keeping every month; a stored month whose value changes stops
+  the refresh (nothing written); unavailable values are stored without a price. The engine uses each
+  region's latest usable month (dated on the page), as paid including sales tax; the before-tax price
+  divides by 1 + the reviewed `heating_oil` sales taxes - rebates in `taxes.json` (none reviewed: before
+  tax not available). Energy: 38.80 MJ/L (Statistics Canada energy accounts, derived). Average and
+  marginal are equal. Nunavut is not available (no official price found).
+- **Efficiency and realistic COP (155-158, 163):** homes, the new-equipment AFUE minimums of SOR/2016-311
+  (gas 95%, oil 83%); businesses, both commercial gas minimums as a range (furnace 80%, hot-water
+  boiler 90%, thermal efficiencies) and no realistic COP or words. Homes compare with the CCI/Dunsky
+  2024 seasonal system COPs (standard and cold-climate, 2035 climate, backup included) of the nearest
+  of five cities, labelled approximate; the territories show the break-even only.
+- **Result in words (157, 161):** homes with a realistic COP, on the average price: both heat pump
+  types above the break-even COP → `heat_pump_cheaper`; only cold-climate → `depends_on_heat_pump`;
+  neither → `furnace_cheaper`; a note when the marginal price gives another result.
+- **Views and taxes (132-133):** with tax and rebates (default) and before; the territories also show
+  after automatic subsidies (electricity before tax ÷ oil before tax). Business prices with tax are as
+  billed; the page notes GST/HST input tax credits.
+- **Publication and monitoring (143, 152):** rebuilt after every model refresh (export, Market
+  Benchmarks, Ontario Price Archive); a failed build keeps the previous file. Model monitoring's
+  `spark_gap` check is described in the [CI rules](ci-data-history.instructions.md#model-monitoring).
+- **Adding a gas utility billed in m³** needs a reviewed heating value entry (else the labelled CER
+  factor); a utility that appears in more than one model at a spark gap point needs a reviewed choice.

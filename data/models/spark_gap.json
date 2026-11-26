@@ -1,0 +1,218 @@
+{
+  "version": 1,
+  "method": "SG-1",
+  "decided": "Owner decisions 118 and 124-165 (2026-11-25 and 2026-11-26).",
+  "basis": "Spark gap (owner decision 118): for each region, the price of electricity divided by the price of the region's usual heating fuel for the same amount of energy, before equipment efficiency (step 1), then the break-even heat pump COP = spark gap x the furnace or boiler efficiency, checked against realistic seasonal heat pump COPs for the climate (step 2, decision 128). Prices come from the live tariffs through the representative model engine and, for heating oil, from Statistics Canada's monthly average retail prices. It compares running costs only: not a bill, a savings estimate or a forecast; equipment, installation, maintenance and the electricity system's winter peak are left out. Every number below records its decision, why, what it represents and its sources (the usage-level backing rule).",
+  "kwh_per_gj": 277.7778,
+  "kwh_per_gj_source": {
+    "title": "Canada Energy Regulator, Energy conversion tables (Energy Terms)",
+    "url": "https://apps.cer-rec.gc.ca/Conversion/conversion-tables.aspx?GoCTemplateCulture=en-CA",
+    "quote": "1.0 Gigajoules (GJ) | 277.7778 Kilowatt-hours (kW.h)",
+    "checked": "2026-11-26"
+  },
+  "points": {
+    "residential": {
+      "label": "Home",
+      "electricity": {"level": "high", "kwh": 2000, "kw": null},
+      "average_energy_gj": 7.2,
+      "gas_marginal": {"m3": 400, "GJ": 16},
+      "decided": "owner decisions 130 (2026-11-25) and 139-140 (2026-11-26)",
+      "represents": "Average price: the whole monthly bill, fixed charges included, divided by the energy, for 2,000 kWh = 7.2 GJ of either fuel (decision 140). Marginal price: the next kWh above 2,000 kWh and the next m3 or GJ above 400 m3 or 16 GJ, the top modelled levels (decision 130).",
+      "why": "2,000 kWh keeps the electricity cost exactly as the residential model publishes it at its high level and is within 10% of the gas reference month (200 m3 or 8 GJ). Statistics Canada table 25-10-0060-01 (2021) reports 72 to 109 GJ a year per gas-using household by province (6 to 9 GJ a month).",
+      "sources": [
+        {"title": "Statistics Canada, Table 25-10-0060-01, Household energy consumption, Canada and provinces (2021)", "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006001"}
+      ]
+    },
+    "commercial_small": {
+      "label": "Small building",
+      "electricity": {"level": "s2", "kwh": 10000, "kw": 40},
+      "average_energy_gj": 36,
+      "gas_marginal": {"m3": 2000, "GJ": 60},
+      "decided": "owner decisions 136-137 (2026-11-25) and 141-142 (2026-11-26)",
+      "represents": "Gas small building paired with the electricity under-50 kW model at s2 (10,000 kWh at 40 kW). Average at the electricity level's energy, 36 GJ (decision 141); marginal electricity at the same load factor (the next kWh adds 0.004 kW, so demand charges are included, decision 137); marginal gas at a heavy month about twice the average, 2,000 m3 or 60 GJ (decision 142).",
+      "why": "The electricity level is the published s2 example customer; gas is priced at the same energy in whichever class its own limits select. Businesses compare with gas only, in the eight provinces with a gas model (decision 125).",
+      "sources": []
+    },
+    "commercial_medium": {
+      "label": "Mid-size building",
+      "electricity": {"level": "m1", "kwh": 25000, "kw": 100},
+      "average_energy_gj": 90,
+      "gas_marginal": {"m3": 5000, "GJ": 200},
+      "decided": "owner decisions 136-138 (2026-11-25) and 141-142 (2026-11-26)",
+      "represents": "Gas mid-size building paired with the electricity 50-499 kW model at m1 (25,000 kWh at 100 kW). Average at 90 GJ (decision 141); marginal electricity at the same load factor (the next kWh adds 0.004 kW); marginal gas at 5,000 m3 or 200 GJ (decision 142). In Ontario and Alberta the electricity includes the method 7S-2 estimated market energy, labelled (decision 138).",
+      "why": "The electricity level is the published m1 example customer; gas is priced at the same energy in whichever class its own limits select.",
+      "sources": []
+    }
+  },
+  "comparison_fuels": {
+    "decided": "owner decisions 125 (2026-11-25), 146 and 147 (2026-11-26)",
+    "rule": "Homes: each region's most common heating fuel other than electricity among the fuels with an official price (natural gas and heating oil); wood and propane have no official price series and are left out with their shares named (decision 147). Businesses: natural gas, in the eight provinces with a gas model (decision 125).",
+    "residential": {"BC": "gas", "AB": "gas", "SK": "gas", "MB": "gas", "ON": "gas", "QC": "gas", "NB": "heating_oil", "NS": "heating_oil", "PE": "heating_oil", "NL": "heating_oil", "YT": "heating_oil", "NT": "heating_oil", "NU": "heating_oil"},
+    "commercial_small": {"BC": "gas", "AB": "gas", "SK": "gas", "MB": "gas", "ON": "gas", "QC": "gas", "NB": "gas", "NS": "gas"},
+    "commercial_medium": {"BC": "gas", "AB": "gas", "SK": "gas", "MB": "gas", "ON": "gas", "QC": "gas", "NB": "gas", "NS": "gas"},
+    "shares": {
+      "basis": "Percent of households by primary heating energy. Provinces: Statistics Canada Table 38-10-0286-01 (Households and the Environment Survey, 2023); heat pumps are counted as electricity. Territories (combined): NRCan Comprehensive Energy Use Database, Residential Sector - Territories, Table 14 (2023), households by energy source; 'Other' includes coal and propane. A dash in the source (too few households to publish) is null.",
+      "BC": {"electricity": 36, "natural_gas": 42, "oil": 1, "wood": 2, "propane": null},
+      "AB": {"electricity": 14, "natural_gas": 76, "oil": null, "wood": null, "propane": null},
+      "SK": {"electricity": 16, "natural_gas": 75, "oil": null, "wood": null, "propane": null},
+      "MB": {"electricity": 33, "natural_gas": 52, "oil": null, "wood": null, "propane": null},
+      "ON": {"electricity": 18, "natural_gas": 58, "oil": 1, "wood": 1, "propane": 4},
+      "QC": {"electricity": 70, "natural_gas": 5, "oil": 2, "wood": 4, "propane": null},
+      "NB": {"electricity": 39, "natural_gas": null, "oil": 3, "wood": 6, "propane": null},
+      "NS": {"electricity": 29, "natural_gas": null, "oil": 28, "wood": 6, "propane": null},
+      "PE": {"electricity": 18, "natural_gas": null, "oil": 28, "wood": 8, "propane": 4},
+      "NL": {"electricity": 64, "natural_gas": null, "oil": 13, "wood": 3, "propane": null},
+      "territories": {"electricity": 4.8, "natural_gas": 1.0, "oil": 76.5, "wood": 6.1, "coal_and_propane": 11.5},
+      "notes": "NB publishes no gas share; Statistics Canada Table 25-10-0060-01 (2021) counts 27,998 NB households using heating oil and 19,332 using natural gas.",
+      "sources": [
+        {"title": "Statistics Canada, Table 38-10-0286-01, Primary heating systems and type of energy (2023)", "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028601"},
+        {"title": "NRCan, Comprehensive Energy Use Database, Residential Sector - Territories, Table 14: Total Households by Building Type and Energy Source (2023)", "url": "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=res&juris=tr&year=2023&rn=14&page=0"}
+      ]
+    },
+    "left_out": "Wood heats 1% to 8% of homes in the provinces and 6% in the territories; propane 4% in Ontario and PEI; coal and propane together 11.5% in the territories. Neither has an official price series, so neither is compared (decision 147)."
+  },
+  "gas_heating_values": {
+    "decided": "owner decision 153 (2026-11-26)",
+    "rule": "A record billed in m3 converts to energy with its utility's own published heating value (the first entry whose utility matches and whose optional tariff_code_regex fully matches the record); otherwise the CER factor, labelled. Gas billed in GJ needs no conversion. Used only for this comparison: the gas models keep their native units.",
+    "fallback": {
+      "mj_per_m3": 37.3,
+      "label": "CER approximate energy content",
+      "quote": "1.0 Cubic metres (m\u00b3) | 0.0373 Gigajoules (GJ) (Based on 1000 Btu/cf)",
+      "source": {"title": "Canada Energy Regulator, Energy conversion tables, Approximate Energy Content: Natural Gas", "url": "https://apps.cer-rec.gc.ca/Conversion/conversion-tables.aspx?GoCTemplateCulture=en-CA"},
+      "checked": "2026-11-26",
+      "applies_to_note": "Used for Centra Gas Manitoba and EPCOR Aylmer: no published value was found (research 2026-11-26)."
+    },
+    "entries": [
+      {
+        "id": "energir-billing",
+        "utility": "Energir",
+        "mj_per_m3": 37.89,
+        "kind": "billing heating value (higher heating value)",
+        "quote": "Aux fins de facturation, le volume sera ajust\u00e9 \u00e0 un pouvoir calorifique sup\u00e9rieur de 37,89 MJ/m\u00b3.",
+        "source": {"title": "\u00c9nergir, Conditions de service et Tarif au 1er octobre 2025, article 6.1.1 (Volume de gaz naturel factur\u00e9)", "url": "https://energir.com/files/energir_common/import/Fichiers/Affaires/Tarif/CST-FR-1oct2025.pdf"},
+        "also": "Confirmed in \u00c9nergir's answer of 2026-03-02 in R\u00e9gie file R-4320-2025 (exhibit B-0047): 'La valeur de conversion de 37,89 MJ/m3 correspond au pouvoir calorifique sup\u00e9rieur volumique de r\u00e9f\u00e9rence du gaz naturel'.",
+        "reviewed": "2026-11-26"
+      },
+      {
+        "id": "enbridge-qram-2026-07",
+        "utility": "Enbridge Gas",
+        "mj_per_m3": 39.08,
+        "kind": "rate conversion heat value",
+        "quote": "The proposed July 1, 2026 prices reflect the heat value conversion factor of 39.08 GJ/10\u00b3m\u00b3.",
+        "source": {"title": "Enbridge Gas Inc., EB-2026-0156, July 1, 2026 QRAM, Application and Evidence", "url": "https://www.enbridgegas.com/-/media/Extranet-Pages/Regulatory-Filings/RateCases/Rate-Cases-and-QRAM/2026-Rates-Application/EB-2026-0156---July-1-2026-QRAM/Application-and-Evidence.pdf"},
+        "also": "The same filing converts its PGVA reference price '$178.347/10\u00b3m\u00b3 ($4.564/GJ based upon an assumed heat value of 39.08 MJ/m3)'. Used for every Enbridge rate zone.",
+        "reviewed": "2026-11-26"
+      },
+      {
+        "id": "epcor-southern-bruce",
+        "utility": "EPCOR Natural Gas (Ontario)",
+        "match": {"tariff_code_regex": "SB-.*"},
+        "mj_per_m3": 39.02,
+        "kind": "supply conversion heat value",
+        "quote": "The heat value to convert GJ to m3 is 39.02 GJ/10\u00b3 m3 for gas delivered from Enbridge starting April 2025.",
+        "source": {"title": "EPCOR Natural Gas Limited Partnership, EB-2025-0317, January 2026 QRAM application (OEB record 925548)", "url": "https://rds.oeb.ca/CMWebDrawer/Record/925548/File/document"},
+        "reviewed": "2026-11-26"
+      },
+      {
+        "id": "saskenergy-forecast",
+        "utility": "SaskEnergy",
+        "mj_per_m3": 39.5,
+        "kind": "forecast heating value",
+        "quote": "The Commodity Rate in dollars per cubic metre ($/m3) may be converted to a rate in dollars per gigajoule ($/GJ) by dividing it by SaskEnergy's forecast heating value of 0.03950 GJ/m3.",
+        "source": {"title": "SaskEnergy, Residential Rates", "url": "https://www.saskenergy.com/manage-account/rates/residential-rates"},
+        "reviewed": "2026-11-26"
+      }
+    ]
+  },
+  "heating_oil": {
+    "decided": "owner decisions 148-152, 162, 164 and 165 (2026-11-26)",
+    "price_file": "data/fuel/heating_oil_prices.json",
+    "price_basis": "Statistics Canada Table 18-10-0001-01, monthly average retail price of household heating fuel (cents per litre), the latest published month (decision 150), treated as the price paid including sales tax (decision 165): the table is a Consumer Price Index product, and the CPI publishes special aggregates 'excluding the effect of indirect taxes', so its regular prices include them. The before-tax price removes the reviewed heating-oil tax lines of data/models/taxes.json.",
+    "price_basis_source": {"title": "Statistics Canada, Consumer Price Index (record 2301), detailed information", "url": "https://www23.statcan.gc.ca/imdb/p2SV.pl?Function=getSurvey&SDDS=2301", "quote": "all-items excluding the effect of indirect taxes", "checked": "2026-11-26"},
+    "series": {"NB": "NB", "NS": "NS", "PE": "PE", "NL": "NL", "YT": "YT", "NT": "NT"},
+    "not_available": {
+      "NU": "No official heating-oil price for a Nunavut community was found (Statistics Canada publishes no Nunavut city; a search of gov.nu.ca on 2026-11-26 found no price page), so Nunavut is not compared (decision 148)."
+    },
+    "energy_mj_per_litre": 38.8,
+    "energy_label": "Statistics Canada energy accounts",
+    "energy_derivation": "Canada, residential light fuel oil: Table 25-10-0029-01 (terajoules) / Table 25-10-0030-01 (megalitres) = 38.80 MJ/L for each of 2022 (42,834 TJ / 1,104.0 ML), 2023, 2024 and 2025 (37,211 TJ / 959.0 ML). The tables do not state whether this is a higher or lower heating value (decision 164). The CER's approximate energy content of heating oil, 36.72 GJ/m3, is not used.",
+    "energy_sources": [
+      {"title": "Statistics Canada, Table 25-10-0029-01, Supply and demand of primary and secondary energy in terajoules, annual", "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510002901"},
+      {"title": "Statistics Canada, Table 25-10-0030-01, Supply and demand of primary and secondary energy in natural units", "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510003001"}
+    ],
+    "reviewed": "2026-11-26",
+    "max_lag_months": 3
+  },
+  "efficiency": {
+    "decided": "owner decisions 155 and 163 (2026-11-26)",
+    "residential": {
+      "gas": {
+        "value": 0.95, "measure": "AFUE",
+        "label": "new gas furnace minimum (95% AFUE)",
+        "quote": "Gas furnaces, other than gas furnaces for relocatable buildings or replacement non-condensing gas furnaces, that have an input rate of \u2264 65.92 kW (225,000 Btu/h), use single-phase electric current and do not have an integrated cooling component ... Annual fuel utilization efficiency \u2265 95% ... On or after July 3, 2019",
+        "source": {"title": "Energy Efficiency Regulations, 2016 (SOR/2016-311), section 259, table item 2.1", "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2016-311/FullText.html"},
+        "reviewed": "2026-11-26"
+      },
+      "heating_oil": {
+        "value": 0.83, "measure": "AFUE",
+        "label": "new oil furnace minimum (83% AFUE)",
+        "quote": "CSA P.2, for annual fuel utilization efficiency ... Annual fuel utilization efficiency \u2265 83% ... On or after July 3, 2019",
+        "source": {"title": "Energy Efficiency Regulations, 2016 (SOR/2016-311), section 263, table item 3", "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2016-311/FullText.html"},
+        "reviewed": "2026-11-26"
+      }
+    },
+    "commercial": {
+      "gas": [
+        {
+          "id": "commercial_furnace", "value": 0.8, "measure": "thermal efficiency",
+          "label": "commercial gas furnace minimum (80% thermal efficiency)",
+          "quote": "Gas furnaces that have an input rate of > 65.92 kW (225,000 Btu/h) but \u2264 117.23 kW (400,000 Btu/h) CSA 2.3 Thermal efficiency \u2265 80% On or after February 3, 1995",
+          "source": {"title": "Energy Efficiency Regulations, 2016 (SOR/2016-311), section 259, table item 7", "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2016-311/FullText.html"},
+          "reviewed": "2026-11-26"
+        },
+        {
+          "id": "commercial_boiler", "value": 0.9, "measure": "thermal efficiency",
+          "label": "commercial hot-water gas boiler minimum (90% thermal efficiency)",
+          "quote": "Commercial gas boilers that have an input rate of \u2265 87.92 kW (300,000 Btu/h) but \u2264 732.68 kW (2,500,000 Btu/h) and are intended for hot water systems: Thermal efficiency \u2265 90% (manufactured on or after January 1, 2025, subsection 317(3))",
+          "source": {"title": "Energy Efficiency Regulations, 2016 (SOR/2016-311), subsection 317(3) and Table 2, item 1", "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2016-311/FullText.html"},
+          "reviewed": "2026-11-26"
+        }
+      ],
+      "note": "Thermal efficiency is a steady-state test, not a seasonal rating like a home furnace's AFUE. Nothing in the data says which equipment a model building has, so businesses show the break-even COP for both (decision 163). The regulations' gas furnace definition covers gas-fired central forced air furnaces and does not name rooftop units."
+    }
+  },
+  "realistic_cop": {
+    "decided": "owner decision 156 (2026-11-26)",
+    "source": {
+      "title": "Dunsky Energy + Climate Advisors for the Canadian Climate Institute, Heat Pumps Pay Off technical memo (updated February 2024), Table 5: Calculated seasonal equipment and system performance (with 2035 climate data)",
+      "url": "https://climateinstitute.ca/wp-content/uploads/2023/09/2024-02-14_Dunsky-CCI-Heat-Pumps-Pay-Off-Revised-Technical-Report_FINAL-5-cities.pdf",
+      "quote": "Table 5 shows the resulting portion of the building's heating load covered by the heat pump, as well as the heat pump system's average COP delivered over the heating season (which takes into account the contribution of the back-up system).",
+      "checked": "2026-11-26"
+    },
+    "measure": "Total seasonal system efficiency (COP), back-up heat included: all-electric with a standard heat pump, and all-electric with a cold-climate heat pump.",
+    "cities": {
+      "Vancouver": {"standard": 3.1, "cold_climate": 3.3},
+      "Edmonton": {"standard": 1.9, "cold_climate": 2.3},
+      "Toronto": {"standard": 2.5, "cold_climate": 2.8},
+      "Montr\u00e9al": {"standard": 2.1, "cold_climate": 2.5},
+      "Halifax": {"standard": 2.5, "cold_climate": 2.8}
+    },
+    "provinces": {"BC": "Vancouver", "AB": "Edmonton", "SK": "Edmonton", "MB": "Edmonton", "ON": "Toronto", "QC": "Montr\u00e9al", "NB": "Halifax", "NS": "Halifax", "PE": "Halifax", "NL": "Halifax"},
+    "applies_to": ["residential"],
+    "note": "Approximate: each province is matched to the nearest of the five modelled cities. Winnipeg and Regina are colder than Edmonton and St. John's colder than Halifax, and the 2035 climate is milder than today's, so the values may flatter those provinces. The territories have no modelled city and show the break-even only; businesses have no published seasonal COP (decision 158)."
+  },
+  "utility_choices": {
+    "decided": "owner decisions 131 (2026-11-25), 159 and 160 (2026-11-26)",
+    "rule": "One price per fuel and region: the median across its utilities, each counted once whatever its rate structure (decision 131). A utility found in more than one model of the region at the evaluation point uses the first entry below that covers it; with none, the region shows not available, naming the utility (fail closed).",
+    "entries": [
+      {"id": "on-electricity-tou", "province": "ON", "fuel": "electricity", "sectors": ["residential", "commercial_small"], "select": "structure", "structure": "tou", "reason": "Ontario electricity on time-of-use, the Regulated Price Plan's default, at the published RPP shares (decision 131)."},
+      {"id": "bc-hydro-cheaper-plan", "province": "BC", "fuel": "electricity", "utility": "BC Hydro", "sectors": ["residential"], "select": "cheapest", "reason": "BC Hydro's residential customers 'can choose between the tiered rate and the flat rate plan'; the plan that costs less at the average point (before tax) is used for both the average and the marginal, re-checked at every build (decision 159).", "source": {"title": "BC Hydro, Residential rates", "url": "https://www.bchydro.com/accounts-billing/rates-energy-use/electricity-rates/residential-rates.html"}},
+      {"id": "epcor-ontario-gas-median", "province": "ON", "fuel": "gas", "utility": "EPCOR Natural Gas (Ontario)", "sectors": ["residential", "commercial_small", "commercial_medium"], "select": "median", "reason": "EPCOR's two Ontario systems (Aylmer and Southern Bruce) count once, at the median of the two, as the models treat a utility's zones (decision 160)."}
+    ]
+  },
+  "verdicts": {
+    "decided": "owner decisions 157 and 161 (2026-11-26)",
+    "rule": "Homes with a realistic COP only, on the average price: a heat pump whose seasonal COP is above the break-even COP costs less to run than the new furnace. Both types above: heat_pump_cheaper; only the cold-climate type: depends_on_heat_pump; neither: furnace_cheaper. When the marginal price gives another result, a note says so. Running cost only."
+  },
+  "reviews_max_age_days": 365
+}

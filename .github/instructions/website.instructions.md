@@ -1,5 +1,5 @@
 ---
-description: "Use when changing the static website under site/: index.html, css/, js/app.js (Rate Browser, Market Pricing, Compare), js/models.js (Representative Models), js/across-canada.js, js/rate-history.js (Rate History) and the site/data/ JSON it reads. Covers the six views, hiding seed (estimated) rates by default, filterState Sets, the province-to-utility cascade, dedupe by effective date, formatCharge, Compare never totalling, the Ontario/Alberta market dashboard, the window.CanadaUtilityModels API and shared lazy load, the Rate History periods, reviewed series and event lists and hand-built SVG charts, safe DOM building, failure notices, the estimated market energy note and offline browser tests."
+description: "Use when changing the static website under site/: index.html, css/, js/app.js (Rate Browser, Market Pricing, Compare), js/models.js (Representative Models), js/across-canada.js, js/rate-history.js (Rate History) and the site/data/ JSON it reads. Covers the six views, hiding seed (estimated) rates by default, filterState Sets, the province-to-utility cascade, dedupe by effective date, formatCharge, Compare never totalling, the Ontario/Alberta market dashboard, the window.CanadaUtilityModels API and shared lazy load, the Rate History periods, reviewed series and event lists and hand-built SVG charts, safe DOM building, failure notices, the estimated market energy note, the Across-Canada sub-tabs and spark gap view, and offline browser tests."
 applyTo: "site/**"
 ---
 # Static website
@@ -13,8 +13,8 @@ file rules: [market-data.instructions.md](market-data.instructions.md).
 ## Views
 
 - Six views: **Rate Browser** (filters, cards, details), **Rate History** (how stored prices changed),
-  **Market Pricing**, **Representative Models**, **Across-Canada** (residential comparison) and
-  **Compare** (two tariffs). Across-Canada and Compare stay separate.
+  **Market Pricing**, **Representative Models**, **Across-Canada** (residential comparison and, in its
+  second sub-tab, the spark gap) and **Compare** (two tariffs). Across-Canada and Compare stay separate.
 - Test over HTTP (`python -m http.server --directory site 8000`); opening the HTML file directly does
   not reliably load the JSON.
 
@@ -77,7 +77,7 @@ file rules: [market-data.instructions.md](market-data.instructions.md).
   file without roles. The reference level is highlighted. Commercial gas models (7D-2) add a "Class
   used" column to the contributors table (the tariff codes of the records used at the selected level,
   and the elective choice with both costs) and a "Class used at each level" note with the peak-month
-  factor and elective classes. Across-Canada keeps filtering to residential electricity.
+  factor and elective classes. Across-Canada's residential sub-tab keeps filtering to residential electricity.
 - Estimated market energy (method 7S-2, owner decisions 119-123 of 2026-11-25): the Ontario and Alberta
   50-499 kW and 500-4,999 kW models include it in the table. The badge says "with estimated market
   energy", the caption says it is not live, and each estimated level gets an "Estimated energy" tag.
@@ -114,11 +114,31 @@ file rules: [market-data.instructions.md](market-data.instructions.md).
 
 ## Across-Canada (`site/js/across-canada.js`, `site/css/across-canada.css`)
 
+- Two sub-tab buttons above the view (owner decision 144, 2026-11-26), styled like Rate History's but
+  with their own `across-subtab` class and `aria-pressed` (`data-across-tab`): "Residential
+  electricity" (default, `#across-residential`) and "Spark gap" (`#across-spark`, below).
 - A scrollable national table and grouped horizontal CSS bars by province, with a stable province hue
   and related shades per rate structure, for desktop and phone screens.
 - Territories with a model show their before-subsidy totals labelled "before subsidies" (status and
   chart label, plus a note under the chart) and, in the row, the published after-subsidy median before
   tax or the reason none is shown; a territory without a model keeps "Not modelled yet".
+
+## Spark gap (`site/js/spark-gap.js`, `site/css/spark-gap.css`; method SG-1, decisions 124-165)
+
+- Reads `data/spark_gap.json` with its own lazy fetch the first time its sub-tab opens (never on page
+  load); a missing or broken file shows a retryable notice in this sub-tab only.
+- Shows the pipeline's values only (nothing recalculated): a customer selector (home by default; small
+  building; mid-size building, which list the eight gas provinces), the tax toggle (with tax and
+  rebates by default), CSS bars of the average spark gap on one 0-to-N scale with a dashed line at 1,
+  and a table of both prices (average and marginal, cents per kWh with $/GJ), the spark gap, the
+  break-even COP (businesses: furnace and boiler), and for homes the realistic COP with its city and
+  the result in words with any marginal note. A row that is not available says why and never gets a
+  zero bar.
+- Labels: "Estimated energy", "Interim rates", "Before subsidies" (territories also state the
+  after-subsidy spark gap and break-even, before tax) and the oil price's month. A "Method and
+  sources" list names the comparison-fuel rule and left-out fuels, the oil price basis and energy, the
+  heating values, the efficiencies, the COP source and, for businesses, input tax credits; links are
+  http(s) only and all text is set with `textContent`.
 
 ## Rate History (`site/js/rate-history.js`, `site/css/rate-history.css`)
 

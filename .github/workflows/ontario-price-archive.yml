@@ -142,6 +142,13 @@ jobs:
         if: ${{ !cancelled() && steps.totals.outcome == 'success' }}
         run: python -m pipeline.representative_models --build --output site/data/representative_models.json --generation-receipt model-generation.json 2>&1 | tee model_output.txt
 
+      # Spark gap (owner decision 143, 2026-11-26): rebuilt with every model refresh, before the monitoring check that
+      # compares it with the models; a failed build keeps the previous file and never blocks the models.
+      - name: Refresh spark gap comparison
+        if: ${{ !cancelled() && steps.models.outcome == 'success' }}
+        continue-on-error: true
+        run: python -m pipeline.spark_gap --build --output site/data/spark_gap.json 2>&1 | tee spark_gap_output.txt
+
       - name: Record model change history
         id: monitor_history
         if: ${{ !cancelled() && steps.models.outcome == 'success' }}
@@ -159,6 +166,7 @@ jobs:
           git add site/data/representative_models.json
           if [ -f site/data/model_change_history.json ]; then git add site/data/model_change_history.json; fi
           if [ -f site/data/model_cost_quarterly.json ]; then git add site/data/model_cost_quarterly.json; fi
+          if [ -f site/data/spark_gap.json ]; then git add site/data/spark_gap.json; fi
           git add data/market/ontario_total_hourly.csv data/market/ontario_total_hourly_2020_2025.csv
           git add data/market/ontario_total_monthly.csv data/market/ontario_total_metadata.json
           if git diff --staged --quiet; then

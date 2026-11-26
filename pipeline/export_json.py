@@ -13,6 +13,7 @@ Output:
     site/data/summary.json      — high-level stats and metadata
     site/data/rate_history_revisions.json — same-date price corrections from the database snapshots (Rate History tab)
     site/data/representative_models.json — Phase 7 representative models (provinces and territories; Representative Models tab)
+    site/data/spark_gap.json — spark gap comparison, electricity vs the usual heating fuel (Across-Canada, Spark gap)
 """
 
 from __future__ import annotations
@@ -164,11 +165,14 @@ def export_all(generation_receipt_path: Path | None = None) -> None:
     conn.close()
     result = export_representative_models(tariffs, SITE_DATA_DIR / "representative_models.json",
                                          generation_receipt_path=generation_receipt_path)
+    spark_gap = export_spark_gap(tariffs, SITE_DATA_DIR / "spark_gap.json")
     print(f"JSON export complete -> {SITE_DATA_DIR}")
     if revisions is None:
         print("Rate history revisions export FAILED; the previous revisions file was retained.")
     if result is None:
         print("Representative model refresh FAILED; the previous model file was retained.")
+    if spark_gap is None:
+        print("Spark gap refresh FAILED; the previous spark gap file was retained.")
 
 
 def _number_or_none(value: object) -> bool:
@@ -340,6 +344,24 @@ def export_representative_models(tariffs: list[dict], out_path: Path, *,
     if monitor is not None:
         monitor.save_generation_receipt(generation_receipt_path, result, previous=previous, inputs=inputs)
     logger.info("Exported %d representative models to %s", len(result["models"]), out_path)
+    return result
+
+
+def export_spark_gap(tariffs: list[dict], out_path: Path) -> dict | None:
+    """Build the spark gap comparison (pipeline.spark_gap, method SG-1) right after the models and write it.
+
+    Never raises: on any failure the error is logged, ``None`` is returned and an existing file is left untouched
+    (owner decision 143, 2026-11-26). The simulated buildings are cached per process, so they are read once.
+    """
+    try:
+        # Imported here so a broken spark gap module cannot break the main export.
+        from pipeline import spark_gap
+
+        result = spark_gap.write_spark_gap(out_path, rates=tariffs)
+    except Exception:
+        logger.exception("Spark gap export failed; %s left unchanged", out_path)
+        return None
+    logger.info("Exported the spark gap comparison to %s", out_path)
     return result
 
 

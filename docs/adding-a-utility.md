@@ -287,6 +287,13 @@ not modelled:
   check.
 - The site's Representative Models tab (`site/js/models.js`) lists every model in the exported
   file, so a newly modelled province appears there without site changes.
+- **Spark gap (method SG-1):** the Across-Canada spark gap reuses the models at its own points. A new
+  gas utility billed in m³ converts with the CER's 37.3 MJ/m³ (labelled) until a reviewed heating value
+  quoting the utility's own published figure is added to `gas_heating_values` in
+  `data/models/spark_gap.json`. A utility that appears in more than one model of its province at a
+  spark gap point (for example a flat and a tiered plan) makes that row "not available" until a
+  reviewed `utility_choices` entry says which price to use; check with
+  `python -m pipeline.spark_gap --dry-run` after the export.
 
 ## Tips
 

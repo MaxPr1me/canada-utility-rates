@@ -49,8 +49,11 @@ snapshot rules: [scrapers.instructions.md](scrapers.instructions.md). Model expo
   closest registry names), each as an `::error title=Inputs::` annotation that says what to type.
 - Order: check out; check inputs; restore and digest-check the database (initialize only a new one);
   run the deterministic tests; scrape; `pipeline.validate`; synchronize with `git pull --ff-only origin
-  main`; `pipeline.export_json`; reject empty exports; report the coverage gate; verify the history;
-  upload; diff report; commit `site/data/` with a plain `git push`; prune backups. A queued dispatch
+  main`; refresh the heating-oil prices (`scripts/fetch_heating_oil.py`, continue-on-error: a failed
+  download keeps the last file; spark gap, owner decision 152 of 2026-11-26); `pipeline.export_json`
+  (models, then the spark gap); reject empty exports; report the coverage gate; verify the history;
+  upload; diff report; commit `site/data/` and `data/fuel/` with a plain `git push`; prune backups. A
+  queued dispatch
   checks out its dispatch-time commit, so the sync makes the export see the previous writer's bot
   commit; generated files are never rebased onto newer inputs, like the market workflows (issue #5;
   owner decision 2026-11-04). A push rejected because `main` moved after the export fails the run
@@ -101,7 +104,12 @@ snapshot rules: [scrapers.instructions.md](scrapers.instructions.md). Model expo
   annotation (live, seed and invalid totals; failed, no-valid and seed-only utilities), escaping `%`,
   CR and LF, only when `GITHUB_ACTIONS == "true"`. Tests that call `main()` set or clear that variable.
 - `pipeline.validate` reconfigures stdout so Windows consoles do not crash on non-ASCII names.
-- `export_json.py` writes the site JSON, then the representative models. Right after `rates.json` it
+- `export_json.py` writes the site JSON, then the representative models, then the spark gap
+  (`export_spark_gap`, method SG-1, owner decision 143 of 2026-11-26: never raises, and a failure keeps
+  the previous `spark_gap.json`). The Market Benchmarks and Ontario Price Archive workflows run
+  `python -m pipeline.spark_gap --build` right after their model refresh and before "Record model change
+  history" (continue-on-error), and stage `site/data/spark_gap.json` with the models. Right after
+  `rates.json` it
   writes `rate_history_revisions.json` for the Rate History tab (owner decision 55, 2026-11-23): the
   same-date corrections found in `historical_snapshots`, which `rates.json` cannot show because a stored
   version keeps only its latest values. Only live snapshots count, floating-point noise is not a
@@ -170,6 +178,13 @@ The following workflow decisions were approved on 2026-11-17.
   model whose estimated market energy failed on an input (`energy_estimate.available` false with
   `input_problem` true; for example a stale market history or unreadable simulated buildings) shows
   delivery charges only and is a problem until a refresh makes the estimate again.
+- `spark_gap` (method SG-1, owner decisions 143 and 152, 2026-11-26; `pipeline.spark_gap.spark_gap_problems`)
+  is a problem when the reviewed inputs in `data/models/spark_gap.json` are invalid or a `reviewed` or
+  `checked` date is more than `reviews_max_age_days` (365) old, when `site/data/spark_gap.json` is
+  missing, invalid or older than `representative_models.json` (its last build failed), or when a
+  heating-oil series in `data/fuel/heating_oil_prices.json` is missing or its newest usable month is
+  more than `max_lag_months` (3) before the current month. Model input fingerprints leave out the
+  `heating_oil` tax lines (`MODEL_TAX_FUELS`), so those spark-gap-only lines never enter the change log.
 - Keep one bot-owned, marked monitoring issue for input/refresh problems, never ordinary price
   changes. Preserve unchecked problems and maintainer text, reject older recovery evidence and
   avoid duplicating a failure already reported by its workflow. Only monitoring-owned issues are

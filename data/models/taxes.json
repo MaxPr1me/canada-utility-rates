@@ -1,7 +1,7 @@
 {
  "version": 1,
  "as_of": "2026-10-30",
- "notes": "Apply per modelled month: S = sum of the model's pre-tax rate components (before any tax or rebate). Use jurisdictions[province][fuel]['residential'] for sector 'residential', otherwise ['commercial']; keep a line only if the model sector is in eligibility.sectors, its thresholds pass (null = no limit; when max_demand_kw and max_annual_kwh are both set the line applies if EITHER is met, per O. Reg. 363/16 s.1.1(1)) and effective_date <= as-of date < end_date (when set). Line amount = rate x base: 'pre_tax_subtotal' = S; 'pre_rebate_subtotal' = S as well (same number; marks a tax charged on the bill before a rebate line is deducted); 'energy_charge_subtotal' = pre-tax sum of per-kWh consumption charges only (no fixed/service, demand or rental charges). Lines never compound: PST/RST/QST/ICE are computed on the price excluding GST/HST. With tax = S + sum(sales_tax amounts) - sum(rebate amounts); for eligible Ontario electricity accounts the OER (23.5% until 2026-10-31, 15.7% from 2026-11-01 under O. Reg. 328/26) exceeds the 13% HST, so 'with tax' is below 'without tax'. A rate change is two lines of the same name: the old line ends (end_date) the day the new one starts (effective_date); while one of them is in its date window, the other is not listed as not applied. 'order' is the display/application order (GST/HST, provincial tax, rebates). Commercial results show tax as invoiced; GST/HST registrants can generally recover GST/HST through input tax credits (not modelled). Excluded: income-tested or application-based assistance (e.g. OESP, LEAP, Ontario and Northern Ontario energy tax credits, PEI Island Essentials Benefit, Alberta Energy Rebate, NS YERP claims by landlords, condominiums, mixed-use and commercial-rate accounts); municipal taxes and fees (City of Winnipeg gas and electricity tax, SaskPower/SaskEnergy municipal surcharges, Alberta franchise/access fees); carbon charges and territorial power subsidies (rate components elsewhere); First Nations and diplomatic exemptions; price-triggered per-GJ rebates (Alberta Natural Gas Rebate Program, $0 for October 2026); announced but not in force (NL Churchill River Electricity Rebate); expired (PEI Government Energy Rebate, ended 2026-06-30). Manitoba residential RST depends on heating use (defaults: electricity 7%, gas 1.4% - flagged for review). As of 2026-10-09; confidence per line.",
+ "notes": "Apply per modelled month: S = sum of the model's pre-tax rate components (before any tax or rebate). Use jurisdictions[province][fuel]['residential'] for sector 'residential', otherwise ['commercial']; keep a line only if the model sector is in eligibility.sectors, its thresholds pass (null = no limit; when max_demand_kw and max_annual_kwh are both set the line applies if EITHER is met, per O. Reg. 363/16 s.1.1(1)) and effective_date <= as-of date < end_date (when set). Line amount = rate x base: 'pre_tax_subtotal' = S; 'pre_rebate_subtotal' = S as well (same number; marks a tax charged on the bill before a rebate line is deducted); 'energy_charge_subtotal' = pre-tax sum of per-kWh consumption charges only (no fixed/service, demand or rental charges). Lines never compound: PST/RST/QST/ICE are computed on the price excluding GST/HST. With tax = S + sum(sales_tax amounts) - sum(rebate amounts); for eligible Ontario electricity accounts the OER (23.5% until 2026-10-31, 15.7% from 2026-11-01 under O. Reg. 328/26) exceeds the 13% HST, so 'with tax' is below 'without tax'. A rate change is two lines of the same name: the old line ends (end_date) the day the new one starts (effective_date); while one of them is in its date window, the other is not listed as not applied. 'order' is the display/application order (GST/HST, provincial tax, rebates). Commercial results show tax as invoiced; GST/HST registrants can generally recover GST/HST through input tax credits (not modelled). Excluded: income-tested or application-based assistance (e.g. OESP, LEAP, Ontario and Northern Ontario energy tax credits, PEI Island Essentials Benefit, Alberta Energy Rebate, NS YERP claims by landlords, condominiums, mixed-use and commercial-rate accounts); municipal taxes and fees (City of Winnipeg gas and electricity tax, SaskPower/SaskEnergy municipal surcharges, Alberta franchise/access fees); carbon charges and territorial power subsidies (rate components elsewhere); First Nations and diplomatic exemptions; price-triggered per-GJ rebates (Alberta Natural Gas Rebate Program, $0 for October 2026); announced but not in force (NL Churchill River Electricity Rebate); expired (PEI Government Energy Rebate, ended 2026-06-30). Manitoba residential RST depends on heating use (defaults: electricity 7%, gas 1.4% - flagged for review). As of 2026-10-09; confidence per line. Heating oil (owner decision 151, 2026-11-26): jurisdictions[province]['heating_oil']['residential'] lines serve only the spark gap comparison; they remove sales tax from Statistics Canada's as-paid heating-oil prices (before tax = price / (1 + sales taxes - rebates)) and never enter the representative models or their input fingerprints.",
  "sectors": [
   "residential",
   "commercial_small",
@@ -580,6 +580,30 @@
       "confidence": "high"
      }
     ]
+   },
+   "heating_oil": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-07-01",
+      "end_date": null,
+      "source_url": "https://nbeub.ca/current-petroleum-prices",
+      "source_note": "NB Energy and Utilities Board, Current Petroleum Prices (read 2026-11-26): 'Heating Fuel Maximum Total Price (incl. HST) Furnace Oil 228.4'. HST 15% (GST 5% + provincial part; CRA GST/HST rates table; 13% -> 15% on 2016-07-01). The GNB 10% Rebate is 'on electricity consumption' only, so heating oil has no rebate line.",
+      "confidence": "high"
+     }
+    ]
    }
   },
   "NL": {
@@ -677,6 +701,30 @@
       "end_date": null,
       "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
       "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). gov.nl.ca HST page (https://www.gov.nl.ca/fin/tax-programs-incentives/personal/hst/): provincial portion 8% -> 10% effective 2016-07-01, HST 15%. Approved NL Hydro / Newfoundland Power schedules: 'This rate does not include the Harmonized Sales Tax (HST) which applies to electricity bills'. No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ]
+   },
+   "heating_oil": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.15,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2016-07-01",
+      "end_date": null,
+      "source_url": "https://www.gov.nl.ca/fin/tax-programs-incentives/personal/hst/",
+      "source_note": "gov.nl.ca HST page: HST 15% (provincial portion 10% since 2016-07-01). No point-of-sale rebate for heating oil; the Home Heating Supplement (https://www.gov.nl.ca/fin/home-heating-supplement-program/) is income-tested (adjusted family income up to $150,000) and paid on application, so it is left out like other income-tested programs.",
       "confidence": "high"
      }
     ]
@@ -820,6 +868,50 @@
       "confidence": "high"
      }
     ]
+   },
+   "heating_oil": {
+    "residential": [
+     {
+      "name": "HST",
+      "kind": "sales_tax",
+      "rate": 0.14,
+      "base": "pre_rebate_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2025-04-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table: 'As of April 1, 2025, the HST rate has decreased to 14% in Nova Scotia'. Charged in full on home heating oil; the YERP rebate is the next line.",
+      "confidence": "high"
+     },
+     {
+      "name": "NS Your Energy Rebate (YERP)",
+      "kind": "rebate",
+      "rate": 0.09,
+      "base": "pre_tax_subtotal",
+      "order": 2,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2025-04-01",
+      "end_date": null,
+      "source_url": "https://www.novascotia.ca/sites/default/files/documents/1-202/your-energy-rebate-program-en.pdf",
+      "source_note": "YERP consumer guide (read 2026-11-26): 'a 9% rebate on the before tax price of residential use energy'; 'your bulk vendor of home heating oil, propane, natural gas or firewood will deduct your rebate from your bill'. Oil bought elsewhere and claims by application are left out.",
+      "confidence": "high"
+     }
+    ]
    }
   },
   "NT": {
@@ -917,6 +1009,30 @@
       "end_date": null,
       "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
       "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines. No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ]
+   },
+   "heating_oil": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table: GST 5%; no territorial sales tax.",
       "confidence": "high"
      }
     ]
@@ -1303,6 +1419,30 @@
       "end_date": null,
       "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
       "source_note": "CRA GST/HST rates table (page modified 2025-04-01): HST 15% (GST 5% + provincial part). PE HST 14% -> 15% on 2016-10-01 (CRA archived statistics notes). No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ]
+   },
+   "heating_oil": {
+    "residential": [
+     {
+      "name": "Tax on furnace oil (5%)",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": null,
+      "end_date": null,
+      "source_url": "https://irac.pe.ca/petrol/current-petroleum-prices/",
+      "source_note": "IRAC, Current Petroleum Prices, Furnace Oil - November 24, 2026 (read 2026-11-26): 'Maximum Price (Before Tax) 170.6 | Federal Fuel Charge Not Applicable | Tax (5%) 8.5 | Maximum Price (After Tax) 179.1'. Not the 15% HST of electricity; no start date was published with the breakdown.",
       "confidence": "high"
      }
     ]
@@ -1735,6 +1875,30 @@
       "end_date": null,
       "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
       "source_note": "CRA GST/HST rates table (page modified 2025-04-01): GST 5%. 6% -> 5% effective 2008-01-01 (CRA archived GST/HST statistics notes, https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/gst-hst-statistics/gst-hst-statistics-tables-2012-2016-calendar-years.html). No territorial sales tax (CRA table: PST 0%). Territorial electricity subsidies are represented as conditional rate components in the tariff data, not as tax lines. No natural gas utility is in the project registry for this jurisdiction; general rule only.",
+      "confidence": "high"
+     }
+    ]
+   },
+   "heating_oil": {
+    "residential": [
+     {
+      "name": "GST",
+      "kind": "sales_tax",
+      "rate": 0.05,
+      "base": "pre_tax_subtotal",
+      "order": 1,
+      "eligibility": {
+       "sectors": [
+        "residential"
+       ],
+       "max_demand_kw": null,
+       "max_annual_kwh": null,
+       "other": null
+      },
+      "effective_date": "2008-01-01",
+      "end_date": null,
+      "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/charge-collect-which-rate/calculator.html",
+      "source_note": "CRA GST/HST rates table: GST 5%; no territorial sales tax.",
       "confidence": "high"
      }
     ]

@@ -446,12 +446,18 @@ def test_scrape_verifies_history_before_uploading_with_a_dated_backup():
     order = ["Checkout repository", "Check manual inputs", "Set up Python", "Install dependencies",
              "Install Playwright browser", "Restore database history", "Initialize database (first run only)",
              "Run deterministic tests before scraping", "Run scrapers", "Validate data",
-             "Synchronize inputs before exporting", "Export JSON for site", "Record model change history",
+             "Synchronize inputs before exporting", "Refresh heating-oil prices", "Export JSON for site",
+             "Record model change history",
              "Reject empty or corrupt exports", "Report live-rate coverage gate",
              "Check database history before upload", "Save database history",
              "Generate diff report", "Commit updated data", "Prune old database backups",
              "Create issue on workflow errors", "Record explicit workflow outcomes", "Keep monitoring evidence"]
     assert [name for name, _ in steps] == order
+    # Spark gap (owner decision 152, 2026-11-26): the heating-oil refresh never blocks the run, and its file is
+    # committed with the site data.
+    oil = _step(steps, "Refresh heating-oil prices")
+    assert "continue-on-error: true" in oil and "python scripts/fetch_heating_oil.py" in _run(oil)
+    assert "if [ -d data/fuel ]; then git add data/fuel/; fi" in _run(_step(steps, "Commit updated data"))
     verify = _run(_step(steps, "Check database history before upload"))
     assert ("python scripts/check_db_history.py verify --db data/db/rates.db --before db_before.json 2>&1 "
             "| tee verify_output.txt") in verify
@@ -573,11 +579,15 @@ def test_archive_workflow_commits_the_archive_before_building_the_market_history
              "Test archive and combined totals", "Preserve raw IESO reports", "Commit raw reports before validation",
              "Update the Ontario Price archive",
              "Commit updated archive", "Synchronize model inputs", "Build the Ontario market history",
-             "Export combined Ontario prices", "Refresh representative models", "Record model change history",
+             "Export combined Ontario prices", "Refresh representative models", "Refresh spark gap comparison",
+             "Record model change history",
              "Commit updated market history",
              "Keep raw reports for recovery after failure",
              "Create issue on failure", "Record explicit workflow outcomes", "Keep monitoring evidence"]
     assert [name for name, _ in steps] == order
+    # Spark gap (owner decision 143, 2026-11-26): rebuilt after the models, before the history check, never blocking.
+    spark = _step(steps, "Refresh spark gap comparison")
+    assert "continue-on-error: true" in spark and "python -m pipeline.spark_gap --build" in _run(spark)
     archive_commit = _run(_step(steps, "Commit updated archive"))
     assert re.findall(r"git add [^\n]+", archive_commit) == ["git add data/market/ontario_price_hourly.csv"]
     market = _step(steps, "Build the Ontario market history")
@@ -589,6 +599,7 @@ def test_archive_workflow_commits_the_archive_before_building_the_market_history
         "git add site/data/representative_models.json",
         "git add site/data/model_change_history.json; fi",
         "git add site/data/model_cost_quarterly.json; fi",
+        "git add site/data/spark_gap.json; fi",
         "git add data/market/ontario_total_hourly.csv data/market/ontario_total_hourly_2020_2025.csv",
         "git add data/market/ontario_total_monthly.csv data/market/ontario_total_metadata.json"]
     assert 'git commit -m "data: Ontario market history update $(date +%Y-%m-%d)"' in market_commit

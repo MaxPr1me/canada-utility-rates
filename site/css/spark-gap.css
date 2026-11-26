@@ -1,0 +1,40 @@
+/* Across-Canada "Spark gap" sub-tab (method SG-1). The sub-tab buttons look like Rate History's but keep their own
+   class, so neither view's scripts or tests see the other's buttons. */
+#across-residential.hidden, #across-spark.hidden { display: none; }
+.across-subtabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0 1rem; }
+.across-subtab { padding: 0.45rem 1rem; border: 1px solid var(--color-border); border-radius: 999px;
+    background: var(--color-surface); color: var(--color-text); font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+.across-subtab:hover { border-color: var(--color-primary); }
+.across-subtab[aria-pressed="true"] { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.across-subtab:focus-visible { outline: 2px solid var(--color-primary-dark); outline-offset: 2px; }
+#across-spark select { margin: 0.5rem; padding: 0.5rem; }
+.spark-explain { max-width: 60rem; }
+#spark-chart { margin: 1rem 0 2rem; }
+#spark-chart > p { margin: 0.5rem 0; }
+.spark-chart-row { display: grid; grid-template-columns: 15rem minmax(0, 1fr) 4rem; gap: 0.75rem; align-items: center;
+    padding: 0.25rem 0 0.25rem 0.6rem; border-left: 5px solid var(--region-color); margin: 0.2rem 0; }
+.spark-track { position: relative; height: 1.1rem; background: #e5e7eb; border-radius: 2px; }
+.spark-track::after { content: ""; position: absolute; left: var(--one); top: -3px; bottom: -3px; border-left: 2px dashed #374151; }
+.spark-bar { position: absolute; left: 0; height: 100%; border-radius: 2px; outline: 1px solid #374151; outline-offset: -1px; }
+.spark-chart-value { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.spark-chart-unavailable { grid-column: 2 / -1; color: #665320; }
+.spark-table { min-width: 900px; }
+.spark-table td, .spark-table th { vertical-align: top; }
+.spark-line { display: block; white-space: normal; }
+.spark-sub { color: var(--color-text-secondary); font-size: 0.85rem; }
+.spark-headline { font-weight: 700; }
+.spark-unavailable { color: #665320; }
+.spark-tag { display: inline-block; margin: 0 0.25rem 0.25rem 0; padding: 0.05rem 0.45rem; border: 1px solid #b7791f;
+    border-radius: 999px; background: #fff8e6; color: #7a5c00; font-size: 0.8rem; font-weight: 600; }
+.spark-subsidy { font-weight: 600; max-width: 22rem; }
+.spark-table details { min-width: 14rem; max-width: 28rem; white-space: normal; overflow-wrap: anywhere; }
+.spark-table summary { cursor: pointer; }
+.spark-verdict { max-width: 18rem; }
+.spark-heat_pump_cheaper .spark-line:first-child { color: #166534; font-weight: 600; }
+.spark-furnace_cheaper .spark-line:first-child { color: #92400e; font-weight: 600; }
+.spark-depends_on_heat_pump .spark-line:first-child { color: #1e40af; font-weight: 600; }
+.spark-sources { max-width: 60rem; font-size: 0.9rem; }
+.spark-sources li { margin: 0.3rem 0; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+    .spark-chart-row { grid-template-columns: 8rem minmax(0, 1fr) 3rem; gap: 0.4rem; font-size: 0.85rem; }
+}

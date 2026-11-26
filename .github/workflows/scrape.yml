@@ -164,6 +164,12 @@ jobs:
       - name: Synchronize inputs before exporting
         run: git pull --ff-only origin main
 
+      # Spark gap (owner decision 152, 2026-11-26): Statistics Canada's monthly heating-oil prices, read by the export.
+      # A failed download keeps the last file; model monitoring warns when its newest month is over three months old.
+      - name: Refresh heating-oil prices
+        continue-on-error: true
+        run: python scripts/fetch_heating_oil.py 2>&1 | tee heating_oil_output.txt
+
       - name: Export JSON for site
         id: models
         run: python -m pipeline.export_json --generation-receipt model-generation.json
@@ -232,6 +238,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add site/data/
+          if [ -d data/fuel ]; then git add data/fuel/; fi
           if git diff --staged --quiet; then
             echo "No data changes to commit."
           else

@@ -84,6 +84,10 @@ These rules apply to every change. They matter more than any single feature.
    buildings of their size, to their delivery charges in the main table, so it enters those models'
    medians, change log and Rate History. That energy is labelled estimated, states its assumptions,
    never counts as live coverage, and falls back to "market energy pending" when an input fails.
+   The spark gap comparison (Across-Canada; owner decisions 118 and 124-165, November 25-26, 2026) is a
+   comparison aid of running costs only: never a bill, never in model medians, the change log, Rate
+   History, change checks or coverage. Its Ontario and Alberta mid-size buildings use that labelled
+   estimated energy (decision 138).
 9. **Claim complete coverage only when it is true.** Do not say nationwide live-rate coverage is
    complete unless the coverage gate passes and no known source problem is open. A passing gate
    does not override a known problem.
@@ -171,6 +175,7 @@ records does not prove that every building class is covered. Current figures are
 | `site/data/rate_history_revisions.json`, `market_quarterly_ontario.json`, `market_quarterly_alberta.json`, `model_cost_quarterly.json` | What the Rate History tab reads besides the rates: stored prices that were corrected later for the same date (written by the Monthly Scrape's export), complete-quarter market averages (written by the market history builders) and the model costs at each quarter's end (written when the model change log is recorded). |
 | `data/market/` | Permanent market history for Ontario and Alberta, the project's own hourly Ontario Price archive, and ready-to-use Ontario totals (`ontario_total_*`: energy plus Class B GA in cents/kWh; a missing hour stays blank, never zero, and monthly averages never stand in for it). |
 | `data/market/ieso_raw/` | Saved copies of the original IESO reports, kept before any price check. They are unverified evidence, not rates; old copies are never replaced. |
+| `data/fuel/heating_oil_prices.json` | Statistics Canada's monthly average retail price of household heating fuel (Table 18-10-0001-01) in six cities (Saint John, Halifax, Charlottetown-Summerside, St. John's, Whitehorse, Yellowknife), for the spark gap. Every month is kept; `scripts/fetch_heating_oil.py` adds new months during the Monthly Scrape and stops for review if a stored month changes. Not a tariff and not in the rates database. |
 | `data/btap/` | The owner's simulated buildings (see "Archetype" in the glossary): 68 runs of 17 NECB 2020 building types in Toronto and Calgary, with electric or gas space heating. `results/output.xlsx` describes each run and `parametric/runs/<run id>/timestep.csv` holds its electricity and gas use every 15 minutes. Read by `pipeline/archetype_profiles.py`, which checks every run against the workbook and leaves out a run that does not match. |
 | Other files in `site/data/` | Research notes on each province's market structure, and audit reports of missing customer classes and source URLs. |
 
@@ -200,10 +205,12 @@ Power) are labelled.
 | `data/models/block_periods.json` | Reviewed notes saying whether an energy block such as "first 5,000 kWh" is per month or per two months, quoting the source. When nothing says, the tariff is left out of the model instead of guessed. |
 | `data/models/percentage_riders.json` | The reviewed list of percentage riders the territorial models apply (Yukon's Riders R, J and J1; Naka Power's Riders R, E and H), each quoting what its percentage applies to, plus the ones left out (a percentage of the whole bill) and the Yukon relief applied only after subsidies. |
 | `data/models/subsidies.json` | The reviewed territorial subsidies: which territories show a cost after automatic subsidies, which programs are applied (NWT power support first block, NTPC's Cost of Living Subsidy, Naka's rate equalization, the Yukon relief) or only named (Nunavut's subsidy, whose price is unpublished), each with its official source. |
-| `data/models/taxes.json` | Sales taxes and automatic bill rebates for every province and territory, as dated lines: for example the Ontario Electricity Rebate is 23.5% until October 31, 2026 and 15.7% from November 1, 2026 (O. Reg. 328/26). Municipal taxes and income-tested programs are left out. |
+| `data/models/taxes.json` | Sales taxes and automatic bill rebates for every province and territory, as dated lines: for example the Ontario Electricity Rebate is 23.5% until October 31, 2026 and 15.7% from November 1, 2026 (O. Reg. 328/26). Municipal taxes and income-tested programs are left out. Its `heating_oil` lines (NB, NS, PE, NL, YT, NT) serve only the spark gap: they take the sales tax out of Statistics Canada's heating-oil prices for the before-tax view and never change the models. |
 | `pipeline/representative_models.py` | The calculator: each utility's monthly cost at each level, then the median, the spread, the utility closest to the median and any far from it (outliers), without and with tax, with a written explanation of how each number was made. |
 | `pipeline/archetype_profiles.py` | Reads and checks the simulated buildings in `data/btap/`: each run's monthly electricity, peaks and gas, and its average use in each hour of the market heatmaps (Ontario's in Eastern Standard Time, Alberta's in local time with daylight saving), plus a fingerprint of those values so model monitoring notices when they change. |
 | `site/data/representative_models.json` | The results, rewritten by every export (if the calculation fails, the previous file is kept). These are comparison aids, never rates anyone is billed. |
+| `data/models/spark_gap.json` | The reviewed spark gap inputs (owner decisions 124-165): the energy amounts compared (a home at 2,000 kWh = 7.2 GJ a month; small and mid-size buildings at their electricity levels), each region's comparison fuel and the published heating-fuel shares behind it, each gas utility's heating value (m³ to GJ; else the CER factor, labelled), the heating-oil energy content, the furnace and boiler efficiencies of the Energy Efficiency Regulations, the realistic heat pump COPs by city, and the reviewed choices when a utility appears in several models. Every value quotes its official source with the date it was checked. |
+| `pipeline/spark_gap.py` | The spark gap calculator: prices electricity and gas with the model engine at the spark gap's own points (average = the whole bill ÷ its energy; marginal = the next kWh, m³ or GJ), reads the heating-oil price, and writes `site/data/spark_gap.json`: each region's prices, spark gap, break-even heat pump COP and, for homes, the result in plain words. Rebuilt after every model refresh; a failed build keeps the previous file. |
 | `pipeline/model_monitoring.py` | Compares successful model refreshes, checks whether their saved inputs are usable (including the Rate History list of regulated and default prices) and, when it records the change log, writes the quarter-end model costs that Rate History charts. It does not calculate bills or write the database. |
 | `site/data/model_change_history.json` | The public change log, created by a verified automated refresh. Its first entry starts tracking; it does not invent earlier history. |
 
@@ -216,7 +223,8 @@ Power) are labelled.
 | `site/js/rate-history.js` | The Rate History page: the recent price changes, then bar charts of each stored price period (as wide as the period lasts), of the regulated and default prices, of quarterly market averages and of quarterly model costs, each with a table, a CSV download and a shareable link. It charts only live prices collected since September 29, 2026 (the market history goes back further), never estimates, never adds charges together and never extends a price that has ended. |
 | `site/js/models.js` | The Representative Models page: typical monthly costs without and with tax, the method, the contributing utilities and the example customer's assumptions; for the territories, the cost after automatic subsidies (before tax) and an "Interim rates" label; and, for the larger Ontario and Alberta businesses, an "Estimated energy" tag in the table and an always-visible note on their estimated market energy: the price used, its assumptions, the same-use-every-hour comparison (the historical market benchmark) and the simulated buildings behind it. |
 | `site/js/across-canada.js` | Residential electricity across Canada at 500, 1,000 or 2,000 kWh (default 1,000), with tax by default. It reuses the model file, never recalculates bills or uses estimated, synthetic or simulated values, and never turns a missing model into a zero bar. Territorial bars are labelled "before subsidies"; each territory's row gives its cost after automatic subsidies, before tax. |
-| `site/css/` | How the pages look (`style.css`, `models.css`, `across-canada.css`, `rate-history.css`). |
+| `site/js/spark-gap.js` | The Across-Canada sub-tabs ("Residential electricity", the view above, and "Spark gap") and the spark gap view: a customer selector (home, small building, mid-size building), the tax toggle, bars of the spark gap with a line at 1, and a table of both prices (average and marginal), the spark gap, the break-even heat pump COP and, for homes, the realistic COP and the result in words. It reads `site/data/spark_gap.json` only, the first time its sub-tab opens, and recalculates nothing. |
+| `site/css/` | How the pages look (`style.css`, `models.css`, `across-canada.css`, `rate-history.css`, `spark-gap.css`). |
 
 The model views label totals **"Before tax and rebates"** and **"With tax and rebates"**.
 The second can be lower when an automatic rebate exceeds sales tax (for example Ontario's
@@ -244,6 +252,7 @@ The comparison policy is in the
 | `scripts/check_db_history.py` | The Monthly Scrape's safety check: the database is not damaged, and nothing old was lost or changed. |
 | `scripts/coverage_gate.py`, `data/sources/coverage_ledger.json` | The coverage gate (see the glossary) and the audit ledger it reads: audit dates, exclusions, deferred and monitored items, manual-update decisions, and the "not updated in a year" exemptions and review notes for each utility. The ledger records decisions; it never changes a rate. |
 | `scripts/pull_history_db.py` | Downloads the newest database to your computer, checks it, and keeps your old copy. It never uploads anything. |
+| `scripts/fetch_heating_oil.py` | Downloads Statistics Canada's monthly heating-oil prices for the spark gap into `data/fuel/heating_oil_prices.json` (run by the Monthly Scrape before the export; `--dry-run` writes nothing). A failed download keeps the last file. |
 | `scripts/build_ontario_market.py`, `archive_ontario_price.py`, `preserve_ieso_reports.py`, `export_ontario_totals.py` | Build the Ontario market history, extend the hourly Ontario Price archive, save the original IESO reports, and create the combined energy-plus-GA files. |
 | `scripts/build_alberta_market.py` | Builds the Alberta market history, checked against every official AESO monthly summary. |
 
@@ -351,7 +360,9 @@ The file `.github/workflows/scrape.yml` tells GitHub Actions to:
    the run stops. Only when there is no release at all does it start a new, empty database.
 3. Run the tests, then the scrape (all utilities; on the 4th only the monthly-price utilities; or
    the one utility or province typed in when it was started by hand), the data quality checks
-   (`python -m pipeline.validate`) and the export for the website (`python -m pipeline.export_json`).
+   (`python -m pipeline.validate`), the heating-oil prices for the spark gap
+   (`python scripts/fetch_heating_oil.py`) and the export for the website
+   (`python -m pipeline.export_json`, which also rebuilds the models and the spark gap).
 4. **Check the database** with `scripts/check_db_history.py`: it must not be damaged, it must
    have at least as many snapshots, tariff versions and scrape runs as before, and every older
    snapshot must be unchanged. A public "Database history" note on the run page gives the result.
@@ -566,6 +577,16 @@ workflow does not dismiss a monitoring warning.
    invalid, or simulated buildings that could not be read), so it shows delivery charges only. Fix the
    named input (for a stale market history, see the market workflows below); the next successful model
    refresh makes the estimate again and the issue closes itself.
+   A check named `spark_gap` names one of four problems. "Older than the representative models": the
+   last spark gap build failed (read "Refresh spark gap comparison" or the export log; run
+   `python -m pipeline.spark_gap --dry-run` to see the error), and the page keeps its previous
+   comparison. "More than 3 months old": Statistics Canada's heating-oil prices were not refreshed (read
+   "Refresh heating-oil prices" in the Monthly Scrape log; `python scripts/fetch_heating_oil.py
+   --dry-run` shows what Statistics Canada answers; if it says a stored month changed, check the
+   table before refreshing). "Checked more than 365 days ago": a reviewed value in
+   `data/models/spark_gap.json` (a heating value, an efficiency or a source) needs its yearly check:
+   open its source, update the value if it changed, set its `reviewed` or `checked` date and push.
+   "Invalid": fix the named entry. The next check closes the issue.
 3. The checker updates its own issue and closes it only after all recorded problems have verified
    recovery. Other issues and maintainer notes are left alone. Do not delete change history to
    silence a warning. On a data run while a problem is open, the "Record model change history" step
@@ -893,6 +914,11 @@ The detailed rules are in the area files: [all scrapers](.github/instructions/sc
 | **Estimated market energy** | The energy part of the Ontario and Alberta business models of 50-499 kW and 500-4,999 kW. These customers buy energy at market prices, which have no published price, so the model adds an estimate: the market price of the general load shape of the simulated buildings of that size over the latest 60 complete months, times the example customer's kWh (owner decisions of November 25, 2026). It is labelled estimated, its assumptions are listed under the table, it never counts as live coverage, and if an input fails the model shows delivery charges only ("market energy pending"). It replaced, the same day, an opt-in estimate shown behind a checkbox, which had itself replaced one built from a made-up business-hours profile. |
 | **Historical market benchmark** | A comparison using the average of 60 complete monthly energy prices plus today's modeled delivery charges. Ontario includes actual Class B GA; Alberta uses pool energy alone. It is not a forecast, retail quote or customer-profile-weighted bill, and does not replace the base model: the Representative Models page shows it as the "same use every hour" comparison beside the estimated market energy. |
 | **Rolling window** | A period that moves forward as time passes. The Market Pricing page always shows the latest 60 complete months; when a new month is complete, the oldest one leaves the page (it stays in the monthly history file). |
+| **Spark gap** | The price of a kWh of electricity divided by the price of a kWh of the region's usual heating fuel (natural gas, or heating oil where gas is not the usual fuel), before any equipment efficiency. A spark gap of 3 means a kWh of electricity costs three times a kWh of the fuel. Not the power-market "spark spread". |
+| **Break-even heat pump COP** | The spark gap × the furnace's efficiency: a heat pump whose seasonal COP is higher costs less to run than that furnace. |
+| **COP (coefficient of performance)** | The heat a heat pump delivers for each unit of electricity it uses. A *seasonal* COP averages a heating season, including any backup heat; it falls as the climate gets colder. |
+| **AFUE** | Annual fuel utilization efficiency: the seasonal efficiency rating of a home furnace (new gas furnaces must reach 95% and new oil furnaces 83% under the Energy Efficiency Regulations). Commercial equipment is rated by its steady-state *thermal efficiency* instead. |
+| **Heating value** | The energy in a cubic metre of natural gas (or a litre of oil), used to turn m³ or litres into GJ or kWh. Each gas utility publishes its own (for example Énergir bills at 37.89 MJ/m³). |
 | **Coverage gate** | `scripts/coverage_gate.py`: the check that must pass before anyone may say nationwide live-rate coverage is complete. It fails while any active utility has no live record, no recent audit, an open deferred item or an overdue review. It also warns, without failing, about documents whose prices have not changed for more than a year. |
 | **LDC** | Local Distribution Company — the utility that delivers electricity to your home (common in Ontario). |
 | **OEB** | Ontario Energy Board — the regulator that sets many Ontario utility rates. |

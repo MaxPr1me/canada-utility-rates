@@ -2905,7 +2905,7 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
                  taxes: dict, as_of: date, zone_policy: str, province_utilities: set[str], input_label: str,
                  block_periods: Optional[list] = None, archetypes: Optional[dict] = None,
                  benchmark_market: Optional[dict] = None, percentage_riders: Optional[list] = None,
-                 subsidies: Optional[dict] = None) -> dict:
+                 subsidies: Optional[dict] = None, exact_costs: bool = False) -> dict:
     """One model: per-utility costs at each usage level, statistics, buckets, energy blocks and method text; for a
     territory also the cost after automatic subsidies (subsidy_policy) and the reviewed percentage riders it applies."""
     province, fuel, sector, structure, band = key
@@ -3072,6 +3072,16 @@ def _build_model(key: tuple, entries: list[tuple[dict, str, Optional[str]]], *, 
                     after_applied.update(row[7]["applied"])
                     after_skipped.extend({**skip, "utility": utility, "record_id": row[0].get("id")}
                                          for skip in row[7]["not_applied"])
+            if exact_costs:
+                # Spark gap (method SG-1, owner decisions 2026-11-26): unrounded costs for per-unit and next-unit
+                # prices, also per record (each gas record converts with its own heating value); off for the
+                # published models, which therefore never carry them.
+                row_out["exact"] = {"without_tax": costs[utility], "with_tax": taxed[utility],
+                                    "after_subsidy": after_costs.get(utility),
+                                    "records": [{"record_id": row[0].get("id"), "without_tax": row[2],
+                                                 "with_tax": row[3],
+                                                 "after_subsidy": row[7]["cost"] if row[7] and row[7]["status"] == "ok"
+                                                 else None} for row in zone_rows]}
             rows_out.append(row_out)
         missing = [name for name in required_names if name not in costs]
         withheld = None
@@ -3546,7 +3556,8 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
                  zone_policy: str = "median_of_zones", input_label: str = "site/data/rates.json",
                  fuels: Optional[Iterable[str]] = MODEL_FUELS, block_periods: Any = _DEFAULT,
                  market_document: Any = _DEFAULT, market_documents: Any = _DEFAULT,
-                 percentage_riders: Any = _DEFAULT, subsidies: Any = _DEFAULT, archetypes: Any = _DEFAULT) -> dict:
+                 percentage_riders: Any = _DEFAULT, subsidies: Any = _DEFAULT, archetypes: Any = _DEFAULT,
+                 exact_costs: bool = False) -> dict:
     """Representative models for every crosswalk model key of the given provinces and fuels (Phases 7B/7C, 7T).
 
     ``block_periods``: a block_periods document or entry list (default data/models/block_periods.json; a missing file
@@ -3559,7 +3570,8 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
     model needs them; None disables the estimate, so those models stay market_energy_pending).
     ``percentage_riders`` and ``subsidies``: the reviewed percentage_riders and subsidies documents (defaults
     data/models/percentage_riders.json and data/models/subsidies.json; a missing file leaves territorial percentage
-    riders not computable and publishes no after-subsidy cost)."""
+    riders not computable and publishes no after-subsidy cost). ``exact_costs``: also give each utility row its
+    unrounded costs ('exact'), for the spark gap comparison (pipeline.spark_gap); off for the published models."""
     if zone_policy not in ZONE_POLICIES:
         raise ValueError(f"zone_policy must be one of {ZONE_POLICIES}")
     as_of_date = _as_of(as_of)
@@ -3628,7 +3640,7 @@ def build_models(rates: Union[list[dict], dict], crosswalk: dict, usage_levels: 
                            province_utilities=province_utilities[(key[0], key[1])], input_label=input_label,
                            block_periods=periods["entries"], archetypes=archetype_ctx,
                            benchmark_market=benchmarks.get(key[0]),
-                           percentage_riders=riders["entries"], subsidies=subsidy_cfg)
+                           percentage_riders=riders["entries"], subsidies=subsidy_cfg, exact_costs=exact_costs)
               for key in sorted(groups, key=lambda k: _model_order(k, crosswalk))]
     shapes_used = {k: v for k, v in (usage_levels.get("market_energy_shapes") or {}).items()
                    if isinstance(v, dict) and (wanted is None or wanted & set(

@@ -1,0 +1,916 @@
+{
+ "version": 1,
+ "kind": "heating_oil_prices",
+ "source": {
+  "table": "18-10-0001-01",
+  "title": "Monthly average retail prices for gasoline and fuel oil, by geography",
+  "product": "Household heating fuel",
+  "unit": "cents per litre",
+  "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+  "service": "https://www150.statcan.gc.ca/t1/wds/rest/getDataFromVectorsAndLatestNPeriods",
+  "basis": "Consumer Price Index average retail prices, treated as prices paid including sales tax (owner decision 165, 2026-11-26)."
+ },
+ "updated_at": "2026-11-26T16:32:32+00:00",
+ "series": {
+  "NB": {
+   "vector": "v735159",
+   "geo": "Saint John, New Brunswick",
+   "months": {
+    "2024-11": {
+     "value": 145.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2024-12-17T08:30"
+    },
+    "2024-12": {
+     "value": 147.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-01-21T08:30"
+    },
+    "2025-01": {
+     "value": 158.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-02-18T08:30"
+    },
+    "2025-02": {
+     "value": 160.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-03-18T08:30"
+    },
+    "2025-03": {
+     "value": 152.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-04-15T08:30"
+    },
+    "2025-04": {
+     "value": 139.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-05-20T08:30"
+    },
+    "2025-05": {
+     "value": 133.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-06-24T08:30"
+    },
+    "2025-06": {
+     "value": 135.9,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-07-15T08:30"
+    },
+    "2025-07": {
+     "value": 145.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-08-19T08:30"
+    },
+    "2025-08": {
+     "value": 139.9,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-09-16T08:30"
+    },
+    "2025-09": {
+     "value": 147.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-10-21T08:30"
+    },
+    "2025-10": {
+     "value": 166.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-11-17T08:30"
+    },
+    "2025-11": {
+     "value": 178.9,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-12-15T08:30"
+    },
+    "2025-12": {
+     "value": 169.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-01-19T08:30"
+    },
+    "2026-01": {
+     "value": 163.9,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-02-17T08:30"
+    },
+    "2026-02": {
+     "value": 182.5,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-03-16T08:30"
+    },
+    "2026-03": {
+     "value": 221.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-04-20T08:30"
+    },
+    "2026-04": {
+     "value": 225.7,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-05-19T08:30"
+    },
+    "2026-05": {
+     "value": 224.8,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-06-22T08:30"
+    },
+    "2026-06": {
+     "value": 203.8,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-07-20T08:30"
+    },
+    "2026-07": {
+     "value": 216.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-08-17T08:30"
+    },
+    "2026-08": {
+     "value": 234.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-09-14T08:30"
+    },
+    "2026-09": {
+     "value": 259.9,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-10-19T08:30"
+    },
+    "2026-10": {
+     "value": 268.7,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-11-16T08:30"
+    }
+   }
+  },
+  "NS": {
+   "vector": "v735158",
+   "geo": "Halifax, Nova Scotia",
+   "months": {
+    "2024-11": {
+     "value": 145.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2024-12-17T08:30"
+    },
+    "2024-12": {
+     "value": 150.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-01-21T08:30"
+    },
+    "2025-01": {
+     "value": 162.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-02-18T08:30"
+    },
+    "2025-02": {
+     "value": 172.8,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-03-18T08:30"
+    },
+    "2025-03": {
+     "value": 166.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-04-15T08:30"
+    },
+    "2025-04": {
+     "value": 154.9,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-05-20T08:30"
+    },
+    "2025-05": {
+     "value": 142.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-06-24T08:30"
+    },
+    "2025-06": {
+     "value": 139.9,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-07-15T08:30"
+    },
+    "2025-07": {
+     "value": 139.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-08-19T08:30"
+    },
+    "2025-08": {
+     "value": 140.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-09-16T08:30"
+    },
+    "2025-09": {
+     "value": 139.7,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-10-21T08:30"
+    },
+    "2025-10": {
+     "value": 144.7,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-11-17T08:30"
+    },
+    "2025-11": {
+     "value": 150.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-12-15T08:30"
+    },
+    "2025-12": {
+     "value": 156.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-01-19T08:30"
+    },
+    "2026-01": {
+     "value": 156.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-02-17T08:30"
+    },
+    "2026-02": {
+     "value": 169.5,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-03-16T08:30"
+    },
+    "2026-03": {
+     "value": 203.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-04-20T08:30"
+    },
+    "2026-04": {
+     "value": 213.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-05-19T08:30"
+    },
+    "2026-05": {
+     "value": 205.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-06-22T08:30"
+    },
+    "2026-06": {
+     "value": 195.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-07-20T08:30"
+    },
+    "2026-07": {
+     "value": 192.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-08-17T08:30"
+    },
+    "2026-08": {
+     "value": 210.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-09-14T08:30"
+    },
+    "2026-09": {
+     "value": 230.8,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-10-19T08:30"
+    },
+    "2026-10": {
+     "value": 248.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-11-16T08:30"
+    }
+   }
+  },
+  "PE": {
+   "vector": "v735157",
+   "geo": "Charlottetown and Summerside, Prince Edward Island",
+   "months": {
+    "2024-11": {
+     "value": 124.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2024-12-17T08:30"
+    },
+    "2024-12": {
+     "value": 123.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-01-21T08:30"
+    },
+    "2025-01": {
+     "value": 139.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-02-18T08:30"
+    },
+    "2025-02": {
+     "value": 144.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-03-18T08:30"
+    },
+    "2025-03": {
+     "value": 130.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-04-15T08:30"
+    },
+    "2025-04": {
+     "value": 117.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-05-20T08:30"
+    },
+    "2025-05": {
+     "value": 108.7,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-06-24T08:30"
+    },
+    "2025-06": {
+     "value": 109.8,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-07-15T08:30"
+    },
+    "2025-07": {
+     "value": 119.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-08-19T08:30"
+    },
+    "2025-08": {
+     "value": 116.7,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-09-16T08:30"
+    },
+    "2025-09": {
+     "value": 118.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-10-21T08:30"
+    },
+    "2025-10": {
+     "value": 120.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-11-17T08:30"
+    },
+    "2025-11": {
+     "value": 127.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-12-15T08:30"
+    },
+    "2025-12": {
+     "value": 121.5,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-01-19T08:30"
+    },
+    "2026-01": {
+     "value": 123.5,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-02-17T08:30"
+    },
+    "2026-02": {
+     "value": 130.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-03-16T08:30"
+    },
+    "2026-03": {
+     "value": 172.9,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-04-20T08:30"
+    },
+    "2026-04": {
+     "value": 174.9,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-05-19T08:30"
+    },
+    "2026-05": {
+     "value": 173.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-06-22T08:30"
+    },
+    "2026-06": {
+     "value": 153.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-07-20T08:30"
+    },
+    "2026-07": {
+     "value": 163.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-08-17T08:30"
+    },
+    "2026-08": {
+     "value": 180.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-09-14T08:30"
+    },
+    "2026-09": {
+     "value": 200.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-10-19T08:30"
+    },
+    "2026-10": {
+     "value": 210.9,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-11-16T08:30"
+    }
+   }
+  },
+  "NL": {
+   "vector": "v735149",
+   "geo": "St. John's, Newfoundland and Labrador",
+   "months": {
+    "2024-11": {
+     "value": 133.5,
+     "status": null,
+     "symbol": null,
+     "release_time": "2024-12-17T08:30"
+    },
+    "2024-12": {
+     "value": 134.8,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-01-21T08:30"
+    },
+    "2025-01": {
+     "value": 146.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-02-18T08:30"
+    },
+    "2025-02": {
+     "value": 150.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-03-18T08:30"
+    },
+    "2025-03": {
+     "value": 149.7,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-04-15T08:30"
+    },
+    "2025-04": {
+     "value": 137.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-05-20T08:30"
+    },
+    "2025-05": {
+     "value": 125.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-06-24T08:30"
+    },
+    "2025-06": {
+     "value": 128.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-07-15T08:30"
+    },
+    "2025-07": {
+     "value": 139.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-08-19T08:30"
+    },
+    "2025-08": {
+     "value": 132.7,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-09-16T08:30"
+    },
+    "2025-09": {
+     "value": 133.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-10-21T08:30"
+    },
+    "2025-10": {
+     "value": 143.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-11-17T08:30"
+    },
+    "2025-11": {
+     "value": 157.5,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-12-15T08:30"
+    },
+    "2025-12": {
+     "value": 147.7,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-01-19T08:30"
+    },
+    "2026-01": {
+     "value": 142.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-02-17T08:30"
+    },
+    "2026-02": {
+     "value": 164.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-03-16T08:30"
+    },
+    "2026-03": {
+     "value": 206.5,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-04-20T08:30"
+    },
+    "2026-04": {
+     "value": 208.8,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-05-19T08:30"
+    },
+    "2026-05": {
+     "value": 201.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-06-22T08:30"
+    },
+    "2026-06": {
+     "value": 184.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-07-20T08:30"
+    },
+    "2026-07": {
+     "value": 200.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-08-17T08:30"
+    },
+    "2026-08": {
+     "value": 216.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-09-14T08:30"
+    },
+    "2026-09": {
+     "value": 241.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-10-19T08:30"
+    },
+    "2026-10": {
+     "value": 253.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-11-16T08:30"
+    }
+   }
+  },
+  "YT": {
+   "vector": "v735155",
+   "geo": "Whitehorse, Yukon",
+   "months": {
+    "2024-11": {
+     "value": 167.5,
+     "status": null,
+     "symbol": null,
+     "release_time": "2024-12-17T08:30"
+    },
+    "2024-12": {
+     "value": 162.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-01-21T08:30"
+    },
+    "2025-01": {
+     "value": 167.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-02-18T08:30"
+    },
+    "2025-02": {
+     "value": 169.5,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-03-18T08:30"
+    },
+    "2025-03": {
+     "value": 167.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-04-15T08:30"
+    },
+    "2025-04": {
+     "value": 160.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-05-20T08:30"
+    },
+    "2025-05": {
+     "value": 154.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-06-24T08:30"
+    },
+    "2025-06": {
+     "value": 155.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-07-15T08:30"
+    },
+    "2025-07": {
+     "value": 162.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-08-19T08:30"
+    },
+    "2025-08": {
+     "value": 163.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-09-16T08:30"
+    },
+    "2025-09": {
+     "value": 159.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-10-21T08:30"
+    },
+    "2025-10": {
+     "value": 162.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-11-17T08:30"
+    },
+    "2025-11": {
+     "value": 163.7,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-12-15T08:30"
+    },
+    "2025-12": {
+     "value": 150.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-01-19T08:30"
+    },
+    "2026-01": {
+     "value": 153.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-02-17T08:30"
+    },
+    "2026-02": {
+     "value": 157.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-03-16T08:30"
+    },
+    "2026-03": {
+     "value": 171.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-04-20T08:30"
+    },
+    "2026-04": {
+     "value": 202.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-05-19T08:30"
+    },
+    "2026-05": {
+     "value": 213.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-06-22T08:30"
+    },
+    "2026-06": {
+     "value": 189.5,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-07-20T08:30"
+    },
+    "2026-07": {
+     "value": 181.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-08-17T08:30"
+    },
+    "2026-08": {
+     "value": 213.5,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-09-14T08:30"
+    },
+    "2026-09": {
+     "value": 228.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-10-19T08:30"
+    },
+    "2026-10": {
+     "value": 255.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-11-16T08:30"
+    }
+   }
+  },
+  "NT": {
+   "vector": "v735156",
+   "geo": "Yellowknife, Northwest Territories",
+   "months": {
+    "2024-11": {
+     "value": 158.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2024-12-17T08:30"
+    },
+    "2024-12": {
+     "value": 154.8,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-01-21T08:30"
+    },
+    "2025-01": {
+     "value": 153.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-02-18T08:30"
+    },
+    "2025-02": {
+     "value": 161.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-03-18T08:30"
+    },
+    "2025-03": {
+     "value": 160.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-04-15T08:30"
+    },
+    "2025-04": {
+     "value": 153.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-05-20T08:30"
+    },
+    "2025-05": {
+     "value": 150.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-06-24T08:30"
+    },
+    "2025-06": {
+     "value": 148.8,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-07-15T08:30"
+    },
+    "2025-07": {
+     "value": 148.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-08-19T08:30"
+    },
+    "2025-08": {
+     "value": 147.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-09-16T08:30"
+    },
+    "2025-09": {
+     "value": 147.4,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-10-21T08:30"
+    },
+    "2025-10": {
+     "value": 149.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-11-17T08:30"
+    },
+    "2025-11": {
+     "value": 147.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2025-12-15T08:30"
+    },
+    "2025-12": {
+     "value": 152.7,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-01-19T08:30"
+    },
+    "2026-01": {
+     "value": 147.0,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-02-17T08:30"
+    },
+    "2026-02": {
+     "value": 149.6,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-03-16T08:30"
+    },
+    "2026-03": {
+     "value": 172.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-04-20T08:30"
+    },
+    "2026-04": {
+     "value": 193.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-05-19T08:30"
+    },
+    "2026-05": {
+     "value": 204.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-06-22T08:30"
+    },
+    "2026-06": {
+     "value": 180.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-07-20T08:30"
+    },
+    "2026-07": {
+     "value": 172.1,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-08-17T08:30"
+    },
+    "2026-08": {
+     "value": 216.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-09-14T08:30"
+    },
+    "2026-09": {
+     "value": 225.3,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-10-19T08:30"
+    },
+    "2026-10": {
+     "value": 243.2,
+     "status": null,
+     "symbol": null,
+     "release_time": "2026-11-16T08:30"
+    }
+   }
+  }
+ }
+}

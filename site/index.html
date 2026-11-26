@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/models.css">
     <link rel="stylesheet" href="css/across-canada.css">
     <link rel="stylesheet" href="css/rate-history.css">
+    <link rel="stylesheet" href="css/spark-gap.css">
 </head>
 <body>
     <header>
@@ -300,6 +301,11 @@
         </div><!-- /view-models -->
 
         <div id="view-across-canada" class="view-panel hidden">
+            <nav class="across-subtabs" aria-label="Across-Canada comparisons">
+                <button type="button" class="across-subtab" data-across-tab="residential" aria-pressed="true">Residential electricity</button>
+                <button type="button" class="across-subtab" data-across-tab="spark" aria-pressed="false">Spark gap</button>
+            </nav>
+            <div id="across-residential">
             <section class="market-header">
                 <h2>Across-Canada Residential Electricity</h2>
                 <p>Representative monthly costs in CAD, not billed tariffs or quotes.
@@ -321,6 +327,32 @@
             <p id="across-status" role="status" aria-live="polite"></p>
             <section id="across-chart" aria-labelledby="across-chart-title"></section>
             <div id="across-content" class="rm-table-wrap"></div>
+            </div><!-- /across-residential -->
+            <div id="across-spark" class="hidden">
+            <section class="market-header">
+                <h2>Spark gap: electricity versus the usual heating fuel</h2>
+                <p>How many times more a kWh of electricity costs than a kWh of the region's usual heating fuel,
+                    and the heat pump efficiency (COP) that would make up the difference. Running costs only,
+                    from the stored tariffs and official prices: not a bill, a savings estimate or a forecast.</p>
+                <label for="spark-customer">Customer</label>
+                <select id="spark-customer">
+                    <option value="residential" selected>Home</option>
+                    <option value="commercial_small">Small building</option>
+                    <option value="commercial_medium">Mid-size building</option>
+                </select>
+                <label for="spark-tax">Cost basis</label>
+                <select id="spark-tax">
+                    <option value="with_tax" selected>With tax and rebates</option>
+                    <option value="without_tax">Before tax and rebates</option>
+                </select>
+                <p id="spark-asof"></p>
+            </section>
+            <p id="spark-status" role="status" aria-live="polite"></p>
+            <section id="spark-explain"></section>
+            <section id="spark-chart" aria-labelledby="spark-chart-title"></section>
+            <div id="spark-content" class="rm-table-wrap"></div>
+            <section id="spark-notes"></section>
+            </div><!-- /across-spark -->
         </div>
 
         <div id="view-compare" class="view-panel hidden">
@@ -365,6 +397,7 @@
     <script src="js/app.js"></script>
     <script src="js/models.js"></script>
     <script src="js/across-canada.js"></script>
+    <script src="js/spark-gap.js"></script>
     <script src="js/rate-history.js"></script>
 </body>
 </html>

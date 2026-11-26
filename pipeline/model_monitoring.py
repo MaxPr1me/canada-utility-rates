@@ -89,6 +89,7 @@ ORDERED_FIELDS = {"rules", "entries", "reference_customer", "fixed_charge_varian
 # it (Phase 7E and method 7S-1) still compare.
 SYNTHETIC_FIELDS = {"illustrative", "illustrative_all_in", "synthetic_profiles", "simulated_profiles"}
 MODEL_STATES = ("modeled", "single_source", "market_energy_pending", "market_energy_estimated", "not_computable")
+MODEL_TAX_FUELS = ("electricity", "gas")
 
 
 def timestamp(value: str) -> datetime:
@@ -162,8 +163,19 @@ def input_fingerprints(inputs: dict[str, dict]) -> dict[str, str]:
     unknown = set(inputs) - set(INPUT_FIELDS)
     if unknown:
         raise ValueError(f"unsupported model input roles: {sorted(unknown)}")
-    return {name: fingerprint(_normalize(_pick(value, INPUT_FIELDS[name])))
+    return {name: fingerprint(_normalize(_pick(_model_view(name, value), INPUT_FIELDS[name])))
             for name, value in sorted(inputs.items())}
+
+
+def _model_view(name: str, value: dict) -> dict:
+    """The part of an input the models read. The heating-oil tax lines serve only the spark gap comparison (owner
+    decisions 143 and 151, 2026-11-26), so they never change a model input fingerprint or the change log."""
+    jurisdictions = value.get("jurisdictions") if name == "taxes" else None
+    if not isinstance(jurisdictions, dict):
+        return value
+    return {**value, "jurisdictions": {
+        code: {fuel: lines for fuel, lines in fuels.items() if fuel in MODEL_TAX_FUELS} if isinstance(fuels, dict)
+        else fuels for code, fuels in jurisdictions.items()}}
 
 
 def _median(summary: Any) -> float | int | None:
@@ -725,6 +737,15 @@ def input_checks(root: Path, now: datetime) -> list[dict]:
     except (OSError, ValueError, KeyError, TypeError) as exc:
         checks.append({"id": "rate_history_series", "ok": False,
                        "details": [f"Rate History series cannot be checked: {exc}"]})
+    try:
+        # Spark gap (owner decisions 143 and 152, 2026-11-26): its build never blocks the models, so a file older than
+        # the models, out-of-date heating-oil prices or reviewed inputs not checked for a year are reported here.
+        from pipeline.spark_gap import spark_gap_problems
+
+        problems = spark_gap_problems(root, now.date())
+        checks.append({"id": "spark_gap", "ok": not problems, "details": problems})
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        checks.append({"id": "spark_gap", "ok": False, "details": [f"Spark gap cannot be checked: {exc}"]})
     return checks
 
 

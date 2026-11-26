@@ -165,6 +165,16 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   uses 25,000 kWh at 100 kW and 250,000 kWh at 1,000 kW for these sizes (Quebec 50-499 kW: $3,397.20 a
   month before tax, was $4,341.00 at 40,000 kWh). This replaced the opt-in estimate of method 7S-1,
   built earlier the same day.
+- **Spark gap (method SG-1, November 26, owner decisions 118 and 124-165):** the Across-Canada tab has
+  two sub-tabs, "Residential electricity" (unchanged) and "Spark gap". For each region it divides the
+  price of a kWh of electricity by the price of a kWh of the usual heating fuel (natural gas from British
+  Columbia to Quebec; heating oil, from Statistics Canada's monthly prices, in the Atlantic provinces and
+  the territories), for homes and for small and mid-size buildings in the eight gas provinces, then gives
+  the heat pump efficiency (COP) that would make up the difference; for homes it is checked against
+  published seasonal heat pump COPs. Running costs only, never a bill, and never part of the models. On
+  November 26, with tax: a heat pump costs less to run than a new furnace in British Columbia, Quebec and
+  the Atlantic provinces, the furnace in Alberta, Saskatchewan, Manitoba and (narrowly) Ontario; Nunavut
+  has no official heating-oil price.
 - **Latest export (November 20, scrape run 46, the owner's full run):** 987 latest live tariffs and
   484 retained estimates; 1,414 stored live versions and 7,670 history snapshots. Counts include
   conditional products and reference-only records, not complete utility catalogues.
@@ -203,7 +213,7 @@ More commands: [Common Commands](#common-commands). If something goes wrong:
   are now modelled too. Small businesses are modelled at 2,000 kWh with 14 kW and 10,000 kWh with
   40 kW, and every usage level records its decision, what it represents and its sources. The Rate
   Browser shows a dated price's period and tags it "Ended" once that date has passed.
-- **Validation:** all 2,680 tests passed on Python 3.11 using `pytest tests`.
+- **Validation:** all 2,730 tests passed on Python 3.11 using `pytest tests`.
 
 The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; the
 [parser gap report](docs/live_parser_gap_report.md) lists class-level gaps and exclusions.
@@ -216,7 +226,7 @@ The [coverage matrix](docs/phase5_completion_matrix.md) holds the work queue; th
 2. **Stores** everything in a normalized SQLite database that preserves every rate detail — not just a single "cost per kWh" number.
 3. **Tracks history** — each stored scrape appends snapshots. Only the Monthly Scrape workflow stores scrapes: it keeps `data/db/rates.db` in the `data-history` GitHub release with dated backups and checks that history only grows; local copies are read-only mirrors (`python scripts/pull_history_db.py`).
 4. **Exports** the data as JSON for the GitHub Pages static site.
-5. **Serves** a browsable web interface with six views: **Rate Browser** (multi-select filters, confidence indicators and source attribution), **Rate History** (bar charts of how stored prices changed: tariff and regulated or default prices collected since September 29, 2026, quarterly market averages since 2020 and quarterly model costs; never estimates), **Market Pricing** (observed Ontario and Alberta market history with a monthly chart, table and heatmap), **Representative Models** (typical monthly electricity costs for the ten provinces and the three territories, the territories also after automatic subsidies, and natural gas costs for homes and small and mid-size commercial buildings in each utility's m³ or GJ, without and with tax), **Across-Canada** (residential electricity compared by province and territory) and **Compare** (two tariffs side by side, never a bill total).
+5. **Serves** a browsable web interface with six views: **Rate Browser** (multi-select filters, confidence indicators and source attribution), **Rate History** (bar charts of how stored prices changed: tariff and regulated or default prices collected since September 29, 2026, quarterly market averages since 2020 and quarterly model costs; never estimates), **Market Pricing** (observed Ontario and Alberta market history with a monthly chart, table and heatmap), **Representative Models** (typical monthly electricity costs for the ten provinces and the three territories, the territories also after automatic subsidies, and natural gas costs for homes and small and mid-size commercial buildings in each utility's m³ or GJ, without and with tax), **Across-Canada** (two sub-tabs: residential electricity compared by province and territory, and the **spark gap**: the price of a kWh of electricity against a kWh of each region's usual heating fuel, with the heat pump efficiency that would make up the difference) and **Compare** (two tariffs side by side, never a bill total).
 6. **Provides automation** through monthly scraping, separate Pages deployment, non-blocking source-health runs, a twice-monthly Ontario Price archive and market history update, and Alberta market history and model refreshes.
 
 **Scope: building energy costs.** The work supports building energy-cost analysis, including
@@ -291,6 +301,7 @@ canada-utility-costs/
 │   ├── export_json.py        ← Export database → JSON for the website (also runs the model builder)
 │   ├── representative_models.py ← Phase 7 representative models: crosswalk coverage, cost engine, Alberta pairs, estimated market energy
 │   ├── archetype_profiles.py ← Reads and checks the simulated BTAP buildings (monthly use, peaks, market-hour load shapes)
+│   ├── spark_gap.py          ← Spark gap comparison: electricity vs the usual heating fuel, break-even heat pump COP
 │   ├── diff_report.py        ← Compare two scrape runs to see changes
 │   └── validate.py           ← Data quality checks
 │
@@ -320,7 +331,9 @@ canada-utility-costs/
 │   │   ├── block_periods.json ← Reviewed periods for block thresholds printed without one
 │   │   ├── percentage_riders.json ← Reviewed territorial percentage riders (what each applies to)
 │   │   ├── subsidies.json    ← Reviewed territorial subsidies (applied or only named)
-│   │   └── taxes.json        ← Sales taxes and automatic point-of-sale rebates
+│   │   ├── spark_gap.json    ← Reviewed spark gap inputs: points, comparison fuels, heating values, efficiencies, heat pump COPs
+│   │   └── taxes.json        ← Sales taxes and automatic point-of-sale rebates (also the heating-oil lines of the spark gap)
+│   ├── fuel/heating_oil_prices.json ← Statistics Canada monthly heating-oil prices for the spark gap (every month kept)
 │   ├── sources/registry.json ← Master list of where to find rate data
 │   ├── sources/coverage_ledger.json ← Coverage audit ledger read by the coverage gate
 │   └── inventory/            ← Full utility inventory
@@ -331,10 +344,12 @@ canada-utility-costs/
 │   ├── css/models.css        ← Representative Models styles, incl. the estimated market energy note
 │   ├── css/across-canada.css ← Residential national comparison table
 │   ├── css/rate-history.css  ← Rate History charts, tables and phone layout
+│   ├── css/spark-gap.css     ← Across-Canada spark gap sub-tab
 │   ├── js/app.js             ← SPA logic: filters, cards, modal, market viz
 │   ├── js/models.js          ← Representative Models, assumptions and shared lazy data loader
 │   ├── js/across-canada.js   ← Residential comparisons using published model totals only
 │   ├── js/rate-history.js    ← Rate History: recent changes and hand-built SVG history charts
+│   ├── js/spark-gap.js       ← Across-Canada sub-tabs and the spark gap view (reads spark_gap.json only)
 │   └── data/                 ← Seven pipeline exports plus separately maintained market/audit data
 │       ├── rates.json        ← All tariff/component data
 │       ├── utilities.json    ← Utility metadata
@@ -344,6 +359,7 @@ canada-utility-costs/
 │       ├── representative_models.json   ← Phase 7 models (provinces and territories; Representative Models tab)
 │       ├── model_change_history.json    ← Public model change log (pipeline/model_monitoring.py --record)
 │       ├── model_cost_quarterly.json    ← Quarter-end model costs for Rate History, rebuilt from the change log
+│       ├── spark_gap.json               ← Spark gap comparison (pipeline/spark_gap.py, rebuilt after every model refresh)
 │       ├── rate_history_revisions.json  ← Same-date price corrections found in the database snapshots (export)
 │       ├── rate_history_series.json     ← Reviewed regulated and default price series for Rate History
 │       ├── rate_history_events.json     ← Reviewed regulator and government decisions marked on its charts
@@ -364,6 +380,7 @@ canada-utility-costs/
 │   ├── check_db_history.py        ← Monthly Scrape check: database integrity, history only grows
 │   ├── coverage_gate.py           ← Live-rate coverage gate: live output, audit ledger, deferred and monitored items (Monthly Scrape reports it)
 │   ├── pull_history_db.py         ← Downloads the CI history database into a read-only local mirror
+│   ├── fetch_heating_oil.py       ← Statistics Canada heating-oil prices for the spark gap (Monthly Scrape)
 │   └── graphify_hook.py           ← Optional graphify post-commit hook helper (see Graphify below)
 │
 ├── tests/                    ← Regression tests (run them with: pytest tests)
@@ -401,6 +418,8 @@ use `--dry-run` and get the history with `python scripts/pull_history_db.py`.
 | Compare two scrape runs (default the two latest; only the utilities the newer run scraped) | `python -m pipeline.diff_report [--run1 ID --run2 ID]` |
 | Check the representative-model crosswalk | `python -m pipeline.representative_models --coverage` |
 | Build the representative models (summary; `--output PATH` writes the JSON) | `python -m pipeline.representative_models --build` |
+| Check the spark gap comparison without writing | `python -m pipeline.spark_gap --dry-run` |
+| Check Statistics Canada's heating-oil prices without writing | `python scripts/fetch_heating_oil.py --dry-run` |
 | Rebuild the rolling Ontario market history (downloads IESO files) | `python scripts/build_ontario_market.py` |
 | Rebuild the legacy 2020-2024 market surface (Phase 6A, manual; writes `logs/market_pricing_legacy_2020_2024.json` by default) | `python scripts/generate_market_pricing.py [--output PATH]` |
 | Extend the hourly Ontario Price archive (downloads IESO files) | `python scripts/archive_ontario_price.py` |
@@ -490,14 +509,15 @@ history database `data/db/rates.db` (owner decision), kept as asset `rates.db` o
    restore.
 2. **Test, scrape, validate, export:** deterministic tests, the scrape (all active utilities, one
    utility, one province or, on the 4th, the monthly-price group), validation, `git pull --ff-only
-   origin main` before JSON export,
+   origin main`, Statistics Canada's heating-oil prices for the spark gap (a failed download keeps
+   the last file) and the JSON export (models, then the spark gap),
    and a check that rejects empty exports. Synchronizing first makes queued runs use the latest
    committed inputs; generated files are never rebased onto newer inputs.
 3. **Check before upload:** `scripts/check_db_history.py verify` requires SQLite `integrity_check`
    "ok", no fewer snapshots, tariff versions or scrape runs, and every earlier snapshot unchanged
    (a digest over all earlier rows). It posts a public "Database history" notice on the run page.
 4. **Upload:** a dated gzip backup (`rates-YYYY-MM-DD.db.gz`), then `rates.db`. The bot then
-   commits `site/data/` with a plain `git push`, and dated backups are pruned to the newest 12.
+   commits `site/data/` and `data/fuel/` with a plain `git push`, and dated backups are pruned to the newest 12.
 5. **Failure issue:** a failed step opens a GitHub issue with the test, scrape, validation,
    database-history and diff output; a failed check uploads nothing.
 
@@ -527,12 +547,14 @@ entries. **Risk:** deleting the `data-history` release deletes `rates.db` and ev
   1st and 15th and after relevant code pushes. It first commits the raw IESO reports, then
   extends and commits `data/market/ontario_price_hourly.csv`, then runs
   `scripts/build_ontario_market.py` (also when the archive step failed, using the archive
-  already committed), the combined-price export and the models, and commits those separately.
+  already committed), the combined-price export, the models and the spark gap, and commits those
+  separately.
   A failure opens an issue whose title says which part failed.
 - [Market Benchmarks](.github/workflows/market-benchmarks.yml) runs after the Monthly Scrape and
   Ontario Price Archive workflows and after relevant code or model-input pushes. It publishes
-  the Alberta market history and refreshes the representative models without touching the
-  database, and opens an issue if it fails.
+  the Alberta market history and refreshes the representative models and the spark gap without
+  touching the database, and opens an issue if it fails (a failed spark gap build only keeps the
+  previous spark gap file; model monitoring reports it).
 - [Model Monitoring](.github/workflows/model-monitoring.yml) is a non-blocking follow-up to the
   existing data workflows and Source Health, not a new daily job. It checks explicit refresh
   evidence and reports input/refresh problems; ordinary changes appear in the model change log.
@@ -853,7 +875,7 @@ One line per phase; sub-phase detail and the work queue are in the
 - **Phase 6: Market Integration** — in progress (6A, 6B, 6C and 6D done; 6E gas supply-price freshness: Énergir's monthly prices and period end dates for the other gas utilities done November 20, and the monthly-price run on the 4th added November 23 (first run December 4)).
 - **Phase 7: Representative Models** — in progress (7A, 7B, 7C and 7F done, including the separate historical market benchmarks of method 7C-4; the Ontario and Alberta 50-499 kW and 500-4,999 kW models include market energy estimated from simulated building load shapes since method 7S-2 (November 25), labelled estimated and never a bill; 7D gas done in each utility's native m³ or GJ: homes as method 7D-1 and commercial general service for small and mid-size buildings as method 7D-2, November 23; contract, interruptible and seasonal gas classes come later with their own decision; the territories were added November 24 as method 7T-1, homes and small businesses, before and after automatic subsidies). The check for rates not updated in a year was added November 24.
 - **Phase 8: Representative Model Refresh Automation** — done and verified in CI and on the deployed site. Public change history and problem-only monitoring follow the [approved policy](.github/instructions/representative-models.instructions.md#change-monitoring-phase-8-owner-decision-2026-11-17).
-- **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done; the Rate History tab of historical charts built November 24, using data collected since September 29, 2026 plus the stored market history). Planned next: a Building Archetypes tab pricing 68 simulated NECB 2020 buildings in Toronto and Calgary with the stored tariffs, labelled simulated and kept out of the models (owner decisions November 24). Planned later: a spark gap comparison by region (the cost of a unit of useful heat from electricity versus natural gas, or versus the region's usual heating fuel where gas is not widespread; owner request November 25, details in the coverage matrix), AI-ready exports, a bill calculator or API and commercial/gas comparisons.
+- **Phase 9: Product Follow-up** — started (residential Across-Canada comparison done; the Rate History tab of historical charts built November 24, using data collected since September 29, 2026 plus the stored market history). Planned next: a Building Archetypes tab pricing 68 simulated NECB 2020 buildings in Toronto and Calgary with the stored tariffs, labelled simulated and kept out of the models (owner decisions November 24). The spark gap comparison by region is done (Across-Canada sub-tab, November 26). Planned later: AI-ready exports, a bill calculator or API and commercial/gas comparisons.
 
 ---
 

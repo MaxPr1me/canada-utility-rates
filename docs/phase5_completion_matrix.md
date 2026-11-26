@@ -640,7 +640,7 @@ building coverage; counts include optional adjustments and reference records.
 | Done (October 30, batch 16; pushed October 30) | W1 Yukon book discovery through the page model JSON; W2 Centra schedule edition by rates date and the v1126 text Appendix A (high confidence); W3 dead seed citations kept with notes (`KEPT_DEAD`), inventory and AESO pool-price links fixed, guard scans reference data; W4 local check kit (`logs/_b16_kit_*`, untracked); W5 model decisions (method 7C-3) | 2,090 tests across 27 modules. Dry runs: Yukon 20 and 20, Centra 13, Alberta 2/4/5/2 live. Gate 77 of 78 on the committed export (AESO, stored by the next Monthly Scrape) |
 | Done (October 15-16) | Lane B (7F site view, October 15); Lane F (EPCOR Energy Alberta's moved pages), CI as the only database writer (first stored run: Monthly Scrape #11, scrape run 29), the Ontario market continuation (rolling 60-month history), Lane A (7C, all ten provinces) and the 7E illustrative sidecar (all October 16) | See Next Batches item 0 |
 | Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones. | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
-| Planned (order decided November 20, updated November 23 and 24) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); January 1 readiness (published November 23); the one-year check (built November 24, first review round done the same day); then territorial models (built November 24, method 7T-1); then the Rate History tab (moved ahead of the coverage claim, November 23; built November 24); then the building archetype costs (planned November 24, ahead of the coverage claim; the archetype replacement of the illustrative estimate's profile was done first, November 25, at the owner's request, and became the models' estimated market energy the same day, method 7S-2); then the rest of the Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses estimated or illustrative values; a spark gap comparison of heating fuels by region was added November 25, order not decided) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
+| Planned (order decided November 20, updated November 23 and 24) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); January 1 readiness (published November 23); the one-year check (built November 24, first review round done the same day); then territorial models (built November 24, method 7T-1); then the Rate History tab (moved ahead of the coverage claim, November 23; built November 24); then the building archetype costs (planned November 24, ahead of the coverage claim; the archetype replacement of the illustrative estimate's profile was done first, November 25, at the owner's request, and became the models' estimated market energy the same day, method 7S-2); then the rest of the Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses estimated or illustrative values; the spark gap comparison of heating fuels by region was built November 26, method SG-1) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11) while the rate pages show August 1, 2026 rates; from the November 1, 2026 rates the v1126 text Appendix A is parsed at high confidence (batch 16, row 1b) |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Checked October 30 (ledger notes): Qulliq, NTPC Snare, EPCOR Distribution (2026 tariffs still interim) and the next Rate of Last Resort term (the UCA table shows only the 2025-2026 term) unchanged, next review December 15; Centra and Yukon changed (row 1b); the Centra monitor was closed November 18 (owner decision) and Yukon's review is December 15. Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |
@@ -1181,27 +1181,20 @@ live records also need crosswalk rules: after export,
     coverage claim. AI exports and calculator/API scoping remain roadmap items, not implemented
     features.
 
-    **Spark gap comparison (owner request November 25; planned, not started, order not decided),**
-    maybe as a section of the Across-Canada tab. For each region it compares heating with
-    electricity and with natural gas, per unit of useful heat:
-    - the *spark gap*: the price of electricity divided by the price of the competing fuel, both per
-      unit of energy delivered (gas m³ or GJ converted to kWh with a sourced heating value; not the
-      power-market "spark spread");
-    - the cost of useful heat: each price divided by the equipment's efficiency (a heat pump's
-      seasonal coefficient of performance, which falls in colder climates; a furnace's seasonal
-      efficiency);
-    - the break-even heat pump efficiency (spark gap x furnace efficiency), above which a heat pump
-      heats more cheaply, so no single heat pump has to be assumed.
-
-    Where gas is not widespread (no gas utility is registered or inventoried in PE, NL or the
-    territories), electricity is compared with the region's usual heating fuel, chosen from official
-    household statistics: Statistics Canada Table 38-10-0286-01 covers the provinces, not the
-    territories. Pricing heating oil or propane would be a new, non-tariff kind of data needing its
-    own official sources and an owner scope decision (Table 18-10-0001-01 gives monthly household
-    heating fuel prices for 18 cities, with no Nunavut city and no propane). It is a price
-    comparison at stored rates, not a bill or savings estimate; its definitions (marginal or average
-    price, which tier or period, taxes, heating values, efficiencies, regions) are decided in their
-    own round.
+    **Spark gap comparison: done November 26 (method SG-1, owner decisions 118 and 124-165).** The
+    Across-Canada tab has two sub-tabs: "Residential electricity" (unchanged) and "Spark gap". For
+    each region (homes in all 13; small and mid-size buildings in the eight gas provinces) it divides
+    the price of a kWh of electricity by the price of a kWh of the usual heating fuel (gas in BC to
+    QC; heating oil in NB, NS, PE, NL and the territories, from Statistics Canada Table 18-10-0001-01),
+    average (whole bill) and marginal (next unit), and gives the break-even heat pump COP (spark gap x
+    the new-furnace efficiency; for businesses the commercial furnace and boiler minimums). For homes it
+    is checked against the CCI/Dunsky seasonal COPs of the nearest of five cities and stated in plain
+    words. Running costs only; never a bill or part of the models. Rules: the
+    [model rules](../.github/instructions/representative-models.instructions.md) ("Spark gap").
+    Open items: Nunavut has no official heating-oil price (shown not available); Manitoba's mid-size
+    electricity model is not computable, so that row is not available; wood and propane are left out
+    (no official price series); commercial heat pumps have no published seasonal COP (businesses show
+    the break-even only).
 11. **Monitoring and maintenance:** the campaign's priced, dated gaps are closed (batch 11).
     Monitor the queue's Monitor row and the calendar (Qulliq final GRA instruction, NTPC Snare TPSP
     reconciliation, Centra Appendix A edition changes, monthly Yukon joint-book file name, EPCOR
