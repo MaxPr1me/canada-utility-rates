@@ -575,6 +575,11 @@
       "size": 6112,
       "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261126_v1.xml"
     },
+    "PUB_DAHourlyOntarioZonalPrice_20261127_v1.xml.47d913e614be236b9803dae7017c32cbf9b6401466cb6feb8c88623a3392c725.gz": {
+      "sha256": "47d913e614be236b9803dae7017c32cbf9b6401466cb6feb8c88623a3392c725",
+      "size": 6070,
+      "source_url": "https://reports-public.ieso.ca/public/DAHourlyOntarioZonalPrice/PUB_DAHourlyOntarioZonalPrice_20261127_v1.xml"
+    },
     "PUB_HourlyLFDA_2025_v1.csv.2454e4689c6eb7536f0e845ae3ea778ef9e0936ae5099c663b44611a329a6747.gz": {
       "sha256": "2454e4689c6eb7536f0e845ae3ea778ef9e0936ae5099c663b44611a329a6747",
       "size": 145471,
