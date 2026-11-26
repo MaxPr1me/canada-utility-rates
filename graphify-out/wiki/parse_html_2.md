@@ -2,7 +2,7 @@
 
 > God node · 100 connections · `scrapers/utils/parsing.py`
 
-**Community:** [BaseScraper](BaseScraper.md)
+**Community:** [parse_html](parse_html.md)
 
 ## Connections by Relation
 

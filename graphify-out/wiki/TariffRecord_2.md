@@ -2,7 +2,7 @@
 
 > God node · 423 connections · `scrapers/base.py`
 
-**Community:** [TariffRecord](TariffRecord.md)
+**Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
 
 ## Connections by Relation
 
@@ -97,7 +97,7 @@
 - HydroQuebecScraper `INFERRED`
 - NLHydroScraper `INFERRED`
 - MaritimeElectricScraper `INFERRED`
-- SaskEnergyScraper `INFERRED`
+- [SaskEnergyScraper](SaskEnergyScraper.md) `INFERRED`
 - [YukonEnergyScraper](YukonEnergyScraper.md) `INFERRED`
 - [HeritageGasScraper](HeritageGasScraper.md) `INFERRED`
 - LibertyGasNBScraper `INFERRED`

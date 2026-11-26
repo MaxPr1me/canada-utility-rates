@@ -94,7 +94,7 @@
 - NLHydroScraper `INFERRED`
 - MaritimeElectricScraper `INFERRED`
 - _build_record() `INFERRED`
-- SaskEnergyScraper `INFERRED`
+- [SaskEnergyScraper](SaskEnergyScraper.md) `INFERRED`
 - [YukonEnergyScraper](YukonEnergyScraper.md) `INFERRED`
 - [HeritageGasScraper](HeritageGasScraper.md) `INFERRED`
 - LibertyGasNBScraper `INFERRED`

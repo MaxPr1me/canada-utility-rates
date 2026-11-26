@@ -12,7 +12,7 @@
 
 ## Relationships
 
-- [.fetch_page](fetch_page.md) (2 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
 - [BaseScraper](BaseScraper.md) (2 shared connections)
 
 ## Source Files

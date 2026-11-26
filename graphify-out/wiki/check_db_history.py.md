@@ -33,9 +33,9 @@
 
 ## Relationships
 
-- [json](json.md) (6 shared connections)
-- [run_scrape.py](run_scrape.py.md) (5 shared connections)
+- [run_scrape.py](run_scrape.py.md) (7 shared connections)
 - [os](os.md) (4 shared connections)
+- [write_spark_gap](write_spark_gap.md) (4 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files

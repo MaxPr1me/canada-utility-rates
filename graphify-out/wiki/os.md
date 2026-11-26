@@ -1,6 +1,6 @@
 # os
 
-> 20 nodes
+> 22 nodes
 
 ## Key Concepts
 
@@ -12,8 +12,10 @@
 - **download()** (9 connections) — `scripts/pull_history_db.py`
 - **PullError** (6 connections) — `scripts/pull_history_db.py`
 - **resolve_asset()** (6 connections) — `scripts/pull_history_db.py`
+- **digest()** (4 connections) — `scripts/graphify_hook.py`
 - **file_sha256()** (4 connections) — `scripts/pull_history_db.py`
 - **Path** (4 connections)
+- **tempfile** (4 connections)
 - **backup_path()** (3 connections) — `scripts/pull_history_db.py`
 - **content_hash()** (3 connections) — `scrapers/utils/parsing.py`
 - **main()** (3 connections) — `scripts/pull_history_db.py`
@@ -27,27 +29,28 @@
 
 ## Relationships
 
+- [run_scrape.py](run_scrape.py.md) (9 shared connections)
 - [graphify_hook.py](graphify_hook.py.md) (8 shared connections)
-- [run_scrape.py](run_scrape.py.md) (7 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (6 shared connections)
 - [BaseScraper](BaseScraper.md) (6 shared connections)
-- [json](json.md) (5 shared connections)
+- [build_alberta_market.py](build_alberta_market.py.md) (6 shared connections)
 - [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (5 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (4 shared connections)
 - [check_db_history.py](check_db_history.py.md) (4 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (4 shared connections)
-- [archive_ontario_price.py](archive_ontario_price.py.md) (3 shared connections)
-- [requests](requests.md) (3 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (4 shared connections)
+- [write_spark_gap](write_spark_gap.md) (3 shared connections)
+- [json](json.md) (3 shared connections)
+- [Path](Path.md) (2 shared connections)
 - [re](re.md) (2 shared connections)
-- [archetype_profiles.py](archetype_profiles.py.md) (2 shared connections)
 
 ## Source Files
 
 - `scrapers/utils/parsing.py`
+- `scripts/graphify_hook.py`
 - `scripts/pull_history_db.py`
 
 ## Audit Trail
 
-- EXTRACTED: 104 (100%)
+- EXTRACTED: 109 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

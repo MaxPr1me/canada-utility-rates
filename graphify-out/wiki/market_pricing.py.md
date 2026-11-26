@@ -31,17 +31,17 @@
 
 ## Relationships
 
-- [_build_model](_build_model.md) (9 shared connections)
-- [json](json.md) (5 shared connections)
-- [BaseScraper](BaseScraper.md) (4 shared connections)
+- [representative_models.py](representative_models.py.md) (7 shared connections)
+- [generate_market_pricing.py](generate_market_pricing.py.md) (6 shared connections)
+- [model_monitoring.py](model_monitoring.py.md) (5 shared connections)
 - [run_scrape.py](run_scrape.py.md) (4 shared connections)
 - [archetype_profiles.py](archetype_profiles.py.md) (4 shared connections)
 - [spark_gap.py](spark_gap.py.md) (4 shared connections)
+- [write_spark_gap](write_spark_gap.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (3 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (3 shared connections)
-- [generate_market_pricing.py](generate_market_pricing.py.md) (3 shared connections)
-- [MarketDataError](MarketDataError.md) (3 shared connections)
+- [json](json.md) (3 shared connections)
 - [re](re.md) (2 shared connections)
-- [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
 - [_prepare](_prepare.md) (2 shared connections)
 
 ## Source Files

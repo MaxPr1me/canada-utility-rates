@@ -32,7 +32,7 @@
 - [parse_tariff_pages](parse_tariff_pages.md) (3 shared connections)
 - [close_class](close_class.md) (2 shared connections)
 - [class_loss_factors](class_loss_factors.md) (2 shared connections)
-- [TariffRecord](TariffRecord.md) (1 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (1 shared connections)
 - [OntarioLDCScraper](OntarioLDCScraper.md) (1 shared connections)
 - [_dedupe_classifications](_dedupe_classifications.md) (1 shared connections)
 

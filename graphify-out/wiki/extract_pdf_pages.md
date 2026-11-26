@@ -2,14 +2,14 @@
 
 > God node · 69 connections · `scrapers/utils/parsing.py`
 
-**Community:** [BaseScraper](BaseScraper.md)
+**Community:** [parse_html](parse_html.md)
 
 ## Connections by Relation
 
 ### calls
 - [re](re.md) `EXTRACTED`
 - [DocumentPage](DocumentPage.md) `EXTRACTED`
-- io `EXTRACTED`
+- [io](io.md) `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`
 - ._try_live_scrape() `EXTRACTED`

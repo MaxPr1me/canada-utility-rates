@@ -33,13 +33,13 @@
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (8 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (8 shared connections)
 - [._energy_entries](_energy_entries.md) (7 shared connections)
 - [RateComponent](RateComponent.md) (7 shared connections)
 - [ontario_ldc.py](ontario_ldc.py.md) (4 shared connections)
 - [._load_sheets](_load_sheets.md) (4 shared connections)
-- [BaseScraper](BaseScraper.md) (2 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
+- [parse_html](parse_html.md) (3 shared connections)
+- [BaseScraper](BaseScraper.md) (1 shared connections)
 - [oeb_distributor_for_registry](oeb_distributor_for_registry.md) (1 shared connections)
 - [validate_energy_charges](validate_energy_charges.md) (1 shared connections)
 - [oeb_tariff.py](oeb_tariff.py.md) (1 shared connections)

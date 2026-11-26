@@ -1,15 +1,15 @@
 # NovaScotiaPowerScraper
 
-> 71 nodes
+> 75 nodes
 
 ## Key Concepts
 
-- **DocumentPage** (241 connections) — `scrapers/utils/parsing.py`
+- **TariffRecord** (423 connections) — `scrapers/base.py`
 - **NovaScotiaPowerScraper** (40 connections) — `scrapers/utilities/nova_scotia_power.py`
-- **._parse_industrial_tariff()** (11 connections) — `scrapers/utilities/nova_scotia_power.py`
 - **._order_context()** (11 connections) — `scrapers/utilities/nova_scotia_power.py`
-- **._parse_residential_tariffs()** (11 connections) — `scrapers/utilities/nova_scotia_power.py`
+- **parse_manual()** (11 connections) — `scrapers/utilities/summerside_electric.py`
 - **._parse_business_tariff()** (10 connections) — `scrapers/utilities/nova_scotia_power.py`
+- **TorontoHydroScraper** (9 connections) — `scrapers/utilities/toronto_hydro.py`
 - **._parse_business_pilot()** (9 connections) — `scrapers/utilities/nova_scotia_power.py`
 - **._business_rider_components()** (9 connections) — `scrapers/utilities/nova_scotia_power.py`
 - **._continuous_pages()** (9 connections) — `scrapers/utilities/nova_scotia_power.py`
@@ -27,34 +27,36 @@
 - **._footer_effective_date()** (7 connections) — `scrapers/utilities/nova_scotia_power.py`
 - **._murb_rider_components()** (7 connections) — `scrapers/utilities/nova_scotia_power.py`
 - **._rtp_rider_components()** (7 connections) — `scrapers/utilities/nova_scotia_power.py`
+- **._parse_residential()** (6 connections) — `scrapers/utilities/nova_scotia_power.py`
 - **._parse_building_option_tariffs()** (6 connections) — `scrapers/utilities/nova_scotia_power.py`
-- **.scrape()** (6 connections) — `scrapers/utilities/nova_scotia_power.py`
-- *... and 46 more nodes in this community*
+- *... and 50 more nodes in this community*
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (35 shared connections)
-- [RateComponent](RateComponent.md) (31 shared connections)
-- [fortisbc_electric.py](fortisbc_electric.py.md) (24 shared connections)
-- [BaseScraper](BaseScraper.md) (23 shared connections)
-- [enmax_power.py](enmax_power.py.md) (15 shared connections)
-- [epcor_distribution.py](epcor_distribution.py.md) (15 shared connections)
-- [re](re.md) (14 shared connections)
-- [nl_hydro.py](nl_hydro.py.md) (13 shared connections)
-- [DocumentPage](DocumentPage.md) (11 shared connections)
+- [RateComponent](RateComponent.md) (65 shared connections)
+- [parse_html](parse_html.md) (48 shared connections)
+- [DocumentPage](DocumentPage.md) (35 shared connections)
+- [TariffRecord](TariffRecord.md) (28 shared connections)
+- [BaseScraper](BaseScraper.md) (27 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (24 shared connections)
+- [.__init__](__init__.md) (19 shared connections)
+- [fortisbc_electric.py](fortisbc_electric.py.md) (17 shared connections)
+- [maritime_electric.py](maritime_electric.py.md) (16 shared connections)
+- [nl_hydro.py](nl_hydro.py.md) (11 shared connections)
+- [YukonEnergyScraper](YukonEnergyScraper.md) (11 shared connections)
 - [EnbridgeGasScraper](EnbridgeGasScraper.md) (10 shared connections)
-- [extract_effective_date](extract_effective_date.md) (8 shared connections)
-- [fortisalberta.py](fortisalberta.py.md) (7 shared connections)
 
 ## Source Files
 
+- `scrapers/base.py`
 - `scrapers/utilities/nova_scotia_power.py`
-- `scrapers/utils/parsing.py`
+- `scrapers/utilities/summerside_electric.py`
+- `scrapers/utilities/toronto_hydro.py`
 
 ## Audit Trail
 
-- EXTRACTED: 301 (73%)
-- INFERRED: 111 (27%)
+- EXTRACTED: 526 (87%)
+- INFERRED: 81 (13%)
 - AMBIGUOUS: 0 (0%)
 
 ---

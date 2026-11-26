@@ -1,6 +1,6 @@
 # fortisbc_electric.py
 
-> 56 nodes
+> 50 nodes
 
 ## Key Concepts
 
@@ -22,34 +22,35 @@
 - **_parse_large_commercial_primary_tou()** (11 connections) — `scrapers/utilities/fortisbc_electric.py`
 - **_parse_primary_tou()** (11 connections) — `scrapers/utilities/fortisbc_electric.py`
 - **_parse_secondary_tou()** (11 connections) — `scrapers/utilities/fortisbc_electric.py`
-- **FortisBCElectricScraper** (10 connections) — `scrapers/utilities/fortisbc_electric.py`
 - **_customer_charge_component()** (10 connections) — `scrapers/utilities/fortisbc_electric.py`
 - **_parse_residential_tou()** (10 connections) — `scrapers/utilities/fortisbc_electric.py`
 - **_adopted_customer_charge()** (10 connections) — `scrapers/utilities/fortisbc_electric.py`
 - **_tou_rates()** (10 connections) — `scrapers/utilities/fortisbc_electric.py`
 - **_parse_residential()** (9 connections) — `scrapers/utilities/fortisbc_electric.py`
 - **_parse_small_commercial()** (9 connections) — `scrapers/utilities/fortisbc_electric.py`
-- *... and 31 more nodes in this community*
+- **_small_commercial_record()** (9 connections) — `scrapers/utilities/fortisbc_electric.py`
+- *... and 25 more nodes in this community*
 
 ## Relationships
 
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (24 shared connections)
-- [TariffRecord](TariffRecord.md) (20 shared connections)
-- [re](re.md) (16 shared connections)
-- [BaseScraper](BaseScraper.md) (10 shared connections)
-- [RateComponent](RateComponent.md) (9 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
-- [.__init__](__init__.md) (1 shared connections)
+- [DocumentPage](DocumentPage.md) (21 shared connections)
+- [re](re.md) (17 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (17 shared connections)
+- [RateComponent](RateComponent.md) (8 shared connections)
+- [BaseScraper](BaseScraper.md) (8 shared connections)
+- [.__init__](__init__.md) (4 shared connections)
+- [io](io.md) (2 shared connections)
+- [parse_html](parse_html.md) (1 shared connections)
 
 ## Source Files
 
 - `scrapers/utilities/fortisbc_electric.py`
+- `scrapers/utils/parsing.py`
 
 ## Audit Trail
 
-- EXTRACTED: 222 (81%)
-- INFERRED: 52 (19%)
+- EXTRACTED: 208 (81%)
+- INFERRED: 50 (19%)
 - AMBIGUOUS: 0 (0%)
 
 ---

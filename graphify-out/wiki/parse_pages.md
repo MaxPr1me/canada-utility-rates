@@ -1,6 +1,6 @@
 # .parse_pages
 
-> 24 nodes
+> 23 nodes
 
 ## Key Concepts
 
@@ -12,14 +12,13 @@
 - **._carbon()** (5 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._class_values()** (5 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._ops_values()** (5 connections) — `scrapers/utilities/liberty_gas_nb.py`
-- **.scrape()** (5 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._commodity()** (4 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._long_date()** (4 connections) — `scrapers/utilities/liberty_gas_nb.py`
-- **._seed_data()** (4 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._detail()** (3 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._num()** (3 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **_month_end()** (3 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **comp()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **._norm()** (2 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **Explicit federal zero fuel charge, with New Brunswick's charge period ending…** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
 - **Current month's Liberty Utility Gas rate from the year-column history table.** (1 connections) — `scrapers/utilities/liberty_gas_nb.py`
@@ -31,10 +30,10 @@
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (6 shared connections)
-- [RateComponent](RateComponent.md) (5 shared connections)
-- [BaseScraper](BaseScraper.md) (4 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
+- [RateComponent](RateComponent.md) (6 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (3 shared connections)
+- [parse_html](parse_html.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
@@ -43,8 +42,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 59 (97%)
-- INFERRED: 2 (3%)
+- EXTRACTED: 55 (96%)
+- INFERRED: 2 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

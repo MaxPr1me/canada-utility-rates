@@ -1,6 +1,6 @@
 # EPCOROntarioGasScraper
 
-> 61 nodes
+> 59 nodes
 
 ## Key Concepts
 
@@ -20,28 +20,28 @@
 - **_ZoneContext** (6 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._carbon()** (6 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._columns()** (6 connections) — `scrapers/utilities/epcor_gas_ontario.py`
-- **.scrape()** (6 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **find_rate_order_url()** (6 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **_page_classes()** (6 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **_cell_values()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **_display()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._fetch_pdf_pages()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
-- **._fetch_text()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._require_effective()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
 - **._seasons()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
-- *... and 36 more nodes in this community*
+- **notice_case()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
+- **notice_url()** (5 connections) — `scrapers/utilities/epcor_gas_ontario.py`
+- *... and 34 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (12 shared connections)
+- [parse_html](parse_html.md) (10 shared connections)
 - [re](re.md) (9 shared connections)
-- [TariffRecord](TariffRecord.md) (5 shared connections)
+- [BaseScraper](BaseScraper.md) (8 shared connections)
 - [RateComponent](RateComponent.md) (5 shared connections)
-- [.fetch_page](fetch_page.md) (4 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [DocumentPage](DocumentPage.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
-- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
+- [io](io.md) (1 shared connections)
+- [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -49,7 +49,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 183 (98%)
+- EXTRACTED: 178 (98%)
 - INFERRED: 4 (2%)
 - AMBIGUOUS: 0 (0%)
 

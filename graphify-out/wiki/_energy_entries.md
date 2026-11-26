@@ -32,7 +32,7 @@
 - [validate_energy_charges](validate_energy_charges.md) (2 shared connections)
 - [class_loss_factors](class_loss_factors.md) (1 shared connections)
 - [_split_criteria](_split_criteria.md) (1 shared connections)
-- [TariffRecord](TariffRecord.md) (1 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (1 shared connections)
 
 ## Source Files
 

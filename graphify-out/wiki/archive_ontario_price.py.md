@@ -1,6 +1,6 @@
 # archive_ontario_price.py
 
-> 69 nodes
+> 72 nodes
 
 ## Key Concepts
 
@@ -21,6 +21,7 @@
 - **set_day()** (8 connections) — `scripts/archive_ontario_price.py`
 - **_price()** (7 connections) — `scripts/archive_ontario_price.py`
 - **parse_site_api()** (7 connections) — `scripts/archive_ontario_price.py`
+- **bs4** (7 connections)
 - **month_statuses()** (6 connections) — `scripts/archive_ontario_price.py`
 - **serialize()** (6 connections) — `scripts/archive_ontario_price.py`
 - **MonthStatus** (5 connections) — `scripts/archive_ontario_price.py`
@@ -28,21 +29,21 @@
 - **SiteApiSource** (5 connections) — `scripts/archive_ontario_price.py`
 - **_by_month()** (5 connections) — `scripts/archive_ontario_price.py`
 - **_check_days()** (5 connections) — `scripts/archive_ontario_price.py`
-- **_hour()** (5 connections) — `scripts/archive_ontario_price.py`
-- *... and 44 more nodes in this community*
+- *... and 47 more nodes in this community*
 
 ## Relationships
 
-- [build_ontario_market.py](build_ontario_market.py.md) (9 shared connections)
+- [io](io.md) (9 shared connections)
 - [_yearly_files](_yearly_files.md) (7 shared connections)
 - [re](re.md) (4 shared connections)
-- [json](json.md) (4 shared connections)
-- [os](os.md) (3 shared connections)
-- [BaseScraper](BaseScraper.md) (3 shared connections)
-- [run_scrape.py](run_scrape.py.md) (2 shared connections)
-- [requests](requests.md) (2 shared connections)
+- [run_scrape.py](run_scrape.py.md) (4 shared connections)
+- [os](os.md) (4 shared connections)
+- [BaseScraper](BaseScraper.md) (4 shared connections)
+- [json](json.md) (2 shared connections)
+- [write_spark_gap](write_spark_gap.md) (2 shared connections)
 - [market_quarterly.py](market_quarterly.py.md) (1 shared connections)
 - [preserve_ieso_reports.py](preserve_ieso_reports.py.md) (1 shared connections)
+- [EPCOROntarioGasScraper](EPCOROntarioGasScraper.md) (1 shared connections)
 - [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
 
 ## Source Files
@@ -51,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 210 (100%)
+- EXTRACTED: 219 (100%)
 - INFERRED: 1 (0%)
 - AMBIGUOUS: 0 (0%)
 

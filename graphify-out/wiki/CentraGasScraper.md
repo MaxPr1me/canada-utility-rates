@@ -33,10 +33,10 @@
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (8 shared connections)
-- [BaseScraper](BaseScraper.md) (6 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (8 shared connections)
+- [BaseScraper](BaseScraper.md) (5 shared connections)
 - [RateComponent](RateComponent.md) (4 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
+- [parse_html](parse_html.md) (4 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files

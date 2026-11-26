@@ -2,7 +2,7 @@
 
 > God node · 241 connections · `scrapers/utils/parsing.py`
 
-**Community:** [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md)
+**Community:** [DocumentPage](DocumentPage.md)
 
 ## Connections by Relation
 

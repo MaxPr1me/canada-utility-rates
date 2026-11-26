@@ -1,6 +1,6 @@
 # ATCOGasScraper
 
-> 53 nodes
+> 54 nodes
 
 ## Key Concepts
 
@@ -29,18 +29,18 @@
 - **._today()** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **_soup_text()** (4 connections) — `scrapers/utilities/atco_gas.py`
 - **ClassSpec** (3 connections) — `scrapers/utilities/atco_gas.py`
-- *... and 28 more nodes in this community*
+- *... and 29 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (14 shared connections)
-- [TariffRecord](TariffRecord.md) (7 shared connections)
+- [parse_html](parse_html.md) (9 shared connections)
+- [BaseScraper](BaseScraper.md) (8 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (7 shared connections)
 - [RateComponent](RateComponent.md) (6 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
+- [DocumentPage](DocumentPage.md) (5 shared connections)
 - [re](re.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [json](json.md) (1 shared connections)
+- [write_spark_gap](write_spark_gap.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +48,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 155 (98%)
+- EXTRACTED: 156 (98%)
 - INFERRED: 3 (2%)
 - AMBIGUOUS: 0 (0%)
 

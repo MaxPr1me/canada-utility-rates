@@ -16,10 +16,10 @@
 
 ## Relationships
 
-- [TariffRecord](TariffRecord.md) (4 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (3 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (2 shared connections)
+- [parse_html](parse_html.md) (2 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 

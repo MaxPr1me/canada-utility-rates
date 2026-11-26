@@ -33,18 +33,18 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (35 shared connections)
+- [BaseScraper](BaseScraper.md) (23 shared connections)
 - [re](re.md) (15 shared connections)
+- [parse_html](parse_html.md) (12 shared connections)
 - [RateComponent](RateComponent.md) (8 shared connections)
-- [TariffRecord](TariffRecord.md) (8 shared connections)
-- [EPCOREnergyAlbertaScraper](EPCOREnergyAlbertaScraper.md) (5 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (8 shared connections)
 - [ENMAXEnergyScraper](ENMAXEnergyScraper.md) (4 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
+- [DocumentPage](DocumentPage.md) (4 shared connections)
 - [DirectEnergyRegulatedScraper](DirectEnergyRegulatedScraper.md) (3 shared connections)
-- [json](json.md) (2 shared connections)
+- [aeso.py](aeso.py.md) (3 shared connections)
+- [write_spark_gap](write_spark_gap.md) (2 shared connections)
+- [.__init__](__init__.md) (2 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (1 shared connections)
-- [epcor_distribution.py](epcor_distribution.py.md) (1 shared connections)
-- [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
 
 ## Source Files
 

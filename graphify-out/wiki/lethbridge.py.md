@@ -31,13 +31,13 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (12 shared connections)
+- [parse_html](parse_html.md) (8 shared connections)
+- [BaseScraper](BaseScraper.md) (7 shared connections)
 - [re](re.md) (6 shared connections)
-- [TariffRecord](TariffRecord.md) (5 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (2 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
+- [DocumentPage](DocumentPage.md) (2 shared connections)
+- [io](io.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files

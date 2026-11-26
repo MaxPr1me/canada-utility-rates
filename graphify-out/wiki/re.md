@@ -1,6 +1,6 @@
 # re
 
-> 34 nodes
+> 33 nodes
 
 ## Key Concepts
 
@@ -26,32 +26,32 @@
 - **_Column** (3 connections) — `scrapers/utilities/atco_electric.py`
 - **_iso()** (3 connections) — `scrapers/utilities/atco_electric.py`
 - **_price_region()** (3 connections) — `scrapers/utilities/atco_electric.py`
-- **value()** (3 connections) — `scrapers/utilities/bc_hydro.py`
 - **Any** (2 connections)
 - **date** (1 connections)
-- *... and 9 more nodes in this community*
+- **Exception** (1 connections)
+- *... and 8 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (11 shared connections)
+- [BaseScraper](BaseScraper.md) (8 shared connections)
 - [re](re.md) (7 shared connections)
-- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (5 shared connections)
-- [.fetch_page](fetch_page.md) (5 shared connections)
-- [TariffRecord](TariffRecord.md) (4 shared connections)
+- [DocumentPage](DocumentPage.md) (5 shared connections)
+- [parse_html](parse_html.md) (5 shared connections)
 - [RateComponent](RateComponent.md) (3 shared connections)
+- [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
+- [ATCOElectricScraper](ATCOElectricScraper.md) (3 shared connections)
 - [model_monitoring.py](model_monitoring.py.md) (2 shared connections)
-- [graphify_hook.py](graphify_hook.py.md) (1 shared connections)
-- [json](json.md) (1 shared connections)
+- [TariffRecord](TariffRecord.md) (1 shared connections)
+- [write_spark_gap](write_spark_gap.md) (1 shared connections)
 
 ## Source Files
 
 - `scrapers/utilities/atco_electric.py`
-- `scrapers/utilities/bc_hydro.py`
 
 ## Audit Trail
 
-- EXTRACTED: 105 (96%)
-- INFERRED: 4 (4%)
+- EXTRACTED: 104 (97%)
+- INFERRED: 3 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---
