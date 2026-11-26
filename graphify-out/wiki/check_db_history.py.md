@@ -33,7 +33,8 @@
 
 ## Relationships
 
-- [json](json.md) (11 shared connections)
+- [json](json.md) (6 shared connections)
+- [run_scrape.py](run_scrape.py.md) (5 shared connections)
 - [os](os.md) (4 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 

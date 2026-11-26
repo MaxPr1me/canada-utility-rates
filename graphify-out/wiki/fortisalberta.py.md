@@ -1,6 +1,6 @@
 # fortisalberta.py
 
-> 52 nodes
+> 51 nodes
 
 ## Key Concepts
 
@@ -29,18 +29,17 @@
 - **document_edition_date()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **_document()** (6 connections) — `scrapers/utilities/fortisalberta.py`
 - **Match** (6 connections)
-- *... and 27 more nodes in this community*
+- *... and 26 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (24 shared connections)
+- [BaseScraper](BaseScraper.md) (13 shared connections)
+- [RateComponent](RateComponent.md) (12 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (7 shared connections)
 - [re](re.md) (7 shared connections)
 - [TariffRecord](TariffRecord.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [FortisBCEnergyScraper](FortisBCEnergyScraper.md) (1 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +47,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 177 (92%)
+- EXTRACTED: 176 (92%)
 - INFERRED: 16 (8%)
 - AMBIGUOUS: 0 (0%)
 

@@ -29,7 +29,7 @@
 - nb_power.py `EXTRACTED`
 - [maritime_electric.py](maritime_electric.py.md) `EXTRACTED`
 - yukon_energy.py `EXTRACTED`
-- [aeso.py](aeso.py.md) `EXTRACTED`
+- aeso.py `EXTRACTED`
 - *…and 26 more `imports` connection(s) not listed (lowest-degree first to go)*
 
 ### inherits
@@ -47,7 +47,7 @@
 - HydroQuebecScraper `EXTRACTED`
 - NLHydroScraper `EXTRACTED`
 - MaritimeElectricScraper `EXTRACTED`
-- [SaskEnergyScraper](SaskEnergyScraper.md) `EXTRACTED`
+- SaskEnergyScraper `EXTRACTED`
 - [YukonEnergyScraper](YukonEnergyScraper.md) `EXTRACTED`
 - [HeritageGasScraper](HeritageGasScraper.md) `EXTRACTED`
 - LibertyGasNBScraper `EXTRACTED`

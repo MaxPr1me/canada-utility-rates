@@ -2,7 +2,7 @@
 
 > God node · 287 connections · `scrapers/base.py`
 
-**Community:** [BaseScraper](BaseScraper.md)
+**Community:** [RateComponent](RateComponent.md)
 
 ## Connections by Relation
 
@@ -94,7 +94,7 @@
 - NLHydroScraper `INFERRED`
 - MaritimeElectricScraper `INFERRED`
 - _build_record() `INFERRED`
-- [SaskEnergyScraper](SaskEnergyScraper.md) `INFERRED`
+- SaskEnergyScraper `INFERRED`
 - [YukonEnergyScraper](YukonEnergyScraper.md) `INFERRED`
 - [HeritageGasScraper](HeritageGasScraper.md) `INFERRED`
 - LibertyGasNBScraper `INFERRED`

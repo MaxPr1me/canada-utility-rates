@@ -97,7 +97,7 @@
 - HydroQuebecScraper `INFERRED`
 - NLHydroScraper `INFERRED`
 - MaritimeElectricScraper `INFERRED`
-- [SaskEnergyScraper](SaskEnergyScraper.md) `INFERRED`
+- SaskEnergyScraper `INFERRED`
 - [YukonEnergyScraper](YukonEnergyScraper.md) `INFERRED`
 - [HeritageGasScraper](HeritageGasScraper.md) `INFERRED`
 - LibertyGasNBScraper `INFERRED`

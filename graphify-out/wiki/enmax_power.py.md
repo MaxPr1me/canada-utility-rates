@@ -35,12 +35,13 @@
 
 - [re](re.md) (18 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (15 shared connections)
-- [BaseScraper](BaseScraper.md) (12 shared connections)
+- [BaseScraper](BaseScraper.md) (9 shared connections)
+- [RateComponent](RateComponent.md) (3 shared connections)
 - [TariffRecord](TariffRecord.md) (3 shared connections)
-- [io](io.md) (3 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (3 shared connections)
 - [.fetch_page](fetch_page.md) (2 shared connections)
 - [os](os.md) (1 shared connections)
-- [FortisBCEnergyScraper](FortisBCEnergyScraper.md) (1 shared connections)
+- [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files
 

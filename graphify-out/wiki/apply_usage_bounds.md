@@ -1,6 +1,6 @@
 # apply_usage_bounds
 
-> 9 nodes
+> 11 nodes
 
 ## Key Concepts
 
@@ -9,6 +9,8 @@
 - **_kw()** (5 connections) — `pipeline/representative_models.py`
 - **record_covers_level()** (5 connections) — `pipeline/representative_models.py`
 - **resolve_size_band()** (5 connections) — `pipeline/representative_models.py`
+- **_outcome()** (4 connections) — `pipeline/representative_models.py`
+- **resolve()** (2 connections) — `pipeline/representative_models.py`
 - **Bands whose reference kW the [min, max) demand range covers; else bands…** (1 connections) — `pipeline/representative_models.py`
 - **Normalise a rule size_band (None, id, list or '@demand_bounds') to a list of…** (1 connections) — `pipeline/representative_models.py`
 - **True when the record's published demand ([min, max) kW, or the inclusivity of a…** (1 connections) — `pipeline/representative_models.py`
@@ -16,10 +18,10 @@
 
 ## Relationships
 
-- [representative_models.py](representative_models.py.md) (7 shared connections)
+- [_build_model](_build_model.md) (7 shared connections)
+- [representative_models.py](representative_models.py.md) (3 shared connections)
 - [Any](Any.md) (3 shared connections)
-- [_fullmatch](_fullmatch.md) (1 shared connections)
-- [_build_model](_build_model.md) (1 shared connections)
+- [_prepare](_prepare.md) (1 shared connections)
 - [re](re.md) (1 shared connections)
 
 ## Source Files
@@ -28,7 +30,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 21 (100%)
+- EXTRACTED: 25 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

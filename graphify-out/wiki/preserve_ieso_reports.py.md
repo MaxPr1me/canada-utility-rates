@@ -34,14 +34,14 @@
 ## Relationships
 
 - [os](os.md) (5 shared connections)
-- [json](json.md) (5 shared connections)
+- [json](json.md) (3 shared connections)
+- [run_scrape.py](run_scrape.py.md) (2 shared connections)
+- [build_ontario_market.py](build_ontario_market.py.md) (2 shared connections)
 - [_yearly_files](_yearly_files.md) (1 shared connections)
 - [re](re.md) (1 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 - [archive_ontario_price.py](archive_ontario_price.py.md) (1 shared connections)
 - [build_alberta_market.py](build_alberta_market.py.md) (1 shared connections)
-- [build_ontario_market.py](build_ontario_market.py.md) (1 shared connections)
-- [io](io.md) (1 shared connections)
 
 ## Source Files
 

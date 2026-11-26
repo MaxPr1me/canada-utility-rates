@@ -14,19 +14,19 @@
 - _after_subsidy_record() `EXTRACTED`
 - _energy_estimate() `EXTRACTED`
 - _select_variants() `EXTRACTED`
+- statistics `EXTRACTED`
 - _context() `EXTRACTED`
+- tax_lines() `EXTRACTED`
 - _price() `EXTRACTED`
 - summary_stats() `EXTRACTED`
-- tax_lines() `EXTRACTED`
 - _energy_block() `EXTRACTED`
-- statistics `EXTRACTED`
 - _after_subsidy_level() `EXTRACTED`
+- gas_volume_unit() `EXTRACTED`
 - subsidy_policy() `EXTRACTED`
 - volume_bound_problem() `EXTRACTED`
 - key_label() `EXTRACTED`
 - _territorial_fields() `EXTRACTED`
 - _method_text() `EXTRACTED`
-- gas_volume_unit() `EXTRACTED`
 - *…and 22 more `calls` connection(s) not listed (lowest-degree first to go)*
 
 ### contains

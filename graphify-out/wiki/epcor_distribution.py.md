@@ -33,13 +33,13 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (18 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (15 shared connections)
+- [BaseScraper](BaseScraper.md) (13 shared connections)
 - [re](re.md) (12 shared connections)
 - [TariffRecord](TariffRecord.md) (7 shared connections)
+- [RateComponent](RateComponent.md) (6 shared connections)
 - [.fetch_page](fetch_page.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
 - [epcor_energy_alberta.py](epcor_energy_alberta.py.md) (1 shared connections)
 
 ## Source Files

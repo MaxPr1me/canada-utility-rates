@@ -32,12 +32,12 @@
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (13 shared connections)
+- [BaseScraper](BaseScraper.md) (11 shared connections)
 - [re](re.md) (6 shared connections)
 - [TariffRecord](TariffRecord.md) (5 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (4 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [FortisBCEnergyScraper](FortisBCEnergyScraper.md) (1 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
+- [RateComponent](RateComponent.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 
 ## Source Files

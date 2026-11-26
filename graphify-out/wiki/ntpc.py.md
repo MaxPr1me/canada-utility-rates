@@ -1,6 +1,6 @@
 # ntpc.py
 
-> 55 nodes
+> 58 nodes
 
 ## Key Concepts
 
@@ -21,6 +21,7 @@
 - **_Schedule** (7 connections) — `scrapers/utilities/ntpc.py`
 - **build_records()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **_iso()** (7 connections) — `scrapers/utilities/ntpc.py`
+- **.scrape()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **parse_schedule_index()** (7 connections) — `scrapers/utilities/ntpc.py`
 - **_Block** (6 connections) — `scrapers/utilities/ntpc.py`
 - **_content()** (6 connections) — `scrapers/utilities/ntpc.py`
@@ -28,19 +29,20 @@
 - **parse_tpsp()** (6 connections) — `scrapers/utilities/ntpc.py`
 - **_ResidentialPage** (5 connections) — `scrapers/utilities/ntpc.py`
 - **_schedule_component()** (5 connections) — `scrapers/utilities/ntpc.py`
-- **_norm()** (5 connections) — `scrapers/utilities/ntpc.py`
-- *... and 30 more nodes in this community*
+- *... and 33 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (19 shared connections)
+- [BaseScraper](BaseScraper.md) (12 shared connections)
 - [re](re.md) (12 shared connections)
-- [TariffRecord](TariffRecord.md) (10 shared connections)
+- [TariffRecord](TariffRecord.md) (9 shared connections)
+- [RateComponent](RateComponent.md) (8 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (6 shared connections)
-- [.fetch_page](fetch_page.md) (3 shared connections)
-- [run_scrape.py](run_scrape.py.md) (2 shared connections)
+- [.fetch_page](fetch_page.md) (4 shared connections)
+- [registry.py](registry.py.md) (2 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
 - [extract_effective_date](extract_effective_date.md) (1 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 170 (96%)
+- EXTRACTED: 176 (96%)
 - INFERRED: 8 (4%)
 - AMBIGUOUS: 0 (0%)
 

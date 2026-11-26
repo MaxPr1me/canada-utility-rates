@@ -1,6 +1,6 @@
 # graphify_hook.py
 
-> 73 nodes
+> 74 nodes
 
 ## Key Concepts
 
@@ -29,14 +29,14 @@
 - **callflow_sections()** (6 connections) — `scripts/graphify_hook.py`
 - **existing_hook()** (6 connections) — `scripts/graphify_hook.py`
 - **graph_summary()** (6 connections) — `scripts/graphify_hook.py`
-- *... and 48 more nodes in this community*
+- *... and 49 more nodes in this community*
 
 ## Relationships
 
-- [json](json.md) (9 shared connections)
 - [os](os.md) (8 shared connections)
-- [re](re.md) (3 shared connections)
-- [TariffRecord](TariffRecord.md) (1 shared connections)
+- [json](json.md) (7 shared connections)
+- [re](re.md) (4 shared connections)
+- [run_scrape.py](run_scrape.py.md) (2 shared connections)
 - [BaseScraper](BaseScraper.md) (1 shared connections)
 
 ## Source Files
@@ -45,7 +45,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 210 (99%)
+- EXTRACTED: 212 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

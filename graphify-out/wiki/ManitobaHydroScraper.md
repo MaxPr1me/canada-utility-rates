@@ -1,6 +1,6 @@
 # ManitobaHydroScraper
 
-> 35 nodes
+> 36 nodes
 
 ## Key Concepts
 
@@ -23,22 +23,23 @@
 - **_mb_assign_demand_blocks()** (4 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **_mb_flat()** (4 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **_mb_section()** (3 connections) — `scrapers/utilities/manitoba_hydro.py`
+- **.__init__()** (2 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **section()** (1 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **Parse a Manitoba Hydro value line into (kind, value, unit); glyph-agnostic for…** (1 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **Build a RateComponent from a label line and the value line that follows it.** (1 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **Turn the parsed energy block rows into 1..n tiers with cumulative upper bounds…** (1 connections) — `scrapers/utilities/manitoba_hydro.py`
 - **Pair the zero-priced first kVA block with its balance row (both carry the same…** (1 connections) — `scrapers/utilities/manitoba_hydro.py`
-- **First 'Rates effective <date>' line ahead of the electricity tables -> (iso,…** (1 connections) — `scrapers/utilities/manitoba_hydro.py`
-- *... and 10 more nodes in this community*
+- *... and 11 more nodes in this community*
 
 ## Relationships
 
-- [BaseScraper](BaseScraper.md) (25 shared connections)
+- [BaseScraper](BaseScraper.md) (14 shared connections)
 - [TariffRecord](TariffRecord.md) (9 shared connections)
+- [RateComponent](RateComponent.md) (8 shared connections)
 - [re](re.md) (6 shared connections)
+- [NBPowerScraper](NBPowerScraper.md) (4 shared connections)
 - [NovaScotiaPowerScraper](NovaScotiaPowerScraper.md) (3 shared connections)
 - [.__init__](__init__.md) (1 shared connections)
-- [RateComponent](RateComponent.md) (1 shared connections)
 
 ## Source Files
 
@@ -46,7 +47,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 83 (92%)
+- EXTRACTED: 84 (92%)
 - INFERRED: 7 (8%)
 - AMBIGUOUS: 0 (0%)
 
