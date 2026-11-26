@@ -2484,7 +2484,8 @@ def _benchmark(model: dict, market: dict, level_inputs: dict, config: dict, as_o
 # band (usage_levels market_energy_shapes) and the observed market heatmap, in the main table, labelled estimated.
 _MARKET_CLOCK_TEXT = {
     "ON": "Eastern Standard Time all year (IESO market time), so the simulated steps are not shifted",
-    "AB": "Alberta prevailing local time (AESO market time), so steps inside daylight saving move one hour later",
+    "AB": "Alberta prevailing local time (AESO market time), so steps inside daylight saving move one hour later and "
+          "the hour before the spring change shares the bin of AESO's HE03 price for the same hour",
 }
 _BAND_TEXT = {"commercial_medium": "50 to 499 kW", "commercial_large": "500 to 4,999 kW"}
 _HEATING_TEXT = {"Electricity": "electric", "NaturalGas": "natural gas"}

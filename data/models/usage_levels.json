@@ -1087,7 +1087,7 @@
       "month_weighting": "The price weights the 12 calendar-month prices by the general shape's own use in each month.",
       "time_basis": {
         "ON": "EST (IESO market time): simulated steps (local standard time) are not shifted",
-        "AB": "Alberta prevailing local time (AESO market time): simulated steps inside daylight saving move one hour later (owner decision 94)"
+        "AB": "Alberta prevailing local time (AESO market time): simulated steps inside daylight saving move one hour later (owner decision 94), and the hour before the spring change (01:00-02:00 standard time) goes in hour 2, where AESO bins its HE03 price for the same hour (owner decision 166, 2026-11-26)"
       },
       "holidays": "counted as the weekday they fall on, in the simulations and in both heatmaps",
       "max_window_lag_months": 4,

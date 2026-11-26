@@ -15,9 +15,9 @@ bins follow each market's own clock (market-data rules): the IESO heatmap is in 
 are not shifted; the AESO heatmap is in Alberta's prevailing local time, so Calgary steps inside daylight saving move one
 hour later (today's rule on the 2006 calendar: from the second Sunday of March at 02:00 standard time to the first Sunday
 of November at 01:00 standard time). Both heatmaps count holidays as the weekday they fall on, and so do the bins here.
-One known difference, one hour a year: AESO labels the hour before the spring change (01:00-02:00 standard time) HE03
-and its heatmap files it in hour 2 (HE-1), while decision 94 leaves that hour unshifted in hour 1 here. The autumn
-repeated hour (HE02 and HE02*) matches. The difference is open with the owner, not corrected silently.
+AESO labels each hour by its end and bins it in hour HE-1, so the hour before the spring change (01:00-02:00 standard
+time) is HE03 in hour 2 (that day has no HE02); owner decision 166 (2026-11-26) puts the simulated hour in the same bin,
+replacing decision 94's one-hour-a-year difference. The autumn repeated hour (HE02 and HE02*) already matches.
 
 Failure behaviour: a missing or unreadable results workbook, or one without the expected columns, raises
 ``ArchetypeDataError``; a run that fails any check is left out with its reason in ``ArchetypeSet.problems``.
@@ -51,8 +51,8 @@ TOTAL_TOLERANCE = 0.001
 UNMET_FLAG_HOURS = 300.0
 DAY_TYPES = ("weekday", "weekend")
 # Market clock per province (market-data rules): "standard" = the simulation's own local standard time (IESO bins are
-# EST); "prevailing" = local time with daylight saving (AESO bins).
-MARKET_CLOCKS = {"ON": "standard", "AB": "prevailing"}
+# EST); "aeso" = AESO's hour-ending labels on Alberta prevailing local time (AESO bins, see _aeso_bin_moment).
+MARKET_CLOCKS = {"ON": "standard", "AB": "aeso"}
 HEATING_FUELS = ("Electricity", "NaturalGas")
 
 COLUMNS = {
@@ -159,6 +159,20 @@ def _prevailing(moment: datetime) -> datetime:
     return moment + timedelta(hours=1) if begins <= moment < ends else moment
 
 
+def _aeso_bin_moment(moment: datetime) -> datetime:
+    """The moment whose month, day type and hour give a local-standard-time step's AESO heatmap bin.
+
+    AESO labels each hour by its end on Alberta's prevailing clock and bins it in hour HE-1 (build_alberta_market.py).
+    That is the step's prevailing time, except in the hour before the spring change (01:00-02:00 standard time): it ends
+    at 03:00 daylight time, so AESO labels it HE03 (the day has no HE02) and bins it in hour 2. Owner decision 166
+    (2026-11-26) puts the simulated hour in that bin too, so its load meets the price of the same hour.
+    """
+    begins = _nth_sunday(3, 2) + timedelta(hours=2)
+    if begins - timedelta(hours=1) <= moment < begins:
+        return moment + timedelta(hours=1)
+    return _prevailing(moment)
+
+
 @lru_cache(maxsize=1)
 def _calendar() -> dict:
     """Per-step labels, calendar months and market-bin keys, shared by every run (all use the 2006 calendar)."""
@@ -170,7 +184,7 @@ def _calendar() -> dict:
         return moment.month, DAY_TYPES[1] if moment.weekday() >= 5 else DAY_TYPES[0], moment.hour
 
     bins = {"standard": [key(moment) for moment in starts],
-            "prevailing": [key(_prevailing(moment)) for moment in starts]}
+            "aeso": [key(_aeso_bin_moment(moment)) for moment in starts]}
     return {"labels": labels, "months": months, "bins": bins}
 
 

@@ -381,8 +381,9 @@ or live coverage. Page presentation: [website.instructions.md](website.instructi
   in [market-data.instructions.md](market-data.instructions.md)). Each run is also priced alone for the
   published list and range, and a flat load gives the same-use-every-hour price. Runs come from
   `pipeline/archetype_profiles.py` (reads and checks `data/btap/`: totals against `output.xlsx`,
-  15-minute steps, IESO bins in EST, AESO bins in prevailing time; a failing run is left out with its
-  reason; `archetype_fingerprint()` hashes the values used).
+  15-minute steps, IESO bins in EST, AESO bins in prevailing time with AESO's own labels: the hour
+  before the spring change goes in hour 2 with AESO's HE03 price, decision 166 of 2026-11-26; a
+  failing run is left out with its reason; `archetype_fingerprint()` hashes the values used).
 - Applying it: price x the level's kWh is added to each market-priced record's cost and energy
   subtotal before the tax lines and the per-utility medians (`level.market_energy_estimate`
   {price_per_kwh, cost}; utility rows `estimated_market_energy`). The level's kWh and kW are unchanged

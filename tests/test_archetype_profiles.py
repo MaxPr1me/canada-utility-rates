@@ -76,6 +76,32 @@ def test_daylight_saving_moves_only_steps_inside_its_2006_dates():
     assert ap._prevailing(datetime(2006, 11, 5, 1, 0)) == datetime(2006, 11, 5, 1, 0)
 
 
+def test_the_spring_change_hour_shares_aesos_he03_bin_and_autumn_is_unchanged(tmp_path):
+    # Owner decision 166 (2026-11-26): AESO labels 01:00-02:00 standard time on the spring change day HE03 (no HE02)
+    # and bins it in hour 2, so the simulated hour goes there too; the true clock (_prevailing) is unchanged.
+    assert ap._aeso_bin_moment(datetime(2006, 3, 12, 0, 45)) == datetime(2006, 3, 12, 0, 45)
+    assert ap._aeso_bin_moment(datetime(2006, 3, 12, 1, 0)) == datetime(2006, 3, 12, 2, 0)
+    assert ap._aeso_bin_moment(datetime(2006, 3, 12, 1, 45)) == datetime(2006, 3, 12, 2, 45)
+    assert ap._aeso_bin_moment(datetime(2006, 3, 12, 2, 0)) == datetime(2006, 3, 12, 3, 0)
+    assert ap._aeso_bin_moment(datetime(2006, 3, 5, 1, 15)) == datetime(2006, 3, 5, 1, 15)
+    # Autumn: HE02 (00:00-01:00 standard) and HE02* (01:00-02:00 standard) both enter hour 1, as AESO bins them.
+    autumn = [ap._aeso_bin_moment(datetime(2006, 11, 5, hour, 15)).hour for hour in (0, 1)]
+    assert autumn == [1, 1]
+    # A 1 kWh step at 01:15 standard time on Sunday 2006-03-12 over a steady 1 kW: eight March weekend days give hour 2
+    # four steps each in Calgary, and March 12's hour 1 is empty there, as in AESO's heatmap.
+    electricity = _steady(spring=(datetime(2006, 3, 12, 1, 15), 3_600_000.0))
+    _write_run(tmp_path, "on-run", electricity)
+    _write_run(tmp_path, "ab-run", electricity)
+    _write_workbook(tmp_path, [_row("on-run", electricity), _row("ab-run", electricity, province="AB")])
+    data = ap.load_archetypes(tmp_path)
+    toronto, calgary = sorted(data.runs, key=lambda run: run.province, reverse=True)
+    assert calgary.market_bin_kw[(3, "weekend", 2)] == pytest.approx(1 + 0.75 / 8)
+    assert calgary.market_bin_kw[(3, "weekend", 1)] == pytest.approx(1.0)
+    assert toronto.market_bin_kw[(3, "weekend", 1)] == pytest.approx(1 + 0.75 / 8)
+    assert toronto.market_bin_kw[(3, "weekend", 2)] == pytest.approx(1.0)
+    assert calgary.market_month_kwh[3] == pytest.approx(31 * 24 - 1 + 0.75)
+
+
 def test_runs_are_checked_against_the_workbook_and_binned_on_each_markets_clock(tmp_path):
     # A 1 kWh step (4 kW) on Monday 2006-07-03 at 10:00 standard time: IESO bin hour 10, AESO bin hour 11 (daylight).
     spike = datetime(2006, 7, 3, 10, 0)
