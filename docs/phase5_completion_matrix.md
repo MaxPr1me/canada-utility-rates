@@ -9,34 +9,39 @@ history publication, monitoring and the deployed desktop/mobile views are verifi
 and [workflow rules](../.github/instructions/ci-data-history.instructions.md#model-monitoring).
 This does not waive source checks or authorize a Monthly Scrape merely to test monitoring.
 
-## Current milestone - building archetype costs (planned November 24)
+## Current milestone - building archetype costs (built November 26, method AC-1)
 
-Owner decisions 86-114 (November 24, seven question rounds): the owner's building simulations
-arrived on the `dev` branch: 68 runs of NRCan's BTAP tool for NECB 2020 archetype buildings (17
-building types in Toronto and Calgary, each heated by electricity or by natural gas, CWEC 2020
-typical weather), with the whole building's electricity and gas use every 15 minutes for a year. The
-plan, built next:
-- merge the simulation outputs into `main` unchanged (about 370 MB of timestep files, which the
+Owner decisions 86-114 (November 24, seven question rounds) and 166-168 (November 26): the owner's
+building simulations arrived on the `dev` branch: 68 runs of NRCan's BTAP tool for NECB 2020 archetype
+buildings (17 building types in Toronto and Calgary, each heated by electricity or by natural gas,
+CWEC 2020 typical weather), with the whole building's electricity and gas use every 15 minutes for a
+year. Built November 26 (the "Building Archetypes" tab, method AC-1; rules in the
+[model rules](../.github/instructions/representative-models.instructions.md), "Archetype costs"):
+- the simulation outputs are merged into `main` unchanged (about 370 MB of timestep files, which the
   workflows read directly; done November 25);
-- store ENMAX Energy's Medium and Large Commercial Rate of Last Resort schedules (D300 and
-  D310/D410), which the rate schedule PDF the scraper already reads publishes (scraper done November
-  25; the next Monthly Scrape stores the two records);
-- price each simulated building for a whole year, month by month, with the stored tariffs of the
-  utilities serving its city: Toronto Hydro and Enbridge Gas in Toronto; ENMAX Power, with ENMAX
-  Energy's Rate of Last Resort below 250,000 kWh a year or the pool-price benchmark above it, and
-  ATCO Gas South with the default gas rate in Calgary. Each building takes the rate class its own
+- ENMAX Energy's Medium and Large Commercial Rate of Last Resort schedules (D300 and D310/D410),
+  which the rate schedule PDF the scraper already reads publishes (scraper done November 25; the next
+  Monthly Scrape stores the two records);
+- each simulated building is priced for a whole year, month by month, with the stored tariffs of the
+  utilities serving its city: Toronto Hydro and Enbridge Gas (Rate 6, which Enbridge's own rate-class
+  evidence says includes apartment buildings) in Toronto; ENMAX Power, with ENMAX Energy's Rate of Last
+  Resort below 250,000 kWh a year or estimated pool energy above it, and ATCO Gas South with the
+  default gas rate in Calgary. Each building takes the rate class its own
   simulated load qualifies for under the tariff's published limits, quoted with the reason;
-  apartments are one bulk-metered building account. Ontario accounts that qualify for the
-  Regulated Price Plan pay Time-of-Use prices, the others the market price plus Class B Global
-  Adjustment from the observed hourly averages of the 60-month window; loss factors are applied as
-  the OEB bill calculator applies them; taxes and the Ontario Electricity Rebate follow their
-  published rules. Prices are those in force when the file is built: a comparison at today's
-  prices, not a forecast or a bill;
-- publish the results in a new "Building Archetypes" tab after Representative Models, labelled
+  apartments are one bulk-metered building account (Toronto Hydro's Conditions of Service put
+  bulk-metered apartment buildings in its general service classes, decision 167). Ontario accounts
+  that qualify for the Regulated Price Plan pay Time-of-Use prices, the others the market price plus
+  Class B Global Adjustment estimated from the building's own load shape over the 60-month window;
+  loss factors are applied as the OEB bill calculator applies them; taxes and the Ontario Electricity
+  Rebate follow their published rules. Prices are those in force when the file is built: a comparison
+  at today's prices, not a forecast or a bill;
+- the results are published in the "Building Archetypes" tab after Representative Models, labelled
   SIMULATED and rebuilt by every export. Simulated costs never enter the models' medians,
-  Across-Canada, Compare, Rate History or change checks (safeguard 8 is amended with the build);
-- afterwards, replace the made-up profile of the illustrative estimate with archetype shapes, after
-  its own decision round. **Done first instead, at the owner's request (November 25):** method 7S-1
+  Across-Canada, Compare, Rate History or change checks (safeguard 8 is amended);
+- the Alberta market hour on the spring daylight-saving day follows AESO's own hour-ending labels
+  (decision 166, shipped first as a correction inside method 7S-2, decision 168);
+- the made-up profile of the illustrative estimate is replaced by archetype shapes. **Done first, at
+  the owner's request (November 25):** method 7S-1
   first made it an opt-in estimate; method 7S-2 (owner decisions 119-123, the same day) moved it into
   the main table. The Ontario and Alberta 50-499 kW and 500-4,999 kW models now add market energy
   priced with the general load shape of every simulated building of that size in Toronto or Calgary
@@ -46,9 +51,14 @@ plan, built next:
   kWh at 1,000 kW (the simulated buildings' size; decision 120). Decisions 119-123 settled the
   provisional choices of method 7S-1.
 
-Open: whether an official Enbridge source puts apartment buildings of more than six units on Rate 6
-(until one is found, those three runs show gas as not computable). The dated December and January
-checks keep priority when they fall due.
+Open:
+- the owner reviews the live tab (decision 110);
+- 7 Calgary buildings on ENMAX Energy's mid-size Rate of Last Resort stay not computable until the
+  December 1 Monthly Scrape stores that price;
+- EnergyPlus states its higher-heating-value basis only for hot-water boilers, so the gas energy
+  basis is a stated assumption.
+
+The dated December and January checks keep priority when they fall due.
 
 ## Previous milestone - the one-year check, territorial models and the Rate History tab (done November 24)
 
@@ -182,7 +192,8 @@ Second decision round (November 20), from the commercial gas research:
   the base models. Update November 24: the data has arrived and the order is reversed: the archetype
   cost comparison comes first, ahead of the coverage claim, and the illustrative estimate's profile
   is replaced afterwards (see the current milestone above). Update November 25: the replacement was
-  done first, at the owner's request, and became the estimated market energy of method 7S-2.
+  done first, at the owner's request, and became the estimated market energy of method 7S-2. Update
+  November 26: the archetype cost comparison is built (the Building Archetypes tab, method AC-1).
 
 Progress (November 23): the small fixes are published. Énergir's monthly supply price was stored by
 scrape run 45, and the other supply-price period ends by the owner's full run on November 20 (scrape
@@ -201,8 +212,8 @@ are priced, so Québec and New Brunswick homes are modelled too; the small-busin
 moved to 14 and 40 kW (BC Hydro is priced on Rate 1500 at 40 kW; FortisBC Electric Rate 20 is "not
 more than 40 kW"). Owner decision November 23: the Rate Browser shows a dated price's period and an
 "Ended" tag once it has passed. The model preview against the published models showed only these
-intended changes. Next: the building archetype costs (planned November 24; see the current milestone
-above), with the dated December checks taking priority when due, then the January renewals and the
+intended changes. The building archetype costs were built November 26 (see the current milestone
+above). Next: the dated December checks when they fall due, then the January renewals and the
 Ontario January batch, the coverage wording and the rest of Phase 9 (the one-year check, its first
 review round, the territorial models and the Rate History tab were done November 24).
 
@@ -640,7 +651,7 @@ building coverage; counts include optional adjustments and reference records.
 | Done (October 30, batch 16; pushed October 30) | W1 Yukon book discovery through the page model JSON; W2 Centra schedule edition by rates date and the v1126 text Appendix A (high confidence); W3 dead seed citations kept with notes (`KEPT_DEAD`), inventory and AESO pool-price links fixed, guard scans reference data; W4 local check kit (`logs/_b16_kit_*`, untracked); W5 model decisions (method 7C-3) | 2,090 tests across 27 modules. Dry runs: Yukon 20 and 20, Centra 13, Alberta 2/4/5/2 live. Gate 77 of 78 on the committed export (AESO, stored by the next Monthly Scrape) |
 | Done (October 15-16) | Lane B (7F site view, October 15); Lane F (EPCOR Energy Alberta's moved pages), CI as the only database writer (first stored run: Monthly Scrape #11, scrape run 29), the Ontario market continuation (rolling 60-month history), Lane A (7C, all ten provinces) and the 7E illustrative sidecar (all October 16) | See Next Batches item 0 |
 | Open defaults (the user may change them) | Market history: GA for April-June 2020 (published capped 115 $/MWh, not the unadjusted values); the separate 2021 Class B recovery rates (5.01-7.09 $/MWh, excluded); statutory holidays counted as weekdays. Models: each utility counts once as the median of its standard zones. | Both market builds use the same GA values and day-type rule; after a change, the archive workflow (or `python scripts/build_ontario_market.py`) rebuilds the rolling history. Known deviation: April 2025 uses the IESO HOEP monthly report value (the yearly hourly file's April mean, 39.181 $/MWh, disagrees with the report's 39.22), so it has no observed hours |
-| Planned (order decided November 20, updated November 23 and 24) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); January 1 readiness (published November 23); the one-year check (built November 24, first review round done the same day); then territorial models (built November 24, method 7T-1); then the Rate History tab (moved ahead of the coverage claim, November 23; built November 24); then the building archetype costs (planned November 24, ahead of the coverage claim; the archetype replacement of the illustrative estimate's profile was done first, November 25, at the owner's request, and became the models' estimated market energy the same day, method 7S-2); then the rest of the Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses estimated or illustrative values; the spark gap comparison of heating fuels by region was built November 26, method SG-1) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
+| Planned (order decided November 20, updated November 23 and 24) | Commercial gas models (done November 23 as method 7D-2, with 6E gas supply-price freshness); January 1 readiness (published November 23); the one-year check (built November 24, first review round done the same day); then territorial models (built November 24, method 7T-1); then the Rate History tab (moved ahead of the coverage claim, November 23; built November 24); then the building archetype costs (planned November 24 ahead of the coverage claim, built November 26 as method AC-1; the archetype replacement of the illustrative estimate's profile was done first, November 25, at the owner's request, and became the models' estimated market energy the same day, method 7S-2); then the rest of the Phase 9 product follow-up (the residential Across-Canada comparison is done and never uses estimated or illustrative values; the spark gap comparison of heating fuels by region was built November 26, method SG-1) | See the current milestone above and Next Batches items 7-10; Phase 8 is completed above |
 | Maintain | Centra Gas Mainline Interruptible | Hash-gated reviewed transcription (batch 11) while the rate pages show August 1, 2026 rates; from the November 1, 2026 rates the v1126 text Appendix A is parsed at high confidence (batch 16, row 1b) |
 | Monitor | Qulliq final GRA instruction; NTPC Snare TPSP saving mismatch; Centra Appendix A editions; Yukon joint-book file name; EPCOR Distribution final 2026 rates; Oakville GS<50 rejection; Alberta RoLR term end (December 31, 2026) | Checked October 30 (ledger notes): Qulliq, NTPC Snare, EPCOR Distribution (2026 tariffs still interim) and the next Rate of Last Resort term (the UCA table shows only the 2025-2026 term) unchanged, next review December 15; Centra and Yukon changed (row 1b); the Centra monitor was closed November 18 (owner decision) and Yukon's review is December 15. Interim rates stay medium confidence (Qulliq: URRC recommended approval); Snare TPSP omitted until the source reconciles; Oakville GS<50 stays rejected (fail-closed) until its tariff is reissued; RoLR records fail closed after the term until the next term is published. Dates are in the calendar below |
 | Source-blocked | See the reconciliation table below, plus ENMAX D700 | Published without printed, dated prices; re-check periodically |
@@ -1176,10 +1187,10 @@ live records also need crosswalk rules: after export,
 10. **Phase 9: Product Follow-up** ([README](../README.md#roadmap)):
     historical charts (the Rate History tab, owner decisions of November 23 and 24, built November 24
     ahead of the coverage claim) and the Across-Canada comparison view built on the Phase 7 models
-    (done for residential electricity; it never uses estimated or illustrative values) are done. A cost comparison
-    of simulated building archetypes (owner decisions of November 24) is planned next, ahead of the
-    coverage claim. AI exports and calculator/API scoping remain roadmap items, not implemented
-    features.
+    (done for residential electricity; it never uses estimated or illustrative values) are done. The cost
+    comparison of simulated building archetypes (owner decisions of November 24 and 26) is done too,
+    built November 26 ahead of the coverage claim (below). AI exports and calculator/API scoping
+    remain roadmap items, not implemented features.
 
     **Spark gap comparison: done November 26 (method SG-1, owner decisions 118 and 124-165).** The
     Across-Canada tab has two sub-tabs: "Residential electricity" (unchanged) and "Spark gap". For
@@ -1195,6 +1206,18 @@ live records also need crosswalk rules: after export,
     electricity model is not computable, so that row is not available; wood and propane are left out
     (no official price series); commercial heat pumps have no published seasonal COP (businesses show
     the break-even only).
+
+    **Building Archetypes: done November 26 (method AC-1, owner decisions 86-114 and 166-168).** A tab
+    after Representative Models prices the owner's 68 simulated NECB 2020 buildings (Toronto and
+    Calgary, electric or gas heating) for a year at today's stored tariffs:
+    - each building is on the rate class its own simulated load qualifies for, with time-of-use and
+      on-peak energy from its own hours and demand from its own peaks (ENMAX's 90% ratchet included);
+    - market energy is estimated from its own load shape (labelled estimated);
+    - Ontario loss factors and taxes and rebates are applied as published.
+
+    Simulated and labelled so: never a bill, never in the models or the other views. Rules: the
+    [model rules](../.github/instructions/representative-models.instructions.md) ("Archetype costs").
+    Open items are in the current milestone above.
 11. **Monitoring and maintenance:** the campaign's priced, dated gaps are closed (batch 11).
     Monitor the queue's Monitor row and the calendar (Qulliq final GRA instruction, NTPC Snare TPSP
     reconciliation, Centra Appendix A edition changes, monthly Yukon joint-book file name, EPCOR

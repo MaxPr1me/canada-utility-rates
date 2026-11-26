@@ -1,5 +1,5 @@
 ---
-description: "Use when changing the static website under site/: index.html, css/, js/app.js (Rate Browser, Market Pricing, Compare), js/models.js (Representative Models), js/across-canada.js, js/rate-history.js (Rate History) and the site/data/ JSON it reads. Covers the six views, hiding seed (estimated) rates by default, filterState Sets, the province-to-utility cascade, dedupe by effective date, formatCharge, Compare never totalling, the Ontario/Alberta market dashboard, the window.CanadaUtilityModels API and shared lazy load, the Rate History periods, reviewed series and event lists and hand-built SVG charts, safe DOM building, failure notices, the estimated market energy note, the Across-Canada sub-tabs and spark gap view, and offline browser tests."
+description: "Use when changing the static website under site/: index.html, css/, js/app.js (Rate Browser, Market Pricing, Compare), js/models.js (Representative Models), js/archetypes.js (Building Archetypes), js/across-canada.js, js/rate-history.js (Rate History) and the site/data/ JSON it reads. Covers the seven views, hiding seed (estimated) rates by default, filterState Sets, the province-to-utility cascade, dedupe by effective date, formatCharge, Compare never totalling, the Ontario/Alberta market dashboard, the window.CanadaUtilityModels API and shared lazy load, the Rate History periods, reviewed series and event lists and hand-built SVG charts, safe DOM building, failure notices, the estimated market energy note, the Building Archetypes tab (simulated, lazy, phone cards), the Across-Canada sub-tabs and spark gap view, and offline browser tests."
 applyTo: "site/**"
 ---
 # Static website
@@ -12,9 +12,10 @@ file rules: [market-data.instructions.md](market-data.instructions.md).
 
 ## Views
 
-- Six views: **Rate Browser** (filters, cards, details), **Rate History** (how stored prices changed),
-  **Market Pricing**, **Representative Models**, **Across-Canada** (residential comparison and, in its
-  second sub-tab, the spark gap) and **Compare** (two tariffs). Across-Canada and Compare stay separate.
+- Seven views: **Rate Browser** (filters, cards, details), **Rate History** (how stored prices changed),
+  **Market Pricing**, **Representative Models**, **Building Archetypes** (simulated building costs),
+  **Across-Canada** (residential comparison and, in its second sub-tab, the spark gap) and **Compare**
+  (two tariffs). Across-Canada and Compare stay separate.
 - Test over HTTP (`python -m http.server --directory site 8000`); opening the HTML file directly does
   not reliably load the JSON.
 
@@ -140,6 +141,31 @@ file rules: [market-data.instructions.md](market-data.instructions.md).
   heating values, the efficiencies, the COP source and, for businesses, input tax credits; links are
   http(s) only and all text is set with `textContent`.
 
+## Building Archetypes (`site/js/archetypes.js`, `site/css/archetypes.css`; method AC-1, decisions 107-110)
+
+- A tab right after Representative Models with a "Simulated" badge. The view repeats the SIMULATED badge
+  and keeps an always-visible banner ("Simulated buildings, not real buildings or bills"); rows tag
+  estimated market energy and quality-flagged runs. Never reuse these costs in another view
+  (safeguard 8).
+- Reads `data/archetype_costs.json` with its own lazy fetch the first time the tab opens (never on page
+  load). A file that is missing, broken or not an AC-1 SIMULATED document shows a notice in this view
+  only; opening the tab again retries.
+- Shows the pipeline's values only (nothing recalculated):
+  - "With tax and rebates" first, with a switch to "Before tax and rebates";
+  - filters by city, building type and heating, and a table sortable by annual cost, $/m² and effective
+    ¢/kWh;
+  - a detail panel per row: monthly costs (a stacked electricity and gas SVG with a table), the load,
+    quality and apartment notes, each fuel's rate class and why, supply, annual cost, effective rates,
+    cost by charge group with the tax lines, loss factor, estimated energy, rebates not applied and
+    tariff sources, the same building with the other heating fuel, and the simulation file links.
+
+  A fuel that is not computable shows its reasons. No load-shape heatmap (decision 108).
+- Phones: below 640 px each row becomes a stacked card. The detail's label/value rows stack through
+  child selectors (`.arch-kv > tr > th/td`), so the nested charge-group table keeps its two columns.
+  The filters stretch below 768 px, as on Representative Models.
+- There is no global `.hidden` rule: `#view-archetypes .hidden` hides the view's loading line, notice
+  and panels. Build with `createElement`/`createElementNS` and `textContent`; links are http(s) only.
+
 ## Rate History (`site/js/rate-history.js`, `site/css/rate-history.css`)
 
 Owner decisions 44-57 (2026-11-23) and 80-84 (2026-11-24).
@@ -218,3 +244,5 @@ Owner decisions 44-57 (2026-11-23) and 80-84 (2026-11-24).
 ## Tests
 
 - Browser tests run offline: every request is routed to frozen or synthetic local data.
+- A new view must be added to the navigation list and the views loop of `tests/test_rate_history_site.py`.
+  The Building Archetypes tab has its own tests at 1280 and 390 px in `tests/test_archetypes_site.py`.

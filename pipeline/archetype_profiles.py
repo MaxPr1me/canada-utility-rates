@@ -19,6 +19,11 @@ AESO labels each hour by its end and bins it in hour HE-1, so the hour before th
 time) is HE03 in hour 2 (that day has no HE02); owner decision 166 (2026-11-26) puts the simulated hour in the same bin,
 replacing decision 94's one-hour-a-year difference. The autumn repeated hour (HE02 and HE02*) already matches.
 
+Tariff clock rules (owner decisions 95 and 112, for the archetype costs): billing months stay on the simulation's
+standard-time calendar months, while clock-time rules (Ontario time-of-use periods, ENMAX's on-peak hours) read each
+hour's local clock time, one hour later inside daylight saving, so a simulated building runs an hour later on the clock
+in summer. Holidays come from each tariff's reviewed rules applied to the 2006 calendar (``holiday_dates``).
+
 Failure behaviour: a missing or unreadable results workbook, or one without the expected columns, raises
 ``ArchetypeDataError``; a run that fails any check is left out with its reason in ``ArchetypeSet.problems``.
 """
@@ -29,10 +34,10 @@ import hashlib
 import json
 import math
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional, Sequence
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 BTAP_ROOT = PROJECT_ROOT / "data" / "btap" / "NECB2020_Default" / "NECB2020_Default"
@@ -42,6 +47,8 @@ SHEET = "btap_data"
 CSV_HEADER = ["Index", "Timestep", "datapoint_id", "Name", "KeyValue", "Units", "Value"]
 ELECTRICITY, GAS = "Electricity:Facility", "NaturalGas:Facility"
 YEAR, STEP_MINUTES, STEPS = 2006, 15, 35040
+STEPS_PER_HOUR = 60 // STEP_MINUTES
+HOURS = STEPS // STEPS_PER_HOUR
 J_PER_KWH, J_PER_GJ = 3.6e6, 1e9
 # The 68 runs agreed with output.xlsx to 0.0085% (electricity), 0.0028% (gas) and 0.00005% (peak) when checked on
 # 2026-11-25; a larger gap means the CSV and the workbook do not describe the same simulation.
@@ -94,6 +101,8 @@ class ArchetypeRun:
     # (calendar month 1-12, "weekday"/"weekend", hour beginning 0-23) and the kWh in each calendar month.
     market_bin_kw: dict = field(default_factory=dict, compare=False, repr=False)
     market_month_kwh: dict = field(default_factory=dict, compare=False, repr=False)
+    # kWh in each of the 8,760 standard-time hours of 2006, in order (hour_calendar() gives their month and clock time).
+    hourly_kwh: tuple = field(default=(), compare=False, repr=False)
 
     @property
     def annual_kwh(self) -> float:
@@ -186,6 +195,98 @@ def _calendar() -> dict:
     bins = {"standard": [key(moment) for moment in starts],
             "aeso": [key(_aeso_bin_moment(moment)) for moment in starts]}
     return {"labels": labels, "months": months, "bins": bins}
+
+
+@lru_cache(maxsize=1)
+def hour_calendar() -> tuple[tuple[int, datetime], ...]:
+    """(billing month, local clock start) of each of the 8,760 standard-time hours of the simulated year, in order.
+
+    Owner decision 112 (2026-11-24): billing months are the simulation's standard-time calendar months, and clock-time
+    tariff rules read the hour's clock start, one hour later inside daylight saving (``_prevailing``)."""
+    start = datetime(YEAR, 1, 1)
+    hours = (start + timedelta(hours=hour) for hour in range(HOURS))
+    return tuple((moment.month, _prevailing(moment)) for moment in hours)
+
+
+HOLIDAY_KINDS = ("fixed", "nth_weekday", "weekday_before", "easter")
+WEEKEND_RULES = ("none", "next_weekday")
+
+
+def _easter(year: int) -> date:
+    """Gregorian Easter Sunday (the anonymous Gregorian algorithm, as given in Meeus, Astronomical Algorithms)."""
+    a, b, c = year % 19, year // 100, year % 100
+    d, e = divmod(b, 4)
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = divmod(c, 4)
+    weekday = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * weekday) // 451
+    month, day = divmod(h + weekday - 7 * m + 114, 31)
+    return date(year, month, day + 1)
+
+
+def holiday_date(rule: dict, year: int = YEAR) -> date:
+    """The date of one reviewed holiday rule in ``year``; raises ValueError for an unknown or incomplete rule.
+
+    Kinds: "fixed" (month, day; "sunday_to_monday" moves a Sunday date to the Monday, as Alberta's Canada Day rule
+    does), "nth_weekday" (month, weekday 0 = Monday, n), "weekday_before" (the last given weekday strictly before
+    month/day, e.g. Victoria Day, "the Monday before May 25") and "easter" (offset_days from Easter Sunday)."""
+    kind = rule.get("kind") if isinstance(rule, dict) else None
+    try:
+        if kind == "fixed":
+            day = date(year, rule["month"], rule["day"])
+            if rule.get("sunday_to_monday") is True and day.weekday() == 6:
+                day += timedelta(days=1)
+            return day
+        if kind == "nth_weekday":
+            first = date(year, rule["month"], 1)
+            day = first + timedelta(days=(rule["weekday"] - first.weekday()) % 7 + 7 * (rule["n"] - 1))
+            if day.month != rule["month"] or not 1 <= rule["n"] <= 5:
+                raise ValueError(f"no weekday number {rule['n']} in month {rule['month']}")
+            return day
+        if kind == "weekday_before":
+            limit = date(year, rule["month"], rule["day"])
+            return limit - timedelta(days=(limit.weekday() - rule["weekday"] - 1) % 7 + 1)
+        if kind == "easter":
+            return _easter(year) + timedelta(days=rule["offset_days"])
+    except (KeyError, TypeError) as exc:
+        raise ValueError(f"holiday rule {rule.get('name')!r} is incomplete ({exc})") from exc
+    raise ValueError(f"unknown holiday rule kind {kind!r} (expected one of {HOLIDAY_KINDS})")
+
+
+def holiday_dates(rules: Iterable[dict], *, weekend_rule: str = "none", year: int = YEAR) -> dict[date, str]:
+    """The dates a tariff treats as holidays in ``year`` (default the simulation's 2006), mapped to each holiday's name.
+
+    ``weekend_rule`` "next_weekday" is the OEB time-of-use rule: "If a holiday falls on a weekend, the next weekday
+    (that is not also a holiday) will have the holiday prices in effect all day"; "none" leaves a weekend holiday on its
+    weekend day. Raises ValueError for an unknown weekend rule or holiday rule (callers fail closed)."""
+    if weekend_rule not in WEEKEND_RULES:
+        raise ValueError(f"unknown weekend rule {weekend_rule!r} (expected one of {WEEKEND_RULES})")
+    days = sorted((holiday_date(rule, year), str(rule.get("name") or "holiday")) for rule in rules)
+    out: dict[date, str] = {}
+    for day, name in days:
+        out.setdefault(day, name)
+    if weekend_rule == "next_weekday":
+        for day, name in days:
+            if day.weekday() >= 5:
+                moved = day + timedelta(days=1)
+                while moved.weekday() >= 5 or moved in out:
+                    moved += timedelta(days=1)
+                out[moved] = f"{name} (observed)"
+    return dict(sorted(out.items()))
+
+
+def period_kwh(run: ArchetypeRun, labels: Sequence[str]) -> dict[int, dict[str, float]]:
+    """kWh of each billing month split by the label of each standard-time hour (``labels`` aligns with
+    ``hour_calendar()``, e.g. a time-of-use period); raises ValueError when either series is not 8,760 hours."""
+    if len(labels) != HOURS or len(run.hourly_kwh) != HOURS:
+        raise ValueError(f"need {HOURS} hourly labels and kWh values (got {len(labels)} and {len(run.hourly_kwh)})")
+    parts: dict[int, dict[str, list[float]]] = {}
+    for (month, _), label, kwh in zip(hour_calendar(), labels, run.hourly_kwh):
+        parts.setdefault(month, {}).setdefault(label, []).append(kwh)
+    return {month: {label: math.fsum(values) for label, values in sorted(groups.items())}
+            for month, groups in sorted(parts.items())}
 
 
 def _number(value) -> Optional[float]:
@@ -341,7 +442,9 @@ def _run(row: dict, root: Path) -> ArchetypeRun:
         floor_area_m2=area, unmet_heating_occupied=numbers["unmet_heating_occupied"],
         unmet_cooling_occupied=numbers["unmet_cooling_occupied"], monthly_kwh=tuple(monthly_kwh),
         monthly_peak_kw=tuple(monthly_peak), monthly_gas_gj=tuple(monthly_gas), market_bin_kw=bin_kw,
-        market_month_kwh=month_kwh)
+        market_month_kwh=month_kwh,
+        hourly_kwh=tuple(math.fsum(electricity[step:step + STEPS_PER_HOUR]) / J_PER_KWH
+                         for step in range(0, STEPS, STEPS_PER_HOUR)))
 
 
 @lru_cache(maxsize=4)

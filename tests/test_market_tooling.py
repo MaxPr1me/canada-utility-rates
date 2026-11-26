@@ -122,10 +122,12 @@ def test_market_writers_serialize_and_never_rebase_generated_models():
     assert "git pull --rebase" not in text and "rates.db" not in text
     assert "if: failure()" in text and "github.rest.issues.create" in text
     assert "site/data/representative_models.json" in text
-    # Spark gap (owner decision 143, 2026-11-26): rebuilt after the models and before the history check.
+    # Spark gap (owner decision 143, 2026-11-26) and archetype costs (decision 106): rebuilt after the models and
+    # before the history check.
     assert (text.index("pipeline.representative_models --build") < text.index("pipeline.spark_gap --build")
-            < text.index("pipeline.model_monitoring --receipt"))
+            < text.index("pipeline.archetype_costs --build") < text.index("pipeline.model_monitoring --receipt"))
     assert "if [ -f site/data/spark_gap.json ]; then git add site/data/spark_gap.json; fi" in text
+    assert "if [ -f site/data/archetype_costs.json ]; then git add site/data/archetype_costs.json; fi" in text
 
 
 def test_market_workflow_rebuilds_after_sources_and_model_input_changes():

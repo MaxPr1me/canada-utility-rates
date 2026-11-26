@@ -1,0 +1,271 @@
+{
+ "version": 1,
+ "method": "AC-1",
+ "label": "SIMULATED",
+ "decided": "Owner decisions 86-114 (2026-11-24) and 166-167 (2026-11-26).",
+ "basis": "Archetype costs (owner decisions 86-114): each simulated BTAP building is priced month by month over its simulated year with the utility tariffs stored today for the city named in its weather file, in the rate class its own simulated load qualifies for under each utility's published limits. Per-day and per-30-day charges use each month's actual days, blocks apply per month, demand charges use the month's highest 15-minute demand (kVA = kW / the usage levels' power factor) with each tariff's ratchet over a repeating simulated year, time-of-use and on-peak energy is split by the simulated hours in clock time, and taxes and rebates follow data/models/taxes.json. Market energy (Ontario market price plus Class B Global Adjustment, Alberta pool energy) is estimated from the building's own load shape and the observed market history, as in owner decision 12. A comparison at today's prices, not a forecast or a bill (decision 114).",
+ "caveat": "Simulated NECB 2020 archetype buildings (NRCan BTAP, CWEC 2020 typical weather), not real buildings or bills: costs at today's stored tariffs for comparison only.",
+ "reviews_max_age_days": 365,
+ "simulations": {
+  "profile_reference": "usage_levels.market_energy_shapes.BTAP_NECB2020_BAND_GENERAL_SHAPE",
+  "represents": "17 NECB 2020 building types, each simulated in Toronto and Calgary with electric or natural gas space heating (68 runs), whole-building electricity and natural gas every 15 minutes over a typical weather year laid on the 2006 calendar.",
+  "why": "The owner's own BTAP simulations (owner decisions 10, 86-94): standards-based archetypes give whole-building 15-minute loads for every common commercial and multi-unit building type, which no published customer profile provides.",
+  "sources": [
+   {
+    "title": "NRCan CanmetENERGY, Building Technology Assessment Platform (BTAP), source repository",
+    "url": "https://github.com/canmet-energy/btap",
+    "checked": "2026-11-26"
+   }
+  ],
+  "quality_flag_unmet_occupied_hours": 300,
+  "quality_note": "Owner decision 91: runs with more than 300 occupied unmet heating plus cooling hours (the usual NECB and ASHRAE 90.1 simulation-quality limit) are flagged, never corrected."
+ },
+ "building_labels": {
+  "FullServiceRestaurant": "Full-service restaurant",
+  "HighriseApartment": "High-rise apartment",
+  "Hospital": "Hospital",
+  "LargeHotel": "Large hotel",
+  "LargeOffice": "Large office",
+  "LowriseApartment": "Low-rise apartment",
+  "MediumOffice": "Medium office",
+  "MidriseApartment": "Mid-rise apartment",
+  "Outpatient": "Outpatient clinic",
+  "PrimarySchool": "Primary school",
+  "QuickServiceRestaurant": "Quick-service restaurant",
+  "RetailStandalone": "Stand-alone retail",
+  "RetailStripmall": "Strip mall",
+  "SecondarySchool": "Secondary school",
+  "SmallHotel": "Small hotel",
+  "SmallOffice": "Small office",
+  "Warehouse": "Warehouse"
+ },
+ "apartments": {
+  "decided": "owner decisions 92, 103, 111 and 167",
+  "rule": "Each apartment run is one bulk-metered whole-building account (the building's own electricity and gas meters), priced on the class the utility's published wording gives such buildings.",
+  "note": "Priced as one bulk-metered building account; tenants with their own meters (individually metered or sub-metered suites) would be priced on residential rates instead.",
+  "building_types": {
+   "LowriseApartment": {
+    "dwelling_units": 17,
+    "evidence": "The geometry declares 17 living units (OS:Building 'Standards Number of Living Units'; 18 dwelling spaces).",
+    "source": {"title": "openstudio-standards (branch nrcan), NECB2011 geometry LowriseApartment.osm", "url": "https://github.com/NatLabRockies/openstudio-standards/blob/nrcan/lib/openstudio-standards/standards/necb/NECB2011/data/geometry/LowriseApartment.osm", "checked": "2026-11-26"}
+   },
+   "MidriseApartment": {
+    "dwelling_units": 32,
+    "evidence": "24 dwelling spaces, the 8 middle-floor apartment zones (TZ-M ... Apartment) with thermal-zone multiplier 2: 8 + 8 x 2 + 8 = 32.",
+    "source": {"title": "openstudio-standards (branch nrcan), NECB2011 geometry MidriseApartment.osm", "url": "https://github.com/NatLabRockies/openstudio-standards/blob/nrcan/lib/openstudio-standards/standards/necb/NECB2011/data/geometry/MidriseApartment.osm", "checked": "2026-11-26"}
+   },
+   "HighriseApartment": {
+    "dwelling_units": 80,
+    "evidence": "80 dwelling spaces, every thermal-zone multiplier 1.",
+    "source": {"title": "openstudio-standards (branch nrcan), NECB2011 geometry HighriseApartment.osm", "url": "https://github.com/NatLabRockies/openstudio-standards/blob/nrcan/lib/openstudio-standards/standards/necb/NECB2011/data/geometry/HighriseApartment.osm", "checked": "2026-11-26"}
+   }
+  }
+ },
+ "locations": {
+  "Toronto": {
+   "province": "ON",
+   "decided": "owner decision 89: the utilities serving the city named in the weather file (Toronto's station is at Pearson, in Mississauga)",
+   "electricity": {"utility": "Toronto Hydro-Electric System Ltd."},
+   "gas": {"utility": "Enbridge Gas", "tariff_code": "EGD-6", "volume_unit": "m3"}
+  },
+  "Calgary": {
+   "province": "AB",
+   "decided": "owner decision 89",
+   "electricity": {"utility": "ENMAX Power", "pair_unit": "ab-enmax"},
+   "gas": {"utility": "ATCO Gas", "tariff_codes": ["S-LOW", "S-MID"], "volume_unit": "GJ"}
+  }
+ },
+ "electricity_classes": {
+  "Toronto Hydro-Electric System Ltd.": {
+   "kind": "demand_range",
+   "tariff_codes": ["GS-TOU-S", "GS 50-999 kW", "GS 1,000-4,999 kW"],
+   "measure": "average_monthly_peak_kw",
+   "rule": "The class whose stored demand range contains the run's average of its 12 monthly highest 15-minute demands (owner decision 100; Toronto Hydro reviews a class by the 'average monthly peak demand'); below 50 kW the Time-of-Use general service record (decision 97).",
+   "quotes": {
+    "GS 50-999 kW": "a non-residential account whose monthly average peak demand is equal to or greater than 50 kW but less than 1,000 kW",
+    "GS 1,000-4,999 kW": "a non-residential account whose monthly average peak demand is equal to or greater than 1,000 kW but less than 5,000 kW",
+    "GS-TOU-S": "a non-residential account whose monthly average peak demand is less than, or is forecast to be less than 50 kW"
+   },
+   "apartments": {
+    "tariff_codes": ["GS 50-999 kW", "GS 1,000-4,999 kW"],
+    "quote": "This rate also applies to bulk metered residential apartment buildings or the house service of a residential apartment building with more than 6 units.",
+    "rule": "Owner decision 167 (2026-11-26): an apartment building of more than 6 units takes the 50-999 kW or 1,000-4,999 kW class by its average monthly peak, and the 50-999 kW class when its peak is below 50 kW: the 'non-residential account' wording keeps it off the under-50 kW class, and Toronto Hydro's residential class takes only bulk-metered buildings 'with six or fewer units'.",
+    "sources": [
+     {"title": "Toronto Hydro, Conditions of Service effective January 1, 2026, Definitions (PDF page 101)", "url": "https://www.torontohydro.com/documents/d/guest/conditions-of-service-main-document-as-of-jan-1-2026", "quote": "\"general service\" means any service supplied to premises other than those designated as Residential and less than 50kW, Large User, or Municipal Street Lighting. This includes multi-unit residential establishments such as apartments buildings supplied through one service (bulk-metered);", "checked": "2026-11-26"},
+     {"title": "Toronto Hydro, Conditions of Service effective January 1, 2026, capital contribution classes (PDF page 25)", "url": "https://www.torontohydro.com/documents/d/guest/conditions-of-service-main-document-as-of-jan-1-2026", "quote": "Condominium apartments and apartment buildings that have a demand less than 1,000 kW are part of Class 3A General Services", "checked": "2026-11-26"}
+    ]
+   },
+   "source": {"title": "Toronto Hydro-Electric System Limited, OEB Tariff of Rates and Charges effective January 1, 2026 (stored records)", "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/925317/File/document", "checked": "2026-11-26"}
+  },
+  "ENMAX Power": {
+   "kind": "monthly_tests",
+   "measure": "monthly highest 15-minute demand in kVA (kW / power factor) and monthly kWh over a repeating simulated year (owner decision 100)",
+   "tests": [
+    {"tariff_code": "D310", "test": "kva_months_over", "kva": 150, "months": 2, "quote": "registered a monthly peak demand greater than 150 kVA twice in the previous 365 days and served at secondary voltage"},
+    {"tariff_code": "D300", "test": "kwh_months_at_least", "kwh": 5000, "months": 6, "quote": "equal to or greater than 5,000 kWh per month for at least six of the last 12 invoice periods, provided a peak demand greater than 150 kVA was not registered twice in the previous 365 days"},
+    {"tariff_code": "D200", "test": "otherwise", "quote": "Commercial Sites where the Energy consumption is less than 5,000 kWh per month"}
+   ],
+   "apartments": "Bulk-metered apartments use the same tests: D100 is for separately and permanently metered single family dwelling units, and the D300 schedule lists 'Non-Standard Residential \"Bulk-Metering\"' (apartments, town housing) under OTHER.",
+   "source": {"title": "ENMAX Power Corporation Distribution Tariff, rate schedules D200, D300 and D310 (PDF pages 5 and 7-10)", "url": "https://assets.enmax.com/api/public/content/cd1e0f8abc01404693d2c35a4502d11d?v=f9d61f49", "checked": "2026-11-26"}
+  }
+ },
+ "supply": {
+  "ON": {
+   "decided": "owner decisions 96-98",
+   "rpp": {
+    "max_demand_kw": 50,
+    "max_annual_kwh": 250000,
+    "residential_complex": true,
+    "plan": "tou",
+    "energy_record": "GS-TOU-S",
+    "drop_reference_entries": ["on-non-rpp-class-b-ga"],
+    "rule": "Regulated Price Plan time-of-use prices (decision 97) where O. Reg. 95/05 makes the account eligible: an average monthly peak of 50 kW or less, an apartment building (a residential complex), or 250,000 kWh a year or less (decision 96). A Regulated Price Plan account pays no non-RPP Global Adjustment rider. The time-of-use energy lines come from the utility's under-50 kW time-of-use record: the OEB sets one set of RPP prices for every eligible consumer.",
+    "quote": "A consumer who has a demand of 50 kilowatts or less; ... a residential complex ...; A consumer who annually uses at least 150,000 but not more than 250,000 kilowatt hours of electricity",
+    "source": {"title": "O. Reg. 95/05 (Classes of Consumers and Determination of Rates), s. 4 (2)", "url": "https://www.ontario.ca/laws/regulation/050095", "checked": "2026-11-26"}
+   },
+   "market": {
+    "rule": "Every other run pays the Ontario market price plus the Class B Global Adjustment (decision 98; Class A is not modelled), estimated each month from the run's own load shape and the observed market history (owner decision 12, scrapers.utils.market_pricing.load_shape_price), on loss-adjusted kWh (decision 99)."
+   }
+  },
+  "AB": {
+   "decided": "owner decisions 89 and 102",
+   "rule": "Below the Rate of Last Resort limit (crosswalk pairs retail_below_annual_kwh) a run pays ENMAX Energy's Rate of Last Resort for its ENMAX Power class (crosswalk pairs unit ab-enmax); at or above it, its energy follows the Alberta pool price, estimated from the run's own load shape and the observed AESO history, with no retailer charges or margins (a historical pool-energy estimate, never a retail price)."
+  }
+ },
+ "holidays": {
+  "OEB_TOU": {
+   "weekend_rule": "next_weekday",
+   "rules": [
+    {"name": "New Year's Day", "kind": "fixed", "month": 1, "day": 1},
+    {"name": "Family Day", "kind": "nth_weekday", "month": 2, "weekday": 0, "n": 3},
+    {"name": "Good Friday", "kind": "easter", "offset_days": -2},
+    {"name": "Victoria Day", "kind": "weekday_before", "month": 5, "day": 25, "weekday": 0},
+    {"name": "Canada Day", "kind": "fixed", "month": 7, "day": 1},
+    {"name": "Civic Holiday", "kind": "nth_weekday", "month": 8, "weekday": 0, "n": 1},
+    {"name": "Labour Day", "kind": "nth_weekday", "month": 9, "weekday": 0, "n": 1},
+    {"name": "Thanksgiving Day", "kind": "nth_weekday", "month": 10, "weekday": 0, "n": 2},
+    {"name": "Christmas Day", "kind": "fixed", "month": 12, "day": 25},
+    {"name": "Boxing Day", "kind": "fixed", "month": 12, "day": 26}
+   ],
+   "quote": "If a holiday falls on a weekend, the next weekday (that is not also a holiday) will have the holiday prices in effect all day.",
+   "source": {"title": "Ontario Energy Board, Holiday schedule - Time-of-Use and Ultra-Low Overnight (2026 schedule)", "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates/holiday-schedule-time-use-and-ultra-low", "checked": "2026-11-26"}
+  },
+  "AB_GENERAL": {
+   "weekend_rule": "none",
+   "rules": [
+    {"name": "New Year's Day", "kind": "fixed", "month": 1, "day": 1},
+    {"name": "Alberta Family Day", "kind": "nth_weekday", "month": 2, "weekday": 0, "n": 3},
+    {"name": "Good Friday", "kind": "easter", "offset_days": -2},
+    {"name": "Victoria Day", "kind": "weekday_before", "month": 5, "day": 25, "weekday": 0},
+    {"name": "Canada Day", "kind": "fixed", "month": 7, "day": 1, "sunday_to_monday": true},
+    {"name": "Labour Day", "kind": "nth_weekday", "month": 9, "weekday": 0, "n": 1},
+    {"name": "Thanksgiving Day", "kind": "nth_weekday", "month": 10, "weekday": 0, "n": 2},
+    {"name": "Remembrance Day", "kind": "fixed", "month": 11, "day": 11},
+    {"name": "Christmas Day", "kind": "fixed", "month": 12, "day": 25}
+   ],
+   "why": "ENMAX's on-peak hours exclude 'statutory holidays (as according to the ISO Rules definition)', but the AESO Consolidated Authoritative Document Glossary (versions of 2020-08-06, 2024-10-01 and 2026-11-01) defines no statutory holiday, so owner decision 95's fallback applies: today's provincial holiday list, the nine Alberta general holidays. Only Canada Day moves (to July 2 when July 1 is a Sunday).",
+   "quote": "Canada Day | July 1, except when it falls on a Sunday, then it is July 2",
+   "sources": [
+    {"title": "Government of Alberta, General holidays and general holiday pay: General holidays in Alberta", "url": "https://www.alberta.ca/general-holidays-pay", "checked": "2026-11-26"},
+    {"title": "AESO, Consolidated Authoritative Document Glossary effective 2026-11-01 (no 'statutory holiday' entry)", "url": "https://www.aeso.ca/assets/CADG-LARA/Consolidated-Authoritative-Document-Glossary-2026-11-01.pdf", "checked": "2026-11-26"}
+   ]
+  }
+ },
+ "clock_periods": {
+  "decided": "owner decisions 95, 97 and 112: periods in local clock time (one hour later than the simulation's standard time inside daylight saving), with each tariff's holiday rule on the 2006 calendar",
+  "ON_TOU": {
+   "utility": "Toronto Hydro-Electric System Ltd.",
+   "seasons": {"winter": [11, 12, 1, 2, 3, 4], "summer": [5, 6, 7, 8, 9, 10]},
+   "weekday_hours": {
+    "winter": {"on-peak": [[7, 11], [17, 19]], "mid-peak": [[11, 17]]},
+    "summer": {"on-peak": [[11, 17]], "mid-peak": [[7, 11], [17, 19]]}
+   },
+   "other_hours": "off-peak",
+   "holidays": "OEB_TOU",
+   "stored_tou_hours": {
+    "on-peak": "Winter (November 1 - April 30): Weekdays 7 a.m. - 11 a.m. and 5 p.m. - 7 p.m.; Summer (May 1 - October 31): Weekdays 11 a.m. - 5 p.m.",
+    "mid-peak": "Winter (November 1 - April 30): Weekdays 11 a.m. - 5 p.m.; Summer (May 1 - October 31): Weekdays 7 a.m. - 11 a.m. and 5 p.m. - 7 p.m.",
+    "off-peak": "Winter (November 1 - April 30): Weekdays 7 p.m. - 7 a.m. Weekends and holidays all day; Summer (May 1 - October 31): Weekdays 7 p.m. - 7 a.m. Weekends and holidays all day"
+   },
+   "source": {"title": "Ontario Energy Board, Electricity rates: TOU price periods (prices set for November 1, 2026)", "url": "https://www.oeb.ca/consumer-information-and-protection/electricity-rates", "checked": "2026-11-26"}
+  },
+  "ENMAX_ON_PEAK": {
+   "utility": "ENMAX Power",
+   "seasons": {"all": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]},
+   "weekday_hours": {"all": {"on-peak": [[8, 21]]}},
+   "other_hours": "off-peak",
+   "holidays": "AB_GENERAL",
+   "stored_tou_hours": {
+    "on-peak": "8 a.m. to 9 p.m. Monday to Friday inclusive, excluding statutory holidays (ISO Rules definition)",
+    "off-peak": "All hours outside On Peak"
+   },
+   "source": {"title": "ENMAX Power Corporation Distribution Tariff, rate schedule D310 (PDF page 10)", "url": "https://assets.enmax.com/api/public/content/cd1e0f8abc01404693d2c35a4502d11d?v=f9d61f49", "quote": "\"On Peak\" is all Energy consumption from 8 a.m. to 9 p.m. Monday to Friday inclusive, excluding statutory holidays (as according to the ISO Rules definition)", "checked": "2026-11-26"}
+  }
+ },
+ "demand": {
+  "decided": "owner decisions 100 and 113",
+  "rule": "Metered demand is the month's highest 15-minute demand (the simulation's own step); kVA charges use kW divided by the usage levels' power factor (power_factor_for_kva). Every run is a standard secondary-voltage service with utility-owned transformation and no contract demand (decision 113).",
+  "ratchets": [
+   {
+    "utility": "ENMAX Power",
+    "tariff_codes": ["D300", "D310"],
+    "fraction": 0.9,
+    "metered_component_regex": "^Non-Ratcheted Demand Charge$",
+    "stored_wording": "Ratchet Demand (90% of the highest kVA demand in the last 365 days ending with the last day of the bill period)",
+    "stored_metered_wording": "Metered Demand (the actual metered demand in the bill period; not ratcheted)",
+    "rule": "Billing demand is the greater of the month's metered kVA and 90% of the highest kVA in the last 365 days; over a repeating simulated year that window always holds the year's highest month. The Non-Ratcheted Demand Charge uses the metered demand. Each demand charge's stored note must still contain stored_wording (or, for the Non-Ratcheted Demand Charge, stored_metered_wording), and a demand charge of another class whose note mentions a ratchet has no reviewed rule: either makes the electricity not computable until this entry is reviewed.",
+    "quote": "\"Ratchet Demand\" is 90% of the highest kVA demand in the last 365 days ending with the last day of the Tariff bill period",
+    "source": {"title": "ENMAX Power Corporation Distribution Tariff, rate schedules D300 and D310 (PDF pages 7 and 9)", "url": "https://assets.enmax.com/api/public/content/cd1e0f8abc01404693d2c35a4502d11d?v=f9d61f49", "checked": "2026-11-26"}
+   }
+  ]
+ },
+ "loss_factors": {
+  "ON": {
+   "decided": "owner decisions 99 and 113",
+   "label_regex": "Secondary Metered Customer < 5,000 kW",
+   "loss_adjusted_buckets": ["energy", "transmission", "regulatory"],
+   "rule": "The record's published total loss factor for a secondary-metered customer (read from the scraper's note) multiplies the kWh of energy (RPP or market price plus Global Adjustment), per-kWh transmission and per-kWh regulatory charges, as the OEB bill calculator does; distribution charges and riders use metered kWh, and kW or kVA charges are unchanged. The representative models state these factors but do not apply them (decision 122).",
+   "source": {"title": "Ontario Energy Board bill calculator (Toronto Hydro GS < 50 kW, 2,500 kWh, time-of-use, $526.47 reproduced to the cent on 2026-11-24)", "url": "https://www.oeb.ca/_html/calculator/billcalc_nr.php", "checked": "2026-11-24"}
+  }
+ },
+ "gas": {
+  "Enbridge Gas": {
+   "decided": "owner decisions 101 and 111",
+   "rule": "Rate 6 General Service for every Toronto gas-heated run: non-residential buildings by its wording, and apartment buildings of more than six units because Rate 1 takes only residential buildings of six or fewer dwelling units while Enbridge files apartments in the Rate 6 commercial sector. Contract and interruptible rates are left out (decision 4).",
+   "class_quote": "a single Point of Consumption for non-residential purposes",
+   "apartment_evidence": [
+    {"title": "Enbridge Gas Inc., EB-2022-0200 (2024 rebasing), Exhibit 3, Tab 2, Schedule 6, page 2 (filed 2022-10-31; OEB record 780967, PDF page 174)", "url": "https://www.rds.oeb.ca/CMWebDrawer/Record/780967/File/document", "quote": "General service customers in the EGD rate zone are included in Rate 1 and Rate 6, which represent residential and non-residential (commercial1 and industrial) customers. ... 1 The EGD rate zone commercial sector includes apartments.", "checked": "2026-11-26"},
+    {"title": "Enbridge Gas Rate Handbook (EGD rate zone, EB-2026-0221), Rate 1 Residential Service", "url": "https://www.enbridgegas.com/-/media/Extranet-Pages/ontario/business-and-industrial/Commercial-and-Industrial/Large-Volume-Rates-and-Services/EGD-Rates/rate-handbook.pdf", "quote": "a residential building served through one meter, the Point of Consumption, and containing no more than six dwelling units", "checked": "2026-11-26"}
+   ],
+   "heating_value": {
+    "spark_gap_entry": "enbridge-qram-2026-07",
+    "rule": "m3 = GJ x 1,000 / the heat value conversion factor (GJ per 1,000 m3) of the spark gap's reviewed Enbridge entry (one copy, data/models/spark_gap.json).",
+    "confirmed": {"title": "Enbridge Gas Inc., EB-2026-0221 (October 1, 2026 QRAM), Exhibit D, Tab 2, Schedule 1, page 1 (PDF page 93)", "url": "https://www.enbridgegas.com/-/media/Extranet-Pages/Regulatory-Filings/RateCases/Rate-Cases-and-QRAM/2026-Rates-Application/EB-2026-0221-October-1-2026-QRAM/Application-and-Evidence.pdf", "quote": "The proposed October 1, 2026 prices reflect the heat value conversion factor of 39.08 GJ/103m3.", "mj_per_m3": 39.08, "checked": "2026-11-26"}
+   }
+  },
+  "ATCO Gas": {
+   "decided": "owner decisions 89 and 6",
+   "rule": "Low Use or Mid Use by the run's annual GJ inside the class's reviewed usage bounds (crosswalk usage_bounds), with Direct Energy Regulated Services' default supply price for the month; an ended monthly price leaves the run's gas not computable until the next price is stored."
+  },
+  "energy_basis": {
+   "decided": "owner decision 101",
+   "rule": "The simulated gas energy is treated as higher-heating-value energy, the basis of Enbridge's heat value conversion factor.",
+   "evidence": "EnergyPlus states that a hot-water boiler's nominal thermal efficiency is 'the efficiency relative to the higher heating value (HHV) of fuel'; its fuel heating coil and water heater documentation states no basis, and BTAP enters the NECB 2020 minimum efficiencies, which are North American equipment ratings. A lower-heating-value basis would understate Toronto m3 by about 10%.",
+   "source": {"title": "EnergyPlus 24.1 Input Output Reference, Boiler:HotWater, Field: Nominal Thermal Efficiency", "url": "https://bigladdersoftware.com/epx/docs/24-1/input-output-reference/group-plant-equipment.html#field-nominal-thermal-efficiency", "checked": "2026-11-26"}
+  }
+ },
+ "taxes": {
+  "decided": "owner decision 103",
+  "rule": "Tax and rebate lines from data/models/taxes.json in force on the build date. The Ontario Electricity Rebate tests the run's average monthly peak (50 kW or less) or its annual use (250,000 kWh or less), either one sufficing. Apartment buildings above both limits get the rebate as if the s. 1.3 notice had been given (they are priced with the residential lines); hotels and hospitals cannot use that route (s. 1.1 (2)).",
+  "apartments_use_residential_lines": true,
+  "source": {"title": "O. Reg. 363/16 (Ontario Electricity Rebate), ss. 1.1 and 1.3", "url": "https://www.ontario.ca/laws/regulation/160363", "checked": "2026-11-24"}
+ },
+ "not_applied": [
+  "Retailer contracts, energy marketers and Class A Global Adjustment (decision 98).",
+  "Alberta retailer charges and margins above the pool price for sites using 250,000 kWh a year or more.",
+  "The City of Calgary Local Access Fee (no rate in ENMAX Power's schedule), as in the representative models.",
+  "Contract, interruptible and seasonal gas services (decision 4); Enbridge's Rider I expansion surcharges (conditional).",
+  "Primary-voltage service, customer-owned transformers and contract demand (decision 113).",
+  "Daylight saving in the simulated schedules: the buildings run an hour later on the clock in summer (decision 112)."
+ ]
+}

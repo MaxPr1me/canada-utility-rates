@@ -7,6 +7,7 @@ on:
       - "scripts/build_alberta_market.py"
       - "pipeline/representative_models.py"
       - "pipeline/archetype_profiles.py"
+      - "pipeline/archetype_costs.py"
       - "pipeline/spark_gap.py"
       - "pipeline/model_monitoring.py"
       - "scripts/model_monitoring_issue.js"
@@ -64,7 +65,7 @@ jobs:
           pip install -e .
 
       - name: Test market ingestion and benchmarks
-        run: python -m pytest -q tests/test_alberta_market.py tests/test_ws4_aeso.py tests/test_market_benchmarks.py tests/test_models_7c.py tests/test_model_monitoring.py tests/test_archetype_profiles.py tests/test_spark_gap.py
+        run: python -m pytest -q tests/test_alberta_market.py tests/test_ws4_aeso.py tests/test_market_benchmarks.py tests/test_models_7c.py tests/test_model_monitoring.py tests/test_archetype_profiles.py tests/test_spark_gap.py tests/test_archetype_costs.py
 
       - name: Synchronize inputs before calculating
         run: git pull --ff-only origin main
@@ -82,6 +83,13 @@ jobs:
         continue-on-error: true
         run: python -m pipeline.spark_gap --build --output site/data/spark_gap.json 2>&1 | tee spark_gap_output.txt
 
+      # Archetype costs (owner decisions 105-106, 2026-11-24): the simulated buildings priced with the tariffs and market
+      # window of this refresh, before the monitoring check that compares the file with the models; a failed build
+      # keeps the previous file and never blocks the models.
+      - name: Refresh archetype costs
+        continue-on-error: true
+        run: python -m pipeline.archetype_costs --build --output site/data/archetype_costs.json 2>&1 | tee archetype_costs_output.txt
+
       - name: Record model change history
         id: monitor_history
         continue-on-error: true
@@ -97,6 +105,7 @@ jobs:
           if [ -f site/data/model_change_history.json ]; then git add site/data/model_change_history.json; fi
           if [ -f site/data/model_cost_quarterly.json ]; then git add site/data/model_cost_quarterly.json; fi
           if [ -f site/data/spark_gap.json ]; then git add site/data/spark_gap.json; fi
+          if [ -f site/data/archetype_costs.json ]; then git add site/data/archetype_costs.json; fi
           if git diff --staged --quiet; then
             echo "No market changes to commit."
           else

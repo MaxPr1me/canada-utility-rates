@@ -1,0 +1,241 @@
+/* Building Archetypes tab (method AC-1): simulated NECB 2020 buildings priced at today's stored tariffs. */
+
+#view-archetypes .hidden { display: none; }
+
+.arch-tab-badge,
+.arch-badge {
+    display: inline-block;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: #e8eaf6;
+    color: #283593;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.arch-badge-caution {
+    background: #fff3cd;
+    color: #664d03;
+}
+
+.arch-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+}
+
+.arch-table-wrap {
+    overflow-x: auto;
+}
+
+.arch-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.arch-table caption {
+    text-align: left;
+    color: var(--color-text-secondary);
+    padding-bottom: 0.4rem;
+}
+
+.arch-table th,
+.arch-table td {
+    padding: 0.45rem 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.arch-table .rm-num,
+.arch-months .rm-num,
+.arch-groups .rm-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.arch-table tbody tr.arch-selected {
+    background: #eef4ff;
+}
+
+.arch-sort,
+.arch-open,
+.arch-close {
+    font: inherit;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    border-radius: 6px;
+    padding: 0.2rem 0.55rem;
+    cursor: pointer;
+}
+
+.arch-sort {
+    border: none;
+    padding: 0;
+    font-weight: 600;
+    text-decoration: underline dotted;
+}
+
+.arch-close {
+    margin-left: auto;
+}
+
+.arch-block {
+    margin-top: 1rem;
+}
+
+.arch-kv {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.arch-kv th {
+    width: 14rem;
+    text-align: left;
+    vertical-align: top;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem 0.3rem 0;
+}
+
+.arch-kv td {
+    padding: 0.3rem 0;
+    overflow-wrap: anywhere;
+}
+
+.arch-kv ul {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.arch-groups td {
+    padding: 0.1rem 0.75rem 0.1rem 0;
+}
+
+.arch-months {
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+}
+
+.arch-months th,
+.arch-months td {
+    padding: 0.2rem 0.75rem 0.2rem 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.arch-chart-wrap {
+    max-width: 44rem;
+}
+
+.arch-chart {
+    width: 100%;
+    height: auto;
+}
+
+.arch-bar-electricity {
+    fill: var(--color-elec);
+}
+
+.arch-bar-gas {
+    fill: var(--color-gas);
+}
+
+.arch-axis {
+    font-size: 11px;
+    fill: var(--color-text-secondary);
+}
+
+.arch-legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+}
+
+.arch-key::before {
+    content: "";
+    display: inline-block;
+    width: 0.8rem;
+    height: 0.8rem;
+    margin-right: 0.3rem;
+    vertical-align: -0.1rem;
+    border-radius: 2px;
+}
+
+.arch-key-electricity::before {
+    background: var(--color-elec);
+}
+
+.arch-key-gas::before {
+    background: var(--color-gas);
+}
+
+/* Phones: each simulated building becomes a stacked card (owner decision 107). */
+@media (max-width: 640px) {
+    .arch-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+
+    .arch-table,
+    .arch-table tbody,
+    .arch-table tr,
+    .arch-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .arch-table tr {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        margin-bottom: 0.6rem;
+        padding: 0.4rem 0.6rem;
+        background: var(--color-surface);
+    }
+
+    .arch-table td {
+        border: none;
+        padding: 0.2rem 0;
+        text-align: left;
+    }
+
+    .arch-table td.rm-num {
+        text-align: left;
+    }
+
+    .arch-table td[data-label]:not(.arch-name)::before {
+        content: attr(data-label) ": ";
+        font-weight: 600;
+        color: var(--color-text-secondary);
+    }
+
+    /* Child selectors only: the charge-group table nested in a value cell keeps its two columns. */
+    .arch-kv > tr > th,
+    .arch-kv > tbody > tr > th {
+        width: auto;
+        display: block;
+        padding-bottom: 0;
+    }
+
+    .arch-kv > tr > td,
+    .arch-kv > tbody > tr > td {
+        display: block;
+        padding-bottom: 0.5rem;
+    }
+}
+
+/* Same narrow-screen filter layout as the Representative Models view. */
+@media (max-width: 768px) {
+    #view-archetypes .market-controls {
+        align-items: stretch;
+    }
+}

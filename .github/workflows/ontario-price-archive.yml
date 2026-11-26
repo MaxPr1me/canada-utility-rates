@@ -149,6 +149,13 @@ jobs:
         continue-on-error: true
         run: python -m pipeline.spark_gap --build --output site/data/spark_gap.json 2>&1 | tee spark_gap_output.txt
 
+      # Archetype costs (owner decisions 105-106, 2026-11-24): the simulated buildings priced with the tariffs and market
+      # window of this refresh; a failed build keeps the previous file and never blocks the models.
+      - name: Refresh archetype costs
+        if: ${{ !cancelled() && steps.models.outcome == 'success' }}
+        continue-on-error: true
+        run: python -m pipeline.archetype_costs --build --output site/data/archetype_costs.json 2>&1 | tee archetype_costs_output.txt
+
       - name: Record model change history
         id: monitor_history
         if: ${{ !cancelled() && steps.models.outcome == 'success' }}
@@ -167,6 +174,7 @@ jobs:
           if [ -f site/data/model_change_history.json ]; then git add site/data/model_change_history.json; fi
           if [ -f site/data/model_cost_quarterly.json ]; then git add site/data/model_cost_quarterly.json; fi
           if [ -f site/data/spark_gap.json ]; then git add site/data/spark_gap.json; fi
+          if [ -f site/data/archetype_costs.json ]; then git add site/data/archetype_costs.json; fi
           git add data/market/ontario_total_hourly.csv data/market/ontario_total_hourly_2020_2025.csv
           git add data/market/ontario_total_monthly.csv data/market/ontario_total_metadata.json
           if git diff --staged --quiet; then

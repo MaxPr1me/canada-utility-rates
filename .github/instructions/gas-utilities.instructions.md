@@ -38,6 +38,11 @@ and gaps: [gap report](../../docs/live_parser_gap_report.md).
   Socialization" charges and its seven "Basic Fee — Band n" components with their annual thresholds;
   and the annual or monthly class limits stored as `usage_min`/`usage_max`. A mismatch fails closed:
   the class or charge becomes not computable in the models until the entry is reviewed.
+- **The Building Archetypes costs (method AC-1)** price Enbridge EGD-6 and ATCO Gas Low and Mid Use.
+  EGD-6's stored eligibility must contain the reviewed quote in `data/models/archetypes.json`
+  (`gas.Enbridge Gas.class_quote`), and Enbridge's m³ use the reviewed heating value shared with the
+  spark gap. ATCO's class is chosen by its stored usage limits, and exactly one class must fit. A
+  mismatch makes the affected buildings' gas not computable until the entry is reviewed.
 
 ## Enbridge Gas (Ontario)
 

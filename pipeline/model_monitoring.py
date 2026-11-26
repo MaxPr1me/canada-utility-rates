@@ -746,6 +746,15 @@ def input_checks(root: Path, now: datetime) -> list[dict]:
         checks.append({"id": "spark_gap", "ok": not problems, "details": problems})
     except (OSError, ValueError, KeyError, TypeError) as exc:
         checks.append({"id": "spark_gap", "ok": False, "details": [f"Spark gap cannot be checked: {exc}"]})
+    try:
+        # Archetype costs (owner decision 105, 2026-11-24): never part of the model change history; monitoring reports
+        # only a build that failed (a missing file, or one older than the models) or reviewed inputs past their review.
+        from pipeline.archetype_costs import archetype_costs_problems
+
+        problems = archetype_costs_problems(root, now.date())
+        checks.append({"id": "archetype_costs", "ok": not problems, "details": problems})
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        checks.append({"id": "archetype_costs", "ok": False, "details": [f"Archetype costs cannot be checked: {exc}"]})
     return checks
 
 

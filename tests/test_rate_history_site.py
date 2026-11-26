@@ -731,8 +731,9 @@ def test_the_other_views_still_load(open_site):
     page, errors = open_site(width=390)
     expect(page.locator(".rate-card").first).to_be_visible()
     expect(page.locator(".nav-tab")).to_have_text(["Rate Browser", "Rate History", "Market Pricing", "Representative Models",
-                                                   "Across-Canada", re.compile("^Compare")])
-    for view in ("rate-history", "market", "models", "across-canada", "compare", "rates"):
+                                                   re.compile("^Building Archetypes"), "Across-Canada",
+                                                   re.compile("^Compare")])
+    for view in ("rate-history", "market", "models", "archetypes", "across-canada", "compare", "rates"):
         page.locator(f'[data-view="{view}"]').click()
         expect(page.locator(f"#view-{view}")).to_be_visible()
         if view == "across-canada":

@@ -7,7 +7,7 @@ import csv
 import dataclasses
 import re
 import statistics
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import openpyxl
 import pytest
@@ -200,6 +200,74 @@ def test_the_fingerprint_follows_the_values_used_and_not_the_run_order(tmp_path)
     assert ap.archetype_fingerprint(changed) != fingerprint
 
 
+def test_hours_keep_standard_time_months_and_read_clock_time_inside_daylight_saving(tmp_path):
+    # Owner decision 112: bills use the simulation's standard-time months; clock rules read the hour one hour later
+    # inside daylight saving (2006: from Sunday March 12 02:00 to Sunday November 5 01:00 standard time).
+    calendar = ap.hour_calendar()
+    assert len(calendar) == ap.HOURS == 8760
+
+    def hour(moment):
+        return int((moment - datetime(ap.YEAR, 1, 1)) / timedelta(hours=1))
+
+    assert calendar[hour(datetime(2006, 3, 12, 1))] == (3, datetime(2006, 3, 12, 1))
+    assert calendar[hour(datetime(2006, 3, 12, 2))] == (3, datetime(2006, 3, 12, 3))
+    assert calendar[hour(datetime(2006, 11, 5, 0))] == (11, datetime(2006, 11, 5, 1))
+    assert calendar[hour(datetime(2006, 11, 5, 1))] == (11, datetime(2006, 11, 5, 1))
+    # The last standard-time hour of July is billed in July although its clock time is 00:00 on August 1.
+    assert calendar[hour(datetime(2006, 7, 31, 23))] == (7, datetime(2006, 8, 1, 0))
+    electricity = _steady(spike=(datetime(2006, 7, 31, 23, 30), 3_600_000.0))
+    _write_run(tmp_path, "on-run", electricity)
+    _write_workbook(tmp_path, [_row("on-run", electricity)])
+    run = ap.load_archetypes(tmp_path).runs[0]
+    assert len(run.hourly_kwh) == ap.HOURS and run.hourly_kwh[hour(datetime(2006, 7, 31, 23))] == pytest.approx(1.75)
+    assert sum(run.hourly_kwh) == pytest.approx(run.annual_kwh)
+    labels = ["night" if clock.hour < 7 else "day" for _, clock in calendar]
+    split = ap.period_kwh(run, labels)
+    assert sorted(split) == list(range(1, 13))
+    assert [sum(split[month].values()) for month in range(1, 13)] == pytest.approx(list(run.monthly_kwh))
+    assert split[1] == pytest.approx({"day": 31 * 17, "night": 31 * 7})
+    with pytest.raises(ValueError):
+        ap.period_kwh(run, labels[:-1])
+
+
+OEB_HOLIDAYS = [  # the ten holidays of the OEB time-of-use schedule, as reviewed rules
+    {"name": "New Year's Day", "kind": "fixed", "month": 1, "day": 1},
+    {"name": "Family Day", "kind": "nth_weekday", "month": 2, "weekday": 0, "n": 3},
+    {"name": "Good Friday", "kind": "easter", "offset_days": -2},
+    {"name": "Victoria Day", "kind": "weekday_before", "month": 5, "day": 25, "weekday": 0},
+    {"name": "Canada Day", "kind": "fixed", "month": 7, "day": 1},
+    {"name": "Civic Holiday", "kind": "nth_weekday", "month": 8, "weekday": 0, "n": 1},
+    {"name": "Labour Day", "kind": "nth_weekday", "month": 9, "weekday": 0, "n": 1},
+    {"name": "Thanksgiving Day", "kind": "nth_weekday", "month": 10, "weekday": 0, "n": 2},
+    {"name": "Christmas Day", "kind": "fixed", "month": 12, "day": 25},
+    {"name": "Boxing Day", "kind": "fixed", "month": 12, "day": 26},
+]
+
+
+def test_holiday_rules_follow_each_tariffs_weekend_rule():
+    oeb = ap.holiday_dates(OEB_HOLIDAYS, weekend_rule="next_weekday")
+    weekdays = sorted(day.isoformat() for day in oeb if day.weekday() < 5)
+    # 2006: New Year's Day (Sunday) is observed on Monday January 2 and Canada Day (Saturday) on Monday July 3.
+    assert weekdays == ["2006-01-02", "2006-02-20", "2006-04-14", "2006-05-22", "2006-07-03", "2006-08-07",
+                        "2006-09-04", "2006-10-09", "2006-12-25", "2006-12-26"]
+    # The OEB's 2026 schedule: Boxing Day (Saturday) moves past Christmas (Friday) to Monday December 28.
+    assert date(2026, 12, 28) in ap.holiday_dates(OEB_HOLIDAYS, weekend_rule="next_weekday", year=2026)
+    # Christmas on Saturday and Boxing Day on Sunday (2027): Monday and Tuesday, the next weekdays not holidays.
+    observed = ap.holiday_dates(OEB_HOLIDAYS, weekend_rule="next_weekday", year=2027)
+    assert observed[date(2027, 12, 27)].startswith("Christmas") and observed[date(2027, 12, 28)].startswith("Boxing")
+    # Alberta moves only a Sunday Canada Day to July 2; other weekend holidays stay put.
+    canada = {"name": "Canada Day", "kind": "fixed", "month": 7, "day": 1, "sunday_to_monday": True}
+    assert list(ap.holiday_dates([canada])) == [date(2006, 7, 1)]
+    assert list(ap.holiday_dates([canada], year=2029)) == [date(2029, 7, 2)]
+    assert ap.holiday_date({"kind": "weekday_before", "month": 5, "day": 25, "weekday": 0}, 2026) == date(2026, 5, 18)
+    for bad in ({"kind": "lunar"}, {"kind": "fixed", "month": 2}, {"kind": "nth_weekday", "month": 2, "weekday": 0,
+                                                                  "n": 5}):
+        with pytest.raises(ValueError):
+            ap.holiday_date(bad)
+    with pytest.raises(ValueError):
+        ap.holiday_dates(OEB_HOLIDAYS, weekend_rule="previous_weekday")
+
+
 def test_the_repository_runs_all_validate_and_match_the_documented_size_band_figures():
     data = ap.load_archetypes()
     assert data.problems == () and len(data.runs) == data.workbook_rows == 68
@@ -207,3 +275,5 @@ def test_the_repository_runs_all_validate_and_match_the_documented_size_band_fig
         runs = ap.runs_in_band(data, "ON", low, high) + ap.runs_in_band(data, "AB", low, high)
         assert len(runs) == count
         assert round(statistics.median(run.kwh_per_kw for run in runs), 1) == median
+    for run in data.runs:
+        assert len(run.hourly_kwh) == ap.HOURS and sum(run.hourly_kwh) == pytest.approx(run.annual_kwh, rel=1e-9)

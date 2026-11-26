@@ -1,6 +1,6 @@
 ---
-description: "Use when changing representative models, model change monitoring, their inputs or the views that read them. Covers crosswalk rules, required contributors, usage levels, taxes, block periods, model states, the estimated market energy (method 7S-2) and the observed benchmark, semantic change history, the quarter-end model costs for Rate History, METHOD_VERSION, Across-Canada constraints and the spark gap comparison (method SG-1: comparison fuels, heating values, heating-oil prices, efficiencies, break-even COP)."
-applyTo: "pipeline/representative_models.py, pipeline/archetype_profiles.py, pipeline/model_monitoring.py, pipeline/spark_gap.py, scripts/fetch_heating_oil.py, tests/test_model_monitoring.py, tests/test_model_cost_quarterly.py, tests/test_archetype_profiles.py, tests/test_spark_gap.py, tests/test_heating_oil_prices.py, data/models/**, data/fuel/**, site/js/models.js, site/js/across-canada.js, site/js/spark-gap.js, site/css/models.css, site/css/across-canada.css, site/css/spark-gap.css, site/data/representative_models.json, site/data/model_change_history.json, site/data/model_cost_quarterly.json, site/data/spark_gap.json"
+description: "Use when changing representative models, model change monitoring, their inputs or the views that read them. Covers crosswalk rules, required contributors, usage levels, taxes, block periods, model states, the estimated market energy (method 7S-2) and the observed benchmark, semantic change history, the quarter-end model costs for Rate History, METHOD_VERSION, Across-Canada constraints, the spark gap comparison (method SG-1: comparison fuels, heating values, heating-oil prices, efficiencies, break-even COP) and the simulated building archetype costs (method AC-1: rate classes from each building's own load, RPP and Rate of Last Resort eligibility, clock periods and holidays, demand ratchets, Ontario loss factors)."
+applyTo: "pipeline/representative_models.py, pipeline/archetype_profiles.py, pipeline/archetype_costs.py, pipeline/model_monitoring.py, pipeline/spark_gap.py, scripts/fetch_heating_oil.py, tests/test_model_monitoring.py, tests/test_model_cost_quarterly.py, tests/test_archetype_profiles.py, tests/test_archetype_costs.py, tests/test_spark_gap.py, tests/test_heating_oil_prices.py, data/models/**, data/fuel/**, site/js/models.js, site/js/across-canada.js, site/js/spark-gap.js, site/js/archetypes.js, site/css/models.css, site/css/across-canada.css, site/css/spark-gap.css, site/css/archetypes.css, site/data/representative_models.json, site/data/model_change_history.json, site/data/model_cost_quarterly.json, site/data/spark_gap.json, site/data/archetype_costs.json"
 ---
 # Representative models
 
@@ -490,3 +490,92 @@ change checks or coverage (decision 143).
   `spark_gap` check is described in the [CI rules](ci-data-history.instructions.md#model-monitoring).
 - **Adding a gas utility billed in m³** needs a reviewed heating value entry (else the labelled CER
   factor); a utility that appears in more than one model at a spark gap point needs a reviewed choice.
+
+## Archetype costs (method AC-1, owner decisions 86-114 of 2026-11-24 and 166-168 of 2026-11-26)
+
+`pipeline/archetype_costs.py` writes `site/data/archetype_costs.json`; `site/js/archetypes.js` shows it
+on the Building Archetypes tab ([website rules](website.instructions.md)). Reviewed inputs:
+`data/models/archetypes.json` (each value quoting its official source with a `checked` or `reviewed`
+date). The costs are simulated comparison aids (safeguard 8, decisions 104-105): never a bill or live
+coverage, and never in the models, medians, Across-Canada, Compare, Rate History, the change log or
+change checks.
+
+- **Runs and region (89-92):** all validated runs from `archetype_profiles.load_archetypes()`, priced
+  with the utilities serving the city named by the weather file: Toronto Hydro and Enbridge Gas (EGD
+  rate zone); ENMAX Power with ENMAX Energy's Rate of Last Resort or pool energy, and ATCO Gas with the
+  DERS default supply, in Calgary. A run above 300 occupied unmet hours is flagged, never corrected.
+  An apartment building is one bulk-metered account, its dwelling units cited from openstudio-standards.
+- **Pricing date (114):** all 12 months at the tariffs, taxes and market window in force on the build
+  date (`as_of`); later changes are not projected.
+- **Classes (100, 111, 113, 167):**
+  - Toronto Hydro: the average of the 12 monthly highest 15-minute demands against each stored class's
+    limits. An apartment building of more than six units takes a 50 kW and over class (its Conditions
+    of Service, decision 167). The stored eligibility must contain the reviewed quotes, and every
+    reviewed class must be stored, or the electricity fails closed.
+  - ENMAX Power, on the repeating simulated year with kVA = kW ÷ 0.9: D310 above 150 kVA in two months,
+    else D300 at 5,000 kWh in six months, else D200. D300 and D310 bill the greater of the month's
+    demand and 90% of the year's highest. Each demand charge's stored note must still state the reviewed
+    ratchet (`stored_wording`, or `stored_metered_wording` for the Non-Ratcheted Demand Charge), and a
+    ratchet mentioned in any other class fails closed.
+  - Every run is a standard secondary service: Toronto Hydro's secondary loss factor, no transformer
+    allowance, and D310 rather than D410.
+  - Gas: Enbridge Rate 6 (apartment buildings included, per Enbridge's EB-2022-0200 evidence, decision
+    111); ATCO Gas Low or Mid Use by annual GJ, and exactly one must fit.
+- **Supply (96-98, 102):**
+  - Toronto: Regulated Price Plan time-of-use where O. Reg. 95/05 makes the account eligible (50 kW or
+    less, a residential complex, or 250,000 kWh a year or less). A class with a value-less market energy
+    line takes the stored RPP TOU energy lines in its place and drops the reviewed
+    `drop_reference_entries` (the non-RPP Class B GA). Otherwise it pays the market price plus Class B
+    GA (Class A is not modelled).
+  - Calgary: ENMAX Energy's Rate of Last Resort (the crosswalk pair) below the 250,000 kWh pair limit,
+    otherwise pool energy with no retailer charges or margins.
+  - Market energy uses `load_shape_price()`'s month prices for the run's own bins, × kWh (× the loss
+    factor in Ontario), labelled estimated.
+- **Clock and holidays (94, 95, 112, 166):**
+  - Timestep labels are interval starts in local standard time. Clock rules (the OEB TOU periods,
+    ENMAX's 8 a.m.-9 p.m. on-peak hours) add an hour inside daylight saving, using today's rule on the
+    2006 calendar.
+  - Each tariff's own holidays apply: the OEB TOU list with its next-weekday rule, and for ENMAX
+    Alberta's general holidays, since AESO's glossary defines no statutory holiday.
+  - The reviewed periods must match the stored `tou_hours` text, or the build fails closed.
+  - Market bins: IESO in EST; AESO by its hour-ending labels (decision 166).
+- **Month pricer:** `representative_models._prepare()` decides which charges apply. Each charge is then
+  priced with the month's own quantities: actual days, monthly blocks, seasons, TOU and on-peak kWh
+  from the run's own hours, and the ratcheted demand. A charge it cannot price makes that fuel "not
+  computable", with the reason.
+- **Loss factor (99):**
+  - Ontario energy (RPP, or market price plus GA) and the per-kWh transmission and regulatory charges
+    use kWh × the record's published secondary-metered total loss factor. Distribution, riders and
+    kW/kVA charges use metered values.
+  - `tests/test_archetype_costs.py` reproduces the OEB bill calculator: Toronto Hydro GS < 50 kW at
+    2,500 kWh TOU gives $526.47.
+  - The representative models do not apply loss factors (decision 122); the method text says so.
+- **Gas units (101):** Enbridge m³ = GJ × 1,000 ÷ the heating value of the spark gap entry named in
+  `gas.Enbridge Gas.heating_value.spark_gap_entry`, which must equal the reviewed `confirmed.mj_per_m3`
+  (else Toronto gas fails closed). BTAP gas energy is taken as higher heating value: a stated assumption
+  in `gas.energy_basis`.
+- **Taxes (103):** `tax_lines()` at the average month (annual kWh ÷ 12, the average monthly peak). The
+  Ontario Electricity Rebate tests the average monthly peak (50 kW or less) or the annual use (250,000
+  kWh or less). Toronto apartment buildings use the residential lines, so they get the rebate as
+  residential complexes; hotels and hospitals cannot use that route.
+- **Output:** `method_version` AC-1, `label` SIMULATED, `as_of`, `generated_at`, the caveat, method text
+  and not-applied list, a summary, and `inputs`:
+  - fingerprints of the archetypes, their hourly values, `archetypes.json`, the taxes and the records
+    used;
+  - the market windows, the records used and the heating value.
+
+  Then the charge-group labels and `runs[]`: identity, quality, apartment, load, electricity and gas
+  (class and why, supply, months, annual groups, taxes, effective rates, sources, or `reasons` when not
+  computable), total, the electric/gas pair, and the simulation file links.
+- **Publication and monitoring (105-106):** rebuilt by every export and by the "Refresh archetype costs"
+  step of Market Benchmarks and Ontario Price Archive; a failed build keeps the previous file. Model
+  monitoring's `archetype_costs` check is in the [CI rules](ci-data-history.instructions.md#model-monitoring).
+  An ended or missing price makes the affected buildings not computable until the next export after it is
+  stored. That is expected, not a monitoring problem.
+- **Tests:**
+  - `tests/test_archetype_costs.py`: frozen records in `tests/fixtures/archetype_records.json`, with a
+    test-only ENMAX RoLR-MC record until the real one is stored; the real BTAP runs for the class counts;
+  - `tests/test_archetype_profiles.py`: the hourly calendar and the holidays;
+  - `tests/test_archetypes_site.py`: the tab at 1280 and 390 px.
+- **Adding a city or utility** needs its location entry, the class rules quoting the tariff, its clock
+  periods and holidays, and tests. The config check accepts only Toronto and Calgary today.

@@ -580,14 +580,17 @@ def test_archive_workflow_commits_the_archive_before_building_the_market_history
              "Update the Ontario Price archive",
              "Commit updated archive", "Synchronize model inputs", "Build the Ontario market history",
              "Export combined Ontario prices", "Refresh representative models", "Refresh spark gap comparison",
-             "Record model change history",
+             "Refresh archetype costs", "Record model change history",
              "Commit updated market history",
              "Keep raw reports for recovery after failure",
              "Create issue on failure", "Record explicit workflow outcomes", "Keep monitoring evidence"]
     assert [name for name, _ in steps] == order
-    # Spark gap (owner decision 143, 2026-11-26): rebuilt after the models, before the history check, never blocking.
+    # Spark gap (owner decision 143, 2026-11-26) and archetype costs (decision 106, 2026-11-24): rebuilt after the
+    # models, before the history check, never blocking.
     spark = _step(steps, "Refresh spark gap comparison")
     assert "continue-on-error: true" in spark and "python -m pipeline.spark_gap --build" in _run(spark)
+    archetypes = _step(steps, "Refresh archetype costs")
+    assert "continue-on-error: true" in archetypes and "python -m pipeline.archetype_costs --build" in _run(archetypes)
     archive_commit = _run(_step(steps, "Commit updated archive"))
     assert re.findall(r"git add [^\n]+", archive_commit) == ["git add data/market/ontario_price_hourly.csv"]
     market = _step(steps, "Build the Ontario market history")
@@ -600,6 +603,7 @@ def test_archive_workflow_commits_the_archive_before_building_the_market_history
         "git add site/data/model_change_history.json; fi",
         "git add site/data/model_cost_quarterly.json; fi",
         "git add site/data/spark_gap.json; fi",
+        "git add site/data/archetype_costs.json; fi",
         "git add data/market/ontario_total_hourly.csv data/market/ontario_total_hourly_2020_2025.csv",
         "git add data/market/ontario_total_monthly.csv data/market/ontario_total_metadata.json"]
     assert 'git commit -m "data: Ontario market history update $(date +%Y-%m-%d)"' in market_commit

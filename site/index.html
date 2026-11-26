@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/across-canada.css">
     <link rel="stylesheet" href="css/rate-history.css">
     <link rel="stylesheet" href="css/spark-gap.css">
+    <link rel="stylesheet" href="css/archetypes.css">
 </head>
 <body>
     <header>
@@ -19,6 +20,7 @@
             <button class="nav-tab" data-view="rate-history">Rate History</button>
             <button class="nav-tab" data-view="market">Market Pricing</button>
             <button class="nav-tab" data-view="models">Representative Models</button>
+            <button class="nav-tab" data-view="archetypes">Building Archetypes <span class="arch-tab-badge">Simulated</span></button>
             <button class="nav-tab" data-view="across-canada">Across-Canada</button>
             <button class="nav-tab" data-view="compare">Compare <span id="compare-count">0/2</span></button>
         </nav>
@@ -300,6 +302,58 @@
 
         </div><!-- /view-models -->
 
+        <!-- ── Building Archetypes View (method AC-1, owner decisions 107-110) ── -->
+        <div id="view-archetypes" class="view-panel hidden">
+
+            <section class="market-header">
+                <h2>Building Archetypes <span class="arch-badge">Simulated</span></h2>
+            </section>
+
+            <section class="estimated-banner" role="note">
+                <span>Simulated buildings, not real buildings or bills: NECB 2020 archetype buildings simulated with NRCan's BTAP over a typical weather year (CWEC 2020), each priced month by month with the tariffs stored today for its city, in the rate class its own simulated load qualifies for. Shown for comparison only; never part of the representative models or any other view.</span>
+            </section>
+
+            <p id="arch-loading" class="rm-loading hidden" role="status">Loading the simulated buildings&hellip;</p>
+            <section id="arch-notice" class="estimated-banner hidden" role="status"></section>
+
+            <div id="arch-content" class="hidden">
+                <section class="market-controls">
+                    <div class="filter-group">
+                        <label for="arch-city">City</label>
+                        <select id="arch-city"></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="arch-type">Building type</label>
+                        <select id="arch-type"></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="arch-fuel">Heating</label>
+                        <select id="arch-fuel">
+                            <option value="">Electric and natural gas heating</option>
+                            <option value="Electricity">Electric heating</option>
+                            <option value="NaturalGas">Natural gas heating</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="arch-tax">Costs</label>
+                        <select id="arch-tax">
+                            <option value="with_tax">With tax and rebates</option>
+                            <option value="without_tax">Before tax and rebates</option>
+                        </select>
+                    </div>
+                </section>
+
+                <section class="market-section">
+                    <p id="arch-asof" class="section-desc" role="status"></p>
+                    <div id="arch-table-wrap" class="arch-table-wrap"></div>
+                </section>
+
+                <section id="arch-detail" class="market-section hidden" aria-live="polite"></section>
+                <section id="arch-notes" class="market-section"></section>
+            </div><!-- /arch-content -->
+
+        </div><!-- /view-archetypes -->
+
         <div id="view-across-canada" class="view-panel hidden">
             <nav class="across-subtabs" aria-label="Across-Canada comparisons">
                 <button type="button" class="across-subtab" data-across-tab="residential" aria-pressed="true">Residential electricity</button>
@@ -398,6 +452,7 @@
     <script src="js/models.js"></script>
     <script src="js/across-canada.js"></script>
     <script src="js/spark-gap.js"></script>
+    <script src="js/archetypes.js"></script>
     <script src="js/rate-history.js"></script>
 </body>
 </html>

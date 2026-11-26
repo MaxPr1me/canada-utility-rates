@@ -14,6 +14,7 @@ Output:
     site/data/rate_history_revisions.json — same-date price corrections from the database snapshots (Rate History tab)
     site/data/representative_models.json — Phase 7 representative models (provinces and territories; Representative Models tab)
     site/data/spark_gap.json — spark gap comparison, electricity vs the usual heating fuel (Across-Canada, Spark gap)
+    site/data/archetype_costs.json — simulated building archetype costs (Building Archetypes, labelled SIMULATED)
 """
 
 from __future__ import annotations
@@ -166,6 +167,7 @@ def export_all(generation_receipt_path: Path | None = None) -> None:
     result = export_representative_models(tariffs, SITE_DATA_DIR / "representative_models.json",
                                          generation_receipt_path=generation_receipt_path)
     spark_gap = export_spark_gap(tariffs, SITE_DATA_DIR / "spark_gap.json")
+    archetypes = export_archetype_costs(tariffs, SITE_DATA_DIR / "archetype_costs.json")
     print(f"JSON export complete -> {SITE_DATA_DIR}")
     if revisions is None:
         print("Rate history revisions export FAILED; the previous revisions file was retained.")
@@ -173,6 +175,8 @@ def export_all(generation_receipt_path: Path | None = None) -> None:
         print("Representative model refresh FAILED; the previous model file was retained.")
     if spark_gap is None:
         print("Spark gap refresh FAILED; the previous spark gap file was retained.")
+    if archetypes is None:
+        print("Archetype cost refresh FAILED; the previous archetype cost file was retained.")
 
 
 def _number_or_none(value: object) -> bool:
@@ -362,6 +366,25 @@ def export_spark_gap(tariffs: list[dict], out_path: Path) -> dict | None:
         logger.exception("Spark gap export failed; %s left unchanged", out_path)
         return None
     logger.info("Exported the spark gap comparison to %s", out_path)
+    return result
+
+
+def export_archetype_costs(tariffs: list[dict], out_path: Path) -> dict | None:
+    """Price the simulated building archetypes (pipeline.archetype_costs, method AC-1) after the models and write them.
+
+    Never raises: on any failure the error is logged, ``None`` is returned and an existing file is left untouched, and
+    model monitoring reports the failed build (owner decisions 105-106, 2026-11-24). The simulated buildings are cached
+    per process, so a build that already read them for the models does not read them again.
+    """
+    try:
+        # Imported here so a broken archetype module cannot break the main export.
+        from pipeline import archetype_costs
+
+        result = archetype_costs.write_archetype_costs(out_path, rates=tariffs)
+    except Exception:
+        logger.exception("Archetype cost export failed; %s left unchanged", out_path)
+        return None
+    logger.info("Exported the simulated archetype costs to %s", out_path)
     return result
 
 

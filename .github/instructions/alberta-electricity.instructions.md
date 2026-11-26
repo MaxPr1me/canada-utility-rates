@@ -37,6 +37,13 @@ Decisions marked 2026-10-09 are the owner's.
   only where priced; D22, D24 and D34 are out of scope (2026-10-09).
 - **ENMAX Power** (D100, D200, D300, D310, D410): D700 is in scope only where priced, and its AESO
   flow-through is source-blocked (2026-10-09). D500 and D600 are excluded.
+- **The Building Archetypes costs (method AC-1) read ENMAX Power's stored wording.** Each class's
+  eligibility must contain its reviewed quote in `data/models/archetypes.json` (`electricity_classes`).
+  Every D300 and D310 demand charge's note must state the reviewed ratchet, or metered demand for the
+  Non-Ratcheted Demand Charge (`demand.ratchets`). The D310 on-peak hours text must equal
+  `clock_periods.ENMAX_ON_PEAK.stored_tou_hours`. Keep them in step when the scraper's wording changes:
+  a mismatch makes the Calgary buildings not computable until the entry is reviewed
+  ([representative-models rules](representative-models.instructions.md)).
 - **EPCOR Distribution** (DAS-R, SC, MC, TOU, TOUP): "2026 INTERIM RATE" tariffs are live at medium
   confidence with an interim note (2026-10-09). Values must match the tariffs' lookup tables. Riders
   G, J and K are dated components. The SAS operating reserve (a percentage of the pool price) is a

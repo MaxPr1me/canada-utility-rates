@@ -63,6 +63,15 @@ Market history: [market-data.instructions.md](market-data.instructions.md).
 - Hydro One (owner-confirmed readings): Seasonal = the R2 seasonal service charge plus the shared R2
   lines, without the RRRP credit; year-round R2 carries the RRRP credit as conditional; UR/R1
   seasonal properties use the UR/R1 records; DRP is not modelled.
+- **The Building Archetypes costs (method AC-1) read Toronto Hydro's stored wording.** Each GS class's
+  eligibility must contain its reviewed quote and the apartment wording in
+  `data/models/archetypes.json` (`electricity_classes`). The RPP TOU hours text of the stored records
+  must equal `clock_periods.ON_TOU.stored_tou_hours`. The secondary-metered total loss factor is read
+  from the "Published total loss factors" note (`loss_factors.ON.label_regex`). For an RPP-eligible
+  account, the archetype costs replace a demand class's value-less Market Energy line with the RPP TOU
+  energy lines. Keep these in step when `ontario_ldc.py` or the OEB wording changes: a mismatch makes
+  the Toronto buildings not computable until the entry is reviewed
+  ([representative-models rules](representative-models.instructions.md)).
 
 ## Rejections, seeds and merged distributors
 
